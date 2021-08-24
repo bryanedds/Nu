@@ -809,7 +809,7 @@ type [<NoEquality; NoComparison>] PropDescriptor =
 type [<NoEquality; NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
-    | FieldRandom of int * single * Origin option * int * string
+    | FieldRandom of int * single * OriginRand * int * string
 
 type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
@@ -872,10 +872,9 @@ module FieldData =
                     match (World.tryGetTileMapMetadata fieldAsset world, World.tryGetTileMapMetadata fieldFadeAsset world) with
                     | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
                     | (_, _) -> None
-                | FieldRandom (walkLength, bias, originOpt, floor, fieldPath) ->
+                | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (originRandom, rand) = Origin.random rand
-                    let origin = Option.getOrDefault originRandom originOpt
+                    let (origin, rand) = OriginRand.random originRand rand
                     let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand
@@ -915,9 +914,9 @@ module FieldData =
             let rand = Rand.makeFromSeedState rotatedSeedState
             let propObjects = getPropObjects omniSeedState fieldData world
             let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
-            let (propsRandomized, rand) = Rand.randomize propsUninflated rand
+            let (propsRandomized, rand) = Rand.nextPermutation propsUninflated rand
             let (propDescriptors, _, _) =
-                Array.foldBack (fun prop (propDescriptors, treasures, rand) ->
+                List.foldBack (fun prop (propDescriptors, treasures, rand) ->
                     let (propDescriptor, treasures, rand) = inflateProp prop treasures rand
                     let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
                     (propDescriptor :: propDescriptors, treasures, rand))

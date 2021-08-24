@@ -18,28 +18,21 @@ type Origin =
     | OriginNW
     | OriginSE
     | OriginSW
-    static member random rand =
-        let (i, rand) = Rand.nextIntUnder 9 rand
-        let origin =
-            match i with
-            | 0 -> OriginC
-            | 1 -> OriginN
-            | 2 -> OriginE
-            | 3 -> OriginS
-            | 4 -> OriginW
-            | 5 -> OriginNE
-            | 6 -> OriginNW
-            | 7 -> OriginSE
-            | 8 -> OriginSW
-            | _ -> failwithumf ()
-        (origin, rand)
 
 type OriginRand =
     | OriginStatic of Origin
-    | OriginSouthern // SW, S, SE
-    | OriginNorthern // NW, N, NE
-    | OriginHorizonal // W, E
+    | OriginSouthern
+    | OriginNorthern
+    | OriginHorizonal
     | OriginRandom
+
+    static member random originRand rand =
+        match originRand with
+        | OriginStatic origin -> (origin, rand)
+        | OriginSouthern -> Rand.nextItem [OriginSW; OriginS; OriginSE] rand
+        | OriginNorthern -> Rand.nextItem [OriginNW; OriginN; OriginNE] rand
+        | OriginHorizonal -> Rand.nextItem [OriginW; OriginE] rand
+        | OriginRandom -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW; OriginNE; OriginNW; OriginSE; OriginSW] rand
 
 type Segment =
     | Segment0 = 0b000000
@@ -262,27 +255,50 @@ type MapRand =
             if floor = 0 then
                 match origin with
                 | OriginC ->    Segment.Segment0
-                | OriginN ->    Segment.Segment1N
                 | OriginE ->    Segment.Segment1E
-                | OriginS ->    Segment.Segment1S
                 | OriginW ->    Segment.Segment1W
+                | OriginN ->    Segment.Segment1N
                 | OriginNE ->   Segment.Segment1N
-                | OriginNW ->   Segment.Segment1W
-                | OriginSE ->   Segment.Segment1E
+                | OriginNW ->   Segment.Segment1N
+                | OriginS ->    Segment.Segment1S
+                | OriginSE ->   Segment.Segment1S
                 | OriginSW ->   Segment.Segment1S
             else Segment.Segment0
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
+        let (bossQuadrant, rand) = Rand.nextIntUnder 4 rand
         let isMapValid =
             match origin with
-            | OriginC ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginN ->    MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginNE ->   MapRand.tryAddBossRoomFromSouthWest map
-            | OriginNW ->   MapRand.tryAddBossRoomFromSouthEast map
-            | OriginE ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginS ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
-            | OriginSE ->   MapRand.tryAddBossRoomFromNorthWest map
-            | OriginSW ->   MapRand.tryAddBossRoomFromNorthEast map
-            | OriginW ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthEast map
+            | OriginC ->
+                match bossQuadrant with
+                | 0 -> MapRand.tryAddBossRoomFromNorthWest map
+                | 1 -> MapRand.tryAddBossRoomFromNorthEast map
+                | 2 -> MapRand.tryAddBossRoomFromSouthWest map
+                | 3 -> MapRand.tryAddBossRoomFromSouthEast map
+                | _ -> failwithumf ()
+            | OriginN ->
+                match bossQuadrant with
+                | 0 | 1 -> MapRand.tryAddBossRoomFromSouthEast map
+                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthWest map
+                | _ -> failwithumf ()
+            | OriginE ->
+                match bossQuadrant with
+                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthWest map
+                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthWest map
+                | _ -> failwithumf ()
+            | OriginS ->
+                match bossQuadrant with
+                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthWest map
+                | 2 | 3 -> MapRand.tryAddBossRoomFromNorthEast map
+                | _ -> failwithumf ()
+            | OriginW ->
+                match bossQuadrant with
+                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthEast map
+                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthEast map
+                | _ -> failwithumf ()
+            | OriginNE -> MapRand.tryAddBossRoomFromSouthWest map
+            | OriginNW -> MapRand.tryAddBossRoomFromSouthEast map
+            | OriginSE -> MapRand.tryAddBossRoomFromNorthWest map
+            | OriginSW -> MapRand.tryAddBossRoomFromNorthEast map
 #if DEV
         MapRand.printn map
 #endif
@@ -309,13 +325,13 @@ type MapRand =
             let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
                 match origin with
                 | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
                 | OriginE ->    (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
-                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
                 | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
                 | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginNW ->   (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
-                | OriginSE ->   (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginNW ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginSE ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
                 | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
             let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
             let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
