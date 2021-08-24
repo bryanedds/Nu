@@ -35,11 +35,11 @@ type [<NoEquality; NoComparison>] SpiritPattern =
 
     static member toSpiritMovement pattern =
         match pattern with
-        | Disinterested ->  [|Creep;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
-        | Confused ->       [|Creep;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
-        | Steadfast ->      [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
-        | Stalking ->       [|Creep;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
-        | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
+        | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
+        | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
+        | Steadfast ->      [|Chase;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Stalking ->       [|Chase;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
+        | Ambushing ->      [|Chase;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
 type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
