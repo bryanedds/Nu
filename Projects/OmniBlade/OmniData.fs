@@ -304,6 +304,7 @@ type ArchetypeType =
     | Ghost
     | Goblin
     | Soldier
+    | Knight
     | Imp
     | Zombie
     | Skeleton
@@ -335,6 +336,7 @@ type ArchetypeType =
     | Vampire
     | Cerebus
     | Hydra
+    | Gargoyle
     | ShamanBig
     | FireElemental
     | IceElemental
