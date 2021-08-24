@@ -37,7 +37,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         match pattern with
         | Disinterested -> [|Wander|]
         | Curious -> [|Chase; Scatter|]
-        | Confused -> [|Creep; Wander|]
+        | Confused -> [|Chase; Wander|]
         | Stalking -> [|Chase; Creep|]
         | Ambushing -> [|Chase|]
 

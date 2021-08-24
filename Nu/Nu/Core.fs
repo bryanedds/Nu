@@ -85,3 +85,14 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+
+/// TODO: put this in Prime and remove from here once Nu is updated.
+[<AutoOpen>]
+module Rand =
+
+    /// Randomize a sequence.
+    let randomize items rand =
+        items |>
+        Seq.toArray |>
+        Array.fold (fun (items, rand) item -> let (i, rand) = Rand.nextInt rand in (Map.add i item items, rand)) (Map.empty, rand) |>
+        mapFst Map.toValueArray
