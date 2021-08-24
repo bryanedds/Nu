@@ -257,14 +257,14 @@ module BattleDispatcher =
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
                             let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
-                            let (sigs2, battle) = update time battle
+                            let (sigs2, battle) = updateBattle time battle
                             (msg (CelebrateCharacters false) :: sigs @ sigs2, battle)
                         elif
                             List.forall (fun (character : Character) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
                             let battle = Battle.updateBattleState (constant (BattleResults (true, time))) battle
-                            let (sigs2, battle) = update time battle
+                            let (sigs2, battle) = updateBattle time battle
                             (msg (CelebrateCharacters true) :: sigs @ sigs2, battle)
                         else (sigs, battle)
                     | Some _ -> (sigs, battle)
@@ -311,7 +311,7 @@ module BattleDispatcher =
             let command = CurrentCommand.make time nextCommand
             let battle = Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle
-            update time battle
+            updateBattle time battle
 
         and updateNoNextCommand (_ : int64) (battle : Battle) =
             let (allySignalsRev, battle) =
@@ -423,7 +423,7 @@ module BattleDispatcher =
             then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
             else just battle
 
-        and update time (battle : Battle) =
+        and updateBattle time (battle : Battle) =
             match battle.BattleState with
             | BattleReady timeStart -> updateReady time timeStart battle
             | BattleRunning -> updateRunning time battle
@@ -442,7 +442,7 @@ module BattleDispatcher =
                 // update
                 let (signals, battle) = 
                     if World.isAdvancing world
-                    then update (World.getUpdateTime world) battle
+                    then updateBattle (World.getUpdateTime world) battle
                     else just battle
 
                 // update dialog
