@@ -16,8 +16,8 @@ type [<NoEquality; NoComparison>] SpiritMovement =
 
 type [<NoEquality; NoComparison>] SpiritPattern =
     | Disinterested
-    | Steadfast
     | Confused
+    | Steadfast
     | Stalking
     | Ambushing
 

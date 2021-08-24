@@ -90,9 +90,22 @@ module CoreOperators =
 [<AutoOpen>]
 module Rand =
 
+    /// Get a random element from a sequence if there are any elements or None.
+    let nextItemOpt seq rand =
+        let arr = Seq.toArray seq
+        if Array.notEmpty arr then
+            let (index, rand) = Rand.nextIntUnder arr.Length rand
+            (Some arr.[index], rand)
+        else (None, rand)
+
+    /// Get a random element from a sequence if there are any elements or raise exception.
+    let nextItem seq rand =
+        let (itemOpt, rand) = nextItemOpt seq rand
+        (Option.get itemOpt, rand)
+
     /// Randomize a sequence.
-    let randomize items rand =
+    let nextPermutation items rand =
         items |>
-        Seq.toArray |>
-        Array.fold (fun (items, rand) item -> let (i, rand) = Rand.nextInt rand in (Map.add i item items, rand)) (Map.empty, rand) |>
-        mapFst Map.toValueArray
+        Seq.toList |>
+        List.fold (fun (items, rand) item -> let (i, rand) = Rand.nextInt rand in (Map.add i item items, rand)) (Map.empty, rand) |>
+        mapFst Map.toValueList
