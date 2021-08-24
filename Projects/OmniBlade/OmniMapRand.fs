@@ -197,7 +197,9 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> Segment.Segment0 && i > 0 then
+                        if  i > 0 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <- Segment.SegmentBS
                             bossRoomAdded <- true
@@ -209,7 +211,9 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> Segment.Segment0 && i > 0 then
+                        if  i > 0 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <- Segment.SegmentBS
                             bossRoomAdded <- true
@@ -221,7 +225,9 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> Segment.Segment0 && i < dec 7 then
+                        if  i < dec 7 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <- Segment.SegmentBN
                             bossRoomAdded <- true
@@ -233,7 +239,9 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> Segment.Segment0 && i < dec 7 then
+                        if  i < dec 7 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <- Segment.SegmentBN
                             bossRoomAdded <- true
@@ -279,38 +287,12 @@ type MapRand =
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         let (bossQuadrant, rand) = Rand.nextIntUnder 4 rand
         let isMapValid =
-            match origin with
-            | OriginC ->
-                match bossQuadrant with
-                | 0 -> MapRand.tryAddBossRoomFromNorthWest map
-                | 1 -> MapRand.tryAddBossRoomFromNorthEast map
-                | 2 -> MapRand.tryAddBossRoomFromSouthWest map
-                | 3 -> MapRand.tryAddBossRoomFromSouthEast map
-                | _ -> failwithumf ()
-            | OriginN ->
-                match bossQuadrant with
-                | 0 | 1 -> MapRand.tryAddBossRoomFromSouthEast map
-                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthWest map
-                | _ -> failwithumf ()
-            | OriginE ->
-                match bossQuadrant with
-                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthWest map
-                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthWest map
-                | _ -> failwithumf ()
-            | OriginS ->
-                match bossQuadrant with
-                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthWest map
-                | 2 | 3 -> MapRand.tryAddBossRoomFromNorthEast map
-                | _ -> failwithumf ()
-            | OriginW ->
-                match bossQuadrant with
-                | 0 | 1 -> MapRand.tryAddBossRoomFromNorthEast map
-                | 2 | 3 -> MapRand.tryAddBossRoomFromSouthEast map
-                | _ -> failwithumf ()
-            | OriginNE -> MapRand.tryAddBossRoomFromSouthWest map
-            | OriginNW -> MapRand.tryAddBossRoomFromSouthEast map
-            | OriginSE -> MapRand.tryAddBossRoomFromNorthWest map
-            | OriginSW -> MapRand.tryAddBossRoomFromNorthEast map
+            match bossQuadrant with
+            | 0 -> MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
+            | 1 -> MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromNorthWest map
+            | 2 -> MapRand.tryAddBossRoomFromSouthWest map || MapRand.tryAddBossRoomFromSouthEast map
+            | 3 -> MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
+            | _ -> failwithumf ()
 #if DEV
         MapRand.printn map
 #endif
