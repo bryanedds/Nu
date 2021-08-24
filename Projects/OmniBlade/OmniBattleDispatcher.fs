@@ -319,8 +319,8 @@ module BattleDispatcher =
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
                         let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) allyIndex battle
-                        let playActionTimeSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)
-                        (Command playActionTimeSound :: signals, battle)
+                        let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
+                        (Command playReadySound :: signals, battle)
                     else (signals, battle))
                     ([], battle)
                     (Battle.getAllies battle)
