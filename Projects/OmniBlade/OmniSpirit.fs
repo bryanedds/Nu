@@ -16,7 +16,7 @@ type [<NoEquality; NoComparison>] SpiritMovement =
 
 type [<NoEquality; NoComparison>] SpiritPattern =
     | Disinterested
-    | Stoic
+    | Steadfast
     | Confused
     | Stalking
     | Ambushing
@@ -25,7 +25,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         match i with
         | 0 -> Disinterested
         | 1 -> Confused
-        | 2 -> Stoic
+        | 2 -> Steadfast
         | 3 -> Stalking
         | 4 -> Ambushing
         | _ -> failwithumf ()
@@ -37,7 +37,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         match pattern with
         | Disinterested ->  [|Creep;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
         | Confused ->       [|Creep;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
-        | Stoic ->          [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Steadfast ->      [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
         | Stalking ->       [|Creep;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
         | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
