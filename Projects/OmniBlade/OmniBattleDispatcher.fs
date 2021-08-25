@@ -195,20 +195,26 @@ module BattleDispatcher =
             match targetIndexOpt with
             | Some targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some _ ->
-                    match Map.tryFind techType Data.Value.TechAnimations with
-                    | Some techData ->
-                        let (msgs, battle) =
-                            if timeLocal = techData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], battle)
-                            elif timeLocal = techData.TechingStart then ([TechCharacter2 (sourceIndex, targetIndex, techType)], battle)
-                            elif timeLocal = techData.AffectingStart then ([TechCharacter3 (sourceIndex, targetIndex, techType)], battle)
-                            elif timeLocal = techData.AffectingStop then ([TechCharacter4 (sourceIndex, targetIndex, techType)], battle)
-                            elif timeLocal = techData.TechingStop then ([TechCharacter5 (sourceIndex, targetIndex, techType)], battle)
-                            elif timeLocal = techData.TechStop then ([TechCharacter6 (sourceIndex, targetIndex, techType)], battle)
-                            else ([], battle)
-                        let (msgs, battle) = (msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)], battle)
-                        withMsgs msgs battle
-                    | None ->
+                | Some target ->
+                    match (Map.tryFind techType Data.Value.Techs,  Map.tryFind techType Data.Value.TechAnimations) with
+                    | (Some techData, Some techAnimationData) ->
+                        ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
+                        if target.IsHealthy then
+                            let (msgs, battle) =
+                                if timeLocal = techAnimationData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], battle)
+                                elif timeLocal = techAnimationData.TechingStart then ([TechCharacter2 (sourceIndex, targetIndex, techType)], battle)
+                                elif timeLocal = techAnimationData.AffectingStart then ([TechCharacter3 (sourceIndex, targetIndex, techType)], battle)
+                                elif timeLocal = techAnimationData.AffectingStop then ([TechCharacter4 (sourceIndex, targetIndex, techType)], battle)
+                                elif timeLocal = techAnimationData.TechingStop then ([TechCharacter5 (sourceIndex, targetIndex, techType)], battle)
+                                elif timeLocal = techAnimationData.TechStop then ([TechCharacter6 (sourceIndex, targetIndex, techType)], battle)
+                                else ([], battle)
+                            let (msgs, battle) = (msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)], battle)
+                            withMsgs msgs battle
+                        else
+                            // TODO: change target automatically
+                            let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                            withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
+                    | (_, _) ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                 | None ->
