@@ -421,6 +421,9 @@ module Character =
                 | Slash -> 1.5f
                 | TechType.Flame -> 1.75f
                 | Aura -> 0.5f
+                | Empower -> 0.5f
+                | Enlighten -> 0.5f
+                | Protect -> 0.5f
                 | _ -> 1.0f
             else 1.0f
         if techData.Curative then
