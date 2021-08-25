@@ -15,7 +15,7 @@ Bolt,7,Magical,2.3,1,False,False,False,False,0,[Some Lightning],[],[],[SingleTar
 BoltBeam,8,Magical,1.25,1,False,False,False,False,0,[Some Lightning],[],[],[HorizontalTarget 48 [EnemyAim True]],
 Stone,9,Magical,2.7,1,False,False,False,False,0,[Some Earth],[],[],[SingleTarget [EnemyAim True]],
 Quake,10,Magical,1.25,0.667,False,False,False,False,0,[Some Earth],[],[],[AllTarget [EnemyAim True]],
-Aura,3,Magical,1.5,1,True,False,False,False,0,None,[],[],[AllTarget [AllyAim True]],
+Aura,4,Magical,1.5,1,True,False,False,False,0,None,[],[],[AllTarget [AllyAim True]],
 Empower,3,Magical,1,1,True,False,False,False,0,None,[[Power True False]],[],[SingleTarget [AllyAim True]],
 Enlighten,3,Magical,1,1,True,False,False,False,0,None,[[Magic True False]],[],[SingleTarget [AllyAim True]],
 Protect,3,Magical,1,1,True,False,False,False,0,None,[[Shield True False]],[],[SingleTarget [AllyAim True]],
