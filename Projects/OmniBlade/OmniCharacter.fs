@@ -420,6 +420,7 @@ module Character =
                 | Critical -> 1.25f
                 | Slash -> 1.5f
                 | TechType.Flame -> 1.75f
+                | Snowball -> 1.25f
                 | Aura -> 0.5f
                 | Empower -> 0.5f
                 | Enlighten -> 0.5f
