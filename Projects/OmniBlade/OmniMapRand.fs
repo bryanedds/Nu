@@ -29,6 +29,8 @@ type OriginRand =
     | OriginVertical
     | OriginCardinal
     | OriginDiagonal
+    | OriginCross
+    | OriginX
     | OriginRandom
 
     static member toOrigin originRand rand =
@@ -42,6 +44,8 @@ type OriginRand =
         | OriginVertical -> Rand.nextItem [OriginN; OriginS] rand
         | OriginCardinal -> Rand.nextItem [OriginN; OriginE; OriginS; OriginW] rand
         | OriginDiagonal -> Rand.nextItem [OriginNE; OriginNW; OriginSE; OriginSW] rand
+        | OriginCross -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW] rand
+        | OriginX -> Rand.nextItem [OriginC; OriginNE; OriginNW; OriginSE; OriginSW] rand
         | OriginRandom -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW; OriginNE; OriginNW; OriginSE; OriginSW] rand
 
 type Segment =
