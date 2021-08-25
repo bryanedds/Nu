@@ -667,8 +667,8 @@ type WeaponData =
 type ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
-      HitPointsBase : int
-      TechPointsBase : int
+      StaminaBase : int
+      MindBase : int
       Cost : int
       Description : string }
 

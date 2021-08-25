@@ -72,7 +72,7 @@ module Algorithms =
             match armorOpt with
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
-                | Some armorData -> single armorData.HitPointsBase
+                | Some armorData -> single armorData.StaminaBase
                 | None -> single level * 1.5f
             | None -> single level * 1.5f
         (intermediate + single level) * stamina |> int |> max 1

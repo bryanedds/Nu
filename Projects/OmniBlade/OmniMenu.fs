@@ -30,7 +30,7 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
 
     static member makeFromArmorData selection (ad : ArmorData) =
         let prompt = "Equip " + string ad.ArmorType + " to whom?"
-        let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
+        let stats = "(Stm: " + string ad.StaminaBase + " | Mnd: " + string ad.MindBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
