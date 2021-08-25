@@ -86,7 +86,7 @@ module Algorithms =
             match armorOpt with
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
-                | Some armorData -> single armorData.TechPointsBase
+                | Some armorData -> single armorData.MindBase
                 | None -> single level
             | None -> single level
         (intermediate + single level) * focus |> int |> max 0
