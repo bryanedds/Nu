@@ -45,6 +45,7 @@ module Constants =
         let BossSize = v2 324.0f 276.0f
         let BossCelSize = v2 108.0f 92.0f
         let DialogSplit = '^'
+        let ArmorStatBaseDisplayDivisor = 4
         let ItemLimit = 9
 
     [<RequireQualifiedAccess>]

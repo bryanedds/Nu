@@ -50,7 +50,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
         let price = if buying then ad.Cost else ad.Cost / 2
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let effect = "Effect: " + ad.Description
-        let stats = "Edr: " + string ad.EnduranceBase + " | Mnd: " + string ad.MindBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Edr: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + " | Own: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =

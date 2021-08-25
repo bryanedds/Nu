@@ -671,6 +671,8 @@ type ArmorData =
       MindBase : int
       Cost : int
       Description : string }
+    member this.EnduranceBaseDisplay = this.EnduranceBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
+    member this.MindBaseDisplay = this.MindBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
 
 type AccessoryData =
     { AccessoryType : AccessoryType // key
