@@ -63,63 +63,70 @@ module Program =
     /// Program entry point.
     let [<EntryPoint; STAThread>] main _ =
 
-        // query user to create new project
-        Console.Write "Create a new game with the Nu Game Engine? [y/n]: "
-        let result = Console.ReadLine ()
-        match result.ToUpper () with
-        | "Y" ->
+        // ensure template directory exists
+        let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+        let slnDir = Path.Combine (programDir, "../../../..") |> Path.Simplify
+        let templateDir = Path.Combine (programDir, "../../../Nu.Template") |> Path.Simplify
+        if Directory.Exists templateDir then
 
-            // execute name entry
-            Console.Write "Please enter your project's name (no spaces, tabs or dots, PascalCase is preferred): "
-            let name = Console.ReadLine ()
-            let name = name.Replace(" ", "").Replace("\t", "").Replace(".", "")
-            if Array.notExists (fun char -> name.Contains (string char)) (Path.GetInvalidPathChars ()) then
-                
-                // compute directories
-                let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-                let slnDir = Path.Combine (programDir, "../../../..") |> Path.Simplify
-                let templateDir = Path.Combine (programDir, "../../../Nu.Template") |> Path.Simplify
-                let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
-                let templateFileName = "Nu.Template.fsproj"
-                let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
-                let newProjDir = Path.Combine (projectsDir, name) |> Path.Simplify
-                let newFileName = name + ".fsproj"
-                let newProj = Path.Combine (newProjDir, newFileName) |> Path.Simplify
-                Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
+            // query user to create new project
+            Console.Write "Create a new game with the Nu Game Engine? [y/n]: "
+            let result = Console.ReadLine ()
+            match result.ToUpper () with
+            | "Y" ->
 
-                // install nu template
-                Directory.SetCurrentDirectory templateDir
-                Process.Start("dotnet", "new -u \"" + templateIdentifier + "\"").WaitForExit()
-                Process.Start("dotnet", "new -i ./").WaitForExit()
+                // execute name entry
+                Console.Write "Please enter your project's name (no spaces, tabs or dots, PascalCase is preferred): "
+                let name = Console.ReadLine ()
+                let name = name.Replace(" ", "").Replace("\t", "").Replace(".", "")
+                if Array.notExists (fun char -> name.Contains (string char)) (Path.GetInvalidPathChars ()) then
+                    
+                    // compute directories
+                    
+                    let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
+                    let templateFileName = "Nu.Template.fsproj"
+                    let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
+                    let newProjDir = Path.Combine (projectsDir, name) |> Path.Simplify
+                    let newFileName = name + ".fsproj"
+                    let newProj = Path.Combine (newProjDir, newFileName) |> Path.Simplify
+                    Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
 
-                // instantiate nu template
-                Directory.SetCurrentDirectory projectsDir
-                Directory.CreateDirectory name |> ignore<DirectoryInfo>
-                Directory.SetCurrentDirectory newProjDir
-                Process.Start("dotnet", "new nu-game --force").WaitForExit()
+                    // install nu template
+                    Directory.SetCurrentDirectory templateDir
+                    Process.Start("dotnet", "new -u \"" + templateIdentifier + "\"").WaitForExit()
+                    Process.Start("dotnet", "new -i ./").WaitForExit()
 
-                // rename project file
-                File.Copy (templateFileName, newFileName, true)
-                File.Delete templateFileName
+                    // instantiate nu template
+                    Directory.SetCurrentDirectory projectsDir
+                    Directory.CreateDirectory name |> ignore<DirectoryInfo>
+                    Directory.SetCurrentDirectory newProjDir
+                    Process.Start("dotnet", "new nu-game --force").WaitForExit()
 
-                // substitute $safeprojectname$ in project file
-                let newProjStr = File.ReadAllText newProj
-                let newProjStr = newProjStr.Replace("$safeprojectname$", name)
-                File.WriteAllText (newProj, newProjStr)
+                    // rename project file
+                    File.Copy (templateFileName, newFileName, true)
+                    File.Delete templateFileName
 
-                // add project to sln file
-                // NOTE: not currently working due to project in old file format - user is instructed to do this manually
-                //Directory.SetCurrentDirectory slnDir
-                //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
-                ignore (slnDir, newProj)
-                
-                // success
-                Constants.Engine.SuccessExitCode
+                    // substitute $safeprojectname$ in project file
+                    let newProjStr = File.ReadAllText newProj
+                    let newProjStr = newProjStr.Replace("$safeprojectname$", name)
+                    File.WriteAllText (newProj, newProjStr)
 
-            // invalid name; failure
-            else
-                Console.WriteLine ("Project name '" + name + "' contains invalid path characters.")
-                Constants.Engine.FailureExitCode
+                    // add project to sln file
+                    // NOTE: not currently working due to project in old file format - user is instructed to do this manually
+                    //Directory.SetCurrentDirectory slnDir
+                    //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
+                    ignore (slnDir, newProj)
+                    
+                    // success
+                    Constants.Engine.SuccessExitCode
 
-        // rejected
-        | _ -> Constants.Engine.SuccessExitCode
+                // invalid name; failure
+                else
+                    Console.WriteLine ("Project name '" + name + "' contains invalid path characters.")
+                    Constants.Engine.FailureExitCode
+
+            // rejected
+            | _ -> Constants.Engine.SuccessExitCode
+
+        // nothing to do
+        else Constants.Engine.SuccessExitCode
