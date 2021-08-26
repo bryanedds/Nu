@@ -289,14 +289,17 @@ type MapRand =
                 | OriginSW ->   Segment.Segment1S
             else Segment.Segment0
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
-        let (bossQuadrant, rand) = Rand.nextIntUnder 4 rand
-        let isMapValid =
-            match bossQuadrant with
-            | 0 -> MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
-            | 1 -> MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromNorthWest map
-            | 2 -> MapRand.tryAddBossRoomFromSouthWest map || MapRand.tryAddBossRoomFromSouthEast map
-            | 3 -> MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
-            | _ -> failwithumf ()
+        let (tryAddBosses, rand) =
+            Rand.nextPermutation
+                [MapRand.tryAddBossRoomFromNorthWest
+                 MapRand.tryAddBossRoomFromNorthEast
+                 MapRand.tryAddBossRoomFromSouthWest
+                 MapRand.tryAddBossRoomFromSouthEast]
+                rand
+        let mutable isMapValid = false
+        for tryAddBoss in tryAddBosses do
+            if not isMapValid then
+                isMapValid <- tryAddBoss map
 #if DEV
         MapRand.printn map
 #endif
