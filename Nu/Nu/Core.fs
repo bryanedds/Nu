@@ -85,27 +85,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-
-/// TODO: put this in Prime and remove from here once Nu is updated.
-[<AutoOpen>]
-module Rand =
-
-    /// Get a random element from a sequence if there are any elements or None.
-    let nextItemOpt seq rand =
-        let arr = Seq.toArray seq
-        if Array.notEmpty arr then
-            let (index, rand) = Rand.nextIntUnder arr.Length rand
-            (Some arr.[index], rand)
-        else (None, rand)
-
-    /// Get a random element from a sequence if there are any elements or raise exception.
-    let nextItem seq rand =
-        let (itemOpt, rand) = nextItemOpt seq rand
-        (Option.get itemOpt, rand)
-
-    /// Randomize a sequence.
-    let nextPermutation items rand =
-        items |>
-        Seq.toList |>
-        List.fold (fun (items, rand) item -> let (i, rand) = Rand.nextInt rand in (Map.add i item items, rand)) (Map.empty, rand) |>
-        mapFst Map.toValueList
