@@ -82,7 +82,6 @@ module Program =
                 if Array.notExists (fun char -> name.Contains (string char)) (Path.GetInvalidPathChars ()) then
                     
                     // compute directories
-                    
                     let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                     let templateFileName = "Nu.Template.fsproj"
                     let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
