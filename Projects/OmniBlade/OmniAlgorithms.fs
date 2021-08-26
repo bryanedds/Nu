@@ -177,7 +177,7 @@ module Algorithms =
         let algo = single level * 1.5f
         max (int (mythos * scalar * algo)) 1
 
-    let itemPrizeOpt archetypeType (level : int) =
+    let itemPrizeOpt (_ : ArchetypeType) (_ : int) =
         // TODO: pull this from data.
         if Gen.random1 32 = 0
         then Some (Consumable GreenHerb)

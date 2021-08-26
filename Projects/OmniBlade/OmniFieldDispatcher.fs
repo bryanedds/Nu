@@ -166,6 +166,7 @@ module FieldDispatcher =
                 | Sensor (sensorType, _, _, cue, requirements) -> Some (sensorType, cue, requirements)
                 | _ -> None)
                 avatar.SeparatedBodyShapes
+        do ignore getUntouchedSensors // NOTE: suppressing warning.
 
         static let interactDialog dialog field =
             match Dialog.tryAdvance (flip detokenize field) dialog with
@@ -756,7 +757,7 @@ module FieldDispatcher =
                         field
                 just field
             
-            | MenuTechSelect index ->
+            | MenuTechSelect _ ->
                 just field
             
             | MenuClose ->
