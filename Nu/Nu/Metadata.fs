@@ -10,7 +10,6 @@ open System.IO
 open TiledSharp
 open Prime
 open Nu
-open TiledSharp
 
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
