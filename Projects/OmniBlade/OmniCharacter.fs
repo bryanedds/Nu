@@ -265,9 +265,9 @@ module Character =
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
         member this.CenterOffset4 = this.Center + Constants.Battle.CharacterCenterOffset4
         member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
-        member this.BottomOffsetB = this.Bottom + Constants.Battle.CharacterBottomOffsetB
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
         member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
+        member this.BottomOffset4 = this.Bottom + Constants.Battle.CharacterBottomOffset4
 
         (* CharacterState Properties *)
         member this.Name = CharacterType.getName this.CharacterType_
