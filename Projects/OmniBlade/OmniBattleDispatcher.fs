@@ -665,7 +665,7 @@ module BattleDispatcher =
                         let hopStop = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = hopStop })
                     | Cyclone ->
-                        Left (DisplayHop { HopStart = source.Bottom; HopStop = target.BottomOffset2 })
+                        Left (DisplayHop { HopStart = source.Bottom; HopStop = target.BottomOffset3 })
                     | _ ->
                         match source.ArchetypeType with
                         | Cleric ->
@@ -872,7 +872,7 @@ module BattleDispatcher =
                         let hopDirection = Direction.ofVector2 (target.Bottom - source.BottomOriginal)
                         let hopStart = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Some { HopStart = hopStart; HopStop = source.BottomOriginal }
-                    | Cyclone -> Some { HopStart = target.BottomOffset2; HopStop = source.BottomOriginal }
+                    | Cyclone -> Some { HopStart = target.BottomOffset3; HopStop = source.BottomOriginal }
                     | _ -> None
                 match hopOpt with
                 | Some hop -> withCmd (DisplayHop hop) battle
@@ -1176,7 +1176,7 @@ module BattleDispatcher =
                      // tech bar
                      Content.fillBar "TechBar" 
                         [Entity.Size == v2 48.0f 6.0f
-                         Entity.Center <== ally --> fun ally -> ally.BottomOffsetB
+                         Entity.Center <== ally --> fun ally -> ally.BottomOffset2
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
                          Entity.Fill <== ally --> fun ally -> single ally.TechPoints / single ally.TechPointsMax]
