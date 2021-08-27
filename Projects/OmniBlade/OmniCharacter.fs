@@ -265,6 +265,7 @@ module Character =
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
         member this.CenterOffset4 = this.Center + Constants.Battle.CharacterCenterOffset4
         member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
+        member this.BottomOffsetB = this.Bottom + Constants.Battle.CharacterBottomOffsetB
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
         member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
 
@@ -293,6 +294,7 @@ module Character =
         member this.IsWounded = this.CharacterState_.IsWounded
         member this.Level = this.CharacterState_.Level
         member this.HitPointsMax = this.CharacterState_.HitPointsMax
+        member this.TechPointsMax = this.CharacterState_.TechPointsMax
         member this.Power = this.CharacterState_.Power
         member this.Magic = this.CharacterState_.Magic
         member this.Shield = this.CharacterState_.Shield

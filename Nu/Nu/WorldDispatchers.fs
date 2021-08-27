@@ -2148,9 +2148,15 @@ module FillBarDispatcherModule =
         member this.GetFillInset world : single = this.Get Property? FillInset world
         member this.SetFillInset (value : single) world = this.Set Property? FillInset value world
         member this.FillInset = lens Property? FillInset this.GetFillInset this.SetFillInset this
+        member this.GetFillColor world : Color = this.Get Property? FillColor world
+        member this.SetFillColor (value : Color) world = this.Set Property? FillColor value world
+        member this.FillColor = lens Property? FillColor this.GetFillColor this.SetFillColor this
         member this.GetFillImage world : Image AssetTag = this.Get Property? FillImage world
         member this.SetFillImage (value : Image AssetTag) world = this.Set Property? FillImage value world
         member this.FillImage = lens Property? FillImage this.GetFillImage this.SetFillImage this
+        member this.GetBorderColor world : Color = this.Get Property? BorderColor world
+        member this.SetBorderColor (value : Color) world = this.Set Property? BorderColor value world
+        member this.BorderColor = lens Property? BorderColor this.GetBorderColor this.SetBorderColor this
         member this.GetBorderImage world : Image AssetTag = this.Get Property? BorderImage world
         member this.SetBorderImage (value : Image AssetTag) world = this.Set Property? BorderImage value world
         member this.BorderImage = lens Property? BorderImage this.GetBorderImage this.SetBorderImage this
@@ -2171,7 +2177,9 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage Assets.Default.Image11
+             define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))
+             define Entity.FillImage Assets.Default.Image9
+             define Entity.BorderColor (Color (byte 0, byte 0, byte 0, byte 255))
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
@@ -2192,8 +2200,10 @@ module FillBarDispatcherModule =
                       Rotation = 0.0f
                       Elevation = entity.GetElevation world
                       Flags = entity.GetFlags world }
-                let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                let disabledColor = entity.GetDisabledColor world
+                let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
                 let borderImage = entity.GetBorderImage world
+                let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
                 let fillImage = entity.GetFillImage world
                 let world =
                     World.enqueueRenderLayeredMessage
@@ -2207,7 +2217,7 @@ module FillBarDispatcherModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = borderImage
-                                  Color = fillBarColor
+                                  Color = borderImageColor
                                   Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
@@ -2224,7 +2234,7 @@ module FillBarDispatcherModule =
                                     Offset = Vector2.Zero
                                     InsetOpt = None
                                     Image = fillImage
-                                    Color = fillBarColor
+                                    Color = fillImageColor
                                     Blend = Transparent
                                     Glow = Color.Zero
                                     Flip = FlipNone }}
