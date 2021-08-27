@@ -389,7 +389,7 @@ module Battle =
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-          TileMap_ = Assets.Field.DebugBattleTileMap
+          TileMap_ = Assets.Battle.DebugBattleTileMap
           TileIndexOffset_ = 0
           BattleSongOpt_ = None
           CurrentCommandOpt_ = None
