@@ -625,7 +625,8 @@ module BattleDispatcher =
                 let damage = Battle.getAttackResult Physical sourceIndex targetIndex battle
                 let battle = Battle.updateHitPoints targetIndex false false -damage battle
                 let battle = Battle.updateCharacter (Character.animate time DamageAnimation) targetIndex battle
-                withCmd (DisplayHitPointsChange (targetIndex, -damage)) battle
+                let sigs = if Battle.getCharacterWounded targetIndex battle then [msg (ResetCharacter targetIndex)] else []
+                withSigs (cmd (DisplayHitPointsChange (targetIndex, -damage)) :: sigs) battle
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getUpdateTime world
