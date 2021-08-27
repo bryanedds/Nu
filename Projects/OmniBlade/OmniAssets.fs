@@ -68,7 +68,6 @@ module Assets =
 
         let PackageName = "Field"
         let DebugRoomTileMap = asset<TileMap> PackageName "DebugRoom" // TODO: P1: Convert tile sheet.
-        let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle" // TODO: P1: Convert tile sheet.
         let WoodenChestOpenedImage = asset<Image> PackageName "WoodenChestOpened"
         let WoodenChestClosedImage = asset<Image> PackageName "WoodenChestClosed"
         let BrassChestOpenedImage = asset<Image> PackageName "BrassChestOpened"
@@ -133,6 +132,7 @@ module Assets =
     module Battle =
         
         let PackageName = "Battle"
+        let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle"
         let CancelImage = asset<Image> PackageName "Cancel"
         let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert effect art.
         let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur" // TODO: P1: Convert effect art.
