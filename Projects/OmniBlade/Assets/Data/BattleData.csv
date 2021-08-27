@@ -19,7 +19,7 @@ Castle2Battle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[FacelessSoldier Poi
 Castle2Battle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],-612,[Some [Castle CastleBattle]]
 Castle2Battle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk FacelessSoldier PoisonGorgon],[Castle CastleBattle],-612,[Some [Castle CastleBattle]]
 Castle2Battle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk Hawk],[Castle CastleBattle],-612,[Some [Castle CastleBattle]]
-HeavyArmorosBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[HeavyArmoros Hawk PoisonGorgon],[Castle CastleBattle],-612,[Some [Battle Midboss]]
+HeavyArmorosBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[HeavyArmoros Hawk PoisonGorgon PoisonGorgon],[Castle CastleBattle],-612,[Some [Battle Midboss]]
 Castle3Battle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Cloak Apparition],[Castle CastleBattle],-18,[Some [Castle CastleBattle]]
 Castle3Battle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Apparition Apparition Apparition],[Castle CastleBattle],-18,[Some [Castle CastleBattle]]
 Castle3Battle3,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Cloak Cloak],[Castle CastleBattle],-18,[Some [Castle CastleBattle]]
