@@ -1171,6 +1171,14 @@ module BattleDispatcher =
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Fill <== ally --> fun ally -> single ally.HitPoints / single ally.HitPointsMax]
+                         
+                     // tech bar
+                     Content.fillBar "TechBar" 
+                        [Entity.Size == v2 48.0f 6.0f
+                         Entity.Center <== ally --> fun ally -> ally.BottomOffsetB
+                         Entity.Elevation == Constants.Battle.GuiElevation
+                         Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
+                         Entity.Fill <== ally --> fun ally -> single ally.TechPoints / single ally.TechPointsMax]
 
                      // regular menu
                      Content.entity<RingMenuDispatcher> "RegularMenu"
