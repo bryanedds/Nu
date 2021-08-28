@@ -1200,7 +1200,7 @@ module FieldDispatcher =
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -192.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 384.0f
+                       [Entity.Position == v2 -448.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
                        [team (v2 160.0f 150.0f) 1.0f 3 field
                            (fun teammate menu ->
