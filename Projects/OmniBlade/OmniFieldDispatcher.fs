@@ -1202,30 +1202,31 @@ module FieldDispatcher =
                     Content.panel Gen.name
                        [Entity.Position == v2 -448.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
-                       [team (v2 160.0f 150.0f) 1.0f 3 field
+                       [team (v2 160.0f 182.0f) 1.0f 3 field
                            (fun teammate menu ->
                                match menu.MenuUseOpt with
                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                | None -> false)
                            MenuItemUse
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 810.0f 306.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
-                            Entity.Text == "X"
+                           [Entity.PositionLocal == v2 810.0f 344.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                            Entity.UpImage == asset "Field" "CloseButtonUp"
+                            Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 306.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 42.0f 344.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
                                | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 264.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 60.0f 302.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine2
                                 | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 222.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.ShopOpt with
                                | Some shop ->
@@ -1285,7 +1286,7 @@ module FieldDispatcher =
                  // shop confirm
                  Content.entityOpt field (fun field _ -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 864.0f 252.0f
+                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 252.0f
                         Entity.LabelImage == Assets.Gui.DialogThickImage]
                        [Content.button Gen.name
                            [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f
