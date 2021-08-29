@@ -74,14 +74,17 @@ type EffectType =
     | Physical
     | Magical
 
-type ElementType =
-    | Fire // beats ice, average scalar
-    | Ice // beats fire, lightning; average scaler
-    | Lightning // beats water, average scalar
-    | Water // beats lightning, average scalar
-    | Dark // beats light, stronger scalar
-    | Light // beats dark, weaker scalar
-    | Earth // beats nothing, strongest scalar
+type AffinityType =
+    | Fire // beats ice
+    | Ice // beats fire, insect
+    | Lightning // beats water, metal
+    | Water // beats lightning
+    //| Wind - maybe in a sequal...
+    | Dark // beats light
+    | Light // beats dark
+    | Earth // beats lightning
+    | Metal // beats nothing
+    | Insect // beats nothing
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
@@ -89,7 +92,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Silence
     | Sleep
     | Confuse
-    | Previve
     | Time of bool // true = Haste, false = Slow
     | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
@@ -104,13 +106,12 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Silence -> 2
         | Sleep -> 3
         | Confuse -> 4
-        | Previve -> 5
-        | Time _ -> 6
-        | Counter (_, _) -> 7
-        | Power (_, _) -> 8
-        | Magic (_, _) -> 9
-        | Shield (_, _) -> 10
-        | Provoke i -> 11 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+        | Time _ -> 5
+        | Counter (_, _) -> 6
+        | Power (_, _) -> 7
+        | Magic (_, _) -> 8
+        | Shield (_, _) -> 9
+        | Provoke i -> 10 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
 
     static member compare this that =
         compare
@@ -701,10 +702,9 @@ type TechData =
       SuccessRate : single
       Curative : bool
       Sneakening : bool
-      Provocative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      ElementTypeOpt : ElementType option
+      ElementTypeOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
@@ -726,6 +726,8 @@ type ArchetypeData =
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
+      Immunities : StatusType Set
+      AffinityOpt : AffinityType option
       Stature : StatureType
       Description : string }
 
