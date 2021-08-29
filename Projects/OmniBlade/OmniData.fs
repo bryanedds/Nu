@@ -704,7 +704,7 @@ type TechData =
       Sneakening : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      ElementTypeOpt : AffinityType option
+      AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
