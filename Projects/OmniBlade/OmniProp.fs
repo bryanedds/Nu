@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 type [<NoEquality; NoComparison>] PropState =
-    | PortalState of bool
+    | PortalState of Vector4 * bool
     | DoorState of bool
     | ChestState of Vector4 * Guid
     | SwitchState of bool

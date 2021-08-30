@@ -83,6 +83,7 @@ module Assets =
         let SpiritImage = asset<Image> PackageName "Spirit"
         let SpiritChestClosedImage = asset<Image> PackageName "SpiritChestClosed"
         let SpiritChestOpenedImage = asset<Image> PackageName "SpiritChestOpened"
+        let SpiritPortalImage = asset<Image> PackageName "SpiritPortal"
         let SpiritAvatarImage = asset<Image> PackageName "SpiritAvatar"
         let SpiritOrbImage = asset<Image> PackageName "SpiritOrb"
         let SealAnimationSheet = asset<Image> PackageName "Seal"
