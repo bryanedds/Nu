@@ -125,6 +125,7 @@ module Assets =
         let IfritSound = asset<Sound> PackageName "Ifrit"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
         let ReadySound = asset<Sound> PackageName "Ready"
+        let BuffSound = asset<Sound> PackageName "Buff"
         let DebuffSound = asset<Sound> PackageName "Debuff"
         let FieldSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Field" }
 
@@ -160,4 +161,8 @@ module Assets =
         let MagicDebuffImage = asset<Image> PackageName "MagicDebuff"
         let ShieldDebuffImage = asset<Image> PackageName "ShieldDebuff"
         let TimeDebuffImage = asset<Image> PackageName "TimeDebuff"
+        let PowerBuffImage = asset<Image> PackageName "PowerBuff"
+        let MagicBuffImage = asset<Image> PackageName "MagicBuff"
+        let ShieldBuffImage = asset<Image> PackageName "ShieldBuff"
+        let TimeBuffImage = asset<Image> PackageName "TimeBuff"
         let FireSpinAnimationSheet = asset<Image> PackageName "FireSpin"

@@ -383,6 +383,28 @@ module Effects =
                      StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
     
+    let makeBuffEffect statusType =
+        let image =
+            match statusType with
+            | Power (_, _) -> Assets.Battle.PowerBuffImage
+            | Magic (_, _) -> Assets.Battle.MagicBuffImage
+            | Shield (_, _) -> Assets.Battle.ShieldBuffImage
+            | Time _ -> Assets.Battle.TimeBuffImage
+            | _ -> Assets.Default.ImageEmpty
+        let shrink =
+            Sizes
+               (Set, EaseIn, Once,
+                [|{ TweenValue = v2 0.0f 0.0f; TweenLength = 20L }
+                  { TweenValue = v2 96.0f 96.0f; TweenLength = 10L }
+                  { TweenValue = v2 96.0f 96.0f; TweenLength = 20L }|])
+        { EffectName = "Buff"
+          LifeTimeOpt = Some 50L
+          Definitions = Map.empty
+          Content =
+              Contents
+                  (Shift 0.0f,
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v2 0.0f 32.0f)|], Nil)|])}
+    
     let makeDebuffEffect statusType =
         let image =
             match statusType with

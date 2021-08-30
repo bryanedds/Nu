@@ -73,6 +73,7 @@ module BattleDispatcher =
         | DisplayAura of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
+        | DisplayBuff of int64 * StatusType * CharacterIndex
         | DisplayDebuff of int64 * StatusType * CharacterIndex
         | DisplayConjureIfrit of int64
         | DisplayHop of Hop
@@ -795,21 +796,21 @@ module BattleDispatcher =
                 | Empower ->
                     let time = World.getUpdateTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound and effect.
-                    let displayAura = DisplayAura (0L, targetIndex)
-                    withCmds [playAura; displayAura] battle
+                    let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                    let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
+                    withCmds [playBuff; displayBuff] battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound and effect.
-                    let displayAura = DisplayAura (0L, targetIndex)
-                    withCmds [playAura; displayAura] battle
+                    let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                    let displayBuff = DisplayBuff (0L, Magic (true, true), targetIndex)
+                    withCmds [playBuff; displayBuff] battle
                 | Protect ->
                     let time = World.getUpdateTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound.
-                    let displayProtect = DisplayProtect (0L, targetIndex)
-                    withCmds [playAura; displayProtect] battle
+                    let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                    let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
+                    withCmds [playBuff; displayBuff] battle
                 | Weaken ->
                     let time = World.getUpdateTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -1104,9 +1105,14 @@ module BattleDispatcher =
                 | Some source -> displayEffect delay (v2 48.0f 48.0f) (Bottom source.Bottom) (Effects.makeDimensionalCastEffect ()) world |> just
                 | None -> just world
 
-            | DisplayDebuff (delay, powerDown, targetIndex) ->
+            | DisplayBuff (delay, statusType, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect powerDown) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeBuffEffect statusType) world |> just
+                | None -> just world
+
+            | DisplayDebuff (delay, statusType, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect statusType) world |> just
                 | None -> just world
 
             | DisplayConjureIfrit delay ->
