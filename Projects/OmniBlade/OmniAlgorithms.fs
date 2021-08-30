@@ -105,7 +105,7 @@ module Algorithms =
             immunities
             accessories
 
-    let affinityTypeOpt accessories archetypeType (level : int) =
+    let affinityOpt accessories archetypeType (level : int) =
         ignore level
         let affinityOpt =
             match Map.tryFind archetypeType Data.Value.Archetypes with
