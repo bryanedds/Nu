@@ -268,9 +268,9 @@ type TechType =
     | Slash
     | DarkCritical
     | Cyclone
-    | SneakCut
+    | PoisonCut
     | PowerCut
-    | ProvokeCut
+    | SilenceCut
     | DoubleCut
     | Fire
     | Flame
