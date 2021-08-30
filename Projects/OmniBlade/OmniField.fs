@@ -86,7 +86,7 @@ module Field =
         match Map.tryFind propDescriptor.PropId propStates with
         | None ->
             match propDescriptor.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> PortalState (advents.IsSupersetOf requirements)
+            | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
             | Door (_, _, _, _) -> DoorState false
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
@@ -117,6 +117,11 @@ module Field =
         getPropStates field world |>
         Map.toValueArray |>
         Array.choose (function ChestState (bounds, id) -> Some (Chest.make bounds (field.Advents.Contains (Opened id))) | _ -> None)
+
+    let getPortals field world =
+        getPropStates field world |>
+        Map.toValueArray |>
+        Array.choose (function PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
 
     let updateFieldType updater field =
         { field with
