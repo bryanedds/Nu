@@ -409,7 +409,7 @@ module Battle =
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
-                Map.add 1 (Teammate.makeAtLevel level 1 Riain) |>
+                Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
                 Map.add 2 (Teammate.makeAtLevel level 2 Mael)
             makeFromTeam Inventory.initial prizePool team battle 0L
         | None -> empty
