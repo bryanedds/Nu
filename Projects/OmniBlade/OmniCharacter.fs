@@ -294,6 +294,7 @@ module Character =
         member this.Charging = this.CharacterState_.Charging
         member this.IsHealthy = this.CharacterState_.IsHealthy
         member this.IsWounded = this.CharacterState_.IsWounded
+        member this.IsWounding = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> true | _ -> false
         member this.Level = this.CharacterState_.Level
         member this.HitPointsMax = this.CharacterState_.HitPointsMax
         member this.TechPointsMax = this.CharacterState_.TechPointsMax
@@ -339,12 +340,9 @@ module Character =
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
-            characters |>
-            Map.filter (fun _ c -> c.IsHealthy = healthy)
+            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy) characters
         | EnemyAim healthy | AllyAim healthy ->
-            characters |>
-            Map.filter (fun _ c -> isFriendly target c) |>
-            Map.filter (fun _ c -> c.IsHealthy = healthy)
+            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy && isFriendly target c) characters
         | NoAim ->
             Map.empty
 
