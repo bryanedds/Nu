@@ -1,2 +1,3 @@
 Type,ShieldBase,CounterBase,Immunities,AffinityOpt,Cost,Description
-LeatherBrace,1,0,[],None,100,Increases defense slightly.
+SilverRing,0,0,[[Magic False False] [Magic False True]],None,100,Prevents Magic status afflictions.
+IronBrace,1,0,[],None,200,Increases defense slightly.

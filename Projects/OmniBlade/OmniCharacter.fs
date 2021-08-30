@@ -34,6 +34,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Defense = Algorithms.defense this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Absorb = Algorithms.absorb this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.AffinityOpt = Algorithms.affinityOpt this.Accessories this.ArchetypeType this.Level
+    member this.Immunities = Algorithms.immunities this.Accessories this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
@@ -300,6 +302,8 @@ module Character =
         member this.Shield = this.CharacterState_.Shield
         member this.Defense = this.CharacterState_.Defense
         member this.Absorb = this.CharacterState_.Absorb
+        member this.AffinityOpt = this.CharacterState_.AffinityOpt
+        member this.Immunities = this.CharacterState_.Immunities
         member this.GoldPrize = this.CharacterState_.GoldPrize
         member this.ExpPrize = this.CharacterState_.ExpPrize
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
@@ -408,7 +412,7 @@ module Character =
             | Physical -> source.CharacterState_.Power
             | Magical -> source.CharacterState_.Magic
         let affinityScalar =
-            match (Algorithms.affinityTypeOpt source.CharacterState_.Accessories source.CharacterState_.ArchetypeType source.Level, techData.AffinityTypeOpt) with
+            match (source.AffinityOpt, techData.AffinityOpt) with
             | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget
             | (_, _) -> 1.0f
         let specialScalar =
@@ -441,7 +445,7 @@ module Character =
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
             let damage = (single efficacy * affinityScalar * techData.Scalar * specialScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, false, -damage, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters

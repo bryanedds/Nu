@@ -35,8 +35,8 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
         let prompt = "Equip " + string ad.AccessoryType + " to whom?"
-        let stats = "(Shd: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
-        MenuUse.make selection prompt stats
+        let effect = "(Effect: " + ad.Description + ")"
+        MenuUse.make selection prompt effect
 
     static member tryMakeFromSelection selection =
         match snd selection with

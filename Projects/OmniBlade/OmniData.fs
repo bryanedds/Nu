@@ -191,7 +191,8 @@ type ArmorType =
     | StoneHide
 
 type AccessoryType =
-    | LeatherBrace
+    | SilverRing
+    | IronBrace
 
 type WeaponSubtype =
     | Melee
@@ -726,7 +727,7 @@ type TechData =
       Sneakening : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      AffinityTypeOpt : AffinityType option
+      AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
