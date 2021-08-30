@@ -17,7 +17,7 @@ Beetle,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Some Insect],SmallStature,Weak ph
 Rat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,SmallStature,Semi-weak physical attacks.
 Scorpion,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[Poison],[Some Insect],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[Poison],[Some Earth],SmallStature,Weak physical attacks with Debuff effects.
-Ghost,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SneakCut]],[Poison Blind Sleep Confuse],[Some Dark],NormalStature,Physical attacks with Debuff magic.
+Ghost,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SneakCut]],[Poison Sleep Confuse],[Some Dark],NormalStature,Physical attacks with Debuff magic.
 Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],[],None,NormalStature,Normal physical attacks with normal Elemental magic.
 Soldier,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],None,NormalStature,Physical attacks with ???.
 Knight,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],None,NormalStature,Physical attacks with ???.
@@ -28,7 +28,7 @@ Shaman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Weaken] [2 Flame]],[],None,NormalStatu
 Glurble,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Some Water],NormalStature,Elemental magic and Countering.
 Wolfman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],None,NormalStature,Physical attacks with Countering.
 Dryad,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Some Earth],NormalStature,Physical attack and Earth magic.
-Mummy,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[Poison Blind],[Some Dark],NormalStature,Physical attacks with Debuff effects.
+Mummy,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[Poison],[Some Dark],NormalStature,Physical attacks with Debuff effects.
 Witch,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],None,NormalStature,Elemental and Status magic.
 Squidly,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Some Water],NormalStature,Physical attacks and Lightning magic.
 Merman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Some Water],NormalStature,Physical attacks and Lightning magic.
@@ -40,13 +40,13 @@ Monk,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],None,NormalStature,
 Tortoise,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],None,LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[Poison Silence Sleep],[Some Metal],LargeStature,Physical attack and Lightning magic.
 Harpy,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],None,LargeStature,
-Jack,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[Blind],[Some Dark],LargeStature,Fire and Debuff magic.
+Jack,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Some Dark],LargeStature,Fire and Debuff magic.
 Avian,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[1 Aura]],[],None,LargeStature,Strong physical attacks with Curative magic.
 Troll,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,LargeStature,Strong physical attacks with Buff magic.
 Mare,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,LargeStature,Physical attack with Status effects.
 Djinn,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,LargeStature,Elemental and Status magic.
 Naga,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,LargeStature,Physical attack with Status effects.
-Jackorider,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[Blind],[Some Dark],LargeStature,Fire and Debuff magic.
+Jackorider,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Dark],LargeStature,Fire and Debuff magic.
 Trap,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Metal],LargeStature,Strong physical attacks with Debuff magic.
 Vampire,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[Poison Sleep],[Some Dark],LargeStature,Status magic.
 Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,LargeStature,Strong physical attacks w/ Countering.
