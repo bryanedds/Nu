@@ -108,30 +108,28 @@ type AffinityType =
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
-    | Blind
     | Silence
     | Sleep
     | Confuse
+    // Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
     | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    | Provoke of CharacterIndex
+    //| Provoke of CharacterIndex - may in the sequal
 
     static member enumerate this =
         match this with
         | Poison -> 0
-        | Blind -> 1
-        | Silence -> 2
-        | Sleep -> 3
-        | Confuse -> 4
-        | Time _ -> 5
-        | Counter (_, _) -> 6
-        | Power (_, _) -> 7
-        | Magic (_, _) -> 8
-        | Shield (_, _) -> 9
-        | Provoke i -> 10 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+        | Silence -> 1
+        | Sleep -> 2
+        | Confuse -> 3
+        | Time _ -> 4
+        | Counter (_, _) -> 5
+        | Power (_, _) -> 6
+        | Magic (_, _) -> 7
+        | Shield (_, _) -> 8
 
     static member compare this that =
         compare
@@ -722,9 +720,7 @@ type TechData =
       TechCost : int
       EffectType : EffectType
       Scalar : single
-      SuccessRate : single
       Curative : bool
-      Sneakening : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
       AffinityOpt : AffinityType option

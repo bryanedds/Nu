@@ -2,7 +2,7 @@ Type,Scalar,Curative,Techative,Revive,StatusesAdded,StatusRemoved,AimType,Cost,D
 GreenHerb,30,True,False,False,[],[],[AllyAim True],10,Heals minor injuries.
 RedHerb,100,True,False,False,[],[],[AllyAim True],50,Heals medium injuries.
 GoldHerb,999,True,False,False,[],[],[AllyAim True],200,Heals all injuries.
-Remedy,10,True,False,False,[],[Poison Silence Sleep [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True] [Provoke [AllyIndex 0]] [Provoke [AllyIndex 1]] [Provoke [AllyIndex 2]]],[AllyAim True],25,Cures status ailments & trivial injuries.
+Remedy,10,True,False,False,[],[Poison Silence Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],[AllyAim True],25,Cures status ailments & trivial injuries.
 Ether,10,True,True,False,[],[],[AllyAim True],50,Restores a small amount of TP.
 HighEther,30,True,True,False,[],[],[AllyAim True],150,Restores a decent amount of TP.
 TurboEther,99,True,True,False,[],[],[AllyAim True],500,Restores all TP.
