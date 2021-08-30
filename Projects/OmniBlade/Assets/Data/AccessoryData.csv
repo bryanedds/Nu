@@ -1,2 +1,2 @@
-Type,ShieldBase,CounterBase,Cost,Description
-LeatherBrace,1,0,100,Increases defense slightly.
+Type,ShieldBase,CounterBase,Immunities,AffinityOpt,Cost,Description
+LeatherBrace,1,0,[],None,100,Increases defense slightly.

@@ -226,18 +226,23 @@ module Battle =
     let shouldCounter characterIndex battle =
         getCharacterBy Character.shouldCounter characterIndex battle
     
-    let getAttackResult effectType sourceIndex targetIndex battle =
+    let evalAttack effectType sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         Character.getAttackResult effectType source target
 
-    let evaluateTechMove sourceIndex targetIndex techType battle =
+    let evalTech techData sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        (techData.TechCost, Character.evalTech techData source target)
+
+    let evalTechMove sourceIndex targetIndex techType battle =
         match Map.tryFind techType Data.Value.Techs with
         | Some techData ->
             let source = getCharacter sourceIndex battle
             let target = getCharacter targetIndex battle
             let characters = getCharacters battle
-            (techData.TechCost, Character.evaluateTechMove techData source target characters)
+            (techData.TechCost, Character.evalTechMove techData source target characters)
         | None -> (0, Map.empty)
 
     let updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle =

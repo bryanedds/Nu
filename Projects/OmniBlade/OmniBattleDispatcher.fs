@@ -622,7 +622,7 @@ module BattleDispatcher =
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
                 let time = World.getUpdateTime world
-                let damage = Battle.getAttackResult Physical sourceIndex targetIndex battle
+                let damage = Battle.evalAttack Physical sourceIndex targetIndex battle
                 let battle = Battle.updateHitPoints targetIndex false false -damage battle
                 let battle = Battle.updateCharacter (Character.animate time DamageAnimation) targetIndex battle
                 let sigs = if Battle.getCharacterWounded targetIndex battle then [msg (ResetCharacter targetIndex)] else []
@@ -719,7 +719,7 @@ module BattleDispatcher =
                     let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let slashSpike = DisplaySlashSpike (10L, (Battle.getCharacter sourceIndex battle).Bottom, targetIndex)
-                    let impactSplashes = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex))
+                    let impactSplashes = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex))
                     let battle = Battle.updateCharacter (Character.animate time SlashAnimation) sourceIndex battle
                     withCmds (playSlash :: playHit :: slashSpike :: impactSplashes) battle
                 | PowerCut ->
@@ -790,7 +790,7 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
                     let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound)
-                    let displayAuras = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayAura (0L, targetIndex))
+                    let displayAuras = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayAura (0L, targetIndex))
                     withCmds (playAura :: displayAuras) battle
                 | Empower ->
                     let time = World.getUpdateTime world
@@ -841,7 +841,7 @@ module BattleDispatcher =
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getUpdateTime world
-                let results = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd
+                let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd
                 let (battle, cmds) =
                     Map.fold (fun (battle, cmds) characterIndex (cancelled, _, hitPointsChange, _, _) ->
                         if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
@@ -854,7 +854,7 @@ module BattleDispatcher =
                 withCmds cmds battle
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
-                let results = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd 
+                let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd 
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
                         // TODO: glow effect
@@ -879,7 +879,7 @@ module BattleDispatcher =
                 | None -> just battle
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
-                let (techCost, results) = Battle.evaluateTechMove sourceIndex targetIndex techType battle
+                let (techCost, results) = Battle.evalTechMove sourceIndex targetIndex techType battle
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle

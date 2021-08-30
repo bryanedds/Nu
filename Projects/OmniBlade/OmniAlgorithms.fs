@@ -91,6 +91,34 @@ module Algorithms =
             | None -> single level
         (intermediate + single level) * focus |> int |> max 0
 
+    let immunities accessories archetypeType (level : int) =
+        ignore level
+        let immunities =
+            match Map.tryFind archetypeType Data.Value.Archetypes with
+            | Some archetypeData -> archetypeData.Immunities
+            | None -> Set.empty
+        List.fold
+            (fun affinityOpt accessoryType ->
+                match Map.tryFind accessoryType Data.Value.Accessories with
+                | Some accessoryData -> Set.union accessoryData.Immunities immunities
+                | None -> affinityOpt)
+            immunities
+            accessories
+
+    let affinityTypeOpt accessories archetypeType (level : int) =
+        ignore level
+        let affinityOpt =
+            match Map.tryFind archetypeType Data.Value.Archetypes with
+            | Some archetypeData -> archetypeData.AffinityOpt
+            | None -> None
+        List.fold
+            (fun affinityOpt accessoryType ->
+                match Map.tryFind accessoryType Data.Value.Accessories with
+                | Some accessoryData -> match accessoryData.AffinityOpt with Some _ as opt -> opt | None -> affinityOpt
+                | None -> affinityOpt)
+            affinityOpt
+            accessories
+
     let power weaponOpt statuses archetypeType level =
         let powerBuff =
             statuses |>
@@ -137,12 +165,13 @@ module Algorithms =
             | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)
             | None -> (1.0f, 1.0f)
         let intermediate =
-            match Seq.tryHead accessories with
-            | Some accessory -> // just the first accessory for now
-                match Map.tryFind accessory Data.Value.Accessories with
-                | Some accessoryData -> single accessoryData.ShieldBase
-                | None -> 0.0f
-            | None -> 0.0f
+            List.fold
+                (fun shieldBase accessoryType ->
+                    match Map.tryFind accessoryType Data.Value.Accessories with
+                    | Some accessoryData -> single accessoryData.ShieldBase + shieldBase
+                    | None -> shieldBase)
+                0.0f
+                accessories
         let scalar = match effectType with Physical -> defense * 0.5f | Magical -> absorb * 0.5f
         (intermediate + single level) * shieldBuff * scalar |> int |> max 0
 
@@ -160,9 +189,6 @@ module Algorithms =
         match techs |> Map.toList |> List.tryFindIndexBack (fun (levelReq, _) -> level >= levelReq) with
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
-
-    let immunities accessories archetypeType level =
-        () // TODO: implement.
 
     let goldPrize archetypeType scalar (level : int) =
         let wealth =

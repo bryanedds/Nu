@@ -40,7 +40,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
         let shield = target.Shield effectType
-        let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
         let damage = single (power - shield) * defendingScalar |> int |> max 1
         damage
 
@@ -332,7 +332,7 @@ module Character =
         character.ArchetypeType = Fighter &&
         Gen.random1 8 = 0
 
-    let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
+    let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
             characters |>
@@ -350,19 +350,19 @@ module Character =
             Map.singleton target.CharacterIndex target
         | ProximityTarget (radius, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
                 v.Length () <= radius)
         | RadialTarget (radius, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
                 v.Length () <= radius)
         | LineTarget (offset, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
@@ -373,7 +373,7 @@ module Character =
                 else false)
         | SegmentTarget (offset, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
@@ -386,34 +386,31 @@ module Character =
                 else false)
         | VerticalTarget (width, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let x = target.Bottom.X
                 character.Bottom.X >= x - width &&
                 character.Bottom.X <= x + width)
         | HorizontalTarget (width, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let y = target.Bottom.Y
                 character.Bottom.Y >= y - width &&
                 character.Bottom.Y <= y + width)
         | AllTarget aimType ->
             characters |>
-            evaluateAimType aimType target
+            evalAimType aimType target
 
-    let evaluateTech techData source (target : Character) =
+    let evalTech techData source (target : Character) =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
             | Magical -> source.CharacterState_.Magic
-        let specialAddend =
-            // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
-            // TODO: consider pulling this from TechData.AddendOpt.
-            match techData.TechType with
-            | Critical -> 1.0f
-            | DarkCritical -> 1.0f
-            | _ -> 0.0f
+        let affinityScalar =
+            match (Algorithms.affinityTypeOpt source.CharacterState_.Accessories source.CharacterState_.ArchetypeType source.Level, techData.AffinityTypeOpt) with
+            | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget
+            | (_, _) -> 1.0f
         let specialScalar =
             // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
             // TODO: pull this from TechData.EnemyScalarOpt.
@@ -429,20 +426,27 @@ module Character =
                 | Protect -> 0.5f
                 | _ -> 1.0f
             else 1.0f
+        let specialAddend =
+            // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
+            // TODO: consider pulling this from TechData.AddendOpt.
+            match techData.TechType with
+            | Critical -> 1.0f
+            | DarkCritical -> 1.0f
+            | _ -> 0.0f
         if techData.Curative then
             let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
-            let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
-            let damage = (single (efficacy - shield) * techData.Scalar * specialScalar + specialAddend) * defendingScalar |> int |> max 1
+            let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
+            let damage = (single efficacy * affinityScalar * techData.Scalar * specialScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
-    let evaluateTechMove techData source target characters =
+    let evalTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, affectsWounded, delta, added, removed) = evaluateTech techData source target
+            let (index, cancelled, affectsWounded, delta, added, removed) = evalTech techData source target
             Map.add index (cancelled, affectsWounded, delta, added, removed) results)
             Map.empty
             targets

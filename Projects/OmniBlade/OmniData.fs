@@ -75,16 +75,36 @@ type EffectType =
     | Magical
 
 type AffinityType =
-    | Fire // beats ice
-    | Ice // beats fire, insect
-    | Lightning // beats water, metal
-    | Water // beats lightning
+    | Fire
+    | Ice
+    | Lightning
+    | Water
     //| Wind - maybe in a sequal...
-    | Dark // beats light
-    | Light // beats dark
-    | Earth // beats lightning
-    | Metal // beats nothing
-    | Insect // beats nothing
+    | Dark
+    | Light
+    | Earth
+    | Metal
+    | Insect
+
+    static member getScalar source target =
+        match (source, target) with
+        | (Fire, Fire) -> Constants.Battle.AffinityResistanceScalar
+        | (Ice, Ice) -> Constants.Battle.AffinityResistanceScalar
+        | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
+        | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
+        | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
+        | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
+        | (Earth, Earth) -> Constants.Battle.AffinityResistanceScalar
+        | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Earth, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
@@ -679,6 +699,8 @@ type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
+      Immunities : StatusType Set
+      AffinityOpt : AffinityType option
       Cost : int
       Description : string }
 
@@ -704,7 +726,7 @@ type TechData =
       Sneakening : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      AffinityOpt : AffinityType option
+      AffinityTypeOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
