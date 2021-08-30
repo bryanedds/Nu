@@ -79,9 +79,6 @@ module Battle =
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
-    let getEnemies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
-
     let getAlliesHealthy battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.IsHealthy)
@@ -90,18 +87,19 @@ module Battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.IsWounded)
 
+    let getEnemies battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
+
     let getEnemiesHealthy battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.IsHealthy)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.IsWounding | _ -> false) |> Map.ofSeq
 
     let getEnemiesWounded battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.IsWounded)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.IsWounding | _ -> false) |> Map.ofSeq
 
     let getTargets aimType battle =
         match aimType with
         | EnemyAim _ ->
-            getEnemies battle
+            getEnemiesHealthy battle
         | AllyAim healthy ->
             if healthy
             then getAlliesHealthy battle
@@ -111,7 +109,10 @@ module Battle =
                 if healthy
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
-            let enemies = getEnemies battle
+            let enemies =
+                if healthy
+                then getEnemiesHealthy battle
+                else getEnemiesWounded battle
             let characters = allies @@ enemies
             characters
         | NoAim -> Map.empty
