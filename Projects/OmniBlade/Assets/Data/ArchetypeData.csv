@@ -1,7 +1,7 @@
 Type,Stamina,Strength,Intelligence,Defense,Absorb,Focus,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs,Immunities,AffinityOpt,Stature,Description
 Apprentice,1,1,1,1,1,1,1,1,Sword,Vest,[],[],None,SmallStature,Generic character.
 Fighter,1.2,1.1,0.8,1,1,0.9,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],[],None,SmallStature,
-Ninja,1.1,1,0.9,1,1,1,1,1,Knife,Vest,[[2 SneakCut] [4 PowerCut] [6 ProvokeCut] [8 DoubleCut]],[],None,SmallStature,
+Ninja,1.1,1,0.9,1,1,1,1,1,Knife,Vest,[[2 PoisonCut] [4 PowerCut] [6 SilenceCut] [8 DoubleCut]],[],None,SmallStature,
 Wizard,0.9,0.8,1.2,1,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],[],None,SmallStature,
 Conjuror,0.9,0.8,1.2,1,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],[],None,SmallStature,
 Cleric,1,1,1,1,1,1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],[],None,SmallStature,
@@ -17,7 +17,7 @@ Beetle,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Some Insect],SmallStature,Weak ph
 Rat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,SmallStature,Semi-weak physical attacks.
 Scorpion,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[Poison],[Some Insect],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[Poison],[Some Earth],SmallStature,Weak physical attacks with Debuff effects.
-Ghost,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SneakCut]],[Poison Sleep Confuse],[Some Dark],NormalStature,Physical attacks with Debuff magic.
+Ghost,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SilenceCut]],[Poison Sleep Confuse],[Some Dark],NormalStature,Physical attacks with Debuff magic.
 Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],[],None,NormalStature,Normal physical attacks with normal Elemental magic.
 Soldier,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],None,NormalStature,Physical attacks with ???.
 Knight,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],None,NormalStature,Physical attacks with ???.
