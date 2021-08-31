@@ -358,6 +358,10 @@ module BattleDispatcher =
                         if character.IsAlly
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
+                    let actionTimeDelta =
+                        if Map.containsKey (Time false) character.Statuses then actionTimeDelta * 0.667f
+                        elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * 1.5f
+                        else actionTimeDelta * 0.667f
                     let character =
                         if character.IsHealthy
                         then Character.updateActionTime ((+) actionTimeDelta) character
