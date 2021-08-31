@@ -422,10 +422,10 @@ module Character =
                 | Slash -> 1.25f
                 | TechType.Flame -> 1.45f
                 | Snowball -> 1.125f
-                | Aura -> 0.5f
-                | Empower -> 0.5f
-                | Enlighten -> 0.5f
-                | Protect -> 0.5f
+                | Aura -> 0.8f
+                | Empower -> 0.8f
+                | Enlighten -> 0.8f
+                | Protect -> 0.8f
                 | _ -> techData.Scalar
             else techData.Scalar
         let specialAddend =
