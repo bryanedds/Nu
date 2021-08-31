@@ -79,9 +79,6 @@ module Battle =
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
-    let getEnemies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
-
     let getAlliesHealthy battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.IsHealthy)
@@ -90,18 +87,19 @@ module Battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.IsWounded)
 
+    let getEnemies battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
+
     let getEnemiesHealthy battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.IsHealthy)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.IsWounding | _ -> false) |> Map.ofSeq
 
     let getEnemiesWounded battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.IsWounded)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.IsWounding | _ -> false) |> Map.ofSeq
 
     let getTargets aimType battle =
         match aimType with
         | EnemyAim _ ->
-            getEnemies battle
+            getEnemiesHealthy battle
         | AllyAim healthy ->
             if healthy
             then getAlliesHealthy battle
@@ -111,7 +109,10 @@ module Battle =
                 if healthy
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
-            let enemies = getEnemies battle
+            let enemies =
+                if healthy
+                then getEnemiesHealthy battle
+                else getEnemiesWounded battle
             let characters = allies @@ enemies
             characters
         | NoAim -> Map.empty
@@ -194,6 +195,67 @@ module Battle =
         let character = updater character
         { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
 
+    let updateCharacterActionTime updater characterIndex battle =
+        updateCharacter (Character.updateActionTime updater) characterIndex battle
+
+    let updateCharacterAutoBattleOpt updater characterIndex battle =
+        updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
+
+    let updateCharacterInputState updater characterIndex battle =
+        updateCharacter (Character.updateInputState updater) characterIndex battle
+
+    let updateCharacterBottom updater characterIndex battle =
+        updateCharacter (Character.updateBottom updater) characterIndex battle
+
+    let updateCharacterStatuses updater characterIndex battle =
+        updateCharacter (Character.updateStatuses updater) characterIndex battle
+
+    let animateCharacter time animation characterIndex battle =
+        updateCharacter (Character.animate time animation) characterIndex battle
+
+    let animationCharacterPoise time characterIndex battle =
+        updateCharacter (fun character ->
+            let poiseType = Character.getPoiseType character
+            let character = Character.animate time (PoiseAnimation poiseType) character
+            character)
+            characterIndex
+            battle
+
+    let animateCharacterWound time characterIndex battle =
+        updateCharacter (fun character ->
+            let character =
+                if character.IsAlly
+                then Character.updateInputState (constant NoInput) character
+                else character
+            let character = Character.animate time WoundAnimation character
+            character)
+            characterIndex
+            battle
+
+    let animateCharactersReady time battle =
+        updateCharactersHealthy (Character.animate time ReadyAnimation) battle
+
+    let animateCharactersCelebrate time outcome battle =
+        if outcome
+        then updateAlliesIf (fun _ ally -> ally.IsHealthy) (Character.animate time CelebrateAnimation) battle
+        else updateEnemiesIf (fun _ enemy -> enemy.IsHealthy) (Character.animate time CelebrateAnimation) battle
+
+    let animatedCharactersPoised time battle =
+        updateCharactersHealthy (fun character ->
+            let poiseType = Character.getPoiseType character
+            let character = Character.animate time (PoiseAnimation poiseType) character
+            character)
+            battle
+
+    let getCharacterAnimationFinished time characterIndex battle =
+        getCharacterBy (Character.getAnimationFinished time) characterIndex battle
+
+    let defendCharacter characterIndex battle =
+        updateCharacter Character.defend characterIndex battle
+
+    let undefendCharacter characterIndex battle =
+        updateCharacter Character.undefend characterIndex battle
+
     let updateBattleState updater battle =
         { battle with BattleState_ = updater battle.BattleState_ }
 
@@ -225,14 +287,24 @@ module Battle =
 
     let shouldCounter characterIndex battle =
         getCharacterBy Character.shouldCounter characterIndex battle
+    
+    let evalAttack effectType sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        Character.getAttackResult effectType source target
 
-    let evaluateTechMove sourceIndex targetIndex techType battle =
+    let evalTech techData sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        (techData.TechCost, Character.evalTech techData source target)
+
+    let evalTechMove sourceIndex targetIndex techType battle =
         match Map.tryFind techType Data.Value.Techs with
         | Some techData ->
             let source = getCharacter sourceIndex battle
             let target = getCharacter targetIndex battle
             let characters = getCharacters battle
-            (techData.TechCost, Character.evaluateTechMove techData source target characters)
+            (techData.TechCost, Character.evalTechMove techData source target characters)
         | None -> (0, Map.empty)
 
     let updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle =
@@ -273,7 +345,7 @@ module Battle =
                                 layout.[x+0].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
-                    | HugeStature ->
+                    | BossStature ->
                         if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
                             match
                                 (layout.[x+0].[y+2],
@@ -384,7 +456,7 @@ module Battle =
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-          TileMap_ = Assets.Field.DebugBattleTileMap
+          TileMap_ = Assets.Battle.DebugBattleTileMap
           TileIndexOffset_ = 0
           BattleSongOpt_ = None
           CurrentCommandOpt_ = None
@@ -394,12 +466,12 @@ module Battle =
     let debug =
         match Map.tryFind DebugBattle Data.Value.Battles with
         | Some battle ->
-            let level = 9
+            let level = 6
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
-                Map.add 1 (Teammate.makeAtLevel level 1 Riain) |>
-                Map.add 2 (Teammate.makeAtLevel level 2 Peric)
+                Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
+                Map.add 2 (Teammate.makeAtLevel level 2 Mael)
             makeFromTeam Inventory.initial prizePool team battle 0L
         | None -> empty
 

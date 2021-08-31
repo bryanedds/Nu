@@ -106,7 +106,7 @@ module GameDispatcher =
                     | Some battle ->
                         match battle.BattleState with
                         | BattleCease (result, consequents, time) ->
-                            let localTime = World.getTickTime world - time
+                            let localTime = World.getUpdateTime world - time
                             if localTime = 60L then
                                 let field = Field (Field.synchronizeFromBattle consequents battle field)
                                 if result

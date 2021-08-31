@@ -28,6 +28,8 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Magic = Algorithms.magic this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Defense = Algorithms.defense this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Absorb = Algorithms.absorb this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =
@@ -38,7 +40,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
         teammate
 
-    static member equipAccessory1Opt accessoryTypeOpt (teammate : Teammate) =
+    static member equipAccessoryOpt accessoryTypeOpt (teammate : Teammate) =
         { teammate with Accessories = Option.toList accessoryTypeOpt }
 
     static member canUseItem itemType teammate =
@@ -89,7 +91,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                 match equipmentType with
                 | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
                 | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
-                | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessory1Opt (Some accessoryType) teammate)
+                | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessoryOpt (Some accessoryType) teammate)
             | KeyItem _ -> (false, None, teammate)
             | Stash _ -> (false, None, teammate)
         else (false, None, teammate)

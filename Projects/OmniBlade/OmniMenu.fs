@@ -34,13 +34,13 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
     static member makeFromArmorData selection (ad : ArmorData) =
         //let prompt = "Equip " + string ad.ArmorType + " to whom?"
         let prompt = "Qui equiper de l'armure \"" + string ad.ArmorType + "\" ?"
-        //let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
-        let stats = "(PV : " + string ad.HitPointsBase + " |PT : " + string ad.TechPointsBase + ")"
+        //let stats = "(End: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
+        let stats = "(End: " + string ad.EnduranceBaseDisplay + " | Esp: " + string ad.MindBaseDisplay + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
         let prompt = "Qui doter de l'accessoire \"" + string ad.AccessoryType + "\" ?"
-        let stats = "(Bouclier : " + string ad.ShieldBase + " | Contre : " + string ad.CounterBase + ")"
+        let stats = "(Effet: " + string ad.Description + ")"
         MenuUse.make selection prompt stats
 
     static member tryMakeFromSelection selection =

@@ -8,7 +8,7 @@ open Prime
 open Nu
 open TiledSharp
 
-type OriginRand =
+type Origin =
     | OriginC
     | OriginN
     | OriginE
@@ -19,7 +19,36 @@ type OriginRand =
     | OriginSE
     | OriginSW
 
-type SegmentRand =
+type OriginRand =
+    | OriginStatic of Origin
+    | OriginNorthern
+    | OriginEastern
+    | OriginSouthern
+    | OriginWestern
+    | OriginHorizontal
+    | OriginVertical
+    | OriginCardinal
+    | OriginDiagonal
+    | OriginCross
+    | OriginX
+    | OriginRandom
+
+    static member toOrigin originRand rand =
+        match originRand with
+        | OriginStatic origin -> (origin, rand)
+        | OriginNorthern -> Rand.nextItem [OriginNW; OriginN; OriginNE] rand
+        | OriginEastern -> (OriginE, rand)
+        | OriginSouthern -> Rand.nextItem [OriginSW; OriginS; OriginSE] rand
+        | OriginWestern -> (OriginW, rand)
+        | OriginHorizontal -> Rand.nextItem [OriginE; OriginW] rand
+        | OriginVertical -> Rand.nextItem [OriginN; OriginS] rand
+        | OriginCardinal -> Rand.nextItem [OriginN; OriginE; OriginS; OriginW] rand
+        | OriginDiagonal -> Rand.nextItem [OriginNE; OriginNW; OriginSE; OriginSW] rand
+        | OriginCross -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW] rand
+        | OriginX -> Rand.nextItem [OriginC; OriginNE; OriginNW; OriginSE; OriginSW] rand
+        | OriginRandom -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW; OriginNE; OriginNW; OriginSE; OriginSW] rand
+
+type Segment =
     | Segment0 = 0b000000
     | Segment1N = 0b000001
     | Segment1E = 0b000010
@@ -39,7 +68,7 @@ type SegmentRand =
     | SegmentBN = 0b010001
     | SegmentBS = 0b010100
 
-type [<StructuralEquality; NoComparison>] SegmentsRand =
+type [<StructuralEquality; NoComparison>] Segments =
     { Segment0 : TmxMap
       Segment1N : TmxMap
       Segment1E : TmxMap
@@ -80,7 +109,7 @@ type [<StructuralEquality; NoComparison>] SegmentsRand =
         SegmentBS = TmxMap (filePath + "+BS+" + string floor + ".tmx") }
 
 type MapRand =
-    { MapSegments : SegmentRand array array
+    { MapSegments : Segment array array
       MapSize : Vector2i
       MapOriginOpt : Vector2i option }
 
@@ -112,24 +141,24 @@ type MapRand =
 
     static member getSegmentOpt segment segments =
         match segment with
-        | SegmentRand.Segment0 -> None
-        | SegmentRand.Segment1N -> Some segments.Segment1N
-        | SegmentRand.Segment1E -> Some segments.Segment1E
-        | SegmentRand.Segment1S -> Some segments.Segment1S
-        | SegmentRand.Segment1W -> Some segments.Segment1W
-        | SegmentRand.Segment2NE -> Some segments.Segment2NE
-        | SegmentRand.Segment2NW -> Some segments.Segment2NW
-        | SegmentRand.Segment2SE -> Some segments.Segment2SE
-        | SegmentRand.Segment2SW -> Some segments.Segment2SW
-        | SegmentRand.Segment2EW -> Some segments.Segment2EW
-        | SegmentRand.Segment2NS -> Some segments.Segment2NS
-        | SegmentRand.Segment3N -> Some segments.Segment3N
-        | SegmentRand.Segment3E -> Some segments.Segment3E
-        | SegmentRand.Segment3S -> Some segments.Segment3S
-        | SegmentRand.Segment3W -> Some segments.Segment3W
-        | SegmentRand.Segment4 -> Some segments.Segment4
-        | SegmentRand.SegmentBN -> Some segments.SegmentBN
-        | SegmentRand.SegmentBS -> Some segments.SegmentBS
+        | Segment.Segment0 -> None
+        | Segment.Segment1N -> Some segments.Segment1N
+        | Segment.Segment1E -> Some segments.Segment1E
+        | Segment.Segment1S -> Some segments.Segment1S
+        | Segment.Segment1W -> Some segments.Segment1W
+        | Segment.Segment2NE -> Some segments.Segment2NE
+        | Segment.Segment2NW -> Some segments.Segment2NW
+        | Segment.Segment2SE -> Some segments.Segment2SE
+        | Segment.Segment2SW -> Some segments.Segment2SW
+        | Segment.Segment2EW -> Some segments.Segment2EW
+        | Segment.Segment2NS -> Some segments.Segment2NS
+        | Segment.Segment3N -> Some segments.Segment3N
+        | Segment.Segment3E -> Some segments.Segment3E
+        | Segment.Segment3S -> Some segments.Segment3S
+        | Segment.Segment3W -> Some segments.Segment3W
+        | Segment.Segment4 -> Some segments.Segment4
+        | Segment.SegmentBN -> Some segments.SegmentBN
+        | Segment.SegmentBS -> Some segments.SegmentBS
         | _ -> failwithumf ()
 
     static member private walk biasChance bias (cursor : Vector2i) map rand =
@@ -142,27 +171,27 @@ type MapRand =
         | 0 ->
             // try go north (negative y)
             if  cursor.Y > 1 then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1N
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
                 cursor.Y <- dec cursor.Y
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1S
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
         | 1 ->
             // try go east (positive x)
             if  cursor.X < dec bounds.Z then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1E
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
                 cursor.X <- inc cursor.X
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1W
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
         | 2 ->
             // try go south (positive y)
             if  cursor.Y < dec bounds.W then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1S
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
                 cursor.Y <- inc cursor.Y
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1N
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
         | 3 ->
             // try go west (negative x)
             if  cursor.X > 1 then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1W
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
                 cursor.X <- dec cursor.X
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1E
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
         | _ -> failwithumf ()
         (cursor, rand)
 
@@ -172,9 +201,11 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| SegmentRand.Segment1N
-                            map.MapSegments.[dec i].[j] <- SegmentRand.SegmentBS
+                        if  i > 0 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
+                            map.MapSegments.[dec i].[j] <- Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -184,9 +215,11 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| SegmentRand.Segment1N
-                            map.MapSegments.[dec i].[j] <- SegmentRand.SegmentBS
+                        if  i > 0 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
+                            map.MapSegments.[dec i].[j] <- Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -196,9 +229,11 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| SegmentRand.Segment1S
-                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
+                        if  i < dec 7 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
+                            map.MapSegments.[inc i].[j] <- Segment.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -208,9 +243,11 @@ type MapRand =
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| SegmentRand.Segment1S
-                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
+                        if  i < dec 7 &&
+                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
+                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
+                            map.MapSegments.[inc i].[j] <- Segment.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -219,15 +256,15 @@ type MapRand =
         let bounds = v4iBounds v2iZero size
         let (cursor, biases) =
             match origin with
-            | OriginC ->    (bounds.Center,                     [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
-            | OriginN ->    (bounds.Bottom,                     [2; 2; 1; 3])
-            | OriginE ->    (bounds.Right - v2iRight,           [3; 3; 0; 2])
-            | OriginS ->    (bounds.Top - v2iUp,                [0; 0; 1; 3])
-            | OriginW ->    (bounds.Left,                       [1; 1; 0; 2])
-            | OriginNE ->   (v2i (dec bounds.Z) bounds.Y,       [2; 2; 3; 3])
-            | OriginNW ->   (v2i bounds.X bounds.Y,             [2; 2; 1; 1])
-            | OriginSE ->   (v2i (dec bounds.Z) (dec bounds.W), [0; 0; 3; 3])
-            | OriginSW ->   (v2i bounds.X (dec bounds.W),       [0; 0; 1; 1])
+            | OriginC ->        (bounds.Center,                     [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
+            | OriginN ->        (bounds.Bottom,                     [2; 2; 1; 3])
+            | OriginE ->        (bounds.Right - v2iRight,           [3; 3; 0; 2])
+            | OriginS ->        (bounds.Top - v2iUp,                [0; 0; 1; 3])
+            | OriginW ->        (bounds.Left,                       [1; 1; 0; 2])
+            | OriginNE ->       (v2i (dec bounds.Z) bounds.Y,       [2; 2; 3; 3])
+            | OriginNW ->       (v2i bounds.X bounds.Y,             [2; 2; 1; 1])
+            | OriginSE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 0; 3; 3])
+            | OriginSW ->       (v2i bounds.X (dec bounds.W),       [0; 0; 1; 1])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
                 let map = { MapRand.make size with MapOriginOpt = Some cursor }
@@ -235,32 +272,34 @@ type MapRand =
                 (map :: maps, rand))
                 ([], rand)
                 biases
+        let (maps, rand) = Rand.nextPermutation maps rand
+        let maps = List.take 3 maps
         let map = List.reduce MapRand.concat maps
         let opening =
             if floor = 0 then
                 match origin with
-                | OriginC ->    SegmentRand.Segment0
-                | OriginN ->    SegmentRand.Segment1N
-                | OriginE ->    SegmentRand.Segment1E
-                | OriginS ->    SegmentRand.Segment1S
-                | OriginW ->    SegmentRand.Segment1W
-                | OriginNE ->   SegmentRand.Segment1N
-                | OriginNW ->   SegmentRand.Segment1W
-                | OriginSE ->   SegmentRand.Segment1E
-                | OriginSW ->   SegmentRand.Segment1S
-            else SegmentRand.Segment0
+                | OriginC ->    Segment.Segment0
+                | OriginE ->    Segment.Segment1E
+                | OriginW ->    Segment.Segment1W
+                | OriginN ->    Segment.Segment1N
+                | OriginNE ->   Segment.Segment1N
+                | OriginNW ->   Segment.Segment1N
+                | OriginS ->    Segment.Segment1S
+                | OriginSE ->   Segment.Segment1S
+                | OriginSW ->   Segment.Segment1S
+            else Segment.Segment0
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
-        let isMapValid =
-            match origin with
-            | OriginC ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginN ->    MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginNE ->   MapRand.tryAddBossRoomFromSouthWest map
-            | OriginNW ->   MapRand.tryAddBossRoomFromSouthEast map
-            | OriginE ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromSouthWest map
-            | OriginS ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
-            | OriginSE ->   MapRand.tryAddBossRoomFromNorthWest map
-            | OriginSW ->   MapRand.tryAddBossRoomFromNorthEast map
-            | OriginW ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthEast map
+        let (tryAddBosses, rand) =
+            Rand.nextPermutation
+                [MapRand.tryAddBossRoomFromNorthWest
+                 MapRand.tryAddBossRoomFromNorthEast
+                 MapRand.tryAddBossRoomFromSouthWest
+                 MapRand.tryAddBossRoomFromSouthEast]
+                rand
+        let mutable isMapValid = false
+        for tryAddBoss in tryAddBosses do
+            if not isMapValid then
+                isMapValid <- tryAddBoss map
 #if DEV
         MapRand.printn map
 #endif
@@ -270,7 +309,7 @@ type MapRand =
 
     static member make (size : Vector2i) =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
-        { MapSegments = Array.init size.X (fun _ -> Array.init size.Y (constant SegmentRand.Segment0))
+        { MapSegments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
           MapOriginOpt = None
           MapSize = size }
 
@@ -279,22 +318,22 @@ type MapRand =
         // locals
         let mapTmx = TmxMap (abstractPath + "+7x7.tmx")
         let objects = mapTmx.ObjectGroups.[0].Objects
-        let segments = SegmentsRand.load floor abstractPath
+        let segments = Segments.load floor abstractPath
         let entryId = 0
 
         // create entry prop
         if floor = 0 then
             let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
                 match origin with
-                | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal AirPortal Center Downward " + fieldName + "Connector North]")
-                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal North Downward " + fieldName + "Connector North]")
-                | OriginE ->    (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal East Leftward " + fieldName + "Connector North]")
-                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Upward " + fieldName + "Connector North]")
-                | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal West Rightward " + fieldName + "Connector North]")
-                | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Downward " + fieldName + "Connector North]")
-                | OriginNW ->   (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal West Rightward " + fieldName + "Connector North]")
-                | OriginSE ->   (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal East Leftward " + fieldName + "Connector North]")
-                | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Upward " + fieldName + "Connector North]")
+                | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginE ->    (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginNW ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginSE ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
             let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
             let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
             let object = TmxMap.makeObject entryId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
@@ -302,7 +341,7 @@ type MapRand =
             objects.[0] <- object
         else
             let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
-            let stairsInfo = "[Portal [StairsPortal true] [IX 0] Upward [" + fieldName + " " + scstring (dec floor) + "] [IX 1]]"
+            let stairsInfo = "[Portal [StairsPortal true] [IX 1] Upward [" + fieldName + " " + scstring (dec floor) + "] [IX 2]]"
             let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
             let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
             let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)

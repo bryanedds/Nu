@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="13">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="14">
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
  <layer id="2" name="Floor" width="80" height="80">
@@ -9,12 +9,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <layer id="6" name="Ceiling" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt3FdOw0AUhWFnKbRF8EgTIGAR9JpF0Psi6H0TFFEEe+JY4oXIwc4dx0xm/k86yottzYzug8fR3CRBO0zUkmRSmarZnzGqe8eUcYdndKpVzXlNqRvnvqD7FpUlZVlZCXwNG2vlUL9HyrFx3ju6b1fZU/aVA6VL6VZ6lF6lL5A1zaqVO+VeeTDO8VL3XSnXyo1yqwwog8qQMqyMBLJ+WbWS+tTvV5M55tVSun6vypvyrnwo08qMMqvMKfOBrF9WreSx1NK6rtlQNpUtZTuQ9Us11koeSy2d6JpT5Uw5Vy4CWr9WWWvpUdc9Kc/KS8TrRy25o5bw38rY58XMdZ8XO9d9Xuxc93n4e58HAOgcMf/v4Cq2/x3K1uxbMoqxfEvGb61+SwYAAAAAAAAAAAAAAAAAAAAAAK2J4eySZY5F+hTEcHbJOscifQp8PrvU/xNX1jkW6VMQw9kl6xyL9inIOrsUWt8+6/ksa5+CUPv2VSXUvn1VCblvXxXK6LXm+3tlu8fn0mvN9/dK38fn83tlyvfx+f5e6fv4Ur6fifd9fADgm2/LjZI5
+   eJzt3FdOw0AUhWFnKbRF8EgTIGAR9JpF0Psi6H0TFFEEe+JYICGihOA7jjOe+T/pKC+2NTO68zCOfJMErTBWSZJxZaJif8aw7h1RRh2eUVbLmvOKUjXOfU73zSsLyqKyFPga1tbKvn4PlEPjvLd037ayo+wqe0qH0ql0Kd1KTyBrWq9WbpRb5c44x3Pdd6FcKlfKtdKn9CsDyqAyFMj61auV1Lt+PxrMsVktpev3rLwor8qbMqlMKdPKjDIbyPrVq5VmLLW0qmvWlHVlQ9kMZP1StbXSjKWWjnTNsXKinCpnAa1fVtZautd1D8qj8hTx+lFL7qgltFse57yYuZ7zYud6zoud6zkPf5/zAADlEfP/Dq5i+98hb43eJeN/LO+S8VvWd8kAAAAAAAAAAAAAAAAAAAAAUGZ8Q2LHNyRuQv+GxLK3svQpCPkbEuveytqnwLdvSHq/48q6t+hT8MW6t+hT8MO6t+hT0B6h9o0sSqh9I4uSR99I388zrRyfa99I388zrR6fa68/388zRYzPpdef7+cZ38eX8u08U8v38QGAbz4BaC+SOQ==
   </data>
  </layer>
  <objectgroup id="4" name="Props">
@@ -23,17 +23,17 @@
     <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
    </properties>
   </object>
-  <object id="6" gid="443" x="3168" y="3360" width="144" height="144">
+  <object id="6" gid="443" x="192" y="3552" width="144" height="144">
    <properties>
     <property name="I" value="[Shopkeep SchaalShopkeep Downward Chemist]"/>
    </properties>
   </object>
-  <object id="7" gid="443" x="480" y="3072" width="144" height="144">
+  <object id="7" gid="443" x="624" y="3264" width="144" height="144">
    <properties>
     <property name="I" value="[Shopkeep RobehnShopkeep Downward Armory]"/>
    </properties>
   </object>
-  <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
+  <object id="8" gid="443" x="3122" y="1536" width="144" height="144">
    <properties>
     <property name="I" value="[Npc MaelNpc Downward [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
    </properties>
@@ -51,6 +51,11 @@
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
     <property name="I" value="[Npc ShadeNpc Downward [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc ShamanaNpc Leftward [Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored. If you plan on delving into this place, I can offer some guidance that might help you make it out alive!^From what we have gathered, the first area has three sections; to proceed to the next section, you will have to destroy its guardian. Be careful as the guardian may be tougher than any of the other enemies you have yet faced!^Ah, I see you have a Spirit Orb! With this, you can see the enemies as they approach you. The further you go into an area, the tougher they get! The redder they appear in your orb, the tougher they are!^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it!^When an enemy is glowing, it's about to use a Tech of its own, which can be devastating! Use your Critical Tech to cancel it and keep yourself out of harm's way!^The Tech you learn after Critical is called the Slash Tech. This is a potentially very powerful Tech as it hits all enemies on a line!^Oh, and one last bit of advice... Don't consider anyone here your friend. However, for the right price, some will be willing to accompany you into the tomb... and others may sell you goods that can save your life!&quot;]]"/>
    </properties>
   </object>
  </objectgroup>

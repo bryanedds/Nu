@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open FSharpx.Collections
 open SDL2
@@ -225,15 +226,15 @@ module WorldModule2 =
         static member private updateScreenTransition3 (screen : Screen) transition world =
             // NOTE: we do not immediately transition when transition time is zero because we only want screen
             // transitions to happen outside the update loop!
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX for
-            // full black if fading.
-            let transitionTicks = screen.GetTransitionTicks world
-            if transitionTicks = transition.TransitionLifeTime then
-                (true, screen.SetTransitionTicks 0L world)
-            elif transitionTicks > transition.TransitionLifeTime then
-                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
-                (true, screen.SetTransitionTicks 0L world)
-            else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+            let transitionUpdates = screen.GetTransitionUpdates world
+            if transitionUpdates = transition.TransitionLifeTime + 1L then
+                (true, screen.SetTransitionUpdates 0L world)
+            elif transitionUpdates > transition.TransitionLifeTime then
+                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
+                (true, screen.SetTransitionUpdates 0L world)
+            else (false, screen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
 
         static member private updateScreenTransition2 (selectedScreen : Screen) world =
             match selectedScreen.GetTransitionState world with
@@ -241,7 +242,7 @@ module WorldModule2 =
                 match World.getLiveness world with
                 | Live ->
                     let world =
-                        if selectedScreen.GetTransitionTicks world = 0L then
+                        if selectedScreen.GetTransitionUpdates world = 0L then
                             let world =
                                 match (selectedScreen.GetIncoming world).SongOpt with
                                 | Some playSong ->
@@ -264,7 +265,7 @@ module WorldModule2 =
                 | Dead -> world
             | OutgoingState ->
                 let world =
-                    if selectedScreen.GetTransitionTicks world = 0L then
+                    if selectedScreen.GetTransitionUpdates world = 0L then
                         let incoming = selectedScreen.GetIncoming world
                         let outgoing = selectedScreen.GetOutgoing world
                         let world =
@@ -295,10 +296,10 @@ module WorldModule2 =
                 | Dead -> world
             | IdlingState -> world
 
-        static member private handleSplashScreenIdleUpdate idlingTime ticks evt world =
+        static member private handleSplashScreenIdleUpdate idlingTime updates evt world =
             let world = World.unsubscribe SplashScreenUpdateId world
-            if ticks < idlingTime then
-                let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
+            if updates < idlingTime then
+                let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc updates)
                 let world = World.subscribePlus SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
                 (Cascade, world)
             else
@@ -490,7 +491,7 @@ module WorldModule2 =
             world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             if time = tasklet.ScheduledTime then
                 let world = tasklet.ScheduledOp world
                 (taskletsNotRun, world)
@@ -698,7 +699,7 @@ module WorldModule2 =
             UpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.isTicking world || entity.GetAlwaysUpdate world
+                    if World.isAdvancing world || entity.GetAlwaysUpdate world
                     then World.updateEntity entity world
                     else world)
                     world
@@ -741,7 +742,7 @@ module WorldModule2 =
             PostUpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.isTicking world || entity.GetAlwaysUpdate world
+                    if World.isAdvancing world || entity.GetAlwaysUpdate world
                     then World.postUpdateEntity entity world
                     else world)
                     world
@@ -755,7 +756,7 @@ module WorldModule2 =
         static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
-                let progress = single (screen.GetTransitionTicks world) / single (inc transition.TransitionLifeTime)
+                let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
@@ -835,7 +836,7 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine physicsEngine world
-            let integrationMessages = physicsEngine.Integrate (World.getTickRate world) physicsMessages
+            let integrationMessages = physicsEngine.Integrate (World.getUpdateRate world) physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
@@ -846,7 +847,7 @@ module WorldModule2 =
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
             renderer.Render eyeCenter eyeSize eyeMargin renderMessages
-            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely availble on linux SDL2...
+            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
 
@@ -861,6 +862,7 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness (rendererThreadOpt : Task option) (audioPlayerThreadOpt : Task option) world =
             TotalTimer.Start ()
             if runWhile world then
+                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFps) // don't let game run too fast while full screen unfocused
                 PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world

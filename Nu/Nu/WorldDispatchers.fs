@@ -203,7 +203,7 @@ module BasicEmitterFacetModule =
 
         static let tryMakeEmitter (entity : Entity) world =
             World.tryMakeEmitter
-                (World.getTickTime world)
+                (World.getUpdateTime world)
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -230,7 +230,7 @@ module BasicEmitterFacetModule =
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
                 Particles.BasicEmitter.makeEmpty
-                    (World.getTickTime world)
+                    (World.getUpdateTime world)
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
                     (entity.GetParticleRate world)
@@ -374,7 +374,7 @@ module BasicEmitterFacetModule =
             entity.SetParticleSystem particleSystem world
 
         override this.Update (entity, world) =
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             let particleSystem = entity.GetParticleSystem world
             let (particleSystem, output) = ParticleSystem.run time particleSystem
             let world = entity.SetParticleSystem particleSystem world
@@ -382,7 +382,7 @@ module BasicEmitterFacetModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let time = World.getTickTime world
+                let time = World.getUpdateTime world
                 let particleSystem = entity.GetParticleSystem world
                 let particlesMessages =
                     particleSystem |>
@@ -476,7 +476,7 @@ module EffectFacetModule =
         /// The time relative to the start of the effect.
         member this.GetEffectTime world =
             let startTime = this.GetEffectStartTime world
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             time - startTime
 
     type EffectFacet () =
@@ -527,7 +527,7 @@ module EffectFacetModule =
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
 
         override this.Update (entity, world) =
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             let effect = entity.GetEffect world
             let particleSystem = entity.GetParticleSystem world
             let (particleSystem, output) = ParticleSystem.run time particleSystem
@@ -548,7 +548,7 @@ module EffectFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 
                 // set up effect system to evaluate effect
-                let time = World.getTickTime world
+                let time = World.getUpdateTime world
                 let world = entity.SetEffectTags Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
@@ -626,7 +626,7 @@ module EffectFacetModule =
             else world
 
         override this.Register (entity, world) =
-            let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
+            let effectStartTime = Option.getOrDefault (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
@@ -1036,7 +1036,7 @@ module TileMapFacetModule =
                     let viewBounds = World.getViewBounds absolute world
                     let tileMapMessages =
                         TmxMap.getLayeredMessages
-                            (World.getTickTime world)
+                            (World.getUpdateTime world)
                             absolute
                             viewBounds
                             (entity.GetPosition world)
@@ -1126,7 +1126,7 @@ module TmxMapFacetModule =
                 let viewBounds = World.getViewBounds absolute world
                 let tileMapMessages =
                     TmxMap.getLayeredMessages
-                        (World.getTickTime world)
+                        (World.getUpdateTime world)
                         absolute
                         viewBounds
                         (entity.GetPosition world)
@@ -1429,7 +1429,7 @@ module AnimatedSpriteFacetModule =
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
-                let cel = int (World.getTickTime world / entity.GetAnimationDelay world) % celCount
+                let cel = int (World.getUpdateTime world / entity.GetAnimationDelay world) % celCount
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -2064,7 +2064,7 @@ module FpsDispatcherModule =
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 4.0 then
-                let world = entity.SetStartTime (World.getTickTime world) world
+                let world = entity.SetStartTime (World.getUpdateTime world) world
                 entity.SetStartDateTime currentDateTime world
             else world
 
@@ -2077,7 +2077,7 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            let time = double (World.getTickTime world - entity.GetStartTime world)
+            let time = double (World.getUpdateTime world - entity.GetStartTime world)
             let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
@@ -2148,9 +2148,15 @@ module FillBarDispatcherModule =
         member this.GetFillInset world : single = this.Get Property? FillInset world
         member this.SetFillInset (value : single) world = this.Set Property? FillInset value world
         member this.FillInset = lens Property? FillInset this.GetFillInset this.SetFillInset this
+        member this.GetFillColor world : Color = this.Get Property? FillColor world
+        member this.SetFillColor (value : Color) world = this.Set Property? FillColor value world
+        member this.FillColor = lens Property? FillColor this.GetFillColor this.SetFillColor this
         member this.GetFillImage world : Image AssetTag = this.Get Property? FillImage world
         member this.SetFillImage (value : Image AssetTag) world = this.Set Property? FillImage value world
         member this.FillImage = lens Property? FillImage this.GetFillImage this.SetFillImage this
+        member this.GetBorderColor world : Color = this.Get Property? BorderColor world
+        member this.SetBorderColor (value : Color) world = this.Set Property? BorderColor value world
+        member this.BorderColor = lens Property? BorderColor this.GetBorderColor this.SetBorderColor this
         member this.GetBorderImage world : Image AssetTag = this.Get Property? BorderImage world
         member this.SetBorderImage (value : Image AssetTag) world = this.Set Property? BorderImage value world
         member this.BorderImage = lens Property? BorderImage this.GetBorderImage this.SetBorderImage this
@@ -2171,7 +2177,9 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage Assets.Default.Image11
+             define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))
+             define Entity.FillImage Assets.Default.Image9
+             define Entity.BorderColor (Color (byte 0, byte 0, byte 0, byte 255))
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
@@ -2192,8 +2200,10 @@ module FillBarDispatcherModule =
                       Rotation = 0.0f
                       Elevation = entity.GetElevation world
                       Flags = entity.GetFlags world }
-                let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                let disabledColor = entity.GetDisabledColor world
+                let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
                 let borderImage = entity.GetBorderImage world
+                let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
                 let fillImage = entity.GetFillImage world
                 let world =
                     World.enqueueRenderLayeredMessage
@@ -2207,7 +2217,7 @@ module FillBarDispatcherModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = borderImage
-                                  Color = fillBarColor
+                                  Color = borderImageColor
                                   Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
@@ -2224,7 +2234,7 @@ module FillBarDispatcherModule =
                                     Offset = Vector2.Zero
                                     InsetOpt = None
                                     Image = fillImage
-                                    Color = fillBarColor
+                                    Color = fillImageColor
                                     Blend = Transparent
                                     Glow = Color.Zero
                                     Flip = FlipNone }}
@@ -2318,7 +2328,7 @@ module CharacterDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let time = World.getTickTime world
+                let time = World.getUpdateTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world

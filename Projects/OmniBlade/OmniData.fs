@@ -74,43 +74,62 @@ type EffectType =
     | Physical
     | Magical
 
-type ElementType =
-    | Fire // beats ice, average scalar
-    | Ice // beats fire, lightning; average scaler
-    | Lightning // beats water, average scalar
-    | Water // beats lightning, average scalar
-    | Dark // beats light, stronger scalar
-    | Light // beats dark, weaker scalar
-    | Earth // beats nothing, strongest scalar
+type AffinityType =
+    | Fire
+    | Ice
+    | Lightning
+    | Water
+    //| Wind - maybe in a sequal...
+    | Dark
+    | Light
+    | Earth
+    | Metal
+    | Insect
+
+    static member getScalar source target =
+        match (source, target) with
+        | (Fire, Fire) -> Constants.Battle.AffinityResistanceScalar
+        | (Ice, Ice) -> Constants.Battle.AffinityResistanceScalar
+        | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
+        | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
+        | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
+        | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
+        | (Earth, Earth) -> Constants.Battle.AffinityResistanceScalar
+        | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Earth, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
-    | Blind
     | Silence
     | Sleep
     | Confuse
-    | Previve
+    // Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
     | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    | Provoke of CharacterIndex
+    //| Provoke of CharacterIndex - may in the sequal
 
     static member enumerate this =
         match this with
         | Poison -> 0
-        | Blind -> 1
-        | Silence -> 2
-        | Sleep -> 3
-        | Confuse -> 4
-        | Previve -> 5
-        | Time _ -> 6
-        | Counter (_, _) -> 7
-        | Power (_, _) -> 8
-        | Magic (_, _) -> 9
-        | Shield (_, _) -> 10
-        | Provoke i -> 11 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+        | Silence -> 1
+        | Sleep -> 2
+        | Confuse -> 3
+        | Time _ -> 4
+        | Counter (_, _) -> 5
+        | Power (_, _) -> 6
+        | Magic (_, _) -> 7
+        | Shield (_, _) -> 8
 
     static member compare this that =
         compare
@@ -187,11 +206,11 @@ type ArmorType =
             
  
 type AccessoryType =
-    | LeatherBrace
+    | SilverRing
+    | IronBrace
     static member frenchName at = match at with
-                                  |LeatherBrace -> "brassard de cuir"
-           //|other -> string other 
-
+                                  |SilverRing -> "bague en argent"
+                                  |IronBrace -> "corset de fer"
 
 type WeaponSubtype =
     | Melee
@@ -249,7 +268,7 @@ type ItemType =
     | KeyItem of KeyItemType
     | Stash of int
 
-    static member getName = ItemType .frenchName 
+    static member getName = ItemType.frenchName 
     static member frenchNameWithQuantity item =
         match item with 
         | Stash _ -> ItemType.frenchName item
@@ -260,6 +279,7 @@ type ItemType =
         | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
         | KeyItem ty -> KeyItemType.frenchName ty
         | Stash gold -> string gold + " Ors"
+
 type AimType =
     | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy
@@ -292,10 +312,10 @@ type TechType =
     | Slash
     | DarkCritical
     | Cyclone
+    | PoisonCut
     | PowerCut
-    | SneakCut
+    | SilenceCut
     | DoubleCut
-    | ProvokeCut
     | Fire
     | Flame
     | Ice
@@ -325,7 +345,7 @@ type StatureType =
     | SmallStature
     | NormalStature
     | LargeStature
-    | HugeStature
+    | BossStature
 
 type ArchetypeType =
     | Apprentice
@@ -345,9 +365,10 @@ type ArchetypeType =
     | Rat
     | Scorpion
     | Plant
+    | Ghost
     | Goblin
     | Soldier
-    | Ghost
+    | Knight
     | Imp
     | Zombie
     | Skeleton
@@ -368,26 +389,29 @@ type ArchetypeType =
     | Tortoise
     | Robot
     | Harpy
+    | Jack
     | Avian
-    | Minotaur
-    | Dragon
     | Troll
     | Mare
-    | Ogre
     | Djinn
     | Naga
-    | Armoros
-    | Golem
-    | Jack
+    | Jackorider
     | Trap
     | Vampire
     | Cerebus
     | Hydra
+    | Gargoyle
+    | ShamanBig
     | FireElemental
     | IceElemental
     | LightningElemental
     | EarthElemental
-    | ShamanBig
+    | Minotaur
+    | Dragon
+    | Ogre
+    | HydraBig
+    | Armoros
+    | Golem
     | RobotBig
     | Dinoman
     | Arachnos
@@ -707,15 +731,19 @@ type WeaponData =
 type ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
-      HitPointsBase : int
-      TechPointsBase : int
+      EnduranceBase : int
+      MindBase : int
       Cost : int
       Description : string }
+    member this.EnduranceBaseDisplay = this.EnduranceBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
+    member this.MindBaseDisplay = this.MindBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
 
 type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
+      Immunities : StatusType Set
+      AffinityOpt : AffinityType option
       Cost : int
       Description : string }
 
@@ -736,13 +764,10 @@ type TechData =
       TechCost : int
       EffectType : EffectType
       Scalar : single
-      SuccessRate : single
       Curative : bool
-      Sneakening : bool
-      Provocative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      ElementTypeOpt : ElementType option
+      AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
@@ -756,13 +781,16 @@ type ArchetypeData =
       Stamina : single // hit points scalar
       Strength : single // power scalar
       Intelligence : single // magic scalar
-      Toughness : single // shield scalar
+      Defense : single // defense scalar
+      Absorb : single // absorb scalar
       Focus : single // tech points scalar
       Wealth : single // gold scalar
       Mythos : single // exp scala
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
+      Immunities : StatusType Set
+      AffinityOpt : AffinityType option
       Stature : StatureType
       Description : string }
 
@@ -864,7 +892,7 @@ type [<NoEquality; NoComparison>] FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, TmxMap option>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin>>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
@@ -905,37 +933,26 @@ module FieldData =
         | None ->
             let tileMapOpt =
                 match fieldData.FieldTileMap with
-                | FieldStatic fieldAsset
-                | FieldConnector (fieldAsset, _) ->
+                | FieldStatic fieldAsset ->
                     match World.tryGetTileMapMetadata fieldAsset world with
-                    | Some (_, _, tileMap) -> Some tileMap
+                    | Some (_, _, tileMap) -> Some (Choice1Of3 tileMap)
                     | None -> None
-                | FieldRandom (walkLength, bias, origin, floor, fieldPath) ->
+                | FieldConnector (fieldAsset, fieldFadeAsset) ->
+                    match (World.tryGetTileMapMetadata fieldAsset world, World.tryGetTileMapMetadata fieldFadeAsset world) with
+                    | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
+                    | (_, _) -> None
+                | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
+                    let (origin, rand) = OriginRand.toOrigin originRand rand
                     let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand
-                    Some mapTmx
-            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
+                    Some (Choice3Of3 (mapTmx, origin))
+            match tileMapOpt with
+            | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
+            | None -> ()
             tileMapOpt
-        | Some tileMapOpt -> tileMapOpt
-
-    let tryGetTileMapFade omniSeedState fieldData world =
-        let rotatedSeedState = OmniSeedState.rotate true fieldData.FieldType omniSeedState
-        let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey tileMapsMemoized with
-        | None ->
-            let tileMapOpt =
-                match fieldData.FieldTileMap with
-                | FieldStatic _
-                | FieldRandom _ -> None
-                | FieldConnector (_, fieldFadeAsset) ->
-                    match World.tryGetTileMapMetadata fieldFadeAsset world with
-                    | Some (_, _, tileMap) -> Some tileMap
-                    | None -> None
-            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
-            tileMapOpt
-        | Some tileMapOpt -> tileMapOpt
+        | tileMapOpt -> tileMapOpt
 
     let getPropObjects omniSeedState fieldData world =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
@@ -944,11 +961,15 @@ module FieldData =
         | None ->
             let propObjects =
                 match tryGetTileMap omniSeedState fieldData world with
-                | Some tileMap ->
-                    if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
-                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
-                        enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
-                    else []
+                | Some tileMapChc ->
+                    match tileMapChc with
+                    | Choice1Of3 tileMap
+                    | Choice2Of3 (tileMap, _)
+                    | Choice3Of3 (tileMap, _) ->
+                        if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                            let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
+                            enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
+                        else []
                 | None -> []
             propObjectsMemoized <- Map.add memoKey propObjects propObjectsMemoized
             propObjects
@@ -959,15 +980,17 @@ module FieldData =
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
+            let rand = Rand.makeFromSeedState rotatedSeedState
             let propObjects = getPropObjects omniSeedState fieldData world
             let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
+            let (propsRandomized, rand) = Rand.nextPermutation propsUninflated rand
             let (propDescriptors, _, _) =
                 List.foldBack (fun prop (propDescriptors, treasures, rand) ->
                     let (propDescriptor, treasures, rand) = inflateProp prop treasures rand
                     let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
                     (propDescriptor :: propDescriptors, treasures, rand))
-                    propsUninflated
-                    ([], FStack.ofSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
+                    propsRandomized
+                    ([], FStack.ofSeq fieldData.Treasures, rand)
             propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
             propDescriptors
         | Some propDescriptors -> propDescriptors
@@ -982,33 +1005,37 @@ module FieldData =
 
     let tryGetSpiritType omniSeedState avatarBottom fieldData world =
         match tryGetTileMap omniSeedState fieldData world with
-        | Some tmxTileMap ->
-            match fieldData.FieldTileMap with
-            | FieldRandom (walkLength, _, origin, _, _) ->
-                let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
-                let distanceFromOriginMax =
-                    let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
-                    let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
-                    let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
-                    delta.Length ()
-                let distanceFromOrigin =
-                    match origin with
-                    | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
-                    | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
-                    | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
-                    | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
-                    | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
-                    | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
-                    | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
-                    | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
-                    | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
-                match battleIndex with
-                | 0 | 1 -> Some WeakSpirit
-                | 2 | 3 -> Some NormalSpirit
-                | _ -> Some StrongSpirit
-            | FieldConnector _ -> None
-            | FieldStatic _ -> None
+        | Some tileMapChc ->
+            match tileMapChc with
+            | Choice3Of3 (tileMap, origin) ->
+                match fieldData.FieldTileMap with
+                | FieldRandom (walkLength, _, _, _, _) ->
+                    let tileMapBounds = v4Bounds v2Zero (v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
+                    let distanceFromOriginMax =
+                        let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
+                        let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
+                        let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
+                        delta.Length ()
+                    let distanceFromOrigin =
+                        match origin with
+                        | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
+                        | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
+                        | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
+                        | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
+                        | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
+                        | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
+                        | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
+                        | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
+                        | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
+                    let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
+                    match battleIndex with
+                    | 0 | 1 -> Some WeakSpirit
+                    | 2 | 3 -> Some NormalSpirit
+                    | _ -> Some StrongSpirit
+                | FieldConnector _ -> None
+                | FieldStatic _ -> None
+            | Choice1Of3 _ -> None
+            | Choice2Of3 _ -> None
         | None -> None
 
 [<RequireQualifiedAccess>]

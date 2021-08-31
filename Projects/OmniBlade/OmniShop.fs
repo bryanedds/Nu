@@ -52,19 +52,18 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
         let itemType = snd selection
         let header = if buying then "Acheter l'armure \"" else "Vendre l'armure \""
         let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.frenchName itemType + "\" pour " + string price + " Ors ?"
-        let effect = "Effet: " + ad.Description
-        //let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        let stats = "PV: " + string ad.HitPointsBase + " | PT: " + string ad.TechPointsBase + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
+        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + ad.Description
+        let stats = "Edr: " + string ad.EnduranceBaseDisplay + " | Esp: " + string ad.MindBaseDisplay + " | Acq: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
         let itemType = snd selection
         let header = if buying then "Acheter l'objet  \"" else "Vendre l'objet \""
         let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.frenchName itemType + "\" pour " + string price + " Ors ?"
+        let offer = header + ItemType.frenchName itemType + " pour " + string price + " Ors ?"
         let effect = "Effet: " + ad.Description
-        let stats = "Boucl. : " + string ad.ShieldBase + " | Contre : " + string ad.CounterBase + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Boucl: " + string ad.ShieldBase + " | Contre: " + string ad.CounterBase + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member tryMakeFromSelection buying inventory selection =

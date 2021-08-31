@@ -264,7 +264,7 @@ module Gaia =
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
-        form.tickingButton.Checked <- false
+        form.advancingButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshGroupPropertyGrid form world
         refreshGroupTabs form world
@@ -272,7 +272,7 @@ module Gaia =
         refreshHierarchyTreeView form world
 
     let private canEditWithMouse (form : GaiaForm) world =
-        World.isTicking world &&
+        World.isAdvancing world &&
         not form.editWhileInteractiveCheckBox.Checked
 
     let private tryMousePickInner (form : GaiaForm) mousePosition world =
@@ -331,7 +331,7 @@ module Gaia =
         | _ -> failwithumf ()
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let handled = if World.isTicking world then Cascade else Resolve
+        let handled = if World.isAdvancing world then Cascade else Resolve
         let mousePosition = World.getMousePosition world
         let (_, world) = tryMousePick mousePosition form world
         let world = updateEditorState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
@@ -339,7 +339,7 @@ module Gaia =
 
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if not (canEditWithMouse form world) then
-            let handled = if World.isTicking world then Cascade else Resolve
+            let handled = if World.isAdvancing world then Cascade else Resolve
             let mousePosition = World.getMousePosition world
             match tryMousePick mousePosition form world with
             | (Some entity, world) ->
@@ -360,7 +360,7 @@ module Gaia =
     let private handleNuEntityDragEnd (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if canEditWithMouse form world then (Cascade, world)
         else
-            let handled = if World.isTicking world then Cascade else Resolve
+            let handled = if World.isAdvancing world then Cascade else Resolve
             match (getEditorState world).DragEntityState with
             | DragEntityPosition _
             | DragEntityRotation _ ->
@@ -987,7 +987,7 @@ module Gaia =
                     let world = World.unshelve pastWorld
                     Globals.PastWorlds <- pastWorlds
                     Globals.FutureWorlds <- futureWorld :: Globals.FutureWorlds
-                    let world = World.setTickRate 0L world
+                    let world = World.setUpdateRate 0L world
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
@@ -1002,34 +1002,34 @@ module Gaia =
                     let world = World.unshelve futureWorld
                     Globals.PastWorlds <- pastWorld :: Globals.PastWorlds
                     Globals.FutureWorlds <- futureWorlds
-                    let world = World.setTickRate 0L world
+                    let world = World.setUpdateRate 0L world
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
             else world
 
-    let private handleFormTickingChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormAdvancingChanged (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let tickRate = if form.tickingButton.Checked then 1L else 0L
-            let (pastWorld, world) = (world, World.setTickRate tickRate world)
-            if tickRate = 1L then Globals.pushPastWorld pastWorld
+            let updateRate = if form.advancingButton.Checked then 1L else 0L
+            let (pastWorld, world) = (world, World.setUpdateRate updateRate world)
+            if updateRate = 1L then Globals.pushPastWorld pastWorld
             world
 
-    let private handleFormResetTickTime (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormResetUpdateTime (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.resetTickTime world)
+            let (pastWorld, world) = (world, World.resetUpdateTime world)
             Globals.pushPastWorld pastWorld
             world
 
-    let private handleFormIncTickTime (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormIncUpdateTime (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.incTickTime world)
+            let (pastWorld, world) = (world, World.incUpdateTime world)
             Globals.pushPastWorld pastWorld
             world
 
-    let private handleFormDecTickTime (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormDecUpdateTime (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.decTickTime world)
+            let (pastWorld, world) = (world, World.decUpdateTime world)
             Globals.pushPastWorld pastWorld
             world
 
@@ -1302,14 +1302,14 @@ module Gaia =
 
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if form :> Form = Form.ActiveForm then
-            if Keys.F5 = key then form.tickingButton.PerformClick ()
+            if Keys.F5 = key then form.advancingButton.PerformClick ()
             if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetTickTime form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncTickTime form ( EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecTickTime form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetUpdateTime form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncUpdateTime form ( EventArgs ())
+            if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecUpdateTime form (EventArgs ())
             if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
                 match form.rolloutTabControl.SelectedTab.Name with
                 | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
@@ -1484,7 +1484,7 @@ module Gaia =
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup defaultGroup form Globals.World
-        form.tickingButton.CheckState <- CheckState.Unchecked
+        form.advancingButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
@@ -1596,7 +1596,7 @@ module Gaia =
         form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
-        form.startStopTickingToolStripMenuItem.Click.Add (fun _ -> form.tickingButton.PerformClick ())
+        form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.advancingButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.newGroupToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveGroupToolStripMenuItem.Click.Add (handleFormSave false form)
@@ -1607,10 +1607,10 @@ module Gaia =
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
-        form.tickingButton.CheckedChanged.Add (handleFormTickingChanged form)
-        form.resetTickTime.Click.Add (handleFormResetTickTime form)
-        form.incTickTime.Click.Add (handleFormIncTickTime form)
-        form.decTickTime.Click.Add (handleFormDecTickTime form)
+        form.advancingButton.CheckedChanged.Add (handleFormAdvancingChanged form)
+        form.resetUpdateTime.Click.Add (handleFormResetUpdateTime form)
+        form.incUpdateTime.Click.Add (handleFormIncUpdateTime form)
+        form.decUpdateTime.Click.Add (handleFormDecUpdateTime form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
@@ -1754,7 +1754,7 @@ module Gaia =
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
                   StandAlone = false
-                  TickRate = 0L
+                  UpdateRate = 0L
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld savedState.UseGameplayScreen sdlDeps worldConfig plugin with

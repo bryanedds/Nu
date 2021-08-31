@@ -269,45 +269,40 @@ module WorldModule =
         static member internal updateTime world =
             World.updateAmbientState AmbientState.updateTime world
     
-        /// Get the tick rate.
+        /// Get the update rate.
         [<FunctionBinding>]
-        static member getTickRate world =
-            World.getAmbientStateBy AmbientState.getTickRate world
+        static member getUpdateRate world =
+            World.getAmbientStateBy AmbientState.getUpdateRate world
 
-        /// Get the tick rate as a floating-point value.
+        /// Set the update rate, starting at the end of the current frame.
         [<FunctionBinding>]
-        static member getTickRateF world =
-            World.getAmbientStateBy AmbientState.getTickRateF world
+        static member setUpdateRate updateRate world =
+            World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) world
 
-        /// Set the tick rate, starting at the end of the current frame.
+        /// Reset the update time to 0 at the end of the current frame.
         [<FunctionBinding>]
-        static member setTickRate tickRate world =
-            World.frame (World.updateAmbientState (AmbientState.setTickRateImmediate tickRate)) world
+        static member resetUpdateTime world =
+            World.frame (World.updateAmbientState AmbientState.resetUpdateTimeImmediate) world
 
-        /// Reset the tick time to 0 at the end of the current frame.
+        /// Increment the update time at the end of the current frame.
         [<FunctionBinding>]
-        static member resetTickTime world =
-            World.frame (World.updateAmbientState AmbientState.resetTickTimeImmediate) world
+        static member incUpdateTime world =
+            World.frame (World.updateAmbientState AmbientState.incUpdateTimeImmediate) world
 
-        /// Increment the tick time at the end of the current frame.
+        /// Decrement the update time at the end of the current frame.
         [<FunctionBinding>]
-        static member incTickTime world =
-            World.frame (World.updateAmbientState AmbientState.incTickTimeImmediate) world
+        static member decUpdateTime world =
+            World.frame (World.updateAmbientState AmbientState.decUpdateTimeImmediate) world
 
-        /// Decrement the tick time at the end of the current frame.
+        /// Get the world's update time.
         [<FunctionBinding>]
-        static member decTickTime world =
-            World.frame (World.updateAmbientState AmbientState.decTickTimeImmediate) world
+        static member getUpdateTime world =
+            World.getAmbientStateBy AmbientState.getUpdateTime world
 
-        /// Get the world's tick time.
+        /// Check that the world is advancing.
         [<FunctionBinding>]
-        static member getTickTime world =
-            World.getAmbientStateBy AmbientState.getTickTime world
-
-        /// Check that the world is ticking.
-        [<FunctionBinding>]
-        static member isTicking world =
-            World.getAmbientStateBy AmbientState.isTicking world
+        static member isAdvancing world =
+            World.getAmbientStateBy AmbientState.isAdvancing world
 
         /// Get the world's clock time.
         /// No script function binding due to lack of a DateTimeOffset script conversion.
@@ -432,11 +427,11 @@ module WorldModule =
         /// Schedule an operation to be executed by the engine at the end of the current frame.
         static member frame fn world =
             let taskletsProcessing = World.getTaskletsProcessing world
-            World.schedule fn (World.getTickTime world + if taskletsProcessing then 1L else 0L) world
+            World.schedule fn (World.getUpdateTime world + if taskletsProcessing then 1L else 0L) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member delay fn delay world =
-            let tasklet = { ScheduledTime = World.getTickTime world + delay; ScheduledOp = fn }
+            let tasklet = { ScheduledTime = World.getUpdateTime world + delay; ScheduledOp = fn }
             World.addTasklet tasklet world
 
         /// Attempt to get the window flags.
@@ -458,6 +453,10 @@ module WorldModule =
         /// Attempt to set the window's full screen state.
         static member trySetWindowFullScreen fullScreen world =
             World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
+
+        /// Check whether the world should sleep rather than run.
+        static member shouldSleep world =
+            World.getAmbientStateBy AmbientState.shouldSleep world
 
         static member internal getSymbolStoreBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world

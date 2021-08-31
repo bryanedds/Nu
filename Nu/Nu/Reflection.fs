@@ -24,7 +24,7 @@ module Reflection =
              ("Facets", true)
              ("Ecs", true)
              ("TransitionState", true)
-             ("TransitionTicks", true)
+             ("TransitionUpdates", true)
              ("EntityTree", true)
              ("Imperative", true)
              ("PublishChangeBindings", true)

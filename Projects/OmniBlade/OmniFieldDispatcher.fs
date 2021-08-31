@@ -166,6 +166,7 @@ module FieldDispatcher =
                 | Sensor (sensorType, _, _, cue, requirements) -> Some (sensorType, cue, requirements)
                 | _ -> None)
                 avatar.SeparatedBodyShapes
+        do ignore getUntouchedSensors // NOTE: suppressing warning.
 
         static let interactDialog dialog field =
             match Dialog.tryAdvance (flip detokenize field) dialog with
@@ -279,7 +280,7 @@ module FieldDispatcher =
             | Animate (characterAnimationType, target) ->
                 match target with
                 | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getTickTime world) characterAnimationType) field
+                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
                     (Cue.Nil, just field)
                 | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
                     (Cue.Nil, just field)
@@ -320,15 +321,15 @@ module FieldDispatcher =
                 (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
 
             | Wait time ->
-                (WaitState (World.getTickTime world + time), just field)
+                (WaitState (World.getUpdateTime world + time), just field)
 
             | WaitState time ->
-                if World.getTickTime world < time
+                if World.getUpdateTime world < time
                 then (cue, just field)
                 else (Cue.Nil, just field)
 
             | Fade (time, fadeIn, target) ->
-                (FadeState (World.getTickTime world, time, fadeIn, target), just field)
+                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
 
             | FadeState (startTime, totalTime, fadeIn, target) ->
                 match target with
@@ -337,7 +338,7 @@ module FieldDispatcher =
                     | Some propKey ->
                         match field.PropStates.[propKey] with
                         | NpcState (_, direction, _, glow, exists) ->
-                            let localTime = World.getTickTime world - startTime
+                            let localTime = World.getUpdateTime world - startTime
                             let progress = single localTime / single totalTime
                             let color = colWhite * if fadeIn then progress else 1.0f - progress
                             let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
@@ -356,7 +357,7 @@ module FieldDispatcher =
                         { FieldType = fieldType
                           FieldDestination = fieldDestination
                           FieldDirection = fieldDirection
-                          FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                          FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                     let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
                     (WarpState, just field)
 
@@ -465,13 +466,11 @@ module FieldDispatcher =
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "OptionButtonUp"
-                    Entity.DownImage == asset "Field" "OptionButtonDown"
-                    Entity.ClickEvent ==> msg Nop]
+                    Entity.DownImage == asset "Field" "OptionButtonDown"]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "HelpButtonUp"
-                    Entity.DownImage == asset "Field" "HelpButtonDown"
-                    Entity.ClickEvent ==> msg Nop]
+                    Entity.DownImage == asset "Field" "HelpButtonDown"]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "CloseButtonUp"
@@ -495,7 +494,8 @@ module FieldDispatcher =
 
         static let items (position : Vector2) elevation columns field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ -> (field.Menu, field.ShopOpt, field.Inventory))
+                (fun (field : Field) _ ->
+                    (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
                     let sorter (item, _) = match item with Consumable _ -> 0 | Equipment _ -> 1 | KeyItem _ -> 2 | Stash _ -> 3
                     match menu.MenuState with
@@ -509,9 +509,13 @@ module FieldDispatcher =
                                 | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
-                                inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |>
+                                inventory.Items |>
+                                Map.toSeq |>
+                                Seq.sortBy sorter |>
+                                Seq.index |>
                                 Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 8 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                                pageItems shop.ShopPage 8 |>
+                                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 368.0f
@@ -520,12 +524,14 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) ->
+                            let itemName = ItemType.getName itemType
                             match countOpt with
-                            | Some count when count > 1 ->
-                                let itemName = ItemType.getName itemType
-                                itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
-                            | _ -> ItemType.getName itemType
-                         Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                            | Some count when count > 1 -> itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
+                            | _ -> itemName
+                         Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) ->
+                            match itemType with
+                            | Consumable _ | Equipment _ -> true
+                            | KeyItem _ | Stash _ -> false
                          Entity.UpImage == Assets.Gui.ButtonBigUpImage
                          Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
@@ -587,7 +593,7 @@ module FieldDispatcher =
                                     { FieldType = fieldType
                                       FieldDestination = destination
                                       FieldDirection = direction
-                                      FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                                      FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
                                 (cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)) :: signals, field)
                             else (signals, field)
@@ -613,28 +619,26 @@ module FieldDispatcher =
 
                 // update spirits
                 let (signals, field) =
-#if !DEV_FIELD
                     if  field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt then
-                        match Field.advanceSpirits field world with
+                        match Field.updateSpirits field world with
                         | Left (battleData, field) ->
                             let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                            let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getTickTime world)
-                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getUpdateTime world)
+                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
                             let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
                             (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
-#else
-                    (signals, field)
-#endif
 
                 // fin
                 (signals, field)
@@ -650,7 +654,7 @@ module FieldDispatcher =
                 | Some fieldTransition ->
 
                     // handle field transition
-                    let time = World.getTickTime world
+                    let time = World.getUpdateTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     let (signals, field) =
 
@@ -663,8 +667,8 @@ module FieldDispatcher =
                                 | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
 
-                        // half-way point of transition
-                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        // just past half-way point of transition
+                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
                             let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                             let field =
                                 Field.updateAvatar (fun avatar ->
@@ -760,7 +764,7 @@ module FieldDispatcher =
                         field
                 just field
             
-            | MenuTechSelect index ->
+            | MenuTechSelect _ ->
                 just field
             
             | MenuClose ->
@@ -848,12 +852,14 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = World.getTickTime world
+                    let time = World.getUpdateTime world
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                    let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                    let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) battleData time
                     let field = Field.clearSpirits field
-                    let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                    let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
@@ -902,27 +908,39 @@ module FieldDispatcher =
                     match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
                     | (Some fieldSong, Some currentSong) ->
                         if not (AssetTag.equals fieldSong currentSong.Song) then
-                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
-                            let startTime = clockTime - playTime
-                            let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
-                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                            let (playTime, startTime) =
+                                let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                                match field.FieldSongTimeOpt with
+                                | Some playTime ->
+                                    let deltaTime = clockTime - playTime
+                                    if playTime < Constants.Audio.SongResumptionMaximum
+                                    then (playTime, deltaTime)
+                                    else (0L, clockTime)
+                                | None -> (0L, clockTime)
+                            let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
-                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
+                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
-                        let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                        let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
-                        let startTime = clockTime - playTime
-                        let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
-                        let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                        let (playTime, startTime) =
+                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                            match field.FieldSongTimeOpt with
+                            | Some playTime ->
+                                let deltaTime = clockTime - playTime
+                                if playTime < Constants.Audio.SongResumptionMaximum
+                                then (playTime, deltaTime)
+                                else (0L, clockTime)
+                            | None -> (0L, clockTime)
+                        let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                        let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
+                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
+                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
@@ -957,7 +975,7 @@ module FieldDispatcher =
                      Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let time = World.getTickTime world
+                            let time = World.getUpdateTime world
                             let deltaTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =
@@ -974,7 +992,11 @@ module FieldDispatcher =
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
-                            | Some tileMap -> tileMap
+                            | Some tileMapChc ->
+                                match tileMapChc with
+                                | Choice1Of3 tileMap
+                                | Choice2Of3 (tileMap, _)
+                                | Choice3Of3 (tileMap, _) -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
                      Entity.TileIndexOffset <== field --> fun field ->
@@ -993,8 +1015,12 @@ module FieldDispatcher =
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMapFade field.OmniSeedState fieldData world with
-                            | Some tileMapFade -> tileMapFade
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
+                            | Some tileMapChc ->
+                                match tileMapChc with
+                                | Choice1Of3 _ -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
+                                | Choice2Of3 (_, tileMapFade) -> tileMapFade
+                                | Choice3Of3 (_, _) ->  World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                             | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                         | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                      Entity.TileLayerClearance == 10.0f]
@@ -1061,7 +1087,7 @@ module FieldDispatcher =
                  Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field world ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field world }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field world; Portals = Field.getPortals field world }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->
@@ -1112,7 +1138,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Arme : " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                   | Some teammate -> "Arm: " + Option.mapOrDefault string "None" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1121,7 +1147,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Armure : " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                   | Some teammate -> "Amr: " + Option.mapOrDefault string "None" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1130,7 +1156,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "1 : " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "Acc: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1148,11 +1174,11 @@ module FieldDispatcher =
                                        let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let def = Algorithms.shield Physical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let abs = Algorithms.shield Magical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                       "PV  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
-                                       "\nPT  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
-                                       "\nPuiss " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
-                                       "\nDef " + (string def).PadLeft 3 + "    Abs " + (string abs).PadLeft 3 +
-                                       "\nExp " + (string teammate.ExpPoints).PadLeft 3 + " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
+                                       "PV   "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
+                                       "\nPT   " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
+                                       "\nPouv " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
+                                       "\nDef  " + (string def).PadLeft 3 + "    Abs " + (string abs).PadLeft 3 +
+                                       "\nExp  " + (string teammate.ExpPoints).PadLeft 3 + " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                    | None -> ""
                                | _ -> ""]]
 
@@ -1181,32 +1207,33 @@ module FieldDispatcher =
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -192.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 384.0f
+                       [Entity.Position == v2 -448.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
-                       [team (v2 160.0f 150.0f) 1.0f 3 field
+                       [team (v2 160.0f 182.0f) 1.0f 3 field
                            (fun teammate menu ->
                                match menu.MenuUseOpt with
                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                | None -> false)
                            MenuItemUse
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 810.0f 306.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
-                            Entity.Text == "X"
+                           [Entity.PositionLocal == v2 810.0f 344.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                            Entity.UpImage == asset "Field" "CloseButtonUp"
+                            Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 306.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 42.0f 344.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
                                | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 264.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 60.0f 302.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine2
                                 | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 222.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.ShopOpt with
                                | Some shop ->
@@ -1266,7 +1293,7 @@ module FieldDispatcher =
                  // shop confirm
                  Content.entityOpt field (fun field _ -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 864.0f 252.0f
+                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 252.0f
                         Entity.LabelImage == Assets.Gui.DialogThickImage]
                        [Content.button Gen.name
                            [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f

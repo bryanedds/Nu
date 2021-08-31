@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+   eJztzaENADAIAEESlsd05xoGIGBPvPxcZUQte932v8bn8/l8Pp/P5/MladYHw1ItDw==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlkEOgkAMRQkTLuJGD6ZINKgcRE7ERi/kRvZCtDLWttPOqCub/JXTeR/017Yuy1qD6iJ71tHdBVUVtrti9Gv+drhz76kR+Ad0dp3oZ/vgnfJJ55znd/nr2UOCB2CPvKunXuBf0Nku0oPPHnlzN2nheP7MvZ69RHjAbJ+HC/NxzYweLGwN3+LBytbyNR5i2BZ+yEMtsDfDZ+WgXfF+J8fnenwPFeJzzw3nagNf6gEPmM+9c5hpjYEv9YAHzOcKZpo/90J8qQdKy4eZ1hv4Uo+VDzON+n44vtRj5UtlyV8qn8oU5ktZlfgrRQ+VKW7/CD3P6HOJZmDIA5Upbv/gcsexNR6oTHH7B5c7iR3yQGWK2z+o3GnYkgcqU9z+Qf2HaNmW36QmfzFsi4dvsVM9fILteyiN+hT7r7++qRtsDXLd
+   eJztlEsOgkAQRAkTLsJGD6ZIJCpehBOx0Qux0b1M4oRhYvdUz8cVndSKal5pqB5UUQwCXaqCnLaSvStE/+Z38ztvlu4Mv3e8p8g83Zf3KBc9S5o/lmtvH5HBsDXvZenN8CfHOwZmsNmat1OL9orm12rtnQIyuGyO55tamCElW5ohBxvNkJONZLgw7PP8rJl1ZXrvDrVjZ2gdPvW7jY+7e5Idk8HlU/+5uWnc3ZPu6Awunxpz07i7F7KD8s1N4+5eyA7KNzdN0glkB+XnGikf6aGkqzb/COwgPUS7qnMenBvoy4D0EPH8YiMZkE75PBzblwHpFOdB2FwGpFOUR8KWfJPIhLBTZYhhx2ZIwbYzNEKlYm/alFMfJstX3Q==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="696" y="1008" width="144" height="144">
+  <object id="1" gid="235" x="696" y="1056" width="144" height="144">
    <properties>
     <property name="I" value="[Npc MadTrixterNpc Upward [Sequence [[Dialog &quot;You've run a fool's errand...!&quot;] [Battle MadTrixterBattle [MadTrixterDefeated]]]]]"/>
    </properties>
   </object>
   <object id="2" gid="235" x="744" y="1200" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 1] Upward [Castle 1] [IX 0] false [MadTrixterDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward [Castle 1] [IX 1] false [MadTrixterDefeated]]"/>
    </properties>
   </object>
  </objectgroup>

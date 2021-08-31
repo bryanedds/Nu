@@ -884,9 +884,9 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
             physicsEngine :> PhysicsEngine
 
-        member physicsEngine.Integrate tickRate physicsMessages =
+        member physicsEngine.Integrate updateRate physicsMessages =
             AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
-            let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
+            let physicsStepAmount = Constants.Physics.PhysicsStepRate * single updateRate
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
             AetherPhysicsEngine.createIntegrationMessages physicsEngine

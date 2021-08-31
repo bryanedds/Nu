@@ -37,7 +37,7 @@ module AvatarDispatcher =
 
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
-            let index = Avatar.getAnimationIndex (World.getTickTime world) avatar
+            let index = Avatar.getAnimationIndex (World.getUpdateTime world) avatar
             let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterCelSize
             let inset = v4Bounds offset Constants.Gameplay.CharacterCelSize
             inset
@@ -97,7 +97,7 @@ module AvatarDispatcher =
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             match message with
             | Update ->
 

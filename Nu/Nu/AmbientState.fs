@@ -8,7 +8,7 @@ open SDL2
 open Prime
 open Nu
 
-/// A tasklet to be completed at the scheduled tick time.
+/// A tasklet to be completed at the scheduled update time.
 type [<NoEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
       ScheduledOp : 'w -> 'w }
@@ -30,8 +30,8 @@ module AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness
-              TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
-              TickTime : int64
+              UpdateRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
+              UpdateTime : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
               // cache line 2
               Metadata : Metadata
@@ -60,37 +60,33 @@ module AmbientState =
     let getLiveness state =
         state.Liveness
 
-    /// Get the tick rate.
-    let getTickRate state =
-        state.TickRate
+    /// Get the update rate.
+    let getUpdateRate state =
+        state.UpdateRate
 
-    /// Get the tick rate as a floating-point value.
-    let getTickRateF state =
-        single (getTickRate state)
+    /// Set the update rate.
+    let setUpdateRateImmediate updateRate state =
+        { state with UpdateRate = updateRate }
 
-    /// Set the tick rate.
-    let setTickRateImmediate tickRate state =
-        { state with TickRate = tickRate }
+    /// Reset the update time to 0.
+    let resetUpdateTimeImmediate state =
+        { state with UpdateTime = 0L }
 
-    /// Reset the tick time to 0.
-    let resetTickTimeImmediate state =
-        { state with TickTime = 0L }
+    /// Increment the update time.
+    let incUpdateTimeImmediate state =
+        { state with UpdateTime = inc state.UpdateTime }
 
-    /// Increment the tick time.
-    let incTickTimeImmediate state =
-        { state with TickTime = inc state.TickTime }
+    /// Increment the update time.
+    let decUpdateTimeImmediate state =
+        { state with UpdateTime = dec state.UpdateTime }
 
-    /// Increment the tick time.
-    let decTickTimeImmediate state =
-        { state with TickTime = dec state.TickTime }
+    /// Get the update time.
+    let getUpdateTime state =
+        state.UpdateTime
 
-    /// Get the tick time.
-    let getTickTime state =
-        state.TickTime
-
-    /// Check that ticking is enabled.
-    let isTicking state =
-        getTickRate state <> 0L
+    /// Check that updating is enabled.
+    let isAdvancing state =
+        getUpdateRate state <> 0L
 
     /// Get the clock delta as a floating point number.
     let getClockDelta state =
@@ -100,15 +96,15 @@ module AmbientState =
     let getClockTime state =
         state.ClockTime
 
-    /// Update the tick and clock times.
+    /// Update the update and clock times.
     let updateTime state =
         let now = DateTimeOffset.UtcNow
         let delta = now - state.ClockTime
-        let frameProgress = 1000.0f / single Constants.Engine.DesiredFps * single state.TickRate
+        let frameProgress = 1000.0f / single Constants.Engine.DesiredFps * single state.UpdateRate
         let clockDelta = single delta.TotalMilliseconds / frameProgress
         let clockDeltaNormalized = if clockDelta < 4.0f then clockDelta else 1.0f // assume timing is unnatural about a 4 frame delay
         { state with
-            TickTime = state.TickTime + state.TickRate
+            UpdateTime = state.UpdateTime + state.UpdateRate
             ClockDelta = clockDeltaNormalized
             ClockTime = now }
 
@@ -192,6 +188,15 @@ module AmbientState =
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
 
+    /// Check whether we should sleep rather than run.
+    let shouldSleep state =
+        match tryGetWindowFlags state with
+        | Some flags ->
+            let focused = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS <> 0u
+            let fullScreen = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u
+            not focused && fullScreen
+        | None -> false
+
     /// Get the margin around the camera eye given the display mode's full screen state and resolution.
     let getEyeMargin (eyeSize : Vector2) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
@@ -241,13 +246,13 @@ module AmbientState =
         by state.OverlayRouter
 
     /// Make an ambient state value.
-    let make imperative standAlone tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+    let make imperative standAlone updateRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
         Imperative <- imperative
         StandAlone <- standAlone
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Liveness = Live
-          TickRate = tickRate
-          TickTime = 0L
+          UpdateRate = updateRate
+          UpdateTime = 0L
           ClockDelta = 1.0f
           ClockTime = DateTimeOffset.Now
           Tasklets = UList.makeEmpty config

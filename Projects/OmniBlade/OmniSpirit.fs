@@ -17,15 +17,15 @@ type [<NoEquality; NoComparison>] SpiritMovement =
 type [<NoEquality; NoComparison>] SpiritPattern =
     | Disinterested
     | Confused
-    | Curious
+    | Steadfast
     | Stalking
     | Ambushing
 
     static member fromInt i =
         match i with
         | 0 -> Disinterested
-        | 1 -> Curious
-        | 2 -> Confused
+        | 1 -> Confused
+        | 2 -> Steadfast
         | 3 -> Stalking
         | 4 -> Ambushing
         | _ -> failwithumf ()
@@ -35,11 +35,11 @@ type [<NoEquality; NoComparison>] SpiritPattern =
 
     static member toSpiritMovement pattern =
         match pattern with
-        | Disinterested -> [|Wander|]
-        | Curious -> [|Chase; Scatter|]
-        | Confused -> [|Creep; Wander|]
-        | Stalking -> [|Chase; Creep|]
-        | Ambushing -> [|Chase|]
+        | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
+        | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
+        | Steadfast ->      [|Chase;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Stalking ->       [|Chase;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
+        | Ambushing ->      [|Chase;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
 type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array

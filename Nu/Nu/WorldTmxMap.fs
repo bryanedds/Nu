@@ -261,7 +261,7 @@ module TmxMap =
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let tileAssets = tileMap.ImageAssets
-        let tileGidCount = Array.fold (fun count (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.Value) 0 tileAssets // TODO: make this a public function!
+        let tileGidCount = Array.fold (fun count (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.GetValueOrDefault 0) 0 tileAssets // TODO: make this a public function!
         let tileMapDescriptor = getDescriptor tileMapPosition tileMap
         let descriptorLists =
             List.foldi

@@ -86,7 +86,7 @@ module Field =
         match Map.tryFind propDescriptor.PropId propStates with
         | None ->
             match propDescriptor.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> PortalState (advents.IsSupersetOf requirements)
+            | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
             | Door (_, _, _, _) -> DoorState false
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
@@ -117,6 +117,11 @@ module Field =
         getPropStates field world |>
         Map.toValueArray |>
         Array.choose (function ChestState (bounds, id) -> Some (Chest.make bounds (field.Advents.Contains (Opened id))) | _ -> None)
+
+    let getPortals field world =
+        getPropStates field world |>
+        Map.toValueArray |>
+        Array.choose (function PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
 
     let updateFieldType updater field =
         { field with
@@ -181,7 +186,7 @@ module Field =
     let clearSpirits field =
         { field with Spirits_= [||] }
 
-    let advanceSpirits (field : Field) world =
+    let updateSpirits (field : Field) world =
         match field.FieldTransitionOpt with
         | None ->
             let field =
@@ -190,7 +195,7 @@ module Field =
             let field =
                 { field with
                     Spirits_ =
-                        Array.map (Spirit.advance (World.getTickTime world) field.Avatar.Center) field.Spirits_ }
+                        Array.map (Spirit.advance (World.getUpdateTime world) field.Avatar.Center) field.Spirits_ }
             let field =
                 { field with
                     Spirits_ =
@@ -211,7 +216,7 @@ module Field =
                             match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
                             | Some spiritType ->
                                 let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.random ())
-                                let spirit = Spirit.spawn (World.getTickTime world) field.Avatar.Bottom spiritType spiritMovement
+                                let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
                         Array.definitize
