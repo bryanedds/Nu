@@ -413,21 +413,21 @@ module Character =
             match (source.AffinityOpt, techData.AffinityOpt) with
             | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget
             | (_, _) -> 1.0f
-        let specialScalar =
+        let techScalar =
             // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
             // TODO: pull this from TechData.EnemyScalarOpt.
             if source.IsEnemy then
                 match techData.TechType with
-                | Critical -> 1.125f
+                | Critical -> 1.25f
                 | Slash -> 1.25f
-                | TechType.Flame -> 1.5f
+                | TechType.Flame -> 1.45f
                 | Snowball -> 1.125f
                 | Aura -> 0.5f
                 | Empower -> 0.5f
                 | Enlighten -> 0.5f
                 | Protect -> 0.5f
-                | _ -> 1.0f
-            else 1.0f
+                | _ -> techData.Scalar
+            else techData.Scalar
         let specialAddend =
             // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
             // TODO: consider pulling this from TechData.AddendOpt.
@@ -436,13 +436,13 @@ module Character =
             | DarkCritical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
-            let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
+            let healing = single efficacy * techScalar * techScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techData.Scalar * specialScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage = (single efficacy * affinityScalar * techScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTechMove techData source target characters =
