@@ -167,30 +167,35 @@ module BattleDispatcher =
                 just battle
 
         static let updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
-            match targetIndexOpt with
-            | Some targetIndex ->
-                match Battle.tryGetCharacter targetIndex battle with
-                | Some target ->
-                    match timeLocal with
-                    | 0L ->
-                        if target.IsHealthy || consumable = Revive then // HACK: should really be checked ConsumableData.
-                            withMsg (ConsumeCharacter1 (consumable, sourceIndex)) battle
-                        else
+            match Battle.tryGetCharacter sourceIndex battle with
+            | Some source when source.IsHealthy ->
+                match targetIndexOpt with
+                | Some targetIndex ->
+                    match Battle.tryGetCharacter targetIndex battle with
+                    | Some target ->
+                        match timeLocal with
+                        | 0L ->
+                            if target.IsHealthy || consumable = Revive then // HACK: should really be checked ConsumableData.
+                                withMsg (ConsumeCharacter1 (consumable, sourceIndex)) battle
+                            else
+                                let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                                withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
+                        | 30L ->
+                            withMsg (ConsumeCharacter2 (consumable, targetIndex)) battle
+                        | _ when timeLocal > 30L && Character.getAnimationFinished time target ->
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                            withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
-                    | 30L ->
-                        withMsg (ConsumeCharacter2 (consumable, targetIndex)) battle
-                    | _ when timeLocal > 30L && Character.getAnimationFinished time target ->
+                            withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
+                        | _ -> just battle
+                    | None ->
+                        // TODO: change target automatically, cancelling if not valid targets.
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
-                    | _ -> just battle
+                        withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                 | None ->
-                    // TODO: change target automatically, cancelling if not valid targets.
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
-            | None ->
+            | Some _ | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
+                just battle
 
         static let updateTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal battle =
             match targetIndexOpt with
