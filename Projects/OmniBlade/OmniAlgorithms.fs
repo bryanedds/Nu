@@ -123,7 +123,7 @@ module Algorithms =
         let powerBuff =
             statuses |>
             Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefault (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333 | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            Option.mapOrDefault (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let strength = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Strength
@@ -141,7 +141,7 @@ module Algorithms =
         let magicBuff =
             statuses |>
             Map.tryFindKey (function Magic (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefault (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333 | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            Option.mapOrDefault (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333f | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let intelligence = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Intelligence
@@ -159,7 +159,7 @@ module Algorithms =
         let shieldBuff =
             statuses |>
             Map.tryFindKey (function Shield (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefault (function Shield (false, false) -> 0.667f | Shield (false, true) -> 0.333f | Shield (true, false) -> 1.333 | Shield (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            Option.mapOrDefault (function Shield (false, false) -> 0.667f | Shield (false, true) -> 0.333f | Shield (true, false) -> 1.333f | Shield (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let (defense, absorb) = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)
