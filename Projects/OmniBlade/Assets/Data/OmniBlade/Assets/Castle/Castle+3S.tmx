@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztkTsOACAIQ0m8PIt3djf+0IIDHd5IX1O0iCghhBBCUlGTs9sEuW/EHTLj5R614U0O8n/WPLTbkuvlPsn3dq88Ue6RL9o96xDp7jv8cNOP8TceYC6p
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlE0KwjAQRoNNTlIweiR/lipFUG/SG3XRGxWMrh1pAjY2IdMkFHEG3mJIJ+9LAq0LxmqCIIg/5CbmpV30NJo2kMYCO2d6pek0KpDOAjtneln0lBoZSGmBnTM91e/WA97vOeMbrjhjax63x0kMuQr3t3c4q/o47w7ce+5et+ssvn32//DoybAEl/Sc17f+dh9GfGO4Mmxg763H71rHuEPuAVNT3KkyxLhjM6RwT82Q0o3NkMMdmiGn23Dx+KvMbvKn978ABX+YiQ==
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="1" gid="235" x="336" y="720" width="48" height="48">
+   <properties>
+    <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="2" gid="235" x="1152" y="720" width="48" height="48">
+   <properties>
+    <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

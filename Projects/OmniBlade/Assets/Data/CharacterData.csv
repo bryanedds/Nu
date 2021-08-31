@@ -1,19 +1,19 @@
 Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
-[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
-[Ally Shade],Ninja,1,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,A ninja from an unknown land.
-[Ally Mael],Wizard,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
-[Ally Riain],Conjuror,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
-[Ally Peric],Cleric,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
-[Enemy DebugGoblin],Goblin,4,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.333],1,1,An enemy for battle debugging.
-[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,A bat from the darkest parts of the tomb.
-[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.333],1,1,A minor goblin from the Golobogos Islands.
-[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,A minotaur gone mad with vengeance.
+[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,Le heros.
+[Ally Shade],Ninja,1,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,Un ninja sorti d'on ne sait ou.
+[Ally Mael],Wizard,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,Un mage noire de la Caelia.
+[Ally Riain],Conjuror,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,Un enchanteur dont l'origine echappe a tous.
+[Ally Peric],Cleric,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,Un clerc exile du Royaume de Vorpe.
+[Enemy DebugGoblin],Goblin,4,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.333],1,1,Un ennemi pour debuguer les combats.
+[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,Une chauve souris venue des entrailles du tombeau.
+[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.333],1,1,Un jeune gobelin des iles Galapagos.
+[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,Un minotaure a l'esprit fou et vengeur.
 [Enemy MadTrixter],Trixter,4,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.333],4,4,???
-[Enemy PoisonGorgon],Gorgon,5,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
-[Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,A soldier whose face is long forgotten.
-[Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
-[Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],4,4,The heaviest armoros you’ve ever seen!
-[Enemy Apparition],Ghost,7,[Castle Apparition],None,[Some Paws],None,[],[Some 0.25],1,1,A dark spirit rejected by Heaven and ignored by Hell.
-[Enemy Cloak],Shaman,7,[Castle Cloak],None,[Some Paws],None,[],[Some 0.333],1,1,A conjurer of the darkness and malice.
-[Enemy BloodArmoros],Armoros,7,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.333],1,1,A long-dead warrior shadow that lives off of blood.
-[Enemy AraneaImplicitum],Arachnos,8,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.333],1,1,Demon of Entanglement.
+[Enemy PoisonGorgon],Gorgon,5,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,Une gorgone venimeuse.
+[Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,Un soldat dont le visage a sombre dans l'oubli.
+[Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,Un volatile vindicatif.
+[Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],4,4,Le plus gros des armoros que tu n'as jamais vu !
+[Enemy Apparition],Ghost,7,[Castle Apparition],None,[Some Paws],None,[],[Some 0.25],1,1,Un mauvais esprit chasse du Paradis et dedaigne par l'Enfer.
+[Enemy Cloak],Shaman,7,[Castle Cloak],None,[Some Paws],None,[],[Some 0.333],1,1,Un conjureur des ombres et du Mal
+[Enemy BloodArmoros],Armoros,7,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.333],1,1,Un guerrier mort-vivant qui se nourrit de sang.
+[Enemy AraneaImplicitum],Arachnos,8,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.333],1,1,Le demon de l'enchevetrement.

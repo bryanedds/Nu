@@ -1,64 +1,63 @@
 Type,Stamina,Strength,Intelligence,Toughness,Focus,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs,Stature,Description
-Apprentice,1,1,1,1,1,1,1,Sword,Vest,[],SmallStature,Generic character.
+Apprentice,1,1,1,1,1,1,1,Sword,Vest,[],SmallStature,Personnage standard
 Fighter,1.2,1.1,0.8,1,0.9,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],SmallStature,
 Ninja,1.1,1,0.9,1,1,1,1,Knife,Vest,[[2 PowerCut] [4 SneakCut] [6 DoubleCut] [8 ProvokeCut]],SmallStature,
-Wizard,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],SmallStature,
+Wizard,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball] [10 Bolt]],SmallStature,
 Conjuror,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],SmallStature,
 Cleric,0.9,0.9,1.1,1,1.1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],SmallStature,
-Bat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
-Spider,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Snake,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Gorgon,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 Weaken] [2 Muddle] [4 Slow]],SmallStature,Physical attacks and Status magic.
-Willowisp,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Fire magic.
-Chillowisp,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Ice magic.
-Fairy,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
-Gel,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
-Beetle,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Curative magic.
-Rat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
-Scorpion,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Plant,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
-Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,Normal physical attacks with normal Elemental magic.
-Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 PowerCut] [2 SneakCut] [3 DoubleCut] [4 ProvokeCut]],NormalStature,Physical attacks with ???.
-Ghost,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
-Imp,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
-Zombie,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Status effects.
-Skeleton,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering.
-Shaman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Status and Debuff magic.
-Glurble,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Elemental magic and Countering.
-Wolfman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering.
-Dryad,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack and Earth magic.
-Mummy,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
-Witch,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Elemental and Status magic.
-Squidly,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and Lightning magic.
-Merman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and Lightning magic.
-Feral,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering and Curative magic.
-Thief,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and High Evasion.
-Lizardman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack w/ High Defense with Buff magic.
-Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,???
+Bat,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie de Drainage
+Spider,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles qui changent le  Statut
+Snake,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles qui changent le  Statut
+Gorgon,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques et magie du Statut
+Willowisp,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie du Feu
+Chillowisp,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie de la Glace
+Fairy,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie des Elements 
+Gel,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie des Elements
+Beetle,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles et magie de Soin
+Rat,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques moyennement faibles
+Scorpion,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles qui changent le  Statut 
+Plant,0.5,0.9,0.9,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Attaques physiques faibles avec Affaiblissement
+Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [3 Ice] [4 Snowball] [5 Bolt]],NormalStature,Attaques physiques normales avec une magie des Elements normale 
+Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 PowerCut] [3 DoubleCut]],NormalStature,Attaques physiques avec ???
+Ghost,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec magie de l' Affaiblissement
+Imp,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Affaiblissement
+Zombie,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques qui changent le  Statut 
+Skeleton,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Contre-Attaque 
+Shaman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Magie du Statut et de l' Affaiblissement 
+Glurble,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Magie de l'Element et Contre-Attaque 
+Wolfman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Contre-Attaque 
+Dryad,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques et magie de la Terre 
+Mummy,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Affaiblissement
+Witch,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Magie des Elements et du Statut
+Squidly,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques et magie de la Foudre
+Merman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques et magie de la Foudre
+Feral,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Contre-Attaque et magie de Soin 
+Thief,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques et Esquive Elevee
+Lizardman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Attaques physiques avec Defense Elevee et magie de Renforcement 
+Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [3 Ice] [4 Snowball] [5 Bolt]],NormalStature,???
 Monk,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,
-Tortoise,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack w/ High Defense with Buff magic.
-Robot,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
+Tortoise,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Attaques physiques avec Defense Elevee et magie de Renforcement
+Robot,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Attaques physiques et magie de la Foudre
 Harpy,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,
-Avian,1.5,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[[1 Aura] [2 Empower] [3 Enlighten] [4 Protect]],LargeStature,Strong physical attacks with Curative magic.
-Minotaur,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash] [3 DarkCritical]],LargeStature,Physical attacks.
-Dragon,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attacks and Elemental magic.
-Troll,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
-Mare,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-Ogre,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Curative magic.
-Djinn,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental and Status magic.
-Naga,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-Armoros,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash] [3 DarkCritical]],LargeStature,Strong physical attacks with Buff magic.
-Golem,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
-Jack,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Fire and Debuff magic.
-Trap,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Debuff magic.
-Vampire,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Status magic.
-Cerebus,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks w/ Countering.
-Hydra,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-FireElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Fire magic.
-IceElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Ice magic.
-LightningElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
-EarthElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
-ShamanBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental magic.
-RobotBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
-Dinoman,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
-Arachnos,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Weaken] [2 Muddle] [3 ConjureIfrit] [4 Slow]],HugeStature,Strong physical attacks with Debuff magic.
+Minotaur,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[3 DarkCritical]],LargeStature,Attaques physiques 
+Dragon,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie des Elements 
+Troll,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes avec magie de Renforcement
+Mare,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques qui changent le  Statut 
+Ogre,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes avec magie de Soin 
+Djinn,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,magie des Elements et du Status 
+Naga,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques avec changements de Statut
+Avian,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes avec magie de Soin
+Armoros,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[3 DarkCritical]],LargeStature,Attaques physiques fortes avec magie de Renforcement
+Golem,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physique et magie de la Terre 
+Jack,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Magie du Feu et de l' Affaiblissement 
+Trap,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes avec magie de l'Affaiblissement
+Vampire,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Magie du Statut
+Cerebus,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes avec Contre-Attaque
+Hydra,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie du Feu
+FireElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie du Feu 
+IceElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie de la Glace 
+LightningElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie de la Foudre
+EarthElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physique et magie de la Terre 
+ShamanBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Magie des Elements
+RobotBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques et magie de la Foudre
+Dinoman,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Attaques physiques fortes et magie de Renforcement

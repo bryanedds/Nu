@@ -152,6 +152,7 @@ type WeaponType =
     | SightedBow
     | IvoryRod
     | Fangs
+    static member frenchName wt = string wt 
 
 type ArmorType =
     | MicroFur
@@ -168,9 +169,29 @@ type ArmorType =
     | SilkRobe
     | ToughHide
     | StoneHide
-
+    static member frenchName at = match at with
+                                  |MicroFur -> "fourrure fine"
+                                  |TinMail -> "cotte de fer blanc"
+                                  |CottonVest -> "veste en coton"
+                                  |CottonRobe -> "robe de coton"
+                                  |ThinFur -> "fourrure legere"
+                                  |BronzeMail -> "cotte de bronze"
+                                  |LeatherVest -> "veste de cuir"
+                                  |LeatherRobe -> "robe de cuir"
+                                  |ThickFur -> "fourrure epaisse"
+                                  |IronMail -> "cotte d'acier"
+                                  |RubberVest -> "veste en caoutchouc"
+                                  |SilkRobe -> "robe de soie"
+                                  |ToughHide -> "peau rigide"
+                                  |StoneHide -> "armure de pierre"
+            
+ 
 type AccessoryType =
     | LeatherBrace
+    static member frenchName at = match at with
+                                  |LeatherBrace -> "brassard de cuir"
+           //|other -> string other 
+
 
 type WeaponSubtype =
     | Melee
@@ -184,6 +205,12 @@ type ArmorSubtype =
     | Vest
     | Mail
     | Pelt
+    static member frenchName ast =
+        match ast with
+        |Robe -> "robe"
+        |Vest -> "veste"
+        |Mail -> "cotte de mailles"
+        |Pelt -> "Pelt"
 
 type EquipmentType =
     | WeaponType of WeaponType
@@ -199,9 +226,22 @@ type ConsumableType =
     | HighEther
     | TurboEther
     | Revive
+    
+    static member frenchName ct =
+        match ct with
+        |GreenHerb -> "herbe verte"
+        |RedHerb -> "herbe rouge"
+        |GoldHerb -> "herbe doree"
+        |Remedy -> "remede"
+        |Ether -> "ether"
+        |HighEther -> "ether fort"
+        |TurboEther -> "ether-turbo"
+        |Revive -> "remontant"
 
 type KeyItemType =
     | BrassKey
+    static member frenchName kt = match kt with
+                                  |BrassKey -> "cle de laiton"
 
 type ItemType =
     | Consumable of ConsumableType
@@ -209,13 +249,17 @@ type ItemType =
     | KeyItem of KeyItemType
     | Stash of int
 
-    static member getName item =
+    static member getName = ItemType .frenchName 
+    static member frenchNameWithQuantity item =
+        match item with 
+        | Stash _ -> ItemType.frenchName item
+        |_ -> "1 " + ItemType.frenchName item 
+    static member frenchName item = 
         match item with
-        | Consumable ty -> string ty
-        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> string ty | AccessoryType ty -> string ty
-        | KeyItem ty -> string ty
-        | Stash gold -> string gold + "G"
-
+        | Consumable ty -> ConsumableType.frenchName ty
+        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
+        | KeyItem ty -> KeyItemType.frenchName ty
+        | Stash gold -> string gold + " Ors"
 type AimType =
     | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy

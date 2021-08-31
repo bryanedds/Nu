@@ -73,7 +73,7 @@ module BattleDispatcher =
         | DisplayAura of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
-        | DisplayXDown of int64 * bool * CharacterIndex
+        | DisplayDebuff of int64 * StatusType * CharacterIndex
         | DisplayConjureIfrit of int64
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
@@ -381,8 +381,8 @@ module BattleDispatcher =
                     List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
-                    | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
-                    | [] -> "Enemies defeated!^"
+                    | _ :: _ -> "" + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + " monte en niveau ! ^"
+                    | [] -> "Victoire ! ^"
                 let textB =
                     alliesLevelingUp |>
                     List.choose (fun ally ->
@@ -390,14 +390,14 @@ module BattleDispatcher =
                         if Set.notEmpty techs then Some (ally, techs) else None) |>
                     List.map (fun (ally, techs) ->
                         let text = techs |> Set.toList |> List.map scstring |> String.join ", "
-                        ally.Name + " learned " + text + "!") |>
+                        ally.Name + " apprend " + text + "!") |>
                     function
                     | _ :: _ as texts -> String.join "\n" texts + "^"
                     | [] -> ""
-                let textC = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+                let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience ! \nTu gagnes " + string battle.PrizePool.Gold + " Ors !"
                 let textD =
                     match battle.PrizePool.Items with
-                    | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
+                    | _ :: _ as items -> "^Tu trouves 1 " + (items |> List.map (fun i -> ItemType.frenchName i) |> String.join ", ") + " !"
                     | [] -> ""
                 let text = textA + textB + textC + textD
                 let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
@@ -813,11 +813,15 @@ module BattleDispatcher =
                 | Weaken ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, false, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | Muddle ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | ConjureIfrit ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -825,7 +829,9 @@ module BattleDispatcher =
                 | Slow ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Time false, targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | Purify ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -1096,9 +1102,9 @@ module BattleDispatcher =
                 | Some source -> displayEffect delay (v2 48.0f 48.0f) (Bottom source.Bottom) (Effects.makeDimensionalCastEffect ()) world |> just
                 | None -> just world
 
-            | DisplayXDown (delay, powerDown, targetIndex) ->
+            | DisplayDebuff (delay, powerDown, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeXDownEffect powerDown) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect powerDown) world |> just
                 | None -> just world
 
             | DisplayConjureIfrit delay ->

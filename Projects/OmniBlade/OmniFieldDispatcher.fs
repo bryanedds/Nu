@@ -100,13 +100,13 @@ module FieldDispatcher =
             | None ->
                 match prop with
                 | Portal (_, _, _, _, _, _, _) -> None
-                | Door _ -> Some "Open"
-                | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
-                | Switch (_, _, _, _) -> Some "Use"
+                | Door _ -> Some "Ouvrir"
+                | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Ouvrir"
+                | Switch (_, _, _, _) -> Some "Utiliser"
                 | Sensor (_, _, _, _, _) -> None
-                | Npc _ | NpcBranching _ -> Some "Talk"
-                | Shopkeep _ -> Some "Shop"
-                | Seal _ -> Some "Touch"
+                | Npc _ | NpcBranching _ -> Some "Parler"
+                | Shopkeep _ -> Some "Vendeur"
+                | Seal _ -> Some "Toucher"
                 | Flame _ -> None
                 | SavePoint -> None
                 | ChestSpawn -> None
@@ -116,12 +116,12 @@ module FieldDispatcher =
                     not
                         (Dialog.isExhausted (flip detokenize field) dialog &&
                          Option.isSome dialog.DialogPromptOpt)
-                then Some "Next"
+                then Some "Suivant"
                 else None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) field world =
             if isTouchingSavePoint avatar world then
-                Some "Save"
+                Some "Sauveg."
             else
                 match tryGetFacingProp avatar world with
                 | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData field
@@ -185,11 +185,11 @@ module FieldDispatcher =
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field =
                     match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
-                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchNameWithQuantity itemType + "!^Mais un truc s'approche !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchNameWithQuantity itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
-            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "C'est verrouille !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
 
         static let interactDoor cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
@@ -198,7 +198,7 @@ module FieldDispatcher =
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "C'est verrouille !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
         static let interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
@@ -209,7 +209,7 @@ module FieldDispatcher =
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState on)) field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ca ne veut pas bouger !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
         
         static let interactNpc branches requirements (field : Field) =
@@ -298,14 +298,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "Tu n'as pas assez d'argent..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | Unseal (fee, consequent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.add consequent) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "Tu n'as pas assez d'argent..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | AddItem itemType ->
                 (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -446,32 +446,36 @@ module FieldDispatcher =
             Content.association Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "T"
+                    Entity.UpImage == asset "Field" "TeamButtonUp"
+                    Entity.DownImage == asset "Field" "TeamButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTeamOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "I"
+                    Entity.UpImage == asset "Field" "InventoryButtonUp"
+                    Entity.DownImage == asset "Field" "InventoryButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 160.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "E"
+                    Entity.UpImage == asset "Field" "TechButtonUp"
+                    Entity.DownImage == asset "Field" "TechButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTechOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "P" // party
-                    Entity.EnabledLocal == false
+                    Entity.UpImage == asset "Field" "OptionButtonUp"
+                    Entity.DownImage == asset "Field" "OptionButtonDown"
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "O" // options - includes quit to main menu
-                    Entity.EnabledLocal == false
+                    Entity.UpImage == asset "Field" "HelpButtonUp"
+                    Entity.DownImage == asset "Field" "HelpButtonDown"
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "X"
+                    Entity.UpImage == asset "Field" "CloseButtonUp"
+                    Entity.DownImage == asset "Field" "CloseButtonDown"
                     Entity.ClickEvent ==> msg MenuClose]]
 
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
@@ -479,12 +483,14 @@ module FieldDispatcher =
                 (fun field _ -> (field.Team, field.Menu))
                 (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
                 (fun index teammateAndMenu _ ->
-                    let x = position.X + if index >= rows then 256.0f + 48.0f else 0.0f
-                    let y = position.Y - single (index % rows) * 72.0f
+                    let x = position.X + if index >= rows then 252.0f + 48.0f else 0.0f
+                    let y = position.Y - single (index % rows) * 80.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 256.0f 72.0f
+                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 252.0f 72.0f
                          Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
                          Entity.Text <== teammateAndMenu --> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
         static let items (position : Vector2) elevation columns field fieldMsg =
@@ -500,12 +506,12 @@ module FieldDispatcher =
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10 |> Map.map (fun _ (i, item) -> (i, (item, None)))
+                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
                                 inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |>
                                 Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                                pageItems shop.ShopPage 8 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 368.0f
@@ -520,6 +526,8 @@ module FieldDispatcher =
                                 itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
                             | _ -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         static let techs (position : Vector2) elevation field fieldMsg =
@@ -540,6 +548,8 @@ module FieldDispatcher =
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== techLens --> scstringm
                          Entity.EnabledLocal == false
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
         override this.Channel (_, field) =
@@ -1093,7 +1103,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Level " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                   | Some teammate -> "Niveau " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1102,7 +1112,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "W: " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                   | Some teammate -> "Arme : " + Option.mapOrDefault string "None" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1111,7 +1121,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "A: " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                   | Some teammate -> "Armure : " + Option.mapOrDefault string "None" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1120,7 +1130,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "1: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "1 : " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1138,9 +1148,9 @@ module FieldDispatcher =
                                        let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let def = Algorithms.shield Physical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let abs = Algorithms.shield Magical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                       "HP  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
-                                       "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
-                                       "\nPow " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
+                                       "PV  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
+                                       "\nPT  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
+                                       "\nPuiss " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
                                        "\nDef " + (string def).PadLeft 3 + "    Abs " + (string abs).PadLeft 3 +
                                        "\nExp " + (string teammate.ExpPoints).PadLeft 3 + " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                    | None -> ""
@@ -1157,7 +1167,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
+                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " Ors")]]
 
                  // tech team
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
@@ -1214,40 +1224,44 @@ module FieldDispatcher =
                        [items (v2 96.0f 350.0f) 1.0f 4 field ShopSelect
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 444.0f; Entity.ElevationLocal == 2.0f
-                            Entity.Text == "Buy"
+                            Entity.Text == "Acheter"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false
                             Entity.ClickEvent ==> msg ShopBuy]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 24.0f 444.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Buy what?"
+                            Entity.Text == "Qu'achetes tu?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 352.0f 444.0f; Entity.ElevationLocal == 2.0f
-                            Entity.Text == "Sell"
+                            Entity.Text == "Vendre"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                             Entity.ClickEvent ==> msg ShopSell]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 352.0f 444.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Sell what?"
+                            Entity.Text == "Que vends-tu ?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 678.0f 444.0f; Entity.ElevationLocal == 2.0f
-                            Entity.Text == "Leave"
+                            Entity.Text == "Quitter"
                             Entity.ClickEvent ==> msg ShopLeave]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 24.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                           [Entity.PositionLocal == v2 24.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
                             Entity.Text == "<"
+                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageUp]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 822.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                           [Entity.PositionLocal == v2 804.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
                             Entity.Text == ">"
+                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageDown]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 352.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
+                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " Ors")]]
 
                  // shop confirm
                  Content.entityOpt field (fun field _ -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->
@@ -1256,11 +1270,11 @@ module FieldDispatcher =
                         Entity.LabelImage == Assets.Gui.DialogThickImage]
                        [Content.button Gen.name
                            [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f
-                            Entity.Text == "Accept"
+                            Entity.Text == "Accepter"
                             Entity.ClickEvent ==> msg ShopConfirmAccept]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 498.0f 42.0f; Entity.ElevationLocal == 2.0f
-                            Entity.Text == "Decline"
+                            Entity.Text == "Refuser"
                             Entity.ClickEvent ==> msg ShopConfirmDecline]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 42.0f 180.0f; Entity.ElevationLocal == 2.0f

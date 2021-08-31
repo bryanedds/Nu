@@ -19,23 +19,28 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
           MenuUseLine2 = line2 }
 
     static member makeFromConsumableData selection (cd : ConsumableData) =
-        let prompt = "Use " + string cd.ConsumableType + " on whom?"
-        let effect = "(Effect: " + cd.Description + ")"
+        //let prompt = "Use " + string cd.ConsumableType + " on whom?"
+        let prompt = "Sur qui utiliser l'objet \"" + ConsumableType.frenchName cd.ConsumableType + "\" ?"
+        let effect = "(Effet: " + cd.Description + ")"
         MenuUse.make selection prompt effect
 
     static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = "Equip " + string wd.WeaponType + " to whom?"
-        let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
+        //let prompt = "Equip " + string wd.WeaponType + "  to whom"
+        let prompt = "Qui equiper de l'arme \"" + WeaponType.frenchName wd.WeaponType + "\" ?"
+        // let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
+        let stats = "(Puissance : " + string wd.PowerBase + " | Magie : " + string wd.MagicBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = "Equip " + string ad.ArmorType + " to whom?"
-        let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
+        //let prompt = "Equip " + string ad.ArmorType + " to whom?"
+        let prompt = "Qui equiper de l'armure \"" + string ad.ArmorType + "\" ?"
+        //let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
+        let stats = "(PV : " + string ad.HitPointsBase + " |PT : " + string ad.TechPointsBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Equip " + string ad.AccessoryType + " to whom?"
-        let stats = "(Shd: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
+        let prompt = "Qui doter de l'accessoire \"" + string ad.AccessoryType + "\" ?"
+        let stats = "(Bouclier : " + string ad.ShieldBase + " | Contre : " + string ad.CounterBase + ")"
         MenuUse.make selection prompt stats
 
     static member tryMakeFromSelection selection =
