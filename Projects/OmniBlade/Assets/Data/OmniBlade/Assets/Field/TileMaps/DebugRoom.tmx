@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="31">
+ <tileset firstgid="1" source="Colloseum.tsx"/>
+ <layer id="2" name="Floor" width="32" height="16">
+  <properties>
+   <property name="E" value="0"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJxjYKAPmMoEwQMFRu0fvPbzAMV56Yz5kNyiA2Tr0hnrDUL7G4G4CQ9uJsJcdDNw6cFm/0IgXoQHLybCfnQzcOnBZv9BID6EBx+msf3UwOh+wOXmwZT+fIBsXzIwupmk6PVDsh9WNpGC0c0jxwxKATXMAgAfOl7L
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="16">
+  <properties>
+   <property name="E" value="10"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJzd1VtqwkAUxvEZoxXdhQgF+xD3oFCsL91Dr3ije6jaPtRuorXtPnrRfbRit+F/yASHMXESMBZ64McMM0e/QwikIoSoaMe4wGUGa1P/f9PIM3OvcI0RPClECWUZ7Mf63FztHte9z1kdZzi35mjhDveYokp/DUcy2L/oc3O1e1z3Yd1iiIaV/4o3fKrZ6D9BWwb7L31urnaP6z6sJzxH5M8wx0LNSH8HXRnsF2KTq8e+D+sdHxH5S/yK7OsbPxH5+66s80+9v82/8bbPEZfvO+ZOUj3etz4Gcj1H0vxd1AO5EzzK+J7//v6lyVcOUNxDbg6e2PwGKYfIa4Uta0HPKrVcwt+ptRqTnVbLyLefZRorqjBTXw==
+  </data>
+ </layer>
+ <objectgroup id="4" name="Props">
+  <properties>
+   <property name="E" value="10"/>
+  </properties>
+  <object id="23" gid="488" x="720" y="432" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc RavelNpc Downward [Dialog &quot;Welcome to Debug Room!^Aye aye aye!&quot;]]"/>
+   </properties>
+  </object>
+  <object id="25" gid="488" x="720" y="840" width="96" height="48">
+   <properties>
+    <property name="I" value="[Portal AirPortal South Upward DebugRoom2 North]"/>
+   </properties>
+  </object>
+  <object id="27" gid="488" x="1248" y="240" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor]"/>
+   </properties>
+  </object>
+  <object id="28" gid="813" x="480" y="480" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 46733ddc-a989-4d6e-a1b7-518af5428739]"/>
+   </properties>
+  </object>
+  <object id="29" gid="813" x="336" y="480" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 7ced2215-353f-4653-86f4-05200b99f641]"/>
+   </properties>
+  </object>
+  <object id="30" gid="488" x="1248" y="168" width="96" height="48">
+   <properties>
+    <property name="I" value="[Portal AirPortal North Downward TombGround [IX 0]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

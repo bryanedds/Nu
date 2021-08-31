@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt0rsKACAIQFEhP96hxy9HkNRcg0R3uIODHAQtidhhZXa6fxt+jF9VpOnyff7lfvxYP4/f2/7P51/ux8fHx8fHj/SJ6O06V9ctQw==
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzrY2Zg6CMB57Iy4AQZrKSZRQ4eDPZ/BtJfmBH2wvj0sl+DhYFBkwVhP4w/UsJ/pNs/0OlPDZjW1JHSH4w/kOGfBRRPoYP9qUA78rC4gR5+xxcG9LQfPQzoFfa4woCefsdmfwGQnU5HN2QD7SpEsn8PE33dAPL7ISaE/e+ZIG6gVzyA7P+KZL8SM8QN9LAfFvYazKj5D+QGepV/yGFP7zIAPewHwn70sKe3/dgAvcpAXPbTK++N1n+j9d+o/cPHfgDgkvvV
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <properties>
+   <property name="I" value="[Sensor StepPlateSensor [BodyBox [[0.5 0.5]  [0.5 0.5]] [RemoveAdvent CastleUnsealed]]"/>
+  </properties>
+ </objectgroup>
+</map>
