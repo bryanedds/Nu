@@ -195,6 +195,67 @@ module Battle =
         let character = updater character
         { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
 
+    let updateCharacterActionTime updater characterIndex battle =
+        updateCharacter (Character.updateActionTime updater) characterIndex battle
+
+    let updateCharacterAutoBattleOpt updater characterIndex battle =
+        updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
+
+    let updateCharacterInputState updater characterIndex battle =
+        updateCharacter (Character.updateInputState updater) characterIndex battle
+
+    let updateCharacterBottom updater characterIndex battle =
+        updateCharacter (Character.updateBottom updater) characterIndex battle
+
+    let updateCharacterStatuses updater characterIndex battle =
+        updateCharacter (Character.updateStatuses updater) characterIndex battle
+
+    let animateCharacter time animation characterIndex battle =
+        updateCharacter (Character.animate time animation) characterIndex battle
+
+    let animationCharacterPoise time characterIndex battle =
+        updateCharacter (fun character ->
+            let poiseType = Character.getPoiseType character
+            let character = Character.animate time (PoiseAnimation poiseType) character
+            character)
+            characterIndex
+            battle
+
+    let animateCharacterWound time characterIndex battle =
+        updateCharacter (fun character ->
+            let character =
+                if character.IsAlly
+                then Character.updateInputState (constant NoInput) character
+                else character
+            let character = Character.animate time WoundAnimation character
+            character)
+            characterIndex
+            battle
+
+    let animateCharactersReady time battle =
+        updateCharactersHealthy (Character.animate time ReadyAnimation) battle
+
+    let animateCharactersCelebrate time outcome battle =
+        if outcome
+        then updateAlliesIf (fun _ ally -> ally.IsHealthy) (Character.animate time CelebrateAnimation) battle
+        else updateEnemiesIf (fun _ enemy -> enemy.IsHealthy) (Character.animate time CelebrateAnimation) battle
+
+    let animatedCharactersPoised time battle =
+        updateCharactersHealthy (fun character ->
+            let poiseType = Character.getPoiseType character
+            let character = Character.animate time (PoiseAnimation poiseType) character
+            character)
+            battle
+
+    let getCharacterAnimationFinished time characterIndex battle =
+        getCharacterBy (Character.getAnimationFinished time) characterIndex battle
+
+    let defendCharacter characterIndex battle =
+        updateCharacter Character.defend characterIndex battle
+
+    let undefendCharacter characterIndex battle =
+        updateCharacter Character.undefend characterIndex battle
+
     let updateBattleState updater battle =
         { battle with BattleState_ = updater battle.BattleState_ }
 
