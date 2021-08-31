@@ -494,7 +494,8 @@ module FieldDispatcher =
 
         static let items (position : Vector2) elevation columns field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ -> (field.Menu, field.ShopOpt, field.Inventory))
+                (fun (field : Field) _ ->
+                    (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
                     let sorter (item, _) = match item with Consumable _ -> 0 | Equipment _ -> 1 | KeyItem _ -> 2 | Stash _ -> 3
                     match menu.MenuState with
@@ -508,9 +509,13 @@ module FieldDispatcher =
                                 | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
-                                inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |>
+                                inventory.Items |>
+                                Map.toSeq |>
+                                Seq.sortBy sorter |>
+                                Seq.index |>
                                 Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 8 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                                pageItems shop.ShopPage 8 |>
+                                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 368.0f
@@ -519,12 +524,14 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) ->
+                            let itemName = ItemType.getName itemType
                             match countOpt with
-                            | Some count when count > 1 ->
-                                let itemName = ItemType.getName itemType
-                                itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
-                            | _ -> ItemType.getName itemType
-                         Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                            | Some count when count > 1 -> itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
+                            | _ -> itemName
+                         Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) ->
+                            match itemType with
+                            | Consumable _ | Equipment _ -> true
+                            | KeyItem _ | Stash _ -> false
                          Entity.UpImage == Assets.Gui.ButtonBigUpImage
                          Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])

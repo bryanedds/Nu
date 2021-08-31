@@ -231,9 +231,9 @@ type ItemType =
 
     static member getName item =
         match item with
-        | Consumable ty -> string ty
-        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> string ty | AccessoryType ty -> string ty
-        | KeyItem ty -> string ty
+        | Consumable ty -> scstringm ty
+        | Equipment ty -> match ty with WeaponType ty -> scstringm ty | ArmorType ty -> scstringm ty | AccessoryType ty -> scstringm ty
+        | KeyItem ty -> scstringm ty
         | Stash gold -> string gold + "G"
 
 type AimType =
