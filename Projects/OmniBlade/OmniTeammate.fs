@@ -40,7 +40,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
         teammate
 
-    static member equipAccessory1Opt accessoryTypeOpt (teammate : Teammate) =
+    static member equipAccessoryOpt accessoryTypeOpt (teammate : Teammate) =
         { teammate with Accessories = Option.toList accessoryTypeOpt }
 
     static member canUseItem itemType teammate =
@@ -91,7 +91,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                 match equipmentType with
                 | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
                 | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
-                | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessory1Opt (Some accessoryType) teammate)
+                | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessoryOpt (Some accessoryType) teammate)
             | KeyItem _ -> (false, None, teammate)
             | Stash _ -> (false, None, teammate)
         else (false, None, teammate)

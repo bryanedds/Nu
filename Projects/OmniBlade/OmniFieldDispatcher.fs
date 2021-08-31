@@ -1131,7 +1131,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "W: " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                   | Some teammate -> "Wpn: " + Option.mapOrDefault string "None" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1140,7 +1140,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "A: " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                   | Some teammate -> "Amr: " + Option.mapOrDefault string "None" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1149,7 +1149,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "1: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "Acc: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
