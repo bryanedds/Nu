@@ -551,8 +551,9 @@ module Character =
         
         // attempt to randomly choose a tech type
         let techOpt =
-            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
-            then CharacterState.tryGetTechRandom source.CharacterState_
+            if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
+                not (Map.containsKey Silence source.Statuses) then
+                CharacterState.tryGetTechRandom source.CharacterState_
             else None
 
         // attempt to randomly choose a target
