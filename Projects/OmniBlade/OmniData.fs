@@ -565,7 +565,7 @@ type EnemyType =
     | FacelessSoldier
     | Hawk
     | HeavyArmoros
-    | Apparition
+    | PitViper
     | Cloak
     | BloodArmoros
     | AraneaImplicitum

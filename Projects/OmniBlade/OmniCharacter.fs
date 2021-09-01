@@ -501,10 +501,13 @@ module Character =
             else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some _ when cancel ->
-                match Gen.randomKeyOpt alliesHealthy with
-                | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
-                | None -> None
+            | Some autoBattle when cancel ->
+                match autoBattle.AutoTarget with
+                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | EnemyIndex _ ->
+                    match Gen.randomKeyOpt alliesHealthy with
+                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                    | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
