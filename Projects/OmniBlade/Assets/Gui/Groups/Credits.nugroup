@@ -22,7 +22,7 @@
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code: Bryan Edds & Dean J. Lee"]]
     [Position [-432 36]]
     [Size [864 90]]
-    [Text "Code : Bryan Edds & Dean J. Lee"]]]
+    [Text "Code : Bryan Edds et Dean J. Lee"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
