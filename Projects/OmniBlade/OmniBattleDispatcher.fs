@@ -1196,7 +1196,7 @@ module BattleDispatcher =
                                 Map.ofSeqBy (fun tech ->
                                     let techUsable =
                                         match Map.tryFind tech Data.Value.Techs with
-                                        | Some techData -> techData.TechCost <= ally.TechPoints
+                                        | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
                                         | None -> false
                                     (scstringm tech, (getTag tech, techUsable)))
                             { Items = techs; ItemCancelOpt = Some "Cancel" }
