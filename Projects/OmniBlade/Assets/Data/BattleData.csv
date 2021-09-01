@@ -1,5 +1,5 @@
 Type,BattleAllyPositions,BattleEnemies,BattleTileMap,BattleTileIndexOffset,BattleSongOpt
-DebugBattle,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[MadTrixter DebugGoblin DebugGoblin],[Battle DebugBattle],0,[Some [Battle Battle]]
+DebugBattle,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[PitViper PitViper PitViper PitViper PitViper],[Battle DebugBattle],0,[Some [Battle Battle]]
 CastleBattle,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[DarkBat DarkBat],[Castle CastleBattle],0,[Some [Castle CastleBattle]]
 CastleBattle2,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[BlueGoblin DarkBat],[Castle CastleBattle],0,[Some [Castle CastleBattle]]
 CastleBattle3,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[BlueGoblin DarkBat DarkBat],[Castle CastleBattle],0,[Some [Castle CastleBattle]]
