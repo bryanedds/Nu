@@ -466,7 +466,7 @@ module Battle =
     let debug =
         match Map.tryFind DebugBattle Data.Value.Battles with
         | Some battle ->
-            let level = 6
+            let level = 50
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
