@@ -347,12 +347,23 @@ module BattleDispatcher =
                         if Map.containsKey (Time false) character.Statuses then actionTimeDelta * 0.667f
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * 1.5f
                         else actionTimeDelta
+                    let poisoned =
+                        let actionTime = character.ActionTime + actionTimeDelta
+                        Map.containsKey Poison character.Statuses &&
+                        character.ActionTime % 500.0f < 250.0f &&
+                        actionTime % 500.0f >= 250.0f
                     let character =
                         if character.IsHealthy
                         then Character.updateActionTime ((+) actionTimeDelta) character
                         else character
                     let character =
-                        if Character.isReadyForAutoBattle character then
+                        if character.IsHealthy && not character.IsWounding && poisoned then
+                            let damage = single character.HitPointsMax * Constants.Battle.PoisonDrainRate |> max 1.0f |> int
+                            let alliesHealthy = Battle.getAlliesHealthy battle
+                            Character.updateHitPoints (fun hp -> (false, max 1 (hp - damage))) false alliesHealthy character
+                        else character
+                    let character =
+                        if character.IsHealthy && Character.isReadyForAutoBattle character then
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             let alliesWounded = Battle.getAlliesWounded battle
                             let enemiesHealthy = Battle.getEnemiesHealthy battle
@@ -910,17 +921,15 @@ module BattleDispatcher =
                 just battle
 
             | ResetCharacter characterIndex ->
-                let character = Battle.getCharacter characterIndex battle
                 let battle = Battle.updateCharacterActionTime (constant 0.0f) characterIndex battle
                 let battle =
-                    if character.IsAlly
+                    if characterIndex.IsAlly
                     then Battle.updateCharacterInputState (constant NoInput) characterIndex battle
                     else Battle.updateCharacterAutoBattleOpt (constant None) characterIndex battle
                 just battle
 
             | DestroyCharacter characterIndex ->
-                let character = Battle.getCharacter characterIndex battle
-                let battle = if character.IsEnemy then Battle.removeCharacter characterIndex battle else battle
+                let battle = if characterIndex.IsEnemy then Battle.removeCharacter characterIndex battle else battle
                 just battle
 
             | Nop -> just battle

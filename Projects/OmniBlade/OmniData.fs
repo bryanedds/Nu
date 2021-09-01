@@ -14,6 +14,14 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
+    member this.IsAlly =
+        match this with
+        | AllyIndex _ -> true
+        | EnemyIndex _ -> false
+
+    member this.IsEnemy =
+        not this.IsAlly
+
     static member isFriendly index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true

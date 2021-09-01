@@ -78,7 +78,10 @@ module CharacterDispatcher =
             | Some afflictionY ->
                 let time = World.getUpdateTime world
                 let afflictionX = time / 8L % 8L |> int
-                let inset = v4Bounds (v2 (single afflictionX * 32.0f) (single afflictionY * 32.0f)) (v2 32.0f 32.0f) // TODO: use constant for affliction dims.
+                let inset =
+                    v4Bounds
+                        (v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y))
+                        Constants.Battle.AfflictionCelSize
                 Some inset
             | None -> None
 
@@ -107,7 +110,10 @@ module CharacterDispatcher =
                     match getAfflictionInsetOpt entity world with
                     | Some _ as insetOpt ->
                         let image = Assets.Battle.AfflictionsAnimationSheet
-                        let transform = { transform with Position = transform.Position + transform.Size - v2Dup (32.0f * 3.0f); Size = v2 32.0f 32.0f * 3.0f } // TODO: use constant for affliction dims.
+                        let transform =
+                            { transform with
+                                Position = transform.Position + transform.Size - Constants.Battle.AfflictionSize
+                                Size = Constants.Battle.AfflictionSize }
                         Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                 { Transform = transform

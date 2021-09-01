@@ -485,7 +485,7 @@ module Character =
         let actionTime = updater character.ActionTime_
         let actionTimeDelta = actionTime - character.ActionTime
         { character with
-            ActionTime_ = updater character.ActionTime_
+            ActionTime_ = actionTime
             CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
 
     let updateStatuses updater character =
