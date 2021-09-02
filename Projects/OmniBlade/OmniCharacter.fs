@@ -481,12 +481,11 @@ module Character =
             Some actionType
         | _ -> None
 
+    let burndownStatuses burndownTime character =
+        { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
+
     let updateActionTime updater character =
-        let actionTime = updater character.ActionTime_
-        let actionTimeDelta = actionTime - character.ActionTime
-        { character with
-            ActionTime_ = actionTime
-            CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
+        { character with ActionTime_ = updater character.ActionTime_ }
 
     let updateStatuses updater character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
