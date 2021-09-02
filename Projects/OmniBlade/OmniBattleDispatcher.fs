@@ -302,13 +302,26 @@ module BattleDispatcher =
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 updateWound targetOpt time battle
 
-        and private updateNextCommand time nextCommand futureCommands (battle : Battle) =
+        and private updateNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
-            let battle = Battle.updateCurrentCommandOpt (constant (Some command)) battle
+            let sourceIndex = command.ActionCommand.Source
+            let source = Battle.getCharacter sourceIndex battle
+            let battle =
+                match command.ActionCommand.Action with
+                | Attack | Consume _ | Defend ->
+                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses)
+                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                    else battle
+                | Tech _ ->
+                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses)
+                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                    else battle
+                | Wound ->
+                    Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle
             update time battle
 
-        and private updateNoNextCommand (_ : int64) (battle : Battle) =
+        and private updateNoNextCommand (_ : int64) battle =
             let (allySignalsRev, battle) =
                 Map.fold (fun (signals, battle) allyIndex (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
