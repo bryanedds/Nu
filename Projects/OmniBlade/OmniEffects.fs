@@ -325,14 +325,66 @@ module Effects =
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
     
     let makeEmpowerEffect () =
-        let sprite = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|Size (v2 48.0f 111.0f)|], Nil)
+        let size = Size (v2 48.0f 111.0f)
+        let orbit0 radiusX radiusY =
+            Aspects
+                [|Positions
+                   (Sum, SinScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 radiusX 0.0f; TweenLength = 0L}|])
+                  Positions
+                   (Sum, CosScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 0.0f radiusY; TweenLength = 0L}|])|]
+        let orbit1 radiusX radiusY =
+            Aspects
+                [|Positions
+                   (Sum, SinScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 -radiusX 0.0f; TweenLength = 0L}|])
+                  Positions
+                   (Sum, CosScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 0.0f -radiusY; TweenLength = 0L}|])|]
+        let orbit2 radiusX radiusY =
+            Aspects
+                [|Positions
+                   (Sum, CosScaled 1.0f, Loop,
+                    [|{TweenValue = v2 radiusX 0.0f; TweenLength = 60L}
+                      {TweenValue = v2 0.0f 0.0f; TweenLength = 0L}|])
+                  Positions
+                   (Sum, SinScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 0.0f radiusY; TweenLength = 0L}|])
+                  Positions
+                   (Sum, Constant, Loop,
+                    [|{ TweenValue = v2 -radiusX 0.0f; TweenLength = 40L }
+                      { TweenValue = v2 -radiusX 0.0f; TweenLength = 0L }|])|]
+        let orbit3 radiusX radiusY =
+            Aspects
+                [|Positions
+                   (Sum, CosScaled 1.0f, Loop,
+                    [|{TweenValue = v2 -radiusX 0.0f; TweenLength = 60L}
+                      {TweenValue = v2 0.0f 0.0f; TweenLength = 0L}|])
+                  Positions
+                   (Sum, SinScaled 1.0f, Loop,
+                    [|{TweenValue = v2Zero; TweenLength = 60L}
+                      {TweenValue = v2 0.0f -radiusY; TweenLength = 0L}|])
+                  Positions
+                   (Sum, Constant, Loop,
+                    [|{ TweenValue = v2 radiusX 0.0f; TweenLength = 40L }
+                      { TweenValue = v2 radiusX 0.0f; TweenLength = 0L }|])|]
+        let sprite0 = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|orbit0 90.0f 30.0f; size|], Nil)
+        let sprite1 = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|orbit1 90.0f 30.0f; size|], Nil)
+        let sprite2 = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|orbit2 90.0f 30.0f; size|], Nil)
+        let sprite3 = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|orbit3 90.0f 30.0f; size|], Nil)
         { EffectName = "Empower"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             Contents
                 (Shift 0.0f,
-                [|sprite|])}
+                [|sprite0; sprite1; sprite2; sprite3|])}
     
     let makeProtectEffect () =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
