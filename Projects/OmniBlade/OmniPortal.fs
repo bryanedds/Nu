@@ -4,16 +4,17 @@
 namespace OmniBlade
 open System
 open System.Numerics
+open FSharpx.Collections
 open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Chest =
+module Portal =
 
-    type [<ReferenceEquality; NoComparison>] Chest =
+    type [<ReferenceEquality; NoComparison>] Portal =
         private
             { Bounds_ : Vector4
-              Opened_ : bool }
+              Active_ : bool }
 
         (* Bounds Properties *)
         member this.Bounds = this.Bounds_
@@ -23,10 +24,10 @@ module Chest =
         member this.Size = this.Bounds_.Size
 
         (* Local Properties *)
-        member this.Opened = this.Opened_
+        member this.Active = this.Active_
 
-        static member make bounds opened =
+        static member make bounds active =
             { Bounds_ = bounds
-              Opened_ = opened }
+              Active_ = active }
 
-type Chest = Chest.Chest
+type Portal = Portal.Portal

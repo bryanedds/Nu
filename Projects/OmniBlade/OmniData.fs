@@ -14,6 +14,14 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
+    member this.IsAlly =
+        match this with
+        | AllyIndex _ -> true
+        | EnemyIndex _ -> false
+
+    member this.IsEnemy =
+        not this.IsAlly
+
     static member isFriendly index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true
@@ -75,43 +83,68 @@ type EffectType =
     | Magical
 
 type AffinityType =
-    | Fire // beats ice
-    | Ice // beats fire, insect
-    | Lightning // beats water, metal
-    | Water // beats lightning
+    | Fire
+    | Ice
+    | Lightning
+    | Water
     //| Wind - maybe in a sequal...
-    | Dark // beats light
-    | Light // beats dark
-    | Earth // beats lightning
-    | Metal // beats nothing
-    | Insect // beats nothing
+    | Dark
+    | Light
+    | Earth
+    | Metal
+    | Insect
+
+    static member getScalar source target =
+        match (source, target) with
+        | (Fire, Fire) -> Constants.Battle.AffinityResistanceScalar
+        | (Ice, Ice) -> Constants.Battle.AffinityResistanceScalar
+        | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
+        | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
+        | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
+        | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
+        | (Earth, Earth) -> Constants.Battle.AffinityResistanceScalar
+        | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Earth, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
-    | Blind
     | Silence
     | Sleep
     | Confuse
+    // Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
-    | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    | Provoke of CharacterIndex
+    //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequal
+    //| Provoke of CharacterIndex - maybe in the sequal
+
+    static member randomize this =
+        match this with
+        | Poison -> Gen.random1 2 = 0
+        | Silence -> Gen.random1 3 = 0
+        | Sleep -> Gen.random1 4 = 0
+        | Confuse -> Gen.random1 3 = 0
+        | Time _ | Power (_, _) | Magic (_, _) | Shield (_, _) -> true
 
     static member enumerate this =
         match this with
         | Poison -> 0
-        | Blind -> 1
-        | Silence -> 2
-        | Sleep -> 3
-        | Confuse -> 4
-        | Time _ -> 5
-        | Counter (_, _) -> 6
-        | Power (_, _) -> 7
-        | Magic (_, _) -> 8
-        | Shield (_, _) -> 9
-        | Provoke i -> 10 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+        | Silence -> 1
+        | Sleep -> 2
+        | Confuse -> 3
+        | Time _ -> 4
+        | Power (_, _) -> 5
+        | Magic (_, _) -> 6
+        | Shield (_, _) -> 7
 
     static member compare this that =
         compare
@@ -171,7 +204,8 @@ type ArmorType =
     | StoneHide
 
 type AccessoryType =
-    | LeatherBrace
+    | SilverRing
+    | IronBrace
 
 type WeaponSubtype =
     | Melee
@@ -212,9 +246,9 @@ type ItemType =
 
     static member getName item =
         match item with
-        | Consumable ty -> string ty
-        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> string ty | AccessoryType ty -> string ty
-        | KeyItem ty -> string ty
+        | Consumable ty -> scstringm ty
+        | Equipment ty -> match ty with WeaponType ty -> scstringm ty | ArmorType ty -> scstringm ty | AccessoryType ty -> scstringm ty
+        | KeyItem ty -> scstringm ty
         | Stash gold -> string gold + "G"
 
 type AimType =
@@ -249,9 +283,9 @@ type TechType =
     | Slash
     | DarkCritical
     | Cyclone
-    | SneakCut
+    | PoisonCut
     | PowerCut
-    | ProvokeCut
+    | SilenceCut
     | DoubleCut
     | Fire
     | Flame
@@ -546,7 +580,7 @@ type EnemyType =
     | FacelessSoldier
     | Hawk
     | HeavyArmoros
-    | Apparition
+    | PitViper
     | Cloak
     | BloodArmoros
     | AraneaImplicitum
@@ -679,6 +713,8 @@ type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
+      Immunities : StatusType Set
+      AffinityOpt : AffinityType option
       Cost : int
       Description : string }
 
@@ -699,9 +735,7 @@ type TechData =
       TechCost : int
       EffectType : EffectType
       Scalar : single
-      SuccessRate : single
       Curative : bool
-      Sneakening : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
       AffinityOpt : AffinityType option
