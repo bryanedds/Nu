@@ -345,13 +345,11 @@ module Battle =
             battle
 
     let confirmCharacterInput sourceIndex targetIndex battle =
-        match tryGetCharacter sourceIndex battle with
-        | Some source ->
-            match Character.getActionTypeOpt source with
-            | Some actionType ->
-                let command = ActionCommand.make actionType sourceIndex (Some targetIndex)
-                appendActionCommand command battle
-            | None -> battle
+        let source = getCharacter sourceIndex battle
+        match Character.getActionTypeOpt source with
+        | Some actionType ->
+            let command = ActionCommand.make actionType sourceIndex (Some targetIndex)
+            appendActionCommand command battle
         | None -> battle
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
