@@ -481,12 +481,11 @@ module Character =
             Some actionType
         | _ -> None
 
+    let burndownStatuses burndownTime character =
+        { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
+
     let updateActionTime updater character =
-        let actionTime = updater character.ActionTime_
-        let actionTimeDelta = actionTime - character.ActionTime
-        { character with
-            ActionTime_ = updater character.ActionTime_
-            CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
+        { character with ActionTime_ = updater character.ActionTime_ }
 
     let updateStatuses updater character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
@@ -501,10 +500,13 @@ module Character =
             else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some _ when cancel ->
-                match Gen.randomKeyOpt alliesHealthy with
-                | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
-                | None -> None
+            | Some autoBattle when cancel ->
+                match autoBattle.AutoTarget with
+                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | EnemyIndex _ ->
+                    match Gen.randomKeyOpt alliesHealthy with
+                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                    | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
@@ -548,8 +550,9 @@ module Character =
         
         // attempt to randomly choose a tech type
         let techOpt =
-            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
-            then CharacterState.tryGetTechRandom source.CharacterState_
+            if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
+                not (Map.containsKey Silence source.Statuses) then
+                CharacterState.tryGetTechRandom source.CharacterState_
             else None
 
         // attempt to randomly choose a target

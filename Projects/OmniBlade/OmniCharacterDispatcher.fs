@@ -46,18 +46,44 @@ module CharacterDispatcher =
             let statuses = character.Statuses
             if character.IsWounded then Color.Zero
             elif Character.isAutoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
-            elif Map.containsKey Poison statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
-            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
-            elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
+            elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
             elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
             elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
-            elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
-            elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark red
+            elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
+            elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
+            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
+            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
+            elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
+            elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
             elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
             elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
-            elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
+            elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
             else Color.Zero
+
+        static let getAfflictionInsetOpt (entity : Entity) world =
+            let character = entity.GetCharacter world
+            let statuses = character.Statuses
+            let celYOpt =
+                if character.IsWounded then None
+                elif Map.containsKey Poison statuses then Some 0
+                elif Map.containsKey Silence statuses then Some 1
+                elif Map.containsKey Sleep statuses then Some 2
+                elif Map.containsKey Confuse statuses then Some 3
+                elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Some 4
+                elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Some 5
+                elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Some 6
+                elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Some 7
+                else None
+            match celYOpt with
+            | Some afflictionY ->
+                let time = World.getUpdateTime world
+                let afflictionX = time / 8L % 8L |> int
+                let inset =
+                    v4Bounds
+                        (v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y))
+                        Constants.Battle.AfflictionCelSize
+                Some inset
+            | None -> None
 
         static member Properties =
             [define Entity.Omnipresent true]
@@ -68,15 +94,37 @@ module CharacterDispatcher =
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
-                    SpriteDescriptor
-                        { Transform = transform
-                          Absolute = entity.GetAbsolute world
-                          Offset = Vector2.Zero
-                          InsetOpt = Some (getSpriteInset entity world)
-                          Image = character.AnimationSheet
-                          Color = getSpriteColor entity world
-                          Blend = Transparent
-                          Glow = getSpriteGlow entity world
-                          Flip = FlipNone })
+                let characterView =
+                    Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
+                        SpriteDescriptor
+                            { Transform = transform
+                              Absolute = entity.GetAbsolute world
+                              Offset = Vector2.Zero
+                              InsetOpt = Some (getSpriteInset entity world)
+                              Image = character.AnimationSheet
+                              Color = getSpriteColor entity world
+                              Blend = Transparent
+                              Glow = getSpriteGlow entity world
+                              Flip = FlipNone })
+                let afflictionView =
+                    match getAfflictionInsetOpt entity world with
+                    | Some _ as insetOpt ->
+                        let image = Assets.Battle.AfflictionsAnimationSheet
+                        let transform =
+                            { transform with
+                                Position = transform.Position + transform.Size - Constants.Battle.AfflictionSize
+                                Size = Constants.Battle.AfflictionSize }
+                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Absolute = entity.GetAbsolute world
+                                  Offset = Vector2.Zero
+                                  InsetOpt = insetOpt
+                                  Image = image
+                                  Color = colWhite
+                                  Blend = Transparent
+                                  Glow = colZero
+                                  Flip = FlipNone })
+                    | None -> View.empty
+                Views [|characterView; afflictionView|]
             else View.empty

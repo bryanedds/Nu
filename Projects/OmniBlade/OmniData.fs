@@ -14,6 +14,14 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
+    member this.IsAlly =
+        match this with
+        | AllyIndex _ -> true
+        | EnemyIndex _ -> false
+
+    member this.IsEnemy =
+        not this.IsAlly
+
     static member isFriendly index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true
@@ -113,11 +121,19 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Confuse
     // Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
-    | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    //| Provoke of CharacterIndex - may in the sequal
+    //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequal
+    //| Provoke of CharacterIndex - maybe in the sequal
+
+    static member randomize this =
+        match this with
+        | Poison -> Gen.random1 2 = 0
+        | Silence -> Gen.random1 3 = 0
+        | Sleep -> Gen.random1 4 = 0
+        | Confuse -> Gen.random1 3 = 0
+        | Time _ | Power (_, _) | Magic (_, _) | Shield (_, _) -> true
 
     static member enumerate this =
         match this with
@@ -126,10 +142,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Sleep -> 2
         | Confuse -> 3
         | Time _ -> 4
-        | Counter (_, _) -> 5
-        | Power (_, _) -> 6
-        | Magic (_, _) -> 7
-        | Shield (_, _) -> 8
+        | Power (_, _) -> 5
+        | Magic (_, _) -> 6
+        | Shield (_, _) -> 7
 
     static member compare this that =
         compare
@@ -609,7 +624,7 @@ type EnemyType =
     | FacelessSoldier
     | Hawk
     | HeavyArmoros
-    | Apparition
+    | PitViper
     | Cloak
     | BloodArmoros
     | AraneaImplicitum
