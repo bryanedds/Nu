@@ -157,6 +157,7 @@ module Assets =
         let HolyCastAnimationSheet = asset<Image> PackageName "HolyCast"
         let PurifyAnimationSheet = asset<Image> PackageName "Purify"
         let SparkleAnimationSheet = asset<Image> PackageName "Sparkle"
+        let StrengthSymbolImage = asset<Image> PackageName "StrengthSymbol"
         let ProtectSphereImage = asset<Image> PackageName "ProtectSphere"
         let ElectronBlueImage = asset<Image> PackageName "ElectronBlue"
         let NonLocationBlueImage = asset<Image> PackageName "NonLocationBlue"

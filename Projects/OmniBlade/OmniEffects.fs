@@ -325,13 +325,14 @@ module Effects =
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
     
     let makeEmpowerEffect () =
+        let sprite = StaticSprite (Resource (AssetTag.toPair Assets.Battle.StrengthSymbolImage), [|Size (v2 48.0f 111.0f)|], Nil)
         { EffectName = "Empower"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             Contents
                 (Shift 0.0f,
-                [||])}
+                [|sprite|])}
     
     let makeProtectEffect () =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
