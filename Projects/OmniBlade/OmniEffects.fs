@@ -324,6 +324,15 @@ module Effects =
           Definitions = Map.empty
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
     
+    let makeEmpowerEffect () =
+        { EffectName = "Empower"
+          LifeTimeOpt = Some 80L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                [||])}
+    
     let makeProtectEffect () =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
         let blink = Enableds (Equal, Loop, [|{ LogicValue = true; LogicLength = 1L };{ LogicValue = false; LogicLength = 2L }|])
