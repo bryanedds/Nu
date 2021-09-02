@@ -177,11 +177,23 @@ module Battle =
     let getCharacterBy by characterIndex battle =
         tryGetCharacter characterIndex battle |> Option.get |> by
 
-    let getCharacterHealthy characterIndex battle =
+    let isCharacterHealthy characterIndex battle =
         (getCharacter characterIndex battle).IsHealthy
 
-    let getCharacterWounded characterIndex battle =
+    let isCharacterWounded characterIndex battle =
         (getCharacter characterIndex battle).IsWounded
+
+    let getCharacterBoundsOriginal characterIndex battle =
+        (getCharacter characterIndex battle).BoundsOriginal
+
+    let getCharacterBounds characterIndex battle =
+        (getCharacter characterIndex battle).Bounds
+
+    let getCharacterAnimationFinished time characterIndex battle =
+        getCharacterBy (Character.getAnimationFinished time) characterIndex battle
+
+    let getCharacterArchetypeType characterIndex battle =
+        (getCharacter characterIndex battle).ArchetypeType
 
     let tryUpdateCharacter updater characterIndex battle =
         match tryGetCharacter characterIndex battle with
@@ -209,6 +221,9 @@ module Battle =
 
     let updateCharacterStatuses updater characterIndex battle =
         updateCharacter (Character.updateStatuses updater) characterIndex battle
+
+    let burndownCharacterStatus burndownTime characterIndex battle =
+        updateCharacter (Character.burndownStatuses burndownTime) characterIndex battle
 
     let animateCharacter time animation characterIndex battle =
         updateCharacter (Character.animate time animation) characterIndex battle
@@ -246,9 +261,6 @@ module Battle =
             let character = Character.animate time (PoiseAnimation poiseType) character
             character)
             battle
-
-    let getCharacterAnimationFinished time characterIndex battle =
-        getCharacterBy (Character.getAnimationFinished time) characterIndex battle
 
     let defendCharacter characterIndex battle =
         updateCharacter Character.defend characterIndex battle

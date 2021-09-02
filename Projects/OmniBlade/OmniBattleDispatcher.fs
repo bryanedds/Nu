@@ -353,11 +353,15 @@ module BattleDispatcher =
                         character.ActionTime % 500.0f < 250.0f &&
                         actionTime % 500.0f >= 250.0f
                     let character =
-                        if character.IsHealthy
+                        if character.IsHealthy && not (Map.containsKey Sleep character.Statuses)
                         then Character.updateActionTime ((+) actionTimeDelta) character
                         else character
                     let character =
-                        if character.IsHealthy && not character.IsWounding && poisoned then
+                        if character.IsHealthy
+                        then Character.burndownStatuses actionTimeDelta character
+                        else character
+                    let character =
+                        if character.IsHealthy && poisoned then
                             let damage = single character.HitPointsMax * Constants.Battle.PoisonDrainRate |> max 1.0f |> int
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             Character.updateHitPoints (fun hp -> (false, max 1 (hp - damage))) false alliesHealthy character
@@ -613,7 +617,7 @@ module BattleDispatcher =
                 let damage = Battle.evalAttack Physical sourceIndex targetIndex battle
                 let battle = Battle.updateHitPoints targetIndex false false -damage battle
                 let battle = Battle.animateCharacter time DamageAnimation targetIndex battle
-                let sigs = if Battle.getCharacterWounded targetIndex battle then [msg (ResetCharacter targetIndex)] else []
+                let sigs = if Battle.isCharacterWounded targetIndex battle then [msg (ResetCharacter targetIndex)] else []
                 withSigs (cmd (DisplayHitPointsChange (targetIndex, -damage)) :: sigs) battle
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
@@ -644,18 +648,18 @@ module BattleDispatcher =
                 | (false, _) -> just battle
 
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
-                let source = Battle.getCharacter sourceIndex battle
-                let target = Battle.getCharacter targetIndex battle
+                let sourceBounds = Battle.getCharacterBounds sourceIndex battle
+                let targetBounds = Battle.getCharacterBounds targetIndex battle
                 let effectOpt =
                     match techType with
                     | Critical | DarkCritical | PowerCut | PoisonCut | DoubleCut | SilenceCut ->
-                        let hopDirection = Direction.ofVector2 (target.Bottom - source.Bottom)
-                        let hopStop = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
-                        Left (DisplayHop { HopStart = source.Bottom; HopStop = hopStop })
+                        let hopDirection = Direction.ofVector2 (targetBounds.Bottom - sourceBounds.Bottom)
+                        let hopStop = targetBounds.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
+                        Left (DisplayHop { HopStart = sourceBounds.Bottom; HopStop = hopStop })
                     | Cyclone ->
-                        Left (DisplayHop { HopStart = source.Bottom; HopStop = target.BottomOffset3 })
+                        Left (DisplayHop { HopStart = sourceBounds.Bottom; HopStop = targetBounds.Bottom + Constants.Battle.CharacterBottomOffset3 })
                     | _ ->
-                        match source.ArchetypeType with
+                        match Battle.getCharacterArchetypeType sourceIndex battle with
                         | Cleric ->
                             let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
                             let displayCast = DisplayHolyCast (0L, sourceIndex)
@@ -672,7 +676,7 @@ module BattleDispatcher =
                 | Left hopEffect ->
                     withCmd hopEffect battle
                 | Right chargeEffects ->
-                    if target.IsWounded then
+                    if Battle.isCharacterWounded targetIndex battle then
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                     else withSigs (msg (ChargeCharacter sourceIndex) :: chargeEffects) battle
@@ -688,7 +692,7 @@ module BattleDispatcher =
                 | Cyclone ->
                     let time = World.getUpdateTime world
                     let radius = 64.0f
-                    let position = (Battle.getCharacter sourceIndex battle).Bottom
+                    let position = (Battle.getCharacterBounds sourceIndex battle).Bottom
                     let playHits =
                         [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                          PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -706,7 +710,7 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                    let slashSpike = DisplaySlashSpike (10L, (Battle.getCharacter sourceIndex battle).Bottom, targetIndex)
+                    let slashSpike = DisplaySlashSpike (10L, (Battle.getCharacterBounds sourceIndex battle).Bottom, targetIndex)
                     let impactSplashes = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex))
                     let battle = Battle.animateCharacter time SlashAnimation sourceIndex battle
                     withCmds (playSlash :: playHit :: slashSpike :: impactSplashes) battle
@@ -832,7 +836,7 @@ module BattleDispatcher =
                 let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd
                 let (battle, cmds) =
                     Map.fold (fun (battle, cmds) characterIndex (cancelled, _, hitPointsChange, _, _) ->
-                        if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
+                        if hitPointsChange < 0 && Battle.isCharacterHealthy characterIndex battle then
                             let battle = Battle.animateCharacter time DamageAnimation characterIndex battle
                             let cmds = if cancelled then DisplayCancel characterIndex :: cmds else cmds
                             (battle, cmds)
@@ -852,15 +856,18 @@ module BattleDispatcher =
                 withSigs sigs battle
 
             | TechCharacter5 (sourceIndex, targetIndex, techType) ->
-                let source = Battle.getCharacter sourceIndex battle
-                let target = Battle.getCharacter targetIndex battle
+                let sourceBoundsOriginal = Battle.getCharacterBoundsOriginal sourceIndex battle
+                let targetBounds = Battle.getCharacterBounds targetIndex battle
                 let hopOpt =
                     match techType with
                     | Critical | DarkCritical | PowerCut | PoisonCut | DoubleCut | SilenceCut ->
-                        let hopDirection = Direction.ofVector2 (target.Bottom - source.BottomOriginal)
-                        let hopStart = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
-                        Some { HopStart = hopStart; HopStop = source.BottomOriginal }
-                    | Cyclone -> Some { HopStart = target.BottomOffset3; HopStop = source.BottomOriginal }
+                        let hopDirection = Direction.ofVector2 (targetBounds.Bottom - sourceBoundsOriginal.Bottom)
+                        let hopStart = targetBounds.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
+                        Some { HopStart = hopStart; HopStop = sourceBoundsOriginal.Bottom }
+                    | Cyclone ->
+                        Some
+                            { HopStart = targetBounds.Bottom + Constants.Battle.CharacterBottomOffset3
+                              HopStop = sourceBoundsOriginal.Bottom }
                     | _ -> None
                 match hopOpt with
                 | Some hop -> withCmd (DisplayHop hop) battle
@@ -872,7 +879,7 @@ module BattleDispatcher =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle
                         let battle = Battle.applyStatusChanges characterIndex added removed battle
-                        let wounded = (Battle.getCharacter characterIndex battle).IsWounded
+                        let wounded = Battle.isCharacterWounded characterIndex battle
                         let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
                         let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
                         let (battle, sigs) =
