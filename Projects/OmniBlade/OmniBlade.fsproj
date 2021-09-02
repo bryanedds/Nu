@@ -84,6 +84,7 @@
     <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniProp.fs" />
     <Compile Include="OmniChest.fs" />
+    <Compile Include="OmniPortal.fs" />
     <Compile Include="OmniAvatar.fs" />
     <Compile Include="OmniDialog.fs" />
     <Compile Include="OmniMenu.fs" />

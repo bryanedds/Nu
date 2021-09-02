@@ -81,7 +81,7 @@ module PropDispatcher =
                     match prop.PropData with
                     | Portal (portalType, _, direction, _, _, _, _) ->
                         match prop.PropState with
-                        | PortalState active ->
+                        | PortalState (_, active) ->
                             if active then
                                 match portalType with
                                 | AirPortal -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)

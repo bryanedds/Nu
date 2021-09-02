@@ -14,11 +14,13 @@ module SpiritOrbDispatcher =
     type [<ReferenceEquality; NoComparison>] SpiritOrb =
         { AvatarLowerCenter : Vector2
           Spirits : Spirit array
-          Chests : Chest array }
+          Chests : Chest array
+          Portals : Portal array }
 
     type [<NoEquality; NoComparison>] SpiritOrbInhabitant =
         | SpiritInhabitant of Spirit
         | ChestInhabitant of Chest
+        | PortalInhabitant of Portal
 
     type Entity with
         member this.GetSpiritOrb = this.GetModel<SpiritOrb>
@@ -26,7 +28,7 @@ module SpiritOrbDispatcher =
         member this.SpiritOrb = this.Model<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =
-        inherit GuiDispatcher<SpiritOrb, unit, unit> ({ AvatarLowerCenter = v2Zero; Spirits = [||]; Chests = [||] })
+        inherit GuiDispatcher<SpiritOrb, unit, unit> ({ AvatarLowerCenter = v2Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
 
         static let makeViews avatarLowerCenter (orbTransform : Transform) inhabitants =
             let mutable orbTransform = orbTransform
@@ -38,6 +40,10 @@ module SpiritOrbDispatcher =
                         let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
                         let color = colWhite.WithA (byte 127)
                         (chest.Center, image, color)
+                    | PortalInhabitant portal ->
+                        let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.ImageEmpty
+                        let color = colWhite.WithA (byte 127)
+                        (portal.Center, image, color)
                 let delta = position - avatarLowerCenter
                 let distance = delta.Length ()
                 if distance < Constants.Field.SpiritRadius then
@@ -64,5 +70,6 @@ module SpiritOrbDispatcher =
             let avatarView = Render (avatarTransform.Elevation, avatarTransform.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
             let spiritViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
             let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant spiritOrb.Chests)
-            let views = orbView :: avatarView :: spiritViews @ chestViews
+            let portalViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)
+            let views = orbView :: avatarView :: spiritViews @ chestViews @ portalViews
             Views (List.toArray views)

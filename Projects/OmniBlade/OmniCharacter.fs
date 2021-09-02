@@ -34,13 +34,15 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Defense = Algorithms.defense this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Absorb = Algorithms.absorb this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.AffinityOpt = Algorithms.affinityOpt this.Accessories this.ArchetypeType this.Level
+    member this.Immunities = Algorithms.immunities this.Accessories this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
         let shield = target.Shield effectType
-        let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
         let damage = single (power - shield) * defendingScalar |> int |> max 1
         damage
 
@@ -292,6 +294,7 @@ module Character =
         member this.Charging = this.CharacterState_.Charging
         member this.IsHealthy = this.CharacterState_.IsHealthy
         member this.IsWounded = this.CharacterState_.IsWounded
+        member this.IsWounding = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> true | _ -> false
         member this.Level = this.CharacterState_.Level
         member this.HitPointsMax = this.CharacterState_.HitPointsMax
         member this.TechPointsMax = this.CharacterState_.TechPointsMax
@@ -300,6 +303,8 @@ module Character =
         member this.Shield = this.CharacterState_.Shield
         member this.Defense = this.CharacterState_.Defense
         member this.Absorb = this.CharacterState_.Absorb
+        member this.AffinityOpt = this.CharacterState_.AffinityOpt
+        member this.Immunities = this.CharacterState_.Immunities
         member this.GoldPrize = this.CharacterState_.GoldPrize
         member this.ExpPrize = this.CharacterState_.ExpPrize
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
@@ -332,15 +337,12 @@ module Character =
         character.ArchetypeType = Fighter &&
         Gen.random1 8 = 0
 
-    let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
+    let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
-            characters |>
-            Map.filter (fun _ c -> c.IsHealthy = healthy)
+            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy) characters
         | EnemyAim healthy | AllyAim healthy ->
-            characters |>
-            Map.filter (fun _ c -> isFriendly target c) |>
-            Map.filter (fun _ c -> c.IsHealthy = healthy)
+            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy && isFriendly target c) characters
         | NoAim ->
             Map.empty
 
@@ -350,19 +352,19 @@ module Character =
             Map.singleton target.CharacterIndex target
         | ProximityTarget (radius, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
                 v.Length () <= radius)
         | RadialTarget (radius, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
                 v.Length () <= radius)
         | LineTarget (offset, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
@@ -373,7 +375,7 @@ module Character =
                 else false)
         | SegmentTarget (offset, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
@@ -386,27 +388,46 @@ module Character =
                 else false)
         | VerticalTarget (width, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let x = target.Bottom.X
                 character.Bottom.X >= x - width &&
                 character.Bottom.X <= x + width)
         | HorizontalTarget (width, aimType) ->
             characters |>
-            evaluateAimType aimType target |>
+            evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let y = target.Bottom.Y
                 character.Bottom.Y >= y - width &&
                 character.Bottom.Y <= y + width)
         | AllTarget aimType ->
             characters |>
-            evaluateAimType aimType target
+            evalAimType aimType target
 
-    let evaluateTech techData source (target : Character) =
+    let evalTech techData source (target : Character) =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
             | Magical -> source.CharacterState_.Magic
+        let affinityScalar =
+            match (source.AffinityOpt, techData.AffinityOpt) with
+            | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget
+            | (_, _) -> 1.0f
+        let techScalar =
+            // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
+            // TODO: pull this from TechData.EnemyScalarOpt.
+            if source.IsEnemy then
+                match techData.TechType with
+                | Critical -> 1.25f
+                | Slash -> 1.25f
+                | TechType.Flame -> 1.45f
+                | Snowball -> 1.125f
+                | Aura -> 1f
+                | Empower -> 0.75f
+                | Enlighten -> 0.75f
+                | Protect -> 0.75f
+                | _ -> techData.Scalar
+            else techData.Scalar
         let specialAddend =
             // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
             // TODO: consider pulling this from TechData.AddendOpt.
@@ -414,35 +435,20 @@ module Character =
             | Critical -> 1.0f
             | DarkCritical -> 1.0f
             | _ -> 0.0f
-        let specialScalar =
-            // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
-            // TODO: pull this from TechData.EnemyScalarOpt.
-            if source.IsEnemy then
-                match techData.TechType with
-                | Critical -> 1.25f
-                | Slash -> 1.5f
-                | TechType.Flame -> 1.75f
-                | Snowball -> 1.25f
-                | Aura -> 0.5f
-                | Empower -> 0.5f
-                | Enlighten -> 0.5f
-                | Protect -> 0.5f
-                | _ -> 1.0f
-            else 1.0f
         if techData.Curative then
-            let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
+            let healing = single efficacy * techScalar * techScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
-            let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
-            let damage = (single (efficacy - shield) * techData.Scalar * specialScalar + specialAddend) * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, false, -damage, techData.StatusesAdded, techData.StatusesRemoved)
+            let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
+            let damage = (single efficacy * affinityScalar * techScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
-    let evaluateTechMove techData source target characters =
+    let evalTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, affectsWounded, delta, added, removed) = evaluateTech techData source target
+            let (index, cancelled, affectsWounded, delta, added, removed) = evalTech techData source target
             Map.add index (cancelled, affectsWounded, delta, added, removed) results)
             Map.empty
             targets
@@ -475,12 +481,11 @@ module Character =
             Some actionType
         | _ -> None
 
+    let burndownStatuses burndownTime character =
+        { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
+
     let updateActionTime updater character =
-        let actionTime = updater character.ActionTime_
-        let actionTimeDelta = actionTime - character.ActionTime
-        { character with
-            ActionTime_ = updater character.ActionTime_
-            CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
+        { character with ActionTime_ = updater character.ActionTime_ }
 
     let updateStatuses updater character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
@@ -495,10 +500,13 @@ module Character =
             else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some _ when cancel ->
-                match Gen.randomKeyOpt alliesHealthy with
-                | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
-                | None -> None
+            | Some autoBattle when cancel ->
+                match autoBattle.AutoTarget with
+                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | EnemyIndex _ ->
+                    match Gen.randomKeyOpt alliesHealthy with
+                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                    | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
@@ -542,8 +550,9 @@ module Character =
         
         // attempt to randomly choose a tech type
         let techOpt =
-            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
-            then CharacterState.tryGetTechRandom source.CharacterState_
+            if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
+                not (Map.containsKey Silence source.Statuses) then
+                CharacterState.tryGetTechRandom source.CharacterState_
             else None
 
         // attempt to randomly choose a target
