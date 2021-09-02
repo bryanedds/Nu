@@ -137,13 +137,11 @@ module BattleDispatcher =
                 match timeLocal with
                 | 0L ->
                     let battle =
-                        Battle.updateCharacter
-                            (Character.updateActionTime (constant 0.0f) >>
-                             Character.updateInputState (constant NoInput) >>
-                             Character.animate time (PoiseAnimation Defending) >>
-                             Character.defend)
-                            sourceIndex
-                            battle
+                        battle |>
+                        Battle.updateCharacterActionTime (constant 0.0f) sourceIndex |>
+                        Battle.updateCharacterInputState (constant NoInput) sourceIndex |>
+                        Battle.animateCharacter time (PoiseAnimation Defending) sourceIndex |>
+                        Battle.defendCharacter sourceIndex
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | _ -> just battle
@@ -557,36 +555,15 @@ module BattleDispatcher =
                 let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
 
-            | ReticlesSelect (targetIndex, allyIndex) ->
+            | ReticlesSelect (sourceIndex, targetIndex) ->
                 match battle.BattleState with
                 | BattleRunning ->
-                    match Battle.tryGetCharacter allyIndex battle with
-                    | Some ally ->
-                        match Character.getActionTypeOpt ally with // TODO: go through Battle API.
-                        | Some actionType ->
-                            let command = ActionCommand.make actionType allyIndex (Some targetIndex)
-                            let battle = Battle.appendActionCommand command battle
-                            withMsg (ResetCharacter allyIndex) battle
-                        | None -> just battle
-                    | None -> just battle
+                    let battle = Battle.confirmCharacterInput sourceIndex targetIndex battle
+                    withMsg (ResetCharacter sourceIndex) battle
                 | _ -> just battle
 
             | ReticlesCancel characterIndex ->
-                let battle =
-                    Battle.tryUpdateCharacter (fun character ->
-                        match Character.getActionTypeOpt character with // TODO: go through Battle API.
-                        | Some actionType ->
-                            let inputState =
-                                match actionType with
-                                | Attack -> RegularMenu
-                                | Defend -> RegularMenu
-                                | Tech _ -> TechMenu
-                                | Consume _ -> ItemMenu
-                                | Wound -> failwithumf ()
-                            Character.updateInputState (constant inputState) character // TODO: go through Battle API.
-                        | None -> character)
-                        characterIndex
-                        battle
+                let battle = Battle.cancelCharacterInput characterIndex battle
                 just battle
 
             | ReadyCharacters timeLocal ->
@@ -615,7 +592,7 @@ module BattleDispatcher =
             | AttackCharacter2 (sourceIndex, targetIndex) ->
                 let time = World.getUpdateTime world
                 let damage = Battle.evalAttack Physical sourceIndex targetIndex battle
-                let battle = Battle.updateHitPoints targetIndex false false -damage battle
+                let battle = Battle.updateCharacterHitPoints false false -damage targetIndex battle
                 let battle = Battle.animateCharacter time DamageAnimation targetIndex battle
                 let sigs = if Battle.isCharacterWounded targetIndex battle then [msg (ResetCharacter targetIndex)] else []
                 withSigs (cmd (DisplayHitPointsChange (targetIndex, -damage)) :: sigs) battle
@@ -634,10 +611,9 @@ module BattleDispatcher =
                         let healing = int consumableData.Scalar
                         let battle =
                             if consumableData.Techative
-                            then Battle.updateTechPoints targetIndex healing battle
-                            else Battle.updateHitPoints targetIndex false consumableData.Revive healing battle
-                        let battle = Battle.updateCharacterStatuses (fun statuses -> Map.removeMany consumableData.StatusesRemoved statuses) targetIndex battle
-                        let battle = Battle.updateCharacterStatuses (fun statuses -> Map.addMany (Seq.map (flip pair Constants.Battle.BurndownTime) consumableData.StatusesAdded) statuses) targetIndex battle
+                            then Battle.updateCharacterTechPoints healing targetIndex battle
+                            else Battle.updateCharacterHitPoints false consumableData.Revive healing targetIndex battle
+                        let battle = Battle.applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                         let battle = Battle.animateCharacter time SpinAnimation targetIndex battle
                         let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
                         let playHealSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)
@@ -877,8 +853,8 @@ module BattleDispatcher =
                 let (techCost, results) = Battle.evalTechMove sourceIndex targetIndex techType battle
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
-                        let battle = Battle.updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle
-                        let battle = Battle.applyStatusChanges characterIndex added removed battle
+                        let battle = Battle.updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
+                        let battle = Battle.applyCharacterStatuses added removed characterIndex battle
                         let wounded = Battle.isCharacterWounded characterIndex battle
                         let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
                         let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
@@ -893,7 +869,7 @@ module BattleDispatcher =
                         (battle, sigs))
                         (battle, [])
                         results
-                let battle = Battle.updateTechPoints sourceIndex -techCost battle
+                let battle = Battle.updateCharacterTechPoints -techCost sourceIndex battle
                 let battle =
                     if Battle.shouldCounter targetIndex battle
                     then Battle.counterAttack sourceIndex targetIndex battle
@@ -1227,5 +1203,5 @@ module BattleDispatcher =
                                     | _ -> c.CenterOffset)
                                     characters
                             reticles
-                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, index))
+                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (ReticlesCancel index)]]]

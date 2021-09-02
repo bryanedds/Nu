@@ -195,14 +195,14 @@ module Battle =
     let getCharacterArchetypeType characterIndex battle =
         (getCharacter characterIndex battle).ArchetypeType
 
-    let tryUpdateCharacter updater characterIndex battle =
+    let private tryUpdateCharacter updater characterIndex battle =
         match tryGetCharacter characterIndex battle with
         | Some character ->
             let character = updater character
             { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
         | None -> battle
 
-    let updateCharacter updater characterIndex battle =
+    let private updateCharacter updater characterIndex battle =
         let character = getCharacter characterIndex battle
         let character = updater character
         { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
@@ -219,11 +219,26 @@ module Battle =
     let updateCharacterBottom updater characterIndex battle =
         updateCharacter (Character.updateBottom updater) characterIndex battle
 
-    let updateCharacterStatuses updater characterIndex battle =
-        updateCharacter (Character.updateStatuses updater) characterIndex battle
+    let updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle =
+        let alliesHealthy = getAlliesHealthy battle
+        let character = getCharacter characterIndex battle
+        let character = Character.updateHitPoints (fun hitPoints -> (cancelled, hitPoints + hitPointsChange)) affectsWounded alliesHealthy character
+        updateCharacter (constant character) characterIndex battle
 
-    let burndownCharacterStatus burndownTime characterIndex battle =
+    let updateCharacterTechPoints techPointsChange characterIndex battle =
+        updateCharacter (Character.updateTechPoints ((+) techPointsChange)) characterIndex battle
+
+    let burndownCharacterStatuses burndownTime characterIndex battle =
         updateCharacter (Character.burndownStatuses burndownTime) characterIndex battle
+
+    let applyCharacterStatuses added removed characterIndex battle =
+        updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
+
+    let defendCharacter characterIndex battle =
+        updateCharacter Character.defend characterIndex battle
+
+    let undefendCharacter characterIndex battle =
+        updateCharacter Character.undefend characterIndex battle
 
     let animateCharacter time animation characterIndex battle =
         updateCharacter (Character.animate time animation) characterIndex battle
@@ -261,12 +276,6 @@ module Battle =
             let character = Character.animate time (PoiseAnimation poiseType) character
             character)
             battle
-
-    let defendCharacter characterIndex battle =
-        updateCharacter Character.defend characterIndex battle
-
-    let undefendCharacter characterIndex battle =
-        updateCharacter Character.undefend characterIndex battle
 
     let updateBattleState updater battle =
         { battle with BattleState_ = updater battle.BattleState_ }
@@ -319,20 +328,31 @@ module Battle =
             (techData.TechCost, Character.evalTechMove techData source target characters)
         | None -> (0, Map.empty)
 
-    let updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle =
-        let alliesHealthy = getAlliesHealthy battle
-        let character = getCharacter characterIndex battle
-        let character = Character.updateHitPoints (fun hitPoints -> (cancelled, hitPoints + hitPointsChange)) affectsWounded alliesHealthy character
-        updateCharacter (constant character) characterIndex battle
+    let cancelCharacterInput characterIndex battle =
+        tryUpdateCharacter (fun character ->
+            match Character.getActionTypeOpt character with
+            | Some actionType ->
+                let inputState =
+                    match actionType with
+                    | Attack -> RegularMenu
+                    | Defend -> RegularMenu
+                    | Tech _ -> TechMenu
+                    | Consume _ -> ItemMenu
+                    | Wound -> failwithumf ()
+                Character.updateInputState (constant inputState) character
+            | None -> character)
+            characterIndex
+            battle
 
-    let updateStatuses characterIndex added removed battle =
-        updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
-
-    let updateTechPoints characterIndex techPointsChange battle =
-        updateCharacter (Character.updateTechPoints ((+) techPointsChange)) characterIndex battle
-
-    let applyStatusChanges characterIndex added removed battle =
-        updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
+    let confirmCharacterInput sourceIndex targetIndex battle =
+        match tryGetCharacter sourceIndex battle with
+        | Some source ->
+            match Character.getActionTypeOpt source with
+            | Some actionType ->
+                let command = ActionCommand.make actionType sourceIndex (Some targetIndex)
+                appendActionCommand command battle
+            | None -> battle
+        | None -> battle
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
