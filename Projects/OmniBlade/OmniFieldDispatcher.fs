@@ -26,6 +26,8 @@ module FieldDispatcher =
         | MenuTechOpen
         | MenuTechAlly of int
         | MenuTechSelect of int
+        | MenuOptionsOpen
+        | MenuOptionsSelectBattleSpeed of BattleSpeed
         | MenuClose
         | ShopBuy
         | ShopSell
@@ -89,7 +91,9 @@ module FieldDispatcher =
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "OptionButtonUp"
-                    Entity.DownImage == asset "Field" "OptionButtonDown"]
+                    Entity.DownImage == asset "Field" "OptionButtonDown"
+                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
+                    Entity.ClickEvent ==> msg MenuOptionsOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "HelpButtonUp"
@@ -634,7 +638,7 @@ module FieldDispatcher =
                             let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getUpdateTime world)
+                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData (World.getUpdateTime world)
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
@@ -769,6 +773,15 @@ module FieldDispatcher =
             
             | MenuTechSelect _ ->
                 just field
+
+            | MenuOptionsOpen ->
+                let state = MenuOptions
+                let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
+                just field
+
+            | MenuOptionsSelectBattleSpeed battleSpeed ->
+                let field = Field.updateOptions (constant { BattleSpeed = battleSpeed }) field
+                just field
             
             | MenuClose ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
@@ -860,7 +873,7 @@ module FieldDispatcher =
                     let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) battleData time
+                    let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) field.Options.BattleSpeed battleData time
                     let field = Field.clearSpirits field
                     let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
@@ -1244,6 +1257,34 @@ module FieldDispatcher =
                                    | Some shopConfirm -> shopConfirm.ShopConfirmLine2
                                    | None -> ""
                                | None -> ""]]
+
+                 // options
+                 Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuOptions -> true | _ -> false) $ fun field _ ->
+                    Content.panel Gen.name
+                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                        Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                       [Content.sidebar (v2 24.0f 420.0f) 1.0f field
+                        Content.text Gen.name
+                           [Entity.PositionLocal == v2 384.0f 432.0f; Entity.ElevationLocal == 1.0f
+                            Entity.Text == "Battle Speed"]
+                        Content.toggle Gen.name
+                           [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
+                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.Text == "Swift"
+                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]
+                        Content.toggle Gen.name
+                           [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
+                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.Text == "Paced"
+                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                        Content.toggle Gen.name
+                           [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
+                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.Text == "Wait"
+                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]]
 
                  // shop
                  Content.entityIf field (fun field _ -> Option.isSome field.ShopOpt) $ fun field _ ->

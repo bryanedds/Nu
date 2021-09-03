@@ -9,11 +9,13 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-// TODO: find a better place for this.
 type [<StructuralEquality; NoComparison>] SaveSlot =
     | Slot1
     | Slot2
     | Slot3
+
+type [<ReferenceEquality; NoComparison>] Options =
+    { BattleSpeed : BattleSpeed }
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -36,6 +38,7 @@ module Field =
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
+              Options_ : Options
               Menu_ : Menu
               Cue_ : Cue
               ShopOpt_ : Shop option
@@ -54,6 +57,7 @@ module Field =
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
+        member this.Options = this.Options_
         member this.Menu = this.Menu_
         member this.Cue = this.Cue_
         member this.ShopOpt = this.ShopOpt_
@@ -142,6 +146,9 @@ module Field =
 
     let updateInventory updater field =
         { field with Inventory_ = updater field.Inventory_ }
+
+    let updateOptions updater field =
+        { field with Options_ = updater field.Options_ }
 
     let updateMenu updater field =
         { field with Menu_ = updater field.Menu_ }
@@ -286,6 +293,7 @@ module Field =
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
+          Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Cue_ = Cue.Nil
           ShopOpt_ = None
@@ -305,6 +313,7 @@ module Field =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Cue_ = Cue.Nil
           ShopOpt_ = None
@@ -333,7 +342,8 @@ module Field =
             | Slot2 -> Assets.Global.SaveFilePath2
             | Slot3 -> Assets.Global.SaveFilePath3
         let fieldSymbolizable = toSymbolizable field
-        let fileStr = scstring fieldSymbolizable
+        let fieldSymbol = valueToSymbol fieldSymbolizable
+        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaulted
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
     let tryLoad saveSlot =

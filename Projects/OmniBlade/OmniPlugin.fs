@@ -11,4 +11,5 @@ type OmniPlugin () =
     override this.GetEditorScreenDispatcher () = (Simulants.Battle.Screen, typeof<BattleDispatcher>)
     override this.MakeOverlayRoutes () =
         [(typeof<ButtonDispatcher>.Name, Some "ButtonDispatcherRoute")
-         (typeof<TextDispatcher>.Name, Some "TextDispatcherRoute")]
+         (typeof<TextDispatcher>.Name, Some "TextDispatcherRoute")
+         (typeof<ToggleDispatcher>.Name, Some "ToggleDispatcherRoute")]
