@@ -435,7 +435,7 @@ module Character =
                 else 1.0f
             else
                 if techData.Split
-                then 0.5f
+                then 0.333f
                 else 1.0f
         let specialAddend =
             // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
