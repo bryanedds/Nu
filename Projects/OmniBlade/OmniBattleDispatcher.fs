@@ -71,6 +71,7 @@ module BattleDispatcher =
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
         | DisplayAura of int64 * CharacterIndex
+        | DisplayEmpower of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
         | DisplayBuff of int64 * StatusType * CharacterIndex
@@ -777,8 +778,8 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
-                    let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
-                    withCmds [playBuff; displayBuff] battle
+                    let displayEmpower = DisplayEmpower (0L, targetIndex)
+                    withCmds [playBuff; displayEmpower] battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -1062,6 +1063,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeAuraEffect ()) world |> just
                 | None -> just world
 
+            | DisplayEmpower (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom target.Bottom) (Effects.makeEmpowerEffect ()) world |> just
+                | None -> just world
+            
             | DisplayProtect (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeProtectEffect ()) world |> just
