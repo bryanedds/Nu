@@ -21,6 +21,6 @@ Enlighten,3,Magical,1,False,True,False,0,None,[[Magic True False]],[],[SingleTar
 Protect,3,Magical,1,False,True,False,0,None,[[Shield True False]],[],[SingleTarget [AllyAim True]],
 Weaken,2,Magical,0.75,False,False,False,0,None,[[Power False False]],[],[SingleTarget [EnemyAim True]],
 Muddle,2,Magical,0.75,False,False,False,0,None,[[Magic False False]],[],[SingleTarget [EnemyAim True]],
-ConjureIfrit,8,Magical,2.8,True,False,False,0,None,[],[],[AllTarget [EnemyAim True]],
+ConjureIfrit,8,Magical,3,True,False,False,0,None,[],[],[AllTarget [EnemyAim True]],
 Slow,2,Magical,0.75,False,False,False,0,None,[[Time False]],[],[SingleTarget [EnemyAim True]],
 Purify,1,Magical,0.75,False,True,False,0,None,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],[SingleTarget [AllyAim True]],
