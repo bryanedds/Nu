@@ -314,10 +314,10 @@ module Battle =
         let target = getCharacter targetIndex battle
         Character.getAttackResult effectType source target
 
-    let evalTech techData sourceIndex targetIndex battle =
+    let evalTech targetCount techData sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
-        (techData.TechCost, Character.evalTech techData source target)
+        (techData.TechCost, Character.evalTech targetCount techData source target)
 
     let evalTechMove sourceIndex targetIndex techType battle =
         match Map.tryFind techType Data.Value.Techs with
