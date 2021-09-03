@@ -345,7 +345,7 @@ module Battle =
                     | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
                     | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesHealthy battle)))
                 | Some false -> targetIndexOpt
-        | None -> failwithumf ()
+        | None -> targetIndexOpt
 
     let cancelCharacterInput characterIndex battle =
         tryUpdateCharacter (fun character ->
