@@ -735,6 +735,7 @@ type TechData =
       TechCost : int
       EffectType : EffectType
       Scalar : single
+      Split : bool
       Curative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster

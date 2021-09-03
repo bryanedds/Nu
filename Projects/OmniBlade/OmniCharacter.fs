@@ -404,7 +404,7 @@ module Character =
             characters |>
             evalAimType aimType target
 
-    let evalTech techData source (target : Character) =
+    let evalTech (targetCount : int) techData source (target : Character) =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
@@ -428,6 +428,15 @@ module Character =
                 | Protect -> 0.75f
                 | _ -> techData.Scalar
             else techData.Scalar
+        let splitScalar =
+            if source.IsAlly then
+                if techData.Split
+                then min 1.0f (1.2f / single targetCount)
+                else 1.0f
+            else
+                if techData.Split
+                then 0.5f
+                else 1.0f
         let specialAddend =
             // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
             // TODO: consider pulling this from TechData.AddendOpt.
@@ -436,19 +445,20 @@ module Character =
             | DarkCritical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
-            let healing = single efficacy * techScalar * techScalar |> int |> max 1
+            let healing = single efficacy * techScalar * splitScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage = (single efficacy * affinityScalar * techScalar* splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
+        let targetsCount = Map.count targets
         Map.fold (fun results _ target ->
-            let (index, cancelled, affectsWounded, delta, added, removed) = evalTech techData source target
+            let (index, cancelled, affectsWounded, delta, added, removed) = evalTech targetsCount techData source target
             Map.add index (cancelled, affectsWounded, delta, added, removed) results)
             Map.empty
             targets
