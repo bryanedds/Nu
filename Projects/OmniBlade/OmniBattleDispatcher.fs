@@ -306,17 +306,34 @@ module BattleDispatcher =
         and private updateNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
             let sourceIndex = command.ActionCommand.Source
+            let targetIndexOpt = command.ActionCommand.TargetOpt
             let source = Battle.getCharacter sourceIndex battle
             let battle =
                 match command.ActionCommand.Action with
-                | Attack | Consume _ | Defend ->
-                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses)
-                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                | Attack | Defend ->
+                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                        let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                        Battle.updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
-                | Tech _ ->
-                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses)
-                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
-                    else battle
+                | Consume consumableType ->
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumable) ->
+                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                            let targetIndexOpt = Battle.tryRetargetIfNeeded consumable.Revive targetIndexOpt battle
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                        else battle
+                    | (false, _) -> battle
+                | Tech techType ->
+                    match Data.Value.Techs.TryGetValue techType with
+                    | (true, _) ->
+                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
+                            let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                        else battle
+                    | (false, _) -> battle
                 | Wound ->
                     Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle

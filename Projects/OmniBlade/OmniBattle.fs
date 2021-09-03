@@ -328,6 +328,25 @@ module Battle =
             (techData.TechCost, Character.evalTechMove techData source target characters)
         | None -> (0, Map.empty)
 
+    let tryRetargetIfNeeded affectingWounded targetIndexOpt battle =
+        match targetIndexOpt with
+        | Some targetIndex ->
+            if affectingWounded then
+                match tryGetCharacterBy (fun (target : Character) -> target.IsHealthy) targetIndex battle with
+                | Some true | None ->
+                    match targetIndex with
+                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesWounded battle)))
+                | Some false -> targetIndexOpt
+            else
+                match tryGetCharacterBy (fun (target : Character) -> target.IsWounded) targetIndex battle with
+                | Some true | None ->
+                    match targetIndex with
+                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesHealthy battle)))
+                | Some false -> targetIndexOpt
+        | None -> failwithumf ()
+
     let cancelCharacterInput characterIndex battle =
         tryUpdateCharacter (fun character ->
             match Character.getActionTypeOpt character with
