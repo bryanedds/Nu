@@ -89,6 +89,7 @@ type [<StructuralEquality; NoComparison>] MenuState =
     | MenuTeam of MenuTeam
     | MenuItem of MenuItem
     | MenuTech of MenuTech
+    | MenuOptions
     | MenuClosed
 
 type [<ReferenceEquality; NoComparison>] Menu =

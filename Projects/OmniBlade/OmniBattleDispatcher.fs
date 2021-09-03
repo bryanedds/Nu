@@ -47,6 +47,7 @@ module BattleDispatcher =
         | TechCharacter5 of CharacterIndex * CharacterIndex * TechType
         | TechCharacter6 of CharacterIndex * CharacterIndex * TechType
         | TechCharacterAmbient of CharacterIndex * CharacterIndex * TechType
+        | AutoBattleEnemies
         | ChargeCharacter of CharacterIndex
         | PoiseCharacter of CharacterIndex
         | WoundCharacter of CharacterIndex
@@ -278,7 +279,7 @@ module BattleDispatcher =
                 withMsg (ReadyCharacters timeLocalReady) battle
             elif timeLocal = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
-                withMsg PoiseCharacters battle
+                withMsgs [PoiseCharacters; AutoBattleEnemies] battle
             else just battle
 
         and private updateCurrentCommand time currentCommand battle =
@@ -369,13 +370,21 @@ module BattleDispatcher =
             let battle =
                 Battle.updateCharacters (fun character ->
                     let actionTimeDelta =
-                        if character.IsAlly
+                        if character.IsAlly || battle.BattleSpeed = WaitSpeed
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
                     let actionTimeDelta =
                         if Map.containsKey (Time false) character.Statuses then actionTimeDelta * 0.667f
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * 1.5f
                         else actionTimeDelta
+                    let actionTimeDelta =
+                        match battle.BattleSpeed with
+                        | SwiftSpeed -> actionTimeDelta
+                        | PacedSpeed -> actionTimeDelta * 0.8f
+                        | WaitSpeed ->
+                            if Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
+                            then 0.0f
+                            else actionTimeDelta
                     let poisoned =
                         let actionTime = character.ActionTime + actionTimeDelta
                         Map.containsKey Poison character.Statuses &&
@@ -401,7 +410,7 @@ module BattleDispatcher =
                             let alliesWounded = Battle.getAlliesWounded battle
                             let enemiesHealthy = Battle.getEnemiesHealthy battle
                             let enemiesWounded = Battle.getEnemiesWounded battle
-                            Character.autoBattle character alliesHealthy alliesWounded enemiesHealthy enemiesWounded
+                            Character.autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded character
                         else character
                     character)
                     battle
@@ -921,6 +930,10 @@ module BattleDispatcher =
                         | None -> battle
                     just battle
                 else just battle
+
+            | AutoBattleEnemies ->
+                let battle = Battle.autoBattleEnemies battle
+                just battle
 
             | ChargeCharacter sourceIndex ->
                 let time = World.getUpdateTime world

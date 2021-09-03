@@ -9,6 +9,11 @@ open Prime
 open Nu
 open OmniBlade
 
+type BattleSpeed =
+    | SwiftSpeed
+    | PacedSpeed
+    | WaitSpeed
+
 type BattleState =
     | BattleReady of int64
     | BattleRunning
@@ -44,6 +49,7 @@ module Battle =
               TileMap_ : TileMap AssetTag
               TileIndexOffset_ : int
               BattleSongOpt_ : Song AssetTag option
+              BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
               DialogOpt_ : Dialog option }
@@ -57,6 +63,7 @@ module Battle =
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
         member this.BattleSongOpt = this.BattleSongOpt_
+        member this.BattleSpeed = this.BattleSpeed_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
         member this.DialogOpt = this.DialogOpt_
@@ -371,6 +378,13 @@ module Battle =
             appendActionCommand command battle
         | None -> battle
 
+    let autoBattleEnemies battle =
+        let alliesHealthy = getAlliesHealthy battle
+        let alliesWounded = getAlliesWounded battle
+        let enemiesHealthy = getEnemiesHealthy battle
+        let enemiesWounded = getEnemiesWounded battle
+        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded) battle
+
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
@@ -427,7 +441,7 @@ module Battle =
         List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
         layout
 
-    let private randomizeEnemies offsetCharacters enemies =
+    let private randomizeEnemies offsetCharacters waitSpeed enemies =
         let (w, h) = (10, 8)
         let origin = v2 -288.0f -240.0f
         let tile = v2 48.0f 48.0f
@@ -442,15 +456,15 @@ module Battle =
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
                         let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
-                        Character.tryMakeEnemy enemyIndex enemyIndexMax offsetCharacters { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy enemyIndex enemyIndexMax offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>
             Array.toList
         enemies
 
-    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleData time =
-        let enemies = randomizeEnemies offsetCharacters battleData.BattleEnemies
+    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData time =
+        let enemies = randomizeEnemies offsetCharacters (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
@@ -465,12 +479,13 @@ module Battle =
               TileMap_ = tileMap
               TileIndexOffset_ = tileIndexOffset
               BattleSongOpt_ = battleData.BattleSongOpt
+              BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
               DialogOpt_ = None }
         battle
 
-    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleData time =
+    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData time =
         let party = team |> Map.toList |> List.tryTake 3
         let offsetCharacters = List.hasAtMost 1 party
         let allyPositions =
@@ -497,7 +512,7 @@ module Battle =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = makeFromParty offsetCharacters inventory prizePool party battleData time
+        let battle = makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData time
         battle
 
     let empty =
@@ -508,6 +523,7 @@ module Battle =
           TileMap_ = Assets.Battle.DebugBattleTileMap
           TileIndexOffset_ = 0
           BattleSongOpt_ = None
+          BattleSpeed_ = SwiftSpeed
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty
           DialogOpt_ = None }
@@ -521,7 +537,7 @@ module Battle =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
                 Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
                 Map.add 2 (Teammate.makeAtLevel level 2 Mael)
-            makeFromTeam Inventory.initial prizePool team battle 0L
+            makeFromTeam Inventory.initial prizePool team SwiftSpeed battle 0L
         | None -> empty
 
 type Battle = Battle.Battle
