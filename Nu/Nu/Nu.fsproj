@@ -69,7 +69,6 @@
     <Compile Include="Core.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Log.fs" />
-    <Compile Include="Unique.fs" />
     <Compile Include="Gen.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
