@@ -382,9 +382,8 @@ module BattleDispatcher =
                         | SwiftSpeed -> actionTimeDelta
                         | PacedSpeed -> actionTimeDelta * 0.75f
                         | WaitSpeed ->
-                            if Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
-                            then 0.0f
-                            else actionTimeDelta
+                            let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
+                            if anyAlliesInputting then 0.0f else actionTimeDelta
                     let poisoned =
                         let actionTime = character.ActionTime + actionTimeDelta
                         Map.containsKey Poison character.Statuses &&
