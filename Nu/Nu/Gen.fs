@@ -78,7 +78,7 @@ module Gen =
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
-            then Some arr.[Gen.random1 arr.Length]
+            then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
             else None
 
         /// Get a random key if there are any or None.
