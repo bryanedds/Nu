@@ -219,6 +219,7 @@ module WorldTypes =
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
+    /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortElevation : single
           SortPositionY : single

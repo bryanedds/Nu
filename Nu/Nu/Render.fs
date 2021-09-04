@@ -4,11 +4,12 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.IO
 #if MULTITHREAD_RENDER_SORT
 open System.Linq
 #endif
 open System.Numerics
-open System.IO
+open System.Reflection
 open SDL2
 open TiledSharp
 open Prime
@@ -356,6 +357,22 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
             SdlRenderer.handleRenderMessage renderMessage renderer
+
+    //static member private sortRenderLayeredMessages (messages : RenderLayeredMessage List) =
+    //    let messagesArray =
+    //        messages.GetType().GetField("_items", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(messages) :?>
+    //        RenderLayeredMessage array
+    //    let comparison =
+    //        ValueComparison
+    //            (fun (left : RenderLayeredMessage byref) (right : RenderLayeredMessage byref) ->
+    //                let elevationCompare = left.Elevation.CompareTo right.Elevation
+    //                if elevationCompare <> 0 then elevationCompare else
+    //                let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
+    //                if positionYCompare <> 0 then positionYCompare else
+    //                let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+    //                if assetNameCompare <> 0 then assetNameCompare else
+    //                strCmp left.AssetTag.PackageName right.AssetTag.PackageName)
+    //    ValueSort.IntroSort (messagesArray, 0, messages.Count, comparison)
 
     static member private sortRenderLayeredMessages (messages : RenderLayeredMessage List) =
 #if MULTITHREAD_RENDER_SORT
