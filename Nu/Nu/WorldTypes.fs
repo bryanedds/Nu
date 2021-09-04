@@ -26,16 +26,16 @@ open Prime
 open Nu
 
 /// Describes a Tiled tile.
-type [<StructuralEquality; NoComparison>] TileDescriptor =
-    { Tile : TmxLayerTile
-      I : int
-      J : int
-      TilePositionI : Vector2i
-      TilePositionF : Vector2
-      TileSetTileOpt : TmxTilesetTile option }
+type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
+    { mutable TileXXX : TmxLayerTile
+      mutable TileI : int
+      mutable TileJ : int
+      mutable TilePositionI : Vector2i
+      mutable TilePositionF : Vector2
+      mutable TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile animation.
-type [<StructuralEquality; NoComparison>] TileAnimationDescriptor =
+type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
       TileAnimationDelay : int64 }
 

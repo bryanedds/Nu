@@ -119,7 +119,7 @@ module TmxMap =
         | Some (_, _, tileMap) -> Some tileMap
         | None -> None
 
-    let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd =
+    let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd (tileDescriptor : TileDescriptor outref) =
         let tileMapRun = tmd.TileMapSizeM.X
         let (i, j) = (tileIndex % tileMapRun, tileIndex / tileMapRun)
         let tile = tl.Tiles.[tileIndex]
@@ -149,21 +149,27 @@ module TmxMap =
                 match tileSet.Tiles.TryGetValue tileId with
                 | (true, tileSetTile) -> Some tileSetTile
                 | (false, _) -> None
-            Some { Tile = tile; I = i; J = j; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
-        else None
+            tileDescriptor.TileXXX <- tile
+            tileDescriptor.TileI <- i
+            tileDescriptor.TileJ <- j
+            tileDescriptor.TilePositionI <- tilePositionI
+            tileDescriptor.TilePositionF <- tilePositionF
+            tileDescriptor.TileSetTileOpt <- tileSetTileOpt
+            true
+        else false
 
     let tryGetTileAnimationDescriptor tileIndex tileLayer tileMapDescriptor =
-        match tryGetTileDescriptor tileIndex tileLayer tileMapDescriptor with
-        | Some tileDescriptor ->
+        let mutable tileDescriptor = Unchecked.defaultof<_>
+        if tryGetTileDescriptor tileIndex tileLayer tileMapDescriptor &tileDescriptor then
             match tileDescriptor.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.AnimationPropertyName with
                 | (true, tileAnimationStr) ->
-                    try Some (scvaluem<TileAnimationDescriptor> tileAnimationStr)
-                    with _ -> None
-                | (false, _) -> None
-            | None -> None
-        | None -> None
+                    try ValueSome (scvaluem<TileAnimationDescriptor> tileAnimationStr)
+                    with _ -> ValueNone
+                | (false, _) -> ValueNone
+            | None -> ValueNone
+        else ValueNone
 
     let getTileLayerBodyShapes (tileLayer : TmxLayer) tileMapDescriptor =
         
@@ -173,16 +179,16 @@ module TmxMap =
         for i in 0 .. dec tileLayer.Tiles.Count do
 
             // construct a dictionary of tile boxes, adding non boxes to the result list
-            match tryGetTileDescriptor i tileLayer tileMapDescriptor with
-            | Some td ->
-                match td.TileSetTileOpt with
+            let mutable tileDescriptor = Unchecked.defaultof<_>
+            if tryGetTileDescriptor i tileLayer tileMapDescriptor &tileDescriptor then
+                match tileDescriptor.TileSetTileOpt with
                 | Some tileSetTile ->
                     match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                     | (true, cexpr) ->
                         let tileCenter =
                             v2
-                                (td.TilePositionF.X + tileMapDescriptor.TileSizeF.X * 0.5f)
-                                (td.TilePositionF.Y + tileMapDescriptor.TileSizeF.Y * 0.5f)
+                                (tileDescriptor.TilePositionF.X + tileMapDescriptor.TileSizeF.X * 0.5f)
+                                (tileDescriptor.TilePositionF.Y + tileMapDescriptor.TileSizeF.Y * 0.5f)
                         match cexpr with
                         | "" ->
                             match tileBoxes.TryGetValue tileCenter.Y with
@@ -196,7 +202,7 @@ module TmxMap =
                             bodyShapes.Add tileShapeImported
                     | (false, _) -> ()
                 | None -> ()
-            | None -> ()
+            else ()
 
         // combine adjacent tiles on the same row into strips
         let strips = List ()
@@ -256,6 +262,7 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
+    /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
     let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
@@ -319,11 +326,11 @@ module TmxMap =
                                             else xTile.Gid
                                         let xTile =
                                             match tryGetTileAnimationDescriptor xTileIndex layer tileMapDescriptor with
-                                            | Some xTileAnimationDescriptor ->
+                                            | ValueSome xTileAnimationDescriptor ->
                                                 let compressedTime = time / xTileAnimationDescriptor.TileAnimationDelay
                                                 let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
                                                 makeLayerTile (xTileGid + xTileOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
-                                            | None ->
+                                            | ValueNone ->
                                                 makeLayerTile xTileGid xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                         tiles.Add xTile
                                 else xS <- xS + tileSize.X
