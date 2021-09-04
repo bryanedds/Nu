@@ -51,17 +51,18 @@ type [<StructuralEquality; NoComparison>] TileMapDescriptor =
 
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
-type TransitionType =
+type [<StructuralEquality; NoComparison; Struct>] TransitionType =
     | Incoming
     | Outgoing
 
 /// The state of a screen's transition.
-type TransitionState =
+type [<StructuralEquality; NoComparison; Struct>] TransitionState =
     | IncomingState
     | OutgoingState
     | IdlingState
 
 /// Describes one of a screen's transition processes.
+/// TODO: figure out if this really needs to be CLIMutable.
 type [<NoEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : int64
@@ -88,7 +89,7 @@ type [<NoEquality; NoComparison>] SplashDescriptor =
       SplashImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
-type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =
+type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay
@@ -149,7 +150,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 /// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
 /// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : List<IComparable>
+    { ToKeys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj }
 
