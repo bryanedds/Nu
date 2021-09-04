@@ -1164,7 +1164,7 @@ module WorldTypes =
               // cache line 2
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
-              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
+              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
