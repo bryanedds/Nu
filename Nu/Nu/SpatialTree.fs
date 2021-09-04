@@ -15,7 +15,7 @@ module internal SpatialNode =
         private
             { Depth : int
               Bounds : Vector4
-              Children : Either<'e SpatialNode array, 'e HashSet> }
+              Children : ValueEither<'e SpatialNode array, 'e HashSet> }
 
     let internal atPoint point node =
         Math.isPointInBounds point node.Bounds
@@ -26,22 +26,22 @@ module internal SpatialNode =
     let rec internal addElement bounds element node =
         if isIntersectingBounds bounds node then
             match node.Children with
-            | Left nodes -> for node in nodes do addElement bounds element node
-            | Right elements -> elements.Add element |> ignore
+            | ValueLeft nodes -> for node in nodes do addElement bounds element node
+            | ValueRight elements -> elements.Add element |> ignore
 
     let rec internal removeElement bounds element node =
         if isIntersectingBounds bounds node then
             match node.Children with
-            | Left nodes -> for node in nodes do removeElement bounds element node
-            | Right elements -> elements.Remove element |> ignore
+            | ValueLeft nodes -> for node in nodes do removeElement bounds element node
+            | ValueRight elements -> elements.Remove element |> ignore
 
     let rec internal updateElement oldBounds newBounds element node =
         match node.Children with
-        | Left nodes ->
+        | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingBounds oldBounds node || isIntersectingBounds newBounds node then
                     updateElement oldBounds newBounds element node
-        | Right elements ->
+        | ValueRight elements ->
             if isIntersectingBounds oldBounds node then
                 if not (isIntersectingBounds newBounds node) then elements.Remove element |> ignore
             elif isIntersectingBounds newBounds node then
@@ -49,21 +49,21 @@ module internal SpatialNode =
 
     let rec internal getElementsAtPoint point node (set : 'e HashSet) =
         match node.Children with
-        | Left nodes -> for node in nodes do if atPoint point node then getElementsAtPoint point node set
-        | Right elements -> for element in elements do set.Add element |> ignore
+        | ValueLeft nodes -> for node in nodes do if atPoint point node then getElementsAtPoint point node set
+        | ValueRight elements -> for element in elements do set.Add element |> ignore
 
     let rec internal getElementsInBounds bounds node (set : 'e HashSet) =
         match node.Children with
-        | Left nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
-        | Right elements -> for element in elements do set.Add element |> ignore
+        | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
+        | ValueRight elements -> for element in elements do set.Add element |> ignore
 
     let rec internal clone node =
         { Depth = node.Depth
           Bounds = node.Bounds
           Children =
             match node.Children with
-            | Right elements -> Right (HashSet (elements, HashIdentity.Structural))
-            | Left nodes -> Left (Array.map clone nodes) }
+            | ValueRight elements -> ValueRight (HashSet (elements, HashIdentity.Structural))
+            | ValueLeft nodes -> ValueLeft (Array.map clone nodes) }
 
     let rec internal make<'e when 'e : equality> granularity depth (bounds : Vector4) =
         if granularity < 2 then failwith "Invalid granularity for SpatialNode. Expected value of at least 2."
@@ -77,8 +77,8 @@ module internal SpatialNode =
                         let childPosition = v2 bounds.X bounds.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = v4Bounds childPosition childSize
                         yield make granularity childDepth childBounds|]
-                Left nodes
-            else Right (HashSet<'e> HashIdentity.Structural)
+                ValueLeft nodes
+            else ValueRight (HashSet<'e> HashIdentity.Structural)
         { Depth = depth
           Bounds = bounds
           Children = children }
