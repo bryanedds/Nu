@@ -637,8 +637,8 @@ module Character =
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
                 let actionTime =
                     if waitSpeed
-                    then 500.0f - single indexRev
-                    else -Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    then 500.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    else 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
                 Some enemy
             | None -> None
