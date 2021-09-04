@@ -175,6 +175,16 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage =
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
+// NOTE: for experimenting with sorting render value types.
+///// A comparable layered message to the rendering system.
+//and [<NoEquality; NoComparison>] RenderLayeredMessageComparable =
+//    struct
+//        val Elevation : single
+//        val PositionY : single
+//        val AssetTag : obj AssetTag
+//        val RenderDescriptor : RenderDescriptor
+//        end
+
 /// A message to the rendering system.
 and [<NoEquality; NoComparison>] RenderMessage =
     | RenderLayeredMessage of RenderLayeredMessage
@@ -358,14 +368,15 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         for renderMessage in renderMessages do
             SdlRenderer.handleRenderMessage renderMessage renderer
 
-//    static member private sortRenderLayeredMessages (messages : RenderLayeredMessage List) =
+// NOTE: for experimenting with sorting render value types.
+//    static member private sortRenderLayeredMessages renderer =
 //#if MULTITHREAD_RENDER_SORT
-//        let messagesSorted = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
+//        let messagesSorted = renderer.RenderLayeredMessages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
 //        messages.Clear ()
 //        messages.AddRange messagesSorted
 //#else
 //        let messagesArray =
-//            messages.GetType().GetField("_items", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(messages) :?>
+//            renderer.RenderLayeredMessages.GetType().GetField("_items", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(messages) :?>
 //            RenderLayeredMessage array
 //        let comparison =
 //            ValueComparison
@@ -380,13 +391,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 //        ValueSort.IntroSort (messagesArray, 0, messages.Count, comparison)
 //#endif
 
-    static member private sortRenderLayeredMessages (messages : RenderLayeredMessage List) =
+    static member private sortRenderLayeredMessages renderer =
 #if MULTITHREAD_RENDER_SORT
-        let messagesSorted = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
+        let messagesSorted = renderer.RenderLayeredMessages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
         messages.Clear ()
         messages.AddRange messagesSorted
 #else
-        messages.Sort (RenderLayeredMessageComparer ())
+        renderer.RenderLayeredMessages.Sort (RenderLayeredMessageComparer ())
 #endif
 
     /// Render sprite.
@@ -743,7 +754,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | RenderCallback callback ->
             callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, eyeMargin, renderer)
 
-    static member private renderLayeredMessages eyeCenter eyeSize eyeMargin (messages : RenderLayeredMessage List) renderer =
+    static member private renderLayeredMessages eyeCenter eyeSize eyeMargin renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
@@ -751,7 +762,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            for message in messages do
+            for message in renderer.RenderLayeredMessages do
                 SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
@@ -761,7 +772,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = { Position = v2Zero; Size = v2Zero; Rotation = 0.0f; Elevation = Constants.Engine.GameSortPriority; Flags = 0 }
+                let transform = { Position = v2Zero; Size = v2Zero; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0 }
                 let sprite = { Transform = transform; Absolute = true; Offset = v2Zero; Inset = v4Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let bottomMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft; Size = v2 eyeMarginBounds.Size.X eyeMargin.Y }}
                 let leftMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft; Size = v2 eyeMargin.X eyeMarginBounds.Size.Y }}
@@ -769,7 +780,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let rightMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomRight - v2 eyeMargin.X 0.0f; Size = v2 eyeMargin.X eyeMarginBounds.Size.Y }}
                 [|bottomMargin; leftMargin; topMargin; rightMargin|]
             else [||]
-        let message = { Elevation = Constants.Engine.GameSortPriority; AssetTag = AssetTag.generalize image; PositionY = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
+        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; PositionY = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
         renderer.RenderLayeredMessages.Add message
 
     /// Get the render context.
@@ -806,9 +817,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
         member renderer.Render eyeCenter eyeSize eyeMargin renderMessages =
             SdlRenderer.handleRenderMessages renderMessages renderer
-            SdlRenderer.sortRenderLayeredMessages renderer.RenderLayeredMessages
-            SdlRenderer.addEyeMarginMessage eyeCenter eyeSize eyeMargin renderer // adds margins to end for rendering last in all cases
-            SdlRenderer.renderLayeredMessages eyeCenter eyeSize eyeMargin renderer.RenderLayeredMessages renderer
+            SdlRenderer.addEyeMarginMessage eyeCenter eyeSize eyeMargin renderer
+            SdlRenderer.sortRenderLayeredMessages renderer
+            SdlRenderer.renderLayeredMessages eyeCenter eyeSize eyeMargin renderer
             renderer.RenderLayeredMessages.Clear ()
 
         member renderer.CleanUp () =
