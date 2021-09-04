@@ -651,15 +651,15 @@ module WorldTypes =
         { // cache line 1 (assuming 16 byte header)
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2 + 16 bytes
+          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
-          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
+          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
