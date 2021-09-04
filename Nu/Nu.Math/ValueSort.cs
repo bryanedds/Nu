@@ -5,14 +5,14 @@ namespace Nu
 	/// <summary>
 	/// Compares two values by reference.
 	/// </summary>
-	public delegate int ValueComparison<T>(ref T left, ref T right) where T : struct;
+	public delegate int ValueComparison<T>(ref T left, ref T right);
 
 	/// <summary>
 	/// Enables faster sorting of non-trivial values types.
 	/// </summary>
     public static class ValueSort
 	{
-		private static void Swap<T>(T[] a, int i, int j) where T : struct
+		private static void Swap<T>(T[] a, int i, int j)
 		{
 			if (i != j)
 			{
@@ -22,7 +22,7 @@ namespace Nu
 			}
 		}
 
-		private static void SwapIfGreater<T>(T[] keys, ValueComparison<T> comparer, int a, int b) where T : struct
+		private static void SwapIfGreater<T>(T[] keys, ValueComparison<T> comparer, int a, int b)
 		{
 			if (a != b && comparer(ref keys[a], ref keys[b]) > 0)
 			{
@@ -43,7 +43,7 @@ namespace Nu
 			return num;
 		}
 
-		private static void DownHeap<T>(T[] keys, int i, int n, int lo, ValueComparison<T> comparer) where T : struct
+		private static void DownHeap<T>(T[] keys, int i, int n, int lo, ValueComparison<T> comparer)
 		{
 			T val = keys[lo + i - 1]; // copy T
 			while (i <= n / 2)
@@ -57,7 +57,7 @@ namespace Nu
 			keys[lo + i - 1] = val;
 		}
 
-		private static void Heapsort<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer) where T : struct
+		private static void Heapsort<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer)
 		{
 			int num = hi - lo + 1;
 			for (int num2 = num / 2; num2 >= 1; num2--)
@@ -71,7 +71,7 @@ namespace Nu
 			}
 		}
 
-		private static void InsertionSort<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer) where T : struct
+		private static void InsertionSort<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer)
 		{
 			for (int i = lo; i < hi; i++)
 			{
@@ -86,7 +86,7 @@ namespace Nu
 			}
 		}
 
-		private static int PickPivotAndPartition<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer) where T : struct
+		private static int PickPivotAndPartition<T>(T[] keys, int lo, int hi, ValueComparison<T> comparer)
 		{
 			int num = lo + (hi - lo) / 2;
 			SwapIfGreater(keys, comparer, lo, num);
@@ -107,7 +107,7 @@ namespace Nu
 			return num2;
 		}
 
-		private static void IntroSort<T>(T[] keys, int lo, int hi, int depthLimit, ValueComparison<T> comparer) where T : struct
+		private static void IntroSort<T>(T[] keys, int lo, int hi, int depthLimit, ValueComparison<T> comparer)
 		{
 			while (hi > lo)
 			{
@@ -144,7 +144,7 @@ namespace Nu
 			}
 		}
 
-		public static void IntroSort<T>(T[] keys, int left, int length, ValueComparison<T> comparer) where T : struct
+		public static void IntroSort<T>(T[] keys, int left, int length, ValueComparison<T> comparer)
 		{
             if (length >= 2)
             {
@@ -152,7 +152,7 @@ namespace Nu
             }
         }
 
-		public static void IntroSort<T>(T[] keys, ValueComparison<T> comparer) where T : struct
+		public static void IntroSort<T>(T[] keys, ValueComparison<T> comparer)
 		{
             IntroSort(keys, 0, keys.Length - 1, 2 * FloorLog2(keys.Length), comparer);
         }
