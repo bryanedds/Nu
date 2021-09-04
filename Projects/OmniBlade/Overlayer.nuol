@@ -11,4 +11,11 @@
   [TextDispatcher]
   [[Font [Gui Font]]
    [TextColor [255 255 255 255]]
+   [TextDisabledColor [192 192 192 192]]]]
+ [ToggleDispatcherRoute
+  [ToggleDispatcher]
+  [[ToggleSoundOpt
+    [Some [Gui Affirm]]]
+   [Font [Gui Font]]
+   [TextColor [255 255 255 255]]
    [TextDisabledColor [192 192 192 192]]]]]

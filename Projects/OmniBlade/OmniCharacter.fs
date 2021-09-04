@@ -325,7 +325,7 @@ module Character =
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
         character.IsEnemy &&
-        (character.ActionTime >= 60.0f || character.ActionTime < 0.0f) // HACK: instantly get enemies ready at the start of battle
+        character.ActionTime >= 60.0f
 
     let isAutoTeching character =
         match character.AutoBattleOpt_ with
@@ -553,7 +553,7 @@ module Character =
                 character
         else character
 
-    let autoBattle (source : Character) alliesHealthy alliesWounded enemiesHealthy enemiesWounded =
+    let autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
@@ -617,7 +617,7 @@ module Character =
           CelSize_ = celSize
           InputState_ = NoInput }
 
-    let tryMakeEnemy index indexMax offsetCharacters enemyData =
+    let tryMakeEnemy index indexMax offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -635,7 +635,10 @@ module Character =
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
-                let actionTime = -Single.Epsilon - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                let actionTime =
+                    if waitSpeed
+                    then 500.0f - single indexRev
+                    else -Constants.Battle.EnemyActionTimeSpacing * single indexRev
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
                 Some enemy
             | None -> None
