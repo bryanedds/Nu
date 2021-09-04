@@ -358,19 +358,19 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
       Force : Vector2 }
 
 /// A message from the physics system describing a body collision that took place.
-type [<NoEquality; NoComparison; Struct>] BodyCollisionMessage =
+type [<NoEquality; NoComparison>] BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing a body separation that took place.
-type [<NoEquality; NoComparison; Struct>] BodySeparationMessage =
+type [<NoEquality; NoComparison>] BodySeparationMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal }
 
 /// A message from the physics system describing the updated transform of a body.
-type [<NoEquality; NoComparison; Struct>] BodyTransformMessage =
+type [<NoEquality; NoComparison>] BodyTransformMessage =
     { BodySource : BodySourceInternal
       Position : Vector2
       Rotation : single
@@ -405,7 +405,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | RebuildPhysicsHackMessage
 
 /// A message from the physics system.
-type [<NoEquality; NoComparison; Struct>] IntegrationMessage =
+type [<NoEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage : BodyCollisionMessage
     | BodySeparationMessage of BodySeparationMessage : BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage : BodyTransformMessage
