@@ -76,6 +76,7 @@ module Simulants =
         module Scene =
 
             let Group = Screen / "Scene"
+            let Feeler = Group / "Feeler"
             let Avatar = Group / "Avatar"
             let TileMap = Group / "TileMap"
 

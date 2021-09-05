@@ -43,8 +43,9 @@ module FieldDispatcher =
         | Interact
 
     type [<NoEquality; NoComparison>] FieldCommand =
+        | ProcessKeyInput
+        | ProcessTouchInput of Vector2
         | UpdateEye
-        | FeelerTouch of Vector2
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * int * single * double * Song AssetTag
@@ -571,6 +572,7 @@ module FieldDispatcher =
 
         override this.Channel (_, field) =
             [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             field.UpdateEvent => cmd ProcessKeyInput
              field.UpdateEvent => msg Update
              field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye
@@ -914,15 +916,26 @@ module FieldDispatcher =
         override this.Command (field, command, screen, world) =
 
             match command with
-            | UpdateEye ->
-                let world = World.setEyeCenter field.Avatar.Center world
-                let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
-                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
-                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
-                let world = World.constrainEyeBounds eyeBounds world
-                just world
+            | ProcessKeyInput ->
+                if not (Simulants.Field.Scene.Feeler.GetTouched world) then
+                    let avatar = Simulants.Field.Scene.Avatar
+                    let force = v2Zero
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A  then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then v2 0.0f Constants.Field.AvatarWalkForce + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                    let signal =
+                        if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (Face Rightward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (Face Leftward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (Face Upward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (Face Downward)
+                        else msg Nil
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
+                    just world
+                else just world
 
-            | FeelerTouch position ->
+            | ProcessTouchInput position ->
                 let avatar = Simulants.Field.Scene.Avatar
                 let lowerCenter = field.Avatar.LowerCenter
                 let positionAbsolute = World.mouseToWorld false position world
@@ -930,10 +943,18 @@ module FieldDispatcher =
                 if heading.Length () >= 12.0f then
                     let goalNormalized = Vector2.Normalize heading
                     let force = goalNormalized * Constants.Field.AvatarWalkForce
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (Face (Direction.ofVector2 heading))) world
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
                     just world
                 else just world
+
+            | UpdateEye ->
+                let world = World.setEyeCenter field.Avatar.Center world
+                let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
+                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
+                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
+                let world = World.constrainEyeBounds eyeBounds world
+                just world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
@@ -1071,9 +1092,9 @@ module FieldDispatcher =
                      Entity.Avatar <== field --> fun field -> field.Avatar]
 
                  // feeler
-                 Content.feeler Gen.name
+                 Content.feeler Simulants.Field.Scene.Feeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.GuiElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
-                     Entity.TouchingEvent ==|> fun evt -> cmd (FeelerTouch evt.Data)]
+                     Entity.TouchingEvent ==|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
                  Content.button Gen.name
