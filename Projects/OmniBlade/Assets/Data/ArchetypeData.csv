@@ -3,7 +3,7 @@ Apprentice,1,1,1,1,1,1,1,1,Sword,Vest,[],[],None,SmallStature,Generic character.
 Fighter,1.2,1.1,0.8,1,1,0.9,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],[],None,SmallStature,
 Ninja,1.1,1,0.9,1,1,1,1,1,Knife,Vest,[[2 PoisonCut] [4 PowerCut] [6 SilenceCut] [8 DoubleCut]],[],None,SmallStature,
 Wizard,0.9,0.8,1.1,1,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],[],None,SmallStature,
-Conjuror,0.9,0.8,1.1,1,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],[],None,SmallStature,
+Conjuror,0.9,0.8,1.1,1,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 Slow] [8 ConjureIfrit]],[],None,SmallStature,
 Cleric,1,1,1,1,1,1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],[],None,SmallStature,
 Bat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,SmallStature,Weak physical attacks and Drain Techs.
 Spider,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[Poison],[Some Insect],SmallStature,Weak physical attacks with Status effects.
@@ -65,4 +65,4 @@ Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash] [3 DarkCritical]],[],[Some M
 Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Some Earth],LargeStature,Physical attack and Earth magic.
 RobotBig,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[Poison Silence Sleep],[Some Metal],LargeStature,Physical attack and Lightning magic.
 Dinoman,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],None,LargeStature,Strong physical attacks with Buff magic.
-Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [2 PowerCut] [3 ConjureIfrit] [4 Slow]],[Poison],[Some Insect],BossStature,Strong physical attacks with Debuff magic.
+Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [2 PowerCut] [3 Slow] [4 ConjureIfrit]],[Poison],[Some Insect],BossStature,Strong physical attacks with Debuff magic.
