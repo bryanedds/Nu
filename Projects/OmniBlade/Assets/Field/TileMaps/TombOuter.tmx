@@ -4,7 +4,7 @@
  <tileset firstgid="513" source="Tent.tsx"/>
  <layer id="2" name="Floor" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt2s2NwjAQhuGcFmrYGxeWSoAWuNEGJdHI/jSyQBc4UixFlm2iTBzPkPfwiJsZPg+ODd40TbMBAAAAACzW1vlydgpqsWjvHJyjgloAAMByfSuowbI/BTWgPs5GMpyNAAAogz2KDHuU+dCrMvSqPvxWIPOvoAbYdFNQg3WsX4B9DwU1WHZXUAMA1MR+UIbzLGDb0L0096zihu6lWSsBfdgDyrCuAViyHwU1vCueL4Bu/B8nk3t+cD6R4fnxmtUe+3ROlWt4tfZ9OOsB49S4L1wzvza3Ifvm9h6wvwPcZrlK5FnjvvClM3d2Y88b/Yx8lqk8S7t2Dt3r3O8v5bMM86yRZSmxNWmKe6h+TfyN5PlO9/1jn2mKvbLrs7Mb95zKdhVhpS9j9fvax657YR/n8ut/r/vCNbNmvrk5jtUv/U6FfbwfOWYq21y+klxT4+XmuPScleyTqee+RC9N1YMAAISeV61aDQ==
+   eJzt2sutwjAQheGsgBrYZQNUArTALm1QEo3waIRHFzhSLEVRHlbGscfJv/jEAsmMzp07scF5lmU5AAAAAGCxdsbeOCioJUVH42ScFdQCAACW666ghpS9FNSA+DgbyXA2AgBgGuxRZNijhEOvytCr+vBdgcxbQQ1I00dBDaljfgHp+ymoIWVfBTUAQEzsB2U4zwJpc91Lc8+qnetemlkJ6MMeUIa5BmDJHgpqmCueL4Bu/B4n0/f84Hwiw/NjWKo9tjUukWsYmn0rY+OwToz7wjHzK3Nz2TeX94DtHeAyy3VHnjHuC18robMbe96oZ2SztHn2ZTuFW+VUvYbOUMpmafOc4331tpnk4x6qnYnPjvdC9mGIHqn3hI+9ssmnMOsWQ5/Z/B+PnYdrb6wbbO1j516zj/vya8tyaGaGzrdvdtdrrtfus4+PI9fsmplt+frItWu9GLM7RK/4/ttP0Us+apnTMxYA4M8f2r1aGQ==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">
