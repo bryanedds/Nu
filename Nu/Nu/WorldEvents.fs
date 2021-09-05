@@ -67,6 +67,7 @@ module Events =
     let Open = stoa<unit> "Open/Event"
     let Close = stoa<unit> "Close/Event"
     let Touch = stoa<Vector2> "Touch/Event"
+    let Touching = stoa<Vector2> "Touching/Event"
     let Untouch = stoa<Vector2> "Untouch/Event"
     let IncomingStart = stoa<unit> "Incoming/Start/Event"
     let IncomingFinish = stoa<unit> "Incoming/Finish/Event"

@@ -42,9 +42,13 @@ module Render =
 
     let [<Literal>] VirtualResolutionX = 960
     let [<Literal>] VirtualResolutionY = 540
+    let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
+    let (*Literal*) VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
     let (*Literal*) VirtualScalar = Core.getVirtualScalarOrDefault 2
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
+    let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
+    let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
     let (*Literal*) RendererFlagsDefault =
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
