@@ -2092,6 +2092,7 @@ module FeelerDispatcherModule =
         member this.SetTouched (value : bool) world = this.Set Property? Touched value world
         member this.Touched = lens Property? Touched this.GetTouched this.SetTouched this
         member this.TouchEvent = Events.Touch --> this
+        member this.TouchingEvent = Events.Touching --> this
         member this.UntouchEvent = Events.Untouch --> this
 
     type FeelerDispatcher () =
@@ -2134,6 +2135,14 @@ module FeelerDispatcherModule =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
+
+        override this.Update (entity, world) =
+            if entity.GetTouched world then
+                let mousePosition = World.getMousePosition world
+                let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
+                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
+                world
+            else world
 
         override this.GetQuickSize (_, _) =
             Vector2 (192.0f, 48.0f)

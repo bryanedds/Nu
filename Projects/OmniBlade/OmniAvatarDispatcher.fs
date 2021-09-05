@@ -80,16 +80,16 @@ module AvatarDispatcher =
         override this.Channel (_, entity) =
             [entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
-                let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.AvatarWalkForce + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A  then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then v2 0.0f Constants.Field.AvatarWalkForce + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
                 cmd (TryTravel force)
              entity.UpdateEvent =|> fun _ ->
-                if KeyboardState.isKeyDown KeyboardKey.Right then msg (Face Rightward)
-                elif KeyboardState.isKeyDown KeyboardKey.Left then msg (Face Leftward)
-                elif KeyboardState.isKeyDown KeyboardKey.Up then msg (Face Upward)
-                elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
+                if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (Face Rightward)
+                elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (Face Leftward)
+                elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (Face Upward)
+                elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (Face Downward)
                 else msg Nil
              entity.UpdateEvent => msg Update
              entity.Parent.PostUpdateEvent => msg PostUpdate

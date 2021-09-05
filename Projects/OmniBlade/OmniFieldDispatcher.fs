@@ -44,6 +44,7 @@ module FieldDispatcher =
 
     type [<NoEquality; NoComparison>] FieldCommand =
         | UpdateEye
+        | FeelerTouch of Vector2
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * int * single * double * Song AssetTag
@@ -921,6 +922,19 @@ module FieldDispatcher =
                 let world = World.constrainEyeBounds eyeBounds world
                 just world
 
+            | FeelerTouch position ->
+                let avatar = Simulants.Field.Scene.Avatar
+                let lowerCenter = field.Avatar.LowerCenter
+                let positionAbsolute = World.mouseToWorld false position world
+                let heading = positionAbsolute - lowerCenter
+                if heading.Length () >= 12.0f then
+                    let goalNormalized = Vector2.Normalize heading
+                    let force = goalNormalized * Constants.Field.AvatarWalkForce
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (Face (Direction.ofVector2 heading))) world
+                    just world
+                else just world
+
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->
@@ -1055,6 +1069,11 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.Avatar <== field --> fun field -> field.Avatar]
+
+                 // feeler
+                 Content.feeler Gen.name
+                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.GuiElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
+                     Entity.TouchingEvent ==|> fun evt -> cmd (FeelerTouch evt.Data)]
 
                  // menu button
                  Content.button Gen.name
