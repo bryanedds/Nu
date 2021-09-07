@@ -2126,6 +2126,10 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
+        let handleDeselect evt world =
+            let entity = evt.Subscriber : Entity
+            (Cascade, entity.SetTouched false world)
+
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
@@ -2134,20 +2138,15 @@ module FeelerDispatcherModule =
         override this.Register (entity, world) =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            let world = World.monitor handleDeselect (Events.Deselect --> entity.Parent.Parent) entity world
             world
 
         override this.Update (entity, world) =
             if entity.GetTouched world then
-                if MouseState.isButtonDown MouseLeft then
-                    let mousePosition = World.getMousePosition world
-                    let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
-                    world
-                else
-                    let world = entity.SetTouched false world
-                    let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                    let world = World.publishPlus (MouseState.getPosition ()) (Events.Untouch --> entity) eventTrace entity true world
-                    world
+                let mousePosition = World.getMousePosition world
+                let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
+                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
+                world
             else world
 
         override this.GetQuickSize (_, _) =
