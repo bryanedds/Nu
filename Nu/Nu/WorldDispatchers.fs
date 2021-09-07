@@ -2126,7 +2126,21 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleDeselect evt world =
+        let handleIncoming evt world =
+            let entity = evt.Subscriber : Entity
+            if  MouseState.isButtonDown MouseLeft &&
+                entity.IsSelected world &&
+                entity.GetVisible world then
+                if entity.GetEnabled world then
+                    let mousePosition = MouseState.getPosition ()
+                    let world = entity.SetTouched true world
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleIncoming" "" EventTrace.empty
+                    let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true world
+                    (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        let handleOutgoing evt world =
             let entity = evt.Subscriber : Entity
             (Cascade, entity.SetTouched false world)
 
@@ -2138,7 +2152,8 @@ module FeelerDispatcherModule =
         override this.Register (entity, world) =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
-            let world = World.monitor handleDeselect (Events.Deselect --> entity.Parent.Parent) entity world
+            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Parent.Parent) entity world
+            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Parent.Parent) entity world
             world
 
         override this.Update (entity, world) =
