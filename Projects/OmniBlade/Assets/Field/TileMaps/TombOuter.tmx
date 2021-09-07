@@ -4,7 +4,7 @@
  <tileset firstgid="513" source="Tent.tsx"/>
  <layer id="2" name="Floor" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt2s0NgjAUAGBO6gzevKiTiCs4iiO5iau4hSWBhIuJWvoDfIcv3Ej7XkvfIz00TXMAAABgtY7BKThXMJY5ugRtcK1gLAAAwP/0RnH0RgCQhholjholH2s1jrUKAMBgE+wqGMdcdb2JvkT8Sul6O30dAACQk/8IcfTB4leS/wgApKJGjKPGEb+S1IjLtQ9uhcfwmug9Je4Ll4pfijO1xH3hey93/GLPhC7+2wQ5+MWj1/bPOcVvLXfTP32TpjpTnxXMMaXS62TY52Nr7GX+PVuH/I3Vtudz5DjXOp56Lt+8bw45/jVPU81lSbEBYPneGOFDDQ==
+   eJzt20tOwzAQANCsoGdg1w1wEtIrcJQeqTfpVbgFjhokhFoJ1Y5nkr7FU3aRPf7M2Er2wzDsAQAAeFivxVvxnqAta/RRjMUhQVsAAID7ORvVcTYCgGWoUeqoUfoxV+uYqwBtPBW7BO1Yqymfy+XiF2Wqh9RCF/ayOtai+EWylwEAAL25R6jjHCx+kdwjANymxqkjR4tfJDUOXPdSfAa34avReyK+F46K3xI1ScT3wsdZ7/jV5tQMNeFpNs7PNcXvUXLyrT2pVf/PCfq4pAz/MExr/fmP6LXfW01u/RnD3zKt/R7j22set+7Lf96XfXzvGadWfdlSbADYvm/TcUMx
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">
