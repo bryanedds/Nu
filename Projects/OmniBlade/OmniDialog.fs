@@ -91,9 +91,9 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     textToShow
                 | None -> ""
              Entity.Justification == Unjustified true
-             Entity.Margins == v2 32.0f 32.0f]
+             Entity.Margins == v2 30.0f 30.0f]
             [Content.button (name + "+Left")
-                [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v2 198.0f 18.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
@@ -104,7 +104,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | None -> ""
                  Entity.ClickEvent ==> msg promptLeft]
              Content.button (name + "+Right")
-                [Entity.PositionLocal == v2 498.0f 42.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v2 498.0f 18.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
