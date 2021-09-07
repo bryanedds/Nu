@@ -936,16 +936,21 @@ module FieldDispatcher =
                 else just world
 
             | ProcessTouchInput position ->
-                let avatar = Simulants.Field.Scene.Avatar
-                let lowerCenter = field.Avatar.LowerCenter
-                let positionAbsolute = World.mouseToWorld false position world
-                let heading = positionAbsolute - lowerCenter
-                if heading.Length () >= 6.0f then // TODO: make constant DeadZoneRadius.
-                    let goalNormalized = Vector2.Normalize heading
-                    let force = goalNormalized * Constants.Field.AvatarWalkForce
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (Face (Direction.ofVector2 heading))) world
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
-                    just world
+                if  KeyboardState.isKeyUp KeyboardKey.Right && KeyboardState.isKeyUp KeyboardKey.D &&
+                    KeyboardState.isKeyUp KeyboardKey.Left && KeyboardState.isKeyUp KeyboardKey.A &&
+                    KeyboardState.isKeyUp KeyboardKey.Up && KeyboardState.isKeyUp KeyboardKey.W &&
+                    KeyboardState.isKeyUp KeyboardKey.Down && KeyboardState.isKeyUp KeyboardKey.S then
+                    let avatar = Simulants.Field.Scene.Avatar
+                    let lowerCenter = field.Avatar.LowerCenter
+                    let positionAbsolute = World.mouseToWorld false position world
+                    let heading = positionAbsolute - lowerCenter
+                    if heading.Length () >= 6.0f then // TODO: make constant DeadZoneRadius.
+                        let goalNormalized = Vector2.Normalize heading
+                        let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (Face (Direction.ofVector2 heading))) world
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                        just world
+                    else just world
                 else just world
 
             | UpdateEye ->
