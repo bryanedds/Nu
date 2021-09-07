@@ -61,6 +61,13 @@ type Direction =
     | Downward
     | Leftward
 
+    member this.Opposite =
+        match this with
+        | Upward -> Downward
+        | Rightward -> Leftward
+        | Downward -> Upward
+        | Leftward -> Rightward
+
     static member ofVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
