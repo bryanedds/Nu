@@ -926,10 +926,10 @@ module FieldDispatcher =
                     let force = if KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
                     let signal =
-                        if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (Face Rightward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (Face Leftward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (Face Upward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (Face Downward)
+                        if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (TryFace Rightward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (TryFace Leftward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (TryFace Upward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (TryFace Downward)
                         else msg Nil
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
                     just world
@@ -947,8 +947,8 @@ module FieldDispatcher =
                     if heading.Length () >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector2.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (Face (Direction.ofVector2 heading))) world
                         let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (TryFace (Direction.ofVector2 heading))) world
                         just world
                     else just world
                 else just world
