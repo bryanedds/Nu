@@ -97,6 +97,11 @@ module Avatar =
     let updateDirection updater (avatar : Avatar) =
         updateCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
 
+    let lookAt position (avatar : Avatar) =
+        let delta = position - avatar.Position
+        let direction = Direction.ofVector2 delta
+        updateDirection (constant direction) avatar
+
     let animate time characterAnimationType avatar =
         updateCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType state) avatar
 
