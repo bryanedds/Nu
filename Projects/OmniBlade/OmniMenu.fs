@@ -20,26 +20,26 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
 
     static member makeFromConsumableData selection (cd : ConsumableData) =
         //let prompt = "Use " + string cd.ConsumableType + " on whom?"
-        let prompt = "Sur qui utiliser " + ConsumableType.frenchWithUndefinedArticle cd.ConsumableType + " ?"
+        let prompt = "Qui doit ingerer " + ConsumableType.frenchWithUndefinedArticle cd.ConsumableType + " ?"
         let effect = "(Effet : " + cd.Description + ")"
         MenuUse.make selection prompt effect
 
     static member makeFromWeaponData selection (wd : WeaponData) =
         //let prompt = "Equip " + string wd.WeaponType + "  to whom"
-        let prompt = "Qui equiper de l'arme \"" + WeaponType.frenchName wd.WeaponType + "\" ?"
+        let prompt = "Qui doit manier " + WeaponType.frenchWithUndefinedArticle wd.WeaponType + " ?"
         // let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
         let stats = "(Puissance : " + string wd.PowerBase + " | Magie : " + string wd.MagicBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromArmorData selection (ad : ArmorData) =
         //let prompt = "Equip " + string ad.ArmorType + " to whom?"
-        let prompt = "Qui equiper d'" + ArmorType.frenchWithUndefinedArticle ad.ArmorType + " ?"
+        let prompt = "Qui doit revetir " + ArmorType.frenchWithUndefinedArticle ad.ArmorType + " ?"
         //let stats = "(End: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
         let stats = "(Endurance : " + string ad.EnduranceBaseDisplay + " |  Mental : " + string ad.MindBaseDisplay + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Qui doter de l'accessoire \"" + string ad.AccessoryType + "\" ?"
+        let prompt = "Qui doter d'" + AccessoryType.frenchWithUndefinedArticle ad.AccessoryType + " ?"
         let stats = "(Effet : " + string ad.Description + ")"
         MenuUse.make selection prompt stats
 

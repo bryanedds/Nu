@@ -13,7 +13,19 @@ open Nu
 
  type FrenchWordGender =
      |Masculin
-     |Feminin 
+     |Feminin
+     member this.UndefinedArticle =
+            match this with
+            |Masculin -> "un "
+            |Feminin -> "une "
+ type NumberAndGender = 
+        |Singular of FrenchWordGender
+        |Plural of FrenchWordGender 
+        member this.UndefinedArticle =
+             match this with
+             |Singular gender -> gender.UndefinedArticle
+             |Plural _ -> "des"
+            
  
 
 
@@ -193,7 +205,39 @@ type WeaponType =
     | SightedBow
     | IvoryRod
     | Fangs
-    static member frenchName wt = string wt 
+    static member frenchName wt = match wt with 
+                                  |Bare -> "Mains Nues"
+                                  |ShortSword -> "Epee Courte"
+                                  |Dagger -> "Dague"
+                                  |OakRod -> "Baguette en Bois "
+                                  |OakBow -> "Arc en Bois"
+                                  |Paws -> "Pattes"
+                                  |BronzeSword -> "Epee de Bronze"
+                                  |BronzeKatana -> "Katana de Bronze"
+                                  |BronzeRod -> "Baguette de Bronze"
+                                  |LightBow -> "Arc de Lumière"
+                                  |Claws -> "Griffes"
+                                  |IronSword -> "Epee de Fer"
+                                  |IronKatana -> "Katana de Fer"
+                                  |SightedBow -> "Arc Droit"
+    static member NumberAndGender wt = match wt with
+                                        |Bare -> Plural Feminin
+                                        |ShortSword -> Singular Feminin
+                                        |Dagger -> Singular Feminin
+                                        |OakRod -> Singular Feminin
+                                        |OakBow -> Singular Masculin 
+                                        |Paws -> Plural Feminin
+                                        |BronzeSword -> Singular Feminin
+                                        |BronzeKatana -> Singular Masculin 
+                                        |BronzeRod -> Singular Feminin  
+                                        |LightBow -> Singular Masculin 
+                                        |Claws -> Plural Feminin
+                                        |IronSword -> Singular Feminin 
+                                        |IronKatana -> Singular Masculin 
+                                        |SightedBow -> Singular Masculin 
+    static member frenchWithUndefinedArticle wt = 
+                    let article = (WeaponType.NumberAndGender wt).UndefinedArticle
+                            in article + WeaponType.frenchName wt 
 
 type ArmorType =
     | MicroFur
@@ -212,24 +256,22 @@ type ArmorType =
     | StoneHide
     static member frenchName at = match at with
                                   |MicroFur -> "Fourrure Fine"
-                                  |TinMail -> "Cotte de FerBlanc"
+                                  |TinMail -> "Cotte de Fer Blanc"
                                   |CottonVest -> "Veste de Coton"
                                   |CottonRobe -> "Robe de Coton"
-                                  |ThinFur -> "FourrureFine"
+                                  |ThinFur -> "Fourrure Fine"
                                   |BronzeMail -> "Cotte de Bronze"
                                   |LeatherVest -> "Veste de Cuir"
                                   |LeatherRobe -> "Robe de Cuir"
                                   |ThickFur -> "Fourrure"
-                                  |IronMail -> "Cotte d'Acier"
+                                  |IronMail -> "Cotte de Fer"
                                   |RubberVest -> "Veste de Caoutchouc"
                                   |SilkRobe -> "Robe de Soie"
                                   |ToughHide -> "Peau Rigide"
                                   |StoneHide -> "Armure de Pierre"
     static member frenchNameGender _ = Feminin 
     static member frenchWithUndefinedArticle at = 
-                    let article = match ArmorType.frenchNameGender at with
-                                        |Feminin -> "une "
-                                        |Masculin -> "un "
+                    let article =  (ArmorType.frenchNameGender at).UndefinedArticle
                         in article + ArmorType.frenchName at  
                         
      
@@ -301,9 +343,7 @@ type ConsumableType =
                                     |GoldHerb -> Feminin 
                                     | _ -> Masculin 
     static member frenchWithUndefinedArticle ct = 
-                    let article = match ConsumableType.frenchGender ct with
-                                        |Feminin -> "une "
-                                        |Masculin -> "un "
+                    let article = (ConsumableType.frenchGender ct).UndefinedArticle 
                         in article + ConsumableType.frenchName ct  
 type KeyItemType =
     | BrassKey
@@ -312,9 +352,7 @@ type KeyItemType =
     static member frenchGender kt = Feminin 
     
     static member frenchWithUndefinedArticle kt = 
-                    let article = match KeyItemType.frenchGender kt with
-                                  |Feminin -> "une "
-                                  |Masculin -> "un "
+                    let article = (KeyItemType.frenchGender kt).UndefinedArticle
                         in article + KeyItemType.frenchName kt  
 
 type ItemType =

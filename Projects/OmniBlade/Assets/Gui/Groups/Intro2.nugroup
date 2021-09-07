@@ -8,7 +8,7 @@
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "the ancient 'tomb' of the 9 mythical demons."]]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "le 'tombeau' ancestral des 9 demons du mythe"]]]
+    [Text "le 'tombeau' ancestral des 9 demons mythiques."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Elevation -10]

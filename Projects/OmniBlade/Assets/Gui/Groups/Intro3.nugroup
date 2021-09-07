@@ -8,7 +8,7 @@
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "After a five day trek into the mountains..."]]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "Apres cinq jours de periple dans ces montagnes ..."]]]
+    [Text "Apres cinq jours de periple dans ces montagnes..."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Elevation -10]

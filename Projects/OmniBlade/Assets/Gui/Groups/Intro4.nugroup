@@ -8,7 +8,7 @@
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "it appears I am not the first to find it."]]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "Je vois que je ne suis pas le seul a l'avoir trouve."]]]
+    [Text "je vois que je ne suis pas le seul a l'avoir trouve."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Elevation -10]
