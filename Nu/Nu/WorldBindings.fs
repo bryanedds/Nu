@@ -134,22 +134,30 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelectedScreenTransitioning' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let selectScreenOpt screenOpt world =
+    let selectScreenOpt transitionState screenOpt world =
         let oldWorld = world
         try
+            let transitionState =
+                match ScriptingSystem.tryExport typeof<TransitionState> transitionState world with
+                | Some value -> value :?> TransitionState
+                | None -> failwith "Invalid argument type for 'transitionState'; expecting a value convertable to TransitionState."
             let screenOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> screenOpt world with
                 | Some value -> value :?> FSharpOption<Screen>
                 | None -> failwith "Invalid argument type for 'screenOpt'; expecting a value convertable to FSharpOption`1."
-            let result = World.selectScreenOpt screenOpt world
+            let result = World.selectScreenOpt transitionState screenOpt world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'selectScreenOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let selectScreen screen world =
+    let selectScreen transitionState screen world =
         let oldWorld = world
         try
+            let transitionState =
+                match ScriptingSystem.tryExport typeof<TransitionState> transitionState world with
+                | Some value -> value :?> TransitionState
+                | None -> failwith "Invalid argument type for 'transitionState'; expecting a value convertable to TransitionState."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -160,7 +168,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.selectScreen screen world
+            let result = World.selectScreen transitionState screen world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'selectScreen' due to: " + scstring exn, None)
@@ -2602,7 +2610,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|screenOpt|] -> selectScreenOpt screenOpt world
+            | [|transitionState; screenOpt|] -> selectScreenOpt transitionState screenOpt world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2613,7 +2621,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|screen|] -> selectScreen screen world
+            | [|transitionState; screen|] -> selectScreen transitionState screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4107,8 +4115,8 @@ module WorldBindings =
              ("tryGetIsSelectedScreenTransitioning", { Fn = evalTryGetIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
              ("isSelectedScreenIdling", { Fn = evalIsSelectedScreenIdlingBinding; Pars = [||]; DocOpt = None })
              ("isSelectedScreenTransitioning", { Fn = evalIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
-             ("selectScreenOpt", { Fn = evalSelectScreenOptBinding; Pars = [|"screenOpt"|]; DocOpt = None })
-             ("selectScreen", { Fn = evalSelectScreenBinding; Pars = [|"screen"|]; DocOpt = None })
+             ("selectScreenOpt", { Fn = evalSelectScreenOptBinding; Pars = [|"transitionState"; "screenOpt"|]; DocOpt = None })
+             ("selectScreen", { Fn = evalSelectScreenBinding; Pars = [|"transitionState"; "screen"|]; DocOpt = None })
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDataOpt"; "destination"; "screen"|]; DocOpt = None })
