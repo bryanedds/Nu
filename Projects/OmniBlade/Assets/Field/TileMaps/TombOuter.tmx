@@ -33,7 +33,7 @@
     <property name="I" value="[Shopkeep RobehnShopkeep Downward Armory]"/>
    </properties>
   </object>
-  <object id="8" gid="443" x="3122" y="1536" width="144" height="144">
+  <object id="8" gid="443" x="3114" y="1536" width="144" height="144">
    <properties>
     <property name="I" value="[Npc MaelNpc Downward [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
    </properties>
