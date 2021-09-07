@@ -84,20 +84,36 @@ module KeyboardState =
         let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
         state = byte 1
 
+    /// Check that the given keyboard key is up.
+    let isKeyUp (key : KeyboardKey) =
+        not (isKeyDown key)
+
     /// Check that either ctrl key is down.
     let isCtrlDown () =
         isKeyDown KeyboardKey.Lctrl ||
         isKeyDown KeyboardKey.Rctrl
+
+    /// Check that both ctrl keys are up.
+    let isCtrlUp () =
+        not (isCtrlDown ())
 
     /// Check that either alt key is down.
     let isAltDown () =
         isKeyDown KeyboardKey.Lalt ||
         isKeyDown KeyboardKey.Ralt
 
+    /// Check that both alt keys are up.
+    let isAltUp () =
+        not (isAltDown ())
+
     /// Check that either shift key is down.
     let isShiftDown () =
         isKeyDown KeyboardKey.Lshift ||
         isKeyDown KeyboardKey.Rshift
+
+    /// Check that both shift keys are up.
+    let isShiftUp () =
+        not (isShiftDown ())
 
 [<RequireQualifiedAccess>]        
 module GamepadState =
