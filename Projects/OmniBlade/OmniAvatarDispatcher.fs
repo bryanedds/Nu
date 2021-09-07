@@ -17,7 +17,7 @@ module AvatarDispatcher =
         | PostUpdate
         | Collision of CollisionData
         | Separation of SeparationData
-        | Face of Direction
+        | TryFace of Direction
         | Nil
 
     type [<StructuralEquality; NoComparison>] AvatarCommand =
@@ -109,7 +109,7 @@ module AvatarDispatcher =
                 let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
                 just avatar
 
-            | Face direction ->
+            | TryFace direction ->
 
                 // update facing if enabled, speed is low, and direction pressed
                 let avatar =

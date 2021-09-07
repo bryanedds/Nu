@@ -2138,10 +2138,16 @@ module FeelerDispatcherModule =
 
         override this.Update (entity, world) =
             if entity.GetTouched world then
-                let mousePosition = World.getMousePosition world
-                let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
-                world
+                if MouseState.isButtonDown MouseLeft then
+                    let mousePosition = World.getMousePosition world
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
+                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
+                    world
+                else
+                    let world = entity.SetTouched false world
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
+                    let world = World.publishPlus (MouseState.getPosition ()) (Events.Untouch --> entity) eventTrace entity true world
+                    world
             else world
 
         override this.GetQuickSize (_, _) =
