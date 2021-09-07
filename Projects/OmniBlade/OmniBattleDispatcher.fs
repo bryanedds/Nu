@@ -47,6 +47,7 @@ module BattleDispatcher =
         | TechCharacter5 of CharacterIndex * CharacterIndex * TechType
         | TechCharacter6 of CharacterIndex * CharacterIndex * TechType
         | TechCharacterAmbient of CharacterIndex * CharacterIndex * TechType
+        | AutoBattleEnemies
         | ChargeCharacter of CharacterIndex
         | PoiseCharacter of CharacterIndex
         | WoundCharacter of CharacterIndex
@@ -71,6 +72,7 @@ module BattleDispatcher =
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
         | DisplayAura of int64 * CharacterIndex
+        | DisplayEmpower of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
         | DisplayBuff of int64 * StatusType * CharacterIndex
@@ -277,7 +279,7 @@ module BattleDispatcher =
                 withMsg (ReadyCharacters timeLocalReady) battle
             elif timeLocal = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
-                withMsg PoiseCharacters battle
+                withMsgs [PoiseCharacters; AutoBattleEnemies] battle
             else just battle
 
         and private updateCurrentCommand time currentCommand battle =
@@ -305,17 +307,34 @@ module BattleDispatcher =
         and private updateNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
             let sourceIndex = command.ActionCommand.Source
+            let targetIndexOpt = command.ActionCommand.TargetOpt
             let source = Battle.getCharacter sourceIndex battle
             let battle =
                 match command.ActionCommand.Action with
-                | Attack | Consume _ | Defend ->
-                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses)
-                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                | Attack | Defend ->
+                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                        let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                        Battle.updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
-                | Tech _ ->
-                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses)
-                    then Battle.updateCurrentCommandOpt (constant (Some command)) battle
-                    else battle
+                | Consume consumableType ->
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumable) ->
+                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                            let targetIndexOpt = Battle.tryRetargetIfNeeded consumable.Revive targetIndexOpt battle
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                        else battle
+                    | (false, _) -> battle
+                | Tech techType ->
+                    match Data.Value.Techs.TryGetValue techType with
+                    | (true, _) ->
+                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
+                            let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                        else battle
+                    | (false, _) -> battle
                 | Wound ->
                     Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle
@@ -351,13 +370,20 @@ module BattleDispatcher =
             let battle =
                 Battle.updateCharacters (fun character ->
                     let actionTimeDelta =
-                        if character.IsAlly
+                        if character.IsAlly || battle.BattleSpeed = WaitSpeed
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
                     let actionTimeDelta =
                         if Map.containsKey (Time false) character.Statuses then actionTimeDelta * 0.667f
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * 1.5f
                         else actionTimeDelta
+                    let actionTimeDelta =
+                        match battle.BattleSpeed with
+                        | SwiftSpeed -> actionTimeDelta
+                        | PacedSpeed -> actionTimeDelta * 0.75f
+                        | WaitSpeed ->
+                            let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
+                            if anyAlliesInputting then 0.0f else actionTimeDelta
                     let poisoned =
                         let actionTime = character.ActionTime + actionTimeDelta
                         Map.containsKey Poison character.Statuses &&
@@ -383,7 +409,7 @@ module BattleDispatcher =
                             let alliesWounded = Battle.getAlliesWounded battle
                             let enemiesHealthy = Battle.getEnemiesHealthy battle
                             let enemiesWounded = Battle.getEnemiesWounded battle
-                            Character.autoBattle character alliesHealthy alliesWounded enemiesHealthy enemiesWounded
+                            Character.autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded character
                         else character
                     character)
                     battle
@@ -777,8 +803,8 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
-                    let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
-                    withCmds [playBuff; displayBuff] battle
+                    let displayEmpower = DisplayEmpower (0L, targetIndex)
+                    withCmds [playBuff; displayEmpower] battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -903,6 +929,10 @@ module BattleDispatcher =
                         | None -> battle
                     just battle
                 else just battle
+
+            | AutoBattleEnemies ->
+                let battle = Battle.autoBattleEnemies battle
+                just battle
 
             | ChargeCharacter sourceIndex ->
                 let time = World.getUpdateTime world
@@ -1062,6 +1092,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeAuraEffect ()) world |> just
                 | None -> just world
 
+            | DisplayEmpower (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom target.Bottom) (Effects.makeEmpowerEffect ()) world |> just
+                | None -> just world
+            
             | DisplayProtect (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeProtectEffect ()) world |> just

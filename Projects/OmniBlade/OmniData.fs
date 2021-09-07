@@ -725,8 +725,8 @@ type [<NoEquality; NoComparison>] SpiritType =
     static member getColor spiritType =
         match spiritType with
         | WeakSpirit -> Color (byte 255, byte 255, byte 255, byte 127)
-        | NormalSpirit -> Color (byte 255, byte 199, byte 199, byte 127)
-        | StrongSpirit -> Color (byte 255, byte 149, byte 149, byte 127)
+        | NormalSpirit -> Color (byte 255, byte 191, byte 191, byte 127)
+        | StrongSpirit -> Color (byte 255, byte 127, byte 127, byte 127)
 
 type [<NoEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
@@ -858,6 +858,7 @@ type TechData =
       TechCost : int
       EffectType : EffectType
       Scalar : single
+      Split : bool
       Curative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
