@@ -424,7 +424,7 @@ module BattleDispatcher =
                 let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience ! \nTu gagnes " + string battle.PrizePool.Gold + " Ors !"
                 let textD =
                     match battle.PrizePool.Items with
-                    | _ :: _ as items -> "^Tu trouves 1 " + (items |> List.map (fun i -> ItemType.frenchName i) |> String.join ", ") + " !"
+                    | _ :: _ as items -> "^Tu trouves " + (items |> List.map (fun i -> ItemType.frenchWithQuantity i) |> String.join ", ") + " !"
                     | [] -> ""
                 let text = textA + textB + textC + textD
                 let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }

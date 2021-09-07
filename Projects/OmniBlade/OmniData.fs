@@ -10,6 +10,13 @@ open TiledSharp
 open Prime
 open Nu
 
+
+ type FrenchWordGender =
+     |Masculin
+     |Feminin 
+ 
+
+
 type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
@@ -204,28 +211,45 @@ type ArmorType =
     | ToughHide
     | StoneHide
     static member frenchName at = match at with
-                                  |MicroFur -> "fourrure fine"
-                                  |TinMail -> "cotte de fer blanc"
-                                  |CottonVest -> "veste en coton"
-                                  |CottonRobe -> "robe de coton"
-                                  |ThinFur -> "fourrure legere"
-                                  |BronzeMail -> "cotte de bronze"
-                                  |LeatherVest -> "veste de cuir"
-                                  |LeatherRobe -> "robe de cuir"
-                                  |ThickFur -> "fourrure epaisse"
-                                  |IronMail -> "cotte d'acier"
-                                  |RubberVest -> "veste en caoutchouc"
-                                  |SilkRobe -> "robe de soie"
-                                  |ToughHide -> "peau rigide"
-                                  |StoneHide -> "armure de pierre"
+                                  |MicroFur -> "Fourrure Fine"
+                                  |TinMail -> "Cotte de FerBlanc"
+                                  |CottonVest -> "Veste de Coton"
+                                  |CottonRobe -> "Robe de Coton"
+                                  |ThinFur -> "FourrureFine"
+                                  |BronzeMail -> "Cotte de Bronze"
+                                  |LeatherVest -> "Veste de Cuir"
+                                  |LeatherRobe -> "Robe de Cuir"
+                                  |ThickFur -> "Fourrure"
+                                  |IronMail -> "Cotte d'Acier"
+                                  |RubberVest -> "Veste de Caoutchouc"
+                                  |SilkRobe -> "Robe de Soie"
+                                  |ToughHide -> "Peau Rigide"
+                                  |StoneHide -> "Armure de Pierre"
+    static member frenchNameGender _ = Feminin 
+    static member frenchWithUndefinedArticle at = 
+                    let article = match ArmorType.frenchNameGender at with
+                                        |Feminin -> "une "
+                                        |Masculin -> "un "
+                        in article + ArmorType.frenchName at  
+                        
+     
+
             
  
 type AccessoryType =
     | SilverRing
     | IronBrace
     static member frenchName at = match at with
-                                  |SilverRing -> "bague en argent"
-                                  |IronBrace -> "corset de fer"
+                                  |SilverRing -> "Bague d'Argent"
+                                  |IronBrace -> "Corset de Fer"
+    static member frenchNameGender at = match at with
+                                        |SilverRing -> Feminin
+                                        |IronBrace -> Masculin 
+    static member frenchWithUndefinedArticle at = let article = match AccessoryType.frenchNameGender at with
+                                                                      |Feminin -> "une "
+                                                                      |Masculin -> "un "
+                                                                         in article + AccessoryType.frenchName at 
+
 
 type WeaponSubtype =
     | Melee
@@ -241,10 +265,10 @@ type ArmorSubtype =
     | Pelt
     static member frenchName ast =
         match ast with
-        |Robe -> "robe"
-        |Vest -> "veste"
-        |Mail -> "cotte de mailles"
-        |Pelt -> "Pelt"
+        |Robe -> "Robe"
+        |Vest -> "Veste"
+        |Mail -> "Cotte de Mailles"
+        |Pelt -> "Peau"
 
 type EquipmentType =
     | WeaponType of WeaponType
@@ -263,19 +287,35 @@ type ConsumableType =
     
     static member frenchName ct =
         match ct with
-        |GreenHerb -> "herbe verte"
-        |RedHerb -> "herbe rouge"
-        |GoldHerb -> "herbe doree"
-        |Remedy -> "remede"
-        |Ether -> "ether"
-        |HighEther -> "ether fort"
-        |TurboEther -> "ether-turbo"
-        |Revive -> "remontant"
-
+        |GreenHerb -> "Herbe Verte"
+        |RedHerb -> "Herbe Rouge"
+        |GoldHerb -> "Herbe Doree"
+        |Remedy -> "Remede"
+        |Ether -> "Ether"
+        |HighEther -> "Ether Fort"
+        |TurboEther -> "Ether Turbo"
+        |Revive -> "Remontant"
+    static member frenchGender ct = match ct with 
+                                    |GreenHerb -> Feminin
+                                    |RedHerb -> Feminin
+                                    |GoldHerb -> Feminin 
+                                    | _ -> Masculin 
+    static member frenchWithUndefinedArticle ct = 
+                    let article = match ConsumableType.frenchGender ct with
+                                        |Feminin -> "une "
+                                        |Masculin -> "un "
+                        in article + ConsumableType.frenchName ct  
 type KeyItemType =
     | BrassKey
     static member frenchName kt = match kt with
-                                  |BrassKey -> "cle de laiton"
+                                  |BrassKey -> "Cle de Laiton"
+    static member frenchGender kt = Feminin 
+    
+    static member frenchWithUndefinedArticle kt = 
+                    let article = match KeyItemType.frenchGender kt with
+                                  |Feminin -> "une "
+                                  |Masculin -> "un "
+                        in article + KeyItemType.frenchName kt  
 
 type ItemType =
     | Consumable of ConsumableType
@@ -283,18 +323,19 @@ type ItemType =
     | KeyItem of KeyItemType
     | Stash of int
 
-    static member getName = ItemType.frenchName 
-    static member frenchNameWithQuantity item =
-        match item with 
-        | Stash _ -> ItemType.frenchName item
-        |_ -> "1 " + ItemType.frenchName item 
-    static member frenchName item = 
-        match item with
-        | Consumable ty -> ConsumableType.frenchName ty
-        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
-        | KeyItem ty -> KeyItemType.frenchName ty
-        | Stash gold -> string gold + " Ors"
-
+    static member getName item = match item with
+                                 | Consumable ty -> ConsumableType.frenchName ty
+                                 | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
+                                 | KeyItem ty -> KeyItemType.frenchName ty
+                                 | Stash gold -> string gold + " Ors"
+    
+    static member frenchWithQuantity item =
+                  match item with
+                         | Consumable ty -> ConsumableType.frenchWithUndefinedArticle ty
+                         | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
+                         | KeyItem ty -> KeyItemType.frenchWithUndefinedArticle ty
+                         | Stash gold -> string gold + " Ors"
+                   
 type AimType =
     | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy

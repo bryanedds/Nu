@@ -304,8 +304,8 @@ module FieldDispatcher =
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field =
                     match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchNameWithQuantity itemType + "!^Mais un truc s'approche !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
-                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchNameWithQuantity itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchWithQuantity itemType + "!^Mais un truc s'approche !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve : " + ItemType.frenchWithQuantity itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "C'est verrouille !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)

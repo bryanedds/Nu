@@ -20,8 +20,8 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
 
     static member makeFromConsumableData selection (cd : ConsumableData) =
         //let prompt = "Use " + string cd.ConsumableType + " on whom?"
-        let prompt = "Sur qui utiliser l'objet \"" + ConsumableType.frenchName cd.ConsumableType + "\" ?"
-        let effect = "(Effet: " + cd.Description + ")"
+        let prompt = "Sur qui utiliser " + ConsumableType.frenchWithUndefinedArticle cd.ConsumableType + " ?"
+        let effect = "(Effet : " + cd.Description + ")"
         MenuUse.make selection prompt effect
 
     static member makeFromWeaponData selection (wd : WeaponData) =
@@ -33,14 +33,14 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
 
     static member makeFromArmorData selection (ad : ArmorData) =
         //let prompt = "Equip " + string ad.ArmorType + " to whom?"
-        let prompt = "Qui equiper de l'armure \"" + string ad.ArmorType + "\" ?"
+        let prompt = "Qui equiper d'" + ArmorType.frenchWithUndefinedArticle ad.ArmorType + " ?"
         //let stats = "(End: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
-        let stats = "(End: " + string ad.EnduranceBaseDisplay + " | Esp: " + string ad.MindBaseDisplay + ")"
+        let stats = "(Endurance : " + string ad.EnduranceBaseDisplay + " |  Mental : " + string ad.MindBaseDisplay + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
         let prompt = "Qui doter de l'accessoire \"" + string ad.AccessoryType + "\" ?"
-        let stats = "(Effet: " + string ad.Description + ")"
+        let stats = "(Effet : " + string ad.Description + ")"
         MenuUse.make selection prompt stats
 
     static member tryMakeFromSelection selection =
