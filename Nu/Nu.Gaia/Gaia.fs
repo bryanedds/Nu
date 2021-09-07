@@ -1722,7 +1722,7 @@ module Gaia =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
                 else world
-            let world = World.selectScreen screen world
+            let world = World.selectScreen IdlingState screen world
             Right world
         | Left error -> Left error
 
