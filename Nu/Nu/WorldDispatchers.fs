@@ -1784,7 +1784,7 @@ module ButtonDispatcherModule =
                             | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
                             | None -> world
                         (Resolve, world)
-                    else (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -1992,7 +1992,7 @@ module ToggleDispatcherModule =
                             | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
                             | None -> world
                         (Resolve, world)
-                    else (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -2123,7 +2123,7 @@ module FeelerDispatcherModule =
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
                     let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
                     (Resolve, world)
-                else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         static member Properties =
