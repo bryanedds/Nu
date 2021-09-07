@@ -1266,7 +1266,7 @@ module FieldDispatcher =
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 432.0f
+                       [Entity.Position == v2 -450.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
                        [Content.team (v2 160.0f 182.0f) 1.0f 3 field
                            (fun teammate menu ->
@@ -1275,12 +1275,12 @@ module FieldDispatcher =
                                | None -> false)
                            MenuItemUse
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 810.0f 344.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                           [Entity.PositionLocal == v2 810.0f 342.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.UpImage == asset "Field" "CloseButtonUp"
                             Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 344.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 30.0f 344.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
@@ -1335,7 +1335,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
-                       [Content.items (v2 96.0f 344.0f) 1.0f 4 field ShopSelect
+                       [Content.items (v2 96.0f 347.0f) 1.0f 4 field ShopSelect
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Buy"
@@ -1377,21 +1377,21 @@ module FieldDispatcher =
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
-                 // shop confirm
+                 // confirm
                  Content.entityOpt field (fun field _ -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 252.0f
-                        Entity.LabelImage == Assets.Gui.DialogThickImage]
+                       [Entity.Position == v2 -450.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 252.0f
+                        Entity.LabelImage == Assets.Gui.DialogFatImage]
                        [Content.button Gen.name
-                           [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 198.0f 36.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Accept"
                             Entity.ClickEvent ==> msg ShopConfirmAccept]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 498.0f 42.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 498.0f 36.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Decline"
                             Entity.ClickEvent ==> msg ShopConfirmDecline]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 180.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 30.0f 180.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmOffer]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 138.0f; Entity.ElevationLocal == 2.0f
