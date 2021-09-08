@@ -4,7 +4,7 @@ open Nu
 open BlazeVector
 
 [<AutoOpen>]
-module BlazeDispatcherModule =
+module BlazeDispatcher =
 
     // this is our Elm-style command type. To learn about the Elm-style, read this article here -
     // https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
