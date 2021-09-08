@@ -5,7 +5,7 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-96 -186]]
+    [Position [-96 -204]]
     [Text Back]]]
   [ButtonDispatcher
    [[ClickSoundOpt
