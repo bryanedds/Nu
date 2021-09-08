@@ -1934,18 +1934,18 @@ module TextDispatcherModule =
 module ToggleDispatcherModule =
 
     type Entity with
-        member this.GetClosed world : bool = this.Get Property? Closed world
-        member this.SetClosed (value : bool) world = this.Set Property? Closed value world
-        member this.Closed = lens Property? Closed this.GetClosed this.SetClosed this
+        member this.GetToggled world : bool = this.Get Property? Toggled world
+        member this.SetToggled (value : bool) world = this.Set Property? Toggled value world
+        member this.Toggled = lens Property? Toggled this.GetToggled this.SetToggled this
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = lens Property? Pressed this.GetPressed this.SetPressed this
-        member this.GetOpenImage world : Image AssetTag = this.Get Property? OpenImage world
-        member this.SetOpenImage (value : Image AssetTag) world = this.Set Property? OpenImage value world
-        member this.OpenImage = lens Property? OpenImage this.GetOpenImage this.SetOpenImage this
-        member this.GetClosedImage world : Image AssetTag = this.Get Property? ClosedImage world
-        member this.SetClosedImage (value : Image AssetTag) world = this.Set Property? ClosedImage value world
-        member this.ClosedImage = lens Property? ClosedImage this.GetClosedImage this.SetClosedImage this
+        member this.GetUntoggledImage world : Image AssetTag = this.Get Property? UntoggledImage world
+        member this.SetUntoggledImage (value : Image AssetTag) world = this.Set Property? UntoggledImage value world
+        member this.UntoggledImage = lens Property? UntoggledImage this.GetUntoggledImage this.SetUntoggledImage this
+        member this.GetToggledImage world : Image AssetTag = this.Get Property? ToggledImage world
+        member this.SetToggledImage (value : Image AssetTag) world = this.Set Property? ToggledImage value world
+        member this.ToggledImage = lens Property? ToggledImage this.GetToggledImage this.SetToggledImage this
         member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.Set Property? ToggleSoundOpt value world
         member this.ToggleSoundOpt = lens Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
@@ -1953,6 +1953,8 @@ module ToggleDispatcherModule =
         member this.SetToggleSoundVolume (value : single) world = this.Set Property? ToggleSoundVolume value world
         member this.ToggleSoundVolume = lens Property? ToggleSoundVolume this.GetToggleSoundVolume this.SetToggleSoundVolume this
         member this.ToggleEvent = Events.Toggle --> this
+        member this.ToggledEvent = Events.Toggled --> this
+        member this.UntoggledEvent = Events.Untoggled --> this
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -1981,12 +1983,13 @@ module ToggleDispatcherModule =
                 if  entity.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                     if entity.GetEnabled world && wasPressed then
-                        let world = entity.SetClosed (not (entity.GetClosed world)) world
-                        let eventAddress = if entity.GetClosed world then Events.Close else Events.Open
+                        let world = entity.SetToggled (not (entity.GetToggled world)) world
+                        let toggled = entity.GetToggled world
+                        let eventAddress = if toggled then Events.Toggled else Events.Untoggled
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publishPlus () (Events.Toggle --> entity) eventTrace entity true world
+                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true world
                         let world =
                             match entity.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
@@ -2002,15 +2005,15 @@ module ToggleDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.Closed false
+             define Entity.Toggled false
              define Entity.Pressed false
-             define Entity.OpenImage Assets.Default.Image
-             define Entity.ClosedImage Assets.Default.Image2
+             define Entity.UntoggledImage Assets.Default.Image
+             define Entity.ToggledImage Assets.Default.Image2
              define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = mirror (entity.Model<bool> ()) entity.Closed world
+            let world = mirror (entity.Model<bool> ()) entity.Toggled world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2019,9 +2022,9 @@ module ToggleDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let image =
-                    if entity.GetClosed world || entity.GetPressed world
-                    then entity.GetClosedImage world
-                    else entity.GetOpenImage world
+                    if entity.GetToggled world || entity.GetPressed world
+                    then entity.GetToggledImage world
+                    else entity.GetUntoggledImage world
                 World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
@@ -2041,7 +2044,7 @@ module ToggleDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetOpenImage world) world with
+            match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
             | Some size -> size
             | None -> Constants.Engine.EntitySizeDefault
             
