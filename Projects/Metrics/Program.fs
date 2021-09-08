@@ -209,7 +209,7 @@ type MyGameDispatcher () =
                 world)
                 world positions
 #endif
-        let world = World.selectScreen Simulants.DefaultScreen world
+        let world = World.selectScreen IdlingState Simulants.DefaultScreen world
 #if ECS_HYBRID
         // define update for static sprites
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
