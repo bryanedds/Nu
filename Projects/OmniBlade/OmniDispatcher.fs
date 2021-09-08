@@ -7,7 +7,6 @@ open System.IO
 open Prime
 open Nu
 open Nu.Declarative
-open OmniBlade
 
 [<AutoOpen>]
 module OmniDispatcher =
