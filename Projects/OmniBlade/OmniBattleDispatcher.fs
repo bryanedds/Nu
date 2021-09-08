@@ -803,8 +803,8 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
-                    let displayEmpower = DisplayEmpower (0L, targetIndex)
-                    withCmds [playBuff; displayEmpower] battle
+                    let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
+                    withCmds [playBuff; displayBuff] battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
