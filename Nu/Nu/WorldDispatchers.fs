@@ -1934,9 +1934,9 @@ module TextDispatcherModule =
 module ToggleDispatcherModule =
 
     type Entity with
-        member this.GetOpen world : bool = this.Get Property? Open world
-        member this.SetOpen (value : bool) world = this.Set Property? Open value world
-        member this.Open = lens Property? Open this.GetOpen this.SetOpen this
+        member this.GetClosed world : bool = this.Get Property? Closed world
+        member this.SetClosed (value : bool) world = this.Set Property? Closed value world
+        member this.Closed = lens Property? Closed this.GetClosed this.SetClosed this
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = lens Property? Pressed this.GetPressed this.SetPressed this
@@ -1981,8 +1981,8 @@ module ToggleDispatcherModule =
                 if  entity.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                     if entity.GetEnabled world && wasPressed then
-                        let world = entity.SetOpen (not (entity.GetOpen world)) world
-                        let eventAddress = if entity.GetOpen world then Events.Open else Events.Close
+                        let world = entity.SetClosed (not (entity.GetClosed world)) world
+                        let eventAddress = if entity.GetClosed world then Events.Close else Events.Open
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
@@ -2002,7 +2002,7 @@ module ToggleDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.Open true
+             define Entity.Closed false
              define Entity.Pressed false
              define Entity.OpenImage Assets.Default.Image
              define Entity.ClosedImage Assets.Default.Image2
@@ -2010,7 +2010,7 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = mirror (entity.Model<bool> ()) entity.Open world
+            let world = mirror (entity.Model<bool> ()) entity.Closed world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2019,9 +2019,9 @@ module ToggleDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let image =
-                    if entity.GetOpen world && not (entity.GetPressed world)
-                    then entity.GetOpenImage world
-                    else entity.GetClosedImage world
+                    if entity.GetClosed world || entity.GetPressed world
+                    then entity.GetClosedImage world
+                    else entity.GetOpenImage world
                 World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
