@@ -518,8 +518,9 @@ module FieldDispatcher =
                 | Some (battleType, consequence) -> withMsg (TryBattle (battleType, consequence)) field
                 | None -> just field
 
-        static let interactChest itemType chestId battleTypeOpt cue requirements (field : Field) =
+        static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
+                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
@@ -529,7 +530,10 @@ module FieldDispatcher =
                     | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
-            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+            else
+                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                just field
 
         static let interactDoor cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
@@ -908,7 +912,7 @@ module FieldDispatcher =
                             match prop.PropData with
                             | Portal (_, _, _, _, _, _, _) -> just field
                             | Door (_, cue, _, requirements) -> interactDoor cue requirements prop field
-                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements field
+                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor (_, _, _, _, _) -> just field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
