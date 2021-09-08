@@ -1331,21 +1331,21 @@ module FieldDispatcher =
                             Entity.Text == "Battle Speed"]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.OpenImage == Assets.Gui.ButtonShortUpImage; Entity.ClosedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Swift"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                            Entity.Closed <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                             Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.OpenImage == Assets.Gui.ButtonShortUpImage; Entity.ClosedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Paced"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                            Entity.Closed <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
                             Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.OpenImage == Assets.Gui.ButtonShortUpImage; Entity.ClosedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Wait"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                            Entity.Closed <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
                             Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]]
 
                  // shop
