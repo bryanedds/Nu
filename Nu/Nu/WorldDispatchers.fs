@@ -2117,27 +2117,29 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world && entity.GetVisible world then
-                if entity.GetEnabled world then
-                    let world = entity.SetTouched false world
-                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
-                    (Resolve, world)
+            if entity.IsSelected world then
+                let wasTouched = entity.GetTouched world
+                let world = entity.SetTouched false world
+                if entity.GetVisible world then
+                    if entity.GetEnabled world && wasTouched then
+                        let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
+                        (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleIncoming evt world =
             let entity = evt.Subscriber : Entity
-            if  MouseState.isButtonDown MouseLeft &&
-                entity.IsSelected world &&
-                entity.GetVisible world then
-                if entity.GetEnabled world then
-                    let mousePosition = MouseState.getPosition ()
-                    let world = entity.SetTouched true world
-                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleIncoming" "" EventTrace.empty
-                    let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true world
-                    (Resolve, world)
-                else (Cascade, world)
+            if  entity.IsSelected world &&
+                MouseState.isButtonDown MouseLeft &&
+                entity.GetVisible world &&
+                entity.GetEnabled world then
+                let mousePosition = MouseState.getPosition ()
+                let world = entity.SetTouched true world
+                let eventTrace = EventTrace.debug "FeelerDispatcher" "handleIncoming" "" EventTrace.empty
+                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true world
+                (Resolve, world)
             else (Cascade, world)
 
         let handleOutgoing evt world =
