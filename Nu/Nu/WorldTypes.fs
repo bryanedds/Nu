@@ -1211,7 +1211,11 @@ module WorldTypes =
 
             member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
-                    if eventAddress.Names.[0] = "Change" || isSelected subscriber world then
+                    let eventName = eventAddress.Names.[0]
+                    if  isSelected subscriber world ||
+                        eventName = "Change" ||
+                        eventName = "Register" ||
+                        eventName = "Unregistering" then
                         match subscriber with
                         | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
                         | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world

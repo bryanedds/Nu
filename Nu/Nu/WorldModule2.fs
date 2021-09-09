@@ -151,8 +151,8 @@ module WorldModule2 =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
-                    let eventTrace = EventTrace.debug "World" "selectScreen" "Deselect" EventTrace.empty
-                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
+                    World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
             let world =
                 match screenOpt with
