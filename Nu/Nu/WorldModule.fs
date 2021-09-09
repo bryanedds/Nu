@@ -82,6 +82,10 @@ module WorldModule =
     let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for checking that a simulant is selected.
+    let mutable internal isSelected : Simulant -> World -> bool =
+        Unchecked.defaultof<_>
+
     /// F# reach-around for getting a screen's Ecs.
     let mutable internal getScreenEcs : Screen -> World -> World Ecs =
         Unchecked.defaultof<_>
@@ -633,13 +637,9 @@ module WorldModule =
                     let (_, subscriptionEntry) = enr.Current
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
-                        let eventName = eventAddress.Names.[0]
-                        if  isSelected subscriptionEntry.Subscriber world ||
-                            eventName = "Change" ||
-                            eventName = "Register" ||
-                            eventName = "Unregistering" then
+                        let subscriber = subscriptionEntry.Subscriber
+                        if shouldPublishEventTo eventAddress.Names.[0] subscriber world then
                             let result =
-                                let subscriber = subscriptionEntry.Subscriber
                                 match Array.length subscriber.SimulantAddress.Names with
                                 | 0 ->
                                     match subscriber with
