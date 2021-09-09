@@ -206,6 +206,19 @@ module WorldGameModule =
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
+        /// Check that an event is published to a subscriber regardless of whether the subscriber is selected.
+        [<FunctionBinding>]
+        static member isEventOmnipresent eventName (_ : World) =
+            eventName = "Change" ||
+            eventName = "Register" ||
+            eventName = "Unregistering"
+
+        /// Check that an event with the given name should be published to the given subscriber.
+        [<FunctionBinding>]
+        static member shouldPublishEventTo eventName subscriber world =
+            World.isSelected subscriber world ||
+            World.isEventOmnipresent eventName world
+
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.
         [<FunctionBinding>]

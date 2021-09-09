@@ -18,25 +18,26 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
-        "resolve relate tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling " +
-        "isSelectedScreenTransitioning selectScreenOpt selectScreen tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
-        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
-        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
-        "destroyBody destroyBodies createJoint createJoints " +
-        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
-        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
-        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
-        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
-        "destroy tryGetParent getParent tryGetGrandparent " +
-        "getGrandparent getChildren getExists getEntities0 " +
-        "getGroups0 isSelected writeGameToFile readGameFromFile " +
+        "resolve relate tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreenOpt selectScreen " +
+        "tryTransitionScreen transitionScreen setScreenSplash createDissolveScreenFromGroupFile6 " +
+        "createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen reloadExistingAssets " +
+        "tryReloadAssets getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume " +
+        "getMasterSoundVolume getMasterSongVolume setMasterAudioVolume setMasterSoundVolume " +
+        "setMasterSongVolume playSong playSong6 playSound " +
+        "playSound3 fadeOutSong stopSong hintAudioPackageUse " +
+        "hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse " +
+        "reloadRenderAssets bodyExists getBodyContactNormals getBodyLinearVelocity " +
+        "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
+        "createBody createBodies destroyBody destroyBodies " +
+        "createJoint createJoints destroyJoint destroyJoints " +
+        "setBodyEnabled setBodyPosition setBodyRotation setBodyLinearVelocity " +
+        "applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce " +
+        "localizeBodyShape isMouseButtonDown getMousePosition isKeyboardKeyDown " +
+        "expandContent destroyImmediate destroy tryGetParent " +
+        "getParent tryGetGrandparent getGrandparent getChildren " +
+        "getExists getEntities0 getGroups0 isSelected " +
+        "isEventOmnipresent shouldPublishEventTo writeGameToFile readGameFromFile " +
         "getScreens setScreenDissolve destroyScreen createScreen " +
         "createDissolveScreen writeScreenToFile readScreenFromFile getGroups " +
         "createGroup destroyGroup destroyGroups writeGroupToFile " +
@@ -1418,6 +1419,46 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelected' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let isEventOmnipresent eventName _arg1 =
+        let oldWorld = world
+        try
+            let eventName =
+                match ScriptingSystem.tryExport typeof<String> eventName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'eventName'; expecting a value convertable to String."
+            let result = World.isEventOmnipresent eventName _arg1
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isEventOmnipresent' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let shouldPublishEventTo eventName subscriber world =
+        let oldWorld = world
+        try
+            let eventName =
+                match ScriptingSystem.tryExport typeof<String> eventName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'eventName'; expecting a value convertable to String."
+            let struct (subscriber, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal subscriber world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.shouldPublishEventTo eventName subscriber world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'shouldPublishEventTo' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let writeGameToFile filePath world =
@@ -3375,6 +3416,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalIsEventOmnipresentBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|eventName|] -> isEventOmnipresent eventName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalShouldPublishEventToBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|eventName; subscriber|] -> shouldPublishEventTo eventName subscriber world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalWriteGameToFileBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4185,6 +4248,8 @@ module WorldBindings =
              ("getEntities0", { Fn = evalGetEntities0Binding; Pars = [||]; DocOpt = None })
              ("getGroups0", { Fn = evalGetGroups0Binding; Pars = [||]; DocOpt = None })
              ("isSelected", { Fn = evalIsSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("isEventOmnipresent", { Fn = evalIsEventOmnipresentBinding; Pars = [|"eventName"|]; DocOpt = None })
+             ("shouldPublishEventTo", { Fn = evalShouldPublishEventToBinding; Pars = [|"eventName"; "subscriber"|]; DocOpt = None })
              ("writeGameToFile", { Fn = evalWriteGameToFileBinding; Pars = [|"filePath"|]; DocOpt = None })
              ("readGameFromFile", { Fn = evalReadGameFromFileBinding; Pars = [|"filePath"|]; DocOpt = None })
              ("getScreens", { Fn = evalGetScreensBinding; Pars = [||]; DocOpt = None })

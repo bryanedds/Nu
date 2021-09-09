@@ -153,9 +153,10 @@ module Nu =
                     | _ -> world :> obj
                 | _ -> world :> obj
 
-            // init isSelected F# reach-around
-            WorldTypes.isSelected <- fun simulant worldObj ->
-                World.isSelected simulant (worldObj :?> World)
+            // init shouldPublishEventTo F# reach-around
+            WorldTypes.shouldPublishEventTo <- fun eventName subscriber worldObj ->
+                let world = worldObj :?> World
+                World.shouldPublishEventTo eventName subscriber world
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -219,6 +220,10 @@ module Nu =
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
+
+            // init isSelected F# reach-around
+            WorldModule.isSelected <- fun simulant world ->
+                World.isSelected simulant world
 
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 

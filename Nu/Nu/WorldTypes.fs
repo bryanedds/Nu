@@ -191,7 +191,7 @@ module WorldTypes =
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal isSelected : Simulant -> obj -> bool = Unchecked.defaultof<_>
+    let mutable internal shouldPublishEventTo : string -> Simulant -> obj -> bool = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -1211,11 +1211,7 @@ module WorldTypes =
 
             member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
-                    let eventName = eventAddress.Names.[0]
-                    if  isSelected subscriber world ||
-                        eventName = "Change" ||
-                        eventName = "Register" ||
-                        eventName = "Unregistering" then
+                    if shouldPublishEventTo eventAddress.Names.[0] subscriber world then
                         match subscriber with
                         | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
                         | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
