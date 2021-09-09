@@ -1666,7 +1666,7 @@ module GuiDispatcherModule =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if entity.IsSelected world && entity.GetVisible world then
+                if entity.GetVisible world then
                     let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
                        entity.GetSwallowMouseLeft world &&
@@ -1698,7 +1698,7 @@ module GuiDispatcherModule =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if entity.IsSelected world && entity.GetVisible world then
+                if entity.GetVisible world then
                     let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
                        entity.GetSwallowMouseLeft world &&
@@ -1752,39 +1752,35 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                if  entity.GetVisible world &&
-                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                    if entity.GetEnabled world then
-                        let world = entity.SetDown true world
-                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true world
-                        (Resolve, world)
-                    else (Resolve, world)
-                else (Cascade, world)
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world then
+                    let world = entity.SetDown true world
+                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                    let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true world
+                    (Resolve, world)
+                else (Resolve, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let wasDown = entity.GetDown world
-                let world = entity.SetDown false world
-                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                if  entity.GetVisible world &&
-                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                    if entity.GetEnabled world && wasDown then
-                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true world
-                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true world
-                        let world =
-                            match entity.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
-                            | None -> world
-                        (Resolve, world)
-                    else (Cascade, world)
+            let wasDown = entity.GetDown world
+            let world = entity.SetDown false world
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world && wasDown then
+                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
+                    let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true world
+                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
+                    let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true world
+                    let world =
+                        match entity.GetClickSoundOpt world with
+                        | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                        | None -> world
+                    (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -1962,40 +1958,36 @@ module ToggleDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                if  entity.GetVisible world &&
-                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                    if entity.GetEnabled world then
-                        let world = entity.SetPressed true world
-                        (Resolve, world)
-                    else (Resolve, world)
-                else (Cascade, world)
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world then
+                    let world = entity.SetPressed true world
+                    (Resolve, world)
+                else (Resolve, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let wasPressed = entity.GetPressed world
-                let world = entity.SetPressed false world
-                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                if  entity.GetVisible world &&
-                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                    if entity.GetEnabled world && wasPressed then
-                        let world = entity.SetToggled (not (entity.GetToggled world)) world
-                        let toggled = entity.GetToggled world
-                        let eventAddress = if toggled then Events.Toggled else Events.Untoggled
-                        let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
-                        let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true world
-                        let world =
-                            match entity.GetToggleSoundOpt world with
-                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
-                            | None -> world
-                        (Resolve, world)
-                    else (Cascade, world)
+            let wasPressed = entity.GetPressed world
+            let world = entity.SetPressed false world
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world && wasPressed then
+                    let world = entity.SetToggled (not (entity.GetToggled world)) world
+                    let toggled = entity.GetToggled world
+                    let eventAddress = if toggled then Events.Toggled else Events.Untoggled
+                    let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
+                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
+                    let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
+                    let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true world
+                    let world =
+                        match entity.GetToggleSoundOpt world with
+                        | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                        | None -> world
+                    (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -2104,38 +2096,33 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                if  entity.GetVisible world &&
-                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                    if entity.GetEnabled world then
-                        let world = entity.SetTouched true world
-                        let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true world
-                        (Resolve, world)
-                    else (Resolve, world)
-                else (Cascade, world)
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world then
+                    let world = entity.SetTouched true world
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                    let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true world
+                    (Resolve, world)
+                else (Resolve, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.IsSelected world then
-                let wasTouched = entity.GetTouched world
-                let world = entity.SetTouched false world
-                if entity.GetVisible world then
-                    if entity.GetEnabled world && wasTouched then
-                        let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
-                        (Resolve, world)
-                    else (Cascade, world)
+            let wasTouched = entity.GetTouched world
+            let world = entity.SetTouched false world
+            if entity.GetVisible world then
+                if entity.GetEnabled world && wasTouched then
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
+                    (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleIncoming evt world =
             let entity = evt.Subscriber : Entity
-            if  entity.IsSelected world &&
-                MouseState.isButtonDown MouseLeft &&
+            if  MouseState.isButtonDown MouseLeft &&
                 entity.GetVisible world &&
                 entity.GetEnabled world then
                 let mousePosition = MouseState.getPosition ()

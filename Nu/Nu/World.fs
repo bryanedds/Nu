@@ -79,6 +79,7 @@ module Nu =
                     else tryPropagateByName simulant left.Name right world
                 (Cascade, world :> obj)
 
+            // init handleSubscribeAndUnsubscribeEventHook F# reach-around
             WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
@@ -152,6 +153,10 @@ module Nu =
                     | _ -> world :> obj
                 | _ -> world :> obj
 
+            // init isSelected F# reach-around
+            WorldTypes.isSelected <- fun simulant worldObj ->
+                World.isSelected simulant (worldObj :?> World)
+
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->
@@ -214,10 +219,6 @@ module Nu =
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
-
-            // init isSelected F# reach-around
-            WorldModule.isSelected <- 
-                World.isSelected
 
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 

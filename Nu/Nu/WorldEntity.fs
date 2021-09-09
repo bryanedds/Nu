@@ -226,7 +226,7 @@ module WorldEntityModule =
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
-            if WorldModule.isSelected this world
+            if WorldTypes.isSelected this world
             then World.propagateEntityPhysics this world
             else world
 
