@@ -633,8 +633,11 @@ module WorldModule =
                     let (_, subscriptionEntry) = enr.Current
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
-                        if  eventAddress.Names.[0] = "Change" ||
-                            isSelected subscriptionEntry.Subscriber world then
+                        let eventName = eventAddress.Names.[0]
+                        if  isSelected subscriptionEntry.Subscriber world ||
+                            eventName = "Change" ||
+                            eventName = "Register" ||
+                            eventName = "Unregistering" then
                             let result =
                                 let subscriber = subscriptionEntry.Subscriber
                                 match Array.length subscriber.SimulantAddress.Names with

@@ -1313,12 +1313,9 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
-                               match field.ShopOpt with
-                               | Some shop ->
-                                   match shop.ShopConfirmOpt with
-                                   | Some shopConfirm -> shopConfirm.ShopConfirmLine2
-                                   | None -> ""
-                               | None -> ""]]
+                                match field.Menu.MenuUseOpt with
+                                | Some menu -> menu.MenuUseLine3
+                                | None -> ""]]
 
                  // options
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuOptions -> true | _ -> false) $ fun field _ ->
