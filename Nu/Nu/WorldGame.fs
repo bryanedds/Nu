@@ -215,10 +215,10 @@ module WorldGameModule =
             | names ->
                 let screenName = Array.head names
                 match World.getOmniScreenOpt world with
-                | Some omniScreen when Address.getName omniScreen.ScreenAddress = screenName -> true
+                | Some omniScreen when omniScreen.Name = screenName -> true
                 | _ ->
                     match World.getSelectedScreenOpt world with
-                    | Some screen when Address.getName screen.ScreenAddress = screenName -> true
+                    | Some screen when screen.Name = screenName -> true
                     | _ -> false
 
         /// Write a game to a game descriptor.
