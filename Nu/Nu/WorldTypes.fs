@@ -191,7 +191,6 @@ module WorldTypes =
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal shouldPublishEventTo : string -> Simulant -> obj -> bool = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -1211,15 +1210,13 @@ module WorldTypes =
 
             member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
-                    if shouldPublishEventTo eventAddress.Names.[0] subscriber world then
-                        match subscriber with
-                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                        | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                        | _ -> failwithumf ()
-                    else (Cascade, world)
+                    match subscriber with
+                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | _ -> failwithumf ()
 #if DEBUG
                 Debug.World.Chosen <- world
 #endif

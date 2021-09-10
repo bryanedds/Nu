@@ -604,7 +604,8 @@ module WorldModule =
             (eventAddress : 'a Address)
             eventTrace
             (publisher : 'p)
-            sorted
+            hierarchical
+            selectedOnly
             (world : World) =
 
             // OPTIMIZATION: generalize only once
@@ -618,7 +619,7 @@ module WorldModule =
             // get subscriptions the fastest way possible
             // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
             let subscriptionsOpt =
-                if sorted then
+                if hierarchical then
                     EventSystemDelegate.getSubscriptionsSorted
                         sortSubscriptionsByElevation eventAddressObj world.EventSystemDelegate world
                 else
@@ -638,7 +639,7 @@ module WorldModule =
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
                         let subscriber = subscriptionEntry.Subscriber
-                        if shouldPublishEventTo eventAddress.Names.[0] subscriber world then
+                        if not selectedOnly || isSelected subscriber world then
                             let result =
                                 match Array.length subscriber.SimulantAddress.Names with
                                 | 0 ->
@@ -661,7 +662,7 @@ module WorldModule =
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
             eventData eventAddress eventTrace publisher world =
-            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false world
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =

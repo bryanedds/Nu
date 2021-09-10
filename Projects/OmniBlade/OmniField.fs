@@ -343,7 +343,7 @@ module Field =
             | Slot3 -> Assets.Global.SaveFilePath3
         let fieldSymbolizable = toSymbolizable field
         let fieldSymbol = valueToSymbol fieldSymbolizable
-        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaulted
+        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
     let tryLoad saveSlot =

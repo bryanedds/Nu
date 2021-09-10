@@ -79,7 +79,7 @@ module WorldModuleGroup =
                 let groupNames = Address.getNames group.GroupAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; groupNames.[0]; groupNames.[1]|]
                 let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
-                World.publishPlus changeData changeEventAddress eventTrace group false world
+                World.publishPlus changeData changeEventAddress eventTrace group false false world
 
             // fin
             world
@@ -246,12 +246,12 @@ module WorldModuleGroup =
             let dispatcher = World.getGroupDispatcher group world
             let world = dispatcher.Register (group, world)
             let eventTrace = EventTrace.debug "World" "registerGroup" "" EventTrace.empty
-            World.publishPlus () (rtoa<unit> [|"Register"; "Event"|] --> group) eventTrace group true world
+            World.publishPlus () (rtoa<unit> [|"Register"; "Event"|] --> group) eventTrace group true false world
 
         static member internal unregisterGroup group world =
             let dispatcher = World.getGroupDispatcher group world
             let eventTrace = EventTrace.debug "World" "unregisteringGroup" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|] --> group) eventTrace group true world
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|] --> group) eventTrace group true false world
             dispatcher.Unregister (group, world)
 
         static member internal addGroup mayReplace groupState group world =

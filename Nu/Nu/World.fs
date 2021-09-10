@@ -153,11 +153,6 @@ module Nu =
                     | _ -> world :> obj
                 | _ -> world :> obj
 
-            // init shouldPublishEventTo F# reach-around
-            WorldTypes.shouldPublishEventTo <- fun eventName subscriber worldObj ->
-                let world = worldObj :?> World
-                World.shouldPublishEventTo eventName subscriber world
-
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->

@@ -151,14 +151,14 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.debug "World" "registerGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true world
+            let world = World.publishPlus () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true false world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true world
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true false world
             let world = dispatcher.Unregister (game, world)
             World.choose world
 
@@ -171,7 +171,7 @@ module WorldGameModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.Update eventTrace game false world
+            let world = World.publishPlus () Events.Update eventTrace game false false world
             World.choose world
 
         static member internal postUpdateGame world =
@@ -183,7 +183,7 @@ module WorldGameModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.PostUpdate eventTrace game false world
+            let world = World.publishPlus () Events.PostUpdate eventTrace game false false world
             World.choose world
 
         static member internal actualizeGame world =
@@ -205,20 +205,6 @@ module WorldGameModule =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
-
-        /// Check that an event is published to a subscriber regardless of whether the subscriber is selected.
-        [<FunctionBinding>]
-        static member isEventOmnipresent eventName (world : World) =
-            ignore world
-            eventName = "Change" ||
-            eventName = "Register" ||
-            eventName = "Unregistering"
-
-        /// Check that an event with the given name should be published to the given subscriber.
-        [<FunctionBinding>]
-        static member shouldPublishEventTo eventName subscriber world =
-            World.isSelected subscriber world ||
-            World.isEventOmnipresent eventName world
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.

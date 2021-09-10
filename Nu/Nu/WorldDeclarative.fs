@@ -95,16 +95,16 @@ type [<NoEquality; NoComparison>] GameContent =
         | GameFromInitializers (dispatcherName, initializers, content) ->
             let game = Game ()
             let expansions = List.map (fun content -> ScreenContent.expand content game world) content
-            let descriptors = Either.getLeftValues expansions |> List.map (fun (_, descriptor, _, _, _, _, _, _, _, _) -> descriptor)
-            let handlers = Either.getLeftValues expansions |> List.map (fun (_, _, handlers, _, _, _, _, _, _, _) -> handlers) |> List.concat
-            let binds = Either.getLeftValues expansions |> List.map (fun (_, _, _, binds, _, _, _, _, _, _) -> binds) |> List.concat
-            let groupStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, stream, _, _, _, _) -> stream) |> List.concat
-            let entityStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, stream, _, _, _) -> stream) |> List.concat
-            let screenBehaviors = Either.getLeftValues expansions |> List.map (fun (screenName, _, _,  _, _, behavior, _, _, _, _) -> (screenName, behavior)) |> Map.ofList
-            let groupFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, groupFilePaths, _, _) -> groupFilePaths) |> List.concat
-            let entityFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, entityFilePaths, _) -> entityFilePaths) |> List.concat
-            let entityContents = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, _, entityContents) -> entityContents) |> List.concat
-            let screenFilePaths = Either.getRightValues expansions
+            let descriptors = Either.getLefts expansions |> List.map (fun (_, descriptor, _, _, _, _, _, _, _, _) -> descriptor)
+            let handlers = Either.getLefts expansions |> List.map (fun (_, _, handlers, _, _, _, _, _, _, _) -> handlers) |> List.concat
+            let binds = Either.getLefts expansions |> List.map (fun (_, _, _, binds, _, _, _, _, _, _) -> binds) |> List.concat
+            let groupStreams = Either.getLefts expansions |> List.map (fun (_, _, _, _, _, stream, _, _, _, _) -> stream) |> List.concat
+            let entityStreams = Either.getLefts expansions |> List.map (fun (_, _, _, _, _, _, stream, _, _, _) -> stream) |> List.concat
+            let screenBehaviors = Either.getLefts expansions |> List.map (fun (screenName, _, _,  _, _, behavior, _, _, _, _) -> (screenName, behavior)) |> Map.ofList
+            let groupFilePaths = Either.getLefts expansions |> List.map (fun (_, _, _, _, _, _, _, groupFilePaths, _, _) -> groupFilePaths) |> List.concat
+            let entityFilePaths = Either.getLefts expansions |> List.map (fun (_, _, _, _, _, _, _, _, entityFilePaths, _) -> entityFilePaths) |> List.concat
+            let entityContents = Either.getLefts expansions |> List.map (fun (_, _, _, _, _, _, _, _, _, entityContents) -> entityContents) |> List.concat
+            let screenFilePaths = Either.getRights expansions
             let (descriptor, handlersGame, bindsGame) = Describe.game5 dispatcherName initializers descriptors game world
             Left (descriptor, handlers @ handlersGame, binds @ bindsGame, screenBehaviors, groupStreams, entityStreams, screenFilePaths, groupFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
