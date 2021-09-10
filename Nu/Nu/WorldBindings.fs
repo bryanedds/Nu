@@ -1421,14 +1421,14 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelected' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let isEventOmnipresent eventName _arg1 =
+    let isEventOmnipresent eventName world =
         let oldWorld = world
         try
             let eventName =
                 match ScriptingSystem.tryExport typeof<String> eventName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'eventName'; expecting a value convertable to String."
-            let result = World.isEventOmnipresent eventName _arg1
+            let result = World.isEventOmnipresent eventName world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)

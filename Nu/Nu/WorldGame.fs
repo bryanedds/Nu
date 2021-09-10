@@ -208,7 +208,8 @@ module WorldGameModule =
 
         /// Check that an event is published to a subscriber regardless of whether the subscriber is selected.
         [<FunctionBinding>]
-        static member isEventOmnipresent eventName (_ : World) =
+        static member isEventOmnipresent eventName (world : World) =
+            ignore world
             eventName = "Change" ||
             eventName = "Register" ||
             eventName = "Unregistering"
