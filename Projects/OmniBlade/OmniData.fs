@@ -583,7 +583,7 @@ type EnemyType =
     | BlueGoblin
     | MadMinotaur
     | MadTrixter
-    | PoisonGorgon
+    | LowerGorgon
     | FacelessSoldier
     | Hawk
     | HeavyArmoros

@@ -50,10 +50,10 @@ module CharacterDispatcher =
             elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
             elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
             elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
-            elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
-            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
             elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
+            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
+            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
+            elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
             elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
             elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
             elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
@@ -65,10 +65,10 @@ module CharacterDispatcher =
             let statuses = character.Statuses
             let celYOpt =
                 if character.IsWounded then None
-                elif Map.containsKey Poison statuses then Some 0
-                elif Map.containsKey Silence statuses then Some 1
-                elif Map.containsKey Sleep statuses then Some 2
                 elif Map.containsKey Confuse statuses then Some 3
+                elif Map.containsKey Sleep statuses then Some 2
+                elif Map.containsKey Silence statuses then Some 1
+                elif Map.containsKey Poison statuses then Some 0
                 elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Some 4
                 elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Some 5
                 elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Some 6
