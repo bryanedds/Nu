@@ -151,14 +151,14 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.debug "World" "registerGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true world
+            let world = World.publishPlus () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true false world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true world
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true false world
             let world = dispatcher.Unregister (game, world)
             World.choose world
 
@@ -171,7 +171,7 @@ module WorldGameModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.Update eventTrace game false world
+            let world = World.publishPlus () Events.Update eventTrace game false false world
             World.choose world
 
         static member internal postUpdateGame world =
@@ -183,7 +183,7 @@ module WorldGameModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.PostUpdate eventTrace game false world
+            let world = World.publishPlus () Events.PostUpdate eventTrace game false false world
             World.choose world
 
         static member internal actualizeGame world =
@@ -215,10 +215,10 @@ module WorldGameModule =
             | names ->
                 let screenName = Array.head names
                 match World.getOmniScreenOpt world with
-                | Some omniScreen when Address.getName omniScreen.ScreenAddress = screenName -> true
+                | Some omniScreen when omniScreen.Name = screenName -> true
                 | _ ->
                     match World.getSelectedScreenOpt world with
-                    | Some screen when Address.getName screen.ScreenAddress = screenName -> true
+                    | Some screen when screen.Name = screenName -> true
                     | _ -> false
 
         /// Write a game to a game descriptor.

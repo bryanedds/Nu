@@ -51,7 +51,7 @@ module WorldScreenModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.SelectEvent = Events.Select --> this
-        member this.DeselectEvent = Events.Deselect --> this
+        member this.DeselectEvent = Events.Deselecting --> this
         member this.IncomingStartEvent = Events.IncomingStart --> this
         member this.IncomingFinishEvent = Events.IncomingFinish --> this
         member this.OutgoingStartEvent = Events.OutgoingStart --> this
@@ -136,7 +136,7 @@ module WorldScreenModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world
+            World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
         
@@ -159,7 +159,7 @@ module WorldScreenModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world
+            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false false world
 
         static member internal actualizeScreen (screen : Screen) world =
         

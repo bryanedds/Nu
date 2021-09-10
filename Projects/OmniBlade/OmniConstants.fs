@@ -56,11 +56,12 @@ module Constants =
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
 #if DEV
-        let AvatarWalkForce = 17000.0f
+        let AvatarWalkForce = 20000.0f
 #else
-        let AvatarWalkForce = 8500.0f
+        let AvatarWalkForce = 11000.0f
+        let AvatarWalkForceMouse = 12000.0f
 #endif
-        let AvatarIdleSpeedMax = 10.0f
+        let AvatarIdleSpeedMax = 5.0f
         let AvatarBottomInset = v2 0.0f 24.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f

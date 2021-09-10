@@ -11,7 +11,7 @@ module Dissolve =
     /// The default 'dissolving' transition behavior of game's screens.
     let Default =
         { IncomingTime = 20L
-          OutgoingTime = 30L
+          OutgoingTime = 40L
           DissolveImage = Assets.Default.Image9 }
 
 [<RequireQualifiedAccess>]

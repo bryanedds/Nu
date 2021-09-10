@@ -105,7 +105,7 @@ module WorldGroupModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> group) eventTrace Simulants.Game false world
+            World.publishPlus () (Events.Update --> group) eventTrace Simulants.Game false false world
 
         static member internal postUpdateGroup (group : Group) world =
 
@@ -115,7 +115,7 @@ module WorldGroupModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> group) eventTrace Simulants.Game false world
+            World.publishPlus () (Events.PostUpdate --> group) eventTrace Simulants.Game false false world
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcher world

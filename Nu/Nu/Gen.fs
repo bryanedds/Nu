@@ -15,7 +15,6 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let private UniqueAllocator = Unique.make ()
     let mutable private Counter = -1L
 
     /// Generates engine-specific values on-demand.
@@ -78,7 +77,7 @@ module Gen =
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
-            then Some arr.[Gen.random1 arr.Length]
+            then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
             else None
 
         /// Get a random key if there are any or None.
@@ -175,14 +174,6 @@ module Gen =
             let id = Gen.id
             let name = Gen.nameIf nameOpt
             (id, name)
-
-        /// Allocate a unique int.
-        static member alloc () =
-            Unique.alloc UniqueAllocator
-
-        /// Free a unique int.
-        static member free number =
-            Unique.free number UniqueAllocator
 
         /// Generate a unique counter.
         static member counter =

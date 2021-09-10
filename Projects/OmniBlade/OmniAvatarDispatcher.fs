@@ -17,7 +17,7 @@ module AvatarDispatcher =
         | PostUpdate
         | Collision of CollisionData
         | Separation of SeparationData
-        | Face of Direction
+        | TryFace of Direction
         | Nil
 
     type [<StructuralEquality; NoComparison>] AvatarCommand =
@@ -68,30 +68,18 @@ module AvatarDispatcher =
             [define Entity.Omnipresent true]
 
         override this.Initializers (avatar, entity) =
+            let bodyCenter = v2 -0.015f -0.36f
             let bodyShapes =
                 BodyShapes
-                    [BodyCircle { Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodyCircle { Radius = 0.25f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
+                    [BodyBoxRounded { Extent = v2 0.175f 0.175f; Radius = 0.0875f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                     BodyCircle { Radius = 0.25f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyShape == bodyShapes]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent =|> fun _ ->
-                let force = v2Zero
-                let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.AvatarWalkForce + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
-                cmd (TryTravel force)
-             entity.UpdateEvent =|> fun _ ->
-                if KeyboardState.isKeyDown KeyboardKey.Right then msg (Face Rightward)
-                elif KeyboardState.isKeyDown KeyboardKey.Left then msg (Face Leftward)
-                elif KeyboardState.isKeyDown KeyboardKey.Up then msg (Face Upward)
-                elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
-                else msg Nil
-             entity.UpdateEvent => msg Update
+            [entity.UpdateEvent => msg Update
              entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
@@ -121,7 +109,7 @@ module AvatarDispatcher =
                 let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
                 just avatar
 
-            | Face direction ->
+            | TryFace direction ->
 
                 // update facing if enabled, speed is low, and direction pressed
                 let avatar =

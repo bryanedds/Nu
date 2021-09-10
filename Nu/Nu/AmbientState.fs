@@ -246,7 +246,7 @@ module AmbientState =
         by state.OverlayRouter
 
     /// Make an ambient state value.
-    let make imperative standAlone updateRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+    let make imperative standAlone updateRate assetMetadataMap symbolStore overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
         StandAlone <- standAlone
         let config = if imperative then TConfig.Imperative else TConfig.Functional
@@ -254,14 +254,14 @@ module AmbientState =
           UpdateRate = updateRate
           UpdateTime = 0L
           ClockDelta = 1.0f
+          Metadata = assetMetadataMap
+          KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
           ClockTime = DateTimeOffset.Now
           Tasklets = UList.makeEmpty config
-          Metadata = assetMetadataMap
-          OverlayRouter = overlayRouter
-          Overlayer = overlayer
+          SdlDepsOpt = sdlDepsOpt
           SymbolStore = symbolStore
-          KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
-          SdlDepsOpt = sdlDepsOpt }
+          Overlayer = overlayer
+          OverlayRouter = overlayRouter }
 
 /// The ambient state of the world.
 type 'w AmbientState = 'w AmbientState.AmbientState

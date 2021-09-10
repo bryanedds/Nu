@@ -100,6 +100,13 @@ type [<StructuralEquality; NoComparison>] BodyCapsule =
       Center : Vector2
       PropertiesOpt : BodyShapeProperties option }
 
+/// The shape of a physics body capsule.
+type [<StructuralEquality; NoComparison>] BodyBoxRounded =
+    { Extent : Vector2
+      Radius : single
+      Center : Vector2
+      PropertiesOpt : BodyShapeProperties option }
+
 /// The shape of a physics body polygon.
 type [<StructuralEquality; NoComparison>] BodyPolygon =
     { Vertices : Vector2 array
@@ -116,6 +123,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyBox of BodyBox
     | BodyCircle of BodyCircle
     | BodyCapsule of BodyCapsule
+    | BodyBoxRounded of BodyBoxRounded
     | BodyPolygon of BodyPolygon
     | BodyShapes of BodyShape list
 
@@ -358,19 +366,19 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
       Force : Vector2 }
 
 /// A message from the physics system describing a body collision that took place.
-type [<NoEquality; NoComparison; Struct>] BodyCollisionMessage =
+type [<NoEquality; NoComparison>] BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing a body separation that took place.
-type [<NoEquality; NoComparison; Struct>] BodySeparationMessage =
+type [<NoEquality; NoComparison>] BodySeparationMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal }
 
 /// A message from the physics system describing the updated transform of a body.
-type [<NoEquality; NoComparison; Struct>] BodyTransformMessage =
+type [<NoEquality; NoComparison>] BodyTransformMessage =
     { BodySource : BodySourceInternal
       Position : Vector2
       Rotation : single
@@ -405,7 +413,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | RebuildPhysicsHackMessage
 
 /// A message from the physics system.
-type [<NoEquality; NoComparison; Struct>] IntegrationMessage =
+type [<NoEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage : BodyCollisionMessage
     | BodySeparationMessage of BodySeparationMessage : BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage : BodyTransformMessage
@@ -585,7 +593,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyProperties.Density
         let center = AetherPhysicsEngine.toPhysicsV2 bodyCapsule.Center
-        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.75f, height * 0.5f, center, 0.0f) // scaled in the capsule's box by 0.75f to stop corner sticking
+        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.9f, height * 0.5f, center, 0.0f) // scaled in the capsule's box to stop corner sticking.
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = body.CreateCompoundPolygon (list, density)
@@ -594,11 +602,41 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
-            bodyShape.Tag <- 
+            bodyShape.Tag <-
                 { Simulant = sourceSimulant
                   BodyId = bodyProperties.BodyId
                   ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
+        Array.ofSeq bodyShapes
+
+    static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
+        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Extent.X * 2.0f
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Extent.Y * 2.0f
+        let radius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyBoxRounded.Radius
+        let center = AetherPhysicsEngine.toPhysicsV2 bodyBoxRounded.Center
+        let boxVerticalWidth = width - radius * 2.0f
+        let boxHorizontalHeight = height - radius * 2.0f
+        let density = bodyProperties.Density
+        let rectangleV = Common.PolygonTools.CreateRectangle (boxVerticalWidth * 0.5f, height * 0.5f * 0.9f, center, 0.0f) // scaled in height to stop corner sticking
+        let rectangleH = Common.PolygonTools.CreateRectangle (width * 0.5f * 0.9f, boxHorizontalHeight * 0.5f, center, 0.0f) // scaled in width to stop corner sticking
+        let list = List<Common.Vertices> ()
+        list.Add rectangleV
+        list.Add rectangleH
+        let bodyShapes = body.CreateCompoundPolygon (list, density)
+        let bodyShapeTopLeft =      body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, +height * 0.5f - radius) + center)
+        let bodyShapeTopRight =     body.CreateCircle (radius, density, Common.Vector2 (+width * 0.5f - radius, +height * 0.5f - radius) + center)
+        let bodyShapeBottomLeft =   body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, -height * 0.5f + radius) + center)
+        let bodyShapeBottomRight =  body.CreateCircle (radius, density, Common.Vector2 (+width * 0.5f - radius, -height * 0.5f + radius) + center)
+        bodyShapes.Add bodyShapeTopLeft
+        bodyShapes.Add bodyShapeTopRight
+        bodyShapes.Add bodyShapeBottomLeft
+        bodyShapes.Add bodyShapeBottomRight
+        for bodyShape in bodyShapes do
+            bodyShape.Tag <-
+                { Simulant = sourceSimulant
+                  BodyId = bodyProperties.BodyId
+                  ShapeId = match bodyBoxRounded.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+            AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
     static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon (body : Body) =
@@ -626,6 +664,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         | BodyBox bodyBox -> AetherPhysicsEngine.attachBoxBody sourceSimulant bodyProperties bodyBox body |> Array.singleton
         | BodyCircle bodyCircle -> AetherPhysicsEngine.attachBodyCircle sourceSimulant bodyProperties bodyCircle body |> Array.singleton
         | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule body |> Array.ofSeq
+        | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded body |> Array.ofSeq
         | BodyPolygon bodyPolygon -> AetherPhysicsEngine.attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body |> Array.singleton
         | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes body
         
@@ -916,6 +955,7 @@ module Physics =
         | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center); PropertiesOpt = bodyBox.PropertiesOpt }
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center; PropertiesOpt = bodyCircle.PropertiesOpt }
         | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center; PropertiesOpt = bodyCapsule.PropertiesOpt }
+        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Extent = Vector2.Multiply (extent, bodyBoxRounded.Extent); Radius = extent.X * bodyBoxRounded.Radius; Center = extent.Y * bodyBoxRounded.Center; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         | BodyPolygon bodyPolygon ->
             let vertices = Array.map (fun vertex -> vertex * extent) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center); PropertiesOpt = bodyPolygon.PropertiesOpt }

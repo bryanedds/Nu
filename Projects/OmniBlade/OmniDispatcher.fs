@@ -7,10 +7,9 @@ open System.IO
 open Prime
 open Nu
 open Nu.Declarative
-open OmniBlade
 
 [<AutoOpen>]
-module GameDispatcher =
+module OmniDispatcher =
 
     type [<StructuralEquality; NoComparison>] Gui =
         | Splashing

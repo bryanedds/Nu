@@ -43,6 +43,8 @@ module FieldDispatcher =
         | Interact
 
     type [<NoEquality; NoComparison>] FieldCommand =
+        | ProcessKeyInput
+        | ProcessTouchInput of Vector2
         | UpdateEye
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
@@ -54,6 +56,221 @@ module FieldDispatcher =
         member this.GetField = this.GetModel<Field>
         member this.SetField = this.SetModel<Field>
         member this.Field = this.Model<Field> ()
+
+    [<RequireQualifiedAccess>]
+    module Cue =
+
+        let rec run (cue : Cue) (field : Field) (world : World) : Cue * (Signal<FieldMessage, FieldCommand> list * Field) =
+
+            match cue with
+            | Cue.Nil ->
+                (cue, just field)
+
+            | Cue.PlaySound (volume, sound) ->
+                (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
+
+            | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
+                (Cue.Nil, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+
+            | Cue.FadeOutSong fade ->
+                (Cue.Nil, withCmd (FadeOutSong fade) field)
+
+            | Cue.Face (direction, target) ->
+                match target with
+                | AvatarTarget ->
+                    let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
+                    (Cue.Nil, just field)
+                | NpcTarget npcType ->
+                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
+                    | Some propKey ->
+                        match field.PropStates.[propKey] with
+                        | NpcState (_, _, color, glow, exists) ->
+                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
+                            (Cue.Nil, just field)
+                        | _ -> (Cue.Nil, just field)
+                    | None -> (Cue.Nil, just field)
+                | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                    (Cue.Nil, just field)
+
+            | Glow (glow, target) ->
+                match target with
+                | NpcTarget npcType ->
+                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
+                    | Some propKey ->
+                        match field.PropStates.[propKey] with
+                        | NpcState (_, direction, color, _, exists) ->
+                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
+                            (Cue.Nil, just field)
+                        | _ -> (Cue.Nil, just field)
+                    | None -> (Cue.Nil, just field)
+                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                    (Cue.Nil, just field)
+
+            | Animate (characterAnimationType, target) ->
+                match target with
+                | AvatarTarget ->
+                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
+                    (Cue.Nil, just field)
+                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                    (Cue.Nil, just field)
+
+            | Recruit allyType ->
+                let fee = Field.getRecruitmentFee field
+                if field.Inventory.Gold >= fee then
+                    let advent =
+                        match allyType with
+                        | Jinn -> failwithumf ()
+                        | Shade -> ShadeRecruited
+                        | Mael -> MaelRecruited
+                        | Riain -> RiainRecruited
+                        | Peric -> PericRecruited
+                    let field = Field.recruit allyType field
+                    let field = Field.updateAdvents (Set.add advent) field
+                    let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
+                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+
+            | Unseal (fee, consequent) ->
+                if field.Inventory.Gold >= fee then
+                    let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
+                    let field = Field.updateAdvents (Set.add consequent) field
+                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
+                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+
+            | AddItem itemType ->
+                (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
+
+            | RemoveItem itemType ->
+                (Cue.Nil, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
+
+            | AddAdvent advent ->
+                (Cue.Nil, just (Field.updateAdvents (Set.add advent) field))
+
+            | RemoveAdvent advent ->
+                (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
+
+            | Wait time ->
+                (WaitState (World.getUpdateTime world + time), just field)
+
+            | WaitState time ->
+                if World.getUpdateTime world < time
+                then (cue, just field)
+                else (Cue.Nil, just field)
+
+            | Fade (time, fadeIn, target) ->
+                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
+
+            | FadeState (startTime, totalTime, fadeIn, target) ->
+                match target with
+                | NpcTarget npcType ->
+                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
+                    | Some propKey ->
+                        match field.PropStates.[propKey] with
+                        | NpcState (_, direction, _, glow, exists) ->
+                            let localTime = World.getUpdateTime world - startTime
+                            let progress = single localTime / single totalTime
+                            let color = colWhite * if fadeIn then progress else 1.0f - progress
+                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
+                            (Cue.Nil, just field)
+                        | _ -> (Cue.Nil, just field)
+                    | None -> (Cue.Nil, just field)
+                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                    (Cue.Nil, just field)
+
+            | Warp (fieldType, fieldDestination, fieldDirection) ->
+                match field.FieldTransitionOpt with
+                | Some _ ->
+                    (cue, just field)
+                | None ->
+                    let fieldTransition =
+                        { FieldType = fieldType
+                          FieldDestination = fieldDestination
+                          FieldDirection = fieldDirection
+                          FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
+                    let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
+                    (WarpState, just field)
+
+            | WarpState ->
+                match field.FieldTransitionOpt with
+                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, just field)
+
+            | Battle (battleType, consequents) ->
+                match field.BattleOpt with
+                | Some _ -> (cue, just field)
+                | None -> (BattleState, withMsg (TryBattle (battleType, consequents)) field)
+
+            | BattleState ->
+                match field.BattleOpt with
+                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, just field)
+
+            | Dialog text ->
+                match field.DialogOpt with
+                | Some _ ->
+                    (cue, just field)
+                | None ->
+                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
+                    let field = Field.updateDialogOpt (constant (Some dialog)) field
+                    (DialogState, just field)
+
+            | DialogState ->
+                match field.DialogOpt with
+                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, just field)
+
+            | Prompt (text, leftPrompt, rightPrompt) ->
+                match field.DialogOpt with
+                | Some _ ->
+                    (cue, just field)
+                | None ->
+                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = Some (leftPrompt, rightPrompt); DialogBattleOpt = None }
+                    let field = Field.updateDialogOpt (constant (Some dialog)) field
+                    (PromptState, just field)
+
+            | PromptState ->
+                match field.DialogOpt with
+                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, just field)
+
+            | If (requirements, consequent, alternate) ->
+                if field.Advents.IsSupersetOf requirements
+                then (consequent, just field)
+                else (alternate, just field)
+
+            | Not (requirements, consequent, alternate) ->
+                if not (field.Advents.IsSupersetOf requirements)
+                then (consequent, just field)
+                else (alternate, just field)
+
+            | Parallel cues ->
+                let (cues, (signals, field)) =
+                    List.fold (fun (cues, (signals, field)) cue ->
+                        let (cue, (signals2, field)) = run cue field world
+                        if Cue.isNil cue
+                        then (cues, (signals @ signals2, field))
+                        else (cues @ [cue], (signals @ signals2, field)))
+                        ([], ([], field))
+                        cues
+                match cues with
+                | _ :: _ -> (Parallel cues, (signals, field))
+                | [] -> (Cue.Nil, (signals, field))
+
+            | Sequence cues ->
+                let (_, haltedCues, (signals, field)) =
+                    List.fold (fun (halted, haltedCues, (signals, field)) cue ->
+                        if halted
+                        then (halted, haltedCues @ [cue], (signals, field))
+                        else
+                            let (cue, (signals2, field)) = run cue field world
+                            if Cue.isNil cue
+                            then (false, [], (signals @ signals2, field))
+                            else (true, [cue], (signals @ signals2, field)))
+                        (false, [], ([], field))
+                        cues
+                match haltedCues with
+                | _ :: _ -> (Sequence haltedCues, (signals, field))
+                | [] -> (Cue.Nil, (signals, field))
 
     [<RequireQualifiedAccess>]
     module Content =
@@ -71,38 +288,38 @@ module FieldDispatcher =
         let sidebar position elevation (field : Lens<Field, World>) =
             Content.association Gen.name []
                 [Content.button Gen.name
-                   [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "TeamButtonUp"
-                    Entity.DownImage == asset "Field" "TeamButtonDown"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
-                    Entity.ClickEvent ==> msg MenuTeamOpen]
+                    [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "TeamButtonUp"
+                     Entity.DownImage == asset "Field" "TeamButtonDown"
+                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
+                     Entity.ClickEvent ==> msg MenuTeamOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "InventoryButtonUp"
-                    Entity.DownImage == asset "Field" "InventoryButtonDown"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
-                    Entity.ClickEvent ==> msg MenuItemOpen]
+                    [Entity.PositionLocal == position - v2 0.0f 81.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "InventoryButtonUp"
+                     Entity.DownImage == asset "Field" "InventoryButtonDown"
+                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
+                     Entity.ClickEvent ==> msg MenuItemOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 160.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "TechButtonUp"
-                    Entity.DownImage == asset "Field" "TechButtonDown"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
-                    Entity.ClickEvent ==> msg MenuTechOpen]
+                    [Entity.PositionLocal == position - v2 0.0f 162.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "TechButtonUp"
+                     Entity.DownImage == asset "Field" "TechButtonDown"
+                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
+                     Entity.ClickEvent ==> msg MenuTechOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "OptionButtonUp"
-                    Entity.DownImage == asset "Field" "OptionButtonDown"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
-                    Entity.ClickEvent ==> msg MenuOptionsOpen]
+                    [Entity.PositionLocal == position - v2 0.0f 243.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "OptionButtonUp"
+                     Entity.DownImage == asset "Field" "OptionButtonDown"
+                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
+                     Entity.ClickEvent ==> msg MenuOptionsOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "HelpButtonUp"
-                    Entity.DownImage == asset "Field" "HelpButtonDown"]
+                    [Entity.PositionLocal == position - v2 0.0f 324.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "HelpButtonUp"
+                     Entity.DownImage == asset "Field" "HelpButtonDown"]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.UpImage == asset "Field" "CloseButtonUp"
-                    Entity.DownImage == asset "Field" "CloseButtonDown"
-                    Entity.ClickEvent ==> msg MenuClose]]
+                    [Entity.PositionLocal == position - v2 0.0f 405.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                     Entity.UpImage == asset "Field" "CloseButtonUp"
+                     Entity.DownImage == asset "Field" "CloseButtonDown"
+                     Entity.ClickEvent ==> msg MenuClose]]
 
         let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
@@ -110,7 +327,7 @@ module FieldDispatcher =
                 (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
                 (fun index teammateAndMenu _ ->
                     let x = position.X + if index >= rows then 252.0f + 48.0f else 0.0f
-                    let y = position.Y - single (index % rows) * 80.0f
+                    let y = position.Y - single (index % rows) * 81.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 252.0f 72.0f
                          Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
@@ -145,8 +362,8 @@ module FieldDispatcher =
                                 Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
-                    let x = if i < columns then position.X else position.X + 368.0f
-                    let y = position.Y - single (i % columns) * 80.0f
+                    let x = if i < columns then position.X else position.X + 375.0f
+                    let y = position.Y - single (i % columns) * 81.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
@@ -159,8 +376,8 @@ module FieldDispatcher =
                             match itemType with
                             | Consumable _ | Equipment _ -> true
                             | KeyItem _ | Stash _ -> false
-                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
-                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
+                         Entity.UpImage == Assets.Gui.ButtonLongUpImage
+                         Entity.DownImage == Assets.Gui.ButtonLongDownImage
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         let techs (position : Vector2) elevation field fieldMsg =
@@ -181,8 +398,8 @@ module FieldDispatcher =
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== techLens --> scstringm
                          Entity.EnabledLocal == false
-                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
-                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
+                         Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
+                         Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
     type FieldDispatcher () =
@@ -197,7 +414,7 @@ module FieldDispatcher =
             if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.ofVector2 v
-                direction = avatar.Direction
+                direction <> avatar.Direction.Opposite
             else false
 
         static let getFacingBodyShapes (avatar : Avatar) world =
@@ -301,8 +518,9 @@ module FieldDispatcher =
                 | Some (battleType, consequence) -> withMsg (TryBattle (battleType, consequence)) field
                 | None -> just field
 
-        static let interactChest itemType chestId battleTypeOpt cue requirements (field : Field) =
+        static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
+                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
@@ -312,16 +530,23 @@ module FieldDispatcher =
                     | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve " + ItemType.frenchWithQuantity itemType + " !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
-            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "C'est verrouille !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+            else
+                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                just field
 
         static let interactDoor cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
             | DoorState false ->
                 if field.Advents.IsSupersetOf requirements then
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "C'est verrouille !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+                else
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    just field
             | _ -> failwithumf ()
 
         static let interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
@@ -329,21 +554,27 @@ module FieldDispatcher =
             | SwitchState on ->
                 if field.Advents.IsSupersetOf requirements then
                     let on = not on
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState on)) field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ca ne veut pas bouger !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field)
+                else
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    just field
             | _ -> failwithumf ()
         
-        static let interactNpc branches requirements (field : Field) =
+        static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
+                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
                 let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog "..."
                 let field = Field.updateCue (constant branchCue) field
                 just field
             else just field
 
-        static let interactShopkeep shopType (field : Field) =
+        static let interactShopkeep shopType (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
@@ -421,14 +652,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else runCue (Parallel [Dialog "Tu n'as pas assez d'argent..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | Unseal (fee, consequent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.add consequent) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else runCue (Parallel [Dialog "Tu n'as pas assez d'argent..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | AddItem itemType ->
                 (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -567,6 +798,7 @@ module FieldDispatcher =
 
         override this.Channel (_, field) =
             [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             field.UpdateEvent => cmd ProcessKeyInput
              field.UpdateEvent => msg Update
              field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye
@@ -578,7 +810,7 @@ module FieldDispatcher =
             | Update ->
 
                 // update cue
-                let (cue, (signals, field)) = runCue field.Cue field world
+                let (cue, (signals, field)) = Cue.run field.Cue field world
                 let field = Field.updateCue (constant cue) field
 
                 // update dialog
@@ -892,12 +1124,12 @@ module FieldDispatcher =
                             match prop.PropData with
                             | Portal (_, _, _, _, _, _, _) -> just field
                             | Door (_, cue, _, requirements) -> interactDoor cue requirements prop field
-                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements field
+                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor (_, _, _, _, _) -> just field
-                            | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements field
-                            | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements field
-                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
+                            | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
+                            | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
+                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
                             | Seal (_, cue, _) -> just (Field.updateCue (constant cue) field)
                             | Flame _ -> just field
                             | SavePoint -> just field
@@ -910,6 +1142,43 @@ module FieldDispatcher =
         override this.Command (field, command, screen, world) =
 
             match command with
+            | ProcessKeyInput ->
+                if not (Simulants.Field.Scene.Feeler.GetTouched world) then
+                    let avatar = Simulants.Field.Scene.Avatar
+                    let force = v2Zero
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A  then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then v2 0.0f Constants.Field.AvatarWalkForce + force else force
+                    let force = if KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                    let signal =
+                        if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (TryFace Rightward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (TryFace Leftward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (TryFace Upward)
+                        elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (TryFace Downward)
+                        else msg Nil
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
+                    just world
+                else just world
+
+            | ProcessTouchInput position ->
+                if  KeyboardState.isKeyUp KeyboardKey.Right && KeyboardState.isKeyUp KeyboardKey.D &&
+                    KeyboardState.isKeyUp KeyboardKey.Left && KeyboardState.isKeyUp KeyboardKey.A &&
+                    KeyboardState.isKeyUp KeyboardKey.Up && KeyboardState.isKeyUp KeyboardKey.W &&
+                    KeyboardState.isKeyUp KeyboardKey.Down && KeyboardState.isKeyUp KeyboardKey.S then
+                    let avatar = Simulants.Field.Scene.Avatar
+                    let lowerCenter = field.Avatar.LowerCenter
+                    let positionAbsolute = World.mouseToWorld false position world
+                    let heading = positionAbsolute - lowerCenter
+                    if heading.Length () >= 6.0f then // TODO: make constant DeadZoneRadius.
+                        let goalNormalized = Vector2.Normalize heading
+                        let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (TryFace (Direction.ofVector2 heading))) world
+                        just world
+                    else just world
+                else just world
+
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
                 let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
@@ -1053,6 +1322,11 @@ module FieldDispatcher =
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.Avatar <== field --> fun field -> field.Avatar]
 
+                 // feeler
+                 Content.feeler Simulants.Field.Scene.Feeler.Name
+                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.GuiElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
+                     Entity.TouchingEvent ==|> fun evt -> cmd (ProcessTouchInput evt.Data)]
+
                  // menu button
                  Content.button Gen.name
                     [Entity.Position == v2 -456.0f -246.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 144.0f 48.0f
@@ -1114,10 +1388,10 @@ module FieldDispatcher =
                  // team
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTeam _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                       [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                       [Content.sidebar (v2 24.0f 420.0f) 1.0f field
-                        Content.team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 MenuTeamAlly
+                       [Content.sidebar (v2 24.0f 417.0f) 1.0f field
+                        Content.team (v2 138.0f 417.0f) 1.0f Int32.MaxValue field tautology2 MenuTeamAlly
                         Content.label Gen.name
                            [Entity.PositionLocal == v2 438.0f 288.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                             Entity.LabelImage <== field --> fun field ->
@@ -1201,11 +1475,11 @@ module FieldDispatcher =
                  // item
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                       [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
-                       [Content.sidebar (v2 24.0f 420.0f) 1.0f field
-                        Content.items (v2 136.0f 420.0f) 1.0f 5 field MenuItemSelect
+                       [Content.sidebar (v2 24.0f 417.0f) 1.0f field
+                        Content.items (v2 138.0f 417.0f) 1.0f 5 field MenuItemSelect
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -1214,16 +1488,16 @@ module FieldDispatcher =
                  // tech team
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                       [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                       [Content.sidebar (v2 24.0f 420.0f) 1.0f field
-                        Content.team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly
-                        Content.techs (v2 466.0f 432.0f) 1.0f field MenuTechSelect]
+                       [Content.sidebar (v2 24.0f 417.0f) 1.0f field
+                        Content.team (v2 138.0f 417.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly
+                        Content.techs (v2 466.0f 429.0f) 1.0f field MenuTechSelect]
 
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 432.0f
+                       [Entity.Position == v2 -450.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
                        [Content.team (v2 160.0f 182.0f) 1.0f 3 field
                            (fun teammate menu ->
@@ -1232,12 +1506,12 @@ module FieldDispatcher =
                                | None -> false)
                            MenuItemUse
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 810.0f 344.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                           [Entity.PositionLocal == v2 810.0f 342.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.UpImage == asset "Field" "CloseButtonUp"
                             Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 344.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 30.0f 344.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
@@ -1251,80 +1525,77 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
-                               match field.ShopOpt with
-                               | Some shop ->
-                                   match shop.ShopConfirmOpt with
-                                   | Some shopConfirm -> shopConfirm.ShopConfirmLine2
-                                   | None -> ""
-                               | None -> ""]]
+                                match field.Menu.MenuUseOpt with
+                                | Some menu -> menu.MenuUseLine3
+                                | None -> ""]]
 
                  // options
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuOptions -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                       [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                       [Content.sidebar (v2 24.0f 420.0f) 1.0f field
+                       [Content.sidebar (v2 24.0f 417.0f) 1.0f field
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 384.0f 432.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text == "Battle Speed"]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Swift"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]
+                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Paced"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.OpenImage == Assets.Gui.ButtonShortDownImage; Entity.ClosedImage == Assets.Gui.ButtonShortUpImage
+                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Wait"
-                            Entity.Open <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                            Entity.ToggleEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]]
+                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]]
 
                  // shop
                  Content.entityIf field (fun field _ -> Option.isSome field.ShopOpt) $ fun field _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                       [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
-                       [Content.items (v2 96.0f 350.0f) 1.0f 4 field ShopSelect
+                       [Content.items (v2 96.0f 347.0f) 1.0f 4 field ShopSelect
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 24.0f 444.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Acheter"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false
                             Entity.ClickEvent ==> msg ShopBuy]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 24.0f 444.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text == "Qu'achetes tu?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 352.0f 444.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Vendre"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                             Entity.ClickEvent ==> msg ShopSell]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 352.0f 444.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text == "Que vends-tu ?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 678.0f 444.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 678.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Quitter"
                             Entity.ClickEvent ==> msg ShopLeave]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 24.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
+                           [Entity.PositionLocal == v2 24.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == "<"
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageUp]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 804.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
+                           [Entity.PositionLocal == v2 804.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == ">"
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
@@ -1334,21 +1605,21 @@ module FieldDispatcher =
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " Ors")]]
 
-                 // shop confirm
+                 // confirm
                  Content.entityOpt field (fun field _ -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->
                     Content.panel Gen.name
-                       [Entity.Position == v2 -448.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 252.0f
-                        Entity.LabelImage == Assets.Gui.DialogThickImage]
+                       [Entity.Position == v2 -450.0f -128.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 252.0f
+                        Entity.LabelImage == Assets.Gui.DialogFatImage]
                        [Content.button Gen.name
-                           [Entity.PositionLocal == v2 198.0f 42.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 198.0f 36.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Accepter"
                             Entity.ClickEvent ==> msg ShopConfirmAccept]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 498.0f 42.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 498.0f 36.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Refuser"
                             Entity.ClickEvent ==> msg ShopConfirmDecline]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 42.0f 180.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 30.0f 180.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmOffer]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 138.0f; Entity.ElevationLocal == 2.0f

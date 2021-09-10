@@ -79,6 +79,7 @@ module Nu =
                     else tryPropagateByName simulant left.Name right world
                 (Cascade, world :> obj)
 
+            // init handleSubscribeAndUnsubscribeEventHook F# reach-around
             WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
@@ -216,8 +217,8 @@ module Nu =
                 struct (evaleds, world)
 
             // init isSelected F# reach-around
-            WorldModule.isSelected <- 
-                World.isSelected
+            WorldModule.isSelected <- fun simulant world ->
+                World.isSelected simulant world
 
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 
@@ -447,7 +448,7 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) overlayRouter Overlayer.empty symbolStore None
+                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
 
             // make the world's entity tree
             let entityTree = World.makeEntityTree ()
@@ -547,7 +548,7 @@ module WorldModule3 =
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
+                        AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's entity tree
                     let entityTree = World.makeEntityTree ()

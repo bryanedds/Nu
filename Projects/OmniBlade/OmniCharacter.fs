@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.Collections.Generic
 open System.Numerics
 open FSharp.Reflection
 open Prime
@@ -553,7 +554,7 @@ module Character =
                 character
         else character
 
-    let autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded (source : Character) =
+    let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesHealthy enemiesWounded (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
@@ -571,9 +572,14 @@ module Character =
             | Some tech ->
                 match Data.Value.Techs.TryGetValue tech with
                 | (true, techData) ->
-                    if techData.Curative
-                    then Gen.randomValueOpt enemiesHealthy
-                    else Gen.randomValueOpt alliesHealthy
+                    if not techData.Curative then
+                        let leadAlly = AllyIndex 0 // have 50% chance of selecting lead ally
+                        if Seq.length alliesHealthy > 2 && alliesHealthy.ContainsKey leadAlly then
+                            if Gen.randomb
+                            then Some alliesHealthy.[leadAlly]
+                            else alliesHealthy |> Map.remove leadAlly |> Gen.randomValueOpt
+                        else Gen.randomValueOpt alliesHealthy
+                    else Gen.randomValueOpt enemiesHealthy
                 | (false, _) -> None
             | None -> Gen.randomValueOpt alliesHealthy
 
@@ -637,8 +643,8 @@ module Character =
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
                 let actionTime =
                     if waitSpeed
-                    then 500.0f - single indexRev
-                    else -Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    then 500.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    else 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
                 Some enemy
             | None -> None

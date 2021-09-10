@@ -604,7 +604,8 @@ module WorldModule =
             (eventAddress : 'a Address)
             eventTrace
             (publisher : 'p)
-            sorted
+            hierarchical
+            selectedOnly
             (world : World) =
 
             // OPTIMIZATION: generalize only once
@@ -618,7 +619,7 @@ module WorldModule =
             // get subscriptions the fastest way possible
             // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
             let subscriptionsOpt =
-                if sorted then
+                if hierarchical then
                     EventSystemDelegate.getSubscriptionsSorted
                         sortSubscriptionsByElevation eventAddressObj world.EventSystemDelegate world
                 else
@@ -629,38 +630,39 @@ module WorldModule =
 
             // publish to each subscription
             // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
+            // OPTIMIZATION: fused PublishEventHook for speed.
             if notNull subscriptionsOpt then
-                let mutable result = (Cascade, world)
-                let mutable going = true
-                let mutable enr = subscriptionsOpt.GetEnumerator ()
+                let mutable (going, enr) = (true, subscriptionsOpt.GetEnumerator ())
+                let mutable (handling, world) = (Cascade, world)
                 while going && enr.MoveNext () do
                     let (_, subscriptionEntry) = enr.Current
-                    if  (match fst result with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness (snd result) with Live -> true | Dead -> false) then
-                        result <-
-                            // OPTIMIZATION: unrolled PublishEventHook here for speed.
-                            // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
-                            let subscriber = subscriptionEntry.Subscriber
-                            let callbackBoxed = subscriptionEntry.CallbackBoxed
-                            match Array.length subscriber.SimulantAddress.Names with
-                            | 0 ->
-                                match subscriber with
-                                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
-                                | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                    if  (match handling with Cascade -> true | Resolve -> false) &&
+                        (match World.getLiveness world with Live -> true | Dead -> false) then
+                        let subscriber = subscriptionEntry.Subscriber
+                        if not selectedOnly || isSelected subscriber world then
+                            let result =
+                                match Array.length subscriber.SimulantAddress.Names with
+                                | 0 ->
+                                    match subscriber with
+                                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | _ -> failwithumf ()
+                                | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                | 3 -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                 | _ -> failwithumf ()
-                            | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
-                            | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
-                            | 3 -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
-                            | _ -> failwithumf ()
-                        result |> snd |> World.choose |> ignore
+                            handling <- fst result
+                            world <- snd result
+                            world |> World.choose |> ignore
+                        else () // nothing to do
                     else going <- false
-                snd result
+                world
             else world
 
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
             eventData eventAddress eventTrace publisher world =
-            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false world
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =

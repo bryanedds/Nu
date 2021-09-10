@@ -26,16 +26,16 @@ open Prime
 open Nu
 
 /// Describes a Tiled tile.
-type [<StructuralEquality; NoComparison>] TileDescriptor =
-    { Tile : TmxLayerTile
-      I : int
-      J : int
-      TilePositionI : Vector2i
-      TilePositionF : Vector2
-      TileSetTileOpt : TmxTilesetTile option }
+type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
+    { mutable TileXXX : TmxLayerTile
+      mutable TileI : int
+      mutable TileJ : int
+      mutable TilePositionI : Vector2i
+      mutable TilePositionF : Vector2
+      mutable TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile animation.
-type [<StructuralEquality; NoComparison>] TileAnimationDescriptor =
+type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
       TileAnimationDelay : int64 }
 
@@ -51,17 +51,18 @@ type [<StructuralEquality; NoComparison>] TileMapDescriptor =
 
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
-type TransitionType =
+type [<StructuralEquality; NoComparison; Struct>] TransitionType =
     | Incoming
     | Outgoing
 
 /// The state of a screen's transition.
-type TransitionState =
+type [<StructuralEquality; NoComparison; Struct>] TransitionState =
     | IncomingState
     | OutgoingState
     | IdlingState
 
 /// Describes one of a screen's transition processes.
+/// TODO: figure out if this really needs to be CLIMutable.
 type [<NoEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : int64
@@ -88,7 +89,7 @@ type [<NoEquality; NoComparison>] SplashDescriptor =
       SplashImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
-type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =
+type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay
@@ -149,7 +150,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 /// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
 /// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : List<IComparable>
+    { ToKeys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj }
 
@@ -218,6 +219,7 @@ module WorldTypes =
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
+    /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortElevation : single
           SortPositionY : single
@@ -649,15 +651,15 @@ module WorldTypes =
         { // cache line 1 (assuming 16 byte header)
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2 + 16 bytes
+          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
-          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
+          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -843,7 +845,7 @@ module WorldTypes =
         member this.Parent = Game ()
 
         /// Get the name of a screen.
-        member this.Name = this.ScreenAddress.Names.[0]
+        member inline this.Name = this.ScreenAddress.Names.[0]
 
 #if DEBUG
         /// Get the latest value of a screen's properties.
@@ -1162,7 +1164,7 @@ module WorldTypes =
               // cache line 2
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
-              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
+              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
@@ -1206,14 +1208,14 @@ module WorldTypes =
                 let (handling, worldObj) = handleUserDefinedCallback userDefined data (world :> obj)
                 (handling, worldObj :?> World)
 
-            member this.PublishEventHook (simulant : Simulant) publisher eventData eventAddress eventTrace subscription world =
+            member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
-                    match simulant with
-                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    match subscriber with
+                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
                 Debug.World.Chosen <- world
