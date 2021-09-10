@@ -547,10 +547,10 @@ module Gaia =
                             | "OverlayNameOpt" ->
                                 let overlays = World.getIntrinsicOverlays Globals.World @ World.getExtrinsicOverlays Globals.World
                                 let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
-                                (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
+                                (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
                             | "FacetNames" ->
                                 let facetNames = Globals.World |> World.getFacets |> Map.toKeyList
-                                (String.concat " " facetNames, "", PrettyPrinter.defaulted)
+                                (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
                             | _ ->
                                 let syntax = SyntaxAttribute.getOrDefault ty
                                 let keywords0 =
