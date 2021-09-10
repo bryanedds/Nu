@@ -33,8 +33,8 @@ module ReticlesDispatcher =
 
         override this.Command (_, command, rets, world) =
             match command with
-            | TargetCancel -> just (World.publishPlus () rets.CancelEvent [] rets true world)
-            | TargetSelect index -> just (World.publishPlus index rets.TargetSelectEvent [] rets true world)
+            | TargetCancel -> just (World.publishPlus () rets.CancelEvent [] rets true false world)
+            | TargetSelect index -> just (World.publishPlus index rets.TargetSelectEvent [] rets true false world)
 
         override this.Content (reticles, rets) =
             [Content.button (rets.Name + "+" + "Cancel")

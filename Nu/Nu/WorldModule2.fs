@@ -527,10 +527,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.debug "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
+                            World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true true world
                         else world
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
+                    World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePosition world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -538,9 +538,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true true world
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePosition world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -548,40 +548,40 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true world
+                    let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true world
+                    let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true true world
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                     let index = evt.jhat.which
                     let direction = evt.jhat.hatValue
                     let eventData = { GamepadDirection = GamepadState.toNuDirection direction }
                     let eventTrace = EventTrace.debug "World" "processInput" "GamepadDirectionChange" EventTrace.empty
-                    World.publishPlus eventData (Events.GamepadDirectionChange index) eventTrace Simulants.Game true world
+                    World.publishPlus eventData (Events.GamepadDirectionChange index) eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_JOYBUTTONDOWN ->
                     let index = evt.jbutton.which
                     let button = int evt.jbutton.button
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonDown" EventTrace.empty
-                        let world = World.publishPlus eventData (Events.GamepadButtonDown index) eventTrace Simulants.Game true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonDown index) eventTrace Simulants.Game true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true world
+                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true true world
                     else world
                 | SDL.SDL_EventType.SDL_JOYBUTTONUP ->
                     let index = evt.jbutton.which
@@ -589,9 +589,9 @@ module WorldModule2 =
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonUp" EventTrace.empty
-                        let world = World.publishPlus eventData (Events.GamepadButtonUp index) eventTrace Simulants.Game true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonUp index) eventTrace Simulants.Game true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true world
+                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true true world
                     else world
                 | _ -> world
             (World.getLiveness world, world)

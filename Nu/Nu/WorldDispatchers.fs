@@ -1758,7 +1758,7 @@ module ButtonDispatcherModule =
                 if entity.GetEnabled world then
                     let world = entity.SetDown true world
                     let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true world
+                    let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -1773,9 +1773,9 @@ module ButtonDispatcherModule =
                 Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                 if entity.GetEnabled world && wasDown then
                     let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                    let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true world
+                    let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
                     let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                    let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true world
+                    let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
                     let world =
                         match entity.GetClickSoundOpt world with
                         | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
@@ -1980,9 +1980,9 @@ module ToggleDispatcherModule =
                     let toggled = entity.GetToggled world
                     let eventAddress = if toggled then Events.Toggled else Events.Untoggled
                     let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
+                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
                     let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                    let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true world
+                    let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
                     let world =
                         match entity.GetToggleSoundOpt world with
                         | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
@@ -2102,7 +2102,7 @@ module FeelerDispatcherModule =
                 if entity.GetEnabled world then
                     let world = entity.SetTouched true world
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true world
+                    let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -2115,7 +2115,7 @@ module FeelerDispatcherModule =
             if entity.GetVisible world then
                 if entity.GetEnabled world && wasTouched then
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
+                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true false world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -2128,7 +2128,7 @@ module FeelerDispatcherModule =
                 let mousePosition = MouseState.getPosition ()
                 let world = entity.SetTouched true world
                 let eventTrace = EventTrace.debug "FeelerDispatcher" "handleIncoming" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true world
+                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true false world
                 (Resolve, world)
             else (Cascade, world)
 
@@ -2152,7 +2152,7 @@ module FeelerDispatcherModule =
             if entity.GetTouched world then
                 let mousePosition = World.getMousePosition world
                 let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true world
+                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
                 world
             else world
 
