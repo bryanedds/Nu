@@ -7,7 +7,12 @@ namespace Nu.Gaia.Design
     {
         public SelectablePanel()
         {
-            SetStyle(ControlStyles.Selectable, true);
+            SetStyle(
+                ControlStyles.Selectable |
+                ControlStyles.UserPaint |
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer,
+                true);
             TabStop = true;
         }
         

@@ -16,6 +16,9 @@ echo "deb https://download.mono-project.com/repo/debian stable-buster main" | su
 sudo apt update
 sudo apt install mono-devel
 
+# configure win forms
+sudo apt get canberra-gtk-module
+
 # configure F#
 sudo apt install fsharp
 

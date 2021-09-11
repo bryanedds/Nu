@@ -16,6 +16,9 @@ echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sud
 sudo apt update
 sudo apt install mono-devel
 
+# configure win forms
+sudo apt get canberra-gtk-module
+
 # configure F#
 sudo apt install fsharp
 

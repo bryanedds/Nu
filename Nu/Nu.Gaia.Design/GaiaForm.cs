@@ -10,12 +10,10 @@ namespace Nu.Gaia.Design
         public GaiaForm()
         {
             InitializeComponent();
+            FormClosing += (_, __) => isClosing = true;
 #if WINDOWS
             proc = HookCallback;
             hookId = SetLowLevelKeyboardHook(proc);
-#endif
-            FormClosing += (_, __) => isClosing = true;
-#if WINDOWS
             FormClosed += (_, __) => UnhookWindowsHookEx(hookId);
 #endif
         }
