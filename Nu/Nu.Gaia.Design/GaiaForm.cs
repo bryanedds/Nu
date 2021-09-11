@@ -25,12 +25,12 @@ namespace Nu.Gaia.Design
         {
             get { return hookId; }
         }
+#endif
 
         public bool IsClosing
         {
             get { return isClosing; }
         }
-#endif
 
         public string propertyValueTextBoxText
         {
