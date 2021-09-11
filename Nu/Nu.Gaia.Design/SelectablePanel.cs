@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
-    public class SelectablePanel : Button{
+    public class SelectablePanel : Button
     {
         protected override bool IsInputKey(Keys keyData)
         {
@@ -13,5 +13,5 @@ namespace Nu.Gaia.Design
             if (keyData == Keys.A || keyData == Keys.D) return true;
             return base.IsInputKey(keyData);
         }
-    }}
+    }
 }
