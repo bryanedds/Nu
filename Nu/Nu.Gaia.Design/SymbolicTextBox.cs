@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
-using ScintillaNET;
-using ScintillaNET_FindReplaceDialog;
 using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
 #if WINDOWS
+    using ScintillaNET;
+    using ScintillaNET_FindReplaceDialog;
     public class SymbolicTextBox : Scintilla
     {
         public SymbolicTextBox()
