@@ -1459,7 +1459,7 @@ module Gaia =
         try World.runWithoutCleanUp
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (Globals.World <- world; world))
-                (fun world -> form.displayPanel.Invalidate (); world)
+                (fun world -> form.displayPanel.Invalidate (); form.Update (); world)
                 sdlDeps Live None None Globals.World |>
                 ignore
         with exn ->
