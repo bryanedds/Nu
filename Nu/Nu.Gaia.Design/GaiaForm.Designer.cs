@@ -1524,7 +1524,6 @@
             this.propertyValueTextBox.Keywords0 = "";
             this.propertyValueTextBox.Keywords1 = "";
             this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
             this.propertyValueTextBox.Size = new System.Drawing.Size(764, 169);
@@ -1537,7 +1536,6 @@
             this.evalInputTextBox.Keywords0 = "";
             this.evalInputTextBox.Keywords1 = "";
             this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
             this.evalInputTextBox.Name = "evalInputTextBox";
             this.evalInputTextBox.Size = new System.Drawing.Size(559, 175);
@@ -1551,7 +1549,6 @@
             this.evalOutputTextBox.Keywords0 = "";
             this.evalOutputTextBox.Keywords1 = "";
             this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
             this.evalOutputTextBox.Name = "evalOutputTextBox";
             this.evalOutputTextBox.ReadOnly = true;
@@ -1565,7 +1562,6 @@
             this.preludeTextBox.Keywords0 = "";
             this.preludeTextBox.Keywords1 = "";
             this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
             this.preludeTextBox.Name = "preludeTextBox";
             this.preludeTextBox.Size = new System.Drawing.Size(764, 169);
@@ -1578,7 +1574,6 @@
             this.assetGraphTextBox.Keywords0 = "";
             this.assetGraphTextBox.Keywords1 = "";
             this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
             this.assetGraphTextBox.Name = "assetGraphTextBox";
             this.assetGraphTextBox.Size = new System.Drawing.Size(764, 169);
@@ -1591,7 +1586,6 @@
             this.overlayerTextBox.Keywords0 = "";
             this.overlayerTextBox.Keywords1 = "";
             this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
             this.overlayerTextBox.Name = "overlayerTextBox";
             this.overlayerTextBox.Size = new System.Drawing.Size(764, 169);
@@ -1604,7 +1598,6 @@
             this.eventFilterTextBox.Keywords0 = "";
             this.eventFilterTextBox.Keywords1 = "";
             this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
             this.eventFilterTextBox.Name = "eventFilterTextBox";
             this.eventFilterTextBox.Size = new System.Drawing.Size(764, 169);

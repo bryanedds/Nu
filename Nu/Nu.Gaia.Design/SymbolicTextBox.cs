@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
+#if WINDOWS
     public class SymbolicTextBox : Scintilla
     {
         public SymbolicTextBox()
@@ -252,4 +253,24 @@ namespace Nu.Gaia.Design
         private int lastSelectionPos = 0;
         private FindReplace MyFindReplace;
     }
+#else
+    public class SymbolicTextBox : TextBox
+    {
+        public SymbolicTextBox()
+        {
+            Multiline = true;
+        }
+
+        public string Keywords0 = "";
+        public string Keywords1 = "";
+        public string KeywordsImplicit = "";
+        public string AutoCWords = "";
+        public int SelectionEnd = 0;
+        public int ExtraDescent = 0;
+        public void EmptyUndoBuffer() { }
+        public void ScrollCaret() { }
+        public void EndUndoAction() { }
+        public void GotoPosition(int position) { }
+    }
+#endif
 }
