@@ -10,21 +10,27 @@ namespace Nu.Gaia.Design
         public GaiaForm()
         {
             InitializeComponent();
+#if WINDOWS
             proc = HookCallback;
             hookId = SetLowLevelKeyboardHook(proc);
+#endif
             FormClosing += (_, __) => isClosing = true;
+#if WINDOWS
             FormClosed += (_, __) => UnhookWindowsHookEx(hookId);
+#endif
+        }
+
+#if WINDOWS
+        public IntPtr HookId
+        {
+            get { return hookId; }
         }
 
         public bool IsClosing
         {
             get { return isClosing; }
         }
-
-        public IntPtr HookId
-        {
-            get { return hookId; }
-        }
+#endif
 
         public string propertyValueTextBoxText
         {
@@ -36,6 +42,7 @@ namespace Nu.Gaia.Design
             }
         }
 
+#if WINDOWS
         public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         public event LowLevelKeyboardProc LowLevelKeyboardHook;
@@ -64,8 +71,10 @@ namespace Nu.Gaia.Design
         private const int WH_KEYBOARD_LL = 13;
         private readonly LowLevelKeyboardProc proc;
         private readonly IntPtr hookId;
+#endif
         private bool isClosing;
 
+#if WINDOWS
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
@@ -81,5 +90,6 @@ namespace Nu.Gaia.Design
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Winapi)]
         private static extern IntPtr GetFocus();
+#endif
     }
 }

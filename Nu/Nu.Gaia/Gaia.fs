@@ -1487,6 +1487,7 @@ module Gaia =
         form.advancingButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
+#if WINDOWS
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
             let WM_SYSKEYDOWN = 0x0104
@@ -1499,6 +1500,7 @@ module Gaia =
                 | :? SymbolicTextBox -> handleKeyboardInput key true form Globals.World
                 | _ -> handleKeyboardInput key false form Globals.World
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
+#endif
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
