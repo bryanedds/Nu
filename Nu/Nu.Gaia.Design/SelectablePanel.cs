@@ -27,29 +27,6 @@ namespace Nu.Gaia.Design
             if (keyData == Keys.A || keyData == Keys.D) return true;
             return base.IsInputKey(keyData);
         }
-        
-        protected override void OnEnter(EventArgs e)
-        {
-            Invalidate();
-            base.OnEnter(e);
-        }
-        
-        protected override void OnLeave(EventArgs e)
-        {
-            Invalidate();
-            base.OnLeave(e);
-        }
-        
-        protected override void OnPaint(PaintEventArgs pe)
-        {
-            base.OnPaint(pe);
-            if (Focused)
-            {
-                var rc = this.ClientRectangle;
-                rc.Inflate(-2, -2);
-                ControlPaint.DrawFocusRectangle(pe.Graphics, rc);
-            }
-        }
     }
 #else
     public class SelectablePanel : UserControl
