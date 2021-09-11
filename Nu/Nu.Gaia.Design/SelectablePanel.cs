@@ -42,7 +42,6 @@ namespace Nu.Gaia.Design
             base.OnMouseDown(e);
         }
         
-        /// NOTE: I don't think this override does anything...
         protected override bool IsInputKey(Keys keyData)
         {
             if (keyData == Keys.Up || keyData == Keys.Down) return true;
