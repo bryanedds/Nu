@@ -1611,7 +1611,6 @@
             this.Controls.Add(this.splitContainer2);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.menuStrip);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "GaiaForm";
