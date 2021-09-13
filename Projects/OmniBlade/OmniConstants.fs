@@ -62,7 +62,7 @@ module Constants =
         let AvatarWalkForceMouse = 12000.0f
 #endif
         let AvatarIdleSpeedMax = 5.0f
-        let AvatarBottomInset = v2 0.0f 24.0f
+        let CharacterBottomOffset = v2 0.0f 24.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f
         let SpiritRunSpeed = 5.5f
