@@ -520,7 +520,7 @@ module FieldDispatcher =
 
         static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
@@ -531,7 +531,7 @@ module FieldDispatcher =
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
-                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                 let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 just field
 
@@ -539,12 +539,12 @@ module FieldDispatcher =
             match prop.PropState with
             | DoorState false ->
                 if field.Advents.IsSupersetOf requirements then
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
@@ -554,19 +554,19 @@ module FieldDispatcher =
             | SwitchState on ->
                 if field.Advents.IsSupersetOf requirements then
                     let on = not on
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState on)) field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
         
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
                 let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog "..."
                 let field = Field.updateCue (constant branchCue) field
@@ -574,7 +574,7 @@ module FieldDispatcher =
             else just field
 
         static let interactShopkeep shopType (prop : Prop) (field : Field) =
-            let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
