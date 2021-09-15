@@ -407,7 +407,7 @@ module Battle =
                                  layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
                             |   (Left (), Left (), Left (),
                                  Left (), Left (), Left ()) ->
-                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right (Some (index, enemy)); layout.[x+1].[y+1] <- Right None
+                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
                                 layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
