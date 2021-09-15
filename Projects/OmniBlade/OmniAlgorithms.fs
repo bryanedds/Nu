@@ -190,6 +190,11 @@ module Algorithms =
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
 
+    let chargeTechs archetypeType (_ : int) =
+        match Map.tryFind archetypeType Data.Value.Archetypes with
+        | Some archetypeData -> archetypeData.ChargeTechs
+        | None -> []
+
     let goldPrize archetypeType scalar (level : int) =
         let wealth =
             match Map.tryFind archetypeType Data.Value.Archetypes with

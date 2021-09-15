@@ -123,7 +123,6 @@ module BattleDispatcher =
                                 withMsg (PoiseCharacter sourceIndex) battle
                         | _ -> just battle
                     | None ->
-                        // TODO: change target automatically, cancelling if not valid targets.
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                 | None ->
@@ -172,7 +171,6 @@ module BattleDispatcher =
                             withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
                         | _ -> just battle
                     | None ->
-                        // TODO: change target automatically, cancelling if not valid targets.
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                 | None ->
@@ -202,14 +200,12 @@ module BattleDispatcher =
                             let (msgs, battle) = (msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)], battle)
                             withMsgs msgs battle
                         else
-                            // TODO: change target automatically, cancelling if not valid targets.
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
                             withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                     | (_, _) ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                 | None ->
-                    // TODO: change target automatically, cancelling if not valid targets.
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
             | None ->
@@ -912,6 +908,7 @@ module BattleDispatcher =
                         (battle, [])
                         results
                 let battle = Battle.updateCharacterTechPoints -techCost sourceIndex battle
+                let battle = Battle.advanceChargeTech sourceIndex battle
                 let battle =
                     if Battle.shouldCounter targetIndex battle
                     then Battle.counterAttack sourceIndex targetIndex battle

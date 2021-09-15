@@ -217,6 +217,9 @@ module Battle =
     let updateCharacterActionTime updater characterIndex battle =
         updateCharacter (Character.updateActionTime updater) characterIndex battle
 
+    let updateCharacterChargeTechOpt updater characterIndex battle =
+        updateCharacter (Character.updateChargeTechOpt updater) characterIndex battle
+
     let updateCharacterAutoBattleOpt updater characterIndex battle =
         updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
 
@@ -308,6 +311,9 @@ module Battle =
 
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
+
+    let advanceChargeTech characterIndex battle =
+        updateCharacter Character.advanceChargeTech characterIndex battle
 
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
@@ -508,7 +514,7 @@ module Battle =
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction actionTime
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
