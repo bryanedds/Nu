@@ -565,9 +565,9 @@ module Character =
         updateChargeTechOpt
             (function
              | Some (_, chargeTime, _) as chargeTechOpt ->
-                if chargeTime >= 10 then
+                if chargeTime >= Constants.Battle.ChargeMax then
                     let chargeTechs = Algorithms.chargeTechs character.ArchetypeType character.Level
-                    chargeTechs |> Gen.randomItemOpt |> Option.map (Triple.insert 0)
+                    chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 else chargeTechOpt
              | None -> None)
             character
