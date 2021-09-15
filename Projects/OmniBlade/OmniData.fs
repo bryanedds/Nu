@@ -222,7 +222,7 @@ type WeaponType =
                                   |BronzeSword -> "Epee de Bronze"
                                   |BronzeKatana -> "Katana de Bronze"
                                   |BronzeRod -> "Baguette de Bronze"
-                                  |LightBow -> "Arc de Lumière"
+                                  |LightBow -> "Arc de Lumiere"
                                   |Claws -> "Griffes"
                                   |IronSword -> "Epee de Fer"
                                   |IronKatana -> "Katana de Fer"
@@ -370,7 +370,7 @@ type ItemType =
 
     static member getName item = match item with
                                  | Consumable ty -> ConsumableType.frenchName ty
-                                 | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
+                                 | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchName ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
                                  | KeyItem ty -> KeyItemType.frenchName ty
                                  | Stash gold -> string gold + " Ors"
     

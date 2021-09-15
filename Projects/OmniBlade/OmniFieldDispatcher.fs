@@ -128,14 +128,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else run (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | Unseal (fee, consequent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.add consequent) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else run (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | AddItem itemType ->
                 (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -560,7 +560,7 @@ module FieldDispatcher =
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ca veut pas bouger !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
         
@@ -652,14 +652,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | Unseal (fee, consequent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.add consequent) field
                     (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else runCue (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                else runCue (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
 
             | AddItem itemType ->
                 (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -1572,15 +1572,15 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Qu'achetes tu?"
+                            Entity.Text == "Qu'achetes tu ?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 385.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Vendre"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                             Entity.ClickEvent ==> msg ShopSell]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 385.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text == "Que vends-tu ?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
