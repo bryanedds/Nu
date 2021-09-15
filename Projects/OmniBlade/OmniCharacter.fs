@@ -590,7 +590,7 @@ module Character =
 
             // see if we're charged
             match source.ChargeTechOpt with
-            | Some (_, chargeAmount, chargeTech) when chargeAmount >= 10 -> (Some chargeTech, true)
+            | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
             | Some _ | None ->
                 if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
                     not (Map.containsKey Silence source.Statuses) then // silence only blocks non-charge techs
@@ -672,7 +672,7 @@ module Character =
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
                 let chargeTechs = Algorithms.chargeTechs archetypeType characterData.LevelBase
-                let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (Triple.insert 0)
+                let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.

@@ -150,6 +150,7 @@ module Assets =
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"
         let AfflictionsAnimationSheet = asset<Image> PackageName "Afflictions"
+        let ChargeOrbAnimationSheet = asset<Image> PackageName "ChargeOrb"
         let SilenceAnimationSheet = asset<Image> PackageName "Silence"
         let SleepAnimationSheet = asset<Image> PackageName "Sleep"
         let ConfuseAnimationSheet = asset<Image> PackageName "Confuse"
