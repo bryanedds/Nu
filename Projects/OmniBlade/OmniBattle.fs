@@ -401,37 +401,31 @@ module Battle =
                 | Some archetypeData ->
                     match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature ->
-                        if x > 0 && x < w - 1 && y > 0 && y < h - 1 then
+                        if x > 0 && x < w - 1 && y < h - 1 then
                             match
-                                (layout.[x+0].[y+1],
-                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0],
-                                 layout.[x+0].[y-1]) with
-                            |   (Left (),
-                                 Left (), Left (), Left (),
-                                 Left ()) ->
-                                layout.[x+0].[y+1] <- Right None
+                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
+                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
+                            |   (Left (), Left (), Left (),
+                                 Left (), Left (), Left ()) ->
+                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right (Some (index, enemy)); layout.[x+1].[y+1] <- Right None
                                 layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
-                                layout.[x+0].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                     | BossStature ->
-                        if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
+                        if x > 1 && x < w - 2 && y > 0 && y < h - 2 then 
                             match
-                                (layout.[x+0].[y+2],
+                                (layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
                                  layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
                                  layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
-                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1],
-                                 layout.[x+0].[y-2]) with
-                            |   (Left (),
+                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
+                            |   (Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (), Left (), Left (),
-                                 Left ()) ->
-                                layout.[x+0].[y+2] <- Right None
+                                 Left (), Left (), Left (), Left (), Left ()) ->
+                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
                                 layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
                                 layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
                                 layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
-                                layout.[x+0].[y-2] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                 | None -> ()
