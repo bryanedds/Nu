@@ -127,10 +127,13 @@ module CharacterDispatcher =
                     match getAfflictionInsetOpt entity world with
                     | Some _ as insetOpt ->
                         let image = Assets.Battle.AfflictionsAnimationSheet
-                        let transform =
-                            { transform with
-                                Position = transform.Position + transform.Size - Constants.Battle.AfflictionSize
-                                Size = Constants.Battle.AfflictionSize }
+                        let position =
+                            match character.Stature with
+                            | SmallStature | NormalStature | LargeStature ->
+                                transform.Position + transform.Size - Constants.Battle.AfflictionSize
+                            | BossStature ->
+                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.0f).MapY((*) 1.75f)
+                        let transform = { transform with Position = position; Size = Constants.Battle.AfflictionSize }
                         Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                 { Transform = transform
@@ -147,10 +150,13 @@ module CharacterDispatcher =
                     match getChargeOrbInsetOpt entity world with
                     | Some _ as insetOpt ->
                         let image = Assets.Battle.ChargeOrbAnimationSheet
-                        let transform =
-                            { transform with
-                                Position = transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX ((*) 2.0f)
-                                Size = Constants.Battle.AfflictionSize }
+                        let position =
+                            match character.Stature with
+                            | SmallStature | NormalStature | LargeStature ->
+                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
+                            | BossStature ->
+                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
+                        let transform = { transform with Position = position; Size = Constants.Battle.ChargeOrbSize }
                         Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                 { Transform = transform
