@@ -85,6 +85,23 @@ module CharacterDispatcher =
                 Some inset
             | None -> None
 
+        static let getChargeOrbInsetOpt (entity : Entity) world =
+            let character = entity.GetCharacter world
+            let celXOpt =
+                match character.ChargeTechOpt with
+                | Some (_, chargeAmount, _) ->
+                    if chargeAmount < 3 then Some 0
+                    elif chargeAmount < 6 then Some 1
+                    elif chargeAmount < 9 then Some 2
+                    elif chargeAmount < 12 then Some 3
+                    else World.getUpdateTime world / 12L % 4L + 4L |> int |> Some
+                | None -> None
+            match celXOpt with
+            | Some celX ->
+                let inset = v4Bounds (v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f) Constants.Battle.ChargeOrbCelSize
+                Some inset
+            | None -> None
+
         static member Properties =
             [define Entity.Omnipresent true]
 
@@ -126,5 +143,25 @@ module CharacterDispatcher =
                                   Glow = colZero
                                   Flip = FlipNone })
                     | None -> View.empty
-                Views [|characterView; afflictionView|]
+                let chargeOrbView =
+                    match getChargeOrbInsetOpt entity world with
+                    | Some _ as insetOpt ->
+                        let image = Assets.Battle.ChargeOrbAnimationSheet
+                        let transform =
+                            { transform with
+                                Position = transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX ((*) 2.0f)
+                                Size = Constants.Battle.AfflictionSize }
+                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Absolute = entity.GetAbsolute world
+                                  Offset = Vector2.Zero
+                                  InsetOpt = insetOpt
+                                  Image = image
+                                  Color = colWhite
+                                  Blend = Transparent
+                                  Glow = colZero
+                                  Flip = FlipNone })
+                    | None -> View.empty
+                Views [|characterView; afflictionView; chargeOrbView|]
             else View.empty
