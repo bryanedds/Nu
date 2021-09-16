@@ -71,7 +71,7 @@ module BattleDispatcher =
         | DisplaySnowball of int64 * CharacterIndex
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
-        | DisplayAura of int64 * CharacterIndex
+        | DisplayCure of int64 * CharacterIndex
         | DisplayEmpower of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
@@ -663,7 +663,7 @@ module BattleDispatcher =
                 let targetBounds = Battle.getCharacterBounds targetIndex battle
                 let effectOpt =
                     match techType with
-                    | Critical | DarkCritical | PowerCut | PoisonCut | DoubleCut | SilenceCut ->
+                    | Critical | DarkCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                         let hopDirection = Direction.ofVector2 (targetBounds.Bottom - sourceBounds.Bottom)
                         let hopStop = targetBounds.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = sourceBounds.Bottom; HopStop = hopStop })
@@ -743,7 +743,7 @@ module BattleDispatcher =
                     let cut = DisplayCut (30L, false, targetIndex)
                     let battle = Battle.animateCharacter time AttackAnimation sourceIndex battle
                     withCmds [playHit; cut] battle
-                | SilenceCut ->
+                | DispelCut ->
                     let time = World.getUpdateTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let displayCut = DisplayCut (30L, true, targetIndex)
@@ -789,18 +789,24 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     withCmd (DisplayBolt (0L, targetIndex)) battle // TODO: use new sound and effect.
-                | Aura ->
+                | Cure ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
-                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound)
-                    let displayAuras = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayAura (0L, targetIndex))
-                    withCmds (playAura :: displayAuras) battle
+                    let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
+                    let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex))
+                    withCmds (playCure :: displayCures) battle
                 | Empower ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                     let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
                     withCmds [playBuff; displayBuff] battle
+                | Aura ->
+                    let time = World.getUpdateTime world
+                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
+                    let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
+                    let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex))
+                    withCmds (playCure :: displayCures) battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -871,7 +877,7 @@ module BattleDispatcher =
                 let targetBounds = Battle.getCharacterBounds targetIndex battle
                 let hopOpt =
                     match techType with
-                    | Critical | DarkCritical | PowerCut | PoisonCut | DoubleCut | SilenceCut ->
+                    | Critical | DarkCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                         let hopDirection = Direction.ofVector2 (targetBounds.Bottom - sourceBoundsOriginal.Bottom)
                         let hopStart = targetBounds.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Some
@@ -1084,9 +1090,9 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom (target.Bottom - v2 0.0f 100.0f)) (Effects.makePurifyEffect ()) world |> just
                 | None -> just world
 
-            | DisplayAura (delay, targetIndex) ->
+            | DisplayCure (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeAuraEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeCureEffect ()) world |> just
                 | None -> just world
 
             | DisplayEmpower (delay, targetIndex) ->

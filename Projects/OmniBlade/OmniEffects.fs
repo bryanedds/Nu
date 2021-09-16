@@ -301,7 +301,7 @@ module Effects =
                    Delay (12L, sprite (v2 -16.0f 64.0f));
                    Delay (24L, sprite (v2 16.0f 32.0f))|])}
 
-    let makeAuraEffect () =
+    let makeCureEffect () =
         let path =
             Aspects
                 [|Positions
@@ -319,11 +319,11 @@ module Effects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.SparkleAnimationSheet),
               v2i 16 16, 6, 6, 4L, Once, [||], Nil)
-        { EffectName = "Aura"
+        { EffectName = "Cure"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
-    
+
     let makeEmpowerEffect () =
         let length = 60L
         let quarterLength = length / 4L
@@ -431,7 +431,7 @@ module Effects =
             Contents
                 (Shift 0.0f,
                 [|sprite0; sprite1; sprite2; sprite3|])}
-    
+
     let makeProtectEffect () =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
         let blink = Enableds (Equal, Loop, [|{ LogicValue = true; LogicLength = 1L };{ LogicValue = false; LogicLength = 2L }|])
