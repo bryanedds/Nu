@@ -433,7 +433,7 @@ module Battle =
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                 | None -> ()
             | None -> ()
-        else Log.debug ("No enemy fit found for '" + scstring enemy + "' in layout.")
+        else Log.info ("No enemy fit found for '" + scstring enemy + "' in layout.")
 
     let private randomizeEnemyLayout w h (enemies : EnemyType list) =
         let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
