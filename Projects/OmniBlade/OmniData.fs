@@ -292,7 +292,7 @@ type TechType =
     | Cyclone
     | PoisonCut
     | PowerCut
-    | SilenceCut
+    | DispelCut
     | DoubleCut
     | Fire
     | Flame
@@ -302,8 +302,9 @@ type TechType =
     | BoltBeam
     | Stone
     | Quake
-    | Aura
+    | Cure
     | Empower
+    | Aura
     | Enlighten
     | Protect
     | Weaken
