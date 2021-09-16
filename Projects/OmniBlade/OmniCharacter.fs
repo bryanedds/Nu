@@ -440,14 +440,13 @@ module Character =
                 else 1.0f
             else
                 if techData.Split
-                then 0.333f
+                then Constants.Battle.EnemySplitScalar
                 else 1.0f
         let specialAddend =
             // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
             // TODO: consider pulling this from TechData.AddendOpt.
             match techData.TechType with
             | Critical -> 1.0f
-            | DarkCritical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
             let healing = single efficacy * techScalar * splitScalar |> int |> max 1
