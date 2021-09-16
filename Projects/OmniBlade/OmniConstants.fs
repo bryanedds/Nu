@@ -100,6 +100,7 @@ module Constants =
         let PacedSpeedScalar = 0.75f
         let DefendingScalar = 0.5f
         let PoisonDrainRate = 0.05f
+        let EnemySplitScalar = 0.5f
         let ChargeMax = 12
         let CancelPosition = v2 -438.0f -228.0f
         let StrikingDistance = 48.0f
