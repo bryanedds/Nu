@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -8,7 +8,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt11sKwjAQheHB0o1YpC7MG4q3jXRFFqkbskj67hkICiFkfJknT+CjgQz589quEuno41CLnJ1sa7t9hftMZIA+GjL6RGlG93rnxXjDEWcPzL0gwBiFjDFRmgnxzhvsjP6EmQX2LTRRm9EkSjO61zufP/SX+HqteWX3vRf77LPPPvvss88++19rnJ0c37DH3SvjH0DfsHFiten/vAFIvB+/
+   eJztlU0KgzAQhQfFixSLPZj9waLWi3iiYrEXkhbd9wWyyCISnAjdvIGPZDEv35As0qciPfFyz0TaSK6Z3t2BVyIygsEyBnD7TPahnKFG5o38F8zgY5kDuH0m+wQ3pX9B9oh9AXJLEcDtM9kpwn/CGluHVO/fq+inn/5tnJFpdpihwhml8g8wM1w8+OaqVnq17q1vo7lj+umnn3766af/P/4fsAa7Nw==
   </data>
  </layer>
  <objectgroup id="3" name="Props"/>

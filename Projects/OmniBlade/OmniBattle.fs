@@ -48,6 +48,7 @@ module Battle =
               PrizePool_ : PrizePool
               TileMap_ : TileMap AssetTag
               TileIndexOffset_ : int
+              TileIndexOffsetRange_ : int * int
               BattleSongOpt_ : Song AssetTag option
               BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
@@ -62,6 +63,7 @@ module Battle =
         member this.PrizePool = this.PrizePool_
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
+        member this.TileIndexOffsetRange = this.TileIndexOffsetRange_
         member this.BattleSongOpt = this.BattleSongOpt_
         member this.BattleSpeed = this.BattleSpeed_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
@@ -474,6 +476,7 @@ module Battle =
         let prizePool = { prizePool with Items = List.fold (fun items (enemy : Character) -> match enemy.ItemPrizeOpt with Some item -> item :: items | None -> items) prizePool.Items enemies }
         let tileMap = battleData.BattleTileMap
         let tileIndexOffset = battleData.BattleTileIndexOffset
+        let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
             { BattleState_ = BattleReady time
               Characters_ = characters
@@ -481,6 +484,7 @@ module Battle =
               PrizePool_ = prizePool
               TileMap_ = tileMap
               TileIndexOffset_ = tileIndexOffset
+              TileIndexOffsetRange_ = tileIndexOffsetRange
               BattleSongOpt_ = battleData.BattleSongOpt
               BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
@@ -525,6 +529,7 @@ module Battle =
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
           TileMap_ = Assets.Battle.DebugBattleTileMap
           TileIndexOffset_ = 0
+          TileIndexOffsetRange_ = (0, 0)
           BattleSongOpt_ = None
           BattleSpeed_ = SwiftSpeed
           CurrentCommandOpt_ = None

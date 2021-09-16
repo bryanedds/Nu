@@ -1145,7 +1145,8 @@ module BattleDispatcher =
                     [Entity.Position == v2 -480.0f -270.0f
                      Entity.Elevation == Constants.Battle.BackgroundElevation
                      Entity.TileMap <== battle --> fun battle -> battle.TileMap
-                     Entity.TileIndexOffset <== battle --> fun battle -> battle.TileIndexOffset]
+                     Entity.TileIndexOffset <== battle --> fun battle -> battle.TileIndexOffset
+                     Entity.TileIndexOffsetRange <== battle --> fun battle -> battle.TileIndexOffsetRange]
 
                  // dialog
                  Dialog.content Gen.name

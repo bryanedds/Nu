@@ -966,6 +966,9 @@ module TileMapFacetModule =
         member this.GetTileIndexOffset world : int = this.Get Property? TileIndexOffset world
         member this.SetTileIndexOffset (value : int) world = this.Set Property? TileIndexOffset value world
         member this.TileIndexOffset = lens Property? TileIndexOffset this.GetTileIndexOffset this.SetTileIndexOffset this
+        member this.GetTileIndexOffsetRange world : int * int = this.Get Property? TileIndexOffsetRange world
+        member this.SetTileIndexOffsetRange (value : int * int) world = this.Set Property? TileIndexOffsetRange value world
+        member this.TileIndexOffsetRange = lens Property? TileIndexOffsetRange this.GetTileIndexOffsetRange this.SetTileIndexOffsetRange this
         member this.GetTileMap world : TileMap AssetTag = this.Get Property? TileMap world
         member this.SetTileMap (value : TileMap AssetTag) world = this.Set Property? TileMap value world
         member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
@@ -985,6 +988,7 @@ module TileMapFacetModule =
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
+             define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
@@ -1046,6 +1050,7 @@ module TileMapFacetModule =
                             (entity.GetParallax world)
                             (entity.GetTileLayerClearance world)
                             (entity.GetTileIndexOffset world)
+                            (entity.GetTileIndexOffsetRange world)
                             tileMap
                     World.enqueueRenderLayeredMessages tileMapMessages world
                 | None -> world
@@ -1079,6 +1084,7 @@ module TmxMapFacetModule =
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
+             define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TmxMap (TmxMap.makeDefault ())
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
@@ -1136,6 +1142,7 @@ module TmxMapFacetModule =
                         (entity.GetParallax world)
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
+                        (entity.GetTileIndexOffsetRange world)
                         (entity.GetTmxMap world)
                 World.enqueueRenderLayeredMessages tileMapMessages world
             else world
