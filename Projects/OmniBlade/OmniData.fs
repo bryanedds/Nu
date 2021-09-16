@@ -807,6 +807,7 @@ type [<NoEquality; NoComparison>] BattleData =
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
       BattleTileIndexOffset : int
+      BattleTileIndexOffsetRange : int * int
       BattleSongOpt : Song AssetTag option }
 
 type [<NoEquality; NoComparison>] EncounterData =
@@ -865,6 +866,7 @@ type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
       FieldTileIndexOffset : int
+      FieldTileIndexOffsetRange : int * int
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option

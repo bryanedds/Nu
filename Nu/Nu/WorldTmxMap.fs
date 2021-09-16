@@ -264,7 +264,7 @@ module TmxMap =
         bodyProperties
 
     /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
-    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset (tileMap : TmxMap) =
+    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
@@ -320,7 +320,9 @@ module TmxMap =
                                         let xTileIndex = xI + yI * tileMap.Width
                                         let xTile = layer.Tiles.[xTileIndex]
                                         let xTileGid =
-                                            if xTile.Gid <> 0 then // never offset the zero tile!
+                                            if  xTile.Gid <> 0 && // never offset the zero tile!
+                                                xTile.Gid >= fst tileIndexOffsetRange &&
+                                                xTile.Gid < snd tileIndexOffsetRange then
                                                 let xTileGidOffset = xTile.Gid + tileIndexOffset
                                                 if xTileGidOffset > 0 && xTileGidOffset < tileGidCount then xTileGidOffset
                                                 else xTile.Gid
