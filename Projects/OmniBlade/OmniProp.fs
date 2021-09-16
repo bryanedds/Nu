@@ -34,6 +34,7 @@ module Prop =
         member this.Position = this.Bounds_.Position
         member this.Center = this.Bounds_.Center
         member this.Bottom = this.Bounds_.Bottom
+        member this.BottomInset = this.Bounds_.Bottom + Constants.Field.CharacterBottomOffset
         member this.Size = this.Bounds_.Size
 
         (* Local Properties *)

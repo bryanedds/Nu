@@ -217,6 +217,9 @@ module Battle =
     let updateCharacterActionTime updater characterIndex battle =
         updateCharacter (Character.updateActionTime updater) characterIndex battle
 
+    let updateCharacterChargeTechOpt updater characterIndex battle =
+        updateCharacter (Character.updateChargeTechOpt updater) characterIndex battle
+
     let updateCharacterAutoBattleOpt updater characterIndex battle =
         updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
 
@@ -309,6 +312,9 @@ module Battle =
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
+    let advanceChargeTech characterIndex battle =
+        updateCharacter Character.advanceChargeTech characterIndex battle
+
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
@@ -395,37 +401,34 @@ module Battle =
                 | Some archetypeData ->
                     match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature ->
-                        if x > 0 && x < w - 1 && y > 0 && y < h - 1 then
+                        if x > 0 && x < w - 1 && y < h - 1 then
                             match
-                                (layout.[x+0].[y+1],
-                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0],
-                                 layout.[x+0].[y-1]) with
-                            |   (Left (),
-                                 Left (), Left (), Left (),
-                                 Left ()) ->
-                                layout.[x+0].[y+1] <- Right None
+                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
+                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
+                            |   (Left (), Left (), Left (),
+                                 Left (), Left (), Left ()) ->
+                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
                                 layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
-                                layout.[x+0].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                     | BossStature ->
-                        if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
+                        if x > 1 && x < w - 2 && y > 0 && y < h - 3 then 
                             match
-                                (layout.[x+0].[y+2],
+                                (layout.[x-2].[y+3], layout.[x-1].[y+3], layout.[x+0].[y+3], layout.[x+1].[y+3], layout.[x+2].[y+3],
+                                 layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
                                  layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
                                  layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
-                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1],
-                                 layout.[x+0].[y-2]) with
-                            |   (Left (),
+                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
+                            |   (Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
-                                 Left ()) ->
-                                layout.[x+0].[y+2] <- Right None
+                                 Left (), Left (), Left (), Left (), Left ()) ->
+                                layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
+                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
                                 layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
                                 layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
                                 layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
-                                layout.[x+0].[y-2] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                 | None -> ()
@@ -508,7 +511,7 @@ module Battle =
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction actionTime
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party

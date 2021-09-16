@@ -31,6 +31,7 @@ module Avatar =
         member this.Position = this.Bounds_.Position
         member this.Center = this.Bounds_.Center
         member this.Bottom = this.Bounds_.Bottom
+        member this.BottomOffset = this.Bounds_.Bottom + Constants.Field.CharacterBottomOffset
         member this.Size = this.Bounds_.Size
         member this.LowerBounds = v4Bounds (this.Bounds_.Position + v2 (this.Bounds_.Size.X * 0.25f) 0.0f) (this.Bounds_.Size * 0.5f)
         member this.LowerCenter = this.LowerBounds.Center
@@ -97,8 +98,8 @@ module Avatar =
     let updateDirection updater (avatar : Avatar) =
         updateCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
 
-    let lookAt position (avatar : Avatar) =
-        let delta = position - avatar.Position
+    let lookAt bottomOffset (avatar : Avatar) =
+        let delta = bottomOffset - avatar.BottomOffset
         let direction = Direction.ofVector2 delta
         updateDirection (constant direction) avatar
 

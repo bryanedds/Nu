@@ -38,6 +38,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.AffinityOpt = Algorithms.affinityOpt this.Accessories this.ArchetypeType this.Level
     member this.Immunities = Algorithms.immunities this.Accessories this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
+    member this.ChargeTechs = Algorithms.chargeTechs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
@@ -230,7 +231,8 @@ type CharacterInputState =
 
 type [<ReferenceEquality; NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
-      AutoTechOpt : TechType option }
+      AutoTechOpt : TechType option
+      IsChargeTech : bool }
 
 [<RequireQualifiedAccess>]
 module Character =
@@ -243,6 +245,7 @@ module Character =
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState
               CharacterAnimationState_ : CharacterAnimationState
+              ChargeTechOpt_ : (int * int * TechType) option
               AutoBattleOpt_ : AutoBattle option
               ActionTime_ : single
               InputState_ : CharacterInputState
@@ -317,6 +320,7 @@ module Character =
         member this.Direction = this.CharacterAnimationState_.Direction
 
         (* Local Properties *)
+        member this.ChargeTechOpt = this.ChargeTechOpt_
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
@@ -330,7 +334,7 @@ module Character =
 
     let isAutoTeching character =
         match character.AutoBattleOpt_ with
-        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
+        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt && not autoBattle.IsChargeTech
         | None -> false
 
     let shouldCounter (character : Character) =
@@ -511,12 +515,12 @@ module Character =
             else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some autoBattle when cancel ->
+            | Some autoBattle when cancel && not autoBattle.IsChargeTech -> // cannot cancel charge tech
                 match autoBattle.AutoTarget with
-                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None; IsChargeTech = false }
                 | EnemyIndex _ ->
                     match Gen.randomKeyOpt alliesHealthy with
-                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None; IsChargeTech = false }
                     | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
@@ -529,6 +533,9 @@ module Character =
 
     let updateInputState updater character =
         { character with InputState_ = updater character.InputState_ }
+
+    let updateChargeTechOpt updater character =
+        { character with ChargeTechOpt_ = updater character.ChargeTechOpt_ }
 
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
@@ -554,17 +561,42 @@ module Character =
                 character
         else character
 
+    let advanceChargeTech (character : Character) =
+        updateChargeTechOpt
+            (function
+             | Some (_, chargeTime, _) as chargeTechOpt ->
+                if chargeTime >= Constants.Battle.ChargeMax then
+                    let chargeTechs = Algorithms.chargeTechs character.ArchetypeType character.Level
+                    chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
+                else chargeTechOpt
+             | None -> None)
+            character
+
     let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesHealthy enemiesWounded (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
-        
-        // attempt to randomly choose a tech type
-        let techOpt =
-            if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
-                not (Map.containsKey Silence source.Statuses) then
-                CharacterState.tryGetTechRandom source.CharacterState_
-            else None
+
+        // charge tech if any
+        let source =
+            updateChargeTechOpt
+                (function
+                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, chargeRate + chargeTime, techType)
+                 | None -> None)
+                source
+
+        // attempt to choose a tech type
+        let (techOpt, isChargeTech) =
+
+            // see if we're charged
+            match source.ChargeTechOpt with
+            | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
+            | Some _ | None ->
+                if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
+                    not (Map.containsKey Silence source.Statuses) then // silence only blocks non-charge techs
+                    let techOpt = CharacterState.tryGetTechRandom source.CharacterState_
+                    (techOpt, false)
+                else (None, false)
 
         // attempt to randomly choose a target
         let targetOpt =
@@ -589,7 +621,7 @@ module Character =
             let sourceToTarget = target.Position - source.Position
             let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
-            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
+            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt; IsChargeTech = isChargeTech }
             { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
         | None -> source
 
@@ -609,7 +641,7 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
-    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction actionTime =
+    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
@@ -618,6 +650,7 @@ module Character =
           CharacterType_ = characterType
           CharacterState_ = characterState
           CharacterAnimationState_ = animationState
+          ChargeTechOpt_ = chargeTechOpt
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
           CelSize_ = celSize
@@ -638,6 +671,8 @@ module Character =
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+                let chargeTechs = Algorithms.chargeTechs archetypeType characterData.LevelBase
+                let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
@@ -645,7 +680,7 @@ module Character =
                     if waitSpeed
                     then 500.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
                     else 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
-                let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
+                let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
         | None -> None
@@ -659,6 +694,7 @@ module Character =
           CharacterType_ = Ally Jinn
           CharacterState_ = CharacterState.empty
           CharacterAnimationState_ = characterAnimationState
+          ChargeTechOpt_ = None
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
           InputState_ = NoInput

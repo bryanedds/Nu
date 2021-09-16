@@ -547,10 +547,10 @@ module Gaia =
                             | "OverlayNameOpt" ->
                                 let overlays = World.getIntrinsicOverlays Globals.World @ World.getExtrinsicOverlays Globals.World
                                 let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
-                                (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
+                                (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
                             | "FacetNames" ->
                                 let facetNames = Globals.World |> World.getFacets |> Map.toKeyList
-                                (String.concat " " facetNames, "", PrettyPrinter.defaulted)
+                                (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
                             | _ ->
                                 let syntax = SyntaxAttribute.getOrDefault ty
                                 let keywords0 =
@@ -1459,7 +1459,7 @@ module Gaia =
         try World.runWithoutCleanUp
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (Globals.World <- world; world))
-                (fun world -> form.displayPanel.Invalidate (); world)
+                (fun world -> Application.DoEvents (); world)
                 sdlDeps Live None None Globals.World |>
                 ignore
         with exn ->
