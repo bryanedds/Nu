@@ -15,7 +15,7 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKBmHxH80+eoEFdLYPA3BDqHkD5I6zJNg7h4ZuvDDQ8TAKRsEoGAWjYBSMglEwDAAA76wTaw==
+   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKBmHxH80+eoEFdLYPHcyF2j+PBHcwcVPP/rMk2DsHqvY8DcLswgDHwygYBaNgFIyCUTAKRsFwAADz+RTt
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
