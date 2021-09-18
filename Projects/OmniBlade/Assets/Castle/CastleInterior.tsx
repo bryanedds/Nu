@@ -114,91 +114,6 @@
    <property name="C" value=""/>
   </properties>
  </tile>
- <tile id="1170">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1171">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1172">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1173">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1174">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1175">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1176">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1177">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1178">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1179">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1180">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1181">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1182">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1183">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1184">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1185">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1186">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="1225">
   <properties>
    <property name="C" value=""/>
@@ -280,56 +195,6 @@
   </properties>
  </tile>
  <tile id="1320">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1321">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1322">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1323">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1324">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1325">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1326">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1327">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1328">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1329">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1330">
   <properties>
    <property name="C" value=""/>
   </properties>
@@ -469,26 +334,6 @@
    <property name="C" value=""/>
   </properties>
  </tile>
- <tile id="1507">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1508">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1509">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1510">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="1512">
   <properties>
    <property name="C" value=""/>
@@ -500,16 +345,6 @@
   </properties>
  </tile>
  <tile id="1514">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1515">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1516">
   <properties>
    <property name="C" value=""/>
   </properties>
@@ -674,122 +509,7 @@
    <property name="C" value=""/>
   </properties>
  </tile>
- <tile id="1623">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1624">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1625">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1626">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1627">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1628">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1629">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1630">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="1653">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1654">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1655">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1656">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1657">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1658">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1659">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1660">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1661">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1662">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1663">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1664">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1665">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1666">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1667">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1669">
   <properties>
    <property name="C" value=""/>
   </properties>
