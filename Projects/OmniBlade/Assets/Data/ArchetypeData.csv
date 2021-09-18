@@ -35,7 +35,7 @@ Merman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],[Some Water],NormalStature,Physic
 Feral,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attacks with Countering and Curative magic.
 Thief,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attacks and High Evasion.
 Lizardman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attack w/ High Defense with Buff magic.
-Trixter,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[3 Ice] [4 Snowball]],[],[],None,NormalStature,Ice magician.
+Trixter,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[4 Snowball]],[[3 Ice]],[],None,NormalStature,Ice magician.
 Monk,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,
 Tortoise,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Poison Sleep],[Some Metal],LargeStature,Physical attack and Lightning magic.
@@ -61,7 +61,7 @@ Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],[],None,La
 Dragon,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Physical attacks and Elemental magic.
 Ogre,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Strong physical attacks with Curative magic.
 HydraBig,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Physical attack with Status effects.
-Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash] [3 DarkCritical]],[],[Poison Sleep],[Some Metal],LargeStature,Strong physical attacks with Buff magic.
+Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[3 DarkCritical]],[Poison Sleep],[Some Metal],LargeStature,Strong physical attacks with Buff magic.
 Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],[Some Earth],LargeStature,Physical attack and Earth magic.
 RobotBig,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Poison Sleep],[Some Metal],LargeStature,Physical attack and Lightning magic.
 Dinoman,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Strong physical attacks with Buff magic.
