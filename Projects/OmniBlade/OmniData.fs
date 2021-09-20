@@ -140,7 +140,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Silence -> Gen.random1 3 = 0
         | Sleep -> Gen.random1 4 = 0
         | Confuse -> Gen.random1 3 = 0
-        | Time _ | Power (_, _) | Magic (_, _) | Shield (_, _) -> true
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
+        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
 
     static member enumerate this =
         match this with
