@@ -4,22 +4,22 @@
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzbEJACAMAMGAy6dxZxsHkAQswhVXPp8rIov2Ve27/P39/X++XvnP+gMATHEACnQtcw==
+   eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlDsKAjEQhkOWbXa3UHsbFfQYar+38IXi6xC2exYR7NxCT6L2ouCz9A9G0E1SrIw2JvCRIUzmmwSSyGEsSkHfZcbRcdPV+oR/9zfhGGh66GKt8QO/6Q6+dfYe6g4TjDX+kSavTdCTOGvMGVtKRLziqn/B1TyKOxH+A2qdJCI+a/x7ruZR+YuYyxIRVxzVX3DUPCr/0Xs4Lpiv4Obp318L60cf5wddj84fo94abMDW17ufoxgwVgoee6j8O9TKoGYW5AKz+7XHHaE/D2cV1EDd4J8kehR7qPyhdE7hmBnuf+6/9xgS+cV/2/qQX/3HFovFYrFYLGm4A1+lFWg=
+   eJztlr0KwjAQx0NLl7aDurtYQR9D3fsWWkXx6yFc+yyiuNlBn0Tdi4Kfo//QCmqSwXLUJQc/EsLlfpdb2tBkLPyBocWU0bN+q5UF7dd+7f+fvwPHSNJDH2ftHPyqGeTxdu3X/rz9A9QdfzGV+CeSvC5BT/ytkcHYJoXvt4boXxtiHsVMuP+EWpcUvr9K/EdDzKPye1hrKXxfN0V/xRTzqPxnO3HcsN7Bwxb9PAKcnx28HywdOn+EWjuwBwdH7n6F5zJWdZM7VP4YtQqoWQQlV+1+7zEm9JfhbIAmaCn8s68e+R0qv58653AsFPNfOZ89+kR+/r0PMpLX/4BGo8nGE3nx9rM=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUUAs85mRgeMJJXTMnczEwPAWa+YwIc4WBakW4qGv/Yah5x4D0cSA+gcN8U6D4YW4GhiNAbEVlNwwkGGi/zIfaz8RNgiZS1BIA50jw/wKo2vPDKP5HwSgYBaNgFIyCUTAKhhMAAMMbDU8=
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dN4xkcAYa3kykhCkVw/8cCelpAVTteSqnwVEwCkbBKKA2AACjcQ2G
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUDAUwjYuBYToQz+AaaJdgBxNp5K7PRJqbNkjDZRSMglEwCkbBKBgFo2AUjILBAgCEBgPs
+   eJztzjEOABAABMGr/V6D5/IDJWIm2X4TAIB7tZL01SinT/bqA48A/GsC5HcCfw==
   </data>
  </layer>
  <objectgroup id="3" name="Props"/>
