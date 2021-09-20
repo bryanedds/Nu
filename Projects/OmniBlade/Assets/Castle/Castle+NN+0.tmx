@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="3">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzbEJACAMAMGAy6dxZxsHkAQswhVXPp8rIov2Ve27/P39/X++XvnP+gMATHEACnQtcw==
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlDsKAjEQhkOWbXa3UHsbFfQYar+38IXi6xC2exYR7NxCT6L2ouCz9A9G0E1SrIw2JvCRIUzmmwSSyGEsSkHfZcbRcdPV+oR/9zfhGGh66GKt8QO/6Q6+dfYe6g4TjDX+kSavTdCTOGvMGVtKRLziqn/B1TyKOxH+A2qdJCI+a/x7ruZR+YuYyxIRVxzVX3DUPCr/0Xs4Lpiv4Obp318L60cf5wddj84fo94abMDW17ufoxgwVgoee6j8O9TKoGYW5AKz+7XHHaE/D2cV1EDd4J8kehR7qPyhdE7hmBnuf+6/9xgS+cV/2/qQX/3HFovFYrFYLGm4A1+lFWg=
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUUAs85mRgeMJJXTMnczEwPAWa+YwIc4WBakW4qGv/Yah5x4D0cSA+gcN8U6D4YW4GhiNAbEVlNwwkGGi/zIfaz8RNgiZS1BIA50jw/wKo2vPDKP5HwSgYBaNgFIyCUTAKhhMAAMMbDU8=
+  </data>
+ </layer>
+ <layer id="5" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzjEOABAABMGr/V6D55Jo9Uhmku03AX7QStJXo9w+OauPfgEAANsEYn4Cfw==
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props"/>
+</map>

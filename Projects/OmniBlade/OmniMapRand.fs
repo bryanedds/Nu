@@ -65,8 +65,14 @@ type Segment =
     | Segment3S = 0b001110
     | Segment3W = 0b001101
     | Segment4 = 0b001111
-    | SegmentBN = 0b010001
-    | SegmentBS = 0b010100
+    | SegmentNN = 0b010001 // bit 5 denotes special segment, bit 6 denotes narrative or boss
+    | SegmentNS = 0b010100
+    | SegmentBN = 0b110001
+    | SegmentBS = 0b110100
+
+type SpecialSegmentType =
+    | NarrativeSegment
+    | BossSegment
 
 type [<StructuralEquality; NoComparison>] Segments =
     { Segment0 : TmxMap
@@ -85,6 +91,8 @@ type [<StructuralEquality; NoComparison>] Segments =
       Segment3S : TmxMap
       Segment3W : TmxMap
       Segment4 : TmxMap
+      SegmentNN : TmxMap
+      SegmentNS : TmxMap
       SegmentBN : TmxMap
       SegmentBS : TmxMap }
 
@@ -105,6 +113,8 @@ type [<StructuralEquality; NoComparison>] Segments =
         Segment3S = TmxMap (filePath + "+3S.tmx")
         Segment3W = TmxMap (filePath + "+3W.tmx")
         Segment4 = TmxMap (filePath + "+4A.tmx")
+        SegmentNN = TmxMap (filePath + "+NN+" + string floor + ".tmx")
+        SegmentNS = TmxMap (filePath + "+NS+" + string floor + ".tmx")
         SegmentBN = TmxMap (filePath + "+BN+" + string floor + ".tmx")
         SegmentBS = TmxMap (filePath + "+BS+" + string floor + ".tmx") }
 
@@ -157,6 +167,8 @@ type MapRand =
         | Segment.Segment3S -> Some segments.Segment3S
         | Segment.Segment3W -> Some segments.Segment3W
         | Segment.Segment4 -> Some segments.Segment4
+        | Segment.SegmentNN -> Some segments.SegmentNN
+        | Segment.SegmentNS -> Some segments.SegmentNS
         | Segment.SegmentBN -> Some segments.SegmentBN
         | Segment.SegmentBS -> Some segments.SegmentBS
         | _ -> failwithumf ()
@@ -195,59 +207,79 @@ type MapRand =
         | _ -> failwithumf ()
         (cursor, rand)
 
-    static member tryAddBossRoomFromNorthWest map =
+    static member tryAddSouthOpeningRoomFromNorthWest specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
-                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] |> int <> 0 &&
+                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
+                            map.MapSegments.[dec i].[j] |> int = 0 &&
+                            map.MapSegments.[dec i].[j] |> int &&& 0b010000 = 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
-                            map.MapSegments.[dec i].[j] <- Segment.SegmentBS
+                            map.MapSegments.[dec i].[j] <-
+                                match specialSegmentType with
+                                | NarrativeSegment -> Segment.SegmentNS
+                                | BossSegment -> Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddBossRoomFromNorthEast map =
+    static member tryAddSouthOpeningRoomFromNorthEast specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
-                            map.MapSegments.[dec i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] |> int <> 0 &&
+                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
+                            map.MapSegments.[dec i].[j] |> int = 0 &&
+                            map.MapSegments.[dec i].[j] |> int &&& 0b010000 = 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
-                            map.MapSegments.[dec i].[j] <- Segment.SegmentBS
+                            map.MapSegments.[dec i].[j] <-
+                                match specialSegmentType with
+                                | NarrativeSegment -> Segment.SegmentNS
+                                | BossSegment -> Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddBossRoomFromSouthWest map =
+    static member tryAddNorthOpeningRoomFromSouthWest specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
-                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] |> int <> 0 &&
+                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
+                            map.MapSegments.[inc i].[j] |> int = 0 &&
+                            map.MapSegments.[inc i].[j] |> int &&& 0b010000 = 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
-                            map.MapSegments.[inc i].[j] <- Segment.SegmentBN
+                            map.MapSegments.[inc i].[j] <-
+                                match specialSegmentType with
+                                | NarrativeSegment -> Segment.SegmentNN
+                                | BossSegment -> Segment.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddBossRoomFromSouthEast map =
+    static member tryAddNorthOpeningRoomFromSouthEast specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] <> Segment.Segment0 &&
-                            map.MapSegments.[inc i].[j] = Segment.Segment0 then
+                            map.MapSegments.[i].[j] |> int <> 0 &&
+                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
+                            map.MapSegments.[inc i].[j] |> int = 0 &&
+                            map.MapSegments.[inc i].[j] |> int &&& 0b010000 = 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
-                            map.MapSegments.[inc i].[j] <- Segment.SegmentBN
+                            map.MapSegments.[inc i].[j] <-
+                                match specialSegmentType with
+                                | NarrativeSegment -> Segment.SegmentNN
+                                | BossSegment -> Segment.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -289,17 +321,27 @@ type MapRand =
                 | OriginSW ->   Segment.Segment1S
             else Segment.Segment0
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
-        let (tryAddBosses, rand) =
-            Rand.nextPermutation
-                [MapRand.tryAddBossRoomFromNorthWest
-                 MapRand.tryAddBossRoomFromNorthEast
-                 MapRand.tryAddBossRoomFromSouthWest
-                 MapRand.tryAddBossRoomFromSouthEast]
+        let (tryAddBoss, rand) =
+            Rand.nextItem
+                [MapRand.tryAddNorthOpeningRoomFromSouthEast BossSegment
+                 MapRand.tryAddNorthOpeningRoomFromSouthWest BossSegment
+                 MapRand.tryAddSouthOpeningRoomFromNorthEast BossSegment
+                 MapRand.tryAddSouthOpeningRoomFromNorthWest BossSegment]
                 rand
-        let mutable isMapValid = false
-        for tryAddBoss in tryAddBosses do
-            if not isMapValid then
-                isMapValid <- tryAddBoss map
+        let (tryAddNorthOpeningNarrative, rand) =
+            Rand.nextItem
+                [MapRand.tryAddNorthOpeningRoomFromSouthEast NarrativeSegment
+                 MapRand.tryAddNorthOpeningRoomFromSouthWest NarrativeSegment]
+                rand
+        let (tryAddSouthOpeningNarrative, rand) =
+            Rand.nextItem
+                [MapRand.tryAddSouthOpeningRoomFromNorthEast NarrativeSegment
+                 MapRand.tryAddSouthOpeningRoomFromNorthWest NarrativeSegment]
+                rand
+        let isMapValid =
+            tryAddNorthOpeningNarrative map &&
+            tryAddSouthOpeningNarrative map &&
+            tryAddBoss map
 #if DEV
         MapRand.printn map
 #endif
@@ -365,7 +407,7 @@ type MapRand =
                 | None -> ()
 
         // add tiles from segments
-        for l in 0 .. 2 - 1 do
+        for l in 0 .. mapTmx.Layers.Count - 1 do
             let layer = mapTmx.Layers.[l]
             layer.Tiles.Clear ()
             for j in 0 .. 7 - 1 do
@@ -376,8 +418,8 @@ type MapRand =
                             let y = j * 32 + jj
                             let tileRef =
                                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
-                                | Some segment -> segment.Layers.[l].Tiles.[ii + jj * 32]
-                                | None -> TmxLayerTile (0u, x, y)
+                                | Some segment when l < segment.Layers.Count -> segment.Layers.[l].Tiles.[ii + jj * 32]
+                                | Some _ | None -> TmxLayerTile (0u, x, y)
                             let tile = TmxMap.makeLayerTile tileRef.Gid x y tileRef.HorizontalFlip tileRef.VerticalFlip tileRef.DiagonalFlip
                             layer.Tiles.Add tile
 
