@@ -16,7 +16,7 @@ module Assets =
 
     [<RequireQualifiedAccess>]
     module Data =
-        
+
         let WeaponDataFilePath = "Assets/Data/WeaponData.csv"
         let ArmorDataFilePath = "Assets/Data/ArmorData.csv"
         let AccessoryDataFilePath = "Assets/Data/AccessoryData.csv"
@@ -138,7 +138,7 @@ module Assets =
 
     [<RequireQualifiedAccess>]
     module Battle =
-        
+
         let PackageName = "Battle"
         let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle"
         let CancelImage = asset<Image> PackageName "Cancel"
