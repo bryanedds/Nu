@@ -622,6 +622,13 @@ type [<NoEquality; NoComparison>] CueTarget =
     | AllyTarget of int // (battle only)
     | EnemyTarget of int // (battle only)
 
+[<Syntax   ("Nil Let PlaySound PlaySong FadeOutSong Face Glow Animate Recruit Unseal " +
+            "AddItem RemoveItem AddAdvent RemoveAdvent " +
+            "Wait Fade Warp Battle Dialog Prompt " +
+            "If Not Parallel Let Expand Sequence",
+            "", "", "", "",
+            Constants.PrettyPrinter.DefaultThresholdMin,
+            Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoEquality; NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag
@@ -650,6 +657,8 @@ type [<NoEquality; NoComparison>] Cue =
     | PromptState
     | If of Advent Set * Cue * Cue
     | Not of Advent Set * Cue * Cue
+    | Define of string * string list * Cue
+    | Expand of string * (string list * Cue) list
     | Parallel of Cue list
     | Sequence of Cue list
     static member isNil cue = match cue with Nil -> true | _ -> false
@@ -660,9 +669,14 @@ type [<NoEquality; NoComparison>] Cue =
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | If (r, c, a) -> if advents.IsSupersetOf r then Cue.isInterrupting advents c else Cue.isInterrupting advents a
         | Not (r, c, a) -> if not (advents.IsSupersetOf r) then Cue.isInterrupting advents c else Cue.isInterrupting advents a
+        | Define (_, _, _) -> false
+        | Expand (_, _) -> true // NOTE: we just assume this expands into something interrupting to be safe.
         | Parallel cues -> List.exists (Cue.isInterrupting advents) cues
         | Sequence cues -> List.exists (Cue.isInterrupting advents) cues
     static member notInterrupting advents cue = not (Cue.isInterrupting advents cue)
+
+type CueDefinitions =
+    Map<string, string list * Cue>
 
 type [<NoEquality; NoComparison>] Branch =
     { Cue : Cue
@@ -840,10 +854,10 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
 
 type [<NoEquality; NoComparison>] PropData =
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
-    | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we'll just have north / south doors
+    | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
-    | Switch of SwitchType * Cue * Cue * Advent Set // anything that can affect another thing on the field through interaction
-    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set // anything that can affect another thing on the field through traversal
+    | Switch of SwitchType * Cue * Cue * Advent Set
+    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
     | Npc of NpcType * Direction * Cue * Advent Set
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
@@ -872,6 +886,7 @@ type [<NoEquality; NoComparison>] FieldData =
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option
+      Definitions : CueDefinitions
       Treasures : ItemType list }
 
 [<RequireQualifiedAccess>]
