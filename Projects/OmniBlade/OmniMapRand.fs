@@ -230,7 +230,7 @@ type MapRand =
         | _ -> failwithumf ()
         (cursor, rand)
 
-    static member tryAddSpecialRoomSouthFromNorthWest specialSegmentType map =
+    static member tryAddSpecialRoomSouthFromNorthWest specialSegment map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
