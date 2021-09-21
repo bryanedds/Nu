@@ -657,8 +657,9 @@ type [<NoEquality; NoComparison>] Cue =
     | PromptState
     | If of Advent Set * Cue * Cue
     | Not of Advent Set * Cue * Cue
-    | Define of string * string list * Cue
-    | Expand of string * (string list * Cue) list
+    | Define of string * Cue
+    | Assign of string * Cue
+    | Expand of string
     | Parallel of Cue list
     | Sequence of Cue list
     static member isNil cue = match cue with Nil -> true | _ -> false
@@ -669,14 +670,14 @@ type [<NoEquality; NoComparison>] Cue =
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | If (r, c, a) -> if advents.IsSupersetOf r then Cue.isInterrupting advents c else Cue.isInterrupting advents a
         | Not (r, c, a) -> if not (advents.IsSupersetOf r) then Cue.isInterrupting advents c else Cue.isInterrupting advents a
-        | Define (_, _, _) -> false
-        | Expand (_, _) -> true // NOTE: we just assume this expands into something interrupting to be safe.
+        | Define (_, _) | Assign (_, _) -> false
+        | Expand _ -> true // NOTE: we just assume this expands into something interrupting to be safe.
         | Parallel cues -> List.exists (Cue.isInterrupting advents) cues
         | Sequence cues -> List.exists (Cue.isInterrupting advents) cues
     static member notInterrupting advents cue = not (Cue.isInterrupting advents cue)
 
 type CueDefinitions =
-    Map<string, string list * Cue>
+    Map<string, Cue>
 
 type [<NoEquality; NoComparison>] Branch =
     { Cue : Cue
