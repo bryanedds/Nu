@@ -65,10 +65,32 @@ type Segment =
     | Segment3S = 0b001110
     | Segment3W = 0b001101
     | Segment4 = 0b001111
-    | SegmentNN = 0b010001 // bit 5 denotes special segment, bit 6 denotes narrative or boss
+    | SegmentNN = 0b010001
     | SegmentNS = 0b010100
-    | SegmentBN = 0b110001
-    | SegmentBS = 0b110100
+    | SegmentBN = 0b100001
+    | SegmentBS = 0b100100
+
+module Segment =
+
+    let isNarrative (segment : Segment) =
+        int segment &&& 0b010000 <> 0
+
+    let isBoss (segment : Segment) =
+        int segment &&& 0b100000 <> 0
+
+    let isSpecial (segment : Segment) =
+        isNarrative segment &&
+        isBoss segment
+
+    let notSpecial segment =
+        not (isNarrative segment) &&
+        not (isBoss segment)
+
+    let isEmpty (segment : Segment) =
+        int segment = 0
+
+    let notEmpty (segment : Segment) =
+        int segment <> 0
 
 type SpecialSegmentType =
     | NarrativeSegment
@@ -214,10 +236,9 @@ type MapRand =
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] |> int <> 0 &&
-                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
-                            map.MapSegments.[dec i].[j] |> int = 0 &&
-                            map.MapSegments.[dec i].[j] |> int &&& 0b010000 = 0 then
+                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
+                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
+                            map.MapSegments.[dec i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <-
                                 match specialSegmentType with
@@ -233,10 +254,9 @@ type MapRand =
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] |> int <> 0 &&
-                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
-                            map.MapSegments.[dec i].[j] |> int = 0 &&
-                            map.MapSegments.[dec i].[j] |> int &&& 0b010000 = 0 then
+                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
+                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
+                            map.MapSegments.[dec i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <-
                                 match specialSegmentType with
@@ -252,10 +272,9 @@ type MapRand =
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] |> int <> 0 &&
-                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
-                            map.MapSegments.[inc i].[j] |> int = 0 &&
-                            map.MapSegments.[inc i].[j] |> int &&& 0b010000 = 0 then
+                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
+                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
+                            map.MapSegments.[inc i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <-
                                 match specialSegmentType with
@@ -271,10 +290,9 @@ type MapRand =
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] |> int <> 0 &&
-                            map.MapSegments.[i].[j] |> int &&& 0b010000 = 0 &&
-                            map.MapSegments.[inc i].[j] |> int = 0 &&
-                            map.MapSegments.[inc i].[j] |> int &&& 0b010000 = 0 then
+                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
+                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
+                            map.MapSegments.[inc i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <-
                                 match specialSegmentType with
