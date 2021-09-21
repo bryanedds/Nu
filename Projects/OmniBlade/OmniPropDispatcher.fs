@@ -97,7 +97,7 @@ module PropDispatcher =
                                     (true, colWhite, colZero, Some (v4Bounds offset Constants.Gameplay.TileCelSize), Assets.Field.StairsImage)
                             else (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
-                    | Door (doorType, _, _, _) ->
+                    | Door (doorType, _, _, _, _) ->
                         let image =
                             match doorType with
                             | WoodenDoor ->

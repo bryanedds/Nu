@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,7 +9,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlr0KwjAQx0NLl7aDurtYQR9D3fsWWkXx6yFc+yyiuNlBn0Tdi4Kfo//QCmqSwXLUJQc/EsLlfpdb2tBkLPyBocWU0bN+q5UF7dd+7f+fvwPHSNJDH2ftHPyqGeTxdu3X/rz9A9QdfzGV+CeSvC5BT/ytkcHYJoXvt4boXxtiHsVMuP+EWpcUvr9K/EdDzKPye1hrKXxfN0V/xRTzqPxnO3HcsN7Bwxb9PAKcnx28HywdOn+EWjuwBwdH7n6F5zJWdZM7VP4YtQqoWQQlV+1+7zEm9JfhbIAmaCn8s68e+R0qv58653AsFPNfOZ89+kR+/r0PMpLX/4BGo8nGE3nx9rM=
+   eJztlrFOwzAQhq1EWeIMwM5CKsFjAHvfAtoKRGkeomteBnVrB3gSYK+KVEIZ+U9J1KvrVLQ6OUN90idbkX3fOTpHyUOl8j14ilRjDKL9ch2C9x+3/x6OoaWGBzy7c+C31eDSzWuow7WbeGT+vmM/uTPmH0Vua6A78Bas/dPATe9zf8H8ixb8V+HafxG697fx7WnDT73+bJBZ/CPLOok7QWedob9eK2jOe5/fAXOdxDsh/xdyfVfQvLD4F8H2Oil/ivGygua89/kdMNdJ+Zdx6fjBuAK/8bafoofnS43zgxct558h1zv4AJ/a7q4jTZTqJOUeKf8cuU6Q8xScJc1uXuNc0H8O5zW4AbcN/rFRI+2R8nd3nLmOid6ssSvkp/+M3oG08V/i8Xj+zx9AzABd
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -19,8 +19,19 @@
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzjEOABAABMGr/V6D5/IDJWIm2X4TAIB7tZL01SinT/bqA48A/GsC5HcCfw==
+   eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
- <objectgroup id="3" name="Props"/>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="720" y="576" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some BrassKey]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="528" y="1152" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6]"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>

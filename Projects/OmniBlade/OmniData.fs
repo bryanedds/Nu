@@ -245,6 +245,7 @@ type ConsumableType =
 
 type KeyItemType =
     | BrassKey
+    | IronKey
 
 type ItemType =
     | Consumable of ConsumableType
@@ -839,7 +840,7 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
 
 type [<NoEquality; NoComparison>] PropData =
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
-    | Door of DoorType * Cue * Cue * Advent Set // for simplicity, we'll just have north / south doors
+    | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we'll just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
     | Switch of SwitchType * Cue * Cue * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set // anything that can affect another thing on the field through traversal
