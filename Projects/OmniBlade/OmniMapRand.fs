@@ -70,6 +70,7 @@ type Segment =
     | SegmentBN = 0b100001
     | SegmentBS = 0b100100
 
+[<RequireQualifiedAccess>]
 module Segment =
 
     let isNarrative (segment : Segment) =
@@ -229,7 +230,7 @@ type MapRand =
         | _ -> failwithumf ()
         (cursor, rand)
 
-    static member tryAddSouthOpeningRoomFromNorthWest specialSegmentType map =
+    static member tryAddSpecialRoomSouthFromNorthWest specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
@@ -247,7 +248,7 @@ type MapRand =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddSouthOpeningRoomFromNorthEast specialSegmentType map =
+    static member tryAddSpecialRoomSouthFromNorthEast specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
@@ -265,7 +266,7 @@ type MapRand =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddNorthOpeningRoomFromSouthWest specialSegmentType map =
+    static member tryAddSpecialRoomNorthFromSouthWest specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
@@ -283,7 +284,7 @@ type MapRand =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddNorthOpeningRoomFromSouthEast specialSegmentType map =
+    static member tryAddSpecialRoomFromNorthSouthEast specialSegmentType map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
@@ -341,20 +342,20 @@ type MapRand =
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         let (tryAddBoss, rand) =
             Rand.nextItem
-                [MapRand.tryAddNorthOpeningRoomFromSouthEast BossSegment
-                 MapRand.tryAddNorthOpeningRoomFromSouthWest BossSegment
-                 MapRand.tryAddSouthOpeningRoomFromNorthEast BossSegment
-                 MapRand.tryAddSouthOpeningRoomFromNorthWest BossSegment]
+                [MapRand.tryAddSpecialRoomFromNorthSouthEast BossSegment
+                 MapRand.tryAddSpecialRoomNorthFromSouthWest BossSegment
+                 MapRand.tryAddSpecialRoomSouthFromNorthEast BossSegment
+                 MapRand.tryAddSpecialRoomSouthFromNorthWest BossSegment]
                 rand
         let (tryAddNorthOpeningNarrative, rand) =
             Rand.nextItem
-                [MapRand.tryAddNorthOpeningRoomFromSouthEast NarrativeSegment
-                 MapRand.tryAddNorthOpeningRoomFromSouthWest NarrativeSegment]
+                [MapRand.tryAddSpecialRoomFromNorthSouthEast NarrativeSegment
+                 MapRand.tryAddSpecialRoomNorthFromSouthWest NarrativeSegment]
                 rand
         let (tryAddSouthOpeningNarrative, rand) =
             Rand.nextItem
-                [MapRand.tryAddSouthOpeningRoomFromNorthEast NarrativeSegment
-                 MapRand.tryAddSouthOpeningRoomFromNorthWest NarrativeSegment]
+                [MapRand.tryAddSpecialRoomSouthFromNorthEast NarrativeSegment
+                 MapRand.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment]
                 rand
         let isMapValid =
             tryAddNorthOpeningNarrative map &&
