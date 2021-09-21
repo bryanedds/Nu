@@ -248,16 +248,26 @@ module FieldDispatcher =
                 then (consequent, definitions, just field)
                 else (alternate, definitions, just field)
 
-            | Define (name, pars, body) ->
-                (Cue.Nil, Map.add name (pars, body) definitions, just field)
+            | Define (name, body) ->
+                if not (Map.containsKey name definitions) then
+                    (Cue.Nil, Map.add name body definitions, just field)
+                else
+                    Log.debug ("Cue definition '" + name + "' already found.")
+                    (Cue.Nil, definitions, just field)
 
-            | Expand (name, args) ->
+            | Assign (name, body) ->
+                if Map.containsKey name definitions then
+                    (Cue.Nil, Map.add name body definitions, just field)
+                else
+                    Log.debug ("Cue definition '" + name + "' not found.")
+                    (Cue.Nil, definitions, just field)
+
+            | Expand name ->
                 match Map.tryFind name definitions with
-                | Some (pars, body) ->
-                    let definitions = Map.addMany (List.zip pars args) definitions
+                | Some body ->
                     run body definitions field world
                 | None ->
-                    Log.debug ("Could not find Cue definition '" + name + "'.")
+                    Log.debug ("Cue definition '" + name + "' not found.")
                     (Cue.Nil, definitions, ([], field))
 
             | Parallel cues ->
