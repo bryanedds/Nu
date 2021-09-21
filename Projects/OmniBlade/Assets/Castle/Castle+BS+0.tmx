@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -8,7 +8,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlksKgzAQhkPFi7hpD9aHtNjqRTyRm/ZCbuq+ERIIQzKvxEXBgdmYmXxfHz84VsaMSD9qY17KvtX43VSv7MH2+6DrPsPBsz/2nq+yJ6VDyF5sHytdzwoHyD7ZZ9pqhA4l2VIHin23Z1fbzzrNSs1QDpzP3bqdDuFjM5hDx/jOe5fpAeFTM6FDC/jU7z25TK+eOTPeAfKp/9rsMr0gd3NmvAPkU9W4TGOenBlfUn7pCvkXJFec3El31vMzyGDKgZM7yU6MjTlwcgcrtYOxUw6cTMGK7XDYMQdupsKCOxI2dJBkyle4o2FzcsGpHHauQwm21qEkW+qwBZvrsCXbN+f9Y+fv/J3/H/wf8PVzKQ==
+   eJy9l0sOwjAMRCOqXqQbOBifCgS0F+mJuoELdUP3pFIsRVbi2E7Skbyhdt7wGeFMjTETUY/WmLeybi19dqo29mjrc9DVkOEB2F97zk9Zs9KDz15tHRtdLQoPmH2yr2nVCT2UZEs9pNh3++xq69XGWbGelAfO++7dzJPgUz2UhyfjMx9cpkeCn+rxPfSIn/q+Z5fpzWdOD3jA/NRvbXGZXomzOT3gAfNT6lymKZ+cHpCUX1o+/0LkipM76cz2/IwyGPPAyZ1kJsSmPHByhxWbodgxD5xMYYVmOOyQB26mfOEZCRt7kGQK5M9o2JxccJTDzvVQgq31UJIt9VCDzfVQk53ysAc75mFPtu8BtDcb7mSgEnctCRt2VZD2nqMpf1cFhXbKmny8q4Z2ypr80H8R3im59QeABoKS
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztw6ENADAIADAMjyL4/wQEB5DMzLRJIwAAALh07l8qN7waL3ABpQ==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +25,11 @@
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward [Castle 1] [IX 1] false [MadTrixterDefeated]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="1488" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some IronKey]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -532,19 +532,22 @@ module FieldDispatcher =
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                // TODO: P1: add jiggle locked sound.
                 let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 just field
 
-        static let interactDoor cue requirements (prop : Prop) (field : Field) =
+        static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
             | DoorState false ->
-                if field.Advents.IsSupersetOf requirements then
+                if  field.Advents.IsSupersetOf requirements &&
+                    Option.mapOrDefault (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    // TODO: P1: add jiggle locked sound.
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
@@ -560,6 +563,7 @@ module FieldDispatcher =
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    // TODO: P1: add jiggle locked sound.
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
@@ -913,7 +917,7 @@ module FieldDispatcher =
                             let prop = prop.GetProp world
                             match prop.PropData with
                             | Portal (_, _, _, _, _, _, _) -> just field
-                            | Door (_, cue, _, requirements) -> interactDoor cue requirements prop field
+                            | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor (_, _, _, _, _) -> just field

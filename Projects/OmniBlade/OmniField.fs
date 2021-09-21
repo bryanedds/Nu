@@ -91,7 +91,7 @@ module Field =
         | None ->
             match propDescriptor.PropData with
             | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
-            | Door (_, _, _, _) -> DoorState false
+            | Door (_, _, _, _, _) -> DoorState false
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
             | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
