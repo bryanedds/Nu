@@ -40,6 +40,8 @@ module Field =
               Inventory_ : Inventory
               Options_ : Options
               Menu_ : Menu
+              Definitions_ : CueDefinitions
+              DefinitionsOriginal_ : CueDefinitions
               Cue_ : Cue
               ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
@@ -59,6 +61,8 @@ module Field =
         member this.Inventory = this.Inventory_
         member this.Options = this.Options_
         member this.Menu = this.Menu_
+        member this.Definitions = this.Definitions_
+        member this.DefinitionsOriginal = this.DefinitionsOriginal_
         member this.Cue = this.Cue_
         member this.ShopOpt = this.ShopOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
@@ -152,6 +156,9 @@ module Field =
 
     let updateMenu updater field =
         { field with Menu_ = updater field.Menu_ }
+
+    let updateDefinitions updater field =
+        { field with Definitions_ = updater field.Definitions_ }
 
     let updateCue updater field =
         { field with Cue_ = updater field.Cue_ }
@@ -282,19 +289,21 @@ module Field =
             Avatar_ = Avatar.toSymbolizable field.Avatar
             FieldSongTimeOpt_ = None }
 
-    let make fieldType randSeedState avatar team advents inventory =
+    let make fieldType saveSlot randSeedState avatar team inventory definitions =
         { FieldType_ = fieldType
-          SaveSlot_ = Slot1
+          SaveSlot_ = saveSlot
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = team
-          Advents_ = advents
+          Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = inventory
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Definitions_ = definitions
+          DefinitionsOriginal_ = definitions
           Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
@@ -315,6 +324,8 @@ module Field =
           Inventory_ = { Items = Map.empty; Gold = 0 }
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Definitions_ = Map.empty
+          DefinitionsOriginal_ = Map.empty
           Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
@@ -327,13 +338,19 @@ module Field =
             Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
 
     let initial saveSlot randSeedState =
-        { empty with
-            FieldType_ = TombOuter
-            SaveSlot_ = saveSlot
-            OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
-            Avatar_ = Avatar.initial
-            Team_ = Map.singleton 0 (Teammate.make 0 Jinn)
-            Inventory_ = Inventory.initial }
+        let fieldType = TombOuter
+        let definitions =
+            match Data.Value.Fields.TryGetValue fieldType with
+            | (true, fieldData) -> fieldData.Definitions
+            | (false, _) -> Map.empty
+        make
+            fieldType
+            saveSlot
+            randSeedState
+            Avatar.initial
+            (Map.singleton 0 (Teammate.make 0 Jinn))
+            Inventory.initial
+            definitions
 
     let save field =
         let saveFilePath =

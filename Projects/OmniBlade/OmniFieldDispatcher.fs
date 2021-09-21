@@ -60,37 +60,42 @@ module FieldDispatcher =
     [<RequireQualifiedAccess>]
     module Cue =
 
-        let rec run (cue : Cue) (field : Field) (world : World) : Cue * (Signal<FieldMessage, FieldCommand> list * Field) =
+        let rec run
+            (cue : Cue)
+            (definitions : CueDefinitions)
+            (field : Field)
+            (world : World) :
+            Cue * CueDefinitions * (Signal<FieldMessage, FieldCommand> list * Field) =
 
             match cue with
             | Cue.Nil ->
-                (cue, just field)
+                (cue, definitions, just field)
 
             | Cue.PlaySound (volume, sound) ->
-                (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
+                (Cue.Nil, definitions, withCmd (PlaySound (0L, volume, sound)) field)
 
             | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-                (Cue.Nil, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+                (Cue.Nil, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
             | Cue.FadeOutSong fade ->
-                (Cue.Nil, withCmd (FadeOutSong fade) field)
+                (Cue.Nil, definitions, withCmd (FadeOutSong fade) field)
 
             | Cue.Face (direction, target) ->
                 match target with
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
                 | NpcTarget npcType ->
                     match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
                     | Some propKey ->
                         match field.PropStates.[propKey] with
                         | NpcState (_, _, color, glow, exists) ->
                             let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
+                            (Cue.Nil, definitions, just field)
+                        | _ -> (Cue.Nil, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
                 | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
 
             | Glow (glow, target) ->
                 match target with
@@ -100,19 +105,19 @@ module FieldDispatcher =
                         match field.PropStates.[propKey] with
                         | NpcState (_, direction, color, _, exists) ->
                             let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
+                            (Cue.Nil, definitions, just field)
+                        | _ -> (Cue.Nil, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
                 | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
 
             | Animate (characterAnimationType, target) ->
                 match target with
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
                 | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
 
             | Recruit allyType ->
                 let fee = Field.getRecruitmentFee field
@@ -127,38 +132,38 @@ module FieldDispatcher =
                     let field = Field.recruit allyType field
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                    (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | Unseal (fee, consequent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.add consequent) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                    (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
+                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | AddItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
+                (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
 
             | RemoveItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
+                (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
 
             | AddAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.add advent) field))
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.add advent) field))
 
             | RemoveAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove advent) field))
 
             | Wait time ->
-                (WaitState (World.getUpdateTime world + time), just field)
+                (WaitState (World.getUpdateTime world + time), definitions, just field)
 
             | WaitState time ->
                 if World.getUpdateTime world < time
-                then (cue, just field)
-                else (Cue.Nil, just field)
+                then (cue, definitions, just field)
+                else (Cue.Nil, definitions, just field)
 
             | Fade (time, fadeIn, target) ->
-                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
+                (FadeState (World.getUpdateTime world, time, fadeIn, target), definitions, just field)
 
             | FadeState (startTime, totalTime, fadeIn, target) ->
                 match target with
@@ -171,16 +176,16 @@ module FieldDispatcher =
                             let progress = single localTime / single totalTime
                             let color = colWhite * if fadeIn then progress else 1.0f - progress
                             let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
+                            (Cue.Nil, definitions, just field)
+                        | _ -> (Cue.Nil, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
                 | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
 
             | Warp (fieldType, fieldDestination, fieldDirection) ->
                 match field.FieldTransitionOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
                     let fieldTransition =
                         { FieldType = fieldType
@@ -188,89 +193,101 @@ module FieldDispatcher =
                           FieldDirection = fieldDirection
                           FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                     let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
-                    (WarpState, just field)
+                    (WarpState, definitions, just field)
 
             | WarpState ->
                 match field.FieldTransitionOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (Cue.Nil, definitions, just field)
 
             | Battle (battleType, consequents) ->
                 match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (BattleState, withMsg (TryBattle (battleType, consequents)) field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (BattleState, definitions, withMsg (TryBattle (battleType, consequents)) field)
 
             | BattleState ->
                 match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (Cue.Nil, definitions, just field)
 
             | Dialog text ->
                 match field.DialogOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
                     let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (DialogState, just field)
+                    (DialogState, definitions, just field)
 
             | DialogState ->
                 match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, definitions, just field)
+                | Some _ -> (cue, definitions, just field)
 
             | Prompt (text, leftPrompt, rightPrompt) ->
                 match field.DialogOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
                     let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = Some (leftPrompt, rightPrompt); DialogBattleOpt = None }
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (PromptState, just field)
+                    (PromptState, definitions, just field)
 
             | PromptState ->
                 match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, definitions, just field)
+                | Some _ -> (cue, definitions, just field)
 
             | If (requirements, consequent, alternate) ->
                 if field.Advents.IsSupersetOf requirements
-                then (consequent, just field)
-                else (alternate, just field)
+                then (consequent, definitions, just field)
+                else (alternate, definitions, just field)
 
             | Not (requirements, consequent, alternate) ->
                 if not (field.Advents.IsSupersetOf requirements)
-                then (consequent, just field)
-                else (alternate, just field)
+                then (consequent, definitions, just field)
+                else (alternate, definitions, just field)
+
+            | Define (name, pars, body) ->
+                (Cue.Nil, Map.add name (pars, body) definitions, just field)
+
+            | Expand (name, args) ->
+                match Map.tryFind name definitions with
+                | Some (pars, body) ->
+                    let definitions = Map.addMany (List.zip pars args) definitions
+                    run body definitions field world
+                | None ->
+                    Log.debug ("Could not find Cue definition '" + name + "'.")
+                    (Cue.Nil, definitions, ([], field))
 
             | Parallel cues ->
-                let (cues, (signals, field)) =
-                    List.fold (fun (cues, (signals, field)) cue ->
-                        let (cue, (signals2, field)) = run cue field world
+                let (cues, definitions, (signals, field)) =
+                    List.fold (fun (cues, definitions, (signals, field)) cue ->
+                        let (cue, definitions, (signals2, field)) = run cue definitions field world
                         if Cue.isNil cue
-                        then (cues, (signals @ signals2, field))
-                        else (cues @ [cue], (signals @ signals2, field)))
-                        ([], ([], field))
+                        then (cues, definitions, (signals @ signals2, field))
+                        else (cues @ [cue], definitions, (signals @ signals2, field)))
+                        ([], definitions, ([], field))
                         cues
                 match cues with
-                | _ :: _ -> (Parallel cues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
+                | _ :: _ -> (Parallel cues, definitions, (signals, field))
+                | [] -> (Cue.Nil, definitions, (signals, field))
 
             | Sequence cues ->
-                let (_, haltedCues, (signals, field)) =
-                    List.fold (fun (halted, haltedCues, (signals, field)) cue ->
+                let (_, haltedCues, definitions, (signals, field)) =
+                    List.fold (fun (halted, haltedCues, definitions, (signals, field)) cue ->
                         if halted
-                        then (halted, haltedCues @ [cue], (signals, field))
+                        then (halted, haltedCues @ [cue], definitions, (signals, field))
                         else
-                            let (cue, (signals2, field)) = run cue field world
+                            let (cue, definitions, (signals2, field)) = run cue definitions field world
                             if Cue.isNil cue
-                            then (false, [], (signals @ signals2, field))
-                            else (true, [cue], (signals @ signals2, field)))
-                        (false, [], ([], field))
+                            then (false, [], definitions, (signals @ signals2, field))
+                            else (true, [cue], definitions, (signals @ signals2, field)))
+                        (false, [], definitions, ([], field))
                         cues
                 match haltedCues with
-                | _ :: _ -> (Sequence haltedCues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
+                | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
+                | [] -> (Cue.Nil, definitions, (signals, field))
 
     [<RequireQualifiedAccess>]
     module Content =
@@ -583,6 +600,10 @@ module FieldDispatcher =
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
+        static let interactSeal cue (field : Field) =
+            let field = Field.updateCue (constant cue) field
+            just field
+
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
@@ -601,8 +622,12 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // update cue
-                let (cue, (signals, field)) = Cue.run field.Cue field world
+                // update cue, resetting definitions if finished
+                let (cue, definitions, (signals, field)) = Cue.run field.Cue field.Definitions field world
+                let field =
+                    match cue with
+                    | Cue.Nil -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
+                    | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
 
                 // update dialog
@@ -924,7 +949,7 @@ module FieldDispatcher =
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
-                            | Seal (_, cue, _) -> just (Field.updateCue (constant cue) field)
+                            | Seal (_, cue, _) -> interactSeal cue field
                             | Flame _ -> just field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
