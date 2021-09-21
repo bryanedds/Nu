@@ -93,7 +93,7 @@ module Segment =
     let notEmpty (segment : Segment) =
         int segment <> 0
 
-type SpecialSegmentType =
+type SpecialSegment =
     | NarrativeSegment
     | BossSegment
 
@@ -242,13 +242,13 @@ type MapRand =
                             map.MapSegments.[dec i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <-
-                                match specialSegmentType with
+                                match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNS
                                 | BossSegment -> Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddSpecialRoomSouthFromNorthEast specialSegmentType map =
+    static member tryAddSpecialRoomSouthFromNorthEast specialSegment map =
         let mutable bossRoomAdded = false
         for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
@@ -260,13 +260,13 @@ type MapRand =
                             map.MapSegments.[dec i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
                             map.MapSegments.[dec i].[j] <-
-                                match specialSegmentType with
+                                match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNS
                                 | BossSegment -> Segment.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddSpecialRoomNorthFromSouthWest specialSegmentType map =
+    static member tryAddSpecialRoomNorthFromSouthWest specialSegment map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
@@ -278,13 +278,13 @@ type MapRand =
                             map.MapSegments.[inc i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <-
-                                match specialSegmentType with
+                                match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNN
                                 | BossSegment -> Segment.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddSpecialRoomFromNorthSouthEast specialSegmentType map =
+    static member tryAddSpecialRoomFromNorthSouthEast specialSegment map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
@@ -296,7 +296,7 @@ type MapRand =
                             map.MapSegments.[inc i].[j] |> Segment.isEmpty then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
                             map.MapSegments.[inc i].[j] <-
-                                match specialSegmentType with
+                                match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNN
                                 | BossSegment -> Segment.SegmentBN
                             bossRoomAdded <- true
