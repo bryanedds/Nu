@@ -524,10 +524,17 @@ type [<NoEquality; NoComparison>] CuePredicate =
     | Advent of Advent
     | Advents of Advent Set
 
-[<Syntax   ("Nil Let PlaySound PlaySong FadeOutSong Face Glow Animate Recruit Unseal " +
+type [<NoEquality; NoComparison>] CueWait =
+    | Wait
+    | Timed of int64
+    | NoWait
+
+[<Syntax   ("Gold Item Items Advent Advents " +
+            "Wait Timed NoWait " +
+            "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
             "AddItem RemoveItem AddAdvent RemoveAdvent " +
-            "Wait Fade Warp Battle Dialog Prompt " +
-            "If Not Parallel Let Expand Sequence",
+            "Wait Animate Fade Warp Battle Dialog Prompt " +
+            "If Not Define Assign Parallel Sequence",
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
@@ -538,7 +545,6 @@ type [<NoEquality; NoComparison>] Cue =
     | FadeOutSong of int
     | Face of Direction * CueTarget
     | Glow of Color * CueTarget
-    | Animate of CharacterAnimationType * CueTarget
     | Recruit of AllyType
     | Unseal of int * Advent
     | AddItem of ItemType
@@ -547,6 +553,8 @@ type [<NoEquality; NoComparison>] Cue =
     | RemoveAdvent of Advent
     | Wait of int64
     | WaitState of int64
+    | Animate of CharacterAnimationType * CueTarget * CueWait
+    | AnimateState of int64 * CueWait
     | Fade of int64 * bool * CueTarget
     | FadeState of int64 * int64 * bool * CueTarget
     | Warp of FieldType * Vector2 * Direction
@@ -568,8 +576,9 @@ type [<NoEquality; NoComparison>] Cue =
     static member notNil cue = match cue with Nil -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Animate _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+        | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
         | If (p, c, a) ->
             match p with
             | Gold gold -> if inventory.Gold >= gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a

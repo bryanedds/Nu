@@ -111,14 +111,6 @@ module FieldDispatcher =
                 | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
                     (Cue.Nil, definitions, just field)
 
-            | Animate (characterAnimationType, target) ->
-                match target with
-                | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
-                    (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, definitions, just field)
-
             | Recruit allyType ->
                 let fee = Field.getRecruitmentFee field
                 if field.Inventory.Gold >= fee then
@@ -161,6 +153,31 @@ module FieldDispatcher =
                 if World.getUpdateTime world < time
                 then (cue, definitions, just field)
                 else (Cue.Nil, definitions, just field)
+
+            | Animate (characterAnimationType, target, wait) ->
+                match target with
+                | AvatarTarget ->
+                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
+                    match wait with
+                    | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
+                    | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                    (Cue.Nil, definitions, just field)
+
+            | AnimateState (startTime, wait) ->
+                let time = World.getUpdateTime world
+                match wait with
+                | CueWait.Wait ->
+                    if Avatar.getAnimationFinished time field.Avatar
+                    then (Cue.Nil, definitions, just field)
+                    else (cue, definitions, just field)
+                | Timed waitTime ->
+                    let timeLocal = time - startTime
+                    if timeLocal < waitTime
+                    then (cue, definitions, just field)
+                    else (Cue.Nil, definitions, just field)
+                | NoWait ->
+                    (Cue.Nil, definitions, just field)
 
             | Fade (time, fadeIn, target) ->
                 (FadeState (World.getUpdateTime world, time, fadeIn, target), definitions, just field)

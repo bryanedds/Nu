@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
  <tileset firstgid="1" source="../Field/TileMaps/TombInner.tsx"/>
  <tileset firstgid="1480" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -18,7 +18,7 @@
   </properties>
   <object id="3" gid="235" x="864" y="720" width="48" height="48">
    <properties>
-    <property name="I" value="[Sensor StepPlateSensor None [If [CastleUnsealed] [Sequence [[PlaySound 0.5 [Field Sealed]] [Dialog &quot;Castle seal reactivated...&quot;] [RemoveAdvent CastleUnsealed]]]]]"/>
+    <property name="I" value="[Sensor StepPlateSensor None [If [Advent CastleUnsealed] [Sequence [[PlaySound 0.5 [Field Sealed]] [Dialog &quot;Castle seal reactivated...&quot;] [RemoveAdvent CastleUnsealed]]]]]"/>
    </properties>
   </object>
   <object id="4" gid="235" x="720" y="1536" width="96" height="48">
