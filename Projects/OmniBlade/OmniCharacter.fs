@@ -206,7 +206,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member getFinished time state =
         match CharacterAnimationState.progressOpt time state with
         | Some progress -> progress = 1.0f
-        | None -> false
+        | None -> true
 
     static member empty =
         { TimeStart = 0L
