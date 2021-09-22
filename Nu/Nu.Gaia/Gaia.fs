@@ -230,10 +230,12 @@ module Gaia =
         Globals.World <- world // must be set for property grid
         let entityTds = { DescribedEntity = entity; Form = form }
         form.entityPropertyGrid.SelectedObject <- entityTds
+        form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
+        form.entityIgnorePropertyBindingsCheckBox.Checked <- false
         form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
@@ -259,8 +261,9 @@ module Gaia =
         match form.groupPropertyGrid.SelectedObject with
         | :? GroupTypeDescriptorSource as groupTds ->
             Globals.World <- world // must be set for property grid
-            if groupTds.DescribedGroup.Exists world
-            then form.groupPropertyGrid.Refresh ()
+            if groupTds.DescribedGroup.Exists world then
+                //form.groupIgnorePropertyBindingsCheckBox.Checked <- groupTds.DescribedGroup.GetIgnorePropertyBindings world
+                form.groupPropertyGrid.Refresh ()
             else deselectGroup form world
         | _ -> ()
 
