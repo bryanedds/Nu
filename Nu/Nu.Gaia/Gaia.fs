@@ -240,8 +240,9 @@ module Gaia =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             Globals.World <- world // must be set for property grid
-            if entityTds.DescribedEntity.Exists world
-            then form.entityPropertyGrid.Refresh ()
+            if entityTds.DescribedEntity.Exists world then
+                form.entityPropertyGrid.Refresh ()
+                form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
             else deselectEntity form world
         | _ -> ()
 
@@ -1300,6 +1301,18 @@ module Gaia =
                 world
             | _ -> world
 
+    let private handleEntityIgnorePropertyBindingsChanged (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger $ fun world ->
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                let world = entity.SetIgnorePropertyBindings form.entityIgnorePropertyBindingsCheckBox.Checked world
+                Globals.World <- world // must be set for property grid
+                form.entityPropertyGrid.Refresh ()
+                world
+            | _ -> world
+
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if form :> Form = Form.ActiveForm then
             if Keys.F5 = key then form.advancingButton.PerformClick ()
@@ -1629,6 +1642,7 @@ module Gaia =
         form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
         form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
         form.entityDesignerPropertyRemoveButton.Click.Add (handleEntityDesignerPropertyRemoveClick form)
+        form.entityIgnorePropertyBindingsCheckBox.CheckedChanged.Add (handleEntityIgnorePropertyBindingsChanged form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords
