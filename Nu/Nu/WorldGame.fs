@@ -206,21 +206,6 @@ module WorldGameModule =
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
-        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
-        /// Game is always considered 'selected' as well.
-        [<FunctionBinding>]
-        static member isSelected (simulant : Simulant) world =
-            match Address.getNames simulant.SimulantAddress with
-            | [||] -> true
-            | names ->
-                let screenName = Array.head names
-                match World.getOmniScreenOpt world with
-                | Some omniScreen when omniScreen.Name = screenName -> true
-                | _ ->
-                    match World.getSelectedScreenOpt world with
-                    | Some screen when screen.Name = screenName -> true
-                    | _ -> false
-
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
             let writeScreens gameDescriptor world =

@@ -203,6 +203,31 @@ module WorldSimulantModule =
         static member getExists (simulant : Simulant) (world : World) =
             (world :> World EventSystem).GetSimulantExists simulant
 
+        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
+        /// Game is always considered 'selected' as well.
+        [<FunctionBinding>]
+        static member isSelected (simulant : Simulant) world =
+            match Address.getNames simulant.SimulantAddress with
+            | [||] -> true
+            | names ->
+                let screenName = Array.head names
+                match World.getOmniScreenOpt world with
+                | Some omniScreen when omniScreen.Name = screenName -> true
+                | _ ->
+                    match World.getSelectedScreenOpt world with
+                    | Some screen when screen.Name = screenName -> true
+                    | _ -> false
+
+        /// Check that a simulant is ignoring bindings.
+        [<FunctionBinding>]
+        static member ignorePropertyBindings (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Entity as entity -> entity.GetIgnorePropertyBindings world
+            | :? Group -> false
+            | :? Screen -> false
+            | :? Game -> false
+            | _ -> failwithumf ()
+
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
             match address |> Address.getNames |> Array.length with

@@ -220,6 +220,10 @@ module Nu =
             WorldModule.isSelected <- fun simulant world ->
                 World.isSelected simulant world
 
+            // init ignorePropertyBindings F# reach-around
+            WorldModule.ignorePropertyBindings <- fun simulant world ->
+                World.ignorePropertyBindings simulant world
+
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 
                 World.getScreenEcs
@@ -314,7 +318,7 @@ module Nu =
                 let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
                 let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
-                let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
+                let world = World.monitor (fun _ world -> (Cascade, if not (World.ignorePropertyBindings leftFixup.This world) then tryPropagate simulant leftFixup rightFixup world else world)) (Events.Register --> right.This.SimulantAddress) simulant world
                 let world = World.increaseBindingCount right.This world
                 World.addPropertyBinding propertyBindingKey propertyAddress leftFixup rightFixup world
 

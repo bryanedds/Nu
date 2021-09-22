@@ -31,6 +31,7 @@ module Reflection =
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
+             ("IgnorePropertyBindings", true)
              ("CreationTimeStamp", true)
              ("Optimized", true)
              ("ScriptFrame", true)

@@ -86,6 +86,10 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for checking that a simulant is ignoring bindings.
+    let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
+        Unchecked.defaultof<_>
+
     /// F# reach-around for getting a screen's Ecs.
     let mutable internal getScreenEcs : Screen -> World -> World Ecs =
         Unchecked.defaultof<_>
@@ -798,8 +802,17 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let value = binding.PBRight.GetWithoutValidation world
-                            let setter = Option.get binding.PBLeft.SetOpt
-                            setter value world
+                            let allowPropertyBinding =
+#if DEBUG
+                                // OPTIMIZATION: only compute in DEBUG mode.
+                                not (ignorePropertyBindings binding.PBLeft.This world)
+#else
+                                true
+#endif
+                            if allowPropertyBinding then
+                                let setter = Option.get binding.PBLeft.SetOpt
+                                setter value world
+                            else world
                         else world
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then
