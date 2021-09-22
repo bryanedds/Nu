@@ -237,16 +237,22 @@ module FieldDispatcher =
                 match field.DialogOpt with
                 | None -> (Cue.Nil, definitions, just field)
                 | Some _ -> (cue, definitions, just field)
+                
+            | If (p, c, a) ->
+                match p with
+                | Gold gold -> if field.Inventory.Gold >= gold then (c, definitions, just field) else (a, definitions, just field)
+                | Item itemType -> if Inventory.containsItem itemType field.Inventory then (c, definitions, just field) else (a, definitions, just field)
+                | Items itemTypes -> if Inventory.containsItems itemTypes field.Inventory then (c, definitions, just field) else (a, definitions, just field)
+                | Advent advent -> if field.Advents.Contains advent then (c, definitions, just field) else (a, definitions, just field)
+                | Advents advents -> if field.Advents.IsSupersetOf advents then (c, definitions, just field) else (a, definitions, just field)
 
-            | If (requirements, consequent, alternate) ->
-                if field.Advents.IsSupersetOf requirements
-                then (consequent, definitions, just field)
-                else (alternate, definitions, just field)
-
-            | Not (requirements, consequent, alternate) ->
-                if not (field.Advents.IsSupersetOf requirements)
-                then (consequent, definitions, just field)
-                else (alternate, definitions, just field)
+            | Not (p, c, a) ->
+                match p with
+                | Gold gold -> if field.Inventory.Gold < gold then (c, definitions, just field) else (a, definitions, just field)
+                | Item itemType -> if not (Inventory.containsItem itemType field.Inventory) then (c, definitions, just field) else (a, definitions, just field)
+                | Items itemTypes -> if not (Inventory.containsItems itemTypes field.Inventory) then (c, definitions, just field) else (a, definitions, just field)
+                | Advent advent -> if not (field.Advents.Contains advent) then (c, definitions, just field) else (a, definitions, just field)
+                | Advents advents -> if not (field.Advents.IsSupersetOf advents) then (c, definitions, just field) else (a, definitions, just field)
 
             | Define (name, body) ->
                 if not (Map.containsKey name definitions) then
@@ -686,7 +692,7 @@ module FieldDispatcher =
                 // update spirits
                 let (signals, field) =
                     if  field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
@@ -1148,7 +1154,7 @@ module FieldDispatcher =
                     [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
@@ -1167,7 +1173,7 @@ module FieldDispatcher =
                      Entity.Text == "Menu"
                      Entity.Visible <== field --> fun field ->
                         field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
@@ -1179,7 +1185,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Menu.MenuState = MenuClosed &&
-                        (Cue.notInterrupting field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&

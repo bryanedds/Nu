@@ -33,28 +33,6 @@ type CharacterIndex =
         | AllyIndex i -> "Ally+" + scstring i
         | EnemyIndex i -> "Enemy+" + scstring i
 
-type Advent =
-    | DebugSwitch
-    | DebugSwitch2
-    | Opened of Guid
-    | ShadeRecruited
-    | MaelRecruited
-    | RiainRecruited
-    | PericRecruited
-    | MadTrixterDefeated
-    | HeavyArmorosDefeated
-    | AraneaImplicitumDefeated
-    | CastleUnsealed
-    | ForestUnsealed
-    | FactoryUnsealed
-    | MountainUnsealed
-    | DeadSeaUnsealed
-    | RuinsUnsealed
-    | DesertUnsealed
-    | Castle2Unsealed
-    | SeasonsUnsealed
-    | VolcanoUnsealed
-
 type Direction =
     | Upward
     | Rightward
@@ -176,89 +154,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
 
     override this.GetHashCode () =
         StatusType.enumerate this
-
-type WeaponType =
-    | Bare
-    | ShortSword
-    | Dagger
-    | OakRod
-    | OakBow
-    | Paws
-    | BronzeSword
-    | BronzeKatana
-    | BronzeRod
-    | LightBow
-    | Claws
-    | IronSword
-    | IronKatana
-    | SightedBow
-    | IvoryRod
-    | Fangs
-
-type ArmorType =
-    | MicroFur
-    | TinMail
-    | CottonVest
-    | CottonRobe
-    | ThinFur
-    | BronzeMail
-    | LeatherVest
-    | LeatherRobe
-    | ThickFur
-    | IronMail
-    | RubberVest
-    | SilkRobe
-    | ToughHide
-    | StoneHide
-
-type AccessoryType =
-    | SilverRing
-    | IronBrace
-
-type WeaponSubtype =
-    | Melee
-    | Sword
-    | Knife
-    | Rod
-    | Bow
-
-type ArmorSubtype =
-    | Robe
-    | Vest
-    | Mail
-    | Pelt
-
-type EquipmentType =
-    | WeaponType of WeaponType
-    | ArmorType of ArmorType
-    | AccessoryType of AccessoryType
-
-type ConsumableType =
-    | GreenHerb
-    | RedHerb
-    | GoldHerb
-    | Remedy
-    | Ether
-    | HighEther
-    | TurboEther
-    | Revive
-
-type KeyItemType =
-    | BrassKey
-    | IronKey
-
-type ItemType =
-    | Consumable of ConsumableType
-    | Equipment of EquipmentType
-    | KeyItem of KeyItemType
-    | Stash of int
-
-    static member getName item =
-        match item with
-        | Consumable ty -> scstringm ty
-        | Equipment ty -> match ty with WeaponType ty -> scstringm ty | ArmorType ty -> scstringm ty | AccessoryType ty -> scstringm ty
-        | KeyItem ty -> scstringm ty
-        | Stash gold -> string gold + "G"
 
 type AimType =
     | EnemyAim of bool // healthy (N/A)
@@ -622,6 +517,13 @@ type [<NoEquality; NoComparison>] CueTarget =
     | AllyTarget of int // (battle only)
     | EnemyTarget of int // (battle only)
 
+type [<NoEquality; NoComparison>] CuePredicate =
+    | Gold of int
+    | Item of ItemType
+    | Items of ItemType list
+    | Advent of Advent
+    | Advents of Advent Set
+
 [<Syntax   ("Nil Let PlaySound PlaySong FadeOutSong Face Glow Animate Recruit Unseal " +
             "AddItem RemoveItem AddAdvent RemoveAdvent " +
             "Wait Fade Warp Battle Dialog Prompt " +
@@ -655,8 +557,8 @@ type [<NoEquality; NoComparison>] Cue =
     | DialogState
     | Prompt of string * (string * Cue) * (string * Cue)
     | PromptState
-    | If of Advent Set * Cue * Cue
-    | Not of Advent Set * Cue * Cue
+    | If of CuePredicate * Cue * Cue
+    | Not of CuePredicate * Cue * Cue
     | Define of string * Cue
     | Assign of string * Cue
     | Expand of string
@@ -664,17 +566,29 @@ type [<NoEquality; NoComparison>] Cue =
     | Sequence of Cue list
     static member isNil cue = match cue with Nil -> true | _ -> false
     static member notNil cue = match cue with Nil -> false | _ -> true
-    static member isInterrupting (advents : Advent Set) cue =
+    static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
         | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Animate _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
-        | If (r, c, a) -> if advents.IsSupersetOf r then Cue.isInterrupting advents c else Cue.isInterrupting advents a
-        | Not (r, c, a) -> if not (advents.IsSupersetOf r) then Cue.isInterrupting advents c else Cue.isInterrupting advents a
+        | If (p, c, a) ->
+            match p with
+            | Gold gold -> if inventory.Gold >= gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Item itemType -> if Inventory.containsItem itemType inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Items itemTypes -> if Inventory.containsItems itemTypes inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advent advent -> if advents.Contains advent then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advents advents2 -> if advents.IsSupersetOf advents2 then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+        | Not (p, c, a) ->
+            match p with
+            | Gold gold -> if inventory.Gold < gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Item itemType -> if not (Inventory.containsItem itemType inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Items itemTypes -> if not (Inventory.containsItems itemTypes inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advent advent -> if not (advents.Contains advent) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advents advents2 -> if not (advents.IsSupersetOf advents2) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
         | Define (_, _) | Assign (_, _) -> false
         | Expand _ -> true // NOTE: we just assume this expands into something interrupting to be safe.
-        | Parallel cues -> List.exists (Cue.isInterrupting advents) cues
-        | Sequence cues -> List.exists (Cue.isInterrupting advents) cues
-    static member notInterrupting advents cue = not (Cue.isInterrupting advents cue)
+        | Parallel cues -> List.exists (Cue.isInterrupting inventory advents) cues
+        | Sequence cues -> List.exists (Cue.isInterrupting inventory advents) cues
+    static member notInterrupting inventory advents cue = not (Cue.isInterrupting inventory advents cue)
 
 type CueDefinitions =
     Map<string, Cue>

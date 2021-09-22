@@ -75,11 +75,11 @@
     <Compile Include="OmniConstants.fs" />
     <Compile Include="OmniSimulants.fs" />
     <Compile Include="OmniMapRand.fs" />
+    <Compile Include="OmniInventory.fs" />
     <Compile Include="OmniData.fs" />
     <Compile Include="OmniEvents.fs" />
     <Compile Include="OmniEffects.fs" />
     <Compile Include="OmniAlgorithms.fs" />
-    <Compile Include="OmniInventory.fs" />
     <Compile Include="OmniTeammate.fs" />
     <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniProp.fs" />
