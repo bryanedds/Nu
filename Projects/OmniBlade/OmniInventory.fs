@@ -7,6 +7,111 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+type Advent =
+    | DebugSwitch
+    | DebugSwitch2
+    | Opened of Guid
+    | ShadeRecruited
+    | MaelRecruited
+    | RiainRecruited
+    | PericRecruited
+    | MadTrixterDefeated
+    | HeavyArmorosDefeated
+    | AraneaImplicitumDefeated
+    | CastleUnsealed
+    | ForestUnsealed
+    | FactoryUnsealed
+    | MountainUnsealed
+    | DeadSeaUnsealed
+    | RuinsUnsealed
+    | DesertUnsealed
+    | Castle2Unsealed
+    | SeasonsUnsealed
+    | VolcanoUnsealed
+
+type WeaponType =
+    | Bare
+    | ShortSword
+    | Dagger
+    | OakRod
+    | OakBow
+    | Paws
+    | BronzeSword
+    | BronzeKatana
+    | BronzeRod
+    | LightBow
+    | Claws
+    | IronSword
+    | IronKatana
+    | SightedBow
+    | IvoryRod
+    | Fangs
+
+type ArmorType =
+    | MicroFur
+    | TinMail
+    | CottonVest
+    | CottonRobe
+    | ThinFur
+    | BronzeMail
+    | LeatherVest
+    | LeatherRobe
+    | ThickFur
+    | IronMail
+    | RubberVest
+    | SilkRobe
+    | ToughHide
+    | StoneHide
+
+type AccessoryType =
+    | SilverRing
+    | IronBrace
+
+type WeaponSubtype =
+    | Melee
+    | Sword
+    | Knife
+    | Rod
+    | Bow
+
+type ArmorSubtype =
+    | Robe
+    | Vest
+    | Mail
+    | Pelt
+
+type EquipmentType =
+    | WeaponType of WeaponType
+    | ArmorType of ArmorType
+    | AccessoryType of AccessoryType
+
+type ConsumableType =
+    | GreenHerb
+    | RedHerb
+    | GoldHerb
+    | Remedy
+    | Ether
+    | HighEther
+    | TurboEther
+    | Revive
+
+type KeyItemType =
+    | BrassKey
+    | IronKey
+
+type ItemType =
+    | Consumable of ConsumableType
+    | Equipment of EquipmentType
+    | KeyItem of KeyItemType
+    | Stash of int
+
+    static member getName item =
+        match item with
+        | Consumable ty -> scstringm ty
+        | Equipment ty -> match ty with WeaponType ty -> scstringm ty | ArmorType ty -> scstringm ty | AccessoryType ty -> scstringm ty
+        | KeyItem ty -> scstringm ty
+        | Stash gold -> string gold + "G"
+
 type [<ReferenceEquality; NoComparison>] PrizePool =
     { Consequents : Advent Set
       Items : ItemType list
@@ -36,6 +141,9 @@ type [<ReferenceEquality; NoComparison>] Inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount when itemCount > 0 -> true
         | _ -> false
+
+    static member containsItems items inventory =
+        List.forall (flip Inventory.containsItem inventory) items
 
     static member canAddItem item inventory =
         match item with
