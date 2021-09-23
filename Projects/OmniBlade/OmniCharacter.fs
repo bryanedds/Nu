@@ -194,6 +194,12 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
             | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
         | None -> v2iZero
 
+    static member inset time (celSize : Vector2) state =
+        let index = CharacterAnimationState.index time state
+        let offset = v2 (single index.X) (single index.Y) * celSize
+        let inset = v4Bounds offset celSize
+        inset
+
     static member progressOpt time state =
         match Map.tryFind state.CharacterAnimationType Data.Value.CharacterAnimations with
         | Some animationData ->
@@ -473,6 +479,9 @@ module Character =
 
     let getAttackResult effectType source target =
         CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
+
+    let getAnimationInset time (character : Character) =
+        CharacterAnimationState.inset time character.CelSize_ character.CharacterAnimationState_
 
     let getAnimationIndex time character =
         CharacterAnimationState.index time character.CharacterAnimationState_

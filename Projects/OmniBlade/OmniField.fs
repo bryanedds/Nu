@@ -90,7 +90,7 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
-    let getPropState propDescriptor (advents : Advent Set) propStates =
+    let getPropState time propDescriptor (advents : Advent Set) propStates =
         match Map.tryFind propDescriptor.PropId propStates with
         | None ->
             match propDescriptor.PropData with
@@ -100,6 +100,17 @@ module Field =
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
             | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
             | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
+            | Actor (characterType, direction, _, requirements) ->
+                let animationSheet =
+                    match Data.Value.Characters.TryGetValue characterType with
+                    | (true, characterData) -> characterData.AnimationSheet
+                    | (false, _) -> Assets.Field.JinnAnimationSheet
+                let characterAnimationState =
+                    { TimeStart = time
+                      AnimationSheet = animationSheet
+                      CharacterAnimationType = IdleAnimation
+                      Direction = direction }
+                ActorState (propDescriptor.PropBounds, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
             | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
             | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
         | Some propState -> propState
@@ -107,16 +118,18 @@ module Field =
     let getPropStates (field : Field) world =
         match Map.tryFind field.FieldType Data.Value.Fields with
         | Some fieldData ->
+            let time = World.getUpdateTime world
             FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, getPropState propDescriptor field.Advents field.PropStates))
+            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, getPropState time propDescriptor field.Advents field.PropStates))
         | None -> Map.empty
 
     let getProps (field : Field) world =
         match Map.tryFind field.FieldType Data.Value.Fields with
         | Some fieldData ->
+            let time = World.getUpdateTime world
             FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
-                let propState = getPropState propDescriptor field.Advents field.PropStates
+                let propState = getPropState time propDescriptor field.Advents field.PropStates
                 let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation field.Advents propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
