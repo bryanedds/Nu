@@ -312,7 +312,7 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { FieldType_ = Debug
+        { FieldType_ = DebugField
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty

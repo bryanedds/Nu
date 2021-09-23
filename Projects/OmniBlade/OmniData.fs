@@ -302,7 +302,7 @@ type ShopkeepAppearanceType =
     | Fancy
 
 type FieldType =
-    | Debug
+    | DebugField
     | TombOuter
     | TombGround
     | TombBasement
@@ -615,7 +615,7 @@ module OmniSeedState =
     let rotate isFade fieldType state =
         if not isFade then
             match fieldType with
-            | Debug | TombOuter | TombGround | TombBasement
+            | DebugField | TombOuter | TombGround | TombBasement
             | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
             | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
             | Castle n -> state.RandSeedState <<< n
