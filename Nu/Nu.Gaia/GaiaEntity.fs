@@ -32,7 +32,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
-        if propertyName.EndsWith "Script" then "Scripts"
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
