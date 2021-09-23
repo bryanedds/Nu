@@ -335,6 +335,7 @@ module Field =
 
     let debug =
         { empty with
+            FieldType_ = DebugSection
             Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
 
     let initial saveSlot randSeedState =
