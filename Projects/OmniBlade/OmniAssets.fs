@@ -73,7 +73,6 @@ module Assets =
     module Field =
 
         let PackageName = "Field"
-        let DebugRoomTileMap = asset<TileMap> PackageName "DebugRoom" // TODO: P1: Convert tile sheet.
         let WoodenChestOpenedImage = asset<Image> PackageName "WoodenChestOpened"
         let WoodenChestClosedImage = asset<Image> PackageName "WoodenChestClosed"
         let BrassChestOpenedImage = asset<Image> PackageName "BrassChestOpened"

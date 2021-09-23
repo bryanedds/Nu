@@ -312,7 +312,7 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { FieldType_ = DebugRoom
+        { FieldType_ = Debug
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
@@ -334,9 +334,7 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let debug =
-        { empty with
-            FieldType_ = DebugSection
-            Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
+        { empty with Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
 
     let initial saveSlot randSeedState =
         let fieldType = TombOuter
