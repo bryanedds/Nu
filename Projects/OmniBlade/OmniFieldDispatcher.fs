@@ -493,7 +493,7 @@ module FieldDispatcher =
                 | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
                 | Switch (_, _, _, _) -> Some "Use"
                 | Sensor (_, _, _, _, _) -> None
-                | Npc _ | NpcBranching _ -> Some "Talk"
+                | Npc _ | NpcBranching _ | Actor _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
                 | Seal _ -> Some "Touch"
                 | Flame _ -> None
@@ -632,6 +632,11 @@ module FieldDispatcher =
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        
+        static let interactActor cue (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let field = Field.updateCue (constant cue) field
+            just field
 
         static let interactSeal cue (field : Field) =
             let field = Field.updateCue (constant cue) field
@@ -982,6 +987,7 @@ module FieldDispatcher =
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
+                            | Actor (_, _, cue, _) -> interactActor cue prop field
                             | Seal (_, cue, _) -> interactSeal cue field
                             | Flame _ -> just field
                             | SavePoint -> just field
@@ -1223,9 +1229,10 @@ module FieldDispatcher =
                             FieldData.getPropDescriptors rotatedSeedState fieldData world |>
                             Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, advents, propStates)))
                         | None -> Map.empty)
-                    (fun _ propLens _ ->
+                    (fun _ propLens world ->
+                        let time = World.getUpdateTime world
                         let prop = flip Lens.map propLens (fun (propDescriptor, advents, propStates) ->
-                            let propState = Field.getPropState propDescriptor advents propStates
+                            let propState = Field.getPropState time propDescriptor advents propStates
                             Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 

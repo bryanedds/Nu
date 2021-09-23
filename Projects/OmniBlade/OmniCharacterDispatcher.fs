@@ -23,9 +23,7 @@ module CharacterDispatcher =
 
         static let getSpriteInset (entity : Entity) world =
             let character = entity.GetCharacter world
-            let index = Character.getAnimationIndex (World.getUpdateTime world) character
-            let offset = v2 (single index.X) (single index.Y) * character.CelSize
-            let inset = v4Bounds offset character.CelSize
+            let inset = Character.getAnimationInset (World.getUpdateTime world) character
             inset
 
         static let getSpriteColor (entity : Entity) world =

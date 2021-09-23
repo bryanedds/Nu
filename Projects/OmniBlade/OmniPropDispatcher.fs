@@ -67,11 +67,19 @@ module PropDispatcher =
                     match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
+                | Actor (_, _, _, _) ->
+                    BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                 | Flame _ | ChestSpawn | EmptyProp ->
                     BodyEmpty]
 
         override this.Physics (position, _, _, _, prop, _, _) =
             let prop = Prop.updatePosition (constant position) prop
+            let prop =
+                match prop.PropState with
+                | ActorState (bounds, animationState, color, glow, exists) ->
+                    let propState = ActorState (v4Bounds position bounds.Size, animationState, color, glow, exists)
+                    Prop.updatePropState (constant propState) prop
+                | _ -> prop
             just prop
 
         override this.View (prop, entity, world) =
@@ -180,6 +188,13 @@ module PropDispatcher =
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterCelSize
                             (false, colWhite, colZero, Some inset, image)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
+                    | Actor (_, _, _, _) ->
+                        match prop.PropState with
+                        | ActorState (_, animationState, color, glow, true) ->
+                            let time = World.getUpdateTime world
+                            let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
+                            (false, color, glow, Some inset, animationState.AnimationSheet)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Flame (flameType, mirror) ->
                         let image = Assets.Field.FlameImage

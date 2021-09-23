@@ -784,6 +784,7 @@ type [<NoEquality; NoComparison>] PropData =
     | Npc of NpcType * Direction * Cue * Advent Set
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
+    | Actor of CharacterType * Direction * Cue * Advent Set
     | Seal of Color * Cue * Advent Set
     | Flame of FlameType * bool
     | SavePoint

@@ -14,6 +14,7 @@ module Avatar =
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
               CharacterAnimationState_ : CharacterAnimationState
+              CelSize_ : Vector2
               CollidedBodyShapes_ : BodyShapeSource list
               SeparatedBodyShapes_ : BodyShapeSource list
               IntersectedBodyShapes_ : BodyShapeSource list }
@@ -41,14 +42,15 @@ module Avatar =
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
+        member this.CelSize = this.CelSize_
 
         (* Local Properties *)
         member this.CollidedBodyShapes = this.CollidedBodyShapes_
         member this.SeparatedBodyShapes = this.SeparatedBodyShapes_
         member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
-    let getAnimationIndex time avatar =
-        CharacterAnimationState.index time avatar.CharacterAnimationState_
+    let getAnimationInset time (avatar : Avatar) =
+        CharacterAnimationState.inset time avatar.CelSize_ avatar.CharacterAnimationState_
 
     let getAnimationProgressOpt time avatar =
         CharacterAnimationState.progressOpt time avatar.CharacterAnimationState_
@@ -117,6 +119,7 @@ module Avatar =
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterAnimationState_ = characterAnimationState
+          CelSize_ = Constants.Gameplay.CharacterCelSize
           CollidedBodyShapes_ = []
           SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
@@ -126,6 +129,7 @@ module Avatar =
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
+          CelSize_ = Constants.Gameplay.CharacterCelSize
           CollidedBodyShapes_ = []
           SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
