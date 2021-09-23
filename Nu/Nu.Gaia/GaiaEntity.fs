@@ -27,8 +27,8 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         true
 
     override this.Category =
-        // HACK: in order to put Scripts as the last category, I start all the other categories with an unprinted
-        // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
+        // HACK: in order to put Scripts and Physics as the last categories, I start all the other categories with an
+        // unprinted \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
@@ -37,7 +37,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
-        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "\rXtension Properties"
 
     override this.Description =

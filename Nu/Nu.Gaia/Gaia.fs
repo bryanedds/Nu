@@ -1706,6 +1706,11 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[record AssetTag [PackageName \"Default\"] [AssetName \"Image\"]] : AssetTag") |> ignore
 
+#if !DEBUG
+        // disable entity ignore property bindings in non-DEBUG mode.
+        form.entityIgnorePropertyBindingsCheckBox.Enabled <- false
+#endif
+
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()
         form.preludeTextBox.EmptyUndoBuffer ()
