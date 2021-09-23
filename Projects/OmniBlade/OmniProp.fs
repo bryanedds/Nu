@@ -14,8 +14,8 @@ type [<NoEquality; NoComparison>] PropState =
     | SwitchState of bool
     | SealState of bool
     | NpcState of NpcType * Direction * Color * Color * bool
+    | CharacterState of Vector4 * CharacterAnimationState * Color * Color * bool
     | ShopkeepState of bool
-    | ActorState of Vector4 * CharacterAnimationState * Color * Color * bool
     | NilState
 
 [<RequireQualifiedAccess>]

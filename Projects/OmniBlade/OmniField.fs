@@ -96,11 +96,11 @@ module Field =
             match propDescriptor.PropData with
             | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
             | Door (_, _, _, _, _) -> DoorState false
+            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
             | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-            | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-            | Actor (characterType, direction, _, requirements) ->
+            | Character (characterType, direction, _, requirements) ->
                 let animationSheet =
                     match Data.Value.Characters.TryGetValue characterType with
                     | (true, characterData) -> characterData.AnimationSheet
@@ -110,8 +110,8 @@ module Field =
                       AnimationSheet = animationSheet
                       CharacterAnimationType = IdleAnimation
                       Direction = direction }
-                ActorState (propDescriptor.PropBounds, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
-            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
+                CharacterState (propDescriptor.PropBounds, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+            | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
             | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
         | Some propState -> propState
 
