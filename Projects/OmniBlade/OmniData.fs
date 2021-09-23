@@ -304,6 +304,7 @@ type ShopkeepAppearanceType =
 type FieldType =
     | DebugRoom
     | DebugRoom2
+    | DebugSection
     | TombOuter
     | TombGround
     | TombBasement
@@ -616,7 +617,7 @@ module OmniSeedState =
     let rotate isFade fieldType state =
         if not isFade then
             match fieldType with
-            | DebugRoom | DebugRoom2 | TombOuter | TombGround | TombBasement
+            | DebugRoom | DebugRoom2 | DebugSection _ | TombOuter | TombGround | TombBasement
             | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
             | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
             | Castle n -> state.RandSeedState <<< n
@@ -956,8 +957,7 @@ module FieldData =
                     | 0 | 1 -> Some WeakSpirit
                     | 2 | 3 -> Some NormalSpirit
                     | _ -> Some StrongSpirit
-                | FieldConnector _ -> None
-                | FieldStatic _ -> None
+                | FieldStatic _ | FieldConnector _ -> None
             | Choice1Of3 _ -> None
             | Choice2Of3 _ -> None
         | None -> None
