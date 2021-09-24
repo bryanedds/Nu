@@ -540,6 +540,12 @@ type [<NoEquality; NoComparison>] MoveType =
         | Mosey -> Constants.Gameplay.CueMoseySpeed
         | Instant -> 0.0f
 
+    static member getStepInfo (origin : Vector2) destination (moveType : MoveType) =
+        let delta = destination - origin
+        let steps = delta.Length () / moveType.MoveSpeed
+        let step = delta / steps
+        (step, int (ceil steps))
+
 [<Syntax   ("Gold Item Items Advent Advents " +
             "Wait Timed NoWait " +
             "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +

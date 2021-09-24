@@ -180,10 +180,8 @@ module FieldDispatcher =
                     | Walk | Run | Mosey ->
                         let time = World.getUpdateTime world
                         let localTime = time - startTime
-                        let delta = destination - origin
-                        let steps = delta.Length () / moveType.MoveSpeed
-                        let step = delta / steps
-                        if localTime >= int64 (ceil steps) then
+                        let (step, steps) = MoveType.getStepInfo origin destination moveType
+                        if localTime >= int64 steps then
                             let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                             (Cue.Nil, definitions, just field)
                         else
@@ -202,10 +200,8 @@ module FieldDispatcher =
                             | Walk | Run | Mosey ->
                                 let time = World.getUpdateTime world
                                 let localTime = time - startTime
-                                let delta = destination - origin
-                                let steps = delta.Length () / moveType.MoveSpeed
-                                let step = delta / steps
-                                if localTime >= int64 (ceil steps) then
+                                let (step, steps) = MoveType.getStepInfo origin destination moveType
+                                if localTime >= int64 steps then
                                     let bounds = bounds.WithBottom destination
                                     let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
                                     (Cue.Nil, definitions, just field)
