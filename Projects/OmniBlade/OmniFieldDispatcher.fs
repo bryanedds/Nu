@@ -159,12 +159,17 @@ module FieldDispatcher =
             | Move (target, destination, moveType) ->
                 match target with
                 | AvatarTarget ->
-                    (MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType), definitions, just field)
+                    let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
+                    (cue, definitions, just field)
                 | CharacterTarget characterType ->
+                    // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of
+                    // course. Perhaps there's an elegant solution that is more performance.
                     match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
                     | Some propKey ->
                         match field.PropStates.[propKey] with
-                        | CharacterState (bounds, _, _, _, _, _) -> (MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType), definitions, just field)
+                        | CharacterState (bounds, _, _, _, _, _) ->
+                            let cue = MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType)
+                            (cue, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
                 | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
@@ -177,11 +182,11 @@ module FieldDispatcher =
                     let localTime = time - startTime
                     let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
                     let totalTime = int64 (dec stepCount)
-                    if localTime = totalTime then
-                        let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
-                        (Cue.Nil, definitions, just field)
-                    else
+                    if localTime < totalTime then
                         let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
+                        (cue, definitions, just field)
+                    else
+                        let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
                     match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
@@ -192,12 +197,12 @@ module FieldDispatcher =
                             let localTime = time - startTime
                             let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
                             let finishTime = int64 (dec stepCount)
-                            if localTime = finishTime then
-                                let bounds = bounds.WithBottom destination
-                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
-                                (Cue.Nil, definitions, just field)
-                            else
+                            if localTime < finishTime then
                                 let bounds = bounds.Translate step
+                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
+                                (cue, definitions, just field)
+                            else
+                                let bounds = bounds.WithBottom destination
                                 let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
                                 (Cue.Nil, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
