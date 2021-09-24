@@ -96,7 +96,7 @@ module Field =
             match propDescriptor.PropData with
             | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
             | Door (_, _, _, _, _) -> DoorState false
-            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
+            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
             | Character (characterType, direction, _, requirements) ->
@@ -130,14 +130,14 @@ module Field =
             FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = getPropState time propDescriptor field.Advents field.PropStates
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation field.Advents propDescriptor.PropData propState propDescriptor.PropId
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
     let getChests field world =
         getPropStates field world |>
         Map.toValueArray |>
-        Array.choose (function ChestState (bounds, id) -> Some (Chest.make bounds (field.Advents.Contains (Opened id))) | _ -> None)
+        Array.choose (function ChestState (bounds, opened) -> Some (Chest.make bounds opened) | _ -> None)
 
     let getPortals field world =
         getPropStates field world |>
