@@ -47,6 +47,9 @@ module Constants =
         let DialogSplit = '^'
         let ArmorStatBaseDisplayDivisor = 4
         let ItemLimit = 9
+        let CueWalkSpeed = 1.0f
+        let CueRunSpeed = 2.0f
+        let CueMoseySpeed = 0.5f
 
     [<RequireQualifiedAccess>]
     module Field =

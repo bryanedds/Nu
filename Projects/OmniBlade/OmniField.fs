@@ -99,18 +99,18 @@ module Field =
             | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
             | Switch (_, _, _, _) -> SwitchState false
             | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-            | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-            | Character (characterType, direction, _, requirements) ->
+            | Actor (characterType, direction, _, requirements) ->
                 let animationSheet =
                     match Data.Value.Characters.TryGetValue characterType with
                     | (true, characterData) -> characterData.AnimationSheet
                     | (false, _) -> Assets.Field.JinnAnimationSheet
                 let characterAnimationState =
-                    { TimeStart = time
+                    { StartTime = time
                       AnimationSheet = animationSheet
                       CharacterAnimationType = IdleAnimation
                       Direction = direction }
-                CharacterState (propDescriptor.PropBounds, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+                ActorState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+            | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
             | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
             | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
         | Some propState -> propState

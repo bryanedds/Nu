@@ -125,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         characterState
 
 type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
-    { TimeStart : int64
+    { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
       Direction : Direction }
@@ -136,7 +136,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member setCharacterAnimationType timeOpt characterAnimationType state =
         if state.CharacterAnimationType <> characterAnimationType then
             match timeOpt with
-            | Some time -> { state with TimeStart = time; CharacterAnimationType = characterAnimationType }
+            | Some time -> { state with StartTime = time; CharacterAnimationType = characterAnimationType }
             | None -> { state with CharacterAnimationType = characterAnimationType }
         else state
 
@@ -147,12 +147,12 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         | Downward -> 2
         | Leftward -> 3
 
-    static member timeLocal time state =
-        time - state.TimeStart
+    static member localTime time state =
+        time - state.StartTime
 
     static member indexCel delay time state =
-        let timeLocal = CharacterAnimationState.timeLocal time state
-        int (timeLocal / delay)
+        let localTime = CharacterAnimationState.localTime time state
+        int (localTime / delay)
 
     static member indexLooped run delay time state =
         CharacterAnimationState.indexCel delay time state % run
@@ -203,9 +203,9 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member progressOpt time state =
         match Map.tryFind state.CharacterAnimationType Data.Value.CharacterAnimations with
         | Some animationData ->
-            let timeLocal = CharacterAnimationState.timeLocal time state
+            let localTime = CharacterAnimationState.localTime time state
             match animationData.LengthOpt with
-            | Some length -> Some (min 1.0f (single timeLocal / single length))
+            | Some length -> Some (min 1.0f (single localTime / single length))
             | None -> None
         | None -> None
 
@@ -215,7 +215,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         | None -> true
 
     static member empty =
-        { TimeStart = 0L
+        { StartTime = 0L
           AnimationSheet = Assets.Field.JinnAnimationSheet
           CharacterAnimationType = IdleAnimation
           Direction = Downward }
@@ -320,7 +320,7 @@ module Character =
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
 
         (* Animation Properties *)
-        member this.TimeStart = this.CharacterAnimationState_.TimeStart
+        member this.TimeStart = this.CharacterAnimationState_.StartTime
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
@@ -652,7 +652,7 @@ module Character =
 
     let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
-        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
+        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
@@ -696,7 +696,7 @@ module Character =
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let characterAnimationState = { TimeStart = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
