@@ -85,7 +85,7 @@ module FieldDispatcher =
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Recruit allyType ->
@@ -138,7 +138,7 @@ module FieldDispatcher =
                     match wait with
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | AnimateState (startTime, wait) ->
@@ -160,58 +160,49 @@ module FieldDispatcher =
                 match target with
                 | AvatarTarget ->
                     (MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType), definitions, just field)
-                | ActorTarget characterType ->
-                    match Map.tryFindKey (constant (function ActorState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
+                | CharacterTarget characterType ->
+                    match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
                     | Some propKey ->
                         match field.PropStates.[propKey] with
-                        | ActorState (bounds, _, _, _, _, _) -> (MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType), definitions, just field)
+                        | CharacterState (bounds, _, _, _, _, _) -> (MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType), definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | MoveState (startTime, target, origin, destination, moveType) ->
                 match target with
                 | AvatarTarget ->
-                    match moveType with
-                    | Instant ->
+                    let time = World.getUpdateTime world
+                    let localTime = time - startTime
+                    let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
+                    let totalTime = int64 (dec stepCount)
+                    if localTime = totalTime then
                         let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                         (Cue.Nil, definitions, just field)
-                    | Walk | Run | Mosey ->
-                        let time = World.getUpdateTime world
-                        let localTime = time - startTime
-                        let (step, steps) = MoveType.getStepInfo origin destination moveType
-                        if localTime >= int64 steps then
-                            let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
-                            (Cue.Nil, definitions, just field)
-                        else
-                            let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
-                            (Cue.Nil, definitions, just field)
-                | ActorTarget characterType ->
-                    match Map.tryFindKey (constant (function ActorState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
+                    else
+                        let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
+                        (Cue.Nil, definitions, just field)
+                | CharacterTarget characterType ->
+                    match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
                     | Some propKey ->
                         match field.PropStates.[propKey] with
-                        | ActorState (bounds, characterType, direction, color, glow, exists) ->
-                            match moveType with
-                            | Instant ->
+                        | CharacterState (bounds, characterType, direction, color, glow, exists) ->
+                            let time = World.getUpdateTime world
+                            let localTime = time - startTime
+                            let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
+                            let finishTime = int64 (dec stepCount)
+                            if localTime = finishTime then
                                 let bounds = bounds.WithBottom destination
-                                let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
+                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
                                 (Cue.Nil, definitions, just field)
-                            | Walk | Run | Mosey ->
-                                let time = World.getUpdateTime world
-                                let localTime = time - startTime
-                                let (step, steps) = MoveType.getStepInfo origin destination moveType
-                                if localTime >= int64 steps then
-                                    let bounds = bounds.WithBottom destination
-                                    let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
-                                    (Cue.Nil, definitions, just field)
-                                else
-                                    let bounds = bounds.Translate step
-                                    let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
-                                    (Cue.Nil, definitions, just field)
+                            else
+                                let bounds = bounds.Translate step
+                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
+                                (Cue.Nil, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Warp (fieldType, fieldDestination, fieldDirection) ->
@@ -508,7 +499,7 @@ module FieldDispatcher =
                 | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
                 | Switch (_, _, _, _) -> Some "Use"
                 | Sensor (_, _, _, _, _) -> None
-                | Actor _ | Npc _ | NpcBranching _ -> Some "Talk"
+                | Character _ | Npc _ | NpcBranching _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
                 | Seal _ -> Some "Touch"
                 | Flame _ -> None
@@ -999,7 +990,7 @@ module FieldDispatcher =
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor (_, _, _, _, _) -> just field
-                            | Actor (_, _, cue, _) -> interactCharacter cue prop field
+                            | Character (_, _, cue, _) -> interactCharacter cue prop field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field

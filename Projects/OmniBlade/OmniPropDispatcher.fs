@@ -33,7 +33,7 @@ module PropDispatcher =
              entity.GravityScale == 0.0f
              entity.Bounds <== prop --> fun prop ->
                 match prop.PropState with
-                | ActorState (bounds, _, _, _, _, _) -> bounds
+                | CharacterState (bounds, _, _, _, _, _) -> bounds
                 | _ -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
@@ -57,7 +57,7 @@ module PropDispatcher =
                     match prop.PropState with
                     | SealState false -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | Actor (_, _, _, _) ->
+                | Character (_, _, _, _) ->
                     BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                 | Npc (npcType, _, _, _) | NpcBranching (npcType, _, _, _) ->
                     match prop.PropState with
@@ -79,8 +79,8 @@ module PropDispatcher =
             let prop = Prop.updatePosition (constant position) prop
             let prop =
                 match prop.PropState with
-                | ActorState (bounds, characterType, animationState, color, glow, exists) ->
-                    let propState = ActorState (v4Bounds position bounds.Size, characterType, animationState, color, glow, exists)
+                | CharacterState (bounds, characterType, animationState, color, glow, exists) ->
+                    let propState = CharacterState (v4Bounds position bounds.Size, characterType, animationState, color, glow, exists)
                     Prop.updatePropState (constant propState) prop
                 | _ -> prop
             just prop
@@ -152,9 +152,9 @@ module PropDispatcher =
                             let image = Assets.Field.SealAnimationSheet
                             (false, color, colZero, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
-                    | Actor (_, _, _, _) ->
+                    | Character (_, _, _, _) ->
                         match prop.PropState with
-                        | ActorState (_, _, animationState, color, glow, true) ->
+                        | CharacterState (_, _, animationState, color, glow, true) ->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             (false, color, glow, Some inset, animationState.AnimationSheet)

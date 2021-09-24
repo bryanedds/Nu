@@ -511,10 +511,10 @@ type [<NoEquality; NoComparison>] SpiritType =
 
 type [<NoEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
-    | ActorTarget of CharacterType // (field only)
+    | CharacterTarget of CharacterType // (field only)
     | NpcTarget of NpcType // (field only)
     | ShopkeepTarget of ShopkeepType // (field only)
-    | CharacterTarget of CharacterIndex // (battle only)
+    | CharacterIndexTarget of CharacterIndex // (battle only)
 
 type [<NoEquality; NoComparison>] CuePredicate =
     | Gold of int
@@ -533,18 +533,22 @@ type [<NoEquality; NoComparison>] MoveType =
     | Run
     | Mosey
     | Instant
-    member this.MoveSpeed =
-        match this with
-        | Walk -> Constants.Gameplay.CueWalkSpeed
-        | Run -> Constants.Gameplay.CueRunSpeed
-        | Mosey -> Constants.Gameplay.CueMoseySpeed
-        | Instant -> 0.0f
 
-    static member getStepInfo (origin : Vector2) destination (moveType : MoveType) =
+    member this.MoveSpeedOpt =
+        match this with
+        | Walk -> Some Constants.Gameplay.CueWalkSpeed
+        | Run -> Some Constants.Gameplay.CueRunSpeed
+        | Mosey -> Some Constants.Gameplay.CueMoseySpeed
+        | Instant -> None
+
+    static member computeStepAndStepCount (origin : Vector2) destination (moveType : MoveType) =
         let delta = destination - origin
-        let steps = delta.Length () / moveType.MoveSpeed
-        let step = delta / steps
-        (step, int (ceil steps))
+        match moveType.MoveSpeedOpt with
+        | Some moveSpeed ->
+            let stepCount = delta.Length () / moveSpeed
+            let step = delta / stepCount
+            (step, int (ceil stepCount))
+        | None -> (delta, 1)
 
 [<Syntax   ("Gold Item Items Advent Advents " +
             "Wait Timed NoWait " +
@@ -798,7 +802,7 @@ type [<NoEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
     | Switch of SwitchType * Cue * Cue * Advent Set
     | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
-    | Actor of CharacterType * Direction * Cue * Advent Set
+    | Character of CharacterType * Direction * Cue * Advent Set
     | Npc of NpcType * Direction * Cue * Advent Set
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
