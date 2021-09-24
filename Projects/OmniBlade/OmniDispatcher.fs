@@ -30,7 +30,7 @@ module OmniDispatcher =
         | Update
         | ToIntro of SaveSlot
         | FromIntro
-        | Nop
+        | TryLoad of SaveSlot
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Picks
@@ -64,9 +64,9 @@ module OmniDispatcher =
              Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ToIntro Slot1)
              Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ToIntro Slot2)
              Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ToIntro Slot3)
-             Simulants.Pick.Gui.LoadGame1.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot1 with Some loaded -> Change (Field loaded) | None -> Nop)
-             Simulants.Pick.Gui.LoadGame2.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot2 with Some loaded -> Change (Field loaded) | None -> Nop)
-             Simulants.Pick.Gui.LoadGame3.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot3 with Some loaded -> Change (Field loaded) | None -> Nop)
+             Simulants.Pick.Gui.LoadGame1.ClickEvent => msg (TryLoad Slot1)
+             Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
+             Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
              Simulants.Pick.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
@@ -133,7 +133,10 @@ module OmniDispatcher =
                     | _ -> just omni
                 | Field _ -> just omni
 
-            | Nop -> just omni
+            | TryLoad saveSlot ->
+                match Field.tryLoad saveSlot world with
+                | Some loaded -> withMsg (Change (Field loaded)) omni
+                | None -> just omni
 
         override this.Command (_, command, _, world) =
             match command with

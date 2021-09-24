@@ -17,7 +17,7 @@ module FieldDispatcher =
         | Update
         | UpdateAvatar of Avatar
         | UpdateFieldTransition
-        | UpdatePropState of int * PropState
+        | UpdatePropState of int * Prop
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemOpen
@@ -163,11 +163,9 @@ module FieldDispatcher =
                     let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
-                    // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of
-                    // course. Perhaps there's an elegant solution that is more performance.
-                    match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
+                    match Field.getPropIdByState (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false) field with
+                    | Some propId ->
+                        match field.Props.[propId].PropState with
                         | CharacterState (bounds, _, _, _, _, _) ->
                             let cue = MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType)
                             (cue, definitions, just field)
@@ -190,9 +188,9 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Map.tryFindKey (constant (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
+                    match Field.getPropIdByState (function CharacterState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false) field with
+                    | Some propId ->
+                        match field.Props.[propId].PropState with
                         | CharacterState (bounds, characterType, direction, color, glow, exists) ->
                             let time = World.getUpdateTime world
                             let localTime = time - startTime
@@ -200,11 +198,11 @@ module FieldDispatcher =
                             let finishTime = int64 (dec stepCount)
                             if localTime < finishTime then
                                 let bounds = bounds.Translate step
-                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
+                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction, color, glow, exists))) propId field
                                 (cue, definitions, just field)
                             else
                                 let bounds = bounds.WithBottom destination
-                                let field = Field.updatePropStates (Map.add propKey (CharacterState (bounds, characterType, direction, color, glow, exists))) field
+                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction, color, glow, exists))) propId field
                                 (Cue.Nil, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
@@ -586,7 +584,7 @@ module FieldDispatcher =
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
-                let field = Field.updatePropStates (Map.add prop.PropId (ChestState (prop.Bounds, true))) field
+                let field = Field.updatePropState (constant (ChestState (prop.Bounds, true))) prop.PropId field
                 let field =
                     match battleTypeOpt with
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
@@ -606,7 +604,7 @@ module FieldDispatcher =
                     Option.mapOrDefault (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
-                    let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
+                    let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
@@ -621,7 +619,7 @@ module FieldDispatcher =
                 if field.Advents.IsSupersetOf requirements then
                     let on = not on
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updatePropStates (Map.add prop.PropId (SwitchState on)) field
+                    let field = Field.updatePropState (constant (SwitchState on)) prop.PropId field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else
@@ -810,8 +808,8 @@ module FieldDispatcher =
                 // no transition
                 | None -> just field
 
-            | UpdatePropState (propId, propState) ->
-                let field = Field.updatePropStates (Map.add propId propState) field
+            | UpdatePropState (propId, prop) ->
+                let field = Field.updateProp (constant prop) propId field
                 just field
 
             | MenuTeamOpen ->
@@ -1239,20 +1237,12 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field _ -> (field.FieldType, field.OmniSeedState, field.PropStates))
-                    (fun (fieldType, rotatedSeedState, propStates) world ->
-                        match Map.tryFind fieldType Data.Value.Fields with
-                        | Some fieldData ->
-                            FieldData.getPropDescriptors rotatedSeedState fieldData world |>
-                            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, propStates)))
-                        | None -> Map.empty)
-                    (fun _ propLens _ ->
-                        let prop = flip Lens.map propLens (fun (propDescriptor, propStates) ->
-                            let propState = propStates.[propDescriptor.PropId]
-                            Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId)
+                    (fun field _ -> field.Props)
+                    (fun props _ -> props)
+                    (fun _ prop _ ->
                         Content.entity<PropDispatcher> Gen.name
                             [Entity.Prop <== prop
-                             Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop.PropState))])
+                             Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop))])
 
                  // spirit orb
                  Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->

@@ -36,7 +36,7 @@ module Field =
               SpiritActivity_ : single
               Spirits_ : Spirit array
               Advents_ : Advent Set
-              PropStates_ : Map<int, PropState>
+              Props_ : Map<int, Prop>
               Inventory_ : Inventory
               Options_ : Options
               Menu_ : Menu
@@ -57,7 +57,7 @@ module Field =
         member this.SpiritActivity = this.SpiritActivity_
         member this.Spirits = this.Spirits_
         member this.Advents = this.Advents_
-        member this.PropStates = this.PropStates_
+        member this.Props = this.Props_
         member this.Inventory = this.Inventory_
         member this.Options = this.Options_
         member this.Menu = this.Menu_
@@ -90,25 +90,15 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
-    let getProps (field : Field) world =
-        match Map.tryFind field.FieldType Data.Value.Fields with
-        | Some fieldData ->
-            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor ->
-                let propState = field.PropStates.[propDescriptor.PropId]
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
-                (propDescriptor.PropId, prop))
-        | None -> Map.empty
-
     let getChests field =
-        field.PropStates_ |>
+        field.Props_ |>
         Map.toValueArray |>
-        Array.choose (function ChestState (bounds, opened) -> Some (Chest.make bounds opened) | _ -> None)
+        Array.choose (fun prop -> match prop.PropState with ChestState (bounds, opened) -> Some (Chest.make bounds opened) | _ -> None)
 
     let getPortals field =
-        field.PropStates_ |>
+        field.Props_ |>
         Map.toValueArray |>
-        Array.choose (function PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
+        Array.choose (fun prop -> match prop.PropState with PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
 
     let private makePropState time (advents : Advent Set) propDescriptor =
         match propDescriptor.PropData with
@@ -132,23 +122,22 @@ module Field =
         | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
         | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
-    let private makePropStates fieldType omniSeedState advents world =
-        match Data.Value.Fields.TryGetValue fieldType with
-        | (true, fieldData) ->
+    let makeProps fieldType omniSeedState advents world =
+        match Map.tryFind fieldType Data.Value.Fields with
+        | Some fieldData ->
             let time = World.getUpdateTime world
-            let propDescriptors = FieldData.getPropDescriptors omniSeedState fieldData world
-            let propStates =
-                propDescriptors |>
-                List.map (fun propDescriptor -> (propDescriptor.PropId, makePropState time advents propDescriptor)) |>
-                Map.ofList
-            propStates
-        | (false, _) -> Map.empty
+            FieldData.getPropDescriptors omniSeedState fieldData world |>
+            Map.ofListBy (fun propDescriptor ->
+                let propState = makePropState time advents propDescriptor
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
+                (propDescriptor.PropId, prop))
+        | None -> Map.empty
 
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
-        let propStates = makePropStates fieldType field.OmniSeedState_ field.Advents_ world
-        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; PropStates_ = propStates }
+        let props = makeProps fieldType field.OmniSeedState_ field.Advents_ world
+        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Props_ = props }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -159,8 +148,23 @@ module Field =
     let updateAdvents updater field =
         { field with Advents_ = updater field.Advents_ }
 
-    let updatePropStates updater field =
-        { field with PropStates_ = updater field.PropStates_ }
+    let private updateProps updater field =
+        { field with Props_ = updater field.Props_ }
+
+    // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
+    // there's an elegant alternative that is more performant.
+    let getPropIdByState predicate field =
+        Map.tryFindKey (fun _ (prop : Prop) ->
+            predicate prop.PropState)
+            field.Props_
+
+    let updateProp updater propId field =
+        match Map.tryFind propId field.Props_ with
+        | Some prop -> updateProps (Map.add propId (updater prop)) field
+        | None -> field
+    
+    let updatePropState updater propId field =
+        updateProp (Prop.updatePropState updater) propId field
 
     let updateInventory updater field =
         { field with Inventory_ = updater field.Inventory_ }
@@ -301,12 +305,13 @@ module Field =
     let toSymbolizable field =
         { field with
             Avatar_ = Avatar.toSymbolizable field.Avatar
+            Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
     let make fieldType saveSlot randSeedState avatar team inventory world =
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let advents = Set.empty
-        let propStates = makePropStates fieldType omniSeedState advents world
+        let props = makeProps fieldType omniSeedState advents world
         let definitions =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> fieldData.Definitions
@@ -319,7 +324,7 @@ module Field =
           Spirits_ = [||]
           Team_ = team
           Advents_ = advents
-          PropStates_ = propStates
+          Props_ = props
           Inventory_ = inventory
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
@@ -341,7 +346,7 @@ module Field =
           Spirits_ = [||]
           Team_ = Map.empty
           Advents_ = Set.empty
-          PropStates_ = Map.empty
+          Props_ = Map.empty
           Inventory_ = Inventory.initial
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
@@ -371,14 +376,16 @@ module Field =
         let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    let tryLoad saveSlot =
+    let tryLoad saveSlot world =
         try let saveFilePath =
                 match saveSlot with
                 | Slot1 -> Assets.Global.SaveFilePath1
                 | Slot2 -> Assets.Global.SaveFilePath2
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
-            fieldStr |> scvalue<Field> |> Some
+            let field = fieldStr |> scvalue<Field>
+            let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ world
+            Some { field with Props_ = props }
         with _ -> None
 
 type Field = Field.Field
