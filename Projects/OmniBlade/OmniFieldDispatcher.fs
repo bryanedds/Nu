@@ -586,6 +586,7 @@ module FieldDispatcher =
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
+                let field = Field.updatePropStates (Map.add prop.PropId (ChestState (prop.Bounds, true))) field
                 let field =
                     match battleTypeOpt with
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
@@ -1249,7 +1250,7 @@ module FieldDispatcher =
                         let time = World.getUpdateTime world
                         let prop = flip Lens.map propLens (fun (propDescriptor, advents, propStates) ->
                             let propState = Field.getPropState time propDescriptor advents propStates
-                            Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId)
+                            Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId)
                         Content.entity<PropDispatcher> Gen.name
                             [Entity.Prop <== prop
                              Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop.PropState))])

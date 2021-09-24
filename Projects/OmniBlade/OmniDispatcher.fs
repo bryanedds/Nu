@@ -122,7 +122,7 @@ module OmniDispatcher =
 
             | ToIntro saveSlot ->
                 let introMsg = msg (Change (Gui (Intro saveSlot)))
-                let introCmd = cmd (Show Simulants.Intro.Screen)
+                let introCmd = cmd (Show Simulants.Intro5.Screen)
                 withSigs [introMsg; introCmd] omni
 
             | FromIntro ->

@@ -116,15 +116,19 @@ module PropDispatcher =
                                 | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, colWhite, colZero, None, image)
-                    | Chest (chestType, _, chestId, _, _, _) ->
+                    | Chest (chestType, _, _, _, _, _) ->
+                        let opened =
+                            match prop.PropState with
+                            | ChestState (_, opened) -> opened
+                            | _ -> true
                         let image =
                             match chestType with
                             | WoodenChest ->
-                                if Set.contains (Opened chestId) prop.Advents
+                                if opened
                                 then Assets.Field.WoodenChestOpenedImage
                                 else Assets.Field.WoodenChestClosedImage
                             | BrassChest ->
-                                if Set.contains (Opened chestId) prop.Advents
+                                if opened
                                 then Assets.Field.BrassChestOpenedImage
                                 else Assets.Field.BrassChestClosedImage
                         (false, colWhite, colZero, None, image)
