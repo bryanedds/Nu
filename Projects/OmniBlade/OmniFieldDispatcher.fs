@@ -183,7 +183,7 @@ module FieldDispatcher =
                         let delta = destination - origin
                         let steps = delta.Length () / moveType.MoveSpeed
                         let step = delta / steps
-                        if localTime = int64 (ceil steps) then
+                        if localTime >= int64 (ceil steps) then
                             let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                             (Cue.Nil, definitions, just field)
                         else
@@ -205,7 +205,7 @@ module FieldDispatcher =
                                 let delta = destination - origin
                                 let steps = delta.Length () / moveType.MoveSpeed
                                 let step = delta / steps
-                                if localTime = int64 (ceil steps) then
+                                if localTime >= int64 (ceil steps) then
                                     let bounds = bounds.WithBottom destination
                                     let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
                                     (Cue.Nil, definitions, just field)
