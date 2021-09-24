@@ -31,7 +31,10 @@ module PropDispatcher =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f
-             entity.Bounds <== prop --> fun prop -> prop.Bounds
+             entity.Bounds <== prop --> fun prop ->
+                match prop.PropState with
+                | ActorState (bounds, _, _, _, _, _) -> bounds
+                | _ -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
@@ -54,6 +57,8 @@ module PropDispatcher =
                     match prop.PropState with
                     | SealState false -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Actor (_, _, _, _) ->
+                    BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                 | Npc (npcType, _, _, _) | NpcBranching (npcType, _, _, _) ->
                     match prop.PropState with
                     | NpcState (_, _, _, _, true) ->
@@ -63,8 +68,6 @@ module PropDispatcher =
                         | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                         | AraneaImplicitumNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
-                | Character (_, _, _, _) ->
-                    BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                 | Shopkeep _ ->
                     match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
@@ -76,8 +79,8 @@ module PropDispatcher =
             let prop = Prop.updatePosition (constant position) prop
             let prop =
                 match prop.PropState with
-                | CharacterState (bounds, animationState, color, glow, exists) ->
-                    let propState = CharacterState (v4Bounds position bounds.Size, animationState, color, glow, exists)
+                | ActorState (bounds, characterType, animationState, color, glow, exists) ->
+                    let propState = ActorState (v4Bounds position bounds.Size, characterType, animationState, color, glow, exists)
                     Prop.updatePropState (constant propState) prop
                 | _ -> prop
             just prop
@@ -149,6 +152,13 @@ module PropDispatcher =
                             let image = Assets.Field.SealAnimationSheet
                             (false, color, colZero, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
+                    | Actor (_, _, _, _) ->
+                        match prop.PropState with
+                        | ActorState (_, _, animationState, color, glow, true) ->
+                            let time = World.getUpdateTime world
+                            let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
+                            (false, color, glow, Some inset, animationState.AnimationSheet)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
                         match prop.PropState with
                         | NpcState (npcType, direction, color, glow, true) ->
@@ -178,13 +188,6 @@ module PropDispatcher =
                             let insetPosition = v2 (single column) (single row) * celSize
                             let inset = v4Bounds insetPosition celSize
                             (false, color, glow, Some inset, image)
-                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
-                    | Character (_, _, _, _) ->
-                        match prop.PropState with
-                        | CharacterState (_, animationState, color, glow, true) ->
-                            let time = World.getUpdateTime world
-                            let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
-                            (false, color, glow, Some inset, animationState.AnimationSheet)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Shopkeep (shopkeepType, direction, _, _) ->
                         match prop.PropState with

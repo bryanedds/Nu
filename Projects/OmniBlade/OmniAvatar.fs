@@ -38,7 +38,7 @@ module Avatar =
         member this.LowerCenter = this.LowerBounds.Center
 
         (* Animation Properties *)
-        member this.TimeStart = this.CharacterAnimationState_.TimeStart
+        member this.StartTime = this.CharacterAnimationState_.StartTime
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
@@ -115,7 +115,7 @@ module Avatar =
             IntersectedBodyShapes_ = [] }
 
     let make bounds animationSheet direction =
-        let characterAnimationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterAnimationState_ = characterAnimationState

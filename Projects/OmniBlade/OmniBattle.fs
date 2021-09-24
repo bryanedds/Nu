@@ -31,11 +31,11 @@ type [<ReferenceEquality; NoComparison>] ActionCommand =
           TargetOpt = targetOpt }
 
 type [<ReferenceEquality; NoComparison>] CurrentCommand =
-    { TimeStart : int64
+    { StartTime : int64
       ActionCommand : ActionCommand }
 
-    static member make timeStart actionCommand =
-        { TimeStart = timeStart; ActionCommand = actionCommand }
+    static member make startTime actionCommand =
+        { StartTime = startTime; ActionCommand = actionCommand }
 
 [<RequireQualifiedAccess>]
 module Battle =

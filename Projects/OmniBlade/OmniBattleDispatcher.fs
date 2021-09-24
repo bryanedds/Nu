@@ -92,14 +92,14 @@ module BattleDispatcher =
     [<RequireQualifiedAccess>]
     module Battle =
 
-        let private updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
+        let private updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
                 match targetIndexOpt with
                 | Some targetIndex ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
-                        match timeLocal with
+                        match localTime with
                         | 0L ->
                             if target.IsHealthy then
                                 withMsg (AttackCharacter1 sourceIndex) battle
@@ -108,7 +108,7 @@ module BattleDispatcher =
                                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                         | 15L ->
                             withMsg (AttackCharacter2 (sourceIndex, targetIndex)) battle
-                        | _ when timeLocal > 15L && Character.getAnimationFinished time target ->
+                        | _ when localTime > 15L && Character.getAnimationFinished time target ->
                             let target = Battle.getCharacter targetIndex battle
                             if target.IsHealthy then
                                 let battle =
@@ -132,10 +132,10 @@ module BattleDispatcher =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateDefend sourceIndex time timeLocal battle =
+        let private updateDefend sourceIndex time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
-                match timeLocal with
+                match localTime with
                 | 0L ->
                     let battle =
                         battle |>
@@ -150,14 +150,14 @@ module BattleDispatcher =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
+        let private updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
                 match targetIndexOpt with
                 | Some targetIndex ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
-                        match timeLocal with
+                        match localTime with
                         | 0L ->
                             if target.IsHealthy || consumable = Revive then // HACK: should really be checked ConsumableData.
                                 withMsg (ConsumeCharacter1 (consumable, sourceIndex)) battle
@@ -166,7 +166,7 @@ module BattleDispatcher =
                                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                         | 30L ->
                             withMsg (ConsumeCharacter2 (consumable, targetIndex)) battle
-                        | _ when timeLocal > 30L && Character.getAnimationFinished time target ->
+                        | _ when localTime > 30L && Character.getAnimationFinished time target ->
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
                             withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
                         | _ -> just battle
@@ -180,7 +180,7 @@ module BattleDispatcher =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal battle =
+        let private updateTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) localTime battle =
             match targetIndexOpt with
             | Some targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
@@ -190,12 +190,12 @@ module BattleDispatcher =
                         ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
                         if target.IsHealthy then
                             let (msgs, battle) =
-                                if timeLocal = techAnimationData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], battle)
-                                elif timeLocal = techAnimationData.TechingStart then ([TechCharacter2 (sourceIndex, targetIndex, techType)], battle)
-                                elif timeLocal = techAnimationData.AffectingStart then ([TechCharacter3 (sourceIndex, targetIndex, techType)], battle)
-                                elif timeLocal = techAnimationData.AffectingStop then ([TechCharacter4 (sourceIndex, targetIndex, techType)], battle)
-                                elif timeLocal = techAnimationData.TechingStop then ([TechCharacter5 (sourceIndex, targetIndex, techType)], battle)
-                                elif timeLocal = techAnimationData.TechStop then ([TechCharacter6 (sourceIndex, targetIndex, techType)], battle)
+                                if localTime = techAnimationData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], battle)
+                                elif localTime = techAnimationData.TechingStart then ([TechCharacter2 (sourceIndex, targetIndex, techType)], battle)
+                                elif localTime = techAnimationData.AffectingStart then ([TechCharacter3 (sourceIndex, targetIndex, techType)], battle)
+                                elif localTime = techAnimationData.AffectingStop then ([TechCharacter4 (sourceIndex, targetIndex, techType)], battle)
+                                elif localTime = techAnimationData.TechingStop then ([TechCharacter5 (sourceIndex, targetIndex, techType)], battle)
+                                elif localTime = techAnimationData.TechStop then ([TechCharacter6 (sourceIndex, targetIndex, techType)], battle)
                                 else ([], battle)
                             let (msgs, battle) = (msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)], battle)
                             withMsgs msgs battle
@@ -264,38 +264,38 @@ module BattleDispatcher =
                 withSigs sigs battle
             | None -> just battle
 
-        and private updateReady time timeStart (battle : Battle) =
-            let timeLocal = time - timeStart
-            if timeLocal = inc 62L then // first frame after transitioning in
+        and private updateReady time startTime (battle : Battle) =
+            let localTime = time - startTime
+            if localTime = inc 62L then // first frame after transitioning in
                 match battle.BattleSongOpt with
                 | Some battleSong -> withCmd (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle
-            elif timeLocal >= 90L && timeLocal < 160L then
-                let timeLocalReady = timeLocal - 90L
-                withMsg (ReadyCharacters timeLocalReady) battle
-            elif timeLocal = 160L then
+            elif localTime >= 90L && localTime < 160L then
+                let localTimeReady = localTime - 90L
+                withMsg (ReadyCharacters localTimeReady) battle
+            elif localTime = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsgs [PoiseCharacters; AutoBattleEnemies] battle
             else just battle
 
         and private updateCurrentCommand time currentCommand battle =
-            let timeLocal = time - currentCommand.TimeStart
+            let localTime = time - currentCommand.StartTime
             match currentCommand.ActionCommand.Action with
             | Attack ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                updateAttack source targetOpt time timeLocal battle
+                updateAttack source targetOpt time localTime battle
             | Defend ->
                 let source = currentCommand.ActionCommand.Source
-                updateDefend source time timeLocal battle
+                updateDefend source time localTime battle
             | Tech techType ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                updateTech techType source targetOpt time timeLocal battle
+                updateTech techType source targetOpt time localTime battle
             | Consume consumable ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                updateConsume consumable source targetOpt time timeLocal battle
+                updateConsume consumable source targetOpt time localTime battle
             | Wound ->
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 updateWound targetOpt time battle
@@ -466,18 +466,18 @@ module BattleDispatcher =
                 | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
                 | Some _ -> just battle
 
-        and private updateCease time timeStart battle =
-            let localTime = time - timeStart
+        and private updateCease time startTime battle =
+            let localTime = time - startTime
             if localTime = 0L
             then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
             else just battle
 
         and update time (battle : Battle) =
             match battle.BattleState with
-            | BattleReady timeStart -> updateReady time timeStart battle
+            | BattleReady startTime -> updateReady time startTime battle
             | BattleRunning -> updateRunning time battle
-            | BattleResults (outcome, timeStart) -> updateResults time timeStart outcome battle
-            | BattleCease (_, _, timeStart) -> updateCease time timeStart battle
+            | BattleResults (outcome, startTime) -> updateResults time startTime outcome battle
+            | BattleCease (_, _, startTime) -> updateCease time startTime battle
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.debug)
@@ -601,10 +601,10 @@ module BattleDispatcher =
                 let battle = Battle.cancelCharacterInput characterIndex battle
                 just battle
 
-            | ReadyCharacters timeLocal ->
+            | ReadyCharacters localTime ->
                 let time = World.getUpdateTime world
                 let battle = Battle.animateCharactersReady time battle
-                if timeLocal = 30L
+                if localTime = 30L
                 then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
                 else just battle
 

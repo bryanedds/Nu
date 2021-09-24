@@ -80,35 +80,12 @@ module FieldDispatcher =
             | Cue.FadeOutSong fade ->
                 (Cue.Nil, definitions, withCmd (FadeOutSong fade) field)
 
-            | Cue.Face (direction, target) ->
+            | Cue.Face (target, direction) ->
                 match target with
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, _, color, glow, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, definitions, just field)
-                        | _ -> (Cue.Nil, definitions, just field)
-                    | None -> (Cue.Nil, definitions, just field)
-                | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, definitions, just field)
-
-            | Glow (glow, target) ->
-                match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, direction, color, _, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, definitions, just field)
-                        | _ -> (Cue.Nil, definitions, just field)
-                    | None -> (Cue.Nil, definitions, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Recruit allyType ->
@@ -154,14 +131,14 @@ module FieldDispatcher =
                 then (cue, definitions, just field)
                 else (Cue.Nil, definitions, just field)
 
-            | Animate (characterAnimationType, target, wait) ->
+            | Animate (target, characterAnimationType, wait) ->
                 match target with
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
                     match wait with
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | AnimateState (startTime, wait) ->
@@ -172,31 +149,73 @@ module FieldDispatcher =
                     then (Cue.Nil, definitions, just field)
                     else (cue, definitions, just field)
                 | Timed waitTime ->
-                    let timeLocal = time - startTime
-                    if timeLocal < waitTime
+                    let localTime = time - startTime
+                    if localTime < waitTime
                     then (cue, definitions, just field)
                     else (Cue.Nil, definitions, just field)
                 | NoWait ->
                     (Cue.Nil, definitions, just field)
 
-            | Fade (time, fadeIn, target) ->
-                (FadeState (World.getUpdateTime world, time, fadeIn, target), definitions, just field)
-
-            | FadeState (startTime, totalTime, fadeIn, target) ->
+            | Move (target, destination, moveType) ->
                 match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
+                | AvatarTarget ->
+                    (MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType), definitions, just field)
+                | ActorTarget characterType ->
+                    match Map.tryFindKey (constant (function ActorState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
                     | Some propKey ->
                         match field.PropStates.[propKey] with
-                        | NpcState (_, direction, _, glow, exists) ->
-                            let localTime = World.getUpdateTime world - startTime
-                            let progress = single localTime / single totalTime
-                            let color = colWhite * if fadeIn then progress else 1.0f - progress
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, definitions, just field)
+                        | ActorState (bounds, _, _, _, _, _) -> (MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType), definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
+                    (Cue.Nil, definitions, just field)
+
+            | MoveState (startTime, target, origin, destination, moveType) ->
+                match target with
+                | AvatarTarget ->
+                    match moveType with
+                    | Instant ->
+                        let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
+                        (Cue.Nil, definitions, just field)
+                    | Walk | Run | Mosey ->
+                        let time = World.getUpdateTime world
+                        let localTime = time - startTime
+                        let delta = destination - origin
+                        let steps = delta.Length () / moveType.MoveSpeed
+                        let step = delta / steps
+                        if localTime = int64 (ceil steps) then
+                            let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
+                            (Cue.Nil, definitions, just field)
+                        else
+                            let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
+                            (Cue.Nil, definitions, just field)
+                | ActorTarget characterType ->
+                    match Map.tryFindKey (constant (function ActorState (_, characterType2, _, _, _, _) -> characterType2 = characterType | _ -> false)) field.PropStates with
+                    | Some propKey ->
+                        match field.PropStates.[propKey] with
+                        | ActorState (bounds, characterType, direction, color, glow, exists) ->
+                            match moveType with
+                            | Instant ->
+                                let bounds = bounds.WithBottom destination
+                                let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
+                                (Cue.Nil, definitions, just field)
+                            | Walk | Run | Mosey ->
+                                let time = World.getUpdateTime world
+                                let localTime = time - startTime
+                                let delta = destination - origin
+                                let steps = delta.Length () / moveType.MoveSpeed
+                                let step = delta / steps
+                                if localTime = int64 (ceil steps) then
+                                    let bounds = bounds.WithBottom destination
+                                    let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
+                                    (Cue.Nil, definitions, just field)
+                                else
+                                    let bounds = bounds.Translate step
+                                    let field = Field.updatePropStates (Map.add propKey (ActorState (bounds, characterType, direction, color, glow, exists))) field
+                                    (Cue.Nil, definitions, just field)
+                        | _ -> (Cue.Nil, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Warp (fieldType, fieldDestination, fieldDirection) ->
@@ -493,7 +512,7 @@ module FieldDispatcher =
                 | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
                 | Switch (_, _, _, _) -> Some "Use"
                 | Sensor (_, _, _, _, _) -> None
-                | Npc _ | NpcBranching _ | Character _ -> Some "Talk"
+                | Actor _ | Npc _ | NpcBranching _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
                 | Seal _ -> Some "Touch"
                 | Flame _ -> None
@@ -617,6 +636,11 @@ module FieldDispatcher =
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
+
+        static let interactCharacter cue (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let field = Field.updateCue (constant cue) field
+            just field
         
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
@@ -626,11 +650,6 @@ module FieldDispatcher =
                 let field = Field.updateCue (constant branchCue) field
                 just field
             else just field
-        
-        static let interactCharacter cue (prop : Prop) (field : Field) =
-            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
-            let field = Field.updateCue (constant cue) field
-            just field
 
         static let interactShopkeep shopType (prop : Prop) (field : Field) =
             let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
@@ -984,9 +1003,9 @@ module FieldDispatcher =
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor (_, _, _, _, _) -> just field
+                            | Actor (_, _, cue, _) -> interactCharacter cue prop field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
-                            | Character (_, _, cue, _) -> interactCharacter cue prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
                             | Seal (_, cue, _) -> interactSeal cue field
                             | Flame _ -> just field

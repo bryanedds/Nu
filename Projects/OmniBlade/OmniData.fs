@@ -511,10 +511,10 @@ type [<NoEquality; NoComparison>] SpiritType =
 
 type [<NoEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
+    | ActorTarget of CharacterType // (field only)
     | NpcTarget of NpcType // (field only)
     | ShopkeepTarget of ShopkeepType // (field only)
-    | AllyTarget of int // (battle only)
-    | EnemyTarget of int // (battle only)
+    | CharacterTarget of CharacterIndex // (battle only)
 
 type [<NoEquality; NoComparison>] CuePredicate =
     | Gold of int
@@ -527,6 +527,18 @@ type [<NoEquality; NoComparison>] CueWait =
     | Wait
     | Timed of int64
     | NoWait
+
+type [<NoEquality; NoComparison>] MoveType =
+    | Walk
+    | Run
+    | Mosey
+    | Instant
+    member this.MoveSpeed =
+        match this with
+        | Walk -> Constants.Gameplay.CueWalkSpeed
+        | Run -> Constants.Gameplay.CueRunSpeed
+        | Mosey -> Constants.Gameplay.CueMoseySpeed
+        | Instant -> 0.0f
 
 [<Syntax   ("Gold Item Items Advent Advents " +
             "Wait Timed NoWait " +
@@ -542,8 +554,7 @@ type [<NoEquality; NoComparison>] Cue =
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
-    | Face of Direction * CueTarget
-    | Glow of Color * CueTarget
+    | Face of CueTarget * Direction
     | Recruit of AllyType
     | Unseal of int * Advent
     | AddItem of ItemType
@@ -552,10 +563,10 @@ type [<NoEquality; NoComparison>] Cue =
     | RemoveAdvent of Advent
     | Wait of int64
     | WaitState of int64
-    | Animate of CharacterAnimationType * CueTarget * CueWait
+    | Animate of CueTarget * CharacterAnimationType * CueWait
     | AnimateState of int64 * CueWait
-    | Fade of int64 * bool * CueTarget
-    | FadeState of int64 * int64 * bool * CueTarget
+    | Move of CueTarget * Vector2 * MoveType
+    | MoveState of int64 * CueTarget * Vector2 * Vector2 * MoveType
     | Warp of FieldType * Vector2 * Direction
     | WarpState
     | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
@@ -575,8 +586,8 @@ type [<NoEquality; NoComparison>] Cue =
     static member notNil cue = match cue with Nil -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
-        | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
+        | Wait _ | WaitState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
         | If (p, c, a) ->
             match p with
@@ -781,9 +792,9 @@ type [<NoEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
     | Switch of SwitchType * Cue * Cue * Advent Set
     | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
+    | Actor of CharacterType * Direction * Cue * Advent Set
     | Npc of NpcType * Direction * Cue * Advent Set
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
-    | Character of CharacterType * Direction * Cue * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     | Seal of Color * Cue * Advent Set
     | Flame of FlameType * bool
