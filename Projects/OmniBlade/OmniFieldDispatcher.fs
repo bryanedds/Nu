@@ -465,7 +465,7 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.debug)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
         static let detokenize (text : string) (field : Field) =
             text
@@ -776,7 +776,7 @@ module FieldDispatcher =
 
                         // just past half-way point of transition
                         elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
-                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field
+                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
                             let field =
                                 Field.updateAvatar (fun avatar ->
                                     let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
@@ -1239,27 +1239,26 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field _ -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
-                    (fun (fieldType, rotatedSeedState, advents, propStates) world ->
+                    (fun field _ -> (field.FieldType, field.OmniSeedState, field.PropStates))
+                    (fun (fieldType, rotatedSeedState, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
                             FieldData.getPropDescriptors rotatedSeedState fieldData world |>
-                            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, advents, propStates)))
+                            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, propStates)))
                         | None -> Map.empty)
-                    (fun _ propLens world ->
-                        let time = World.getUpdateTime world
-                        let prop = flip Lens.map propLens (fun (propDescriptor, advents, propStates) ->
-                            let propState = Field.getPropState time propDescriptor advents propStates
+                    (fun _ propLens _ ->
+                        let prop = flip Lens.map propLens (fun (propDescriptor, propStates) ->
+                            let propState = propStates.[propDescriptor.PropId]
                             Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId)
                         Content.entity<PropDispatcher> Gen.name
                             [Entity.Prop <== prop
                              Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop.PropState))])
 
                  // spirit orb
-                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field world ->
+                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field world; Portals = Field.getPortals field world }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->

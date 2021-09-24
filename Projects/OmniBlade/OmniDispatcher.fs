@@ -122,14 +122,14 @@ module OmniDispatcher =
 
             | ToIntro saveSlot ->
                 let introMsg = msg (Change (Gui (Intro saveSlot)))
-                let introCmd = cmd (Show Simulants.Intro5.Screen)
+                let introCmd = cmd (Show Simulants.Intro.Screen)
                 withSigs [introMsg; introCmd] omni
 
             | FromIntro ->
                 match omni with
                 | Gui gui ->
                     match gui with
-                    | Intro saveSlot -> withMsg (Change (Field (Field.initial saveSlot Gen.randomul))) omni
+                    | Intro saveSlot -> withMsg (Change (Field (Field.initial saveSlot Gen.randomul world))) omni
                     | _ -> just omni
                 | Field _ -> just omni
 

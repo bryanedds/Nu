@@ -90,64 +90,65 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
-    let getPropState time propDescriptor (advents : Advent Set) propStates =
-        match Map.tryFind propDescriptor.PropId propStates with
-        | None ->
-            match propDescriptor.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
-            | Door (_, _, _, _, _) -> DoorState false
-            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
-            | Switch (_, _, _, _) -> SwitchState false
-            | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-            | Character (characterType, direction, _, requirements) ->
-                let animationSheet =
-                    match Data.Value.Characters.TryGetValue characterType with
-                    | (true, characterData) -> characterData.AnimationSheet
-                    | (false, _) -> Assets.Field.JinnAnimationSheet
-                let characterAnimationState =
-                    { StartTime = time
-                      AnimationSheet = animationSheet
-                      CharacterAnimationType = IdleAnimation
-                      Direction = direction }
-                CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
-            | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-            | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-            | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
-        | Some propState -> propState
-
-    let getPropStates (field : Field) world =
-        match Map.tryFind field.FieldType Data.Value.Fields with
-        | Some fieldData ->
-            let time = World.getUpdateTime world
-            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, getPropState time propDescriptor field.Advents field.PropStates))
-        | None -> Map.empty
-
     let getProps (field : Field) world =
         match Map.tryFind field.FieldType Data.Value.Fields with
         | Some fieldData ->
-            let time = World.getUpdateTime world
             FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
-                let propState = getPropState time propDescriptor field.Advents field.PropStates
+                let propState = field.PropStates.[propDescriptor.PropId]
                 let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let getChests field world =
-        getPropStates field world |>
+    let getChests field =
+        field.PropStates_ |>
         Map.toValueArray |>
         Array.choose (function ChestState (bounds, opened) -> Some (Chest.make bounds opened) | _ -> None)
 
-    let getPortals field world =
-        getPropStates field world |>
+    let getPortals field =
+        field.PropStates_ |>
         Map.toValueArray |>
         Array.choose (function PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
 
-    let updateFieldType updater field =
-        { field with
-            FieldType_ = updater field.FieldType_
-            SpiritActivity_ = 0.0f }
+    let private makePropState time (advents : Advent Set) propDescriptor =
+        match propDescriptor.PropData with
+        | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
+        | Door (_, _, _, _, _) -> DoorState false
+        | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
+        | Switch (_, _, _, _) -> SwitchState false
+        | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
+        | Character (characterType, direction, _, requirements) ->
+            let animationSheet =
+                match Data.Value.Characters.TryGetValue characterType with
+                | (true, characterData) -> characterData.AnimationSheet
+                | (false, _) -> Assets.Field.JinnAnimationSheet
+            let characterAnimationState =
+                { StartTime = time
+                  AnimationSheet = animationSheet
+                  CharacterAnimationType = IdleAnimation
+                  Direction = direction }
+            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+        | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
+        | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
+        | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+
+    let private makePropStates fieldType omniSeedState advents world =
+        match Data.Value.Fields.TryGetValue fieldType with
+        | (true, fieldData) ->
+            let time = World.getUpdateTime world
+            let propDescriptors = FieldData.getPropDescriptors omniSeedState fieldData world
+            let propStates =
+                propDescriptors |>
+                List.map (fun propDescriptor -> (propDescriptor.PropId, makePropState time advents propDescriptor)) |>
+                Map.ofList
+            propStates
+        | (false, _) -> Map.empty
+
+    let updateFieldType updater field world =
+        let fieldType = updater field.FieldType_
+        let spiritActivity = 0.0f
+        let propStates = makePropStates fieldType field.OmniSeedState_ field.Advents_ world
+        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; PropStates_ = propStates }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -302,16 +303,23 @@ module Field =
             Avatar_ = Avatar.toSymbolizable field.Avatar
             FieldSongTimeOpt_ = None }
 
-    let make fieldType saveSlot randSeedState avatar team inventory definitions =
+    let make fieldType saveSlot randSeedState avatar team inventory world =
+        let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
+        let advents = Set.empty
+        let propStates = makePropStates fieldType omniSeedState advents world
+        let definitions =
+            match Data.Value.Fields.TryGetValue fieldType with
+            | (true, fieldData) -> fieldData.Definitions
+            | (false, _) -> Map.empty
         { FieldType_ = fieldType
           SaveSlot_ = saveSlot
-          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
+          OmniSeedState_ = omniSeedState
           Avatar_ = avatar
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = team
-          Advents_ = Set.empty
-          PropStates_ = Map.empty
+          Advents_ = advents
+          PropStates_ = propStates
           Inventory_ = inventory
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
@@ -325,16 +333,16 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { FieldType_ = DebugField
+        { FieldType_ = EmptyField
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
-          Avatar_ = Avatar.empty
-          Team_ = Map.empty
+          Avatar_ = Avatar.initial
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
+          Team_ = Map.empty
           Advents_ = Set.empty
           PropStates_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 0 }
+          Inventory_ = Inventory.initial
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = Map.empty
@@ -346,23 +354,11 @@ module Field =
           BattleOpt_ = None
           FieldSongTimeOpt_ = None }
 
-    let debug =
-        { empty with Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
+    let debug world =
+        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 0 Jinn)) Inventory.initial world
 
-    let initial saveSlot randSeedState =
-        let fieldType = TombOuter
-        let definitions =
-            match Data.Value.Fields.TryGetValue fieldType with
-            | (true, fieldData) -> fieldData.Definitions
-            | (false, _) -> Map.empty
-        make
-            fieldType
-            saveSlot
-            randSeedState
-            Avatar.initial
-            (Map.singleton 0 (Teammate.make 0 Jinn))
-            Inventory.initial
-            definitions
+    let initial saveSlot randSeedState world =
+        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 0 Jinn)) Inventory.initial world
 
     let save field =
         let saveFilePath =

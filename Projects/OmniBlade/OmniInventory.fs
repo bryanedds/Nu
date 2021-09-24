@@ -200,5 +200,8 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member updateGold updater (inventory : Inventory) =
         { inventory with Gold = updater inventory.Gold }
 
+    static member empty =
+        { Items = Map.empty; Gold = 0 }
+
     static member initial =
         { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
