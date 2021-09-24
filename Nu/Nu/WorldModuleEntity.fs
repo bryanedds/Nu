@@ -760,7 +760,7 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world =
+        static member internal trySetEntityXtensionPropertyWithoutEvent propertyName property entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> struct (false, false, world)
@@ -801,12 +801,12 @@ module WorldModuleEntity =
                 struct (success, changed, world)
 
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
-            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
             | struct (true, changed, world) -> (true, changed, world)
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
-            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
             | struct (true, changed, world) ->
                 if changed
                 then World.publishEntityChange propertyName property.PropertyValue entity world
@@ -817,7 +817,7 @@ module WorldModuleEntity =
                 | (false, _) -> world
 
         static member internal trySetEntityProperty propertyName property entity world =
-            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
             | struct (true, changed, world) ->
                 let world =
                     if changed

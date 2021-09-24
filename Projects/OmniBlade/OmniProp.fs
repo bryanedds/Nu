@@ -7,7 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 
-type [<NoEquality; NoComparison>] PropState =
+type [<ReferenceEquality; NoComparison>] PropState =
     | PortalState of Vector4 * bool
     | DoorState of bool
     | ChestState of Vector4 * Guid
@@ -21,7 +21,7 @@ type [<NoEquality; NoComparison>] PropState =
 [<RequireQualifiedAccess>]
 module Prop =
 
-    type [<ReferenceEquality; NoComparison>] Prop =
+    type [<StructuralEquality; NoComparison>] Prop =
         private
             { Bounds_ : Vector4
               Elevation_ : single

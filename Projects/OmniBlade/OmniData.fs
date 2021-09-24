@@ -796,7 +796,7 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
       Delay : int64
       Offset : Vector2i }
 
-type [<NoEquality; NoComparison>] PropData =
+type [<ReferenceEquality; NoComparison>] PropData =
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
     | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
