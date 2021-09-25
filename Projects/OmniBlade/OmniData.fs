@@ -104,7 +104,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Silence
     | Sleep
     | Confuse
-    // Blind - maybe in the sequal
+    //| Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
