@@ -139,7 +139,6 @@ module Assets =
     module Battle =
 
         let PackageName = "Battle"
-        let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle"
         let CancelImage = asset<Image> PackageName "Cancel"
         let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert effect art.
         let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur" // TODO: P1: Convert effect art.

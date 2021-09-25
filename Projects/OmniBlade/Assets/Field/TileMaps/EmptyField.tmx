@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="14">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="14">
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
- <layer id="2" name="Floor" width="80" height="80">
+ <layer id="2" name="Floor" width="30" height="20">
   <data encoding="base64" compression="zlib">
-   eJztw0ENAAAMA6GzUv8m52FvSFg1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV9fUAR+45Lg==
+   eJxTZGBgUBzFo3gUj+JRPIpH8SgexVTDAEXVTVk=
   </data>
  </layer>
- <layer id="1" name="Furnishing" width="80" height="80">
+ <layer id="1" name="Furnishing" width="30" height="20">
   <data encoding="base64" compression="zlib">
-   eJzt0DENADAQxLDnvx/fcmhWWwqB7O6mFH/8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xr/Gv8a/xrptwDBui37Q==
+   eJybysDAMHWAML3BqL2j9o7aO2rvqL2j9o7aO/LsHQgMAHJ6N+E=
   </data>
  </layer>
- <layer id="6" name="Ceiling" width="80" height="80">
+ <layer id="6" name="Ceiling" width="30" height="20">
   <data encoding="base64" compression="zlib">
-   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
+   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
   </data>
  </layer>
 </map>

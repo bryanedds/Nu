@@ -1067,8 +1067,9 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let world =
                 let property = World.getGameModelProperty world
-                if property.DesignerType = typeof<unit>
-                then game.SetModel<'model> initial world
+                if property.DesignerType = typeof<unit> then
+                    let model = this.Prepare (initial, world)
+                    game.SetModel<'model> model world
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
@@ -1103,6 +1104,9 @@ module GameDispatcherModule =
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Initializers : Lens<'model, World> * Game -> PropertyInitializer list
         default this.Initializers (_, _) = []

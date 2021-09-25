@@ -15,14 +15,6 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member internal tryAttachModel (modelValue : 'model) modelName (simulant : Simulant) world =
-            match World.tryGetProperty (modelName, simulant, world) with
-            | (false, _) ->
-                let property = { DesignerType = typeof<'model>; DesignerValue = modelValue }
-                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                World.attachProperty modelName property simulant world
-            | (true, _) -> world
-
         static member internal actualizeView view world =
             match view with
             | Render (elevation, positionY, assetTag, descriptor) ->
@@ -98,7 +90,14 @@ module FacetModule =
             lens this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let world = World.tryAttachModel initial this.ModelName entity world
+            let world =
+                match World.tryGetProperty (this.ModelName, entity, world) with
+                | (false, _) ->
+                    let model = this.Prepare (initial, world)
+                    let property = { DesignerType = typeof<'model>; DesignerValue = model }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
+                    World.attachProperty this.ModelName property entity world
+                | (true, _) -> world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let content = this.Content (this.Model entity, entity)
@@ -131,6 +130,9 @@ module FacetModule =
             | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -1518,8 +1520,9 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let world =
                 let property = World.getEntityModelProperty entity world
-                if property.DesignerType = typeof<unit>
-                then entity.SetModel<'model> initial world
+                if property.DesignerType = typeof<unit> then
+                    let model = this.Prepare (initial, world)
+                    entity.SetModel<'model> model world
                 else world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
@@ -1562,6 +1565,9 @@ module EntityDispatcherModule =
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -2470,8 +2476,9 @@ module GroupDispatcherModule =
         override this.Register (group, world) =
             let world =
                 let property = World.getGroupModelProperty group world
-                if property.DesignerType = typeof<unit>
-                then group.SetModel<'model> initial world
+                if property.DesignerType = typeof<unit> then
+                    let model = this.Prepare (initial, world)
+                    group.SetModel<'model> model world
                 else world
             let channels = this.Channel (this.Model group, group)
             let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
@@ -2505,6 +2512,9 @@ module GroupDispatcherModule =
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Initializers : Lens<'model, World> * Group -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -2560,8 +2570,9 @@ module ScreenDispatcherModule =
         override this.Register (screen, world) =
             let world =
                 let property = World.getScreenModelProperty screen world
-                if property.DesignerType = typeof<unit>
-                then screen.SetModel<'model> initial world
+                if property.DesignerType = typeof<unit> then
+                    let model = this.Prepare (initial, world)
+                    screen.SetModel<'model> model world
                 else world
             let channels = this.Channel (this.Model screen, screen)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
@@ -2595,6 +2606,9 @@ module ScreenDispatcherModule =
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
         default this.Initializers (_, _) = []
