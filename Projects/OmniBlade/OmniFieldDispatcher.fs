@@ -1116,7 +1116,31 @@ module FieldDispatcher =
             [// scene group
              Content.group Simulants.Field.Scene.Group.Name []
 
-                [// backdrop sprite
+                [// avatar
+                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
+                    [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                     Entity.Enabled <== field --> fun field ->
+                        field.Menu.MenuState = MenuClosed &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
+                     Entity.LinearDamping == Constants.Field.LinearDamping
+                     Entity.Avatar <== field --> fun field -> field.Avatar]
+
+                 // props
+                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
+                    Content.entity<PropDispatcher> Gen.name
+                        [Entity.Prop <== prop
+                         Entity.Prop.ChangeEvent ==|> fun evt -> msg (UpdatePropState (evt.Data.Value :?> Prop))]
+
+                 // spirit orb
+                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
+                    Content.entity<SpiritOrbDispatcher> Gen.name
+                        [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
+                         
+                 // backdrop sprite
                  Content.staticSprite Gen.name
                     [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image9
@@ -1187,21 +1211,9 @@ module FieldDispatcher =
                         | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                      Entity.TileLayerClearance == 10.0f]
 
-                 // avatar
-                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Enabled <== field --> fun field ->
-                        field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
-                     Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.Avatar <== field --> fun field -> field.Avatar]
-
                  // feeler
                  Content.feeler Simulants.Field.Scene.Feeler.Name
-                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.GuiElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
+                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
                      Entity.TouchingEvent ==|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
@@ -1234,18 +1246,6 @@ module FieldDispatcher =
                         | None -> ""
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> msg Interact]
-
-                 // props
-                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
-                    Content.entity<PropDispatcher> Gen.name
-                        [Entity.Prop <== prop
-                         Entity.Prop.ChangeEvent ==|> fun evt -> msg (UpdatePropState (evt.Data.Value :?> Prop))]
-
-                 // spirit orb
-                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
-                    Content.entity<SpiritOrbDispatcher> Gen.name
-                        [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->
