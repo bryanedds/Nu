@@ -70,6 +70,39 @@ module Field =
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
 
+    let private makePropState time (advents : Advent Set) propDescriptor =
+        match propDescriptor.PropData with
+        | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
+        | Door (_, _, _, _, _) -> DoorState false
+        | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
+        | Switch (_, _, _, _) -> SwitchState false
+        | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
+        | Character (characterType, direction, _, requirements) ->
+            let animationSheet =
+                match Data.Value.Characters.TryGetValue characterType with
+                | (true, characterData) -> characterData.AnimationSheet
+                | (false, _) -> Assets.Field.JinnAnimationSheet
+            let characterAnimationState =
+                { StartTime = time
+                  AnimationSheet = animationSheet
+                  CharacterAnimationType = IdleAnimation
+                  Direction = direction }
+            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+        | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
+        | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
+        | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+
+    let private makeProps fieldType omniSeedState advents world =
+        match Map.tryFind fieldType Data.Value.Fields with
+        | Some fieldData ->
+            let time = World.getUpdateTime world
+            FieldData.getPropDescriptors omniSeedState fieldData world |>
+            Map.ofListBy (fun propDescriptor ->
+                let propState = makePropState time advents propDescriptor
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
+                (propDescriptor.PropId, prop))
+        | None -> Map.empty
+
     let getRecruitmentFee (field : Field) =
         let advents = Set.ofArray [|ShadeRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
         let recruiteds = Set.intersect advents field.Advents
@@ -99,39 +132,6 @@ module Field =
         field.Props_ |>
         Map.toValueArray |>
         Array.choose (fun prop -> match prop.PropState with PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
-
-    let private makePropState time (advents : Advent Set) propDescriptor =
-        match propDescriptor.PropData with
-        | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
-        | Door (_, _, _, _, _) -> DoorState false
-        | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
-        | Switch (_, _, _, _) -> SwitchState false
-        | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-        | Character (characterType, direction, _, requirements) ->
-            let animationSheet =
-                match Data.Value.Characters.TryGetValue characterType with
-                | (true, characterData) -> characterData.AnimationSheet
-                | (false, _) -> Assets.Field.JinnAnimationSheet
-            let characterAnimationState =
-                { StartTime = time
-                  AnimationSheet = animationSheet
-                  CharacterAnimationType = IdleAnimation
-                  Direction = direction }
-            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
-        | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-        | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-        | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
-
-    let makeProps fieldType omniSeedState advents world =
-        match Map.tryFind fieldType Data.Value.Fields with
-        | Some fieldData ->
-            let time = World.getUpdateTime world
-            FieldData.getPropDescriptors omniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor ->
-                let propState = makePropState time advents propDescriptor
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
-                (propDescriptor.PropId, prop))
-        | None -> Map.empty
 
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_

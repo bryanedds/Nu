@@ -480,7 +480,7 @@ module BattleDispatcher =
             | BattleCease (_, _, startTime) -> updateCease time startTime battle
 
     type BattleDispatcher () =
-        inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.debug)
+        inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)
 
         static let displayEffect delay size positioning effect world =
             World.delay (fun world ->
@@ -1260,3 +1260,7 @@ module BattleDispatcher =
                             reticles
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (ReticlesCancel index)]]]
+
+    type DebugBattleDispatcher () =
+        inherit BattleDispatcher ()
+        override this.Prepare (_, _) = Battle.debug

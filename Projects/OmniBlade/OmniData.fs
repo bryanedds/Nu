@@ -335,6 +335,7 @@ type FieldType =
         | _ -> failwithumf ()
 
 type BattleType =
+    | EmptyBattle
     | DebugBattle
     | CastleBattle
     | CastleBattle2

@@ -1498,3 +1498,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 96.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmLine2]]]]
+
+    type DebugFieldDispatcher () =
+        inherit FieldDispatcher ()
+        override this.Prepare (_, world) = Field.debug world

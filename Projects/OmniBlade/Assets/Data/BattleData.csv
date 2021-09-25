@@ -1,4 +1,5 @@
 Type,BattleAllyPositions,BattleEnemies,BattleTileMap,BattleTileIndexOffset,BattleTileIndexOffsetRange,BattleSongOpt
+EmptyBattle,[],[],[Battle EmptyBattle],0,[0 0],None
 DebugBattle,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[AraneaImplicitum MadMinotaur MadMinotaur MadMinotaur MadMinotaur MadMinotaur MadMinotaur MadMinotaur],[Battle DebugBattle],0,[0 0],[Some [Battle Battle]]
 CastleBattle,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle2,[[240 -48] [-384 -48] [-384 78] [-384 -162]],[BlueGoblin DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
