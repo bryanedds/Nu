@@ -1213,7 +1213,7 @@ module FieldDispatcher =
 
                  // feeler
                  Content.feeler Simulants.Field.Scene.Feeler.Name
-                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
+                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF
                      Entity.TouchingEvent ==|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
