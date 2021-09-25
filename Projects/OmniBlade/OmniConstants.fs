@@ -80,6 +80,7 @@ module Constants =
         let TreasureProbability = 0.667f
         let RecruitmentFees = [|200; 1000; 5000; 20000|]
         let ConnectorFadeYMax = 1440.0f
+        let FeelerElevation = -100.0f
         let BackgroundElevation = -10.0f
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
