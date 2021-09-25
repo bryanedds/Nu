@@ -1236,13 +1236,10 @@ module FieldDispatcher =
                      Entity.ClickEvent ==> msg Interact]
 
                  // props
-                 Content.entities field
-                    (fun field _ -> field.Props)
-                    (fun props _ -> props)
-                    (fun _ prop _ ->
-                        Content.entity<PropDispatcher> Gen.name
-                            [Entity.Prop <== prop
-                             Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop))])
+                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
+                    Content.entity<PropDispatcher> Gen.name
+                        [Entity.Prop <== prop
+                         Entity.Prop.ChangeEvent ==|> fun evt -> let prop = evt.Data.Value :?> Prop in msg (UpdatePropState (prop.PropId, prop))]
 
                  // spirit orb
                  Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
