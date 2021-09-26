@@ -870,6 +870,13 @@ module WorldModule2 =
                 match liveness with
                 | Live ->
                     let world = World.updateScreenTransition world
+                    match Simulants.Game.GetSelectedScreenOpt world with
+                    | Some selectedScreen ->
+                        match selectedScreen.GetTransitionState world with
+                        | OutgoingState ->
+                            match Simulants.Game.GetScreenTransitionDestinationOpt world with
+                            | None ->
+                                if selectedScreen.GetTransitionUpdates world = (selectedScreen.GetOutgoing world).TransitionLifeTime then
                     match World.getLiveness world with
                     | Live ->
                         InputTimer.Start ()
