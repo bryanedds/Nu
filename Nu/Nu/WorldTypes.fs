@@ -461,6 +461,7 @@ module WorldTypes =
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
+          DesiredScreens : Screen list
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
@@ -484,6 +485,7 @@ module WorldTypes =
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
+              DesiredScreens = []
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
