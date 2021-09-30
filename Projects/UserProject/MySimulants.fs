@@ -42,12 +42,18 @@ module Simulants =
         let Screen = Screen "Gameplay"
 
         [<RequireQualifiedAccess>]
-        module Level =
-
-            let Group = Screen / "Level"
+        module Gui =
+            
+            let Group = Screen / "Gui"
+            let Quit = Group / "Quit"
 
         [<RequireQualifiedAccess>]
         module Scene =
 
             let Group = Screen / "Scene"
             let Player = Group / "Player"
+
+        [<RequireQualifiedAccess>]
+        module Level =
+
+            let Group = Screen / "Level"

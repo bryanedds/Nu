@@ -70,9 +70,13 @@ type MyGameplayDispatcher () =
     // here we describe the content of the game including the level, the hud, and the player
     override this.Content (_, screen) =
 
-        [// the level group
-         Content.groupIfScreenSelected screen $ fun _ _ ->
-            Content.groupFromFile Simulants.Gameplay.Level.Group.Name "Assets/Gameplay/Level.nugroup"
+        [// the gui group
+         Content.group Simulants.Gameplay.Gui.Group.Name []
+             [Content.button Simulants.Gameplay.Gui.Quit.Name
+                 [Entity.Text == "Quit"
+                  Entity.Position == v2 260.0f -260.0f
+                  Entity.Elevation == 10.0f
+                  Entity.ClickEvent ==> msg Quit]]
 
          // the player group
          Content.groupIfScreenSelected screen $ fun _ _ ->
@@ -80,11 +84,7 @@ type MyGameplayDispatcher () =
                 [Content.character Simulants.Gameplay.Scene.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 108.0f 108.0f]]
-
-         // the gui group
-         Content.group "Gui" []
-             [Content.button Gen.name
-                 [Entity.Text == "Quit"
-                  Entity.Position == v2 260.0f -260.0f
-                  Entity.Elevation == 10.0f
-                  Entity.ClickEvent ==> msg Quit]]]
+        
+         // the level group
+         Content.groupIfScreenSelected screen $ fun _ _ ->
+            Content.groupFromFile Simulants.Gameplay.Level.Group.Name "Assets/Gameplay/Level.nugroup"]
