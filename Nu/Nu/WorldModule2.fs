@@ -224,32 +224,29 @@ module WorldModule2 =
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDescriptorOpt destination (screen : Screen) world =
+        static member setScreenSplash (splashDescriptor : SplashDescriptor) destination (screen : Screen) world =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            match splashDescriptorOpt with
-            | Some (splashDescriptor : SplashDescriptor) ->
-                let cameraEyeSize = World.getEyeSize world
-                let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
-                let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
-                let world = splashGroup.SetPersistent false world
-                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
-                let world = splashSprite.SetPersistent false world
-                let world = splashSprite.SetSize cameraEyeSize world
-                let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
-                let world =
-                    match splashDescriptor.SplashImageOpt with
-                    | Some splashImage ->
-                        let world = splashSprite.SetStaticImage splashImage world
-                        let world = splashSprite.SetVisible true world
-                        world
-                    | None ->
-                        let world = splashSprite.SetStaticImage Assets.Default.Image10 world
-                        let world = splashSprite.SetVisible false world
-                        world
-                world
-            | None -> world
+            let cameraEyeSize = World.getEyeSize world
+            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
+            let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
+            let world = splashGroup.SetPersistent false world
+            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
+            let world = splashSprite.SetPersistent false world
+            let world = splashSprite.SetSize cameraEyeSize world
+            let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+            let world =
+                match splashDescriptor.SplashImageOpt with
+                | Some splashImage ->
+                    let world = splashSprite.SetStaticImage splashImage world
+                    let world = splashSprite.SetVisible true world
+                    world
+                | None ->
+                    let world = splashSprite.SetStaticImage Assets.Default.Image10 world
+                    let world = splashSprite.SetVisible false world
+                    world
+            world
 
         /// Create a dissolve screen whose content is loaded from the given group file.
         [<FunctionBinding>]
@@ -267,7 +264,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
             let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveDescriptor None world
-            let world = World.setScreenSplash (Some splashDescriptor) destination splashScreen world
+            let world = World.setScreenSplash splashDescriptor destination splashScreen world
             (splashScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.

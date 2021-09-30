@@ -197,13 +197,13 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setScreenSplash splashDescriptorOpt destination screen world =
+    let setScreenSplash splashDescriptor destination screen world =
         let oldWorld = world
         try
-            let splashDescriptorOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<SplashDescriptor>> splashDescriptorOpt world with
-                | Some value -> value :?> FSharpOption<SplashDescriptor>
-                | None -> failwith "Invalid argument type for 'splashDescriptorOpt'; expecting a value convertable to FSharpOption`1."
+            let splashDescriptor =
+                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
+                | Some value -> value :?> SplashDescriptor
+                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -224,7 +224,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setScreenSplash splashDescriptorOpt destination screen world
+            let result = World.setScreenSplash splashDescriptor destination screen world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSplash' due to: " + scstring exn, None)
@@ -1157,8 +1157,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
+                match ScriptingSystem.tryExport typeof<FSharpFunc<SplashDescriptor, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
+                | Some value -> value :?> FSharpFunc<SplashDescriptor, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
                 | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
             let content =
                 match ScriptingSystem.tryExport typeof<SimulantContent> content world with
@@ -2634,7 +2634,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|splashDescriptorOpt; destination; screen|] -> setScreenSplash splashDescriptorOpt destination screen world
+            | [|splashDescriptor; destination; screen|] -> setScreenSplash splashDescriptor destination screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4098,7 +4098,7 @@ module WorldBindings =
              ("selectScreen", { Fn = evalSelectScreenBinding; Pars = [|"transitionState"; "screen"|]; DocOpt = None })
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
-             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDescriptorOpt"; "destination"; "screen"|]; DocOpt = None })
+             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDescriptor"; "destination"; "screen"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile6", { Fn = evalCreateDissolveScreenFromGroupFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile", { Fn = evalCreateDissolveScreenFromGroupFileBinding; Pars = [|"nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
              ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
