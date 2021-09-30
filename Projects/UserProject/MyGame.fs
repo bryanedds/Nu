@@ -61,7 +61,8 @@ type MyGameDispatcher () =
         match command with
         | Exit -> just (World.exit world)
 
-    // here we describe the content of the game including all of its screens.
+    // here we describe the content of the game including all of its screens. The Gameplay screen
+    // definition includes a forward bind from the game model.
     override this.Content (myGame, _) =
         [Content.screen Simulants.Splash.Screen.Name (Nu.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
          Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup"
