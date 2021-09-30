@@ -3,14 +3,14 @@ open Prime
 open Nu
 open Nu.Declarative
 
-// this is our Elm-style model type. Either we're playing or we're going back to the title screen.
+// this is our Elm-style model type. Either we're playing or we're quitting back to the title screen.
 type Gameplay =
     | Playing
     | Quitting
 
-// this is our Elm-style model type. Currently it only directs the game to go back to the title screen.
+// this is our Elm-style message type.
 type GameplayMessage =
-    | Back
+    | Quit
 
 // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
 type GameplayCommand =
@@ -38,7 +38,7 @@ type MyGameplayDispatcher () =
     // here we handle the above messages
     override this.Message (_, message, _, _) =
         match message with
-        | Back -> just Quitting
+        | Quit -> just Quitting
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =
@@ -84,7 +84,7 @@ type MyGameplayDispatcher () =
          // the gui group
          Content.group "Gui" []
              [Content.button Gen.name
-                 [Entity.Text == "Back"
+                 [Entity.Text == "Quit"
                   Entity.Position == v2 260.0f -260.0f
                   Entity.Elevation == 10.0f
-                  Entity.ClickEvent ==> msg Back]]]
+                  Entity.ClickEvent ==> msg Quit]]]
