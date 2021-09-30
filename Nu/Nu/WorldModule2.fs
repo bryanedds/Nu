@@ -223,112 +223,16 @@ module WorldModule2 =
         static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination evt world =
             World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
-        static member private updateScreenTransition3 (screen : Screen) transition world =
-            // NOTE: we do not immediately transition when transition time is zero because we only want screen
-            // transitions to happen outside the update loop!
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and and an extra frame for the render messages to actually get processed.
-            let transitionUpdates = screen.GetTransitionUpdates world
-            if transitionUpdates = transition.TransitionLifeTime + 1L then
-                (true, screen.SetTransitionUpdates 0L world)
-            elif transitionUpdates > transition.TransitionLifeTime then
-                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
-                (true, screen.SetTransitionUpdates 0L world)
-            else (false, screen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
-
-        static member private updateScreenTransition2 (selectedScreen : Screen) world =
-            match selectedScreen.GetTransitionState world with
-            | IncomingState ->
-                match World.getLiveness world with
-                | Live ->
-                    let world =
-                        if selectedScreen.GetTransitionUpdates world = 0L then
-                            let world =
-                                match (selectedScreen.GetIncoming world).SongOpt with
-                                | Some playSong ->
-                                    match World.getCurrentSongOpt world with
-                                    | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                    | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
-                                | None -> world
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
-                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
-                        else world
-                    match World.getLiveness world with
-                    | Live ->
-                        let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetIncoming world) world
-                        if finished then
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
-                            let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
-                        else world
-                    | Dead -> world
-                | Dead -> world
-            | OutgoingState ->
-                let world =
-                    if selectedScreen.GetTransitionUpdates world = 0L then
-                        let incoming = selectedScreen.GetIncoming world
-                        let outgoing = selectedScreen.GetOutgoing world
-                        let world =
-                            match outgoing.SongOpt with
-                            | Some playSong ->
-                                match World.getScreenTransitionDestinationOpt world with
-                                | Some destination ->
-                                    match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                                    | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
-                                    | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                    | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
-                                | None -> world
-                            | None -> world
-                        let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
-                    else world
-                match World.getLiveness world with
-                | Live ->
-                    let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetOutgoing world) world
-                    if finished then
-                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                        match World.getLiveness world with
-                        | Live ->
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
-                        | Dead -> world
-                    else world
-                | Dead -> world
-            | IdlingState -> world
-
-        static member private handleSplashScreenIdleUpdate idlingTime updates evt world =
-            let world = World.unsubscribe SplashScreenUpdateId world
-            if updates < idlingTime then
-                let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc updates)
-                let world = World.subscribePlus SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
-                (Cascade, world)
-            else
-                match World.getSelectedScreenOpt world with
-                | Some selectedScreen ->
-                    if World.getScreenExists selectedScreen world then
-                        let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                        (Cascade, world)
-                    else
-                        Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
-                        (Resolve, World.exit world)
-                | None ->
-                    Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
-                    (Resolve, World.exit world)
-
-        static member private handleSplashScreenIdle idlingTime destination (splashScreen : Screen) evt world =
-            let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
-            let world = World.subscribePlus SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
-            (Cascade, world)
-
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+        static member setScreenSplash splashDescriptorOpt destination (screen : Screen) world =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            match splashDataOpt with
-            | Some splashDescriptor ->
+            match splashDescriptorOpt with
+            | Some (splashDescriptor : SplashDescriptor) ->
                 let cameraEyeSize = World.getEyeSize world
+                let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
                 let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
                 let world = splashGroup.SetPersistent false world
                 let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
@@ -345,9 +249,6 @@ module WorldModule2 =
                         let world = splashSprite.SetStaticImage Assets.Default.Image10 world
                         let world = splashSprite.SetVisible false world
                         world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashDescriptor.IdlingTime destination screen) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashGroup) screen world
                 world
             | None -> world
 
@@ -664,11 +565,6 @@ module WorldModule2 =
         static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> World.updateScreenTransition2 selectedScreen world
-            | None -> world
-
         static member private updateSimulants world =
 
             // gather simulants
@@ -868,15 +764,139 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Live ->
-                    let world = World.updateScreenTransition world
-                    match Simulants.Game.GetSelectedScreenOpt world with
-                    | Some selectedScreen ->
-                        match selectedScreen.GetTransitionState world with
-                        | OutgoingState ->
-                            match Simulants.Game.GetScreenTransitionDestinationOpt world with
-                            | None ->
-                                if selectedScreen.GetTransitionUpdates world = (selectedScreen.GetOutgoing world).TransitionLifeTime then
+                | Live ->                
+
+                    let world =
+                        match World.getSelectedScreenOpt world with
+                        | Some selectedScreen ->
+                            match selectedScreen.GetTransitionState world with
+                            | IncomingState ->
+                                match World.getLiveness world with
+                                | Live ->
+                                    let world =
+                                        if selectedScreen.GetTransitionUpdates world = 0L then
+                                            let world =
+                                                match (selectedScreen.GetIncoming world).SongOpt with
+                                                | Some playSong ->
+                                                    match World.getCurrentSongOpt world with
+                                                    | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
+                                                    | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
+                                                | None -> world
+                                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
+                                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
+                                        else world
+                                    match World.getLiveness world with
+                                    | Live ->
+                                        let (finished, world) =
+                                            // NOTE: we do not immediately transition when transition time is zero because we only want screen
+                                            // transitions to happen outside the update loop!
+                                            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+                                            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+                                            let transition = selectedScreen.GetIncoming world
+                                            let transitionUpdates = selectedScreen.GetTransitionUpdates world
+                                            if transitionUpdates = transition.TransitionLifeTime + 1L then
+                                                (true, selectedScreen.SetTransitionUpdates 0L world)
+                                            elif transitionUpdates > transition.TransitionLifeTime then
+                                                Log.debug ("TransitionLifeTime for screen '" + scstring selectedScreen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
+                                                (true, selectedScreen.SetTransitionUpdates 0L world)
+                                            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+                                        if finished then
+                                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
+                                            let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
+                                        else world
+                                    | Dead -> world
+                                | Dead -> world
+                            | IdlingState ->
+                                match World.getLiveness world with
+                                | Live ->
+                                    match selectedScreen.GetSplashOpt world with
+                                    | Some splash ->
+                                        let (finished, world) =
+                                            // NOTE: we do not immediately transition when transition time is zero because we only want screen
+                                            // transitions to happen outside the update loop!
+                                            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+                                            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+                                            let transitionUpdates = selectedScreen.GetTransitionUpdates world
+                                            if transitionUpdates = splash.IdlingTime + 1L then
+                                                (true, selectedScreen.SetTransitionUpdates 0L world)
+                                            elif transitionUpdates > splash.IdlingTime then
+                                                Log.debug ("IdlingTimeOpt for screen '" + scstring selectedScreen.ScreenAddress + "' must be Some consistent multiple of UpdateRate or None.")
+                                                (true, selectedScreen.SetTransitionUpdates 0L world)
+                                            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+                                        if finished
+                                        then World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                                        else world
+                                    | None ->
+                                        match Simulants.Game.GetDesiredScreenOpt world with
+                                        | Some desiredScreen ->
+                                            if desiredScreen <> selectedScreen then
+                                                let world = selectedScreen.SetTransitionUpdates 0L world
+                                                World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                                            else world
+                                        | None -> world
+                                | Dead -> world
+                            | OutgoingState ->
+                                let world =
+                                    if selectedScreen.GetTransitionUpdates world = 0L then
+                                        let incoming = selectedScreen.GetIncoming world
+                                        let outgoing = selectedScreen.GetOutgoing world
+                                        let world =
+                                            match outgoing.SongOpt with
+                                            | Some playSong ->
+                                                match World.getScreenTransitionDestinationOpt world with
+                                                | Some destination ->
+                                                    match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
+                                                    | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
+                                                    | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
+                                                    | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
+                                                | None -> world
+                                            | None -> world
+                                        let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
+                                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
+                                    else world
+                                match World.getLiveness world with
+                                | Live ->
+                                    let (finished, world) =
+                                        // NOTE: we do not immediately transition when transition time is zero because we only want screen
+                                        // transitions to happen outside the update loop!
+                                        // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+                                        // full opacity if fading and and an extra frame for the render messages to actually get processed.
+                                        let transition = selectedScreen.GetOutgoing world
+                                        let transitionUpdates = selectedScreen.GetTransitionUpdates world
+                                        if transitionUpdates = transition.TransitionLifeTime + 1L then
+                                            (true, selectedScreen.SetTransitionUpdates 0L world)
+                                        elif transitionUpdates > transition.TransitionLifeTime then
+                                            Log.debug ("TransitionLifeTime for screen '" + scstring selectedScreen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
+                                            (true, selectedScreen.SetTransitionUpdates 0L world)
+                                        else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+                                    if finished then
+                                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                                        let world =
+                                            match World.getLiveness world with
+                                            | Live ->
+                                                let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
+                                                World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
+                                            | Dead -> world
+                                        match World.getLiveness world with
+                                        | Live ->
+                                            match selectedScreen.GetSplashOpt world with
+                                            | Some splash ->
+                                                if splash.Destination <> selectedScreen
+                                                then World.selectScreen IncomingState splash.Destination world
+                                                else world
+                                            | None ->
+                                                match Simulants.Game.GetDesiredScreenOpt world with
+                                                | Some desiredScreen ->
+                                                    if desiredScreen <> selectedScreen
+                                                    then World.selectScreen IncomingState desiredScreen world
+                                                    else world
+                                                | None -> World.setSelectedScreenOpt None world
+                                        | Dead -> world
+                                    else world
+                                | Dead -> world
+                        | None -> world
+
                     match World.getLiveness world with
                     | Live ->
                         InputTimer.Start ()

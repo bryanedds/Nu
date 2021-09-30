@@ -215,39 +215,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setScreenSplash splashDataOpt destination screen world =
-        let oldWorld = world
-        try
-            let splashDataOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<SplashDescriptor>> splashDataOpt world with
-                | Some value -> value :?> FSharpOption<SplashDescriptor>
-                | None -> failwith "Invalid argument type for 'splashDataOpt'; expecting a value convertable to FSharpOption`1."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let struct (screen, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal screen world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setScreenSplash splashDataOpt destination screen world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSplash' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let createDissolveScreenFromGroupFile6 dispatcherName nameOpt dissolveDescriptor songOpt groupFilePath world =
         let oldWorld = world
         try
@@ -304,68 +271,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromGroupFile' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
-        let oldWorld = world
-        try
-            let dispatcherName =
-                match ScriptingSystem.tryExport typeof<String> dispatcherName world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
-            let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
-                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashDescriptor =
-                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
-                | Some value -> value :?> SplashDescriptor
-                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
-            let (value, world) = result
-            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen6' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let createSplashScreen nameOpt splashDescriptor destination world =
-        let oldWorld = world
-        try
-            let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
-                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashDescriptor =
-                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
-                | Some value -> value :?> SplashDescriptor
-                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen nameOpt splashDescriptor destination world
-            let (value, world) = result
-            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let reloadExistingAssets world =
@@ -1169,49 +1074,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyDown' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let expandContent setScreenSplash content origin owner parent world =
-        let oldWorld = world
-        try
-            let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
-                | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
-            let content =
-                match ScriptingSystem.tryExport typeof<SimulantContent> content world with
-                | Some value -> value :?> SimulantContent
-                | None -> failwith "Invalid argument type for 'content'; expecting a value convertable to SimulantContent."
-            let origin =
-                match ScriptingSystem.tryExport typeof<ContentOrigin> origin world with
-                | Some value -> value :?> ContentOrigin
-                | None -> failwith "Invalid argument type for 'origin'; expecting a value convertable to ContentOrigin."
-            let struct (owner, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal owner world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let struct (parent, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal parent world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.expandContent setScreenSplash content origin owner parent world
-            let (value, world) = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Simulant>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'expandContent' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let destroyImmediate simulant world =
@@ -2650,17 +2512,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetScreenSplashBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|splashDataOpt; destination; screen|] -> setScreenSplash splashDataOpt destination screen world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalCreateDissolveScreenFromGroupFile6Binding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -2678,28 +2529,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|nameOpt; dissolveDescriptor; songOpt; groupFilePath|] -> createDissolveScreenFromGroupFile nameOpt dissolveDescriptor songOpt groupFilePath world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalCreateSplashScreen6Binding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|dispatcherName; nameOpt; splashDescriptor; destination|] -> createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalCreateSplashScreenBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|nameOpt; splashDescriptor; destination|] -> createSplashScreen nameOpt splashDescriptor destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3239,17 +3068,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|key|] -> isKeyboardKeyDown key world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalExpandContentBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|setScreenSplash; content; origin; owner; parent|] -> expandContent setScreenSplash content origin owner parent world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4120,11 +3938,8 @@ module WorldBindings =
              ("selectScreen", { Fn = evalSelectScreenBinding; Pars = [|"transitionState"; "screen"|]; DocOpt = None })
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
-             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDataOpt"; "destination"; "screen"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile6", { Fn = evalCreateDissolveScreenFromGroupFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile", { Fn = evalCreateDissolveScreenFromGroupFileBinding; Pars = [|"nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
-             ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
-             ("createSplashScreen", { Fn = evalCreateSplashScreenBinding; Pars = [|"nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
              ("reloadExistingAssets", { Fn = evalReloadExistingAssetsBinding; Pars = [||]; DocOpt = None })
              ("tryReloadAssets", { Fn = evalTryReloadAssetsBinding; Pars = [||]; DocOpt = None })
              ("getCurrentSongOpt", { Fn = evalGetCurrentSongOptBinding; Pars = [||]; DocOpt = None })
@@ -4174,7 +3989,6 @@ module WorldBindings =
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
-             ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "content"; "origin"; "owner"; "parent"|]; DocOpt = None })
              ("destroyImmediate", { Fn = evalDestroyImmediateBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("destroy", { Fn = evalDestroyBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
