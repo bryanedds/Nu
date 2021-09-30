@@ -2,6 +2,8 @@
 open Prime
 open Nu
 open Nu.Declarative
+
+[<RequireQualifiedAccess>]
 module Simulants =
 
     // here we create an entity reference for Elmario. This is useful for simulants that you want
