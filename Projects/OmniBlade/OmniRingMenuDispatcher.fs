@@ -23,9 +23,9 @@ module RingMenuDispatcher =
         member this.GetRadius = this.Get Property? Radius
         member this.SetRadius = this.Set Property? Radius
         member this.Radius = lens<single> Property? Radius this.GetRadius this.SetRadius this
-        member this.GetRingMenu = this.GetModel<RingMenu>
-        member this.SetRingMenu = this.SetModel<RingMenu>
-        member this.RingMenu = this.Model<RingMenu> ()
+        member this.GetRingMenu = this.GetModelGeneric<RingMenu>
+        member this.SetRingMenu = this.SetModelGeneric<RingMenu>
+        member this.RingMenu = this.ModelGeneric<RingMenu> ()
         member this.ItemSelectEvent = Events.ItemSelect --> this
         member this.CancelEvent = Events.Cancel --> this
 

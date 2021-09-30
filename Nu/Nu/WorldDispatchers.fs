@@ -39,7 +39,7 @@ module FacetModule =
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
                 match signalObj with
                 | :? Signal<'message, 'command> as signal ->
-                    Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
+                    Signal.processSignal facet.Message facet.Command (entity.FacetModelGeneric<'model> facet.ModelName) signal entity world
                 | _ -> Log.info "Incorrect signal type returned from event binding."; world
             | _ -> Log.info "Failed to send signal to entity facet."; world
 
@@ -47,22 +47,22 @@ module FacetModule =
             let facets = entity.GetFacets world
             match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
-                Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
+                Signal.processSignal facet.Message facet.Command (entity.FacetModelGeneric<'model> facet.ModelName) signal entity world
             | _ -> Log.info "Failed to send signal to entity."; world
 
     and Entity with
     
-        member this.GetFacetModel<'model> modelName world =
+        member this.GetFacetModelGeneric<'model> modelName world =
             this.Get<'model> modelName world
 
-        member this.SetFacetModel<'model> modelName (value : 'model) world =
+        member this.SetFacetModelGeneric<'model> modelName (value : 'model) world =
             this.Set<'model> modelName value world
 
-        member this.UpdateFacetModel<'model> modelName updater world =
-            this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
+        member this.UpdateFacetModelGeneric<'model> modelName updater world =
+            this.SetFacetModelGeneric<'model> modelName (updater this.GetFacetModelGeneric<'model> modelName world) world
 
-        member this.FacetModel<'model> modelName =
-            lens<'model> modelName (this.GetFacetModel<'model> modelName) (this.SetFacetModel<'model> modelName) this
+        member this.FacetModelGeneric<'model> modelName =
+            lens<'model> modelName (this.GetFacetModelGeneric<'model> modelName) (this.SetFacetModelGeneric<'model> modelName) this
 
         member this.TrySignalEntityFacet<'model, 'message, 'command> signal facetName world =
             World.trySignalEntityFacet signal facetName this world
@@ -81,10 +81,10 @@ module FacetModule =
             modelNameOpt
             
         member this.GetModel (entity : Entity) world : 'model =
-            entity.GetFacetModel<'model> this.ModelName world
+            entity.GetFacetModelGeneric<'model> this.ModelName world
 
         member this.SetModel (model : 'model) (entity : Entity) world =
-            entity.SetFacetModel<'model> this.ModelName model world
+            entity.SetFacetModelGeneric<'model> this.ModelName model world
 
         member this.Model (entity : Entity) =
             lens this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
@@ -118,7 +118,10 @@ module FacetModule =
                         (Cascade, world))
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 entity left right world)
+                    WorldModule.bind5 entity left right world
+                | BindTwoWay (left, right) ->
+                    let world = WorldModule.bind5 entity left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1492,7 +1495,7 @@ module EntityDispatcherModule =
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) signal entity world
+                Signal.processSignal dispatcher.Message dispatcher.Command (entity.ModelGeneric<'model> ()) signal entity world
             | _ ->
                 Log.info "Failed to send signal to entity."
                 world
@@ -1500,7 +1503,7 @@ module EntityDispatcherModule =
     and Entity with
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
@@ -1509,10 +1512,10 @@ module EntityDispatcherModule =
         inherit EntityDispatcher ()
 
         member this.GetModel (entity : Entity) world : 'model =
-            entity.GetModel<'model> world
+            entity.GetModelGeneric<'model> world
 
         member this.SetModel (model : 'model) (entity : Entity) world =
-            entity.SetModel<'model> model world
+            entity.SetModelGeneric<'model> model world
 
         member this.Model (entity : Entity) =
             lens Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
@@ -1522,7 +1525,7 @@ module EntityDispatcherModule =
                 let property = World.getEntityModelProperty entity world
                 if property.DesignerType = typeof<unit> then
                     let model = this.Prepare (initial, world)
-                    entity.SetModel<'model> model world
+                    entity.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
@@ -1544,7 +1547,10 @@ module EntityDispatcherModule =
                         (Cascade, world))
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 entity left right world)
+                    WorldModule.bind5 entity left right world
+                | BindTwoWay (left, right) ->
+                    let world = WorldModule.bind5 entity left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
@@ -1905,7 +1911,7 @@ module TextDispatcherModule =
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.Register (entity, world) =
-            mirror (entity.Model<string> ()) entity.Text world
+            mirror (entity.ModelGeneric<string> ()) entity.Text world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2018,7 +2024,7 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = mirror (entity.Model<bool> ()) entity.Toggled world
+            let world = mirror (entity.ModelGeneric<bool> ()) entity.Toggled world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2217,7 +2223,7 @@ module FillBarDispatcherModule =
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
-            mirror (entity.Model<single> ()) entity.Fill world
+            mirror (entity.ModelGeneric<single> ()) entity.Fill world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2448,7 +2454,7 @@ module GroupDispatcherModule =
         static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
             match group.GetDispatcher world with
             | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (group.Model<'model> ()) signal group world
+                Signal.processSignal dispatcher.Message dispatcher.Command (group.ModelGeneric<'model> ()) signal group world
             | _ ->
                 Log.info "Failed to send signal to group."
                 world
@@ -2456,7 +2462,7 @@ module GroupDispatcherModule =
     and Group with
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
@@ -2465,10 +2471,10 @@ module GroupDispatcherModule =
         inherit GroupDispatcher ()
 
         member this.GetModel (group : Group) world : 'model =
-            group.GetModel<'model> world
+            group.GetModelGeneric<'model> world
 
         member this.SetModel (model : 'model) (group : Group) world =
-            group.SetModel<'model> model world
+            group.SetModelGeneric<'model> model world
 
         member this.Model (group : Group) =
             lens Property? Model (this.GetModel group) (flip this.SetModel group) group
@@ -2478,7 +2484,7 @@ module GroupDispatcherModule =
                 let property = World.getGroupModelProperty group world
                 if property.DesignerType = typeof<unit> then
                     let model = this.Prepare (initial, world)
-                    group.SetModel<'model> model world
+                    group.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model group, group)
             let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
@@ -2500,7 +2506,10 @@ module GroupDispatcherModule =
                         (Cascade, world))
                         eventAddress (group :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 group left right world)
+                    WorldModule.bind5 group left right world
+                | BindTwoWay (left, right) ->
+                    let world = WorldModule.bind5 group left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.Actualize (group, world) =
@@ -2542,7 +2551,7 @@ module ScreenDispatcherModule =
         static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) signal screen world
+                Signal.processSignal dispatcher.Message dispatcher.Command (screen.ModelGeneric<'model> ()) signal screen world
             | _ ->
                 Log.info "Failed to send signal to screen."
                 world
@@ -2550,7 +2559,7 @@ module ScreenDispatcherModule =
     and Screen with
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
@@ -2559,10 +2568,10 @@ module ScreenDispatcherModule =
         inherit ScreenDispatcher ()
 
         member this.GetModel (screen : Screen) world : 'model =
-            screen.GetModel<'model> world
+            screen.GetModelGeneric<'model> world
 
         member this.SetModel (model : 'model) (screen : Screen) world =
-            screen.SetModel<'model> model world
+            screen.SetModelGeneric<'model> model world
 
         member this.Model (screen : Screen) =
             lens Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
@@ -2572,7 +2581,7 @@ module ScreenDispatcherModule =
                 let property = World.getScreenModelProperty screen world
                 if property.DesignerType = typeof<unit> then
                     let model = this.Prepare (initial, world)
-                    screen.SetModel<'model> model world
+                    screen.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model screen, screen)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
@@ -2594,7 +2603,10 @@ module ScreenDispatcherModule =
                         (Cascade, world))
                         eventAddress (screen :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 screen left right world)
+                    WorldModule.bind5 screen left right world
+                | BindTwoWay (left, right) ->
+                    let world = WorldModule.bind5 screen left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.Actualize (screen, world) =

@@ -39,9 +39,9 @@ module OmniDispatcher =
         | Exit
 
     type Game with
-        member this.GetOmni = this.GetModel<Omni>
-        member this.SetOmni = this.SetModel<Omni>
-        member this.Omni = this.Model<Omni> ()
+        member this.GetOmni = this.GetModelGeneric<Omni>
+        member this.SetOmni = this.SetModelGeneric<Omni>
+        member this.Omni = this.ModelGeneric<Omni> ()
 
     type OmniDispatcher () =
         inherit GameDispatcher<Omni, OmniMessage, OmniCommand> (Gui Splashing)

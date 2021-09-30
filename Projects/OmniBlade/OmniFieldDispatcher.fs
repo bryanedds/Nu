@@ -54,9 +54,9 @@ module FieldDispatcher =
         | Nop
 
     type Screen with
-        member this.GetField = this.GetModel<Field>
-        member this.SetField = this.SetModel<Field>
-        member this.Field = this.Model<Field> ()
+        member this.GetField = this.GetModelGeneric<Field>
+        member this.SetField = this.SetModelGeneric<Field>
+        member this.Field = this.ModelGeneric<Field> ()
 
     [<RequireQualifiedAccess>]
     module Cue =

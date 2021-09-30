@@ -23,6 +23,15 @@ type Message =
 type Command =
     | Exit
 
+// this extends the Game API to expose the above model. This is an unfortunate bit of boilerplate
+// needed when defining a new dispatcher.
+[<AutoOpen>]
+module GameExtension =
+    type Game with
+        member this.GetModel = this.GetModelGeneric<Model>
+        member this.SetModel = this.SetModelGeneric<Model>
+        member this.Model = this.ModelGeneric<Model> ()
+
 // this is the game dispatcher that is customized for our game. In here, we create screens as
 // content and bind them up with events and properties.
 type MyGameDispatcher () =
@@ -35,8 +44,8 @@ type MyGameDispatcher () =
          Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
          Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
-    // here we bind the desired screen based on the state of the game (or None if splashing), then we
-    // bind the game model and gameplay model in both directions (two-way binding).
+    // here we bind the game model and gameplay model in both directions (two-way binding), then we
+    // bind the desired screen based on the state of the game (or None if splashing), then .
     override this.Initializers (model, game) =
         [game.DesiredScreenOpt <== model --> fun model ->
             match model with
@@ -47,8 +56,8 @@ type MyGameDispatcher () =
                 match gameplay with
                 | Playing -> Some Simulants.Gameplay.Screen
                 | Quitting -> Some Simulants.Title.Screen
-         game.Model () <== Simulants.Gameplay.Screen.Model () --> function gameplay -> Gameplay gameplay
-         Simulants.Gameplay.Screen.Model () <== game.Model () --> function Gameplay gameplay -> gameplay | _ -> Quitting]
+         game.Model <== Simulants.Gameplay.Screen.Gameplay --> Gameplay
+         Simulants.Gameplay.Screen.Gameplay <== game.Model --> function Gameplay gameplay -> gameplay | _ -> Quitting]
 
     // here we handle the above messages
     override this.Message (_, message, _, _) =

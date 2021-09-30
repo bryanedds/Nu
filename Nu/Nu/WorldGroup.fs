@@ -16,9 +16,9 @@ module WorldGroupModule =
     
         member this.GetDispatcher world = World.getGroupDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetModel<'a> world = World.getGroupModel<'a> this world
-        member this.SetModel<'a> value world = World.setGroupModel<'a> value this world |> snd'
-        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetModelGeneric<'a> world = World.getGroupModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setGroupModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetEcs world = World.getScreenEcs this.Parent world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetVisible world = World.getGroupVisible this world
@@ -265,8 +265,11 @@ module WorldGroupModule =
                             World.readEntityFromFile filePath (Some entityName) group world |> snd)
                             world entityFilePaths
                     let world =
-                        List.fold (fun world (simulant, left : World Lens, right) ->
-                            WorldModule.bind5 simulant left right world)
+                        List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
+                            if twoWay then
+                                let world = WorldModule.bind5 simulant left right world
+                                WorldModule.bind5 simulant right left world
+                            else WorldModule.bind5 simulant left right world)
                             world binds
                     let world =
                         List.fold (fun world (handler, address, simulant) ->

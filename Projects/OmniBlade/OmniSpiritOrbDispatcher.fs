@@ -23,9 +23,9 @@ module SpiritOrbDispatcher =
         | PortalInhabitant of Portal
 
     type Entity with
-        member this.GetSpiritOrb = this.GetModel<SpiritOrb>
-        member this.SetSpiritOrb = this.SetModel<SpiritOrb>
-        member this.SpiritOrb = this.Model<SpiritOrb> ()
+        member this.GetSpiritOrb = this.GetModelGeneric<SpiritOrb>
+        member this.SetSpiritOrb = this.SetModelGeneric<SpiritOrb>
+        member this.SpiritOrb = this.ModelGeneric<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =
         inherit GuiDispatcher<SpiritOrb, unit, unit> ({ AvatarLowerCenter = v2Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
