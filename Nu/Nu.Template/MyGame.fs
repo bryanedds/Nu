@@ -3,17 +3,23 @@ open Prime
 open Nu
 open Nu.Declarative
 
+// this is our Elm-style model type. It determines which state the game is in. To learn about the
+// Elm-style, read this article here -
+// https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
 type MyGame =
     | Splash
     | Title
     | Credits
     | Gameplay of Gameplay
 
+// this is our Elm-style message type. It provides a signal to show the various screens.
 type MyGameMessage =
     | ShowTitle
     | ShowCredits
     | ShowGameplay
 
+// this is our Elm-style command type. Commands are used instead of messages when side-effecting
+// engine operations are involved.
 type MyGameCommand =
     | Exit
 
