@@ -16,9 +16,9 @@ module WorldScreenModule =
     
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetModel<'a> world = World.getScreenModel<'a> this world
-        member this.SetModel<'a> value world = World.setScreenModel<'a> value this world |> snd'
-        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetEcs world = World.getScreenEcs this world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetTransitionState world = World.getScreenTransitionState this world
@@ -328,8 +328,11 @@ module WorldScreenModule =
                         World.readEntityFromFile filePath (Some entityName) (screen / groupName) world |> snd)
                         world entityFilePaths
                 let world =
-                    List.fold (fun world (simulant, left : World Lens, right) ->
-                        WorldModule.bind5 simulant left right world)
+                    List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
+                        if twoWay then
+                            let world = WorldModule.bind5 simulant left right world
+                            WorldModule.bind5 simulant right left world
+                        else WorldModule.bind5 simulant left right world)
                         world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->

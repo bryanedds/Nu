@@ -1055,7 +1055,7 @@ module GameDispatcherModule =
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) signal game world
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
         /// Send a signal to a simulant.
@@ -1070,7 +1070,7 @@ module GameDispatcherModule =
     and Game with
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
@@ -1079,10 +1079,10 @@ module GameDispatcherModule =
         inherit GameDispatcher ()
 
         member this.GetModel (game : Game) world : 'model =
-            game.GetModel<'model> world
+            game.GetModelGeneric<'model> world
 
         member this.SetModel (model : 'model) (game : Game) world =
-            game.SetModel<'model> model world
+            game.SetModelGeneric<'model> model world
 
         member this.Model (game : Game) =
             lens Property? Model (this.GetModel game) (flip this.SetModel game) game
@@ -1092,7 +1092,7 @@ module GameDispatcherModule =
                 let property = World.getGameModelProperty world
                 if property.DesignerType = typeof<unit> then
                     let model = this.Prepare (initial, world)
-                    game.SetModel<'model> model world
+                    game.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
@@ -1115,7 +1115,10 @@ module GameDispatcherModule =
                         (Cascade, world))
                         eventAddress (game :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 game left right world)
+                    WorldModule.bind5 game left right world
+                | BindTwoWay (left, right) ->
+                    let world = WorldModule.bind5 game left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.Actualize (game, world) =

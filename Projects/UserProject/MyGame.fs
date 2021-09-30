@@ -47,8 +47,8 @@ type MyGameDispatcher () =
                 match gameplay with
                 | Playing -> Some Simulants.Gameplay.Screen
                 | Quitting -> Some Simulants.Title.Screen
-         game.Model () <== Simulants.Gameplay.Screen.Model () --> function gameplay -> Gameplay gameplay
-         Simulants.Gameplay.Screen.Model () <== game.Model () --> function Gameplay gameplay -> gameplay | _ -> Quitting]
+         game.ModelGeneric () <== Simulants.Gameplay.Screen.ModelGeneric () --> function gameplay -> Gameplay gameplay
+         Simulants.Gameplay.Screen.ModelGeneric () <== game.ModelGeneric () --> function Gameplay gameplay -> gameplay | _ -> Quitting]
 
     // here we handle the above messages
     override this.Message (_, message, _, _) =

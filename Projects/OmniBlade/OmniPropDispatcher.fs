@@ -13,9 +13,9 @@ open OmniBlade
 module PropDispatcher =
 
     type Entity with
-        member this.GetProp = this.GetModel<Prop>
-        member this.SetProp = this.SetModel<Prop>
-        member this.Prop = this.Model<Prop> ()
+        member this.GetProp = this.GetModelGeneric<Prop>
+        member this.SetProp = this.SetModelGeneric<Prop>
+        member this.Prop = this.ModelGeneric<Prop> ()
 
     type PropDispatcher () =
         inherit EntityDispatcher<Prop, unit, unit> (Prop.empty)

@@ -24,9 +24,9 @@ module AvatarDispatcher =
         | TryTravel of Vector2
 
     type Entity with
-        member this.GetAvatar = this.GetModel<Avatar>
-        member this.SetAvatar = this.SetModel<Avatar>
-        member this.Avatar = this.Model<Avatar> ()
+        member this.GetAvatar = this.GetModelGeneric<Avatar>
+        member this.SetAvatar = this.SetModelGeneric<Avatar>
+        member this.Avatar = this.ModelGeneric<Avatar> ()
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
