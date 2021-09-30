@@ -46,7 +46,7 @@ module MyGame =
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
         // here we bind the desired screen based on the state of the game (or None if splashing),
-        // then we bind the game model and gameplay model in both directions (two-way binding), then .
+        // then we bind the game model and gameplay model in both directions (two-way binding).
         override this.Initializers (model, game) =
             [game.DesiredScreenOpt <== model --> fun model ->
                 match model with
