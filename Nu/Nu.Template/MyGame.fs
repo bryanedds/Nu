@@ -68,5 +68,4 @@ type MyGameDispatcher () =
          Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup"
          Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup"
          Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None))
-            [Screen.Model () <== myGame --> function Gameplay gameplay -> gameplay | _ -> Quitting]
-            []]
+            [Screen.Model () <== myGame --> function Gameplay gameplay -> gameplay | _ -> Quitting] []]
