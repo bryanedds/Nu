@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open System.IO
 open System.Threading
@@ -645,6 +644,7 @@ module WorldModule2 =
             // fin
             world
 
+        // TODO: P1: factor out any common functions.
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
