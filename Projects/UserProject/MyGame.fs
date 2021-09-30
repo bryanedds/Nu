@@ -7,8 +7,7 @@ open Nu.Declarative
 module MyGame =
 
     // this is our Elm-style model type. It determines what state the game is in. To learn about the
-    // Elm-style in Nu, read this article here -
-    // https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
+    // Elm-style in Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
     type Model =
         | Splash
         | Title
