@@ -146,8 +146,7 @@ module WorldModule2 =
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
-        [<FunctionBinding>]
-        static member selectScreenOpt transitionState screenOpt world =
+        static member internal selectScreenOpt transitionState screenOpt world =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->

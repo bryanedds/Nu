@@ -223,8 +223,7 @@ module WorldModuleGame =
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        [<FunctionBinding>]
-        static member setSelectedScreenOpt value world =
+        static member internal setSelectedScreenOpt value world =
             World.setSelectedScreenOptPlus value world |> snd
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
