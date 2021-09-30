@@ -195,6 +195,11 @@ module WorldTypes =
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
 
+    /// The data required to execution screen splashing.
+    and [<NoEquality; NoComparison>] Splash =
+        { IdlingTime : int64
+          Destination : Screen }
+
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
@@ -461,7 +466,7 @@ module WorldTypes =
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
-          DesiredScreens : Screen list
+          DesiredScreenOpt : Screen option
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
@@ -485,7 +490,7 @@ module WorldTypes =
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
-              DesiredScreens = []
+              DesiredScreenOpt = None
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -532,6 +537,7 @@ module WorldTypes =
           TransitionUpdates : int64
           Incoming : Transition
           Outgoing : Transition
+          SplashOpt : Splash option
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
@@ -552,6 +558,7 @@ module WorldTypes =
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
+              SplashOpt = None
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               CreationTimeStamp = Core.getUniqueTimeStamp ()
@@ -1327,6 +1334,9 @@ type Unsubscription = WorldTypes.Unsubscription
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
+
+/// The data required to execution screen splashing.
+type Splash = WorldTypes.Splash
 
 /// Generalized interface tag for dispatchers.
 type Dispatcher = WorldTypes.Dispatcher
