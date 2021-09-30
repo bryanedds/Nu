@@ -38,7 +38,7 @@ type MyGameDispatcher () =
     // here we back-bind gameplay's model to game's model as well as forward bind the desired
     // screen based on the state of the game (or None if splashing).
     override this.Initializers (myGame, _) =
-        [Simulants.Game.Model<MyGame> () <== Simulants.Gameplay.Screen.Model<Gameplay> () --> Gameplay
+        [Simulants.Game.Model () <== Simulants.Gameplay.Screen.Model () --> Gameplay
          Simulants.Game.DesiredScreenOpt <== myGame --> fun myGame ->
             match myGame with
             | Splash -> None
@@ -68,5 +68,5 @@ type MyGameDispatcher () =
          Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup"
          Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup"
          Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None))
-            [Screen.Model<Gameplay> () <== myGame --> function Gameplay gameplay -> gameplay | _ -> Quitting]
+            [Screen.Model () <== myGame --> function Gameplay gameplay -> gameplay | _ -> Quitting]
             []]
