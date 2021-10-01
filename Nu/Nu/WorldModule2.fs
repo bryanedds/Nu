@@ -267,7 +267,17 @@ module WorldModule2 =
                             let world =
                                 match outgoing.SongOpt with
                                 | Some playSong ->
-                                    match World.getScreenTransitionDestinationOpt world with
+                                    let destinationOpt =
+                                        match selectedScreen.GetSplashOpt world with
+                                        | Some splash -> Some splash.Destination
+                                        | None ->
+                                            match World.getScreenTransitionDestinationOpt world with
+                                            | Some destination -> Some destination
+                                            | None ->
+                                                match Simulants.Game.GetDesiredScreenOpt world with
+                                                | Some destination -> Some destination
+                                                | None -> None
+                                    match destinationOpt with
                                     | Some destination ->
                                         match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
                                         | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
@@ -303,24 +313,22 @@ module WorldModule2 =
                                 | Dead -> world
                             match World.getLiveness world with
                             | Live ->
-                                match selectedScreen.GetSplashOpt world with
-                                | Some splash ->
-                                    if splash.Destination <> selectedScreen
-                                    then World.selectScreen IncomingState splash.Destination world
-                                    else world
-                                | None ->
-                                    match World.getScreenTransitionDestinationOpt world with
-                                    | Some destination ->
-                                        if destination <> selectedScreen
-                                        then World.selectScreen IncomingState destination world
-                                        else world
+                                let destinationOpt =
+                                    match selectedScreen.GetSplashOpt world with
+                                    | Some splash -> Some splash.Destination
                                     | None ->
-                                        match Simulants.Game.GetDesiredScreenOpt world with
-                                        | Some desiredScreen ->
-                                            if desiredScreen <> selectedScreen
-                                            then World.selectScreen IncomingState desiredScreen world
-                                            else world
-                                        | None -> World.setSelectedScreenOpt None world
+                                        match World.getScreenTransitionDestinationOpt world with
+                                        | Some destination -> Some destination
+                                        | None ->
+                                            match Simulants.Game.GetDesiredScreenOpt world with
+                                            | Some destination -> Some destination
+                                            | None -> None
+                                match destinationOpt with
+                                | Some destination ->
+                                    if destination <> selectedScreen
+                                    then World.selectScreen IncomingState destination world
+                                    else world
+                                | None -> world
                             | Dead -> world
                         else world
                     | Dead -> world
