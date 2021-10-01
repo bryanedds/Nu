@@ -66,7 +66,7 @@
   <ItemGroup>
     <Compile Include="BlazeAssets.fs" />
     <Compile Include="BlazeSimulants.fs" />
-    <Compile Include="BlazeDispatchers.fs" />
+    <Compile Include="BlazeGameplay.fs" />
     <Compile Include="BlazeDispatcher.fs" />
     <Compile Include="BlazePlugin.fs" />
     <Compile Include="Program.fs" />

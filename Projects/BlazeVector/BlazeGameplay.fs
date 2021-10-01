@@ -235,49 +235,27 @@ module PlayerModule =
             world
 
 [<AutoOpen>]
-module SceneModule =
-
-    type SceneCommand =
-        | AdjustCamera
-        | PlayerFall
-
-    type SceneDispatcher () =
-        inherit GroupDispatcher<unit, unit, SceneCommand> ()
-
-        override this.Channel (_, scene) =
-            [scene.UpdateEvent => cmd AdjustCamera
-             scene.UpdateEvent => cmd PlayerFall]
-
-        override this.Command (_, command, _, world) =
-            let world =
-                match command with
-                | AdjustCamera ->
-                    if World.getUpdateRate world <> 0L then
-                        let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
-                        let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
-                        let eyeCenter = World.getEyeCenter world
-                        let eyeSize = World.getEyeSize world
-                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
-                        Game.SetEyeCenter eyeCenter world
-                    else world
-                | PlayerFall ->
-                    if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world then
-                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                        if Simulants.Title.Screen.Exists world
-                        then World.transitionScreen Simulants.Title.Screen world
-                        else world
-                    else world
-            just world
-
-[<AutoOpen>]
 module GameplayModule =
 
+    type Gameplay =
+        | Playing
+        | Quitting
+
+    type GameplayMessage =
+        | Quit
+
     type GameplayCommand =
-        | StartPlay
-        | StopPlay
+        | CreateSections
+        | DestroySections
+        | Update
+
+    type Screen with
+        member this.GetGameplay = this.GetModelGeneric<Gameplay>
+        member this.SetGameplay = this.SetModelGeneric<Gameplay>
+        member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<unit, unit, GameplayCommand> ()
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quitting)
 
         static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
@@ -293,35 +271,75 @@ module GameplayModule =
             let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
 
-        static let createSectionGroups gameplay world =
-            let random = System.Random ()
-            let sectionFilePaths = List.toArray Assets.Gameplay.SectionFilePaths
-            List.fold
-                (fun world i ->
-                    let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
-                    let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
-                    let sectionName = SectionName + scstring i
-                    let sectionXShift = 2048.0f * single i
-                    createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
-                world
-                [0 .. SectionCount - 1]
-
-        static let createScene gameplay world =
-            World.readGroupFromFile Assets.Gameplay.SceneGroupFilePath (Some Simulants.Gameplay.Scene.Group.Name) gameplay world |> snd
-
         override this.Channel (_, gameplay) =
-            [gameplay.SelectEvent => cmd StartPlay
-             gameplay.DeselectEvent => cmd StopPlay]
+            [gameplay.SelectEvent => cmd CreateSections
+             gameplay.DeselectEvent => cmd DestroySections
+             gameplay.UpdateEvent => cmd Update
+             Simulants.Gameplay.Gui.Quit.ClickEvent => msg Quit]
+
+        override this.Message (_, message, _, _) =
+            match message with
+            | Quit -> just Quitting
 
         override this.Command (_, command, gameplay, world) =
-            let world =
-                match command with
-                | StartPlay ->
-                    let world = createScene gameplay world
-                    createSectionGroups gameplay world
-                | StopPlay ->
-                    let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                    let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
-                    let groups = List.map (fun groupName -> gameplay / groupName) groupNames
-                    World.destroyGroups groups world
-            just world
+
+            match command with
+            | CreateSections ->
+                let random = System.Random ()
+                let sectionFilePaths = List.toArray Assets.Gameplay.SectionFilePaths
+                let world =
+                    List.fold
+                        (fun world i ->
+                            let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
+                            let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
+                            let sectionName = SectionName + scstring i
+                            let sectionXShift = 2048.0f * single i
+                            createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
+                        world
+                        [0 .. SectionCount - 1]
+                just world
+
+            | DestroySections ->
+                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
+                let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
+                let groups = List.map (fun groupName -> gameplay / groupName) groupNames
+                let world = World.destroyGroups groups world
+                just world
+
+            | Update ->
+
+                // update eye
+                let world =
+                    if World.getUpdateRate world <> 0L then
+                        let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
+                        let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
+                        let eyeCenter = World.getEyeCenter world
+                        let eyeSize = World.getEyeSize world
+                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
+                        Game.SetEyeCenter eyeCenter world
+                    else world
+
+                // update player fall
+                if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world then
+                    let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                    if Simulants.Title.Screen.Exists world
+                    then withMsg Quit world
+                    else just world
+                else just world
+
+        override this.Content (_, screen) =
+
+            [// the gui group
+             Content.group Simulants.Gameplay.Gui.Group.Name []
+                 [Content.button Simulants.Gameplay.Gui.Quit.Name
+                     [Entity.Text == "Quit"
+                      Entity.Position == v2 260.0f -260.0f
+                      Entity.Elevation == 10.0f
+                      Entity.ClickEvent ==> msg Quit]]
+
+             // the scene group
+             Content.groupIfScreenSelected screen $ fun _ _ ->
+                Content.group Simulants.Gameplay.Scene.Group.Name []
+                    [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
+                        [Entity.Position == v2 -300.0f -175.6805f
+                         Entity.Elevation == 1.0f]]]
