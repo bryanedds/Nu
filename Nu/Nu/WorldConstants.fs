@@ -8,7 +8,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Dissolve =
 
-    /// The default 'dissolving' transition behavior of game's screens.
+    /// The default 'dissolving' transition behavior of screens.
     let Default =
         { IncomingTime = 20L
           OutgoingTime = 40L
@@ -17,7 +17,7 @@ module Dissolve =
 [<RequireQualifiedAccess>]
 module Splash =
 
-    /// The default 'splashing' behavior of game's splash screen.
+    /// The default 'splashing' behavior of splash screens.
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime = 60L
