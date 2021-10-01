@@ -144,7 +144,7 @@ module PlayerModule =
 
         static let createBullet (player : Entity) (playerTransform : Transform) world =
             let (bullet, world) = World.createEntity<BulletDispatcher> None NoOverlay player.Parent world // OPTIMIZATION: NoOverlay to avoid reflection.
-            let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
+            let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.95f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetElevation playerTransform.Elevation world
             (bullet, world)
