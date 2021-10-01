@@ -173,20 +173,9 @@ module WorldModule2 =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
-                    not (World.isSelectedScreenTransitioning world) &&
-                    World.getScreenExists selectedScreen world then
-                    let subscriptionId = Gen.id
-                    let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match World.getScreenTransitionDestinationOpt world with
-                        | Some destination ->
-                            let world = World.unsubscribe subscriptionId world
-                            let world = World.setScreenTransitionDestinationOpt None world |> snd'
-                            let world = World.selectScreen IncomingState destination world
-                            (Cascade, world)
-                        | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
+                    not (World.isSelectedScreenTransitioning world) then
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None ->
@@ -198,28 +187,6 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member transitionScreen destination world =
             World.tryTransitionScreen destination world |> snd
-            
-        // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
-            (handling, World.selectScreenOpt IncomingState (Some destination) world)
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
-
-        static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
-            handling destination (_ : Event<'a, 's>) world =
-            match World.tryTransitionScreen destination world with
-            | (true, world) -> (handling, world)
-            | (false, world) ->
-                Log.trace ("Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'.")
-                (handling, world)
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen.
-        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
@@ -765,12 +732,18 @@ module WorldModule2 =
                                     then World.selectScreen IncomingState splash.Destination world
                                     else world
                                 | None ->
-                                    match Simulants.Game.GetDesiredScreenOpt world with
-                                    | Some desiredScreen ->
-                                        if desiredScreen <> selectedScreen
-                                        then World.selectScreen IncomingState desiredScreen world
+                                    match World.getScreenTransitionDestinationOpt world with
+                                    | Some destination ->
+                                        if destination <> selectedScreen
+                                        then World.selectScreen IncomingState destination world
                                         else world
-                                    | None -> World.setSelectedScreenOpt None world
+                                    | None ->
+                                        match Simulants.Game.GetDesiredScreenOpt world with
+                                        | Some desiredScreen ->
+                                            if desiredScreen <> selectedScreen
+                                            then World.selectScreen IncomingState desiredScreen world
+                                            else world
+                                        | None -> World.setSelectedScreenOpt None world
                             | Dead -> world
                         else world
                     | Dead -> world

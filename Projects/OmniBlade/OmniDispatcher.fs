@@ -27,14 +27,13 @@ module OmniDispatcher =
         | Change of Omni
         | ChangeField of Field
         | ChangeBattle of Battle
-        | Update
+        | UpdateMessage
         | ToIntro of SaveSlot
         | FromIntro
         | TryLoad of SaveSlot
 
     type [<NoEquality; NoComparison>] OmniCommand =
-        | Picks
-        | TryFullScreen of KeyboardKeyData
+        | UpdateCommand
         | Show of Screen
         | Exit
 
@@ -57,8 +56,8 @@ module OmniDispatcher =
         override this.Channel (_, _) =
             [Simulants.Field.Screen.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Screen.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
-             Simulants.Game.UpdateEvent => msg Update
-             Simulants.Game.UpdateEvent => cmd Picks
+             Simulants.Game.UpdateEvent => msg UpdateMessage
+             Simulants.Game.UpdateEvent => cmd UpdateCommand
              Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg (Change (Gui Pick))
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
              Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ToIntro Slot1)
@@ -70,8 +69,7 @@ module OmniDispatcher =
              Simulants.Pick.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Events.KeyboardKeyDown =|> fun keyEvent -> cmd (TryFullScreen keyEvent.Data)]
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
 
         override this.Message (omni, message, _, world) =
 
@@ -92,7 +90,7 @@ module OmniDispatcher =
                     | None -> just omni
                     | Some _ -> just (Field (Field.updateBattleOpt (constant (Some battle)) field))
 
-            | Update ->
+            | UpdateMessage ->
                 match omni with
                 | Gui gui ->
                     match gui with
@@ -140,24 +138,34 @@ module OmniDispatcher =
 
         override this.Command (_, command, _, world) =
             match command with
-            | Picks ->
-                if Simulants.Pick.Screen.IsSelected world then
-                    let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                    let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                    let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
-                    let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
-                    let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
-                    let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
-                    just world
-                else just world
-            | TryFullScreen keyData ->
-                if KeyboardState.isAltDown () && keyData.Down && keyData.KeyboardKey = KeyboardKey.Return then
-                    match World.tryGetWindowFullScreen world with
-                    | Some fullScreen -> just (World.trySetWindowFullScreen (not fullScreen) world)
-                    | None -> just world
-                else just world
+            | UpdateCommand ->
+
+                // update picks
+                let world =
+                    if Simulants.Pick.Screen.IsSelected world then
+                        let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                        let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                        let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                        let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                        let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                        let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                        world
+                    else world
+
+                // update full screen toggle
+                let world =
+                    if KeyboardState.isAltDown () && KeyboardState.isKeyDown KeyboardKey.Return then
+                        match World.tryGetWindowFullScreen world with
+                        | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
+                        | None -> world
+                    else world
+
+                // fin
+                just world
+
             | Show screen ->
                 World.transitionScreen screen world |> just
+
             | Exit ->
                 World.exit world |> just
 
