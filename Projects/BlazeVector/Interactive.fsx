@@ -24,7 +24,7 @@ System.IO.Directory.SetCurrentDirectory workingDirPath
 
 #load "BlazeAssets.fs"
 #load "BlazeSimulants.fs"
-#load "BlazeDispatchers.fs"
+#load "BlazeGameplay.fs"
 #load "BlazeDispatcher.fs"
 #load "BlazePlugin.fs"
 

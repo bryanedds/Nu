@@ -168,7 +168,7 @@ module WorldModule2 =
                 let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
                 world
 
-        static member private updateScreenTransitioning transitionType (selectedScreen : Screen) world =
+        static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             // NOTE: we do not immediately transition when transition time is zero because we only want screen
             // transitions to happen outside the update loop!
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
@@ -215,7 +215,7 @@ module WorldModule2 =
                     else world
                 match World.getLiveness world with
                 | Live ->
-                    match World.updateScreenTransitioning Incoming selectedScreen world with
+                    match World.updateScreenTransition3 Incoming selectedScreen world with
                     | (true, world) ->
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
@@ -273,7 +273,7 @@ module WorldModule2 =
                 else world
             match World.getLiveness world with
             | Live ->
-                match World.updateScreenTransitioning Outgoing selectedScreen world with
+                match World.updateScreenTransition3 Outgoing selectedScreen world with
                 | (true, world) ->
                     let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                     let world =
