@@ -45,7 +45,7 @@ module Simulants =
         module Gui =
 
             let Group = Screen / "Gui"
-            let Back = Group / "Back"
+            let Quit = Group / "Quit"
 
         [<RequireQualifiedAccess>]
         module Scene =

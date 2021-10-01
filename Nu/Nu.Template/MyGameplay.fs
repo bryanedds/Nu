@@ -88,7 +88,7 @@ module MyGameplay =
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent ==> msg Quit]]
 
-             // the player group
+             // the scene group
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.group Simulants.Gameplay.Scene.Group.Name []
                     [Content.character Simulants.Gameplay.Scene.Player.Name
