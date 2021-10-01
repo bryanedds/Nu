@@ -112,9 +112,9 @@
     <None Include="Assets\Default\TileMap.tmx" />
     <None Include="Assets\Default\TileMapEmpty.tmx" />
     <None Include="Assets\Gameplay\Jump.wav" />
-    <None Include="Assets\Gameplay\Level.nulyr" />
-    <None Include="Assets\Gui\Title.nulyr" />
-    <None Include="Assets\Gui\Credits.nulyr" />
+    <None Include="Assets\Gameplay\Level.nugroup" />
+    <None Include="Assets\Gui\Title.nugroup" />
+    <None Include="Assets\Gui\Credits.nugroup" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
