@@ -41,13 +41,13 @@ module OmniDispatcher =
         member this.Field =
             this.Model |>
             Lens.bimap (function Field field -> field | _ -> failwithumf ()) Field |>
-            Lens.withValidateOpt (Some (fun world -> match this.GetModel world with Field _ -> true | _ -> false))
+            Lens.augment (fun world -> match this.GetModel world with Field _ -> true | _ -> false)
         member this.Battle =
             this.Model |>
             Lens.bimapWorld
                 (fun model _ -> match model with Field field when Option.isSome field.BattleOpt -> Option.get field.BattleOpt | _ -> failwithumf ())
                 (fun battle world -> match this.GetModel world with Field field -> Field (Field.updateBattleOpt (constant (Some battle)) field) | _ -> failwithumf ()) |>
-            Lens.withValidateOpt (Some (fun world -> match this.GetModel world with Field field -> Option.isSome field.BattleOpt | _ -> false))
+            Lens.augment (fun world -> match this.GetModel world with Field field -> Option.isSome field.BattleOpt | _ -> false)
 
     type OmniDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
