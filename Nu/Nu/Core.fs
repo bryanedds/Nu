@@ -89,5 +89,11 @@ module CoreOperators =
 /// TODO: P1: get rid of this when Prime is updated.
 [<RequireQualifiedAccess>]
 module Lens =
+    let bimapWorld<'a, 'b, 'w> mapper unmapper (lens : Lens<'a, 'w>) : Lens<'b, 'w> =
+        { Name = lens.Name
+          ValidateOpt = lens.ValidateOpt
+          GetWithoutValidation = fun world -> mapper (lens.GetWithoutValidation world) world
+          SetOpt = match lens.SetOpt with Some set -> Some (fun value world -> set (unmapper value world) world) | None -> None
+          This = lens.This }
     let withValidateOpt validateOpt lens =
         { lens with ValidateOpt = validateOpt }
