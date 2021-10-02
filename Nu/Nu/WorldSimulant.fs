@@ -291,13 +291,13 @@ module WorldSimulantOperators =
     let link<'a> (left : Lens<'a, World>) right world = World.link left right world
 
     /// Bind the left property to the right property.
-    let inline (<=<) left right = bind left right
+    let inline (<-<) left right = bind left right
 
     /// Bind the right property to the left property.
-    let inline (>=>) left right = dnib left right
+    let inline (>->) left right = dnib left right
 
-    /// Bind the left property to the right and the right property to the left.
-    let inline (<=>) left right = link left right
+    /// Link the left property with the right property (two-way bind).
+    let inline (<->) left right = link left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
