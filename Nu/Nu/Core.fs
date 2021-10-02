@@ -95,7 +95,7 @@ module Lens =
           GetWithoutValidation = fun world -> mapper (lens.GetWithoutValidation world) world
           SetOpt = match lens.SetOpt with Some set -> Some (fun value world -> set (unmapper value world) world) | None -> None
           This = lens.This }
-    let augment validate lens =
+    let refine validate lens =
         { lens with
             ValidateOpt =
                 match lens.ValidateOpt with
