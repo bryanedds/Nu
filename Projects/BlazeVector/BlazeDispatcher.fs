@@ -31,6 +31,10 @@ module BlazeModule =
         member this.GetModel = this.GetModelGeneric<Model>
         member this.SetModel = this.SetModelGeneric<Model>
         member this.Model = this.ModelGeneric<Model> ()
+        member this.Gameplay =
+            this.Model |>
+            Lens.bimap (function Gameplay gameplay -> gameplay | _ -> failwithumf ()) Gameplay |>
+            Lens.withValidateOpt (Some (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false))
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
@@ -44,10 +48,11 @@ module BlazeModule =
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
-        // here we bind the desired screen based on the state of the game (or None if splashing),
-        // then we bind the game model and gameplay model in both directions (two-way binding).
+        // here we link the game and gameplay models (two-way bind), then we bind the desired
+        // screen based on the state of the game (or None if splashing),
         override this.Initializers (model, game) =
-            [game.DesiredScreenOpt <== model --> fun model ->
+            [game.Gameplay <=> Simulants.Gameplay.Screen.Gameplay
+             game.DesiredScreenOpt <== model --> fun model ->
                 match model with
                 | Splash -> None
                 | Title -> Some Simulants.Title.Screen
@@ -55,9 +60,7 @@ module BlazeModule =
                 | Gameplay gameplay ->
                     match gameplay with
                     | Playing -> Some Simulants.Gameplay.Screen
-                    | Quitting -> Some Simulants.Title.Screen
-             game.Model <== Simulants.Gameplay.Screen.Gameplay --> Gameplay
-             Simulants.Gameplay.Screen.Gameplay <== game.Model --> function Gameplay gameplay -> gameplay | _ -> Quitting]
+                    | Quitting -> Some Simulants.Title.Screen]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
