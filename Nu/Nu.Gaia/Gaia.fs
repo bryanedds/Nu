@@ -213,10 +213,9 @@ module Gaia =
     let private refreshGroupTabs (form : GaiaForm) world =
 
         // add groups imperatively to preserve existing group tabs
-        // NOTE: adding groups in reverse works better when opening anew
         let groups = World.getGroups Globals.Screen world
         let groupTabPages = form.groupTabControl.TabPages
-        for group in Seq.rev groups do
+        for group in groups do
             let groupName = group.Name
             if not (groupTabPages.ContainsKey groupName) then
                 groupTabPages.Add (groupName, groupName)

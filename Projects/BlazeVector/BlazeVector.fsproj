@@ -67,7 +67,7 @@
     <Compile Include="BlazeAssets.fs" />
     <Compile Include="BlazeSimulants.fs" />
     <Compile Include="BlazeGameplay.fs" />
-    <Compile Include="BlazeDispatcher.fs" />
+    <Compile Include="BlazeVector.fs" />
     <Compile Include="BlazePlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
