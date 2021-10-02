@@ -34,7 +34,7 @@ module BlazeVector =
         member this.Gameplay =
             this.Model |>
             Lens.bimap (function Gameplay gameplay -> gameplay | _ -> failwithumf ()) Gameplay |>
-            Lens.augment (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false)
+            Lens.refine (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false)
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
