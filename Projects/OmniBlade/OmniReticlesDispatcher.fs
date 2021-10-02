@@ -19,8 +19,8 @@ module ReticlesDispatcher =
         | TargetSelect of CharacterIndex
 
     type Entity with
-        member this.GetReticles = this.GetModelGeneric<Reticles>
-        member this.SetReticles = this.SetModelGeneric<Reticles>
+        member this.GetReticles world = this.GetModelGeneric<Reticles> world
+        member this.SetReticles value world = this.SetModelGeneric<Reticles> value world
         member this.Reticles = this.ModelGeneric<Reticles> ()
         member this.TargetSelectEvent = Events.TargetSelect --> this
 

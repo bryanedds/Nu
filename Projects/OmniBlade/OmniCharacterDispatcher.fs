@@ -14,8 +14,8 @@ open OmniBlade
 module CharacterDispatcher =
 
     type Entity with
-        member this.GetCharacter = this.GetModelGeneric<Character>
-        member this.SetCharacter = this.SetModelGeneric<Character>
+        member this.GetCharacter world = this.GetModelGeneric<Character> world
+        member this.SetCharacter value world = this.SetModelGeneric<Character> value world
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =

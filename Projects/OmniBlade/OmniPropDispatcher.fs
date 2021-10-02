@@ -13,8 +13,8 @@ open OmniBlade
 module PropDispatcher =
 
     type Entity with
-        member this.GetProp = this.GetModelGeneric<Prop>
-        member this.SetProp = this.SetModelGeneric<Prop>
+        member this.GetProp world = this.GetModelGeneric<Prop> world
+        member this.SetProp value world = this.SetModelGeneric<Prop> value world
         member this.Prop = this.ModelGeneric<Prop> ()
 
     type PropDispatcher () =

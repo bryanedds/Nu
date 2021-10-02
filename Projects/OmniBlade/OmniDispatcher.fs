@@ -35,8 +35,8 @@ module OmniDispatcher =
         | Exit
 
     type Game with
-        member this.GetModel = this.GetModelGeneric<Model>
-        member this.SetModel = this.SetModelGeneric<Model>
+        member this.GetModel world = this.GetModelGeneric<Model> world
+        member this.SetModel value world = this.SetModelGeneric<Model> value world
         member this.Model = this.ModelGeneric<Model> ()
         member this.Field =
             this.Model |>

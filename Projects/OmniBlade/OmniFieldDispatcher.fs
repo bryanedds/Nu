@@ -54,8 +54,8 @@ module FieldDispatcher =
         | Nop
 
     type Screen with
-        member this.GetField = this.GetModelGeneric<Field>
-        member this.SetField = this.SetModelGeneric<Field>
+        member this.GetField world = this.GetModelGeneric<Field> world
+        member this.SetField value world = this.SetModelGeneric<Field> value world
         member this.Field = this.ModelGeneric<Field> ()
 
     [<RequireQualifiedAccess>]
