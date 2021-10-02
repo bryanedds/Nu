@@ -9,13 +9,17 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] SaveSlot =
+type SaveSlot =
     | Slot1
     | Slot2
     | Slot3
 
 type [<ReferenceEquality; NoComparison>] Options =
     { BattleSpeed : BattleSpeed }
+
+type FieldState =
+    | Playing
+    | Quitting
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -29,6 +33,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
+              FieldState_ : FieldState
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
@@ -51,6 +56,7 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
+        member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.Team = this.Team_
@@ -138,6 +144,9 @@ module Field =
         let spiritActivity = 0.0f
         let props = makeProps fieldType field.OmniSeedState_ field.Advents_ world
         { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Props_ = props }
+
+    let updateFieldState updater field =
+        { field with FieldState_ = updater field.FieldState_ }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -317,6 +326,7 @@ module Field =
             | (true, fieldData) -> fieldData.Definitions
             | (false, _) -> Map.empty
         { FieldType_ = fieldType
+          FieldState_ = Playing
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
@@ -339,6 +349,7 @@ module Field =
 
     let empty =
         { FieldType_ = EmptyField
+          FieldState_ = Quitting
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.initial

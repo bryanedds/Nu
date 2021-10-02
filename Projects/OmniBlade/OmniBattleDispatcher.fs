@@ -466,10 +466,12 @@ module BattleDispatcher =
                 | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
                 | Some _ -> just battle
 
-        and private updateCease time startTime battle =
+        and private updateCease time startTime outcome consequents battle =
             let localTime = time - startTime
-            if localTime = 0L
-            then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
+            if localTime = 0L then
+                withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
+            elif localTime = 60L then
+                just (Battle.updateBattleState (constant (BattleQuitting (outcome, consequents))) battle)
             else just battle
 
         and update time (battle : Battle) =
@@ -477,7 +479,8 @@ module BattleDispatcher =
             | BattleReady startTime -> updateReady time startTime battle
             | BattleRunning -> updateRunning time battle
             | BattleResults (outcome, startTime) -> updateResults time startTime outcome battle
-            | BattleCease (_, _, startTime) -> updateCease time startTime battle
+            | BattleCease (outcome, consequents, startTime) -> updateCease time startTime outcome consequents battle
+            | BattleQuitting (_, _) -> just battle
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)

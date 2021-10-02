@@ -19,6 +19,7 @@ type BattleState =
     | BattleRunning
     | BattleResults of bool * int64
     | BattleCease of bool * Advent Set * int64
+    | BattleQuitting of bool * Advent Set
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
     { Action : ActionType
@@ -525,7 +526,7 @@ module Battle =
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
-            { BattleState_ = BattleReady 0L
+            { BattleState_ = BattleQuitting (false, Set.empty)
               Characters_ = Map.empty
               Inventory_ = Inventory.empty
               PrizePool_ = PrizePool.empty
