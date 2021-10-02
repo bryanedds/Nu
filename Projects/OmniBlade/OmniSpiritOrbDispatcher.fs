@@ -23,8 +23,8 @@ module SpiritOrbDispatcher =
         | PortalInhabitant of Portal
 
     type Entity with
-        member this.GetSpiritOrb = this.GetModelGeneric<SpiritOrb>
-        member this.SetSpiritOrb = this.SetModelGeneric<SpiritOrb>
+        member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world
+        member this.SetSpiritOrb value world = this.SetModelGeneric<SpiritOrb> value world
         member this.SpiritOrb = this.ModelGeneric<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =

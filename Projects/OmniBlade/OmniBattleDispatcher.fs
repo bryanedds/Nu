@@ -85,8 +85,8 @@ module BattleDispatcher =
         | FadeOutSong of int
 
     type Screen with
-        member this.GetBattle = this.GetModelGeneric<Battle>
-        member this.SetBattle = this.SetModelGeneric<Battle>
+        member this.GetBattle world = this.GetModelGeneric<Battle> world
+        member this.SetBattle value world = this.SetModelGeneric<Battle> value world
         member this.Battle = this.ModelGeneric<Battle> ()
 
     [<RequireQualifiedAccess>]

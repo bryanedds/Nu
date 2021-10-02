@@ -24,8 +24,8 @@ module AvatarDispatcher =
         | TryTravel of Vector2
 
     type Entity with
-        member this.GetAvatar = this.GetModelGeneric<Avatar>
-        member this.SetAvatar = this.SetModelGeneric<Avatar>
+        member this.GetAvatar world = this.GetModelGeneric<Avatar> world
+        member this.SetAvatar value world = this.SetModelGeneric<Avatar> value world
         member this.Avatar = this.ModelGeneric<Avatar> ()
 
     type AvatarDispatcher () =

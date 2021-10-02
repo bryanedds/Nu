@@ -27,8 +27,8 @@ module MyGame =
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
-        member this.GetModel = this.GetModelGeneric<Model>
-        member this.SetModel = this.SetModelGeneric<Model>
+        member this.GetModel world = this.GetModelGeneric<Model> world
+        member this.SetModel value world = this.SetModelGeneric<Model> value world
         member this.Model = this.ModelGeneric<Model> ()
         member this.Gameplay =
             this.Model |>

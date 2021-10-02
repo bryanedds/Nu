@@ -25,8 +25,8 @@ module MyGameplay =
 
     // this extends the Screen API to expose the above model.
     type Screen with
-        member this.GetGameplay = this.GetModelGeneric<Gameplay>
-        member this.SetGameplay = this.SetModelGeneric<Gameplay>
+        member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
+        member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
