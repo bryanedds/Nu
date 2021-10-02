@@ -25,10 +25,16 @@ module MyGame =
     type Command =
         | Exit
 
-    // this extends the Game API to expose the above model as well as a model bimapped to Gameplay,
+    // this extends the Game API to expose the above model as well as a model bimapped to Gameplay
+    // with validation,
     type Game with
+        member this.GetModel = this.GetModelGeneric<Model>
+        member this.SetModel = this.SetModelGeneric<Model>
         member this.Model = this.ModelGeneric<Model> ()
-        member this.Gameplay = this.Model.Bimap (function Gameplay gameplay -> gameplay | _ -> Quitting) Gameplay
+        member this.Gameplay =
+            this.Model |>
+            Lens.bimap (function Gameplay gameplay -> gameplay | _ -> failwithumf ()) Gameplay |>
+            Lens.withValidateOpt (Some (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false))
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
