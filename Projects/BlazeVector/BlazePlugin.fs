@@ -8,7 +8,7 @@ type BlazePlugin () =
 
     // specify the game dispatcher to use at run-time
     override this.GetGameDispatcher () =
-        typeof<BlazeDispatcher>
+        typeof<BlazeVectorDispatcher>
 
     // specify the screen dispatcher to use in the editor
     override this.GetEditorScreenDispatcher () =

@@ -80,6 +80,17 @@ module Gen =
             then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
             else None
 
+        /// Get a random element from a sequence or a default if sequence is empty.
+        static member randomItemOrDefault default_ seq =
+            match Gen.randomItemOpt seq with
+            | Some item -> item
+            | None -> default_
+
+        /// Get a random element from a sequence, throwing if the sequence is empty.
+        static member randomItem seq =
+            if Seq.isEmpty seq then failwith "Cannot get a random item from an empty sequence."
+            Gen.randomItemOpt seq |> Option.get
+
         /// Get a random key if there are any or None.
         static member randomKeyOpt (dict : IDictionary<'k, 'v>) =
             Gen.randomItemOpt dict.Keys
@@ -87,12 +98,6 @@ module Gen =
         /// Get a random value if there are any or None.
         static member randomValueOpt (dict : IDictionary<'k, 'v>) =
             Gen.randomItemOpt dict.Values
-
-        /// Get a random element from a sequence or a default if sequence is empty.
-        static member randomItemOrDefault default_ seq =
-            match Gen.randomItemOpt seq with
-            | Some item -> item
-            | None -> default_
 
         /// The prefix of a generated name
         static member namePrefix =

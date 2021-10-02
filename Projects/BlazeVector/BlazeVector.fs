@@ -2,9 +2,10 @@
 open Prime
 open Nu
 open Nu.Declarative
+open BlazeVector
 
 [<AutoOpen>]
-module BlazeModule =
+module BlazeVector =
 
     // this is our Elm-style model type. It determines what state the game is in. To learn about the
     // Elm-style in Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
@@ -38,7 +39,7 @@ module BlazeModule =
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
-    type BlazeDispatcher () =
+    type BlazeVectorDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Splash)
 
         // here we channel from screen events to signals

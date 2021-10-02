@@ -7,7 +7,7 @@ open Nu.Declarative
 open BlazeVector
 
 [<AutoOpen>]
-module BulletModule =
+module Bullet =
 
     type Entity with
         member this.GetAge = this.Get Property? Age
@@ -59,7 +59,7 @@ module BulletModule =
             world
 
 [<AutoOpen>]
-module EnemyModule =
+module Enemy =
 
     type Entity with
         member this.GetHealth = this.Get Property? Health
@@ -124,7 +124,7 @@ module EnemyModule =
             world
 
 [<AutoOpen>]
-module PlayerModule =
+module Player =
 
     type Entity with
         member this.GetLastTimeOnGroundNp = this.Get Property? LastTimeOnGroundNp
@@ -235,7 +235,7 @@ module PlayerModule =
             world
 
 [<AutoOpen>]
-module GameplayModule =
+module Gameplay =
 
     type Gameplay =
         | Playing
@@ -285,13 +285,13 @@ module GameplayModule =
 
             match command with
             | CreateSections ->
-                let random = System.Random ()
-                let sectionFilePaths = List.toArray Assets.Gameplay.SectionFilePaths
                 let world =
                     List.fold
                         (fun world i ->
-                            let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
-                            let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
+                            let sectionFilePath =
+                                if i = 0
+                                then Assets.Gameplay.SectionFilePaths.[0]
+                                else Gen.randomItem Assets.Gameplay.SectionFilePaths
                             let sectionName = SectionName + scstring i
                             let sectionXShift = 2048.0f * single i
                             createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
