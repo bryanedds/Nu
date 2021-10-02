@@ -26,8 +26,7 @@ module BlazeVector =
     type Command =
         | Exit
 
-    // this extends the Game API to expose the above model. This is an unfortunate bit of boilerplate
-    // needed when defining a new dispatcher.
+    // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
         member this.GetModel = this.GetModelGeneric<Model>
         member this.SetModel = this.SetModelGeneric<Model>
