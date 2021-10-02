@@ -99,7 +99,7 @@ type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address
     | BindDefinition of World Lens * World Lens
-    | BindTwoWay of World Lens * World Lens
+    | LinkDefinition of World Lens * World Lens
 
 /// Contains primitives for describing simulants.
 [<RequireQualifiedAccess>]
@@ -112,7 +112,7 @@ module Describe =
             | PropertyDefinition def -> Some (def.PropertyType, def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
             | BindDefinition _ -> None
-            | BindTwoWay _ -> None) |>
+            | LinkDefinition _ -> None) |>
         List.definitize |>
         List.map (fun (ty, name, expr) ->
             let valueOpt =
@@ -132,7 +132,7 @@ module Describe =
             | PropertyDefinition _ -> None
             | EventHandlerDefinition (handler, partialAddress) -> Some (handler, partialAddress --> simulant.SimulantAddress, simulant)
             | BindDefinition _ -> None
-            | BindTwoWay _ -> None) |>
+            | LinkDefinition _ -> None) |>
         List.definitize
 
     let private initializersToBinds initializers (simulant : Simulant) =
@@ -142,7 +142,7 @@ module Describe =
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
             | BindDefinition (left, right) -> Some (simulant, left, right, false)
-            | BindTwoWay (left, right) -> Some (simulant, left, right, true)) |>
+            | LinkDefinition (left, right) -> Some (simulant, left, right, true)) |>
         List.definitize
 
     /// Describe a simulant with the given initializers and contained children.

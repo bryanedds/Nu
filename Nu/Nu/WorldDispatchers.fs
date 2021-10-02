@@ -119,7 +119,7 @@ module FacetModule =
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 entity left right world
-                | BindTwoWay (left, right) ->
+                | LinkDefinition (left, right) ->
                     let world = WorldModule.bind5 entity left right world
                     WorldModule.bind5 right.This right left world)
                 world initializers
@@ -1548,7 +1548,7 @@ module EntityDispatcherModule =
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 entity left right world
-                | BindTwoWay (left, right) ->
+                | LinkDefinition (left, right) ->
                     let world = WorldModule.bind5 entity left right world
                     WorldModule.bind5 right.This right left world)
                 world initializers
@@ -1911,7 +1911,7 @@ module TextDispatcherModule =
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.Register (entity, world) =
-            mirror (entity.ModelGeneric<string> ()) entity.Text world
+            link (entity.ModelGeneric<string> ()) entity.Text world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2024,7 +2024,7 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = mirror (entity.ModelGeneric<bool> ()) entity.Toggled world
+            let world = link (entity.ModelGeneric<bool> ()) entity.Toggled world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2223,7 +2223,7 @@ module FillBarDispatcherModule =
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
-            mirror (entity.ModelGeneric<single> ()) entity.Fill world
+            link (entity.ModelGeneric<single> ()) entity.Fill world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2507,7 +2507,7 @@ module GroupDispatcherModule =
                         eventAddress (group :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 group left right world
-                | BindTwoWay (left, right) ->
+                | LinkDefinition (left, right) ->
                     let world = WorldModule.bind5 group left right world
                     WorldModule.bind5 right.This right left world)
                 world initializers
@@ -2604,7 +2604,7 @@ module ScreenDispatcherModule =
                         eventAddress (screen :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 screen left right world
-                | BindTwoWay (left, right) ->
+                | LinkDefinition (left, right) ->
                     let world = WorldModule.bind5 screen left right world
                     WorldModule.bind5 right.This right left world)
                 world initializers

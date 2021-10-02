@@ -1097,7 +1097,7 @@ module GameDispatcherModule =
                         eventAddress (game :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 game left right world
-                | BindTwoWay (left, right) ->
+                | LinkDefinition (left, right) ->
                     let world = WorldModule.bind5 game left right world
                     WorldModule.bind5 right.This right left world)
                 world initializers
