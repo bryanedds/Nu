@@ -76,7 +76,7 @@ module OmniDispatcher =
                         match field.BattleOpt with
                         | Some battle ->
                             match battle.BattleState with
-                            | BattleQuitting (_, _) -> Some Simulants.Field.Screen
+                            | BattleQuitting (_, _, _) -> Some Simulants.Field.Screen
                             | _ -> Some Simulants.Battle.Screen
                         | None -> Some Simulants.Field.Screen
                     | Quitting -> Some Simulants.Title.Screen]
@@ -129,7 +129,7 @@ module OmniDispatcher =
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
-                        | BattleQuitting (outcome, consequents) ->
+                        | BattleQuitting (_, outcome, consequents) ->
                             if outcome then
                                 let field = Field.synchronizeFromBattle consequents battle field
                                 just (Field (Field.updateBattleOpt (constant None) field))

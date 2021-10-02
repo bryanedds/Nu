@@ -137,11 +137,11 @@ module FacetModule =
         abstract member Prepare : 'model * World -> 'model
         default this.Prepare (model, _) = model
 
-        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
-        default this.Initializers (_, _) = []
-
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
         abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1575,11 +1575,11 @@ module EntityDispatcherModule =
         abstract member Prepare : 'model * World -> 'model
         default this.Prepare (model, _) = model
 
-        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
-        default this.Initializers (_, _) = []
-
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
         abstract member Physics : Vector2 * single * Vector2 * single * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
@@ -2525,11 +2525,11 @@ module GroupDispatcherModule =
         abstract member Prepare : 'model * World -> 'model
         default this.Prepare (model, _) = model
 
-        abstract member Initializers : Lens<'model, World> * Group -> PropertyInitializer list
-        default this.Initializers (_, _) = []
-
         abstract member Channel : Lens<'model, World> * Group -> Channel<'message, 'command, Group, World> list
         default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Group -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -2622,11 +2622,11 @@ module ScreenDispatcherModule =
         abstract member Prepare : 'model * World -> 'model
         default this.Prepare (model, _) = model
 
-        abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
-        default this.Initializers (_, _) = []
-
         abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
         default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
