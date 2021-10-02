@@ -249,14 +249,14 @@ module BattleDispatcher =
                         let enemies = battle |> Battle.getEnemies |> Map.toValueList
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
-                            let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleQuitting (time, false, Set.empty))) battle
                             let (sigs2, battle) = update time battle
                             (msg (CelebrateCharacters false) :: sigs @ sigs2, battle)
                         elif
                             List.forall (fun (character : Character) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
-                            let battle = Battle.updateBattleState (constant (BattleResults (true, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleResults (time, true))) battle
                             let (sigs2, battle) = update time battle
                             (msg (CelebrateCharacters true) :: sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -463,24 +463,21 @@ module BattleDispatcher =
                 (cmd (FadeOutSong 6000) :: sigs, battle)
             else
                 match battle.DialogOpt with
-                | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
+                | None -> just (Battle.updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
                 | Some _ -> just battle
 
-        and private updateCease time startTime outcome consequents battle =
+        and private updateCease time startTime battle =
             let localTime = time - startTime
-            if localTime = 0L then
-                withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
-            elif localTime = 60L then
-                just (Battle.updateBattleState (constant (BattleQuitting (outcome, consequents))) battle)
+            if localTime = 0L
+            then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
             else just battle
 
         and update time (battle : Battle) =
             match battle.BattleState with
             | BattleReady startTime -> updateReady time startTime battle
             | BattleRunning -> updateRunning time battle
-            | BattleResults (outcome, startTime) -> updateResults time startTime outcome battle
-            | BattleCease (outcome, consequents, startTime) -> updateCease time startTime outcome consequents battle
-            | BattleQuitting (_, _) -> just battle
+            | BattleResults (startTime, outcome) -> updateResults time startTime outcome battle
+            | BattleQuitting (startTime, _, _) -> updateCease time startTime battle
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)
