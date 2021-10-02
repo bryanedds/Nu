@@ -313,7 +313,9 @@ module Nu =
                                 World.trySetPropertyFast left.Name property simulant world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
-                let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }
+                let rightFixup =
+                    Lens.makePlus right.Name right.ValidateOpt right.GetWithoutValidation None right.This |>
+                    Lens.refine (fun world -> World.getExists right.This world)
                 let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
                 let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This

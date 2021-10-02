@@ -101,3 +101,5 @@ module Lens =
                 match lens.ValidateOpt with
                 | Some validate' -> Some (fun world -> validate' world && validate world)
                 | None -> Some validate }
+    let makePlus<'a, 'w> name validateOpt get setOpt this : Lens<'a, 'w> =
+        { Name = name; ValidateOpt = validateOpt; GetWithoutValidation = get; SetOpt = setOpt; This = this }
