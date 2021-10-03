@@ -924,6 +924,61 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
+module RigidBodyPlusFacetModule =
+
+    type Entity with
+        member this.GetBodyPosition world : Vector2 = this.Get Property? BodyPosition world
+        member private this.SetBodyPosition (value : Vector2) world = this.Set Property? BodyPosition value world
+        member this.BodyPosition = lensReadOnly Property? BodyPosition this.GetBodyPosition this
+        member this.GetBodySize world : Vector2 = this.Get Property? BodySize world
+        member private this.SetBodySize (value : Vector2) world = this.Set Property? BodySize value world
+        member this.BodySize = lensReadOnly Property? BodySize this.GetBodySize this
+        member this.GetBodyAngle world : single = this.Get Property? BodyAngle world
+        member private this.SetBodyAngle (value : single) world = this.Set Property? BodyAngle value world
+        member this.BodyAngle = lensReadOnly Property? BodyAngle this.GetBodyAngle this
+        member this.GetBodyRotation world : single = this.Get Property? BodyRotation world
+        member private this.SetBodyRotation (value : single) world = this.Set Property? BodyRotation value world
+        member this.BodyRotation = lensReadOnly Property? BodyRotation this.GetBodyRotation this
+        member this.GetBodyBounds world : Vector4 = this.Get Property? BodyBounds world
+        member private this.SetBodyBounds (value : Vector4) world = this.Set Property? BodyBounds value world
+        member this.BodyBounds = lensReadOnly Property? BodyBounds this.GetBodyBounds this
+        member this.GetBodyCenter world : Vector2 = this.Get Property? BodyCenter world
+        member private this.SetBodyCenter (value : Vector2) world = this.Set Property? BodyCenter value world
+        member this.BodyCenter = lensReadOnly Property? BodyCenter this.GetBodyCenter this
+        member this.GetBodyBottom world : Vector2 = this.Get Property? BodyBottom world
+        member private this.SetBodyBottom (value : Vector2) world = this.Set Property? BodyBottom value world
+        member this.BodyBottom = lensReadOnly Property? BodyBottom this.GetBodyBottom this
+
+    type RigidBodyPlusFacet () =
+        inherit RigidBodyFacet ()
+
+        static let synchronizeBodyProperties (entity : Entity) world =
+            let world = entity.SetBodyPosition (entity.GetPosition world) world
+            let world = entity.SetBodySize (entity.GetSize world) world
+            let world = entity.SetBodyAngle (entity.GetAngle world) world
+            let world = entity.SetBodyRotation (entity.GetRotation world) world
+            let world = entity.SetBodyBounds (entity.GetBounds world) world
+            let world = entity.SetBodyCenter (entity.GetCenter world) world
+            let world = entity.SetBodyBottom (entity.GetBottom world) world
+            world
+
+        static member Properties =
+            [define Entity.BodyPosition v2Zero
+             define Entity.BodySize Constants.Engine.EntitySizeDefault
+             define Entity.BodyAngle 0.0f
+             define Entity.BodyRotation 0.0f
+             define Entity.BodyBounds (v4Bounds v2Zero Constants.Engine.EntitySizeDefault)
+             define Entity.BodyCenter (Constants.Engine.EntitySizeDefault * 0.5f)
+             define Entity.BodyBottom ((Constants.Engine.EntitySizeDefault * 0.5f).WithY 0.0f)]
+
+        override this.Register (entity, world) =
+            let world = base.Register (entity, world)
+            synchronizeBodyProperties entity world
+
+        override this.Update (entity, world) =
+            synchronizeBodyProperties entity world
+
+[<AutoOpen>]
 module JointFacetModule =
 
     type Entity with
@@ -1314,7 +1369,9 @@ module NodeFacetModule =
                 if node = entity then
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
-                elif entity.Has<RigidBodyFacet> world then
+                elif
+                    entity.Has<RigidBodyFacet> world ||
+                    entity.Has<RigidBodyPlusFacet> world then
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else

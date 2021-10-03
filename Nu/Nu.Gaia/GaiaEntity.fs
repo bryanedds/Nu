@@ -31,7 +31,9 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         // unprinted \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
-        let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
+        let rigidBodyProperties =
+            Reflection.getPropertyDefinitions typeof<RigidBodyFacet> @
+            Reflection.getPropertyDefinitions typeof<RigidBodyPlusFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
