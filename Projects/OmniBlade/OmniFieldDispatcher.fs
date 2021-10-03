@@ -1053,12 +1053,14 @@ module FieldDispatcher =
                 else just world
 
             | UpdateEye ->
-                let world = World.setEyeCenter field.Avatar.Center world
-                let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
-                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
-                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
-                let world = World.constrainEyeBounds eyeBounds world
-                just world
+                if World.getUpdateRate world <> 0L then
+                    let world = World.setEyeCenter field.Avatar.Center world
+                    let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
+                    let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
+                    let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
+                    let world = World.constrainEyeBounds eyeBounds world
+                    just world
+                else just world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with

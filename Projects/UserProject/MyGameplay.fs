@@ -20,6 +20,7 @@ module MyGameplay =
         | MoveLeft
         | MoveRight
         | Jump
+        | EyeTrack
         | Nop
 
     // this extends the Screen API to expose the above model.
@@ -40,14 +41,8 @@ module MyGameplay =
              Simulants.Gameplay.Screen.UpdateEvent =|> fun _ ->
                 if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
                 elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
-                else cmd Nop]
-
-        // here we bind camera eye to the player's center position. Note that we bind to BodyCenter
-        // instead of Center for two reasons -
-        // 1) the player is a physics body and physics propagation does not
-        // 2) for reasons of efficiency, physics-driven property change events do not fire.
-        override this.Initializers (_, _) =
-            [Simulants.Game.EyeCenter <== Simulants.Gameplay.Scene.Player.BodyCenter]
+                else cmd Nop
+             Simulants.Gameplay.Screen.PostUpdateEvent => cmd EyeTrack]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -73,6 +68,10 @@ module MyGameplay =
                     if World.isBodyOnGround physicsId world then
                         let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                         World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
+                    else world
+                | EyeTrack ->
+                    if World.getUpdateRate world <> 0L
+                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
                     else world
                 | Nop -> world
             just world
