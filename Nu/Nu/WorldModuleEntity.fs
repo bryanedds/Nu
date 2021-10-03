@@ -248,6 +248,28 @@ module WorldModuleEntity =
                     world properties
             else world
 
+        static member internal publishTransformEvents (oldTransform : Transform inref, newTransform : Transform inref, entity, world) =
+            if World.getEntityPublishChangeEvents entity world then
+                let positionChanged = v2Neq newTransform.Position oldTransform.Position
+                let sizeChanged = v2Neq newTransform.Size oldTransform.Size
+                let rotationChanged = newTransform.Rotation <> oldTransform.Rotation
+                let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
+                let world = World.publishEntityChange Property? Transform newTransform entity world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds newTransform.Position newTransform.Size) entity world else world
+                let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position entity world else world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (newTransform.Position + newTransform.Size * 0.5f) entity world else world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (newTransform.Position + newTransform.Size.WithY 0.0f * 0.5f) entity world else world
+                let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size entity world else world
+                let world =
+                    if rotationChanged then
+                        let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees newTransform.Rotation) entity world
+                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation entity world
+                        world
+                    else world
+                let world = if elevationChanged then World.publishEntityChange Property? Elevation newTransform.Elevation entity world else world
+                world
+            else world
+
         static member internal getEntityExists entity world =
             notNull (World.getEntityStateOpt entity world :> obj)
 
@@ -406,14 +428,14 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
             else world
 
-        static member internal setEntityTransformByRef (valueInRef : Transform inref, entity, world) =
+        static member internal setEntityTransformByRef (value : Transform inref, entity, world) =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldTransform = oldEntityState.Transform
             let struct (changed, world) =
                 if oldOmnipresent then
-                    let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                    let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                     World.updateEntityStateWithoutEvent
                         (fun entityState ->
                             if not (Transform.equalsByRef (&value, &entityState.Transform))
@@ -423,7 +445,7 @@ module WorldModuleEntity =
                 else
                     let oldAbsolute = oldEntityState.Absolute
                     let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
-                    let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                    let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                     let struct (changed, world) =
                         World.updateEntityStateWithoutEvent
                             (fun entityState ->
@@ -437,29 +459,11 @@ module WorldModuleEntity =
 #if DEBUG
                 let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
                 let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
-                let newFlags = valueInRef.Flags ||| ignoredFlags
+                let newFlags = value.Flags ||| ignoredFlags
                 if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransform."
 #endif
-                if World.getEntityPublishChangeEvents entity world then
-                    let positionChanged = v2Neq valueInRef.Position oldTransform.Position
-                    let sizeChanged = v2Neq valueInRef.Size oldTransform.Size
-                    let rotationChanged = valueInRef.Rotation <> oldTransform.Rotation
-                    let elevationChanged = valueInRef.Elevation <> oldTransform.Elevation
-                    let world = World.publishEntityChange Property? Transform valueInRef entity world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds valueInRef.Position valueInRef.Size) entity world else world
-                    let world = if positionChanged then World.publishEntityChange Property? Position valueInRef.Position entity world else world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (valueInRef.Position + valueInRef.Size * 0.5f) entity world else world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (valueInRef.Position + valueInRef.Size.WithY 0.0f * 0.5f) entity world else world
-                    let world = if sizeChanged then World.publishEntityChange Property? Size valueInRef.Size entity world else world
-                    let world =
-                        if rotationChanged then
-                            let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees valueInRef.Rotation) entity world
-                            let world = World.publishEntityChange Property? Rotation valueInRef.Rotation entity world
-                            world
-                        else world
-                    let world = if elevationChanged then World.publishEntityChange Property? Elevation valueInRef.Elevation entity world else world
-                    struct (changed, world)
-                else struct (changed, world)
+                let world = World.publishTransformEvents (&oldTransform, &value, entity, world)
+                struct (changed, world)
             else struct (changed, world)
 
         static member internal setEntityPosition value entity world =
