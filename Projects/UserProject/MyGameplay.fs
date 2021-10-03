@@ -17,10 +17,10 @@ module MyGameplay =
 
     // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
     type GameplayCommand =
+        | UpdateEye
         | MoveLeft
         | MoveRight
         | Jump
-        | EyeTrack
         | Nop
 
     // this extends the Screen API to expose the above model.
@@ -42,7 +42,7 @@ module MyGameplay =
                 if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
                 elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
                 else cmd Nop
-             Simulants.Gameplay.Screen.PostUpdateEvent => cmd EyeTrack]
+             Simulants.Gameplay.Screen.PostUpdateEvent => cmd UpdateEye]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -53,6 +53,10 @@ module MyGameplay =
         override this.Command (_, command, _, world) =
             let world =
                 match command with
+                | UpdateEye ->
+                    if World.getUpdateRate world <> 0L
+                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
+                    else world
                 | MoveLeft ->
                     let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
@@ -68,10 +72,6 @@ module MyGameplay =
                     if World.isBodyOnGround physicsId world then
                         let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                         World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                    else world
-                | EyeTrack ->
-                    if World.getUpdateRate world <> 0L
-                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
                     else world
                 | Nop -> world
             just world
