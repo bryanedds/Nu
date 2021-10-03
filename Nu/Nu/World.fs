@@ -401,6 +401,7 @@ module WorldModule3 =
                  ScriptFacet () :> Facet
                  TextFacet () :> Facet
                  RigidBodyFacet () :> Facet
+                 RigidBodyPlusFacet () :> Facet
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet

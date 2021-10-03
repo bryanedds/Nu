@@ -39,6 +39,13 @@ module Reflection =
              ("ScriptUnsubscriptions", true)
              ("TmxMap", true)
              ("NodeUnsubscribe", true)
+             ("BodyPosition", true)
+             ("BodySize", true)
+             ("BodyAngle", true)
+             ("BodyRotation", true)
+             ("BodyBounds", true)
+             ("BodyCenter", true)
+             ("BodyBottom", true)
 
              // emitter properties
              ("ParticleSystem", true)
