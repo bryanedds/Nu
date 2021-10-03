@@ -38,7 +38,7 @@ module Bullet =
             (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBodyFastFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =

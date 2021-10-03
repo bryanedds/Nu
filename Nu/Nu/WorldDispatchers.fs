@@ -778,7 +778,7 @@ module TextFacetModule =
             else world
 
 [<AutoOpen>]
-module RigidBodyFacetModule =
+module RigidBodyFastFacetModule =
 
     type Entity with
         member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
@@ -843,7 +843,7 @@ module RigidBodyFacetModule =
         member this.CollisionEvent = Events.Collision --> this
         member this.SeparationEvent = Events.Separation --> this
 
-    type RigidBodyFacet () =
+    type RigidBodyFastFacet () =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
@@ -924,7 +924,7 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module RigidBodyPlusFacetModule =
+module RigidBodyFacetModule =
 
     type Entity with
         member this.GetBodyPosition world : Vector2 = this.Get Property? BodyPosition world
@@ -949,8 +949,8 @@ module RigidBodyPlusFacetModule =
         member private this.SetBodyBottom (value : Vector2) world = this.Set Property? BodyBottom value world
         member this.BodyBottom = lensReadOnly Property? BodyBottom this.GetBodyBottom this
 
-    type RigidBodyPlusFacet () =
-        inherit RigidBodyFacet ()
+    type RigidBodyFacet () =
+        inherit RigidBodyFastFacet ()
 
         static let synchronizeBodyProperties (entity : Entity) world =
             let world = entity.SetBodyPosition (entity.GetPosition world) world
@@ -1370,8 +1370,8 @@ module NodeFacetModule =
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
                 elif
-                    entity.Has<RigidBodyFacet> world ||
-                    entity.Has<RigidBodyPlusFacet> world then
+                    entity.Has<RigidBodyFastFacet> world ||
+                    entity.Has<RigidBodyFacet> world then
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
@@ -2351,7 +2351,7 @@ module BlockDispatcherModule =
         inherit EntityDispatcher ()
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBodyFastFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =

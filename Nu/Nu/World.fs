@@ -400,8 +400,8 @@ module WorldModule3 =
                  EffectFacet () :> Facet
                  ScriptFacet () :> Facet
                  TextFacet () :> Facet
+                 RigidBodyFastFacet () :> Facet
                  RigidBodyFacet () :> Facet
-                 RigidBodyPlusFacet () :> Facet
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
