@@ -125,20 +125,20 @@ module WorldEntityModule =
             world
 
         /// Set the transform of an entity.
-        member this.SetTransformByRef (transform : Transform inref, world) =
-            World.setEntityTransformByRef (&transform, this, world)
+        member this.SetTransformByRef (value : Transform inref, world) =
+            World.setEntityTransformByRef (&value, this, world)
 
         /// Set the transform of an entity without generating any change events.
-        member this.SetTransformByRefWithoutEvent (transform : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&transform, this, world)
+        member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
+            World.setEntityTransformByRefWithoutEvent (&value, this, world)
 
         /// Set the transform of an entity without generating any change events.
-        member this.SetTransformWithoutEvent transform world =
-            World.setEntityTransformByRefWithoutEvent (&transform, this, world)
+        member this.SetTransformWithoutEvent value world =
+            World.setEntityTransformByRefWithoutEvent (&value, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
+        member this.SetTransformSnapped positionSnap rotationSnap value world =
+            let transform = Math.snapTransform positionSnap rotationSnap value
             this.SetTransform transform world
 
         /// Try to get a property value and type.
@@ -215,12 +215,14 @@ module WorldEntityModule =
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
-            let transform = this.GetTransform world
+            let oldTransform = this.GetTransform world
+            let mutable newTransform = oldTransform
             let world =
-                if  transform.Position <> position ||
-                    transform.Rotation <> rotation then
-                    let transform = { transform with Position = position; Rotation = rotation }
-                    this.SetTransformByRefWithoutEvent (&transform, world)
+                if  oldTransform.Position <> position ||
+                    oldTransform.Rotation <> rotation then
+                    newTransform.Position <- position
+                    newTransform.Rotation <- rotation
+                    this.SetTransformByRefWithoutEvent (&newTransform, world)
                 else world
             let world = this.SetXtensionPropertyWithoutEvent Property? LinearVelocity linearVelocity world
             let world = this.SetXtensionPropertyWithoutEvent Property? AngularVelocity angularVelocity world
