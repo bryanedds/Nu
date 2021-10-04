@@ -33,8 +33,7 @@ module RingMenuDispatcher =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
         static member Properties =
-            [define Entity.Radius Constants.Battle.RingMenuRadius
-             define Entity.Rotation 0.0f]
+            [define Entity.Radius Constants.Battle.RingMenuRadius]
 
         override this.Command (_, command, menu, world) =
             match command with
