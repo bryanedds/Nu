@@ -27,10 +27,6 @@ module ReticlesDispatcher =
     type ReticlesDispatcher () =
         inherit GuiDispatcher<Reticles, unit, ReticlesCommand> (Map.empty)
 
-        static member Properties =
-            [define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
-
         override this.Command (_, command, rets, world) =
             match command with
             | TargetCancel -> just (World.publishPlus () rets.CancelEvent [] rets true false world)
