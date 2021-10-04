@@ -315,7 +315,7 @@ module Nu =
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup =
                     Lens.makePlus right.Name right.ValidateOpt right.GetWithoutValidation None right.This |>
-                    Lens.refine (fun world -> World.getExists right.This world)
+                    Lens.narrow (fun world -> World.getExists right.This world)
                 let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
                 let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
