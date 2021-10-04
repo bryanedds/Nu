@@ -100,11 +100,9 @@ module CharacterDispatcher =
                 Some inset
             | None -> None
 
-        static member Properties =
-            [define Entity.Omnipresent true]
-
         override this.Initializers (character, _) =
-            [Entity.Bounds <== character --> fun character -> character.Bounds]
+            [Entity.Omnipresent == true
+             Entity.Bounds <== character --> fun character -> character.Bounds]
 
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
