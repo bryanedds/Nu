@@ -152,12 +152,12 @@ module WorldModuleScreen =
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
+            | (true, getter) -> getter screen world
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
                 | true -> property
                 | false -> failwithf "Could not find property '%s'." propertyName
-            | (true, getter) -> getter screen world
 
         static member internal trySetScreenPropertyFast propertyName property screen world =
             if World.getScreenExists screen world then
@@ -208,6 +208,7 @@ module WorldModuleScreen =
         static member internal setScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
+                | (true, setter) -> setter property screen world
                 | (false, _) ->
                     World.updateScreenState
                         (fun screenState ->
@@ -216,7 +217,6 @@ module WorldModuleScreen =
                             then ScreenState.setProperty propertyName property screenState
                             else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
-                | (true, setter) -> setter property screen world
             else struct (false, world)
 
         static member internal attachScreenProperty propertyName property screen world =

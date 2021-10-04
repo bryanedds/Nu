@@ -372,12 +372,12 @@ module WorldModuleGame =
 
         static member internal getGameProperty propertyName world =
             match GameGetters.TryGetValue propertyName with
+            | (true, getter) -> getter world
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
                 | true -> property
                 | false -> failwithf "Could not find property '%s'." propertyName
-            | (true, getter) -> getter world
 
         static member internal trySetGamePropertyFast propertyName property world =
             match GameSetters.TryGetValue propertyName with
@@ -423,6 +423,7 @@ module WorldModuleGame =
 
         static member internal setGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
+            | (true, setter) -> setter property world
             | (false, _) ->
                 World.updateGameState
                     (fun gameState ->
@@ -431,7 +432,6 @@ module WorldModuleGame =
                         then (GameState.setProperty propertyName property gameState)
                         else Unchecked.defaultof<_>)
                     propertyName property.PropertyValue world
-            | (true, setter) -> setter property world
 
         static member internal attachGameProperty propertyName property world =
             let struct (_, world) =
