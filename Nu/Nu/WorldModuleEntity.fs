@@ -745,18 +745,18 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> false
             | _ ->
-                match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
-                | true ->
-                    if EntityState.containsRuntimeProperties entityStateOpt then
-                        match property.PropertyValue with
-                        | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
-                        | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
-                        | _ -> true
-                    else true
-                | false ->
-                    match EntityGetters.TryGetValue propertyName with
-                    | (true, getter) -> property <- getter entity world; true
-                    | (false, _) -> false
+                match EntityGetters.TryGetValue propertyName with
+                | (true, getter) -> property <- getter entity world; true
+                | (false, _) ->
+                    match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
+                    | true ->
+                        if EntityState.containsRuntimeProperties entityStateOpt then
+                            match property.PropertyValue with
+                            | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                            | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
+                            | _ -> true
+                        else true
+                    | false -> false
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
@@ -810,28 +810,28 @@ module WorldModuleEntity =
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
-            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
-            | struct (true, changed, world) ->
-                if changed
-                then World.publishEntityChange propertyName property.PropertyValue entity world
-                else world
-            | struct (false, _, world) ->
-                match EntitySetters.TryGetValue propertyName with
-                | (true, setter) -> setter property entity world |> snd'
-                | (false, _) -> world
-
-        static member internal trySetEntityProperty propertyName property entity world =
-            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
-            | struct (true, changed, world) ->
-                let world =
+            match EntitySetters.TryGetValue propertyName with
+            | (true, setter) -> setter property entity world |> snd'
+            | (false, _) ->
+                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
+                | struct (true, changed, world) ->
                     if changed
                     then World.publishEntityChange propertyName property.PropertyValue entity world
                     else world
-                struct (true, changed, world)
-            | struct (false, changed, world) ->
-                match EntitySetters.TryGetValue propertyName with
-                | (true, setter) -> let struct (changed, world) = setter property entity world in struct (true, changed, world)
-                | (false, _) -> (false, changed, world)
+                | struct (false, _, world) -> world
+
+        static member internal trySetEntityProperty propertyName property entity world =
+            match EntitySetters.TryGetValue propertyName with
+            | (true, setter) -> let struct (changed, world) = setter property entity world in struct (true, changed, world)
+            | (false, _) ->
+                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
+                | struct (true, changed, world) ->
+                    let world =
+                        if changed
+                        then World.publishEntityChange propertyName property.PropertyValue entity world
+                        else world
+                    struct (true, changed, world)
+                | struct (false, _, _) as result -> result
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
