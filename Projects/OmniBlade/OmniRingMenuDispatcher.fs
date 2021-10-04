@@ -34,9 +34,7 @@ module RingMenuDispatcher =
 
         static member Properties =
             [define Entity.Radius Constants.Battle.RingMenuRadius
-             define Entity.Rotation 0.0f
-             define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
+             define Entity.Rotation 0.0f]
 
         override this.Command (_, command, menu, world) =
             match command with
