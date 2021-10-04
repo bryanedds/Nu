@@ -62,9 +62,6 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        static member Properties =
-            [define Entity.Omnipresent true]
-
         override this.Initializers (avatar, entity) =
             let bodyCenter = v2 -0.015f -0.36f
             let bodyShapes =
@@ -72,6 +69,7 @@ module AvatarDispatcher =
                     [BodyBoxRounded { Extent = v2 0.175f 0.175f; Radius = 0.0875f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodyCircle { Radius = 0.25f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
+             Entity.Omnipresent == true
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyShape == bodyShapes]

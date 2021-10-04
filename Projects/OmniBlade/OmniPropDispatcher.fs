@@ -21,16 +21,14 @@ module PropDispatcher =
         inherit EntityDispatcher<Prop, unit, unit> (Prop.empty)
 
         static member Facets =
-            [typeof<RigidBodyFacet>]
-
-        static member Properties =
-            [define Entity.FixedRotation true
-             define Entity.GravityScale 0.0f]
+            [typeof<RigidBodyFastFacet>]
 
         override this.Initializers (prop, entity) =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
+             entity.FixedRotation == true
              entity.GravityScale == 0.0f
+             entity.BodyType == Static
              entity.Bounds <== prop --> fun prop ->
                 match prop.PropState with
                 | CharacterState (bounds, _, _, _, _, _) -> bounds
