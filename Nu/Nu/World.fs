@@ -313,10 +313,11 @@ module Nu =
                                 World.trySetPropertyFast left.Name property simulant world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
-                let rightFixup =
-                    Lens.makePlus right.Name right.ValidateOpt right.GetWithoutValidation None right.This |>
-                    Lens.narrow (fun world -> World.getExists right.This world)
-                let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
+                let rightFixup = Lens.makePlus right.Name right.ValidateOpt right.GetWithoutValidation None right.This
+                let world =
+                    if World.getExists rightFixup.This world // propagate immediately to start things out synchronized if possible
+                    then tryPropagateByLens leftFixup rightFixup world
+                    else world
                 let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
                 let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
