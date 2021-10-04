@@ -179,7 +179,7 @@ module WorldEntityModule =
         /// Set an xtension property value without publishing an event.
         member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            let (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
+            let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
 
         /// Get an entity's sorting priority.

@@ -129,17 +129,17 @@ module WorldModuleEntity =
         static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
-        static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
+        static member inline private publishEntityChange propertyName (propertyValue : obj) publishChangeBindings publishChangeEvents (entity : Entity) world =
 
             // publish change binding
             let world =
-                if World.getEntityPublishChangeBindings entity world
+                if publishChangeBindings
                 then World.publishChangeBinding propertyName entity world
                 else world
 
             // publish change event
             let world =
-                if World.getEntityPublishChangeEvents entity world then
+                if publishChangeEvents then
                     let changeData = { Name = propertyName; Value = propertyValue }
                     let entityNames = Address.getNames entity.EntityAddress
                     let mutable changeEventNamesUtilized = false
@@ -205,8 +205,10 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let struct (changed, world) = World.updateEntityStateInternal updater entityState entity world
             let world =
-                if changed
-                then World.publishEntityChange propertyName propertyValue entity world
+                if changed then
+                    let publishChangeBindings = entityState.PublishChangeBindings
+                    let publishChangeEvents = entityState.PublishChangeEvents
+                    World.publishEntityChange propertyName propertyValue publishChangeBindings publishChangeEvents entity world
                 else world
             struct (changed, world)
 
@@ -234,39 +236,49 @@ module WorldModuleEntity =
 
             // publish entity change event if needed
             let world =
-                if changed
-                then World.publishEntityChange propertyName propertyValue entity world
+                if changed then
+                    let publishChangeBindings = oldEntityState.PublishChangeBindings
+                    let publishChangeEvents = oldEntityState.PublishChangeEvents
+                    World.publishEntityChange propertyName propertyValue publishChangeBindings publishChangeEvents entity world
                 else world
             struct (changed, world)
 
         static member private publishEntityChanges entity world =
             let entityState = World.getEntityState entity world
             let properties = World.getProperties entityState
-            if entityState.PublishChangeEvents then
+            let publishChangeBindings = entityState.PublishChangeBindings
+            let publishChangeEvents = entityState.PublishChangeEvents
+            if publishChangeEvents || publishChangeBindings then
                 List.fold (fun world (propertyName, _, propertyValue) ->
-                    World.publishEntityChange propertyName propertyValue entity world)
+                    let entityState = World.getEntityState entity world
+                    let publishChangeBindings = entityState.PublishChangeBindings
+                    let publishChangeEvents = entityState.PublishChangeEvents
+                    World.publishEntityChange propertyName propertyValue publishChangeBindings publishChangeEvents entity world)
                     world properties
             else world
 
-        static member internal publishTransformEvents (oldTransform : Transform inref, newTransform : Transform inref, entity, world) =
-            if World.getEntityPublishChangeEvents entity world then
+        static member inline internal publishTransformEvents (oldTransform : Transform inref, newTransform : Transform inref, publishChangeBindings, publishChangeEvents, entity, world) =
+            if publishChangeEvents || publishChangeBindings then
                 let positionChanged = v2Neq newTransform.Position oldTransform.Position
                 let sizeChanged = v2Neq newTransform.Size oldTransform.Size
                 let rotationChanged = newTransform.Rotation <> oldTransform.Rotation
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
-                let world = World.publishEntityChange Property? Transform newTransform entity world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds newTransform.Position newTransform.Size) entity world else world
-                let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position entity world else world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (newTransform.Position + newTransform.Size * 0.5f) entity world else world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (newTransform.Position + newTransform.Size.WithY 0.0f * 0.5f) entity world else world
-                let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size entity world else world
+                let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds newTransform.Position newTransform.Size) publishChangeBindings publishChangeEvents entity world else world
+                let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (newTransform.Position + newTransform.Size * 0.5f) publishChangeBindings publishChangeEvents entity world else world
+                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (newTransform.Position + newTransform.Size.WithY 0.0f * 0.5f) publishChangeBindings publishChangeEvents entity world else world
+                let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
                 let world =
                     if rotationChanged then
-                        let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees newTransform.Rotation) entity world
-                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation entity world
+                        let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees newTransform.Rotation) publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation publishChangeBindings publishChangeEvents entity world
                         world
                     else world
-                let world = if elevationChanged then World.publishEntityChange Property? Elevation newTransform.Elevation entity world else world
+                let world =
+                    if elevationChanged
+                    then World.publishEntityChange Property? Elevation newTransform.Elevation publishChangeBindings publishChangeEvents entity world
+                    else world
                 world
             else world
 
@@ -462,7 +474,9 @@ module WorldModuleEntity =
                 let newFlags = value.Flags ||| ignoredFlags
                 if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransform."
 #endif
-                let world = World.publishTransformEvents (&oldTransform, &value, entity, world)
+                let publishChangeBindings = oldEntityState.PublishChangeBindings
+                let publishChangeEvents = oldEntityState.PublishChangeEvents
+                let world = World.publishTransformEvents (&oldTransform, &value, publishChangeBindings, publishChangeEvents, entity, world)
                 struct (changed, world)
             else struct (changed, world)
 
@@ -764,21 +778,17 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityXtensionPropertyWithoutEvent propertyName property entity world =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            match entityStateOpt :> obj with
-            | null -> struct (false, false, world)
-            | _ ->
+        static member internal trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world =
                 let mutable propertyOld = Unchecked.defaultof<_>
                 let struct (success, changed, world) =
-                    match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
+                    match EntityState.tryGetProperty (propertyName, entityState, &propertyOld) with
                     | true ->
-                        if EntityState.containsRuntimeProperties entityStateOpt then
+                        if EntityState.containsRuntimeProperties entityState then
                             match propertyOld.PropertyValue with
                             | :? DesignerProperty as dp ->
                                 if property.PropertyValue =/= dp.DesignerValue then
                                     let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                                    match EntityState.trySetProperty propertyName property entityStateOpt with
+                                    match EntityState.trySetProperty propertyName property entityState with
                                     | (true, entityState) -> struct (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> struct (false, false, world)
                                 else (true, false, world)
@@ -791,13 +801,13 @@ module WorldModuleEntity =
                                 | None -> struct (false, false, world)
                             | _ ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    match EntityState.trySetProperty propertyName property entityStateOpt with
+                                    match EntityState.trySetProperty propertyName property entityState with
                                     | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> struct (false, false, world)
                                 else struct (true, false, world)
                         else
                             if property.PropertyValue =/= propertyOld.PropertyValue then
-                                match EntityState.trySetProperty propertyName property entityStateOpt with
+                                match EntityState.trySetProperty propertyName property entityState with
                                 | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                 | (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
@@ -805,33 +815,44 @@ module WorldModuleEntity =
                 struct (success, changed, world)
 
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
-            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
-            | struct (true, changed, world) -> (true, changed, world)
+            let entityState = World.getEntityState entity world
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
+            | struct (true, changed, world) -> struct (true, changed, world)
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) -> setter property entity world |> snd'
             | (false, _) ->
-                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
-                | struct (true, changed, world) ->
-                    if changed
-                    then World.publishEntityChange propertyName property.PropertyValue entity world
-                    else world
-                | struct (false, _, world) -> world
+                let entityStateOpt = World.getEntityStateOpt entity world
+                if notNull (entityStateOpt :> obj) then
+                    match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
+                    | struct (true, changed, world) ->
+                        if changed then
+                            let publishChangeBindings = entityStateOpt.PublishChangeBindings
+                            let publishChangeEvents = entityStateOpt.PublishChangeEvents
+                            World.publishEntityChange propertyName property.PropertyValue publishChangeBindings publishChangeEvents entity world
+                        else world
+                    | struct (false, _, world) -> world
+                else world
 
         static member internal trySetEntityProperty propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) -> let struct (changed, world) = setter property entity world in struct (true, changed, world)
             | (false, _) ->
-                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entity world with
-                | struct (true, changed, world) ->
-                    let world =
-                        if changed
-                        then World.publishEntityChange propertyName property.PropertyValue entity world
-                        else world
-                    struct (true, changed, world)
-                | struct (false, _, _) as result -> result
+                let entityStateOpt = World.getEntityStateOpt entity world
+                if notNull (entityStateOpt :> obj) then
+                    match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
+                    | struct (true, changed, world) ->
+                        let world =
+                            if changed then
+                                let publishChangeBindings = entityStateOpt.PublishChangeBindings
+                                let publishChangeEvents = entityStateOpt.PublishChangeEvents
+                                World.publishEntityChange propertyName property.PropertyValue publishChangeBindings publishChangeEvents entity world
+                            else world
+                        struct (true, changed, world)
+                    | struct (false, _, _) as result -> result
+                else struct (false, false, world)
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
