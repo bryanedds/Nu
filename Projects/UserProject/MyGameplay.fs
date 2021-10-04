@@ -17,10 +17,10 @@ module MyGameplay =
 
     // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
     type GameplayCommand =
-        | UpdateEye
         | MoveLeft
         | MoveRight
         | Jump
+        | UpdateEye
         | Nop
 
     // this extends the Screen API to expose the above model.
