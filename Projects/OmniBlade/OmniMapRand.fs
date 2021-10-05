@@ -426,8 +426,8 @@ type MapRand =
                 | None -> ()
 
         // add tiles from segments
-        for l in 0 .. mapTmx.Layers.Count - 1 do
-            let layer = mapTmx.Layers.[l]
+        for l in 0 .. mapTmx.TileLayers.Count - 1 do
+            let layer = mapTmx.TileLayers.[l]
             layer.Tiles.Clear ()
             for j in 0 .. 7 - 1 do
                 for jj in 0 .. 32 - 1 do
@@ -437,7 +437,7 @@ type MapRand =
                             let y = j * 32 + jj
                             let tileRef =
                                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
-                                | Some segment when l < segment.Layers.Count -> segment.Layers.[l].Tiles.[ii + jj * 32]
+                                | Some segment when l < segment.TileLayers.Count -> segment.TileLayers.[l].Tiles.[ii + jj * 32]
                                 | Some _ | None -> TmxLayerTile (0u, x, y)
                             let tile = TmxMap.makeLayerTile tileRef.Gid x y tileRef.HorizontalFlip tileRef.VerticalFlip tileRef.DiagonalFlip
                             layer.Tiles.Add tile
