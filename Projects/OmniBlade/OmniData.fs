@@ -490,6 +490,7 @@ type EnemyType =
     | Cloak
     | BloodArmoros
     | AraneaImplicitum
+    | Kyla
 
 type CharacterType =
     | Ally of AllyType

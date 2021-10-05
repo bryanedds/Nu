@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="7">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="8">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,7 +9,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRgY/gPxNyD+DsQ/gBgEOoH2KgFxNzeEnwYU/wxkfwHiLC7q2b8XaN4DIH4IxI+gdsFAEBpfmYeBQYUHooda9r8FmiUANFMQiIV4GHACZDe+paL9skA7HYDYEYidcNjfiuZGkB5q2e8LtXMD0I5N3Njt38qN6kZfKtmfCjQjDQ3nsWLan4VFXQoV7McVJuiAGn4dtX9o2J+KlgazaJjW8LkBBuhtN6xNAAPUquuJtbsQiA8xIezfA2QX0MkNuVC7vyLZ/54J4gZ6pEGQ/SC7NZgR9isxQ9xAL/uR7UZ2A73sxwVG7R+1f6jZDwAhUQey
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRgY/gPxNyD+DsQ/gBgEOrkhtBKUTgOKfwayvwBxFhf17N8LNO8BED8E4kdQu5BBEJKYMg8DgwoPRA+17H8LNEsAaKYgEAvxYNoPA8hufEtF+2WBdjoAsSMQO+GwvxXNjSA91LLfF2rnBqAdm7CEPwhs5UZ1oy+V7E8FmpGGhvNYMe3PwqIuhQr24woTdEANv47aPzTsT0VLg1k0TGv43AAD9LYb1iaAAWrV9cTaXQjEh5gQ9u8Bsgvo5IZcqN1fkex/zwRxAz3SIMh+kN0azAj7lZghbqCX/ch2I7uBXvbjAqP2j9o/1OwHAImjBxw=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -31,6 +31,11 @@
   <object id="6" gid="235" x="624" y="528" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [KeyItem BrassKey] d7a2247e-b843-4b31-8a22-2f36450697cb]"/>
+   </properties>
+  </object>
+  <object id="7" gid="235" x="720" y="528" width="144" height="144">
+   <properties>
+    <property name="I" value="[Character [Enemy Kyla] Upward Nil []]"/>
    </properties>
   </object>
  </objectgroup>
