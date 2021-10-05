@@ -408,7 +408,7 @@ type NpcType =
     | RavelNpc
     | AdvenNpc
     | EildaenNpc
-    | ShamanaNpc
+    | NostrusNpc
     | MadTrixterNpc
     | HeavyArmorosNpc
     | AraneaImplicitumNpc
@@ -422,7 +422,7 @@ type NpcType =
         | MadTrixterNpc -> not (Set.contains MadTrixterDefeated advents)
         | HeavyArmorosNpc -> not (Set.contains HeavyArmorosDefeated advents)
         | AraneaImplicitumNpc -> not (Set.contains AraneaImplicitumDefeated advents)
-        | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
+        | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc -> true
 
 type ShopkeepType =
     | RobehnShopkeep

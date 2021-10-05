@@ -62,7 +62,7 @@ module PropDispatcher =
                     | NpcState (_, _, _, _, true) ->
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
-                        | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc
+                        | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
                         | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                         | AraneaImplicitumNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
@@ -170,7 +170,7 @@ module PropDispatcher =
                                 | MaelNpc -> (Assets.Field.MaelAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | RiainNpc -> (Assets.Field.RiainAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | PericNpc -> (Assets.Field.PericAnimationSheet, Constants.Gameplay.CharacterSize)
-                                | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | AraneaImplicitumNpc -> (Assets.Field.BossAnimationSheet, Constants.Gameplay.BossSize)
                             let (row, column) =
                                 match npcType with
@@ -181,7 +181,7 @@ module PropDispatcher =
                                 | RavelNpc -> (0, 0)
                                 | AdvenNpc -> (1, 0)
                                 | EildaenNpc -> (2, 0)
-                                | ShamanaNpc -> (3, 0)
+                                | NostrusNpc -> (3, 0)
                                 | MadTrixterNpc -> (4, 0)
                                 | HeavyArmorosNpc -> (5, 0)
                                 | AraneaImplicitumNpc -> (0, 0)

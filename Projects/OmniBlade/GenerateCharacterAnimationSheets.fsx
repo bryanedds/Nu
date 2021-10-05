@@ -242,6 +242,10 @@ generateBattlerAnimationSheet "../../Art/Allies/Mercenary.png" (Some "../../Art/
 generateBattlerAnimationSheet "../../Art/Allies/Ninja.png" (Some "../../Art/Allies/NinjaWalk.png") "../../Art/Allies/Out/Ninja.png"
 generateBattlerAnimationSheet "../../Art/Allies/Prince.png" (Some "../../Art/Allies/PrinceWalk.png") "../../Art/Allies/Out/Prince.png"
 
+// generate npc characters
+Directory.CreateDirectory "../../Art/Npcs/Out"
+generateBattlerAnimationSheet "../../Art/Npcs/Kyla.png" (Some "../../Art/Npcs/KylaWalk.png") "../../Art/Npcs/Out/Kyla.png"
+
 // generate walking enemy characters
 Directory.CreateDirectory "../../Art/Enemies/Walking/Out"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Bedeviler.png" (Some "../../Art/Enemies/Walking/BedevilerWalk.png") "../../Art/Enemies/Walking/Out/Bedeviler.png"
