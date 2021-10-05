@@ -1424,7 +1424,7 @@ module Gaia =
             form.redoButton.Enabled <- not (World.getImperative world)
             form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
-    let private updateEditorWorld form world =
+    let private updateEditorWorld (form : GaiaForm) world =
         let worldChangersCopy = List.ofSeq Globals.WorldChangers
         Globals.WorldChangers.Clear ()
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
@@ -1432,10 +1432,11 @@ module Gaia =
         let world = updateCameraDrag form world
         updateUndoButton form world
         updateRedoButton form world
-        if not form.propertyValueTextBox.Focused &&
-           not form.applyPropertyButton.Focused &&
-           not form.IsClosing then
-           refreshPropertyEditor form
+        if  form.ContainsFocus &&
+            not form.propertyValueTextBox.Focused &&
+            not form.applyPropertyButton.Focused &&
+            not form.IsClosing then
+            refreshPropertyEditor form
         if form.IsDisposed
         then World.exit world
         else world
