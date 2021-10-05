@@ -229,7 +229,7 @@ module TmxMap =
         bodyShapes
 
     let getBodyShapes tileMapDescriptor =
-        tileMapDescriptor.TileMap.Layers |>
+        tileMapDescriptor.TileMap.TileLayers |>
         Seq.fold (fun shapess tileLayer ->
             let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
             shapes :: shapess)
@@ -265,7 +265,7 @@ module TmxMap =
 
     /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
     let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
-        let layers = List.ofSeq tileMap.Layers
+        let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let tileAssets = tileMap.ImageAssets

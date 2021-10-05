@@ -3,7 +3,6 @@
 
 #I __SOURCE_DIRECTORY__
 #r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
-#r "../../packages/TiledSharp.1.0.1/lib/netstandard2.0/TiledSharp.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
@@ -15,6 +14,7 @@
 #r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
 #r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 #r "../../Nu/Nu.Gaia.Design/bin/x64/Debug/Nu.Gaia.Design.exe"

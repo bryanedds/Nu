@@ -22,7 +22,7 @@
    eJztziEKACAQBdFftnhMg/exqMdV2GoRhFWYB9NHAvCDlqS+Gin6ZK8++gUAuKuYFyWbBwA4NwFuOQQj
   </data>
  </layer>
- <objectgroup id="3" name="Props" visible="0">
+ <objectgroup id="3" name="Props">
   <object id="4" gid="235" x="720" y="1200" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor]"/>
@@ -35,7 +35,19 @@
   </object>
   <object id="7" gid="235" x="720" y="528" width="144" height="144">
    <properties>
-    <property name="I" value="[Character [Enemy Kyla] Upward Nil []]"/>
+    <property name="I">[Character [Enemy Kyla] Upward
+  [Sequence
+   [[Wait 60]
+    [FadeOutSong 1000]
+    [PlaySong 1000 1000 0.5 0 [Field Unfolding]]
+    [Dialog &quot;What is freedom...? It must be the death of purpose...&quot;]
+    [Dialog &quot;I was born a servent of a servent. My master is cruel, but unlike the world, her cruelty is predictable. It is something to which I am accustomed. It is the chaos beyond these castle walls that I could not bear...&quot;]
+    [Dialog &quot;But why does every day get worse? Why must I be humiliated at every opportunity? The fortunes of other servents rise, but I am kept at the bottom... Nothing I do goes uncriticized. She may be my master, but she herself serves under the Queen.&quot;]
+    [Dialog &quot;She is cruel not because she doesn't understand what it is like... she is cruel because she understands exactly what it is like...&quot;]
+    [Dialog &quot;They all do...&quot;]
+    [FadeOutSong 2000]
+    [Wait 60]
+    [PlaySong 1000 1000 0.5 0 [Castle CastlePart1]]]] []]</property>
    </properties>
   </object>
  </objectgroup>
