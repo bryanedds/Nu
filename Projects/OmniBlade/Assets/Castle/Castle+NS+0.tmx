@@ -9,12 +9,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRgY/gPxNyD+DsQ/gBgEOrkhtBKUTgOKfwayvwBxFhf17N8LNO8BED8E4kdQu5BBEJKYMg8DgwoPRA+17H8LNEsAaKYgEAvxYNoPA8hufEtF+2WBdjoAsSMQO+GwvxXNjSA91LLfF2rnBqAdm7CEPwhs5UZ1oy+V7E8FmpGGhvNYMe3PwqIuhQr24woTdEANv47aPzTsT0VLg1k0TGv43AAD9LYb1iaAAWrV9cTaXQjEh5gQ9u8Bsgvo5IZcqN1fkex/zwRxAz3SIMh+kN0azAj7lZghbqCX/ch2I7uBXvbjAqP2j9o/1OwHAImjBxw=
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRgY/gPxNyD+DsQ/gBgEOrkhtDcPhE4Din8Gin0B4iwu6tm/F2jeAyB+CMSPoHYigyAkMWWgW1R4IHqoZf9boFkCQDMFgViIB9N+GEB241sq2i8LtNMBiB2B2AmH/a1obgTpoZb9vlA7NwDt2IQl/EFgKzeqG32pZH8q0Iw0NJzHiml/FhZ1KVSwH1eYoANq+HXU/qFhfypaGsyiYVrD5wYYoLfdsDYBDFCrrifW7kIgPsSEsH8PkF1AJzfkQu3+imT/eyaIG+iRBkH2g+zWYEbYr8QMcQO97Ee2G9kN9LIfFxi1f9T+oWY/AGGYB0Y=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmExEGDBAPtlLtT+eSS4g4mbevafJcHeOVC154dR/I+CUTAKRsEoGAWjYBQMJwAAlR4SAQ==
+   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmGBDShx09b8BXT0CzYwF2r/PBLcwUTFMDlLgr1zoGrPD3CYjYJRMApGwSgYBaNgFIwC7AAAjr0SLg==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
@@ -22,7 +22,7 @@
    eJztziEKACAQBdFftnhMg/exqMdV2GoRhFWYB9NHAvCDlqS+Gin6ZK8++gUAuKuYFyWbBwA4NwFuOQQj
   </data>
  </layer>
- <objectgroup id="3" name="Props">
+ <objectgroup id="3" name="Props" visible="0">
   <object id="4" gid="235" x="720" y="1200" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor]"/>
