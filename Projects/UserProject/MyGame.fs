@@ -40,7 +40,7 @@ module MyGame =
     type MyGameDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Splash)
 
-        // here we channel from screen events to signals
+        // here we channel from gui events to signals
         override this.Channel (_, _) =
             [Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
