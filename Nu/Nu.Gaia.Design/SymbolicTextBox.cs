@@ -97,27 +97,7 @@ namespace Nu.Gaia.Design
 
         private void SymbolicTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Control && !e.Shift && e.KeyCode == Keys.X)
-            {
-                Cut();
-                e.SuppressKeyPress = true;
-            }
-            else if (e.Control && !e.Shift && e.KeyCode == Keys.C)
-            {
-                Copy();
-                e.SuppressKeyPress = true;
-            }
-            else if (e.Control && !e.Shift && e.KeyCode == Keys.V)
-            {
-                Paste();
-                e.SuppressKeyPress = true;
-            }
-            else if (e.Control && !e.Shift && e.KeyCode == Keys.A)
-            {
-                SelectAll();
-                e.SuppressKeyPress = true;
-            }
-            else if (e.Control && !e.Shift && e.KeyCode == Keys.F)
+            if (e.Control && !e.Shift && e.KeyCode == Keys.F)
             {
                 MyFindReplace.ShowIncrementalSearch();
                 e.SuppressKeyPress = true;
