@@ -805,7 +805,7 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
     | Switch of SwitchType * Cue * Cue * Advent Set
     | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
-    | Character of CharacterType * Direction * Cue * Advent Set
+    | Character of CharacterType * Direction * bool * Cue * Advent Set
     | Npc of NpcType * Direction * Cue * Advent Set
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set

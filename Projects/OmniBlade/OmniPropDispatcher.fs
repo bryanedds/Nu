@@ -55,7 +55,7 @@ module PropDispatcher =
                     match prop.PropState with
                     | SealState false -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | Character (_, _, _, _) ->
+                | Character (_, _, _, _, _) ->
                     BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                 | Npc (npcType, _, _, _) | NpcBranching (npcType, _, _, _) ->
                     match prop.PropState with
@@ -154,11 +154,19 @@ module PropDispatcher =
                             let image = Assets.Field.SealAnimationSheet
                             (false, color, colZero, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
-                    | Character (_, _, _, _) ->
+                    | Character (_, _, isEcho, _, _) ->
                         match prop.PropState with
                         | CharacterState (_, _, animationState, color, glow, true) ->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
+                            let (color, glow) =
+                                if isEcho then
+                                    let color = color.WithA 95uy
+                                    let glowAmount = single (time % 120L) / 120.0f * 255.0f
+                                    let glowAmount = if glowAmount >= 127.0f then 255.0f - glowAmount else glowAmount
+                                    let glow = colGray.WithA (byte glowAmount)
+                                    (color, glow)
+                                else (color, glow)
                             (false, color, glow, Some inset, animationState.AnimationSheet)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
