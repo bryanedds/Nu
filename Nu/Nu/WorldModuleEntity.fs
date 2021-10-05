@@ -60,7 +60,7 @@ module WorldModuleEntity =
     type World with
     
         // OPTIMIZATION: a ton of optimization has gone down in here...!
-        static member private entityStateFinder (entity : Entity) world =
+        static member inline private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
                 getFreshKeyAndValueEntity <- entity
