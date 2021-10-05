@@ -194,11 +194,11 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS
-        let positions = // 18,150 entity positions (goal: 60FPS, current: 55FPS)
+        let positions = // 24,200 entity positions (goal: 60FPS, current: 40FPS)
             seq {
                 for i in 0 .. 54 do
                     for j in 0 .. 54 do
-                        for k in 0 .. 5 do
+                        for k in 0 .. 7 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
@@ -309,15 +309,13 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen Gen.name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) constant (fun i intss _ ->
+            [Content.groups intss (fun intss _ -> intss.Intss) constant $ fun i intss _ ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) constant (fun j int _ ->
+                    [Content.entities intss (fun ints _ -> ints.Ints) constant $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
-                            (seq {
-                                yield Entity.Omnipresent == true
-                                yield Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
-                                yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
-                                Seq.toList))])
+                            [Entity.Omnipresent == true
+                             Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
+                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
