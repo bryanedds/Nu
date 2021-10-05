@@ -32,8 +32,8 @@ module MyGame =
         member this.Model = this.ModelGeneric<Model> ()
         member this.Gameplay =
             this.Model |>
-            Lens.bimap (function Gameplay gameplay -> gameplay | _ -> failwithumf ()) Gameplay |>
-            Lens.narrow (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false)
+            Lens.narrow (fun world -> match this.GetModel world with Gameplay _ -> true | _ -> false) |>
+            Lens.bimap (function Gameplay gameplay -> gameplay | _ -> failwithumf ()) Gameplay
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
