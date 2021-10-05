@@ -83,7 +83,7 @@ module Field =
         | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
         | Switch (_, _, _, _) -> SwitchState false
         | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-        | Character (characterType, direction, _, requirements) ->
+        | Character (characterType, direction, _, _, requirements) ->
             let animationSheet =
                 match Data.Value.Characters.TryGetValue characterType with
                 | (true, characterData) -> characterData.AnimationSheet
@@ -162,7 +162,7 @@ module Field =
 
     // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
     // there's an elegant alternative that is more performant.
-    let getPropIdByState predicate field =
+    let tryGetPropIdByState predicate field =
         Map.tryFindKey (fun _ (prop : Prop) ->
             predicate prop.PropState)
             field.Props_

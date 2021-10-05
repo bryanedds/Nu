@@ -28,6 +28,8 @@ type Advent =
     | Castle2Unsealed
     | SeasonsUnsealed
     | VolcanoUnsealed
+    | CastlePart1Chest1Unlatched
+    | CastlePart1Chest2Unlatched
 
 type WeaponType =
     | Bare
