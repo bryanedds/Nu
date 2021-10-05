@@ -51,7 +51,7 @@ System.IO.Directory.SetCurrentDirectory workingDirPath
 #load "OmniAvatarDispatcher.fs"
 #load "OmniBattleDispatcher.fs"
 #load "OmniFieldDispatcher.fs"
-#load "OmniDispatcher.fs"
+#load "OmniBlade.fs"
 #load "OmniPlugin.fs"
 
 open System

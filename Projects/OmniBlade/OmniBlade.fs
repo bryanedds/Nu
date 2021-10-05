@@ -9,7 +9,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniDispatcher =
+module OmniBlade =
 
     type Gui =
         | Splash
@@ -49,7 +49,7 @@ module OmniDispatcher =
                 (fun battle world -> match this.GetModel world with Field field -> Field (Field.updateBattleOpt (constant (Some battle)) field) | _ -> failwithumf ()) |>
             Lens.narrow (fun world -> match this.GetModel world with Field field -> Option.isSome field.BattleOpt | _ -> false)
 
-    type OmniDispatcher () =
+    type OmniBladeDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
         override this.Register (game, world) =
