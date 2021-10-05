@@ -1316,7 +1316,7 @@ module Gaia =
             | _ -> world
 
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
-        if form :> Form = Form.ActiveForm then
+        if Form.ActiveForm = (form :> Form) then
             if Keys.F5 = key then form.advancingButton.PerformClick ()
             if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
@@ -1432,7 +1432,7 @@ module Gaia =
         let world = updateCameraDrag form world
         updateUndoButton form world
         updateRedoButton form world
-        if  form.ContainsFocus &&
+        if  Form.ActiveForm = (form :> Form) &&
             not form.propertyValueTextBox.Focused &&
             not form.applyPropertyButton.Focused &&
             not form.IsClosing then
