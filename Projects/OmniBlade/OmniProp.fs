@@ -16,6 +16,9 @@ type [<ReferenceEquality; NoComparison>] PropState =
 [<RequireQualifiedAccess>]
 module Prop =
 
+    [<Syntax   ("", "", "", "", "",
+                Constants.PrettyPrinter.DefaultThresholdMin,
+                Constants.PrettyPrinter.DetailedThresholdMax)>]
     type [<ReferenceEquality; NoComparison>] Prop =
         private
             { Bounds_ : Vector4

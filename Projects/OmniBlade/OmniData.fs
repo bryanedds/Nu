@@ -561,7 +561,7 @@ type [<NoEquality; NoComparison>] MoveType =
             "If Not Define Assign Parallel Sequence",
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
-            Constants.PrettyPrinter.CompositionalThresholdMax)>]
+            Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<NoEquality; NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag
