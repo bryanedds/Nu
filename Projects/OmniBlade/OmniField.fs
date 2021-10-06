@@ -76,14 +76,11 @@ module Field =
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
 
-    let private makePropState time (advents : Advent Set) propDescriptor =
+    let private makePropState time propDescriptor =
         match propDescriptor.PropData with
-        | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
         | Door (_, _, _, _, _) -> DoorState false
-        | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, advents.Contains (Opened id))
         | Switch (_, _, _, _) -> SwitchState false
-        | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-        | Character (characterType, direction, _, _, requirements) ->
+        | Character (characterType, direction, _, _, _) ->
             let animationSheet =
                 match Data.Value.Characters.TryGetValue characterType with
                 | (true, characterData) -> characterData.AnimationSheet
@@ -93,10 +90,8 @@ module Field =
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
                   Direction = direction }
-            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, advents.IsSupersetOf requirements)
-        | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-        | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-        | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState)
+        | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
     let private makeProps fieldType omniSeedState advents world =
         match Map.tryFind fieldType Data.Value.Fields with
@@ -104,8 +99,8 @@ module Field =
             let time = World.getUpdateTime world
             FieldData.getPropDescriptors omniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
-                let propState = makePropState time advents propDescriptor
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
+                let propState = makePropState time propDescriptor
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
@@ -132,12 +127,18 @@ module Field =
     let getChests field =
         field.Props_ |>
         Map.toValueArray |>
-        Array.choose (fun prop -> match prop.PropState with ChestState (bounds, opened) -> Some (Chest.make bounds opened) | _ -> None)
+        Array.choose (fun prop ->
+            match prop.PropData with
+            | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Bounds (field.Advents.Contains (Opened id)))
+            | _ -> None)
 
     let getPortals field =
         field.Props_ |>
         Map.toValueArray |>
-        Array.choose (fun prop -> match prop.PropState with PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
+        Array.choose (fun prop ->
+            match prop.PropData with
+            | Portal (_, _, _, _, _, _, requirements) -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
+            | _ -> None)
 
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_
@@ -155,7 +156,11 @@ module Field =
         { field with Team_ = updater field.Team_ }
 
     let updateAdvents updater field =
-        { field with Advents_ = updater field.Advents_ }
+        let advents = updater field.Advents_
+        if advents <> field.Advents_ then
+            let props = Map.map (fun _ prop -> Prop.updateAdvents (constant advents) prop) field.Props_
+            { field with Advents_ = advents; Props_ = props }
+        else field
 
     let private updateProps updater field =
         { field with Props_ = updater field.Props_ }
@@ -393,7 +398,7 @@ module Field =
                 | Slot2 -> Assets.Global.SaveFilePath2
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
-            let field = fieldStr |> scvalue<Field>
+            let field = scvalue<Field> fieldStr
             let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ world
             Some { field with Props_ = props }
         with _ -> None

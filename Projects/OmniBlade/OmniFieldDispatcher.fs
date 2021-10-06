@@ -87,14 +87,14 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState (bounds, characterType2, animationState, exists) ->
+                                 | CharacterState (bounds, characterType2, animationState) ->
                                     let animationState = CharacterAnimationState.face direction animationState
-                                    CharacterState (bounds, characterType2, animationState, exists)
+                                    CharacterState (bounds, characterType2, animationState)
                                  | propState -> propState)
                                 propId
                                 field
@@ -127,36 +127,6 @@ module FieldDispatcher =
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
                 else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
-            | ShowCharacter characterType ->
-                match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
-                | Some propId ->
-                    let field =
-                        Field.updatePropState
-                            (function
-                             | CharacterState (bounds, characterType2, animationState, _) ->
-                                CharacterState (bounds, characterType2, animationState, true)
-                             | propState -> propState)
-                            propId
-                            field
-                    (Cue.Nil, definitions, just field)
-                | None ->
-                    (Cue.Nil, definitions, just field)
-
-            | HideCharacter characterType ->
-                match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
-                | Some propId ->
-                    let field =
-                        Field.updatePropState
-                            (function
-                             | CharacterState (bounds, characterType2, animationState, _) ->
-                                CharacterState (bounds, characterType2, animationState, false)
-                             | propState -> propState)
-                            propId
-                            field
-                    (Cue.Nil, definitions, just field)
-                | None ->
-                    (Cue.Nil, definitions, just field)
-
             | AddItem itemType ->
                 (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
 
@@ -188,14 +158,14 @@ module FieldDispatcher =
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState (bounds, characterType2, animationState, exists) ->
+                                 | CharacterState (bounds, characterType2, animationState) ->
                                     let animationState = CharacterAnimationState.setCharacterAnimationType (Some (World.getUpdateTime world)) characterAnimationType animationState
-                                    CharacterState (bounds, characterType2, animationState, exists)
+                                    CharacterState (bounds, characterType2, animationState)
                                  | propState -> propState)
                                 propId
                                 field
@@ -226,10 +196,10 @@ module FieldDispatcher =
                     let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType2 = characterType | _ -> false) field with
+                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType2 = characterType | _ -> false) field with
                     | Some propId ->
                         match field.Props.[propId].PropState with
-                        | CharacterState (bounds, _, _, _) ->
+                        | CharacterState (bounds, _, _) ->
                             let cue = MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType)
                             (cue, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
@@ -251,21 +221,21 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType2 = characterType | _ -> false) field with
+                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType2 = characterType | _ -> false) field with
                     | Some propId ->
                         match field.Props.[propId].PropState with
-                        | CharacterState (bounds, characterType, direction, exists) ->
+                        | CharacterState (bounds, characterType, direction) ->
                             let time = World.getUpdateTime world
                             let localTime = time - startTime
                             let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
                             let finishTime = int64 (dec stepCount)
                             if localTime < finishTime then
                                 let bounds = bounds.Translate step
-                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction, exists))) propId field
+                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction))) propId field
                                 (cue, definitions, just field)
                             else
                                 let bounds = bounds.WithBottom destination
-                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction, exists))) propId field
+                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction))) propId field
                                 (Cue.Nil, definitions, just field)
                         | _ -> (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
@@ -646,7 +616,6 @@ module FieldDispatcher =
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
-                let field = Field.updatePropState (constant (ChestState (prop.Bounds, true))) prop.PropId field
                 let field =
                     match battleTypeOpt with
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
