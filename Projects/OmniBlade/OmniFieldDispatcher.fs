@@ -557,7 +557,7 @@ module FieldDispatcher =
                 | _ -> false)
                 avatar.IntersectedBodyShapes
 
-        static let tryGetFacingInteraction dialogOpt advents prop field =
+        static let tryGetFacingInteraction advents prop =
             match prop with
             | Portal (_, _, _, _, _, _, _) -> None
             | Door _ -> Some "Open"
@@ -573,7 +573,7 @@ module FieldDispatcher =
             | EmptyProp -> None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) (field : Field) world =
-            match field.DialogOpt with
+            match dialogOpt with
             | Some dialog ->
                 if  Dialog.canAdvance (flip detokenize field) dialog &&
                     not
@@ -586,7 +586,7 @@ module FieldDispatcher =
                     Some "Save"
                 else
                     match tryGetFacingProp avatar world with
-                    | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData field
+                    | Some prop -> tryGetFacingInteraction advents (prop.GetProp world).PropData
                     | None -> None
 
         static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) world =
