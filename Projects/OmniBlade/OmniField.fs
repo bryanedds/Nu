@@ -90,7 +90,7 @@ module Field =
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
                   Direction = direction }
-            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState)
+            CharacterState characterAnimationState
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
     let private makeProps fieldType omniSeedState advents world =
@@ -167,9 +167,9 @@ module Field =
 
     // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
     // there's an elegant alternative that is more performant.
-    let tryGetPropIdByState predicate field =
+    let tryGetPropIdByData predicate field =
         Map.tryFindKey (fun _ (prop : Prop) ->
-            predicate prop.PropState)
+            predicate prop.PropData)
             field.Props_
 
     let updateProp updater propId field =

@@ -29,10 +29,7 @@ module PropDispatcher =
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyType == Static
-             entity.Bounds <== prop --> fun prop ->
-                match prop.PropState with
-                | CharacterState (bounds, _, _) -> bounds
-                | _ -> prop.Bounds
+             entity.Bounds <== prop --> fun prop -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
@@ -73,16 +70,6 @@ module PropDispatcher =
                     else BodyEmpty
                 | Flame _ | ChestSpawn | EmptyProp ->
                     BodyEmpty]
-
-        override this.Physics (position, _, _, _, prop, _, _) =
-            let prop = Prop.updatePosition (constant position) prop
-            let prop =
-                match prop.PropState with
-                | CharacterState (bounds, characterType, animationState) ->
-                    let propState = CharacterState (v4Bounds position bounds.Size, characterType, animationState)
-                    Prop.updatePropState (constant propState) prop
-                | _ -> prop
-            just prop
 
         override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
@@ -150,7 +137,7 @@ module PropDispatcher =
                         else (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Character (_, _, isEcho, _, requirements) ->
                         match prop.PropState with
-                        | CharacterState (_, _, animationState) when prop.Advents.IsSupersetOf requirements->
+                        | CharacterState animationState when prop.Advents.IsSupersetOf requirements->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, glow) =
