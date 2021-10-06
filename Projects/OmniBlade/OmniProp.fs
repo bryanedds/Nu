@@ -13,7 +13,7 @@ type [<ReferenceEquality; NoComparison>] PropState =
     | ChestState of Vector4 * bool
     | SwitchState of bool
     | SealState of bool
-    | CharacterState of Vector4 * CharacterType * CharacterAnimationState * Color * Color * bool
+    | CharacterState of Vector4 * CharacterType * CharacterAnimationState * bool
     | NpcState of NpcType * Direction * Color * Color * bool
     | ShopkeepState of bool
     | NilState
