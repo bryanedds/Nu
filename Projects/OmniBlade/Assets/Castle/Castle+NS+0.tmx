@@ -60,7 +60,7 @@
     [Dialog &quot;They all do...&quot;]
     [FadeOutSong 2000]
     [Wait 120]
-    [RemoveCharacter [Enemy Kyla]]
+    [HideCharacter [Enemy Kyla]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
     [ReplaceAdvent [KylaAdvent 0] [KylaAdvent 1]]
     [PlaySound 0.5 [Field ChestOpen]]
