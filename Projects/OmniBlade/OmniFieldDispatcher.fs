@@ -645,7 +645,6 @@ module FieldDispatcher =
             if field.Advents.IsSupersetOf requirements then
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
-                // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field = Field.updatePropState (constant (ChestState (prop.Bounds, true))) prop.PropId field
                 let field =
