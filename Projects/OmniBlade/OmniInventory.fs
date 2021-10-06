@@ -119,6 +119,10 @@ type ConsumableType =
 type KeyItemType =
     | BrassKey
     | IronKey
+    | CopperKey
+    | AluminumKey
+    | PewterKey
+    | SteelKey
 
 type ItemType =
     | Consumable of ConsumableType
