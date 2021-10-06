@@ -119,10 +119,10 @@ module FieldDispatcher =
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
                 else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
-            | Unseal (fee, consequent) ->
+            | Unseal (fee, advent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    let field = Field.updateAdvents (Set.add consequent) field
+                    let field = Field.updateAdvents (Set.remove advent) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
                 else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 

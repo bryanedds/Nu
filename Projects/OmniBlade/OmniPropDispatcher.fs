@@ -49,7 +49,7 @@ module PropDispatcher =
                     | Some shape -> shape
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Seal (_, _, requirements) ->
-                    if not (prop.Advents.IsSupersetOf requirements)
+                    if prop.Advents.IsSupersetOf requirements
                     then BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                     else BodyEmpty
                 | Character (_, _, _, _, requirements) ->
@@ -126,7 +126,7 @@ module PropDispatcher =
                         | HiddenSensor -> (true, colWhite, colZero, None, Assets.Default.ImageEmpty)
                         | StepPlateSensor -> (true, colWhite, colZero, None, Assets.Field.StepPlateImage)
                     | Seal (color, _, requirements) ->
-                        if not (prop.Advents.IsSupersetOf requirements) then
+                        if prop.Advents.IsSupersetOf requirements then
                             let time = World.getUpdateTime world
                             let localTime = time / 20L
                             let celSize = v2 32.0f 32.0f // TODO: P1: put this in Constants.
