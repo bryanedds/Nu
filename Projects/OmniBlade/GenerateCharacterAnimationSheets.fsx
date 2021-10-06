@@ -267,6 +267,7 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Trixter.png" (Some "../
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Vampire.png" (Some "../../Art/Enemies/Walking/VampireWalk.png") "../../Art/Enemies/Walking/Out/Vampire.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Witch.png" (Some "../../Art/Enemies/Walking/WitchWalk.png") "../../Art/Enemies/Walking/Out/Witch.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Wolfman.png" (Some "../../Art/Enemies/Walking/WolfmanWalk.png") "../../Art/Enemies/Walking/Out/Wolfman.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/BlackKnight.png" (Some "../../Art/Enemies/Walking/BlackKnightWalk.png") "../../Art/Enemies/Walking/Out/BlackKnight.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Kyla.png" (Some "../../Art/Enemies/Walking/KylaWalk.png") "../../Art/Enemies/Walking/Out/Kyla.png"
 
 // generate non-walking enemy characters
@@ -282,10 +283,10 @@ generateWalkingOnlyAnimationSheet 48 48 48 48 1024 1024 "../../Art/Enemies/Walki
 generateWalkingOnlyAnimationSheet 52 53 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/156x212/Gorgon.png" "../../Art/Enemies/WalkingOnly/Out/Gorgon.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Apparition.png" "../../Art/Enemies/WalkingOnly/Out/Apparition.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
+generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Snake.png" "../../Art/Enemies/WalkingOnly/Out/Snake.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Armoros.png" "../../Art/Enemies/WalkingOnly/Out/Armoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/HeavyArmoros.png" "../../Art/Enemies/WalkingOnly/Out/HeavyArmoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
-generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/Ghost.png" "../../Art/Enemies/WalkingOnly/Out/Ghost.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Arachnos.png" "../../Art/Enemies/WalkingOnly/Out/Arachnos.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Chimera.png" "../../Art/Enemies/WalkingOnly/Out/Chimera.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Pharoah.png" "../../Art/Enemies/WalkingOnly/Out/Pharoah.png"
