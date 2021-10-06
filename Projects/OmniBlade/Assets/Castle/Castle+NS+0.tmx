@@ -9,12 +9,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRgY/gPxNyD+DsQ/gBgEOrkhtDcPhE4Din8Gin0B4iwu6tm/F2oPLhCEJK8MdIsKD0QPtex/CzTrARA/BOJHeNyCrOYtFe2XBfpHAIgFgViIB7f9yGpAeqhlvy/QLAcgdgRiJxz2b+JGVeNLJftTgWakoeE8Vkz7s7CoS6GC/bjCBB1Qw6+j9g8N+1PR0mAWDdMaPjfAAL3thrUJYIBadT2xdhcC8SEmhP17gOwCOrkhF2r3VyT73zNB3ECPNAiyH2S3BjPCfiVmiBvoZT+y3chuoJf9uMCo/aP2DzX7ARvqBTs=
+   eJztlssOwUAUhidtutEusLdBwmNgKzaewS0Vt8ew8TDWLHgbRCxcd/zNaIzqIHVMSOZPvkwzt+9MM0k7MhkbaTQ/SttirBeRpvW5v4M9ZkY0WkT+nRENKn/ODGdhM7YEKzt8nMq/jTF2BgdwBCfgZWjztuzwtoH+Lfp2wI3R+adXjyxVYTyDWrIOX0PlX7/wh2VN6E/hPHGQAElH7hTneGuo/BXsVQBFUJL4x/b9nAqRv449GgG61qPfDZlXI/DL3kkwFGfV/v/w1wN30P3iXXtWgx/Vbv+fwA/Vt/5d9wDMjZt/gue+oho6V/de8G8MXoOKO+j5PXfevPnTJq9BlV90izWo8sui/dr/b/4LW9X/pA==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmGBDShx09b8BXT0CzYwlwz7magYJmeh9s8jwh1zoGrOD3CYjYJRMApGwSgYBaNgFIwC7AAAOr0SLg==
+   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmGBDShx09b8BXT0CzYwF2j/A6AfHwLxIzx+RVbDRMUwOQv1/zwiwmEOVM35AQ6zUTAKRsEoGAWjYBSMglGAHQAA+sMXtg==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
@@ -46,10 +46,6 @@
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;I was born a servent of a servent... My master is cruel, but unlike the world, her cruelty is predictable. It is something to which I am accustomed.&quot;]
     [Dialog &quot;It is the chaos beyond these castle walls that I could not bear...&quot;]
-    [Face [CharacterTarget [Enemy Kyla]] Downward]
-    [Dialog &quot;But why does every day get worse? Why must I be humiliated at every opportunity? The fortunes of other servents rise, but I am kept at the bottom...&quot;]
-    [Dialog &quot;Nothing I do goes uncriticized... She may be my master, but she herself serves under the Queen.&quot;]
-    [Dialog &quot;She is cruel not because she doesn't understand what it is like... she is cruel because she understands exactly...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
     [Dialog &quot;They all do...&quot;]
     [FadeOutSong 2000]

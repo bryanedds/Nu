@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,18 +9,46 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlr0KwjAQx0NLl7aDurtYQR9D3fsWWkXx6yFc+yyiuNlBn0Tdi4Kfo//QCmqSwXLUJQc/EsLlfpdb2tBkLPyBocWU0bN+q5UF7dd+7f+fvwPHSNJDH2ftHPyqGeTxdu3X/rz9A9QdfzGV+CeSvC5BT/ytkcHYJoXvt4boXxtiHsVMuP+EWpcUvr9K/EdDzKPye1hrKXxfN0V/xRTzqPxnO3HcsN7Bwxb9PAKcnx28HywdOn+EWjuwBwdH7n6F5zJWdZM7VP4YtQqoWQQlV+1+7zEm9JfhbIAmaCn8s68e+R0qv58653AsFPNfOZ89+kR+/r0PMpLX/4BGo8nGE3nx9rM=
+   eJztljsKwkAQhpeENCaF2tuooMdQe2/hC8XXRbyM2GmhJ1F7UfBZ+g8mOMT1ybApzMDHLmF3vtkwGzKylRp9QddRT6PlfJfrF2L/f/vrcPQ0NbTxrGbAr6vBpJvXEIRpN9Fh/qZhP7mHzD9wzNZAd2Bh3f1Ty0zvc/+R+bcR+Iv23Z+1zfuj+PZE4ade74cYavwDzTqJO0FnnaG/5j40573P70B4ncQ7If8OuQ4+ND9q/FvrcZ2UP4ex4ENz3vv8DoTXSfn3iZvjhPEMLolHP0UDz/cuzg/Grpx/hlxLsAJrV+8OIucplfdue6T8G+RKImcKpL3X/olf30bQn4GzBMqg8sLPa6Q9Uv7qmzMHwWusCvnpP6PxI1H8l8TExHzOFfnB/Po=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dN4xkcAYa3kykhCkVw/8cCelpAVTteSqnwVEwCkbBKKA2AACjcQ2G
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dNwwV0EoDf5+BhvcCAvH6AGj3QyB+BHIDFd1xjoT0xAS19zyV0+AoGAWjYBRQGwAAlJ8Q2g==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzjEOABAABMGr/V6D5/IDJWIm2X4TAIB7tZL01SinT/bqA48A/GsC5HcCfw==
+   eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
- <objectgroup id="3" name="Props"/>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="480" y="1152" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Leftward True
+  [Sequence
+   [[FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
+    [Wait 180]
+    [Dialog &quot;He told me that my beauty was why I suffered their cruelty all these years...&quot;]
+    [Dialog &quot;No one ever said anything like that to me before...&quot;]
+    [Dialog &quot;He said he would take me from this place...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Rightward]
+    [Dialog &quot;But how can I leave now?&quot;]
+    [Dialog &quot;For a fleeting moment my heart's desire can be heard over my lust for vengeance...&quot;]
+    [Dialog &quot;Vengeance and numbness is all I have ever felt...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Dialog &quot;I don't how I feel anymore...&quot;]
+    [Dialog &quot;How can I leave now...&quot;]
+    [FadeOutSong 2000]
+    [Wait 120]
+    [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [PlaySound 0.5 [Field ChestOpen]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 3]]]</property>
+   </properties>
+  </object>
+ </objectgroup>
 </map>
