@@ -323,12 +323,16 @@ module Field =
             FieldSongTimeOpt_ = None }
 
     let make fieldType saveSlot randSeedState avatar team advents inventory world =
+        let (debugAdvents, debugKeyItems, definitions) =
+            match Data.Value.Fields.TryGetValue fieldType with
+            | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
+            | (false, _) -> (Set.empty, List.empty, Map.empty)
+        let (advents, inventory) =
+            match fieldType with
+            | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
+            | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps fieldType omniSeedState advents world
-        let definitions =
-            match Data.Value.Fields.TryGetValue fieldType with
-            | (true, fieldData) -> fieldData.Definitions
-            | (false, _) -> Map.empty
         { FieldType_ = fieldType
           FieldState_ = Playing
           SaveSlot_ = saveSlot

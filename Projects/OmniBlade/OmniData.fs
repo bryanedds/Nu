@@ -834,6 +834,8 @@ type [<NoEquality; NoComparison>] FieldData =
       FieldTileIndexOffset : int
       FieldTileIndexOffsetRange : int * int
       FieldBackgroundColor : Color
+      FieldDebugAdvents : Advent Set
+      FieldDebugKeyItems : KeyItemType list
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option
       Definitions : CueDefinitions

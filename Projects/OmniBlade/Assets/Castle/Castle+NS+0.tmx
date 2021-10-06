@@ -43,20 +43,14 @@
     [Wait 180]
     [Dialog &quot;What is freedom...?&quot;]
     [Dialog &quot;It must be the death of purpose...&quot;]
-    [Face
-     [CharacterTarget [Enemy Kyla]]
-     Leftward]
+    [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;I was born a servent of a servent... My master is cruel, but unlike the world, her cruelty is predictable. It is something to which I am accustomed.&quot;]
     [Dialog &quot;It is the chaos beyond these castle walls that I could not bear...&quot;]
-    [Face
-     [CharacterTarget [Enemy Kyla]]
-     Downward]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;But why does every day get worse? Why must I be humiliated at every opportunity? The fortunes of other servents rise, but I am kept at the bottom...&quot;]
     [Dialog &quot;Nothing I do goes uncriticized... She may be my master, but she herself serves under the Queen.&quot;]
     [Dialog &quot;She is cruel not because she doesn't understand what it is like... she is cruel because she understands exactly...&quot;]
-    [Face
-     [CharacterTarget [Enemy Kyla]]
-     Upward]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
     [Dialog &quot;They all do...&quot;]
     [FadeOutSong 2000]
     [Wait 120]
