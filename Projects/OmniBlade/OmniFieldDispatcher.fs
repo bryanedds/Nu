@@ -87,14 +87,12 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState (bounds, characterType2, animationState) ->
-                                    let animationState = CharacterAnimationState.face direction animationState
-                                    CharacterState (bounds, characterType2, animationState)
+                                 | CharacterState animationState -> CharacterState (CharacterAnimationState.face direction animationState)
                                  | propState -> propState)
                                 propId
                                 field
@@ -158,14 +156,14 @@ module FieldDispatcher =
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState (bounds, characterType2, animationState) ->
+                                 | CharacterState animationState ->
                                     let animationState = CharacterAnimationState.setCharacterAnimationType (Some (World.getUpdateTime world)) characterAnimationType animationState
-                                    CharacterState (bounds, characterType2, animationState)
+                                    CharacterState animationState
                                  | propState -> propState)
                                 propId
                                 field
@@ -196,13 +194,11 @@ module FieldDispatcher =
                     let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType2 = characterType | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
-                        match field.Props.[propId].PropState with
-                        | CharacterState (bounds, _, _) ->
-                            let cue = MoveState (World.getUpdateTime world, target, bounds.Bottom, destination, moveType)
-                            (cue, definitions, just field)
-                        | _ -> (Cue.Nil, definitions, just field)
+                        let prop = field.Props.[propId]
+                        let cue = MoveState (World.getUpdateTime world, target, prop.Bounds.Bottom, destination, moveType)
+                        (cue, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
                 | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
@@ -221,23 +217,21 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _) -> characterType2 = characterType | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
-                        match field.Props.[propId].PropState with
-                        | CharacterState (bounds, characterType, direction) ->
-                            let time = World.getUpdateTime world
-                            let localTime = time - startTime
-                            let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
-                            let finishTime = int64 (dec stepCount)
-                            if localTime < finishTime then
-                                let bounds = bounds.Translate step
-                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction))) propId field
-                                (cue, definitions, just field)
-                            else
-                                let bounds = bounds.WithBottom destination
-                                let field = Field.updatePropState (constant (CharacterState (bounds, characterType, direction))) propId field
-                                (Cue.Nil, definitions, just field)
-                        | _ -> (Cue.Nil, definitions, just field)
+                        let prop = field.Props.[propId]
+                        let time = World.getUpdateTime world
+                        let localTime = time - startTime
+                        let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
+                        let finishTime = int64 (dec stepCount)
+                        if localTime < finishTime then
+                            let bounds = prop.Bounds.Translate step
+                            let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
+                            (cue, definitions, just field)
+                        else
+                            let bounds = prop.Bounds.WithBottom destination
+                            let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
+                            (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
                 | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
