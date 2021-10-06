@@ -47,7 +47,7 @@
     [FadeOutSong 2000]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 2] [KylaAdvent 3]]
-    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
     [PlaySound 0.5 [Field ChestOpen]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 2]]]</property>
