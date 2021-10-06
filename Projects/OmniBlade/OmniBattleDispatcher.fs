@@ -430,8 +430,8 @@ module BattleDispatcher =
                     List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
-                    | _ :: _ -> "" + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + " monte en niveau ! ^"
-                    | [] -> "Victoire ! ^"
+                    | _ :: _ -> "" + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + " monte en niveau! ^"
+                    | [] -> "Victoire! ^"
                 let textB =
                     alliesLevelingUp |>
                     List.choose (fun ally ->
@@ -443,10 +443,10 @@ module BattleDispatcher =
                     function
                     | _ :: _ as texts -> String.join "\n" texts + "^"
                     | [] -> ""
-                let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience ! \nTu gagnes " + string battle.PrizePool.Gold + " Ors !"
+                let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience! \nTu gagnes " + string battle.PrizePool.Gold + " Ors!"
                 let textD =
                     match battle.PrizePool.Items with
-                    | _ :: _ as items -> "^Tu trouves " + (items |> List.map (fun i -> ItemType.frenchWithQuantity i) |> String.join ", ") + " !"
+                    | _ :: _ as items -> "^Tu trouves " + (items |> List.map (fun i -> ItemType.frenchWithQuantity i) |> String.join ", ") + "!"
                     | [] -> ""
                 let text = textA + textB + textC + textD
                 let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }

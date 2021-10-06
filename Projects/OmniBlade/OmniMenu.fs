@@ -21,25 +21,25 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
           MenuUseLine3 = line3 }
 
     static member makeFromConsumableData selection (cd : ConsumableData) =
-        let prompt = "Qui doit ingerer " + ConsumableType.frenchWithUndefinedArticle cd.ConsumableType + " ?"
-        let effect = "(Effet : " + cd.Description + ")"
+        let prompt = "Qui doit ingerer " + ConsumableType.frenchWithUndefinedArticle cd.ConsumableType + "?"
+        let effect = "(Effet: " + cd.Description + ")"
         MenuUse.make selection prompt effect ""
 
     static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = "Qui doit manier " + WeaponType.frenchWithUndefinedArticle wd.WeaponType + " ?"
-        let stats = "(Puissance : " + string wd.PowerBase + " | Magie : " + string wd.MagicBase + ")"
-        let effect = "(Effet : " + string wd.Description + ")"
+        let prompt = "Qui doit manier " + WeaponType.frenchWithUndefinedArticle wd.WeaponType + "?"
+        let stats = "(Puissance: " + string wd.PowerBase + " | Magie: " + string wd.MagicBase + ")"
+        let effect = "(Effet: " + string wd.Description + ")"
         MenuUse.make selection prompt stats effect
 
     static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = "Qui doit revetir " + ArmorType.frenchWithUndefinedArticle ad.ArmorType + " ?"
-        let stats = "(Endurance : " + string ad.EnduranceBaseDisplay + " |  Mental : " + string ad.MindBaseDisplay + ")"
-        let effect = "(Effet : " + string ad.Description + ")"
+        let prompt = "Qui doit revetir " + ArmorType.frenchWithUndefinedArticle ad.ArmorType + "?"
+        let stats = "(Endurance: " + string ad.EnduranceBaseDisplay + " |  Mental: " + string ad.MindBaseDisplay + ")"
+        let effect = "(Effet: " + string ad.Description + ")"
         MenuUse.make selection prompt stats effect
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Qui doter d'" + AccessoryType.frenchWithUndefinedArticle ad.AccessoryType + " ?"
-        let effect = "(Effet : " + string ad.Description + ")"
+        let prompt = "Qui doter d'" + AccessoryType.frenchWithUndefinedArticle ad.AccessoryType + "?"
+        let effect = "(Effet: " + string ad.Description + ")"
         MenuUse.make selection prompt effect ""
 
     static member tryMakeFromSelection selection =

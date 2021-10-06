@@ -31,39 +31,39 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
         //let header = if buying then "Buy " else "Sell "
         let header = if buying then "Acheter " else "Vendre "
         let price = if buying then cd.Cost else cd.Cost / 2
-        //let offer = header + ItemType.getName itemType + " for " + string price + "G ?"
-        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors ?"
-        let effect = "Effet : " + cd.Description
+        
+        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors?"
+        let effect = "Effet: " + cd.Description
         //let stats = "Own: "+ string (Inventory.getItemCount itemType inventory)
-        let stats = "Acquis : " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Acquis: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member makeFromWeaponData buying inventory selection (wd : WeaponData) =
         let itemType = snd selection
         let header = if buying then "Acheter " else "Vendre "
         let price = if buying then wd.Cost else wd.Cost / 2
-        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors ?"
-        let effect = "Effet : " + wd.Description
+        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors?"
+        let effect = "Effet: " + wd.Description
         //let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        let stats = "Puiss. : " + string wd.PowerBase + " | Mag : " + string wd.MagicBase + " | Acquis : " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Puiss.: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member makeFromArmorData buying inventory selection (ad : ArmorData) =
         let itemType = snd selection
         let header = if buying then "Acheter " else "Vendre "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors ?"
-        let effect = "Effet : " + ad.Description
-        let stats = "End: " + string ad.EnduranceBaseDisplay + " | Esp : " + string ad.MindBaseDisplay + " | Acq : " + string (Inventory.getItemCount itemType inventory)
+        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors?"
+        let effect = "Effet: " + ad.Description
+        let stats = "End: " + string ad.EnduranceBaseDisplay + " | Esp: " + string ad.MindBaseDisplay + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
         let itemType = snd selection
         let header = if buying then "Acheter " else "Vendre "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors ?"
+        let offer = header + ItemType.frenchWithQuantity itemType + " pour " + string price + " Ors?"
         let effect = "Effet: " + ad.Description
-        let stats = "Bouclier : " + string ad.ShieldBase + " | Contre : " + string ad.CounterBase + " | Acquis : " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Bouclier: " + string ad.ShieldBase + " | Contre: " + string ad.CounterBase + " | Acquis: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member tryMakeFromSelection buying inventory selection =

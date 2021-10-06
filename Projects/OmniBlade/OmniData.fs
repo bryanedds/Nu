@@ -216,13 +216,13 @@ type WeaponType =
                                   |Bare -> "Mains Nues"
                                   |ShortSword -> "Epee Courte"
                                   |Dagger -> "Dague"
-                                  |OakRod -> "Baguette en Bois "
+                                  |OakRod -> "Baguette de Bois "
                                   |OakBow -> "Arc en Bois"
                                   |Paws -> "Pattes"
                                   |BronzeSword -> "Epee de Bronze"
                                   |BronzeKatana -> "Katana de Bronze"
                                   |BronzeRod -> "Baguette de Bronze"
-                                  |LightBow -> "Arc de Lumiere"
+                                  |LightBow -> "Arc Leger"
                                   |Claws -> "Griffes"
                                   |IronSword -> "Epee de Fer"
                                   |IronKatana -> "Katana de Fer"
@@ -289,7 +289,7 @@ type AccessoryType =
     | SilverRing
     | IronBrace
     static member frenchName at = match at with
-                                  |SilverRing -> "Bague d'Argent"
+                                  |SilverRing -> "Bague en Argent"
                                   |IronBrace -> "Corset de Fer"
     static member frenchNameGender at = match at with
                                         |SilverRing -> Feminin
