@@ -284,7 +284,7 @@ type MapRand =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member tryAddSpecialRoomFromNorthSouthEast specialSegment map =
+    static member tryAddSpecialRoomNorthFromSouthEast specialSegment map =
         let mutable bossRoomAdded = false
         for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
@@ -342,24 +342,15 @@ type MapRand =
         map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         let (tryAddBoss, rand) =
             Rand.nextItem
-                [MapRand.tryAddSpecialRoomFromNorthSouthEast BossSegment
+                [MapRand.tryAddSpecialRoomNorthFromSouthEast BossSegment
                  MapRand.tryAddSpecialRoomNorthFromSouthWest BossSegment
                  MapRand.tryAddSpecialRoomSouthFromNorthEast BossSegment
                  MapRand.tryAddSpecialRoomSouthFromNorthWest BossSegment]
                 rand
-        let (tryAddNorthOpeningNarrative, rand) =
-            Rand.nextItem
-                [MapRand.tryAddSpecialRoomFromNorthSouthEast NarrativeSegment
-                 MapRand.tryAddSpecialRoomNorthFromSouthWest NarrativeSegment]
-                rand
-        let (tryAddSouthOpeningNarrative, rand) =
-            Rand.nextItem
-                [MapRand.tryAddSpecialRoomSouthFromNorthEast NarrativeSegment
-                 MapRand.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment]
-                rand
+        // TODO: P1: try to add more narrative segment placement variety while keeping each coming from opposite directions.
         let isMapValid =
-            tryAddNorthOpeningNarrative map &&
-            tryAddSouthOpeningNarrative map &&
+            MapRand.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
+            MapRand.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
             tryAddBoss map
 #if DEV
         MapRand.printn map
