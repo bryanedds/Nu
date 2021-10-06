@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3150" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
@@ -9,17 +9,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztljsKwkAQhpeENCaF2tuooMdQe2/hC8XXRbyM2GmhJ1F7UfBZ+g8mOMT1ybApzMDHLmF3vtkwGzKylRp9QddRT6PlfJfrF2L/f/vrcPQ0NbTxrGbAr6vBpJvXEIRpN9Fh/qZhP7mHzD9wzNZAd2Bh3f1Ty0zvc/+R+bcR+Iv23Z+1zfuj+PZE4ade74cYavwDzTqJO0FnnaG/5j40573P70B4ncQ7If8OuQ4+ND9q/FvrcZ2UP4ex4ENz3vv8DoTXSfn3iZvjhPEMLolHP0UDz/cuzg/Grpx/hlxLsAJrV+8OIucplfdue6T8G+RKImcKpL3X/olf30bQn4GzBMqg8sLPa6Q9Uv7qmzMHwWusCvnpP6PxI1H8l8TExHzOFfnB/Po=
+   eJztlssOwVAQhk/adE8fgQWvIJZexS3ELVYEj2CJvRXPwIIF9l5DwoK9f6KNSR3XTE4XOsmXnrTT+abNnKZDW6nhF9Qc9TTKzne1fiHy/7e/AEdd00MF5/IG/LoeTLp5D36YdhNV5i8Z9pO7xfxNx2wPtAfW1t2/sMzMPvdfmP8Ygj9t3/0J27w/jG9PGH6a9UaAlsbf1ORJ7Al61iXma+VBaz77fA8E8yTeCflPqHX2oPVF4z9aj3lS/iSOKQ9a89nneyCYJ+XvxG+OHo59MIg/+ikOMeS6SnVBxpXz51CrCEpU09W7/Zjh+ty93SPlb6PWCIzB5I0/611vC/qnqLUBW7B74ec9TgX9+zfP7AfvcS/kp/+M4o+E8V8SERHxOVfmfwCw
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dNwwV0EoDf5+BhvcCAvH6AGj3QyB+BHIDFd1xjoT0xAS19zyV0+AoGAWjYBRQGwAAlJ8Q2g==
+   eJxjYBgFo2AUjIJRMApGwSigDGQKMDBkCVDXTElBBoZsoJk5RJg7E6hmFpXt9xSE0D5A2heI/QSxq9sPtNdTiIHBC4g5hajrhqECuGng7yBoeKvhCHcYSAPanQ7EGUDcRkAtKSCEBLM6oGpDqWj/KBgFo2AU0AIAAMyFCpo=
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
+   eJztzrEJACAMBdHfZIBUNupwFu4/gkIGsBIJ3oPrTwKQ0bTolWERANxWXWq77q9PzkqCRwDAvxbBsAJX
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -33,14 +33,16 @@
     [Wait 180]
     [Dialog &quot;He told me that my beauty was why I suffered their cruelty all these years...&quot;]
     [Dialog &quot;No one ever said anything like that to me before...&quot;]
-    [Dialog &quot;He said he would take me from this place...&quot;]
+    [Dialog &quot;He said he would take me away from here...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Rightward]
-    [Dialog &quot;But how can I leave now?&quot;]
+    [Dialog &quot;But how can I leave now? Everything is finally in place to exact vengeance.&quot;]
+    [Dialog &quot;The web is already woven...&quot;]
     [Dialog &quot;For a fleeting moment my heart's desire can be heard over my lust for vengeance...&quot;]
-    [Dialog &quot;Vengeance and numbness is all I have ever felt...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Dialog &quot;Vengeance and numbness is all I have ever felt...&quot;]
     [Dialog &quot;I don't how I feel anymore...&quot;]
     [Dialog &quot;How can I leave now...&quot;]
+    [Dialog &quot;The web is already woven...&quot;]
     [FadeOutSong 2000]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
@@ -48,6 +50,16 @@
     [PlaySound 0.5 [Field ChestOpen]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 3]]]</property>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="576" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some CopperKey]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="912" y="1008" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem AluminumKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6 None Nil [[KylaAdvent 4]]]"/>
    </properties>
   </object>
  </objectgroup>
