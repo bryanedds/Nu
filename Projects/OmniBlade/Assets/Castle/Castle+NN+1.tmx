@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="3150" source="CastleInterior.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
@@ -9,17 +9,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlssOwVAQhk/adE8fgQWvIJZexS3ELVYEj2CJvRXPwIIF9l5DwoK9f6KNSR3XTE4XOsmXnrTT+abNnKZDW6nhF9Qc9TTKzne1fiHy/7e/AEdd00MF5/IG/LoeTLp5D36YdhNV5i8Z9pO7xfxNx2wPtAfW1t2/sMzMPvdfmP8Ygj9t3/0J27w/jG9PGH6a9UaAlsbf1ORJ7Al61iXma+VBaz77fA8E8yTeCflPqHX2oPVF4z9aj3lS/iSOKQ9a89nneyCYJ+XvxG+OHo59MIg/+ikOMeS6SnVBxpXz51CrCEpU09W7/Zjh+ty93SPlb6PWCIzB5I0/611vC/qnqLUBW7B74ec9TgX9+zfP7AfvcS/kp/+M4o+E8V8SERHxOVfmfwCw
+   eJztljsKwkAQhpeENCaF2tuooMdQe2/hC8XXRbyM2GmhJ1F7UfBZ+g8mOMT1ybApzMDHLmF3vtkwGzKylRp9QddRT6PlfJfrF2L/f/vrcPQ0NbTxrGbAr6vBpJvXEIRpN9Fh/qZhP7mHzD9wzNZAd2Bh3f1Ty0zvc/+R+bcR+Iv23Z+1zfuj+PZE4ade74cYavwDzTqJO0FnnaG/5j40573P70B4ncQ7If8OuQ4+ND9q/FvrcZ2UP4ex4ENz3vv8DoTXSfn3iZvjhPEMLolHP0UDz/cuzg/Grpx/hlxLsAJrV+8OIucplfdue6T8G+RKImcKpL3X/olf30bQn4GzBMqg8sLPa6Q9Uv7qmzMHwWusCvnpP6PxI1H8l8TExHzOFfnB/Po=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMApGwSigDGQKMDBkCVDXTElBBoZsoJk5RJg7E6hmFpXt9xSE0D5A2heI/QSxq9sPtNdTiIHBC4g5hajrhqECuGng7yBoeKvhCHcYSAPanQ7EGUDcRkAtKSCEBLM6oGpDqWj/KBgFo2AU0AIAAMyFCpo=
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dNwwV0EoDf5+BhvcCAvH6AGj3QyB+BHIDFd1xjoT0xAS19zyV0+AoGAWjYBRQGwAAlJ8Q2g==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzrEJACAMBdHfZIBUNupwFu4/gkIGsBIJ3oPrTwKQ0bTolWERANxWXWq77q9PzkqCRwDAvxbBsAJX
+   eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
