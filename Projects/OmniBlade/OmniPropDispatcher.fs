@@ -57,7 +57,7 @@ module PropDispatcher =
                     then BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     else BodyEmpty
                 | Npc (npcType, _, _, requirements) | NpcBranching (npcType, _, _, requirements) ->
-                    if prop.Advents.IsSupersetOf requirements then
+                    if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
@@ -151,7 +151,7 @@ module PropDispatcher =
                             (false, color, glow, Some inset, animationState.AnimationSheet)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) ->
-                        if prop.Advents.IsSupersetOf requirements then
+                        if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
                             let (image, size) =
                                 match npcType with
                                 | ShadeNpc -> (Assets.Field.ShadeAnimationSheet, Constants.Gameplay.CharacterSize)
