@@ -127,6 +127,36 @@ module FieldDispatcher =
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
                 else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
+            | ShowCharacter characterType ->
+                match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
+                | Some propId ->
+                    let field =
+                        Field.updatePropState
+                            (function
+                             | CharacterState (bounds, characterType2, animationState, _) ->
+                                CharacterState (bounds, characterType2, animationState, true)
+                             | propState -> propState)
+                            propId
+                            field
+                    (Cue.Nil, definitions, just field)
+                | None ->
+                    (Cue.Nil, definitions, just field)
+
+            | HideCharacter characterType ->
+                match Field.tryGetPropIdByState (function CharacterState (_, characterType2, _, _) -> characterType = characterType2 | _ -> false) field with
+                | Some propId ->
+                    let field =
+                        Field.updatePropState
+                            (function
+                             | CharacterState (bounds, characterType2, animationState, _) ->
+                                CharacterState (bounds, characterType2, animationState, false)
+                             | propState -> propState)
+                            propId
+                            field
+                    (Cue.Nil, definitions, just field)
+                | None ->
+                    (Cue.Nil, definitions, just field)
+
             | AddItem itemType ->
                 (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
 
@@ -138,6 +168,9 @@ module FieldDispatcher =
 
             | RemoveAdvent advent ->
                 (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove advent) field))
+
+            | ReplaceAdvent (remove, add) ->
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove remove >> Set.add add) field))
 
             | Wait time ->
                 (WaitState (World.getUpdateTime world + time), definitions, just field)
@@ -525,36 +558,36 @@ module FieldDispatcher =
                 avatar.IntersectedBodyShapes
 
         static let tryGetFacingInteraction dialogOpt advents prop field =
-            match dialogOpt with
-            | None ->
-                match prop with
-                | Portal (_, _, _, _, _, _, _) -> None
-                | Door _ -> Some "Open"
-                | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
-                | Switch (_, _, _, _) -> Some "Use"
-                | Sensor (_, _, _, _, _) -> None
-                | Character _ | Npc _ | NpcBranching _ -> Some "Talk"
-                | Shopkeep _ -> Some "Shop"
-                | Seal _ -> Some "Touch"
-                | Flame _ -> None
-                | SavePoint -> None
-                | ChestSpawn -> None
-                | EmptyProp -> None
+            match prop with
+            | Portal (_, _, _, _, _, _, _) -> None
+            | Door _ -> Some "Open"
+            | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
+            | Switch (_, _, _, _) -> Some "Use"
+            | Sensor (_, _, _, _, _) -> None
+            | Character _ | Npc _ | NpcBranching _ -> Some "Talk"
+            | Shopkeep _ -> Some "Shop"
+            | Seal _ -> Some "Touch"
+            | Flame _ -> None
+            | SavePoint -> None
+            | ChestSpawn -> None
+            | EmptyProp -> None
+
+        static let tryGetInteraction dialogOpt advents (avatar : Avatar) (field : Field) world =
+            match field.DialogOpt with
             | Some dialog ->
                 if  Dialog.canAdvance (flip detokenize field) dialog &&
                     not
                         (Dialog.isExhausted (flip detokenize field) dialog &&
-                         Option.isSome dialog.DialogPromptOpt)
+                            Option.isSome dialog.DialogPromptOpt)
                 then Some "Next"
                 else None
-
-        static let tryGetInteraction dialogOpt advents (avatar : Avatar) field world =
-            if isTouchingSavePoint avatar world then
-                Some "Save"
-            else
-                match tryGetFacingProp avatar world with
-                | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData field
-                | None -> None
+            | None ->
+                if isTouchingSavePoint avatar world then
+                    Some "Save"
+                else
+                    match tryGetFacingProp avatar world with
+                    | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData field
+                    | None -> None
 
         static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>

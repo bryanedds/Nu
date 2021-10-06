@@ -28,8 +28,17 @@ type Advent =
     | Castle2Unsealed
     | SeasonsUnsealed
     | VolcanoUnsealed
-    | CastlePart1Chest1Unlatched
-    | CastlePart1Chest2Unlatched
+    | KylaAdvent of int
+
+[<RequireQualifiedAccess>]
+module Advents =
+
+    let empty =
+        Set.empty<Advent>
+
+    let initial =
+        Set.ofList
+            [KylaAdvent 0]
 
 type WeaponType =
     | Bare

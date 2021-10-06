@@ -317,9 +317,8 @@ module Field =
             Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
-    let make fieldType saveSlot randSeedState avatar team inventory world =
+    let make fieldType saveSlot randSeedState avatar team advents inventory world =
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
-        let advents = Set.empty
         let props = makeProps fieldType omniSeedState advents world
         let definitions =
             match Data.Value.Fields.TryGetValue fieldType with
@@ -356,7 +355,7 @@ module Field =
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = Map.empty
-          Advents_ = Set.empty
+          Advents_ = Advents.empty
           Props_ = Map.empty
           Inventory_ = Inventory.initial
           Options_ = { BattleSpeed = SwiftSpeed }
@@ -371,10 +370,10 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let debug world =
-        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 0 Jinn)) Inventory.initial world
+        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
 
     let initial saveSlot randSeedState world =
-        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 0 Jinn)) Inventory.initial world
+        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
 
     let save field =
         let saveFilePath =

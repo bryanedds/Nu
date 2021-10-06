@@ -56,7 +56,9 @@ module PropDispatcher =
                     | SealState false -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Character (_, _, _, _, _) ->
-                    BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
+                    match prop.PropState with
+                    | CharacterState (_, _, _, true) -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
                 | Npc (npcType, _, _, _) | NpcBranching (npcType, _, _, _) ->
                     match prop.PropState with
                     | NpcState (_, _, _, _, true) ->
