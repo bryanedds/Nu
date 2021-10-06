@@ -93,7 +93,7 @@ module Field =
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
                   Direction = direction }
-            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, colWhite, colZero, advents.IsSupersetOf requirements)
+            CharacterState (propDescriptor.PropBounds, characterType, characterAnimationState, advents.IsSupersetOf requirements)
         | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
         | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
         | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState

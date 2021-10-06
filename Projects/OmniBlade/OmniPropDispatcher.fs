@@ -31,7 +31,7 @@ module PropDispatcher =
              entity.BodyType == Static
              entity.Bounds <== prop --> fun prop ->
                 match prop.PropState with
-                | CharacterState (bounds, _, _, _, _, _) -> bounds
+                | CharacterState (bounds, _, _, _) -> bounds
                 | _ -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
@@ -77,8 +77,8 @@ module PropDispatcher =
             let prop = Prop.updatePosition (constant position) prop
             let prop =
                 match prop.PropState with
-                | CharacterState (bounds, characterType, animationState, color, glow, exists) ->
-                    let propState = CharacterState (v4Bounds position bounds.Size, characterType, animationState, color, glow, exists)
+                | CharacterState (bounds, characterType, animationState, exists) ->
+                    let propState = CharacterState (v4Bounds position bounds.Size, characterType, animationState, exists)
                     Prop.updatePropState (constant propState) prop
                 | _ -> prop
             just prop
@@ -156,17 +156,17 @@ module PropDispatcher =
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Character (_, _, isEcho, _, _) ->
                         match prop.PropState with
-                        | CharacterState (_, _, animationState, color, glow, true) ->
+                        | CharacterState (_, _, animationState, true) ->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, glow) =
                                 if isEcho then
-                                    let color = color.WithA 95uy
+                                    let color = colWhite.WithA 95uy
                                     let glowAmount = single (time % 120L) / 120.0f * 255.0f
                                     let glowAmount = if glowAmount >= 127.0f then 255.0f - glowAmount else glowAmount
                                     let glow = colGray.WithA (byte glowAmount)
                                     (color, glow)
-                                else (color, glow)
+                                else (colWhite, colZero)
                             (false, color, glow, Some inset, animationState.AnimationSheet)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
