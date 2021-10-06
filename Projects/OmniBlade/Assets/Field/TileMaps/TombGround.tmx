@@ -34,42 +34,42 @@
   </object>
   <object id="5" gid="235" x="432" y="2064" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 ForestUnsealed]] [&quot;Refuse&quot;]]]] [ForestUnsealed]]"/>
+    <property name="I" value="[Seal [0 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 ForestSealed]] [&quot;Refuse&quot;]]]] [ForestSealed]]"/>
    </properties>
   </object>
   <object id="6" gid="235" x="2448" y="192" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [255 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DesertUnsealed]] [&quot;Refuse&quot;]]]] [DesertUnsealed]]"/>
+    <property name="I" value="[Seal [255 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DesertSealed]] [&quot;Refuse&quot;]]]] [DesertSealed]]"/>
    </properties>
   </object>
   <object id="7" gid="235" x="1872" y="240" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [255 0 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 CastleUnsealed]] [&quot;Refuse&quot;]]]] [CastleUnsealed]]"/>
+    <property name="I" value="[Seal [255 0 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 CastleSealed]] [&quot;Refuse&quot;]]]] [CastleSealed]]"/>
    </properties>
   </object>
   <object id="8" gid="235" x="1584" y="912" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0 255 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 RuinsUnsealed]] [&quot;Refuse&quot;]]]] [RuinsUnsealed]]"/>
+    <property name="I" value="[Seal [0 255 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 RuinsSealed]] [&quot;Refuse&quot;]]]] [RuinsSealed]]"/>
    </properties>
   </object>
   <object id="9" gid="235" x="864" y="1152" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0 0 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DeadSeaUnsealed]] [&quot;Refuse&quot;]]]] [DeadSeaUnsealed]]"/>
+    <property name="I" value="[Seal [0 0 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DeadSeaSealed]] [&quot;Refuse&quot;]]]] [DeadSeaSealed]]"/>
    </properties>
   </object>
   <object id="10" gid="235" x="240" y="1296" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [160 135 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 MountainUnsealed]] [&quot;Refuse&quot;]]]] [MountainUnsealed]]"/>
+    <property name="I" value="[Seal [160 135 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 MountainSealed]] [&quot;Refuse&quot;]]]] [MountainSealed]]"/>
    </properties>
   </object>
   <object id="11" gid="235" x="528" y="2688" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0 200 200 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 FactoryUnsealed]] [&quot;Refuse&quot;]]]] [FactoryUnsealed]]"/>
+    <property name="I" value="[Seal [0 200 200 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 FactorySealed]] [&quot;Refuse&quot;]]]] [FactorySealed]]"/>
    </properties>
   </object>
   <object id="12" gid="235" x="2928" y="960" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [255 255 255 127] [Sequence [[Prompt &quot;Are you here to find riches?&quot; [&quot;Yes...&quot; [Unseal 0 CastleUnsealed]] [&quot;No&quot;]]]] [CastleUnsealed]]"/>
+    <property name="I" value="[Seal [255 255 255 127] [Sequence [[Prompt &quot;Are you here to find riches?&quot; [&quot;Yes...&quot; [Unseal 0 CastleSealed]] [&quot;No&quot;]]]] [CastleSealed]]"/>
    </properties>
   </object>
   <object id="13" gid="235" x="1584" y="2544" width="48" height="48">

@@ -18,16 +18,16 @@ type Advent =
     | MadTrixterDefeated
     | HeavyArmorosDefeated
     | AraneaImplicitumDefeated
-    | CastleUnsealed
-    | ForestUnsealed
-    | FactoryUnsealed
-    | MountainUnsealed
-    | DeadSeaUnsealed
-    | RuinsUnsealed
-    | DesertUnsealed
-    | Castle2Unsealed
-    | SeasonsUnsealed
-    | VolcanoUnsealed
+    | CastleSealed
+    | ForestSealed
+    | FactorySealed
+    | MountainSealed
+    | DeadSeaSealed
+    | RuinsSealed
+    | DesertSealed
+    | DarkCastleSealed
+    | SeasonsSealed
+    | VolcanoSealed
     | KylaAdvent of int
 
 [<RequireQualifiedAccess>]
@@ -38,7 +38,17 @@ module Advents =
 
     let initial =
         Set.ofList
-            [KylaAdvent 0]
+            [CastleSealed
+             ForestSealed
+             FactorySealed
+             MountainSealed
+             DeadSeaSealed
+             RuinsSealed
+             DesertSealed
+             DarkCastleSealed
+             SeasonsSealed
+             VolcanoSealed
+             KylaAdvent 0]
 
 type WeaponType =
     | Bare
