@@ -570,10 +570,13 @@ type [<NoEquality; NoComparison>] Cue =
     | Face of CueTarget * Direction
     | Recruit of AllyType
     | Unseal of int * Advent
+    | ShowCharacter of CharacterType
+    | HideCharacter of CharacterType
     | AddItem of ItemType
     | RemoveItem of ItemType
     | AddAdvent of Advent
     | RemoveAdvent of Advent
+    | ReplaceAdvent of Advent * Advent
     | Wait of int64
     | WaitState of int64
     | Animate of CueTarget * CharacterAnimationType * CueWait
@@ -599,7 +602,7 @@ type [<NoEquality; NoComparison>] Cue =
     static member notNil cue = match cue with Nil -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
         | Wait _ | WaitState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
         | If (p, c, a) ->
