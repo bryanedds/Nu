@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,12 +9,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlrFOwzAQhq1EWeIMwM5CKsFjAHvfAtoKRGkeomteBnVrB3gSYK+KVEIZ+U9J1KvrVLQ6OUN90idbkX3fOTpHyUOl8j14ilRjDKL9ch2C9x+3/x6OoaWGBzy7c+C31eDSzWuow7WbeGT+vmM/uTPmH0Vua6A78Bas/dPATe9zf8H8ixb8V+HafxG697fx7WnDT73+bJBZ/CPLOok7QWedob9eK2jOe5/fAXOdxDsh/xdyfVfQvLD4F8H2Oil/ivGygua89/kdMNdJ+Zdx6fjBuAK/8bafoofnS43zgxct558h1zv4AJ/a7q4jTZTqJOUeKf8cuU6Q8xScJc1uXuNc0H8O5zW4AbcN/rFRI+2R8nd3nLmOid6ssSvkp/+M3oG08V/i8Xj+zx9AzABd
+   eJztljsKwkAQhpeENCaF2tuooMdQe2/hC8XXRbyM2GmhJ1F7UfBZ+g8mOMT1ybApzMDHLmF3vtkwGzKylRp9QddRT6PlfJfrF2L/f/vrcPQ0NbTxrGbAr6vBpJvXEIRpN9Fh/qZhP7mHzD9wzNZAd2Bh3f1Ty0zvc/+R+bcR+Iv23Z+1zfuj+PZE4ade74cYavwDzTqJO0FnnaG/5j40573P70B4ncQ7If8OuQ4+ND9q/FvrcZ2UP4ex4ENz3vv8DoTXSfn3iZvjhPEMLolHP0UDz/cuzg/Grpx/hlxLsAJrV+8OIucplfdue6T8G+RKImcKpL3X/olf30bQn4GzBMqg8sLPa6Q9Uv7qmzMHwWusCvnpP6PxI1H8l8TExHzOFfnB/Po=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dN4xkcAYa3kykhCkVw/8cCelpAVTteSqnwVEwCkbBKKA2AACjcQ2G
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dNwwV0EoDf5+BhvcCAvH6AGj3QyB+BHIDFd1xjoT0xAS19zyV0+AoGAWjYBRQGwAAlJ8Q2g==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
@@ -30,7 +30,35 @@
   </object>
   <object id="4" gid="235" x="528" y="1152" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6]"/>
+    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6 None Nil [[KylaAdvent 2]]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="816" y="1104" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Rightward True
+  [Sequence
+   [[FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field TheCalling]]
+    [Wait 180]
+    [Dialog &quot;Always. They have always treated me this way...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;Things cannot be put right. Things can only be put in my favor. &quot;]
+    [Dialog &quot;You are either the spider or you are the fly.&quot;]
+    [Dialog &quot;A lifetime of poison is what she gave to me; I shall give it all back to her in one moment!&quot;]
+    [Dialog &quot;Aranea's poison is tasteless and unidentifiable.&quot;]
+    [Dialog &quot;In my master's nightly herbal brew shall I serve it.&quot;]
+    [Dialog &quot;Upon her death by the morn, by the custom of succession, I will take her stead.&quot;]
+    [Dialog &quot;Imagine their faces when they see the lowest servent become the highest... their victim become their tormentor...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Rightward]
+    [Dialog &quot;Things could not be put right...&quot;]
+    [FadeOutSong 2000]
+    [Wait 120]
+    [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [PlaySound 0.5 [Field ChestOpen]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 1]]]</property>
    </properties>
   </object>
  </objectgroup>
