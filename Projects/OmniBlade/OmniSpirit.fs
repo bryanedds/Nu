@@ -40,8 +40,8 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
         | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
         | Steadfast ->      [|Chase;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
-        | Stalking ->       [|Chase;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
-        | Ambushing ->      [|Chase;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
+        | Stalking ->       [|Creep;     Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
+        | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
 type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
