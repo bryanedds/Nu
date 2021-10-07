@@ -39,7 +39,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         match pattern with
         | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
         | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
-        | Steadfast ->      [|Chase;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Steadfast ->      [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
         | Stalking ->       [|Creep;     Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
         | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
