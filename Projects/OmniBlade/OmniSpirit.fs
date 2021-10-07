@@ -30,8 +30,10 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         | 4 -> Ambushing
         | _ -> failwithumf ()
 
-    static member random () =
-        Gen.random1 5 |> SpiritPattern.fromInt
+    static member generate () =
+        if Gen.random1 3 = 0 // 67% less chance of Stalking and Ambushing spirit
+        then Gen.random1 5 |> SpiritPattern.fromInt
+        else Gen.random1 3 |> SpiritPattern.fromInt
 
     static member toSpiritMovement pattern =
         match pattern with
