@@ -79,6 +79,7 @@ module AvatarDispatcher =
              entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
+             //Simulants.Game.BodyRemovedEvent =|> fun evt -> msg (BodyRemoved evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world
