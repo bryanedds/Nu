@@ -261,7 +261,7 @@ module Field =
                         Array.map (fun _ ->
                             match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
                             | Some spiritType ->
-                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.random ())
+                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.generate ())
                                 let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
