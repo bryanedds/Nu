@@ -90,7 +90,7 @@ module Field =
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
                   Direction = direction }
-            CharacterState characterAnimationState
+            CharacterState (colWhite, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
     let private makeProps fieldType omniSeedState advents world =

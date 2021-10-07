@@ -577,6 +577,8 @@ type [<NoEquality; NoComparison>] Cue =
     | ReplaceAdvent of Advent * Advent
     | Wait of int64
     | WaitState of int64
+    | Fade of CueTarget * int64
+    | FadeState of int64 * CueTarget * int64
     | Animate of CueTarget * CharacterAnimationType * CueWait
     | AnimateState of int64 * CueWait
     | Move of CueTarget * Vector2 * MoveType
@@ -602,7 +604,7 @@ type [<NoEquality; NoComparison>] Cue =
         match cue with
         | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Recruit _ | Unseal _ -> false
         | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
-        | Wait _ | WaitState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+        | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
         | If (p, c, a) ->
             match p with
