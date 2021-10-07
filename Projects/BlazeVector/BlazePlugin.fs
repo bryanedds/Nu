@@ -7,9 +7,9 @@ type BlazePlugin () =
     inherit NuPlugin ()
 
     // specify the game dispatcher to use at run-time
-    override this.GetGameDispatcher () =
+    override this.StandAloneConfig =
         typeof<BlazeVectorDispatcher>
 
     // specify the screen dispatcher to use in the editor
-    override this.GetEditorScreenDispatcher () =
+    override this.EditorConfig =
         (Simulants.Gameplay.Screen, typeof<GameplayDispatcher>)

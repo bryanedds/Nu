@@ -520,7 +520,7 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherType = if config.StandAlone then plugin.GetGameDispatcher () else typeof<GameDispatcher>
+                let activeGameDispatcherType = if config.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
                 let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems
@@ -553,7 +553,7 @@ module WorldModule3 =
                     let ambientState =
                         let assetMetadataMap = Metadata.make config.Imperative assetGraph
                         let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
-                        let userOverlayRoutes = plugin.MakeOverlayRoutes ()
+                        let userOverlayRoutes = plugin.OverlayRoutes
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
