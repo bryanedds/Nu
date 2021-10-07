@@ -13,10 +13,10 @@
  </layer>
  <layer id="4" name="Ceiling" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   eJzt18EJADAIA0DpdN1/or67QKnxDhxAiEKqSLDXPd2l7QMAADCdngd05oeRQpbhH+4RAAB4Rf8AAACm0YMAAEhwAMXZCUE=
+   eJzt10EKwDAIBEDT1/VV6dd77jWQ0GxmwLuCCltFgvv61u5G5umt6mlz+1opbR4AAOBsabl1hJwH+/LD/LAUdtku8x/u0T0CAMAq8of8AQAAp5GD5CAAgAQvT4kROQ==
   </data>
  </layer>
- <objectgroup id="3" name="Props">
+ <objectgroup id="3" name="Props" visible="0">
   <object id="2" gid="235" x="1584" y="3072" width="96" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal South Upward TombOuter South]"/>
