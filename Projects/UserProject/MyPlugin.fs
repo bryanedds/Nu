@@ -6,9 +6,9 @@ type MyPlugin () =
     inherit NuPlugin ()
 
     // this specifies the game dispatcher to use in your application
-    override this.GetGameDispatcher () =
+    override this.StandAloneConfig =
         typeof<MyGameDispatcher>
 
     // this specifies the screen dispatcher to use in the editor
-    override this.GetEditorScreenDispatcher () =
+    override this.EditorConfig =
         (Simulants.Gameplay.Screen, typeof<MyGameplayDispatcher>)

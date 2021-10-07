@@ -1735,7 +1735,7 @@ module Gaia =
                     world
             let (screen, screenDispatcher) =
                 if useGameplayScreen
-                then plugin.GetEditorScreenDispatcher ()
+                then plugin.EditorConfig
                 else (Simulants.DefaultScreen, typeof<ScreenDispatcher>)
             Globals.Screen <- screen
             let (screen, world) =

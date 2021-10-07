@@ -413,15 +413,15 @@ type PhantomGameDispatcher () =
 type MetricsPlugin () =
     inherit NuPlugin ()
 #if ELMISH
-    override this.GetGameDispatcher () = typeof<ElmishGameDispatcher>
+    override this.StandAloneConfig = typeof<ElmishGameDispatcher>
 #else
   #if PHANTOM
-    override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
+    override this.StandAloneConfig = typeof<PhantomGameDispatcher>
   #else
     #if TESTBED
-    override this.GetGameDispatcher () = typeof<TestBedGameDispatcher>
+    override this.StandAloneConfig = typeof<TestBedGameDispatcher>
     #else
-    override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+    override this.StandAloneConfig = typeof<MyGameDispatcher>
     #endif
   #endif
 #endif
