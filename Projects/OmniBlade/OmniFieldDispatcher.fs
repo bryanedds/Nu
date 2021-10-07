@@ -17,6 +17,7 @@ module FieldDispatcher =
         | Update
         | UpdateAvatar of Avatar
         | UpdateFieldTransition
+        | UpdateProp of Prop
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemOpen
@@ -858,6 +859,10 @@ module FieldDispatcher =
                 // no transition
                 | None -> just field
 
+            | UpdateProp prop ->
+                let field = Field.updateProp (constant prop) prop.PropId field
+                just field
+
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
@@ -1179,7 +1184,8 @@ module FieldDispatcher =
                  // props
                  Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
                     Content.entity<PropDispatcher> Gen.name
-                        [Entity.Prop <== prop]
+                        [Entity.Prop <== prop
+                         Entity.Prop.ChangeEvent ==|> fun evt -> msg (UpdateProp (evt.Data.Value :?> Prop))]
 
                  // spirit orb
                  Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
