@@ -981,7 +981,7 @@ module FieldData =
                         | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
                         | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
                         | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                    let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
+                    let battleIndex = int (3.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
                     | 0 -> Some WeakSpirit
                     | 1 -> Some NormalSpirit
