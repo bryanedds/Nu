@@ -17,6 +17,7 @@ module AvatarDispatcher =
         | PostUpdate
         | Collision of CollisionData
         | Separation of SeparationData
+        | BodyRemoving of PhysicsId
         | TryFace of Direction
         | Nil
 
@@ -78,8 +79,8 @@ module AvatarDispatcher =
             [entity.UpdateEvent => msg Update
              entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
-             entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
-             //Simulants.Game.BodyRemovedEvent =|> fun evt -> msg (BodyRemoved evt.Data)]
+             entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)
+             Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world
@@ -140,6 +141,13 @@ module AvatarDispatcher =
                         let avatar = Avatar.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) avatar
                         avatar
                     else avatar
+                just avatar
+
+            | BodyRemoving physicsId ->
+                
+                let (separatedBodyShapes, intersectedBodyShapes) = List.split (fun shape -> shape.Entity.GetPhysicsId world = physicsId) avatar.IntersectedBodyShapes
+                let avatar = Avatar.updateIntersectedBodyShapes (constant intersectedBodyShapes) avatar
+                let avatar = Avatar.updateSeparatedBodyShapes ((@) separatedBodyShapes) avatar
                 just avatar
 
             | Nil ->
