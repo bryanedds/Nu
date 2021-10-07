@@ -150,12 +150,7 @@ module FieldDispatcher =
                 else (Cue.Nil, definitions, just field)
 
             | Fade (target, length) ->
-                match target with
-                | AvatarTarget
-                | CharacterTarget _ ->
-                    (FadeState (World.getUpdateTime world, target, length), definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
-                    (Cue.Nil, definitions, just field)
+                (FadeState (World.getUpdateTime world, target, length), definitions, just field)
 
             | FadeState (startTime, target, length) ->
                 let time = World.getUpdateTime world
