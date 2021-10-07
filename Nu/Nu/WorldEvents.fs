@@ -63,6 +63,7 @@ module Events =
     let Deselecting = stoa<unit> "Deselecting/Event"
     let Collision = stoa<CollisionData> "Collision/Event"
     let Separation = stoa<SeparationData> "Separation/Event"
+    let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"

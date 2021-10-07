@@ -80,12 +80,19 @@ module WorldPhysics =
         /// Send a message to the physics system to destroy a physics body.
         [<FunctionBinding>]
         static member destroyBody physicsId world =
+            let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
+            let world = World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.enqueuePhysicsMessage destroyBodyMessage world
 
         /// Send a message to the physics system to destroy several physics bodies.
         [<FunctionBinding>]
         static member destroyBodies physicsIds world =
+            let eventTrace = EventTrace.debug "World" "destroyBodies" "" EventTrace.empty
+            let world =
+                List.fold (fun world physicsId ->
+                    World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world)
+                    world physicsIds
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyBodiesMessage world
 
