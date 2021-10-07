@@ -68,6 +68,7 @@ module WorldGameModule =
         member this.GamepadButtonDownEvent index = Events.GamepadButtonDown index --> this
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUp index --> this
         member this.AssetsReloadEvent = Events.AssetsReload --> this
+        member this.BodyAddingEvent = Events.BodyAdding --> this
         member this.BodyRemovingEvent = Events.BodyRemoving --> this
 
         /// Try to get a property value and type.
