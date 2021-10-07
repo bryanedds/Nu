@@ -10,7 +10,7 @@ open Nu
 type [<ReferenceEquality; NoComparison>] PropState =
     | DoorState of bool
     | SwitchState of bool
-    | CharacterState of CharacterAnimationState
+    | CharacterState of Color * CharacterAnimationState
     | NilState
 
 [<RequireQualifiedAccess>]

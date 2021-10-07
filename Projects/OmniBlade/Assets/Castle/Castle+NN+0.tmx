@@ -53,9 +53,10 @@
     [Dialog &quot;How much longer can this go on...?&quot;]
     [Dialog &quot;How much more must I bear...?&quot;]
     [FadeOutSong 2000]
-    [Wait 120]
+    [Fade [CharacterTarget [Enemy Kyla]] 180]
     [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [Wait 120]
     [PlaySound 0.5 [Field ChestOpen]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 1]]]</property>

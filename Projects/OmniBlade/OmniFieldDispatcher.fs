@@ -91,9 +91,9 @@ module FieldDispatcher =
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState animationState ->
+                                 | CharacterState (color, animationState) ->
                                     let animationState = CharacterAnimationState.face direction animationState
-                                    CharacterState animationState
+                                    CharacterState (color, animationState)
                                  | propState -> propState)
                                 propId
                                 field
@@ -149,6 +149,35 @@ module FieldDispatcher =
                 then (cue, definitions, just field)
                 else (Cue.Nil, definitions, just field)
 
+            | Fade (target, length) ->
+                match target with
+                | AvatarTarget
+                | CharacterTarget _ ->
+                    (FadeState (World.getUpdateTime world, target, length), definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
+                    (Cue.Nil, definitions, just field)
+
+            | FadeState (startTime, target, length) ->
+                let time = World.getUpdateTime world
+                let localTime = time - startTime
+                let progress = single localTime / single length
+                let field =
+                    match target with
+                    | CharacterTarget characterType ->
+                        match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                        | Some propId ->
+                            Field.updatePropState
+                                (function
+                                 | CharacterState (_, animationState) -> CharacterState (colWhite.MapA (fun a -> single a * (1.0f - progress) |> byte), animationState)
+                                 | propState -> propState)
+                                propId
+                                field
+                        | None -> field
+                    | _ -> field
+                if progress >= 1.0f
+                then (Cue.Nil, definitions, just field)
+                else (cue, definitions, just field)
+
             | Animate (target, characterAnimationType, wait) ->
                 match target with
                 | AvatarTarget ->
@@ -162,9 +191,9 @@ module FieldDispatcher =
                         let field =
                             Field.updatePropState
                                 (function
-                                 | CharacterState animationState ->
+                                 | CharacterState (color, animationState) ->
                                     let animationState = CharacterAnimationState.setCharacterAnimationType (Some (World.getUpdateTime world)) characterAnimationType animationState
-                                    CharacterState animationState
+                                    CharacterState (color, animationState)
                                  | propState -> propState)
                                 propId
                                 field

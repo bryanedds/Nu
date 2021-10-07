@@ -44,9 +44,10 @@
     [Dialog &quot;How can I leave now...&quot;]
     [Dialog &quot;The web is already woven...&quot;]
     [FadeOutSong 2000]
-    [Wait 120]
+    [Fade [CharacterTarget [Enemy Kyla]] 180]
     [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
+    [Wait 120]
     [PlaySound 0.5 [Field ChestOpen]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 3]]]</property>
