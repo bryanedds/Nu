@@ -137,6 +137,22 @@ type ItemType =
         | KeyItem ty -> scstringm ty
         | Stash gold -> string gold + "G"
 
+    static member sortItems items =
+        Seq.sortBy
+            (function
+             | (Consumable _, _) -> 0
+             | (Equipment _, _) -> 1
+             | (KeyItem _, _) -> 2
+             | (Stash _, _) -> 3)
+            items
+
+    static member filterSellableItems items =
+        Seq.choose
+            (function
+             | (Equipment _, _) | (Consumable _, _) as item -> Some item
+             | (KeyItem _, _) | (Stash _, _) -> None)
+            items
+
 type [<ReferenceEquality; NoComparison>] PrizePool =
     { Consequents : Advent Set
       Items : ItemType list
