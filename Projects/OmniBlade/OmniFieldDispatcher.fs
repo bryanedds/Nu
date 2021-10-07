@@ -388,15 +388,20 @@ module FieldDispatcher =
     [<RequireQualifiedAccess>]
     module Content =
 
-        let private pageItems pageIndex pageSize items =
+        let private pageItems pageSize pageIndex filter sort (items : Map<ItemType, int>) =
             items |>
+            Map.toSeq |>
+            (fun items -> if filter then ItemType.filterSellableItems items else items) |>
+            (fun items -> if sort then ItemType.sortItems items else items) |>
+            Seq.index |>
             Seq.chunkBySize pageSize |>
             Seq.trySkip pageIndex |>
             Seq.map List.ofArray |>
             Seq.tryHead |>
             Option.defaultValue [] |>
             Seq.indexed |>
-            Map.ofSeq
+            Map.ofSeq |>
+            Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
 
         let sidebar position elevation (field : Lens<Field, World>) =
             Content.association Gen.name []
@@ -449,30 +454,22 @@ module FieldDispatcher =
                          Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
-        let items (position : Vector2) elevation columns field fieldMsg =
+        let items (position : Vector2) elevation rows columns field fieldMsg =
             Content.entities field
                 (fun (field : Field) _ ->
                     (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
-                    let sorter (item, _) = match item with Consumable _ -> 0 | Equipment _ -> 1 | KeyItem _ -> 2 | Stash _ -> 3
                     match menu.MenuState with
-                    | MenuItem menu -> inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |> pageItems menu.ItemPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                    | MenuItem menu -> pageItems rows menu.ItemPage true false inventory.Items
                     | _ ->
                         match shopOpt with
                         | Some shop ->
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
+                                | Some shopData -> pageItems rows shop.ShopPage true false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                                 | None -> Map.empty
-                            | ShopSelling ->
-                                inventory.Items |>
-                                Map.toSeq |>
-                                Seq.sortBy sorter |>
-                                Seq.index |>
-                                Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 8 |>
-                                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                            | ShopSelling -> pageItems rows shop.ShopPage false true inventory.Items
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
@@ -1400,7 +1397,7 @@ module FieldDispatcher =
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
                        [Content.sidebar (v2 24.0f 417.0f) 1.0f field
-                        Content.items (v2 138.0f 417.0f) 1.0f 5 field MenuItemSelect
+                        Content.items (v2 138.0f 417.0f) 1.0f 10 5 field MenuItemSelect
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -1484,7 +1481,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
-                       [Content.items (v2 96.0f 347.0f) 1.0f 4 field ShopSelect
+                       [Content.items (v2 96.0f 347.0f) 1.0f 8 4 field ShopSelect
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Buy"
