@@ -32,7 +32,8 @@
    <properties>
     <property name="I">[Character [Enemy Kyla] Rightward True
   [Sequence
-   [[FadeOutSong 2000]
+   [ClearSpirits
+    [FadeOutSong 2000]
     [Wait 120]
     [PlaySong 2000 0 0.5 0 [Field Joining]]
     [Wait 180]

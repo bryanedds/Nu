@@ -104,6 +104,10 @@ module FieldDispatcher =
                 | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
                     (Cue.Nil, definitions, just field)
 
+            | Cue.ClearSpirits ->
+                let field = Field.clearSpirits field
+                (Cue.Nil, definitions, just field)
+
             | Recruit allyType ->
                 let fee = Field.getRecruitmentFee field
                 if field.Inventory.Gold >= fee then
@@ -118,14 +122,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | Unseal (fee, advent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.remove advent) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog "You don't have enough..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | AddItem itemType ->
                 (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -290,12 +294,13 @@ module FieldDispatcher =
                 | Some _ -> (cue, definitions, just field)
                 | None -> (Cue.Nil, definitions, just field)
 
-            | Dialog text ->
+            | Dialog (text, isNarration) ->
                 match field.DialogOpt with
                 | Some _ ->
                     (cue, definitions, just field)
                 | None ->
-                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
+                    let dialogForm = if isNarration then DialogNarration else DialogThick
+                    let dialog = { DialogForm = dialogForm; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
                     (DialogState, definitions, just field)
 
@@ -686,7 +691,7 @@ module FieldDispatcher =
             if field.Advents.IsSupersetOf requirements then
                 let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
-                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog "..."
+                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
                 let field = Field.updateCue (constant branchCue) field
                 just field
             else just field

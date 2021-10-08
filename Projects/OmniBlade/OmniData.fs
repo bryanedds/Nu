@@ -568,6 +568,7 @@ type [<NoEquality; NoComparison>] Cue =
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
     | Face of CueTarget * Direction
+    | ClearSpirits
     | Recruit of AllyType
     | Unseal of int * Advent
     | AddItem of ItemType
@@ -587,7 +588,7 @@ type [<NoEquality; NoComparison>] Cue =
     | WarpState
     | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
     | BattleState
-    | Dialog of string
+    | Dialog of string * bool
     | DialogState
     | Prompt of string * (string * Cue) * (string * Cue)
     | PromptState
@@ -602,7 +603,7 @@ type [<NoEquality; NoComparison>] Cue =
     static member notNil cue = match cue with Nil -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Recruit _ | Unseal _ -> false
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ | Unseal _ -> false
         | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true

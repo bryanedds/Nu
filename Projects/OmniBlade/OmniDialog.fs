@@ -10,6 +10,7 @@ open Nu.Declarative
 type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogThin    
     | DialogThick
+    | DialogNarration
 
 type [<ReferenceEquality; NoComparison>] Dialog =
     { DialogForm : DialogForm
@@ -70,6 +71,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     match dialog.DialogForm with
                     | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
                     | DialogThick -> v4Bounds (v2 -432.0f 60.0f) (v2 864.0f 192.0f)
+                    | DialogNarration -> v4Bounds (v2 -432.0f 60.0f) (v2 864.0f 192.0f)
                 | None -> v4Zero
              Entity.Elevation == elevation
              Entity.BackgroundImageOpt <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
@@ -79,6 +81,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                         match dialog.DialogForm with
                         | DialogThin -> Assets.Gui.DialogThinImage
                         | DialogThick -> Assets.Gui.DialogThickImage
+                        | DialogNarration -> Assets.Default.ImageEmpty
                     | None -> Assets.Gui.DialogThickImage
                 Some image
              Entity.Text <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
@@ -90,7 +93,13 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     let textToShow = String.tryTake dialog.DialogProgress text
                     textToShow
                 | None -> ""
-             Entity.Justification == Unjustified true
+             Entity.Justification <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
+                match dialogOpt with
+                | Some dialog ->
+                    match dialog.DialogForm with
+                    | DialogThin | DialogThick -> Unjustified true
+                    | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
+                | None -> Unjustified true
              Entity.Margins == v2 30.0f 30.0f]
             [Content.button (name + "+Left")
                 [Entity.PositionLocal == v2 186.0f 18.0f; Entity.ElevationLocal == 2.0f
