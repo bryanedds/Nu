@@ -507,13 +507,9 @@ module WorldModule =
         static member internal setOverlayer overlayer world =
             World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
-        /// Get intrinsic overlays.
-        static member getIntrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getIntrinsicOverlays world
-
-        /// Get extrinsic overlays.
-        static member getExtrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getExtrinsicOverlays world
+        /// Get overlays.
+        static member getOverlays world =
+            World.getOverlayerBy Overlayer.getOverlays world
 
         static member internal getOverlayRouter world =
             World.getAmbientStateBy AmbientState.getOverlayRouter world

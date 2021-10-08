@@ -115,7 +115,8 @@ module Gaia =
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(Routed Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
-        for overlay in World.getExtrinsicOverlays world do
+        let overlays = world |> World.getOverlays |> Map.toValueList
+        for overlay in overlays do
             form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
         form.overlayComboBox.SelectedIndex <- 0
 
@@ -548,8 +549,8 @@ module Gaia =
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
-                                let overlays = World.getIntrinsicOverlays Globals.World @ World.getExtrinsicOverlays Globals.World
-                                let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
+                                let overlays = World.getOverlays Globals.World
+                                let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
                                 (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
                             | "FacetNames" ->
                                 let facetNames = Globals.World |> World.getFacets |> Map.toKeyList

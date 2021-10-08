@@ -12,7 +12,7 @@ module OverlayRouter =
     /// Maps from type names to overlay descriptors.
     type OverlayRouter =
         private
-            { Routes : Map<string, string option> }
+            { Routes : Map<string, string> }
 
     /// Try to find an optional overlay name for a given classification.
     let tryFindOverlayNameOpt dispatcherName overlayRouter =

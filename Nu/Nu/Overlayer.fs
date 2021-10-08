@@ -268,6 +268,10 @@ module Overlayer =
     let getExtrinsicOverlays overlayer =
         overlayer.ExtrinsicOverlays
 
+    /// Get overlays.
+    let getOverlays overlayer =
+        overlayer.Overlays
+
     /// The empty overlayer.
     let empty =
         { IntrinsicOverlays = List.empty
