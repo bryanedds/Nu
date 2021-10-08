@@ -6,6 +6,7 @@ open System
 open Prime
 open Nu
 
+// TODO: collapse OverlayRouter into Overlayer,
 [<RequireQualifiedAccess>]
 module OverlayRouter =
 
