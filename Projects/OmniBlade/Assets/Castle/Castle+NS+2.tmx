@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,18 +9,24 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1r0OwVAYxvE3bbo4HbBbkHAZ2Lu4Bl8hvi7CIBLXIhIbA1eCDRGDz42nQUJ7KlJvhOSc5J+0tO/v1KJdnairUv1oFYOo7rOi8blfxYyx5q8Sk7/T/MXlJ3R5C0G0RCsh/57L3waIzuiAjuiE7NWGG0UdcT0v4PMtjneoHODzR5g3RTM0v1n3lXWcx0yiuHm9h8tfY1YQM0MobJLnetzjmtGPwEyhNMp4+C3HHu17uHzrZvZg9IXcH4jnPVpMfh4zCo5qhtsvS67LMfhev4lzcTyr8pWv/NfZ7yNNid9get9459knmtsfMv3fv+PvJf7mi35Sd/tR/Xu+11K+8v/NvwB4jgEn
+   eJztlssOwUAUhidtutEusLdBwmNgKzaewS0Vt8ew8TDWLHgbRCxcd/zNaIzqIHVMSOZPvkwzt+9MM0k7MhkbaTQ/SttirBeRpvW5v4M9ZkY0WkT+nRENKn/ODGdhM7YEKzt8nMq/jTF2BgdwBCfgZWjztuzwtoH+Lfp2wI3R+adXjyxVYTyDWrIOX0PlX7/wh2VN6E/hPHGQAElH7hTneGuo/BXsVQBFUJL4x/b9nAqRv449GgG61qPfDZlXI/DL3kkwFGfV/v/w1wN30P3iXXtWgx/Vbv+fwA/Vt/5d9wDMjZt/gue+oho6V/de8G8MXoOKO+j5PXfevPnTJq9BlV90izWo8sui/dr/b/4LW9X/pA==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmExEGDBAPtlLtT+eSS4g4mbevafJcHeOVC154dR/I+CUTAKRsEoGAWjYBQMJwAAlR4SAQ==
+   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CKP0fSpsC6cPcDAxHgNiKRmGBDShx09b8BXT0CzYwF2j/A6AfHwLxIzx+RVbDRMUwOQv1/zwiwmEOVM35AQ6zUTAKRsEoGAWjYBSMglGAHQAA+sMXtg==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzjEOABAABMGr/V6D55Jo9Uhmku03AX7QStJXo9w+OauPfgEAANsEYn4Cfw==
+   eJztziEKACAQBdFftnhMg/exqMdV2GoRhFWYB9NHAvCDlqS+Gin6ZK8++gUAuKuYFyWbBwA4NwFuOQQj
   </data>
  </layer>
- <objectgroup id="3" name="Props"/>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="720" y="1200" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some PewterKey]]"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>
