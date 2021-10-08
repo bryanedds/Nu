@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="9">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="10">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -32,7 +32,12 @@
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
-  <object id="7" gid="235" x="696" y="1008" width="144" height="144">
+  <object id="8" gid="1" x="552" y="1080" width="432" height="720">
+   <properties>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
+   </properties>
+  </object>
+  <object id="9" gid="235" x="696" y="1008" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -56,7 +61,7 @@
     [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
     [Wait 120]
     [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
-    [Wait 120]
+    [Wait 180]
     [FadeOutSong 4000]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;What is that sound?&quot; False]
@@ -79,11 +84,6 @@
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
     [PlaySound 0.5 [Field ChestOpen]]]]
   [AraneaImplicitumDefeated]]</property>
-   </properties>
-  </object>
-  <object id="8" gid="1" x="552" y="1080" width="432" height="720">
-   <properties>
-    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
  </objectgroup>
