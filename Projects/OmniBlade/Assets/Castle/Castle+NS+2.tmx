@@ -69,7 +69,7 @@
     [Dialog &quot;Until one of them gives to me...&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
     [FadeOutSong 2000]
-    [Dialog &quot;...the same end I gave to her...&quot; False]
+    [Dialog &quot;...the same end I gave to her...&quot; True]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
     [PlaySong 1000 0 0.5 0 [Castle CastlePart3]]
