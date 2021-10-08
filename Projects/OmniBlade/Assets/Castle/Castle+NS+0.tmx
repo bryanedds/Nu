@@ -28,7 +28,7 @@
     <property name="I" value="[Door WoodenDoor]"/>
    </properties>
   </object>
-  <object id="6" gid="235" x="480" y="528" width="48" height="48">
+  <object id="6" gid="235" x="528" y="528" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [KeyItem BrassKey] d7a2247e-b843-4b31-8a22-2f36450697cb None Nil [[KylaAdvent 1]]]"/>
    </properties>
