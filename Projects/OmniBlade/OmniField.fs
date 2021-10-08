@@ -144,7 +144,7 @@ module Field =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
         let props = makeProps fieldType field.OmniSeedState_ field.Advents_ world
-        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Props_ = props }
+        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Spirits_ = [||]; Props_ = props }
 
     let updateFieldState updater field =
         { field with FieldState_ = updater field.FieldState_ }
@@ -206,9 +206,7 @@ module Field =
 
     let updateBattleOpt updater field =
         let battleOpt = updater field.BattleOpt_
-        { field with
-            BattleOpt_ = battleOpt
-            SpiritActivity_ = if Option.isSome battleOpt then 0.0f else field.SpiritActivity_ }
+        { field with BattleOpt_ = battleOpt }
 
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
@@ -230,7 +228,9 @@ module Field =
         | (false, _) -> false
 
     let clearSpirits field =
-        { field with Spirits_ = [||] }
+        { field with
+            SpiritActivity_ = 0.0f
+            Spirits_ = [||] }
 
     let updateSpirits (field : Field) world =
         match field.FieldTransitionOpt with
