@@ -145,6 +145,8 @@ module AvatarDispatcher =
 
             | BodyRemoving physicsId ->
                 
+                // unfortunately, due to the fact that physics events like separation don't fire until the next frame,
+                // we need to handle this Nu-generated event in order to remove the associated shape manually.
                 let (separatedBodyShapes, intersectedBodyShapes) = List.split (fun shape -> shape.Entity.GetPhysicsId world = physicsId) avatar.IntersectedBodyShapes
                 let avatar = Avatar.updateIntersectedBodyShapes (constant intersectedBodyShapes) avatar
                 let avatar = Avatar.updateSeparatedBodyShapes ((@) separatedBodyShapes) avatar
