@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -26,6 +26,52 @@
   <object id="3" gid="235" x="720" y="1200" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some PewterKey]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="528" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Upward True
+  [Sequence
+   [[FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field HorrorSilent]]
+    [Wait 180]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;A message from the eastern front?&quot;]
+    [Dialog &quot;No... You're lying.&quot;]
+    [Dialog &quot;You cruel liar... You stupid liar!&quot;]
+    [Dialog &quot;Jean's not dead!&quot;]
+    [Dialog &quot;Stop it...!&quot;]
+    [Dialog &quot;Jean's not dead...&quot;]
+    [Dialog &quot;- The coldness freezes my heart. -&quot;]
+    [Dialog &quot;He's not dead...&quot;]
+    [Dialog &quot;- I witness these events taking place around me, but in time I am frozen. -&quot;]
+    [Dialog &quot;He can't be dead...&quot;]
+    [Dialog &quot;- The web is already woven.-&quot;]
+    [Dialog &quot;Wickedness.&quot;]
+    [Dialog &quot;Darkness.&quot;]
+    [Dialog &quot;There's nothing left in my heart now but...&quot;]
+    [Dialog &quot;Blackness... Cruelty...&quot;]
+    [Dialog &quot;I will show them all a cruelty that they have never contemplated...!&quot;]
+    [Dialog &quot;My master taught me well...&quot;]
+    [Dialog &quot;...but even her terrible nature shall I surpass...&quot;]
+    [Dialog &quot;...in darkness... wickedness...&quot;]
+    [Dialog &quot;Until one of them gives to me...&quot;]
+    [Dialog &quot;...the same end as I gave to her...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [FadeOutSong 2000]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
+    [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart3]]
+    [Wait 120]
+    [PlaySound 0.5 [Field ChestOpen]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 5]]]</property>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="432" y="672" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Nil [[KylaAdvent 6]]]"/>
    </properties>
   </object>
  </objectgroup>
