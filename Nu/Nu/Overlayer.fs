@@ -54,14 +54,13 @@ type Overlay =
         let overlayDescriptors =
             List.map
                 (fun (sourceType : Type) ->
-                    let overlaidTypeName = sourceType.Name
                     let includeNames =
                         if sourceType.BaseType <> typeof<obj>
                         then [Overlay.typeNameToOverlayName sourceType.BaseType.Name]
                         else []
                     let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (Overlay.typeNameToOverlayName sourceType.Name, overlaidTypeName, includeNames, definitions, requiresFacetNames))
+                    (Overlay.typeNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
                 decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
