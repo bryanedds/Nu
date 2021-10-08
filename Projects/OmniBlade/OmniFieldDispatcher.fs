@@ -790,6 +790,7 @@ module FieldDispatcher =
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData (World.getUpdateTime world)
+                            let field = Field.clearSpirits field
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
