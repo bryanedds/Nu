@@ -244,7 +244,7 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
                         (cue, definitions, just field)
                     else
-                        let field = Field.updateAvatar (Avatar.updateBottom (constant destination)) field
+                        let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + destination))) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
                     match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
@@ -259,7 +259,7 @@ module FieldDispatcher =
                             let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
                             (cue, definitions, just field)
                         else
-                            let bounds = prop.Bounds.WithBottom destination
+                            let bounds = prop.Bounds.WithBottom (origin + destination)
                             let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
                             (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)

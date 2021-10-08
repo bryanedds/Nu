@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -17,19 +17,66 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="606" y="576" width="324" height="276">
+  <object id="2" gid="235" x="606" y="816" width="324" height="276">
    <properties>
     <property name="I" value="[Npc AraneaImplicitumNpc Downward [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [AraneaImplicitumDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="4" gid="235" x="720" y="1488" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="696" y="480" width="144" height="144">
+   <properties>
+    <property name="I">[Character
+  [Enemy Kyla]
+  Downward
+  True
+  [Sequence
+   [ClearSpirits
+    [FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
+    [Wait 300]
+    [Dialog &quot;One hundred years...&quot; False]
+    [Dialog &quot;For one hundred years, my tainted soul held open the way for that demon...&quot; False]
+    [Dialog &quot;One hundred years of sorrow... anguish...&quot; False]
+    [Dialog &quot;...living over and over again through unbearable memories...&quot; False]
+    [Dialog &quot;All for a fleeting moment of vengeance...&quot; False]
+    [Wait 60]
+    [Dialog &quot;The truth is clear now.&quot; False]
+    [Wait 60]
+    [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
+    [Wait 60]
+    [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
+    [Wait 120]
+    [FadeOutSong 4000]
+    [Dialog &quot;What is that sound?&quot; False]
+    [Wait 120]
+    [Dialog &quot;I think I can feel the wind...&quot; False]
+    [PlaySong 1000 0 0.5 0 [Field ItsTimeToGo]]
+    [Wait 555]
+    [Parallel
+     [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
+      [Sequence
+       [[Wait 120]
+        [Dialog &quot;There's already enough suffering in the world.&quot; True]
+        [Wait 120]
+        [Dialog &quot;There's already too much suffering in this world...&quot; True]
+        [Wait 120]
+        [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
+    [Fade [CharacterTarget [Enemy Kyla]] 240]
+    [FadeOutSong 4000]
+    [Wait 300]
+    [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
+    [PlaySound 0.5 [Field ChestOpen]]]]
+  [AraneaImplicitumDefeated]]</property>
    </properties>
   </object>
  </objectgroup>
