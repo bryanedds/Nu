@@ -64,6 +64,7 @@
     [Dialog &quot;...but blackness... and hatred...&quot; True]
     [Dialog &quot;I will show them all a cruelty that they have never contemplated...&quot; False]
     [Dialog &quot;My master taught me well.&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;...but even her terrible nature shall I surpass...&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;...in darkness... wickedness...&quot; False]
