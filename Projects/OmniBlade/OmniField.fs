@@ -230,7 +230,7 @@ module Field =
         | (false, _) -> false
 
     let clearSpirits field =
-        { field with Spirits_= [||] }
+        { field with Spirits_ = [||] }
 
     let updateSpirits (field : Field) world =
         match field.FieldTransitionOpt with

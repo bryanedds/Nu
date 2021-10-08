@@ -31,7 +31,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         | _ -> failwithumf ()
 
     static member generate () =
-        if Gen.random1 3 = 0 // 67% less chance of Stalking and Ambushing spirit
+        if Gen.randomb // 50% less chance of Stalking and Ambushing spirit
         then Gen.random1 5 |> SpiritPattern.fromInt
         else Gen.random1 3 |> SpiritPattern.fromInt
 

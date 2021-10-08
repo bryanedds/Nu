@@ -19,7 +19,11 @@
  <objectgroup id="3" name="Props">
   <object id="1" gid="235" x="696" y="1056" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc HeavyArmorosNpc Upward [Sequence [[Dialog &quot;Darkness beckons...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
+    <property name="I">[Npc HeavyArmorosNpc Downward
+  [Sequence
+   [[Dialog &quot;Through the gate... the soul...&quot;]
+    [Dialog &quot;Through the soul... the gate...&quot;]
+    [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]</property>
    </properties>
   </object>
   <object id="2" gid="235" x="744" y="1200" width="48" height="48">

@@ -37,7 +37,8 @@
    <properties>
     <property name="I">[Character [Enemy Kyla] Upward True
   [Sequence
-   [[FadeOutSong 2000]
+   [ClearSpirits
+    [FadeOutSong 2000]
     [Wait 120]
     [PlaySong 2000 0 0.5 0 [Field Unfolding]]
     [Wait 180]
@@ -49,6 +50,7 @@
     [Dialog &quot;I came under her custody when my mother passed, but I think she always hated me.&quot;]
     [Dialog &quot;Yet spite is something to which I have become accustomed.&quot;]
     [Dialog &quot;It is the chaos beyond these castle walls that I could not bear...&quot;]
+    [Dialog &quot;The insanity of this decaying world... terrifies me.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
     [Dialog &quot;I can never leave this place...&quot;]
     [FadeOutSong 2000]
