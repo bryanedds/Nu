@@ -518,6 +518,7 @@ type [<NoEquality; NoComparison>] CueTarget =
     | NpcTarget of NpcType // (field only)
     | ShopkeepTarget of ShopkeepType // (field only)
     | CharacterIndexTarget of CharacterIndex // (battle only)
+    | SpriteTarget of string
 
 type [<NoEquality; NoComparison>] CuePredicate =
     | Gold of int
@@ -544,13 +545,13 @@ type [<NoEquality; NoComparison>] MoveType =
         | Mosey -> Some Constants.Gameplay.CueMoseySpeed
         | Instant -> None
 
-    static member computeStepAndStepCount (origin : Vector2) (destination : Vector2) (moveType : MoveType) =
+    static member computeStepAndStepCount (translation : Vector2) (moveType : MoveType) =
         match moveType.MoveSpeedOpt with
         | Some moveSpeed ->
-            let stepCount = destination.Length () / moveSpeed
-            let step = destination / stepCount
+            let stepCount = translation.Length () / moveSpeed
+            let step = translation / stepCount
             (step, int (ceil stepCount))
-        | None -> (destination, 1)
+        | None -> (translation, 1)
 
 [<Syntax   ("Gold Item Items Advent Advents " +
             "Wait Timed NoWait " +
@@ -577,8 +578,8 @@ type [<NoEquality; NoComparison>] Cue =
     | ReplaceAdvent of Advent * Advent
     | Wait of int64
     | WaitState of int64
-    | Fade of CueTarget * int64
-    | FadeState of int64 * CueTarget * int64
+    | Fade of CueTarget * int64 * bool
+    | FadeState of int64 * CueTarget * int64 * bool
     | Animate of CueTarget * CharacterAnimationType * CueWait
     | AnimateState of int64 * CueWait
     | Move of CueTarget * Vector2 * MoveType
@@ -804,6 +805,7 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
       Offset : Vector2i }
 
 type [<ReferenceEquality; NoComparison>] PropData =
+    | Sprite of string * Image AssetTag * Color * Blend * Color * Flip * bool
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
     | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set

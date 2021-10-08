@@ -101,7 +101,7 @@ module FieldDispatcher =
                         (Cue.Nil, definitions, just field)
                     | None ->
                         (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Cue.ClearSpirits ->
@@ -154,13 +154,14 @@ module FieldDispatcher =
                 then (cue, definitions, just field)
                 else (Cue.Nil, definitions, just field)
 
-            | Fade (target, length) ->
-                (FadeState (World.getUpdateTime world, target, length), definitions, just field)
+            | Fade (target, length, fadeIn) ->
+                (FadeState (World.getUpdateTime world, target, length, fadeIn), definitions, just field)
 
-            | FadeState (startTime, target, length) ->
+            | FadeState (startTime, target, length, fadeIn) ->
                 let time = World.getUpdateTime world
                 let localTime = time - startTime
                 let progress = single localTime / single length
+                let progress = if fadeIn then progress else 1.0f - progress
                 let field =
                     match target with
                     | CharacterTarget characterType ->
@@ -168,14 +169,31 @@ module FieldDispatcher =
                         | Some propId ->
                             Field.updatePropState
                                 (function
-                                 | CharacterState (_, animationState) -> CharacterState (colWhite.MapA (fun a -> single a * (1.0f - progress) |> byte), animationState)
+                                 | CharacterState (_, animationState) -> CharacterState (colWhite.MapA (single >> (*) progress >> byte), animationState)
                                  | propState -> propState)
                                 propId
                                 field
                         | None -> field
+                    | SpriteTarget spriteName ->
+                        match Field.tryGetPropIdByData (function Sprite (spriteName2, _, _, _, _, _, _) -> spriteName = spriteName2 | _ -> false) field with
+                        | Some propId ->
+                            Field.updateProp
+                                (fun prop ->
+                                    match prop.PropData with
+                                    | Sprite (_, _, color, _, _, _, _) ->
+                                        Prop.updatePropState
+                                            (function
+                                             | SpriteState (image, _, blend, glow, flip, _) -> SpriteState (image, color.MapA (single >> (*) progress >> byte), blend, glow, flip, true)
+                                             | propState -> propState)
+                                            prop
+                                    | _ -> prop)
+                                propId
+                                field
+                        | None -> field
                     | _ -> field
-                if progress >= 1.0f
-                then (Cue.Nil, definitions, just field)
+                if  fadeIn && progress >= 1.0f ||
+                    not fadeIn && progress <= 0.0f then
+                    (Cue.Nil, definitions, just field)
                 else (cue, definitions, just field)
 
             | Animate (target, characterAnimationType, wait) ->
@@ -200,7 +218,7 @@ module FieldDispatcher =
                         (Cue.Nil, definitions, just field)
                     | None ->
                         (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | AnimateState (startTime, wait) ->
@@ -230,21 +248,21 @@ module FieldDispatcher =
                         let cue = MoveState (World.getUpdateTime world, target, prop.Bounds.Bottom, destination, moveType)
                         (cue, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
                     (Cue.Nil, definitions, just field)
 
-            | MoveState (startTime, target, origin, destination, moveType) ->
+            | MoveState (startTime, target, origin, translation, moveType) ->
                 match target with
                 | AvatarTarget ->
                     let time = World.getUpdateTime world
                     let localTime = time - startTime
-                    let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
+                    let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
                     let totalTime = int64 (dec stepCount)
                     if localTime < totalTime then
                         let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
                         (cue, definitions, just field)
                     else
-                        let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + destination))) field
+                        let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
                     match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
@@ -252,18 +270,18 @@ module FieldDispatcher =
                         let prop = field.Props.[propId]
                         let time = World.getUpdateTime world
                         let localTime = time - startTime
-                        let (step, stepCount) = MoveType.computeStepAndStepCount origin destination moveType
+                        let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
                         let finishTime = int64 (dec stepCount)
                         if localTime < finishTime then
                             let bounds = prop.Bounds.Translate step
                             let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
                             (cue, definitions, just field)
                         else
-                            let bounds = prop.Bounds.WithBottom (origin + destination)
+                            let bounds = prop.Bounds.WithBottom (origin + translation)
                             let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
                             (Cue.Nil, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
-                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ ->
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
                     (Cue.Nil, definitions, just field)
 
             | Warp (fieldType, fieldDestination, fieldDirection) ->
@@ -551,6 +569,7 @@ module FieldDispatcher =
 
         static let tryGetFacingInteraction advents prop =
             match prop with
+            | Sprite _ -> None
             | Portal (_, _, _, _, _, _, _) -> None
             | Door _ -> Some "Open"
             | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
@@ -1048,11 +1067,12 @@ module FieldDispatcher =
                         | Some prop ->
                             let prop = prop.GetProp world
                             match prop.PropData with
-                            | Portal (_, _, _, _, _, _, _) -> just field
+                            | Sprite _ -> just field
+                            | Portal _ -> just field
                             | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
-                            | Sensor (_, _, _, _, _) -> just field
+                            | Sensor _ -> just field
                             | Character (_, _, _, cue, _) -> interactCharacter cue prop field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field

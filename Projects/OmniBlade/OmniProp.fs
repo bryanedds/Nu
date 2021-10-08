@@ -11,6 +11,7 @@ type [<ReferenceEquality; NoComparison>] PropState =
     | DoorState of bool
     | SwitchState of bool
     | CharacterState of Color * CharacterAnimationState
+    | SpriteState of Image AssetTag * Color * Blend * Color * Flip * bool
     | NilState
 
 [<RequireQualifiedAccess>]
