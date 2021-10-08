@@ -544,14 +544,13 @@ type [<NoEquality; NoComparison>] MoveType =
         | Mosey -> Some Constants.Gameplay.CueMoseySpeed
         | Instant -> None
 
-    static member computeStepAndStepCount (origin : Vector2) destination (moveType : MoveType) =
-        let delta = destination - origin
+    static member computeStepAndStepCount (origin : Vector2) (destination : Vector2) (moveType : MoveType) =
         match moveType.MoveSpeedOpt with
         | Some moveSpeed ->
-            let stepCount = delta.Length () / moveSpeed
-            let step = delta / stepCount
+            let stepCount = destination.Length () / moveSpeed
+            let step = destination / stepCount
             (step, int (ceil stepCount))
-        | None -> (delta, 1)
+        | None -> (destination, 1)
 
 [<Syntax   ("Gold Item Items Advent Advents " +
             "Wait Timed NoWait " +
