@@ -28,9 +28,14 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
      StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string
-      OverlaidTypeNames : string list
       OverlaysInherited : string list
+      OverlaidTypeNames : string list
       OverlayProperties : Map<string, Symbol> }
+
+    static member typeNameToOverlayName (typeName : string) =
+        typeName
+            .Replace("Dispatcher", "Overlay")
+            .Replace("Facet", "FacetOverlay")
 
     /// Make intrinsic overlays.
     static member makeIntrinsicOverlays requiresFacetNames sourceTypes =
@@ -49,16 +54,20 @@ type Overlay =
         let overlayDescriptors =
             List.map
                 (fun (sourceType : Type) ->
-                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
+                    let overlaidTypeName = sourceType.Name
+                    let includeNames =
+                        if sourceType.BaseType <> typeof<obj>
+                        then [Overlay.typeNameToOverlayName sourceType.BaseType.Name]
+                        else []
                     let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
+                    (Overlay.typeNameToOverlayName sourceType.Name, overlaidTypeName, includeNames, definitions, requiresFacetNames))
                 decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
         let overlays =
             List.map
-                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
+                (fun (overlayName, overlaidTypeName, includeNames, definitions, requiresFacetNames) ->
                     let overlayProperties =
                         List.foldBack
                             (fun definition overlayProperties ->
@@ -76,8 +85,8 @@ type Overlay =
                         then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
-                      OverlaidTypeNames = [overlayName]
                       OverlaysInherited = includeNames
+                      OverlaidTypeNames = [overlaidTypeName]
                       OverlayProperties = overlayProperties })
                 overlayDescriptors
 
@@ -107,7 +116,8 @@ module Overlayer =
     let internal getOverlaySymbols overlayName facetNames overlayer =
         let overlaySymbols = getOverlaySymbols2 overlayName overlayer
         Seq.fold (fun overlaySymbols facetName ->
-            let overlaySymbols' = getOverlaySymbols2 facetName overlayer
+            let facetOverlayName = Overlay.typeNameToOverlayName facetName
+            let overlaySymbols' = getOverlaySymbols2 facetOverlayName overlayer
             Map.concat overlaySymbols' overlaySymbols)
             overlaySymbols
             facetNames

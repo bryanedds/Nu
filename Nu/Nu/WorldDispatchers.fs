@@ -2472,6 +2472,7 @@ module TileMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
@@ -2480,6 +2481,8 @@ module TileMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
+             define Entity.TileIndexOffset 0
+             define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap]
 
 [<AutoOpen>]

@@ -1076,11 +1076,12 @@ module WorldModuleEntity =
                 | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // compute the optional overlay name
+            let overlayNameDefault = Overlay.typeNameToOverlayName dispatcherName
             let overlayNameOpt =
                 match overlayDescriptor with
                 | NoOverlay -> None
                 | RoutedOverlay -> Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)
-                | DefaultOverlay -> Some (Option.getOrDefault dispatcherName (Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)))
+                | DefaultOverlay -> Some (Option.getOrDefault overlayNameDefault (Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)))
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
@@ -1112,9 +1113,9 @@ module WorldModuleEntity =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
                     // OPTIMIZATION: apply overlay only when it will change something
-                    if dispatcherName <> overlayName then
+                    if overlayNameDefault <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
+                        Overlayer.applyOverlay id overlayNameDefault overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
