@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="6">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -8,7 +8,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9l0sOwjAMRCOqXqQbOBifCgS0F+mJuoELdUP3pFIsRVbi2E7Skbyhdt7wGeFMjTETUY/WmLeybi19dqo29mjrc9DVkOEB2F97zk9Zs9KDz15tHRtdLQoPmH2yr2nVCT2UZEs9pNh3++xq69XGWbGelAfO++7dzJPgUz2UhyfjMx9cpkeCn+rxPfSIn/q+Z5fpzWdOD3jA/NRvbXGZXomzOT3gAfNT6lymKZ+cHpCUX1o+/0LkipM76cz2/IwyGPPAyZ1kJsSmPHByhxWbodgxD5xMYYVmOOyQB26mfOEZCRt7kGQK5M9o2JxccJTDzvVQgq31UJIt9VCDzfVQk53ysAc75mFPtu8BtDcb7mSgEnctCRt2VZD2nqMpf1cFhXbKmny8q4Z2ypr80H8R3im59QeABoKS
+   eJy9l0kOwjAMRSOqXqQbOBhDBQLai/RE3cCFuqF7UimRIitxbMepJW9a3PcYvnCmxpgJ6UdrzFvYtxZ/dq439mj7c5D1UODg2V/7nJ+wZ6FDyF5tHxtZLwIHyD7Za9LqmA6abK5Din231662Xy2dCWdyDtj77t1rnwx+bAZzeCKf+eCyPDL4qZnQoQf81Pc9uyxvftTCZrwD5Kd+a4vL8srg52Y2B8hPVeeyzMkCZYbKr1Uh/4LkSyN/sftnkMGUg1b+MDbmoJk/jJ1y0MofhR1z0Mgfhw0dSvMnYVNyQakSdqmDBlvqoMnmOtRgUx1qsnMOe7BTDnuyQwdfe7P9mcyXxlmLw/a7qi/pOUfS4a7qK7ZT1uTDXTW2U9bkx/6L4E5J7T+ABoKS
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
@@ -32,7 +32,7 @@
     <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
    </properties>
   </object>
-  <object id="5" gid="235" x="696" y="480" width="144" height="144">
+  <object id="5" gid="235" x="696" y="432" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -45,38 +45,45 @@
     [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
     [Wait 300]
     [Dialog &quot;One hundred years...&quot; False]
-    [Dialog &quot;For one hundred years, my tainted soul held open the way for that demon...&quot; False]
+    [Dialog &quot;For one hundred years that demon wormed its way into the world through my tainted soul...&quot; False]
     [Dialog &quot;One hundred years of sorrow... anguish...&quot; False]
     [Dialog &quot;...living over and over again through unbearable memories...&quot; False]
     [Dialog &quot;All for a fleeting moment of vengeance...&quot; False]
-    [Wait 60]
+    [Wait 120]
     [Dialog &quot;The truth is clear now.&quot; False]
-    [Wait 60]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [Wait 120]
     [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
-    [Wait 60]
+    [Wait 120]
     [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
     [Wait 120]
     [FadeOutSong 4000]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;What is that sound?&quot; False]
     [Wait 120]
     [Dialog &quot;I think I can feel the wind...&quot; False]
     [PlaySong 1000 0 0.5 0 [Field ItsTimeToGo]]
-    [Wait 555]
+    [Parallel
+     [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 555]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
       [Sequence
-       [[Wait 120]
-        [Dialog &quot;There's already enough suffering in the world.&quot; True]
-        [Wait 120]
-        [Dialog &quot;There's already too much suffering in this world...&quot; True]
-        [Wait 120]
+       [[Wait 120] [Dialog &quot;There's already enough suffering in the world.&quot; True] [Wait 120]
+        [Dialog &quot;There's too much suffering in the world...&quot; True]
+        [Wait 180]
         [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
-    [Fade [CharacterTarget [Enemy Kyla]] 240]
+    [Fade [CharacterTarget [Enemy Kyla]] 180 False]
     [FadeOutSong 4000]
-    [Wait 300]
+    [Fade [SpriteTarget HeavenlyLight] 200 False]
+    [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
     [PlaySound 0.5 [Field ChestOpen]]]]
   [AraneaImplicitumDefeated]]</property>
+   </properties>
+  </object>
+  <object id="6" gid="1" x="552" y="504" width="432" height="720">
+   <properties>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
  </objectgroup>
