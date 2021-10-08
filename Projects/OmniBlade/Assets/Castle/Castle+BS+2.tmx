@@ -32,7 +32,12 @@
     <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
    </properties>
   </object>
-  <object id="5" gid="235" x="696" y="432" width="144" height="144">
+  <object id="5" gid="1" x="552" y="504" width="432" height="720">
+   <properties>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
+   </properties>
+  </object>
+  <object id="6" gid="235" x="696" y="432" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -56,7 +61,7 @@
     [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
     [Wait 120]
     [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
-    [Wait 120]
+    [Wait 180]
     [FadeOutSong 4000]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;What is that sound?&quot; False]
@@ -79,11 +84,6 @@
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
     [PlaySound 0.5 [Field ChestOpen]]]]
   [AraneaImplicitumDefeated]]</property>
-   </properties>
-  </object>
-  <object id="6" gid="1" x="552" y="504" width="432" height="720">
-   <properties>
-    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
  </objectgroup>
