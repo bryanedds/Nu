@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
@@ -9,18 +9,59 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlr0KwjAQx0NLl7aDurtYQR9D3fsWWkXx6yFc+yyiuNlBn0Tdi4Kfo//QCmqSwXLUJQc/EsLlfpdb2tBkLPyBocWU0bN+q5UF7dd+7f+fvwPHSNJDH2ftHPyqGeTxdu3X/rz9A9QdfzGV+CeSvC5BT/ytkcHYJoXvt4boXxtiHsVMuP+EWpcUvr9K/EdDzKPye1hrKXxfN0V/xRTzqPxnO3HcsN7Bwxb9PAKcnx28HywdOn+EWjuwBwdH7n6F5zJWdZM7VP4YtQqoWQQlV+1+7zEm9JfhbIAmaCn8s68e+R0qv58653AsFPNfOZ89+kR+/r0PMpLX/4BGo8nGE3nx9rM=
+   eJztljsKwkAQhpeENCaF2tuooMdQe2/hC8XXRbyM2GmhJ1F7UfBZ+g8mOMT1ybApzMDHLmF3vtkwGzKylRp9QddRT6PlfJfrF2L/f/vrcPQ0NbTxrGbAr6vBpJvXEIRpN9Fh/qZhP7mHzD9wzNZAd2Bh3f1Ty0zvc/+R+bcR+Iv23Z+1zfuj+PZE4ade74cYavwDzTqJO0FnnaG/5j40573P70B4ncQ7If8OuQ4+ND9q/FvrcZ2UP4ex4ENz3vv8DoTXSfn3iZvjhPEMLolHP0UDz/cuzg/Grpx/hlxLsAJrV+8OIucplfdue6T8G+RKImcKpL3X/olf30bQn4GzBMqg8sLPa6Q9Uv7qmzMHwWusCvnpP6PxI1H8l8TExHzOFfnB/Po=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dN4xkcAYa3kykhCkVw/8cCelpAVTteSqnwVEwCkbBKKA2AACjcQ2G
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioa/9hqHnHgPRxID6Bw3xLoPhhbgaGI0DczE1dNwwV0EoDf5+BhvcCAvH6AGj3QyB+BHIDFd1xjoT0xAS19zyV0+AoGAWjYBRQGwAAlJ8Q2g==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzjEOABAABMGr/V6D5/IDJWIm2X4TAIB7tZL01SinT/bqA48A/GsC5HcCfw==
+   eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
- <objectgroup id="3" name="Props"/>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="720" y="576" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="864" y="1008" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Rightward True
+  [Sequence
+   [[FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field Joining]]
+    [Wait 180]
+    [Dialog &quot;It is done.&quot;]
+    [Dialog &quot;Everyone wears a blank face now...&quot;]
+    [Dialog &quot;The Queen's messenger has informed me that I will take my master's stead.&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;No one knew of my plan, not even Jean. He has proposed that he leave his post that we may again meet...&quot;]
+    [Dialog &quot;I long for his company, but I asked him to defer his leave until the coming holiday.&quot;]
+    [Dialog &quot;Tomorrow my title will be made official and throughout that night I will hear them weep the way they once heard me...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Rightward]
+    [Dialog &quot;Knowing that they will all be passed over for the lowest of them...&quot;]
+    [Dialog &quot;Their hearts writhe in anticipation of my vengeance...&quot;]
+    [Dialog &quot;They now know what cost their cruelty has brought them due.&quot;]
+    [Dialog &quot;It cannot be undone...&quot;]
+    [FadeOutSong 2000]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
+    [ReplaceAdvent [KylaAdvent 4] [KylaAdvent 5]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart3]]
+    [Wait 120]
+    [PlaySound 0.5 [Field ChestOpen]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 4]]]</property>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="480" y="960" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem PewterKey] a0e6030b-897b-483c-9e70-ff360f03e4e8 None Nil [[KylaAdvent 5]]]"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>

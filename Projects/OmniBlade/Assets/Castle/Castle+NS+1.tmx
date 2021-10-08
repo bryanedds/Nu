@@ -46,7 +46,7 @@
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;Things could not be put right...&quot;]
     [FadeOutSong 2000]
-    [Fade [CharacterTarget [Enemy Kyla]] 180]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 2] [KylaAdvent 3]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
     [Wait 120]

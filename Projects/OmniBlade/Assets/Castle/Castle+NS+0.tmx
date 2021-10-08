@@ -52,7 +52,7 @@
     [Face [CharacterTarget [Enemy Kyla]] Upward]
     [Dialog &quot;I can never leave this place...&quot;]
     [FadeOutSong 2000]
-    [Fade [CharacterTarget [Enemy Kyla]] 180]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 0] [KylaAdvent 1]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
     [Wait 120]

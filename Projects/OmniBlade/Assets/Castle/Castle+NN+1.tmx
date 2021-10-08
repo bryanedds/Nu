@@ -44,7 +44,7 @@
     [Dialog &quot;How can I leave now...&quot;]
     [Dialog &quot;The web is already woven...&quot;]
     [FadeOutSong 2000]
-    [Fade [CharacterTarget [Enemy Kyla]] 180]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
     [Wait 120]
