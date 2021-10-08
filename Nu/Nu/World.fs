@@ -454,8 +454,7 @@ module WorldModule3 =
 
             // make the world's ambient state
             let ambientState =
-                let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
-                let overlayRouter = OverlayRouter.make overlayRoutes
+                let overlayRouter = OverlayRouter.empty
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
 
@@ -552,9 +551,11 @@ module WorldModule3 =
                     // make the world's ambient state
                     let ambientState =
                         let assetMetadataMap = Metadata.make config.Imperative assetGraph
-                        let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
-                        let userOverlayRoutes = plugin.OverlayRoutes
-                        let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
+                        let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
+                        let overlayRoutes =
+                            overlays |>
+                            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, Some overlay.OverlayName))) |>
+                            List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)

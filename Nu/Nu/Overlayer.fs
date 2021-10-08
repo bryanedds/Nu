@@ -28,7 +28,8 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
      StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string
-      OverlayIncludeNames : string list
+      OverlaidTypeNames : string list
+      OverlaysInherited : string list
       OverlayProperties : Map<string, Symbol> }
 
     /// Make intrinsic overlays.
@@ -75,7 +76,8 @@ type Overlay =
                         then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
-                      OverlayIncludeNames = includeNames
+                      OverlaidTypeNames = [overlayName]
+                      OverlaysInherited = includeNames
                       OverlayProperties = overlayProperties })
                 overlayDescriptors
 
@@ -99,7 +101,7 @@ module Overlayer =
                 let overlaySymbols' = getOverlaySymbols2 overlayName overlayer
                 Map.concat overlaySymbols' overlaySymbols)
                 overlay.OverlayProperties
-                overlay.OverlayIncludeNames
+                overlay.OverlaysInherited
         | None -> Map.empty
 
     let internal getOverlaySymbols overlayName facetNames overlayer =

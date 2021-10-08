@@ -1,4 +1,5 @@
-[[ButtonDispatcherRoute
+[[ButtonDispatcherOverlay
+  [ButtonDispatcher]
   [ButtonDispatcher]
   [[ClickSoundOpt
     [Some [Gui Affirm]]]
@@ -7,12 +8,14 @@
    [TextColor [255 255 255 255]]
    [TextDisabledColor [192 192 192 192]]
    [UpImage [Gui ButtonUp]]]]
- [TextDispatcherRoute
+ [TextDispatcherOverlay
+  [TextDispatcher]
   [TextDispatcher]
   [[Font [Gui Font]]
    [TextColor [255 255 255 255]]
    [TextDisabledColor [192 192 192 192]]]]
- [ToggleDispatcherRoute
+ [ToggleDispatcherOverlay
+  [ToggleDispatcher]
   [ToggleDispatcher]
   [[ToggleSoundOpt
     [Some [Gui Affirm]]]
