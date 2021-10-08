@@ -27,7 +27,7 @@ open Nu
 
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
-    { mutable TileXXX : TmxLayerTile
+    { mutable Tile : TmxLayerTile
       mutable TileI : int
       mutable TileJ : int
       mutable TilePositionI : Vector2i
@@ -1289,11 +1289,6 @@ module WorldTypes =
         /// The screen / screen dispatcher that Nu will utilize when running inside the editor.
         abstract EditorConfig : Screen * Type
         default this.EditorConfig = (Screen "Screen", typeof<ScreenDispatcher>)
-
-        /// The overlay routes that will allow Nu to use different overlays for the specified
-        /// dispatcher name.
-        abstract OverlayRoutes : (string * string option) list
-        default this.OverlayRoutes = []
 
         /// Make a list of keyed values to hook into the engine.
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World

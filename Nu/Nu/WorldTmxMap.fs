@@ -150,7 +150,7 @@ module TmxMap =
                 match tileSet.Tiles.TryGetValue tileId with
                 | (true, tileSetTile) -> Some tileSetTile
                 | (false, _) -> None
-            tileDescriptor.TileXXX <- tile
+            tileDescriptor.Tile <- tile
             tileDescriptor.TileI <- i
             tileDescriptor.TileJ <- j
             tileDescriptor.TilePositionI <- tilePositionI

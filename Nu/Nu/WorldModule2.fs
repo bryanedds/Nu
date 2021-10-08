@@ -407,9 +407,18 @@ module WorldModule2 =
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
                 | Right overlayer ->
-                
-                    // update overlayer and apply overlays to all entities
+
+                    // update overlayer and overlay router
+                    let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
+                    let overlayRoutes =
+                        overlays |>
+                        List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, Some overlay.OverlayName))) |>
+                        List.concat
+                    let overlayRouter = OverlayRouter.make overlayRoutes
                     let world = World.setOverlayer overlayer world
+                    let world = World.setOverlayRouter overlayRouter world
+
+                    // apply overlays to all entities
                     let entities = World.getEntities1 world
                     let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
                     (Right overlayer, world)

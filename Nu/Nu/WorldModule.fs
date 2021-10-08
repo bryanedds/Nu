@@ -522,14 +522,11 @@ module WorldModule =
             let overlayRouter = World.getOverlayRouter world
             by overlayRouter
 
+        static member internal setOverlayRouter router world =
+            World.updateAmbientState (AmbientState.setOverlayRouter router) world
+
         static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
             World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
-
-        /// Make vanilla overlay routes from dispatchers.
-        static member internal dispatchersToOverlayRoutes entityDispatchers =
-            entityDispatchers |>
-            Map.toValueList |>
-            List.map (fun dispatcher -> (getTypeName dispatcher, None))
 
     type World with // EntityTree
 
