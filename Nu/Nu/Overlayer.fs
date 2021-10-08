@@ -18,13 +18,9 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
 
 /// An overlay.
 [<Syntax
-    ("EntityDispatcher BasicEmitterDispatcher EffectDispatcher StaticSpriteDispatcher AnimatedSpriteDispatcher NodeDispatcher GuiDispatcher " +
-     "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
-     "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher TmxMapDispatcher",
-     "BasicEmitterFacet EffectFacet ScriptFacet TextFacet RigidBodyFastFacet RigidBodyFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
-     "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax);
+     Constants.PrettyPrinter.DetailedThresholdMax);
      StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string

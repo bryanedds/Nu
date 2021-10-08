@@ -1,8 +1,7 @@
 [[OmniButtonOverlay
   [ButtonOverlay]
   [ButtonDispatcher]
-  [[ClickSoundOpt
-    [Some [Gui Affirm]]]
+  [[ClickSoundOpt [Some [Gui Affirm]]]
    [DownImage [Gui ButtonDown]]
    [Font [Gui Font]]
    [TextColor [255 255 255 255]]
@@ -17,8 +16,7 @@
  [OmniToggleOverlay
   [ToggleOverlay]
   [ToggleDispatcher]
-  [[ToggleSoundOpt
-    [Some [Gui Affirm]]]
-   [Font [Gui Font]]
+  [[Font [Gui Font]]
    [TextColor [255 255 255 255]]
-   [TextDisabledColor [192 192 192 192]]]]]
+   [TextDisabledColor [192 192 192 192]]
+   [ToggleSoundOpt [Some [Gui Affirm]]]]]]
