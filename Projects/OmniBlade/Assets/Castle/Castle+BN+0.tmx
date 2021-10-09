@@ -19,7 +19,7 @@
  <objectgroup id="3" name="Props">
   <object id="1" gid="235" x="696" y="1296" width="144" height="144">
    <properties>
-    <property name="I">[Npc MadTrixterNpc Upward
+    <property name="I">[Npc MadTrixterNpc [Some Upward]
  [Sequence
   [[Dialog &quot;You've run a fool's errand...!&quot;]
    [Dialog &quot;Her soul is forever ours!&quot;]

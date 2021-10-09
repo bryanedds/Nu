@@ -19,7 +19,7 @@
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="606" y="816" width="324" height="276">
    <properties>
-    <property name="I" value="[Npc AraneaImplicitumNpc Downward [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
+    <property name="I" value="[Npc AraneaImplicitumNpc [Some Downward] [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">

@@ -8,7 +8,7 @@ open Nu
 open Nu.Declarative
 
 type [<StructuralEquality; NoComparison>] DialogForm =
-    | DialogThin    
+    | DialogThin
     | DialogThick
     | DialogNarration
 

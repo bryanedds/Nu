@@ -19,7 +19,7 @@
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="696" y="480" width="144" height="144">
    <properties>
-    <property name="I">[Npc HeavyArmorosNpc Downward
+    <property name="I">[Npc HeavyArmorosNpc [Some Downward]
   [Sequence
    [[Dialog &quot;Through the gate... the soul...&quot;]
     [Dialog &quot;Through the soul... the gate...&quot;]
