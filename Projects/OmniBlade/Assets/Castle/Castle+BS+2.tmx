@@ -43,6 +43,7 @@
   [Enemy Kyla]
   Downward
   True
+  True
   [Sequence
    [ClearSpirits
     [FadeOutSong 2000]

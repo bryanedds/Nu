@@ -87,7 +87,7 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
@@ -165,7 +165,7 @@ module FieldDispatcher =
                 let field =
                     match target with
                     | CharacterTarget characterType ->
-                        match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                        match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                         | Some propId ->
                             Field.updatePropState
                                 (function
@@ -204,7 +204,7 @@ module FieldDispatcher =
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let field =
                             Field.updatePropState
@@ -242,7 +242,7 @@ module FieldDispatcher =
                     let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let prop = field.Props.[propId]
                         let cue = MoveState (World.getUpdateTime world, target, prop.Bounds.Bottom, destination, moveType)
@@ -265,7 +265,7 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
                     | Some propId ->
                         let prop = field.Props.[propId]
                         let time = World.getUpdateTime world
@@ -567,15 +567,21 @@ module FieldDispatcher =
                 | _ -> false)
                 avatar.IntersectedBodyShapes
 
-        static let tryGetFacingInteraction advents prop =
-            match prop with
+        static let tryGetFacingInteraction avatarPositionY advents (prop : Prop) =
+            match prop.PropData with
             | Sprite _ -> None
             | Portal (_, _, _, _, _, _, _) -> None
             | Door _ -> Some "Open"
             | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
             | Switch (_, _, _, _) -> Some "Use"
             | Sensor (_, _, _, _, _) -> None
-            | Character _ | Npc _ | NpcBranching _ -> Some "Talk"
+            | Character (_, _, _, isRising, _, _) ->
+                if isRising then
+                    if prop.Bottom.Y - avatarPositionY > 46.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                    then Some "Talk"
+                    else None
+                else Some "Talk"
+            | Npc _ | NpcBranching _ -> Some "Talk"
             | Shopkeep _ -> Some "Shop"
             | Seal _ -> Some "Touch"
             | Flame _ -> None
@@ -597,7 +603,7 @@ module FieldDispatcher =
                     Some "Save"
                 else
                     match tryGetFacingProp avatar world with
-                    | Some prop -> tryGetFacingInteraction advents (prop.GetProp world).PropData
+                    | Some prop -> tryGetFacingInteraction avatar.Position.Y advents (prop.GetProp world)
                     | None -> None
 
         static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) world =
@@ -1073,7 +1079,7 @@ module FieldDispatcher =
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor _ -> just field
-                            | Character (_, _, _, cue, _) -> interactCharacter cue prop field
+                            | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
