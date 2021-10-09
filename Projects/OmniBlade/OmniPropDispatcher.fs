@@ -54,7 +54,7 @@ module PropDispatcher =
                     if prop.Advents.IsSupersetOf requirements
                     then BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                     else BodyEmpty
-                | Character (_, _, _, _, requirements) ->
+                | Character (_, _, _, _, _, requirements) ->
                     if prop.Advents.IsSupersetOf requirements
                     then BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     else BodyEmpty
@@ -144,7 +144,7 @@ module PropDispatcher =
                             let image = Assets.Field.SealAnimationSheet
                             (false, image, color, Transparent, colZero, Some inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
-                    | Character (_, _, isEcho, _, requirements) ->
+                    | Character (_, _, isEcho, _, _, requirements) ->
                         match prop.PropState with
                         | CharacterState (color, animationState) when prop.Advents.IsSupersetOf requirements->
                             let time = World.getUpdateTime world

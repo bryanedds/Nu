@@ -35,7 +35,7 @@
   </object>
   <object id="5" gid="235" x="816" y="1104" width="144" height="144">
    <properties>
-    <property name="I">[Character [Enemy Kyla] Rightward True
+    <property name="I">[Character [Enemy Kyla] Rightward True True
   [Sequence
    [ClearSpirits
     [FadeOutSong 2000]

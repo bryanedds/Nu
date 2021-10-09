@@ -25,7 +25,7 @@
  <objectgroup id="3" name="Props">
   <object id="3" gid="235" x="480" y="1152" width="144" height="144">
    <properties>
-    <property name="I">[Character [Enemy Kyla] Leftward True
+    <property name="I">[Character [Enemy Kyla] Leftward True True
   [Sequence
    [ClearSpirits
     [FadeOutSong 2000]

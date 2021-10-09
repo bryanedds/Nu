@@ -79,9 +79,9 @@ module Field =
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
         | Sprite (_, image, color, blend, glow, flip, visible) -> SpriteState (image, color, blend, glow, flip, visible)
-        | Door (_, _, _, _, _) -> DoorState false
-        | Switch (_, _, _, _) -> SwitchState false
-        | Character (characterType, direction, _, _, _) ->
+        | Door _ -> DoorState false
+        | Switch _ -> SwitchState false
+        | Character (characterType, direction, _, _, _, _) ->
             let animationSheet =
                 match Data.Value.Characters.TryGetValue characterType with
                 | (true, characterData) -> characterData.AnimationSheet
