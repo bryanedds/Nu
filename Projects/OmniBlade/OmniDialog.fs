@@ -21,14 +21,14 @@ type [<ReferenceEquality; NoComparison>] Dialog =
       DialogBattleOpt : (BattleType * Advent Set) option }
 
     static member update dialog world =
-        let increment = if World.getUpdateTime world % 2L = 0L then 1 else 0
+        let increment = if World.getUpdateTime world % 3L = 0L then 1 else 0
         let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
         dialog
 
     static member canAdvance (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
         dialog.DialogProgress > detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
-
+        
     static member tryAdvance (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
         if dialog.DialogPage < detokenized.Split(Constants.Gameplay.DialogSplit).Length - 1 then
