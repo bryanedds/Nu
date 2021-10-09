@@ -32,12 +32,12 @@
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
-  <object id="8" gid="1" x="552" y="1080" width="432" height="720">
+  <object id="8" gid="1" x="552" y="1032" width="432" height="720">
    <properties>
     <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
-  <object id="9" gid="235" x="696" y="1008" width="144" height="144">
+  <object id="9" gid="235" x="696" y="960" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -56,8 +56,9 @@
     [Dialog &quot;All for a fleeting moment of vengeance...&quot; False]
     [Wait 120]
     [Dialog &quot;The truth is clear now.&quot; False]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
-    [Wait 120]
+    [Wait 60]
     [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
     [Wait 120]
     [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
@@ -65,21 +66,23 @@
     [FadeOutSong 4000]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;What is that sound?&quot; False]
-    [Wait 120]
+    [Wait 180]
     [Dialog &quot;I think I can feel the wind...&quot; False]
     [PlaySong 1000 0 0.5 0 [Field ItsTimeToGo]]
     [Parallel
-     [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 555]]]
+     [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 558]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
       [Sequence
-       [[Wait 120] [Dialog &quot;There's already enough suffering in the world.&quot; True] [Wait 120]
+       [[Wait 60]
+        [Dialog &quot;There's already enough suffering in the world...&quot; True]
+        [Wait 120]
         [Dialog &quot;There's too much suffering in the world...&quot; True]
         [Wait 180]
         [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
-    [Fade [CharacterTarget [Enemy Kyla]] 180 False]
-    [FadeOutSong 4000]
-    [Fade [SpriteTarget HeavenlyLight] 200 False]
+    [Wait 240]
+    [FadeOutSong 5000]
+    [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
     [PlaySound 0.5 [Field ChestOpen]]]]
