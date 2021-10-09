@@ -34,7 +34,7 @@
   [Enemy Kyla]
   Upward
   True
-  True
+  False
   [Sequence
    [ClearSpirits
     [FadeOutSong 2000]

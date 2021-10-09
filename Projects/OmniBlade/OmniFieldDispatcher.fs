@@ -87,7 +87,13 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
                     (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
                     | Some propId ->
                         let field =
                             Field.updatePropState
@@ -165,7 +171,13 @@ module FieldDispatcher =
                 let field =
                     match target with
                     | CharacterTarget characterType ->
-                        match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                        let propIdOpt =
+                            Field.tryGetPropIdByData
+                                (function
+                                 | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                                 | _ -> false)
+                                field
+                        match propIdOpt with
                         | Some propId ->
                             Field.updatePropState
                                 (function
@@ -204,7 +216,13 @@ module FieldDispatcher =
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
                     | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
                     | Some propId ->
                         let field =
                             Field.updatePropState
@@ -242,7 +260,13 @@ module FieldDispatcher =
                     let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
                     | Some propId ->
                         let prop = field.Props.[propId]
                         let cue = MoveState (World.getUpdateTime world, target, prop.Bounds.Bottom, destination, moveType)
@@ -265,7 +289,13 @@ module FieldDispatcher =
                         let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
                         (Cue.Nil, definitions, just field)
                 | CharacterTarget characterType ->
-                    match Field.tryGetPropIdByData (function Character (characterType2, _, _, _, _, _) -> characterType = characterType2 | _ -> false) field with
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
                     | Some propId ->
                         let prop = field.Props.[propId]
                         let time = World.getUpdateTime world
