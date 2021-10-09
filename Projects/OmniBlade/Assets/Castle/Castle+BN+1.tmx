@@ -17,16 +17,16 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="696" y="1056" width="144" height="144">
+  <object id="1" gid="235" x="696" y="1248" width="144" height="144">
    <properties>
-    <property name="I">[Npc HeavyArmorosNpc Downward
+    <property name="I">[Npc HeavyArmorosNpc Upward
   [Sequence
    [[Dialog &quot;Through the gate... the soul...&quot;]
     [Dialog &quot;Through the soul... the gate...&quot;]
     [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]</property>
    </properties>
   </object>
-  <object id="2" gid="235" x="744" y="1200" width="48" height="48">
+  <object id="2" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward [Castle 2] [IX 1] false [HeavyArmorosDefeated]]"/>
    </properties>
