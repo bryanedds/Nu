@@ -94,14 +94,14 @@ module Field =
             CharacterState (colWhite, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
-    let private makeProps fieldType omniSeedState advents world =
+    let private makeProps fieldType omniSeedState advents pointOfInterest world =
         match Map.tryFind fieldType Data.Value.Fields with
         | Some fieldData ->
             let time = World.getUpdateTime world
             FieldData.getPropDescriptors omniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = makePropState time propDescriptor
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
@@ -144,14 +144,24 @@ module Field =
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
-        let props = makeProps fieldType field.OmniSeedState_ field.Advents_ world
+        let props = makeProps fieldType field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
         { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Spirits_ = [||]; Props_ = props }
 
     let updateFieldState updater field =
         { field with FieldState_ = updater field.FieldState_ }
 
     let updateAvatar updater field =
-        { field with Avatar_ = updater field.Avatar_ }
+        let avatar = field.Avatar_
+        let pointOfInterest = avatar.BottomOffset
+        let avatar = updater avatar : Avatar
+        let pointOfInterest' = avatar.BottomOffset
+        let props =
+            if pointOfInterest <> pointOfInterest'
+            then Map.map (constant (Prop.updatePointOfInterest (constant pointOfInterest'))) field.Props_
+            else field.Props_
+        { field with
+            Avatar_ = avatar
+            Props_ = props }
 
     let updateTeam updater field =
         { field with Team_ = updater field.Team_ }
@@ -323,7 +333,7 @@ module Field =
             Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
-    let make fieldType saveSlot randSeedState avatar team advents inventory world =
+    let make fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory world =
         let (debugAdvents, debugKeyItems, definitions) =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
@@ -333,7 +343,7 @@ module Field =
             | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
             | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
-        let props = makeProps fieldType omniSeedState advents world
+        let props = makeProps fieldType omniSeedState advents avatar.BottomOffset world
         { FieldType_ = fieldType
           FieldState_ = Playing
           SaveSlot_ = saveSlot
@@ -404,7 +414,7 @@ module Field =
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
             let field = scvalue<Field> fieldStr
-            let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ world
+            let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
             Some { field with Props_ = props }
         with _ -> None
 

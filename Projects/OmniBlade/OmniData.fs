@@ -812,9 +812,9 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | Switch of SwitchType * Cue * Cue * Advent Set
     | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
     | Character of CharacterType * Direction * bool * bool * Cue * Advent Set
-    | Npc of NpcType * Direction * Cue * Advent Set
-    | NpcBranching of NpcType * Direction * Branch list * Advent Set
-    | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
+    | Npc of NpcType * Direction option * Cue * Advent Set
+    | NpcBranching of NpcType * Direction option * Branch list * Advent Set
+    | Shopkeep of ShopkeepType * Direction option * ShopType * Advent Set
     | Seal of Color * Cue * Advent Set
     | Flame of FlameType * bool
     | SavePoint

@@ -24,7 +24,7 @@
   </object>
   <object id="4" gid="235" x="602" y="1295.33" width="324" height="276">
    <properties>
-    <property name="I" value="[Npc AraneaImplicitumNpc Upward [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
+    <property name="I" value="[Npc AraneaImplicitumNpc [Some Upward] [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
    </properties>
   </object>
   <object id="5" gid="235" x="744" y="1440" width="48" height="48">

@@ -159,7 +159,7 @@ module PropDispatcher =
                                 else (color, colZero)
                             (false, animationState.AnimationSheet, color, Transparent, glow, Some inset, FlipNone)
                         | _ -> (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
-                    | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) ->
+                    | Npc (npcType, directionOpt, _, requirements) | NpcBranching (npcType, directionOpt, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
                             let (image, size) =
                                 match npcType with
@@ -182,16 +182,28 @@ module PropDispatcher =
                                 | MadTrixterNpc -> (4, 0)
                                 | HeavyArmorosNpc -> (5, 0)
                                 | AraneaImplicitumNpc -> (0, 0)
+                            let direction =
+                                match directionOpt with
+                                | Some direction -> direction
+                                | None ->
+                                    let direction = Direction.ofVector2 (prop.PointOfInterest - prop.Bottom)
+                                    if direction = Upward then Downward else direction
                             let column = column + CharacterAnimationState.directionToInt direction
                             let celSize = size / 3.0f
                             let insetPosition = v2 (single column) (single row) * celSize
                             let inset = v4Bounds insetPosition celSize
                             (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
-                    | Shopkeep (shopkeepType, direction, _, requirements) ->
+                    | Shopkeep (shopkeepType, directionOpt, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements then
                             let image = Assets.Field.ShopkeepAnimationSheet
                             let row = match shopkeepType with RobehnShopkeep -> 0 | SchaalShopkeep -> 1
+                            let direction =
+                                match directionOpt with
+                                | Some direction -> direction
+                                | None ->
+                                    let direction = Direction.ofVector2 (prop.PointOfInterest - prop.Bottom)
+                                    if direction = Upward then Downward else direction
                             let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterCelSize
