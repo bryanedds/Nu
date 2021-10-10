@@ -29,7 +29,7 @@
    eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
- <objectgroup id="3" name="Props" visible="0">
+ <objectgroup id="3" name="Props">
   <object id="3" gid="235" x="720" y="576" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some BrassKey]]"/>
@@ -65,7 +65,7 @@
     [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
     [Wait 120]
-    [PlaySound 0.5 [Field ChestOpen]]
+    [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 1]]]</property>
    </properties>

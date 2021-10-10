@@ -55,7 +55,7 @@
     [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
     [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
     [Wait 120]
-    [PlaySound 0.5 [Field ChestOpen]]
+    [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]
  [[KylaAdvent 3]]]</property>
    </properties>

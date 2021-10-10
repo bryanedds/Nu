@@ -104,7 +104,7 @@
     [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
-    [PlaySound 0.5 [Field ChestOpen]]]]
+    [PlaySound 0.5 [Field Unlatch]]]]
   [[KylaAdvent 6] AraneaImplicitumDefeated]]</property>
    </properties>
   </object>
