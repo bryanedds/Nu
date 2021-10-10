@@ -40,7 +40,7 @@
     <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="602" y="1295.33" width="324" height="276">
+  <object id="4" gid="235" x="606" y="1320" width="324" height="276">
    <properties>
     <property name="I" value="[Npc AraneaImplicitumNpc [Some Upward] [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
    </properties>
@@ -50,12 +50,12 @@
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
-  <object id="8" gid="1" x="552" y="1032" width="432" height="720">
+  <object id="8" gid="1" x="552" y="1128" width="432" height="720">
    <properties>
     <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
-  <object id="9" gid="235" x="696" y="960" width="144" height="144">
+  <object id="9" gid="235" x="696" y="1056" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
