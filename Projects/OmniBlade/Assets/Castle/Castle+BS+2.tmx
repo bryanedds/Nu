@@ -71,7 +71,7 @@
     [Dialog &quot;One hundred years...&quot; False]
     [Dialog &quot;For one hundred years that demon crawled its way into this world through the open wound of my soul...&quot; False]
     [Dialog &quot;One hundred years of sorrow... anguish...&quot; False]
-    [Dialog &quot;...living through unbearable memories over and over again...&quot; False]
+    [Dialog &quot;...living through unbearable memories over and over...&quot; False]
     [Dialog &quot;All for a fleeting moment of vengeance...&quot; False]
     [Wait 120]
     [Dialog &quot;The truth is clear now.&quot; False]
