@@ -228,7 +228,7 @@ module PropDispatcher =
                         (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
-                let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
+                let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
                 Render (elevation, positionY, assetTag,
