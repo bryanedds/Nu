@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="17">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="17">
  <tileset firstgid="1" source="TombInner.tsx"/>
- <layer id="2" name="Floor" width="64" height="64">
+ <layer id="6" name="Basement" width="64" height="64">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20MH6AAAAAAAAAAAAAAAAAAAACAtwFAAAAB
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="64" height="64">
   <data encoding="base64" compression="zlib">
    eJzt2lsOgjAQBVBwae5Y16T7UD+IhJRy5z19TMKXML2nrRiIy9JH3W//Y7Ta23uZA4pnO+exLstz7WMeSp7aub/j9T33vba7F465jx7kmrMje3EMqD2Tn5K5ZpBcG1ES99EgnTvv0rBL/C2bp3Xapz2fP9o77WPbIyraHOW2tpeeW1uzS649e25t3U7p0ePaU/tks3Nze/TyKu49TNovg/1XaNbSPUzSM6o07lWIIZt7nwn9PZauYSb7Pg/ye+yxh73nR3PvW/it5yCL/djr6vvYs53yfYy0R44tzdOLmZPRw+3ppebt2Y1k79195dC0R/s4c6Dl9963knHR66PskqKOkcWvWZ7+SPNVL6kfyezllvSunYv01HgfYGnmrhM6hvR9gKUTHVfit3BbjlvKQP3Myu7lRtbZKlMmO3dvaPujrUjO7P5aZc5pvbc442jPpZdfIzu1svlrBm07xxLlt7ajY3n4qeNYeqXrouG3XPOtF/Ic5OVHxtGqrR/3f0pefqvSyNWqnZpfo0c2O5pfo0dWe6kk2Vq3a9Ro3lKN6t7X9Mf5P74LKfM=
+  </data>
+ </layer>
+ <layer id="5" name="Flooring" width="64" height="64">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20MH6AAAAAAAAAAAAAAAAAAAACAtwFAAAAB
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">

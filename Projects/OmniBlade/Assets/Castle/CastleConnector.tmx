@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="7">
  <tileset firstgid="1" source="../Field/TileMaps/TombInner.tsx"/>
  <tileset firstgid="1480" source="Castle.tsx"/>
- <layer id="2" name="Floor" width="32" height="32">
+ <layer id="5" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0qERACAMQ9Ec2axLAZ0eFqhElPviia9iEkMKtDItLdf9Wt6t7brxN/4HAAAA9HQA5xITiA==
+  </data>
+ </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">

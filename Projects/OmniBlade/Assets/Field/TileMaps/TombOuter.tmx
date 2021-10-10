@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="14">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="14">
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
- <layer id="2" name="Floor" width="80" height="80">
+ <layer id="8" name="Basement" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="80" height="80">
   <data encoding="base64" compression="zlib">
    eJzt28ttwkAQAFCfEmrIjUtCJSEtUAol0Qmt0EXWiiNFEUiIXe+M8Ts8+Wbtzn5mRrK3wzBsAQAAWK334qPYJRjLEn0W++IrwVgAAIDH6Y3q6I0AYB5qlDpqlH7s1Tr2KkAbL8UmwTiWaszncrn4RRnrIbXQD3dZHWdR/CK5ywAA1ksvV0cvIn6R9HIAkI/6uo76UPwiqa/hurfiEDyGS6P3RHwvHBW/OWqSiO+Fj5Pe8avNqRlqwtNkPz2XFL+15ORbd1Kr+Z8TzHFOGf5hGM/66z/RZ7+3mtz6u4Z/ZTr7Pda31z5uPZd73pd9fR9Zp1ZzeabYAPD8vgFKwEMx
+  </data>
+ </layer>
+ <layer id="7" name="Flooring" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">

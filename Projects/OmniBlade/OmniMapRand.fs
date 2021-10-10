@@ -428,7 +428,10 @@ type MapRand =
                             let y = j * 32 + jj
                             let tileRef =
                                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
-                                | Some segment when l < segment.TileLayers.Count -> segment.TileLayers.[l].Tiles.[ii + jj * 32]
+                                | Some segment ->
+                                    match Seq.tryFind (fun (segmentLayer : TmxLayer) -> segmentLayer.Name = layer.Name) segment.TileLayers with
+                                    | Some segmentLayer -> segmentLayer.Tiles.[ii + jj * 32]
+                                    | None -> TmxLayerTile (0u, x, y)
                                 | Some _ | None -> TmxLayerTile (0u, x, y)
                             let tile = TmxMap.makeLayerTile tileRef.Gid x y tileRef.HorizontalFlip tileRef.VerticalFlip tileRef.DiagonalFlip
                             layer.Tiles.Add tile
