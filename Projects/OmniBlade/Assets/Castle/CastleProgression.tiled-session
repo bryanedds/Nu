@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Castle+BS+2.tmx",
+    "activeFile": "Castle+NS+0.tmx",
     "expandedProjectPaths": [
         "C:/Development/Nu/Projects/OmniBlade/Assets",
         "."
@@ -1116,6 +1116,22 @@
                 "y": 3180
             }
         },
+        "C:/Temp/Castle+NN+0.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 768,
+                "y": 767.3333333333333
+            }
+        },
+        "C:/Temp/Castle+NS+0.tmx": {
+            "scale": 0.5721028645833333,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 769.0924608819347,
+                "y": 768.218492176387
+            }
+        },
         "C:/Temp/OmniBlade.Windows/Assets/Castle/Castle+BN+0.tmx": {
             "scale": 4,
             "selectedLayer": 2,
@@ -1315,96 +1331,96 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+BN+1.tmx": {
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1074,
-                "y": 895.5
+                "x": 768,
+                "y": 767.5
             }
         },
         "Castle+BN+2.tmx": {
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1074,
-                "y": 895.5
+                "x": 768,
+                "y": 767.5
             }
         },
         "Castle+BS+0.tmx": {
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 1176,
-                "y": 938
+                "x": 744,
+                "y": 767.3333333333333
             }
         },
         "Castle+BS+1.tmx": {
-            "scale": 0.5721028645833333,
-            "selectedLayer": 0,
+            "scale": 1.5,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 744,
+                "y": 767.6666666666665
             }
         },
         "Castle+BS+2.tmx": {
             "scale": 1,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 768,
-                "y": 563.5
+                "x": 744,
+                "y": 767.5
             }
         },
         "Castle+NN+0.tmx": {
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1176,
-                "y": 938
+                "x": 768,
+                "y": 767.3333333333333
             }
         },
         "Castle+NN+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+0.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1302.2133712660032,
-                "y": 990.2065433854909
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle.tsx": {
@@ -1450,6 +1466,9 @@
         "CastleObjects.tsx": {
             "scaleInDock": 0.33,
             "scaleInEditor": 1
+        },
+        "CastleObjects2.tsx": {
+            "scaleInDock": 1
         }
     },
     "last.imagePath": "C:/Development/Nu/Projects/OmniBlade/Assets/Castle",
@@ -1477,18 +1496,18 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
-        "Castle+NS+0.tmx",
-        "Castle+NN+0.tmx",
-        "Castle+BN+0.tmx",
-        "Castle+BS+0.tmx",
-        "Castle+NS+1.tmx",
         "Castle+NN+1.tmx",
-        "Castle+BN+1.tmx",
-        "Castle+BS+1.tmx",
         "Castle+NN+2.tmx",
+        "Castle+NS+1.tmx",
         "Castle+NS+2.tmx",
+        "Castle+BS+2.tmx",
         "Castle+BN+2.tmx",
-        "Castle+BS+2.tmx"
+        "Castle+BS+1.tmx",
+        "Castle+BN+1.tmx",
+        "Castle+BS+0.tmx",
+        "Castle+BN+0.tmx",
+        "Castle+NN+0.tmx",
+        "Castle+NS+0.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,

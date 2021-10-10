@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="5" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaEJAAAIADDB5y3+bPEBo7CwvMqIAs56+f1+v9/v9/v9fv+HfwD9TS0j
+   eJztzaEJAAAIADDB5y3+bPEAq7CwvMqIAt7p5ff7/X6/3+/3+/0XA325LRk=
+  </data>
+ </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUkApKeBgYpkBxKQ/97V8CtPMKFC8dtX/UfhqBmbwMDLOAeDYv8fbj0kNNMFLCf9T+kW3/aP4btR8baAHaORWKWwfA/lEwCkbB0AcAsOk+iQ==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9l0kOwjAMRSOqXqQbOBhDBQLai/RE3cCFuqF7UimRIitxbMepJW9a3PcYvnCmxpgJ6UdrzFvYtxZ/dq439mj7c5D1UODg2V/7nJ+wZ6FDyF5tHxtZLwIHyD7Za9LqmA6abK5Din231662Xy2dCWdyDtj77t1rnwx+bAZzeCKf+eCyPDL4qZnQoQf81Pc9uyxvftTCZrwD5Kd+a4vL8srg52Y2B8hPVeeyzMkCZYbKr1Uh/4LkSyN/sftnkMGUg1b+MDbmoJk/jJ1y0MofhR1z0Mgfhw0dSvMnYVNyQakSdqmDBlvqoMnmOtRgUx1qsnMOe7BTDnuyQwdfe7P9mcyXxlmLw/a7qi/pOUfS4a7qK7ZT1uTDXTW2U9bkx/6L4E5J7T+ABoKS
+   eJy9l7tOw1AMho9adWnoA0DFAkMrVngJhJi5CJi4VKBC+yJ9CFYuExOiA8zwIMAAQqUwYis5qvXjJO5pU0u/Gh3Z/n5HcZX0ys71MnRWce4iUCeV7N55YnaX9FgKU2cCD579RH0GgXoI9CDZ36RGOdZyeXRt0UeAB2Q36Wy15twaqR85d026SdFtFOc8zzn3Qloa04PGlrFIPfeo/z7pIBqdyzPOkWH1kMY+pbNj0jlpE3prwTmyxuJBY39V49pWkttOejUjncvRiPQa7pXloQ3sQXXUs5PscjfptZ3B34r0Go4BeGgBX869Ihic2y/F/qzzY43vJ+8D8uWztisYnPuZ3Bvr/Fjj+/lf9oB8H6+Uc096F7m8996fZX6s4Z5voidHGn+ent8FUj151od0z35Iv1X7/FjDPXmmutgfyT8Su7JOOTuUu5Hk4i5Z5scarech7KD0IAN3yTI/1sjQ2FkecJcs82v7l8dO84C7ZJkfa6xszQPukmV+rBmHjR5wlyzzy5oQtvSAu8RxWfvPlmeyJpSd9UxeKXw8m2TuPA93Cl+eTZOd9/+AUQTb6qFIdp6HWbDTPMySLT34mDXbf5P5mMa31jhs/67qI/Q7J0TyXdWH9k5ZJB+/TbR3yiL5zJb/d3yN75RW/QH9MrgC
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgT1Au/dS0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyUP0hEvXgAyCzJhNpHsith6loNwyAzCQmHKjpb3qaTQzQ4iasBgTakNLwNKCbpwPxDBLcTo4eGFgA1NMPtH8RVO8xIH0ciE+QYBa6Hli+aSMyb2oCw2k+leMKZGY/DcrmUTC8Ab3zHzqgRv6jBOSxkq83iwK9o2AUjIJRMFjBIl7sbHqB1bzY2UMNAABi8D4T
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztw6ENADAIADAMjyL4/wQEB5DMzLRJIwAAALh07l8qN7waL3ABpQ==
+   eJztzTEKgDAMheEsHXtJB4+hbuqmnsG1s9LT+aANFnEQaXHwffCDwZCKPNNYkRZ1sbv/6U5uPW4OaERrTOmc7uQ24eaMFuRiSud0p4QNd3fk7fl9nX2ht4mIiIiI/q42oa9UJkT01gEbrhqY
   </data>
  </layer>
  <objectgroup id="3" name="Props">

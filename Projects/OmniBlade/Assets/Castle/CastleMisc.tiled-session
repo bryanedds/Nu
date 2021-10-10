@@ -5,8 +5,8 @@
     },
     "activeFile": "CastleConnector.tmx",
     "expandedProjectPaths": [
-        "C:/Development/Nu/Projects/OmniBlade/Assets",
-        "."
+        ".",
+        "C:/Development/Nu/Projects/OmniBlade/Assets"
     ],
     "file.lastUsedOpenFilter": "Tiled map files (*.tmx *.xml)",
     "fileStates": {
@@ -1415,7 +1415,7 @@
             "scale": 0.8985416666666666,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 456.294922327846,
+                "x": 455.1820078831439,
                 "y": 287.68838395548346
             }
         },
