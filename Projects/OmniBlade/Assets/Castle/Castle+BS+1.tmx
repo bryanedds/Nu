@@ -26,16 +26,16 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgT1Au/dS0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyUP0hEvXgAyCzJhNpHsith6loNwyAzCQmHKjpb3qaTQzQ4iasBgTakNLwNKCbpwPxDBLcTo4eGFgA1NMPtP8MVO8xIH0ciE+QYBa6Hli+aSMyb2oCw2k+FePqHBfEzH4alM2jYHgDeuc/dECN/EcJyGMlX28WBXpHwSgYBaNgsIJFvNjZ9AKrebGzhxoAADQsPxU=
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyUP0hEvXgAyCzJhNpHsith6loNwyAzCQmHKjpb3qaTQzQ4iasBgTakNLwNKCbpwPxDBLcTo4eGFgA1NMPtH8RVO8xIH0ciE+QYBa6Hli+aSMyb2oCw2k+leMKZGY/DcrmUTC8Ab3zHzqgRv6jBOSxkq83iwK9o2AUjIJRMFjBIl7sbHqB1bzY2UMNAAC5CT4H
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlTEKgDAQBNOk9JMWPiPaqZ36BltrJa9zIQmGYBGPHILewKCHx1ptolQeplKqhZ337nu8U5oemQMc4eoNhDneKc2EzBkucPMGwhzvcLAj94C2ut7T2TL9W/gHaYeNf1I6HWfkngscHX6SydFh7nNB+C6UO7XkPUzpY8kOU7ojfRMEgZtGO9+i1k5BoHICU+0xMQ==
+   eJztzTEKgDAMheEsHXtJB4+hbuqmnsG1s9LT+aANFnEQaXHwffCDwZCKPNNYkRZ1sbv/6U5uPW4OaERrTOmc7uQ24eaMFuRiSud0p4QNd3fk7fl9nX2ht4mIiIiI/q42oa9UJkT01gEbrhqY
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="696" y="480" width="144" height="144">
+  <object id="2" gid="235" x="696" y="432" width="144" height="144">
    <properties>
     <property name="I">[Npc HeavyArmorosNpc [Some Downward]
   [Sequence
