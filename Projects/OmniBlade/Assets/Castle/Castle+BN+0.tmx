@@ -16,17 +16,17 @@
  </layer>
  <layer id="4" name="Flooring" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUDEVQwsPAUMozcPYvAdq9dNT+UftpBCR4GRgkgViKFzsf2X5CaskBGkC9mkCsxYudj2w/IbWkAFC+nkIEPgrER4hUS0o50QJUO5UIvBWItxCptpUG6YTa6Y/UNITPfnLSI6lpCJ/9lKTH0fRHHKBV+Uds2sFmPzXKQWLTDjb7qVkOEgLDvf4b7Pa30ChfjQL6AQBCilzP
+   eJztlcsJgDAQRLeA5K5WoNanHcQOtAPtQDvQvlxvIoGMkvXHDswhMPIuL5FIo9F8MZUhqs1z/J7Zg/KVL5TEEqXczPrPe35oeyU5f1twS+s/7/mh7Zls97oFunBncHvmnXC87YBO3BHcNgKeSPqH+HTkx3QQ8enIj+Wg+odFyj/UIx8/hoOoRz5+zHcwlL///97Od0L3SnNfVkKKXM8=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9V0tKA0EQbWYI6GTmAJpdwA/kAtEbqDtBT6AxKNF4kVwiS7MSV5KNHkL0BkYXcaGgO6uYLrum0tPzi/OgoKvzUq+m62VIj3ylRgXitKHUJcQ4Un/A9TnsnTSK1Sob2MOE6eO6Lm3eA6Fu7QvQu2L6uD6rqQfUvoZ49Iz+FNbDmnoYaO0vpj/34h76Nemj9rZv9Nt+3MN/6NOsKfDsUbsXGP2PIO5hKLhV50GzfvBM4NnfsN8eAfemXpJbxRPcZ58s8OzvLPq4Nxfcsr7k2qi35Zvgc5do+0nuvEQPUtull4V2wR649nOo1Aqc6SpEEC3mL6HRycPN6kE+90zXb+lZz8Lks/Ec163I/hnlrnOwnfmPrtHRdX9ETZ7juhPZP6PcNYtByry7UHMHYjcy+VNgcg4bl+cI3kNf6JP2bXOx9rKAtW3vStQv4rcs5Kkl9V9ZffSSy29ZcPmRakv9b8ZBL7n8lgWXH6m21MfZSM+g17I8RejqvTSvyu9K/TqBz2p7fkQVHxb5Lten/9QIl+9svkzjUm7zoe2/OvXg8p3Nl2lcyqUPXfcE6iHPuywNnLvZTPowzx2FzwKxATVmEG8Q7znejci919xjxi9yP+I9HEGNtTCu2crxDkDuepjklrmb8R72oNYh6B/ommPLHGgPefuh4Va5F8pZECYWfdveMu6k2EOvZNR9LywTvzYSkFg=
+   eJy9V81OwkAQbtqQKLQPoNxI/El4AfQN1JuJPoEi0aD4IrwERzkZT4aLPoTRNxA94EETuTlf2nGny3ZpF+gkk+wsX+ebnflouv3A8/oF/Lziedfkg8j7N6wvae+sUiyXq6OGoeDHuixuWQNb2dxXxHcj+LG+KKkGcN+SP/uKf0TrXkk1dBPuH8E/8eMaOiXxg3s3UPyNIK5hFfw8a3b0HtztquL/qsY19DTsovPgWT/5ytH7O/HfY8PeyE9jF9GE1Nm3cPT+wcCPvYmGddWl5AbfTqBczl23RpDGThxq0LltfPOsUbAGyf0aet4a9XSdvBrNxm+h4smDnVeDfu5xkr+ezHocps8mY6zrkfk3jm19MPV8muRoJnmnWk4ZY92MzL9xbJtFN2PeLcq5R74fqfilqmJpJqyMYbKGjsbP3Pe12dzLMuQ2vSu7lfS5i2jP5RnUoPPLc78LLHRl057cy9KgKYfOL+1XYKErm/bkXpYGTTls/OiFrh/ojmN4S9Mgx1J//BzHMp+Nf9WG82XN30V7bEWelfz8TQ2zac2koywsxyZNmr7VuQab1kw6ysJyrGvSdk/gGvK8y7JMYrdr6XdmnjuKnAVsi3KMyT/IP3O8G4F9TLCnAl/kfiRrOKEcG2Gcs27pPRuwm2Ea63I3kzUcUK5j4j9Kcg4Mc+A94A5DhV3kXqjPgm1o4DftLeNOihrajl72vdDF/wBVH5DY
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MRwBN5Hpilh1o4A0YE1kuBKrbigAaqQlXGaMplPCAF9aojQ9DuV0Sk7aGU1v1APkpB1qpjceIsySB6rhBWJ+KtorBzRLiZuBQYYIM0HqRsEoIBYAAMdrDAk=
+   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MRwBN5Hpilh1o4A0YE1kuBKrbigActMSLn2jaZM0gC8tUZoeh3I6JScdjaY96gFy0g410xsPEWbJA9XwAjE/Fe2VA5qlxM3AIEOEmSB1o2AUEAsAyasMCQ==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">

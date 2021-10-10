@@ -1328,11 +1328,11 @@
             }
         },
         "Castle+BN+0.tmx": {
-            "scale": 0.5,
-            "selectedLayer": 6,
+            "scale": 0.75,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 745,
-                "y": 837
+                "x": 880.6666666666665,
+                "y": 1046
             }
         },
         "Castle+BN+1.tmx": {
@@ -1353,7 +1353,7 @@
         },
         "Castle+BS+0.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 5,
+            "selectedLayer": 4,
             "viewCenter": {
                 "x": 745.495305832148,
                 "y": 768.218492176387
@@ -1368,11 +1368,11 @@
             }
         },
         "Castle+BS+2.tmx": {
-            "scale": 1.5,
+            "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 767.6666666666665,
-                "y": 563.6666666666666
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+0.tmx": {
@@ -1496,11 +1496,11 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
-        "Castle+BN+0.tmx",
-        "Castle+BN+2.tmx",
-        "Castle+BN+1.tmx",
         "Castle+BS+1.tmx",
         "Castle+BS+2.tmx",
+        "Castle+BN+2.tmx",
+        "Castle+BN+1.tmx",
+        "Castle+BN+0.tmx",
         "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
         "Castle+NS+2.tmx",
