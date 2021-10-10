@@ -84,12 +84,12 @@
     [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
     [PlaySong 1000 0 0.5 0 [Castle CastlePart3]]
     [Wait 120]
-    [PlaySound 0.5 [Field ChestOpen]]
+    [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot; False]]]
   [[KylaAdvent 5]]]</property>
    </properties>
   </object>
-  <object id="5" gid="235" x="432" y="672" width="48" height="48">
+  <object id="5" gid="235" x="528" y="528" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Nil [[KylaAdvent 6]]]"/>
    </properties>

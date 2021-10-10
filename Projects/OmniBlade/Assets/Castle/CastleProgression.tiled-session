@@ -1340,7 +1340,7 @@
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 767.5,
-                "y": 767.5
+                "y": 1037.5
             }
         },
         "Castle+BN+2.tmx": {
@@ -1377,7 +1377,7 @@
         },
         "Castle+NN+0.tmx": {
             "scale": 0.75,
-            "selectedLayer": 0,
+            "selectedLayer": 5,
             "viewCenter": {
                 "x": 716.6666666666665,
                 "y": 766
@@ -1385,7 +1385,7 @@
         },
         "Castle+NN+1.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 0,
+            "selectedLayer": 5,
             "viewCenter": {
                 "x": 768.218492176387,
                 "y": 768.218492176387
@@ -1393,7 +1393,7 @@
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 0,
+            "selectedLayer": 5,
             "viewCenter": {
                 "x": 703.5448079658607,
                 "y": 768.218492176387
@@ -1401,7 +1401,7 @@
         },
         "Castle+NS+0.tmx": {
             "scale": 1,
-            "selectedLayer": 1,
+            "selectedLayer": 5,
             "viewCenter": {
                 "x": 753.5,
                 "y": 668.5
