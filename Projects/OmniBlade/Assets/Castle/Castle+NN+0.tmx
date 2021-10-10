@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="10" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
+  </data>
+ </layer>
+ <layer id="9" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzTENACAMBdEvoHLBATgAB+AIQXTuwEQ63UtuPgkAAAB4KyaNULW8//LXCe3Ef/PXDPXEPwD8cAE9iQwI
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
@@ -22,7 +29,7 @@
    eJztzrEJACAMBdHfpMmYFu5jo46rkAGsRIL34PqTAGRULXqlWAQAt3WXxm7665OzluARAPCvBZrXBCM=
   </data>
  </layer>
- <objectgroup id="3" name="Props">
+ <objectgroup id="3" name="Props" visible="0">
   <object id="3" gid="235" x="720" y="576" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some BrassKey]]"/>

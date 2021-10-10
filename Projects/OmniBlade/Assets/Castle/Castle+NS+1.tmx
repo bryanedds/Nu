@@ -2,9 +2,16 @@
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0jEKADAIBEEhn7fxz3lBAlaCTLH1XHF5IlKS9Kya8Xf5v03Tn+Tz+Xw+n8/vdAHu5y3D
+  </data>
+ </layer>
+ <layer id="9" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzTENACAMBdEvoHLBATgAB+AIQXTuRBg63UtuPgkA8KqYNELV8v7LXye0E//NXzPUE/8AAAD4dwFkDQwI
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
