@@ -1371,8 +1371,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 744,
-                "y": 767.5
+                "x": 768,
+                "y": 563.5
             }
         },
         "Castle+NN+0.tmx": {
@@ -1400,11 +1400,11 @@
             }
         },
         "Castle+NS+0.tmx": {
-            "scale": 0.5721028645833333,
-            "selectedLayer": 2,
+            "scale": 1,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 769.0924608819347,
-                "y": 768.218492176387
+                "x": 792,
+                "y": 669.5
             }
         },
         "Castle+NS+1.tmx": {
@@ -1496,18 +1496,18 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
-        "Castle+NN+1.tmx",
-        "Castle+NN+2.tmx",
         "Castle+NS+1.tmx",
         "Castle+NS+2.tmx",
+        "Castle+NS+0.tmx",
+        "Castle+NN+2.tmx",
+        "Castle+NN+1.tmx",
+        "Castle+BS+0.tmx",
         "Castle+BS+2.tmx",
         "Castle+BN+2.tmx",
         "Castle+BS+1.tmx",
         "Castle+BN+1.tmx",
-        "Castle+BS+0.tmx",
         "Castle+BN+0.tmx",
-        "Castle+NN+0.tmx",
-        "Castle+NS+0.tmx"
+        "Castle+NN+0.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,
