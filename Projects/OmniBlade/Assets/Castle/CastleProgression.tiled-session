@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Castle+NS+0.tmx",
+    "activeFile": "Castle+BN+0.tmx",
     "expandedProjectPaths": [
         "C:/Development/Nu/Projects/OmniBlade/Assets",
         "."
@@ -1329,9 +1329,9 @@
         },
         "Castle+BN+0.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 0,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 769.0924608819347,
+                "x": 744.6213371266003,
                 "y": 768.218492176387
             }
         },
@@ -1344,35 +1344,35 @@
             }
         },
         "Castle+BN+2.tmx": {
-            "scale": 1,
+            "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 768,
-                "y": 767.5
+                "x": 769.0924608819347,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+0.tmx": {
-            "scale": 0.75,
-            "selectedLayer": 2,
+            "scale": 1.5,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 744,
-                "y": 767.3333333333333
+                "x": 778.6666666666665,
+                "y": 429
             }
         },
         "Castle+BS+1.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 2,
+            "scale": 2,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 744,
-                "y": 767.6666666666665
+                "x": 823,
+                "y": 449.25
             }
         },
         "Castle+BS+2.tmx": {
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 3,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 768,
-                "y": 563.5
+                "x": 767.6666666666666,
+                "y": 428.5
             }
         },
         "Castle+NN+0.tmx": {
@@ -1424,7 +1424,7 @@
             }
         },
         "Castle.tsx": {
-            "scaleInDock": 0.5,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "CastleBattle.tmx": {
@@ -1452,7 +1452,7 @@
             }
         },
         "CastleInterior.tsx": {
-            "scaleInDock": 0.5,
+            "scaleInDock": 0.75,
             "scaleInEditor": 1
         },
         "CastleNarrative.tmx": {
@@ -1464,11 +1464,11 @@
             }
         },
         "CastleObjects.tsx": {
-            "scaleInDock": 0.33,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "CastleObjects2.tsx": {
-            "scaleInDock": 1
+            "scaleInDock": 0.75
         }
     },
     "last.imagePath": "C:/Development/Nu/Projects/OmniBlade/Assets/Castle",
@@ -1496,18 +1496,18 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
-        "Castle+NS+1.tmx",
-        "Castle+NS+2.tmx",
-        "Castle+NS+0.tmx",
-        "Castle+NN+2.tmx",
-        "Castle+NN+1.tmx",
-        "Castle+BS+0.tmx",
-        "Castle+BS+2.tmx",
-        "Castle+BN+2.tmx",
         "Castle+BS+1.tmx",
+        "Castle+BS+2.tmx",
+        "Castle+NS+0.tmx",
+        "Castle+NN+0.tmx",
+        "Castle+BN+2.tmx",
+        "Castle+NS+2.tmx",
+        "Castle+NN+2.tmx",
         "Castle+BN+1.tmx",
-        "Castle+BN+0.tmx",
-        "Castle+NN+0.tmx"
+        "Castle+NN+1.tmx",
+        "Castle+NS+1.tmx",
+        "Castle+BS+0.tmx",
+        "Castle+BN+0.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,

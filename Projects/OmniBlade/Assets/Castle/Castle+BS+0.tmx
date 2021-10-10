@@ -26,7 +26,7 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgT1Au/dS0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyUP0hEvXgAyCzJhNpHsith6loNwyAzCQmHKjpb3qaTQzQ4iasBgTakNLwNKCbpwPxDBLcTo4eGFgA1NMPtH8RVO8xIH0ciE+QYBa6Hli+aSMyb2oCw2k+leMKZGY/DcrmUTC8Ab3zHzqgRv6jBOSxkq83iwK9o2AUjIJRMFjBIl7sbHqB1bzY2UMNAABi8D4T
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyUP0hEvXgAyCzJhNpHsith6loNwyAzCQmHKjpb3qaTQzQ4iasBgTakNLwNKCbpwPxDBLcTo4eGFgA1NMPtH8RVO8xIH0ciE+QYBa6Hli+aSMyb2oCw2k+leMKZGY/DcrmUTC8Ab3zHzqgRv6jBOSxkq83iwK9o2AUjIJRMFjBIl7sbHqB1bzY2UMNAAC5CT4H
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
@@ -35,7 +35,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="696" y="480" width="144" height="144">
+  <object id="2" gid="235" x="696" y="432" width="144" height="144">
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Downward]
  [Sequence
