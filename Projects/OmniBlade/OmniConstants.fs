@@ -82,6 +82,7 @@ module Constants =
         let ConnectorFadeYMax = 1440.0f
         let FeelerElevation = -100.0f
         let BackgroundElevation = -30.0f
+        let FlooringElevation = -30.0f
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
         let SpiritOrbElevation = 20.0f
