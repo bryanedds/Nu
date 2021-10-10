@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <layer id="2" name="Floor" width="32" height="32">
+ <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt1DEKACAMBMGAn0+TP9vYC4nxFLbYUgYinA8zTxar7Ptq+Pin/WjuF1/1V/j4+Pf87r3Z7Y/aV98fHx//PV+9Pyq/46Zd4df9CabwMLs=
   </data>
