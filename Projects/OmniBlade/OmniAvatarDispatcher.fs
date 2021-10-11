@@ -67,8 +67,8 @@ module AvatarDispatcher =
             let bodyCenter = v2 -0.015f -0.36f
             let bodyShapes =
                 BodyShapes
-                    [BodyBoxRounded { Extent = v2 0.175f 0.175f; Radius = 0.0875f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodyCircle { Radius = 0.25f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
+                    [BodyCircle { Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                     BodyCircle { Radius = 0.325f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
              Entity.Omnipresent == true
              entity.FixedRotation == true
