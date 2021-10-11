@@ -45,3 +45,8 @@ packages/
 # Tiled Temp Files #
 ####################
 *.tiled-session
+
+##########
+# VSCode #
+##########
+.vscode
