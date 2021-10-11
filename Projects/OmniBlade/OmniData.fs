@@ -50,6 +50,16 @@ type Direction =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
+            if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
+            elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
+            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then  Upward
+            else                                                            Downward
+        direction
+
+    static member ofVector2Biased (v2 : Vector2) =
+        let angle = double (atan2 v2.Y v2.X)
+        let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
+        let direction =
             if      angle > Math.PI * 1.74997 || angle <= Math.PI * 0.25003 then    Rightward
             elif    angle > Math.PI * 0.74997 && angle <= Math.PI * 1.25003 then    Leftward
             elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then          Upward
