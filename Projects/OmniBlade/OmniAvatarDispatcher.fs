@@ -90,7 +90,7 @@ module AvatarDispatcher =
                 // update animation generally
                 let velocity = entity.GetLinearVelocity world
                 let speed = velocity.Length ()
-                let direction = Direction.ofVector2 velocity
+                let direction = Direction.ofVector2Biased velocity
                 let avatar =
                     if speed > Constants.Field.AvatarIdleSpeedMax then
                         if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
