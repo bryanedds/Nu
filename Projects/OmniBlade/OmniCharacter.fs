@@ -687,7 +687,7 @@ module Character =
                 let actionTime =
                     if waitSpeed
                     then Constants.Battle.EnemyActionTimeSpacing * single index + 500.0f
-                    else Constants.Battle.EnemyActionTimeSpacing * single index + Constants.Battle.EnemyActionTimeSpacing
+                    else Constants.Battle.EnemyActionTimeSpacing * single index + 150.0f
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
