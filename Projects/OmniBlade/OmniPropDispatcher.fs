@@ -151,7 +151,7 @@ module PropDispatcher =
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, glow) =
                                 if isEcho then
-                                    let color = color.MapA (fun a -> single a / 3.0f |> byte)
+                                    let color = color.MapA (fun a -> single a / 2.5f |> byte)
                                     let glowAmount = single (time % 120L) / 120.0f
                                     let glowAmount = if glowAmount > 0.5f then 1.0f - glowAmount else glowAmount
                                     let glow = color.MapA (fun a -> single a * glowAmount |> byte)
