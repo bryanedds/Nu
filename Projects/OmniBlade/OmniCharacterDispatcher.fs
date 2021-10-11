@@ -125,10 +125,8 @@ module CharacterDispatcher =
                         let image = Assets.Battle.AfflictionsAnimationSheet
                         let position =
                             match character.Stature with
-                            | SmallStature | NormalStature ->
+                            | SmallStature | NormalStature | LargeStature ->
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize
-                            | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize.WithY(0.0f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.0f).MapY((*) 1.75f)
                         let transform = { transform with Position = position; Size = Constants.Battle.AfflictionSize }
@@ -150,10 +148,8 @@ module CharacterDispatcher =
                         let image = Assets.Battle.ChargeOrbAnimationSheet
                         let position =
                             match character.Stature with
-                            | SmallStature | NormalStature ->
+                            | SmallStature | NormalStature | LargeStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
-                            | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).WithY(0.0f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
                         let transform = { transform with Position = position; Size = Constants.Battle.ChargeOrbSize }
