@@ -1,6 +1,6 @@
 Type,FieldTileMap,FieldTileIndexOffset,FieldTileIndexOffsetRange,FieldBackgroundColor,FieldDebugAdvents,FieldDebugKeyItems,FieldSongOpt,EncounterTypeOpt,Definitions,TreasureList
 EmptyField,[FieldStatic [Field EmptyField]],0,[0 0],[0 0 0 0],[],[],None,None,[],[]
-DebugField,[FieldStatic [Castle Castle+BN+2]],0,[0 0],[0 0 0 255],[AraneaImplicitumDefeated [KylaAdvent 6]],[],[Some [Field Field]],None,[],[]
+DebugField,[FieldStatic [Castle Castle+NS+0]],0,[0 0],[0 0 0 255],[AraneaImplicitumDefeated [KylaAdvent 6]],[],[Some [Field Field]],None,[],[]
 TombOuter,[FieldStatic [Field TombOuter]],0,[0 0],[131 156 172 255],[],[],[Some [Field TombOuter]],None,[],[]
 TombGround,[FieldStatic [Field TombGround]],0,[0 0],[54 46 63 255],[],[],[Some [Field TombGround]],None,[],[]
 CastleConnector,[FieldConnector [Castle CastleConnector] [Castle CastleConnectorFade]],0,[0 0],[54 46 63 255],[],[],[Some [Castle CastleAmbience]],None,[],[]
