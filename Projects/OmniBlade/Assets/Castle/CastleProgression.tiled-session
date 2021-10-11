@@ -1331,45 +1331,45 @@
             "scale": 2,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 897.25,
-                "y": 831.75
+                "x": 743.75,
+                "y": 767.75
             }
         },
         "Castle+BN+1.tmx": {
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1050.5,
-                "y": 895.5
+                "x": 743.5,
+                "y": 767.5
             }
         },
         "Castle+BN+2.tmx": {
             "scale": 2,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 897.25,
-                "y": 831.75
+                "x": 743.75,
+                "y": 767.75
             }
         },
         "Castle+BS+0.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 1278.6162162162163,
-                "y": 990.2065433854909
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 1278.6162162162163,
-                "y": 990.2065433854909
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+2.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 6,
+            "selectedLayer": 1,
             "viewCenter": {
                 "x": 768.218492176387,
                 "y": 923.7849217638693
@@ -1379,7 +1379,7 @@
             "scale": 0.75,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1176.6666666666665,
+                "x": 1175.3333333333333,
                 "y": 938
             }
         },
@@ -1387,40 +1387,40 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 768.218492176387,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 768.218492176387,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+0.tmx": {
             "scale": 1,
-            "selectedLayer": 5,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 1074.5,
-                "y": 894.5
+                "x": 622.5,
+                "y": 487.5
             }
         },
         "Castle+NS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 768.218492176387,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 768.218492176387,
+                "y": 768.218492176387
             }
         },
         "Castle.tsx": {
@@ -1496,16 +1496,16 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
+        "Castle+NS+2.tmx",
+        "Castle+NS+1.tmx",
         "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
         "Castle+BS+0.tmx",
         "Castle+BN+0.tmx",
-        "Castle+NS+1.tmx",
         "Castle+NN+1.tmx",
         "Castle+BN+1.tmx",
         "Castle+BS+1.tmx",
         "Castle+NN+2.tmx",
-        "Castle+NS+2.tmx",
         "Castle+BN+2.tmx",
         "Castle+BS+2.tmx"
     ],
