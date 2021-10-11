@@ -1379,7 +1379,7 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 745.495305832148,
+                "x": 768.218492176387,
                 "y": 768.218492176387
             }
         },
@@ -1387,7 +1387,7 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 745.495305832148,
+                "x": 768.218492176387,
                 "y": 768.218492176387
             }
         },
@@ -1395,32 +1395,32 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 745.495305832148,
+                "x": 768.218492176387,
                 "y": 768.218492176387
             }
         },
         "Castle+NS+0.tmx": {
-            "scale": 0.5721028645833333,
-            "selectedLayer": 4,
+            "scale": 1.5,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 745.495305832148,
-                "y": 766.4705547652917
+                "x": 764.3333333333333,
+                "y": 417
             }
         },
         "Castle+NS+1.tmx": {
             "scale": 0.5721028645833333,
-            "selectedLayer": 5,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 745.495305832148,
+                "x": 768.218492176387,
                 "y": 768.218492176387
             }
         },
         "Castle+NS+2.tmx": {
-            "scale": 0.5721028645833333,
-            "selectedLayer": 5,
+            "scale": 1.5,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 745.495305832148,
-                "y": 768.218492176387
+                "x": 744.3333333333333,
+                "y": 407
             }
         },
         "Castle.tsx": {
@@ -1497,15 +1497,15 @@
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
         "Castle+NS+2.tmx",
-        "Castle+NS+1.tmx",
+        "Castle+BS+2.tmx",
+        "Castle+BN+0.tmx",
         "Castle+NN+1.tmx",
         "Castle+NN+2.tmx",
         "Castle+BS+1.tmx",
-        "Castle+BS+2.tmx",
-        "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
+        "Castle+NS+1.tmx",
         "Castle+BS+0.tmx",
-        "Castle+BN+0.tmx",
+        "Castle+NS+0.tmx",
         "Castle+BN+1.tmx",
         "Castle+BN+2.tmx"
     ],

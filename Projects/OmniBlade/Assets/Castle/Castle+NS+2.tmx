@@ -21,12 +21,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYhBYCs3hO4E0j48DAzePAxw8Bko9gWIs7ioZ/9ebga8IAhJXhnoFhUeiB5q2f+WgP3YwFsq2i8L9I8AEAsCsRAPbjuR1YD0UMt+X6BZDkDsCMROOOzfxI2qxpdK9qeC0h8azmPFtD8Li7oUKtiPK0zQATX8Omr/0LA/FS0NZtEwreFzAwzQ225YmwAGqFXXE2t3IRAfYkLYvwfILqCTG3Khdn9Fsv89E8QN9EiDIPtBdmswI+xXYoa4gV72I9uN7AZ62Y8LjNo/av9Qsx8A1qn/AQ==
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYiRQSfQXh8eBgZvHoTYZ6DYFyDO4qKe/Xu5GfCCICR5ZaBbVHggeqhl/1sC9mMDb6lovyzQPwJALAjEQjy47URWA9JDLft9gWY5ALEjEDvhsH8TN6oaXyrZnwpKf2g4jxXT/iws6lKoYD+uMEEH1PDrqP1Dw/5UtDSYRcO0hs8NMEBvu2FtAhigVl1PrN2FQHyICWH/HiC7gE5uyIXa/RXJ/vdMEDfQIw2C7AfZrcGMsF+JGeIGetmPbDeyG+hlPy4wav+o/UPNfgBdPP5B
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kjmZeKzeEXggT50bIHQayjwCxFR3DRYmbsBpKwAI6+gUb+A+0/wHQjw+B+BEevyKrYaJimJyF+n8eEeEwB6rm/ACH2SgYBaNgFIyCUTAKRsEowA4AGDARfg==
+   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kjsO8hTBxboTYYSD7CBBb0TFclLgJq6EELKCjX7CB/0D7HwD9+BCIH+HxK7IaJiqGyVmo/+cREQ5zoGrOD3CYjYJRMApGwSgYBaNgFIwC7AAAdRIQ7g==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
@@ -94,7 +94,7 @@
   [[KylaAdvent 5]]]</property>
    </properties>
   </object>
-  <object id="5" gid="235" x="528" y="528" width="48" height="48">
+  <object id="5" gid="235" x="576" y="480" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Nil [[KylaAdvent 6]]]"/>
    </properties>
