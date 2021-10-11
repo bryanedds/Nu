@@ -665,7 +665,7 @@ module Character =
           CelSize_ = celSize
           InputState_ = NoInput }
 
-    let tryMakeEnemy index indexMax offsetCharacters waitSpeed enemyData =
+    let tryMakeEnemy index offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -684,11 +684,10 @@ module Character =
                 let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-                let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
                 let actionTime =
                     if waitSpeed
-                    then 500.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
-                    else 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    then Constants.Battle.EnemyActionTimeSpacing * single index + 500.0f
+                    else Constants.Battle.EnemyActionTimeSpacing * single index + Constants.Battle.EnemyActionTimeSpacing
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None

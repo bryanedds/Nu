@@ -451,7 +451,6 @@ module Battle =
         let origin = v2 -288.0f -240.0f
         let tile = v2 48.0f 48.0f
         let layout = randomizeEnemyLayout w h enemies
-        let enemyIndexMax = dec enemies.Length
         let enemies =
             layout |>
             Array.mapi (fun x arr ->
@@ -461,7 +460,7 @@ module Battle =
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
                         let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
-                        Character.tryMakeEnemy enemyIndex enemyIndexMax offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>

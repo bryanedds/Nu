@@ -96,11 +96,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 Some image
              Entity.Text <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                 match dialogOpt with
-                | Some dialog ->
-                    let detokenized = detokenize dialog.DialogTokenized
-                    let text = Dialog.getText detokenize dialog
-                    let textToShow = String.tryTake dialog.DialogProgress text
-                    textToShow
+                | Some dialog -> Dialog.getText detokenize dialog
                 | None -> ""
              Entity.Justification <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
                 match dialogOpt with
