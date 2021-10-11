@@ -516,7 +516,7 @@ module BattleDispatcher =
                 let battle =
                     match battle.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.update dialog world
+                        let dialog = Dialog.update id dialog world // TODO: P1: pass in a real detokenizer!
                         Battle.updateDialogOpt (constant (Some dialog)) battle
                     | None -> battle
 

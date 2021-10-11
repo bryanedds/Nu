@@ -791,7 +791,7 @@ module FieldDispatcher =
                 let field =
                     match field.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.update dialog world
+                        let dialog = Dialog.update (flip detokenize field) dialog world
                         Field.updateDialogOpt (constant (Some dialog)) field
                     | None -> field
 
