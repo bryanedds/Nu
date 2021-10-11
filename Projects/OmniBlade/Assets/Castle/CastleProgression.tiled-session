@@ -1328,90 +1328,90 @@
             }
         },
         "Castle+BN+0.tmx": {
-            "scale": 0.75,
+            "scale": 0.5721028645833333,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 863.3333333333333,
-                "y": 359.33333333333337
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BN+1.tmx": {
-            "scale": 1,
+            "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1050.5,
-                "y": 895.5
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BN+2.tmx": {
-            "scale": 2,
+            "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 897.25,
-                "y": 831.75
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+0.tmx": {
-            "scale": 0.75,
+            "scale": 0.5721028645833333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 876.6666666666665,
-                "y": 628.6666666666665
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 1278.6162162162163,
-                "y": 990.2065433854909
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 768.218492176387,
-                "y": 923.7849217638693
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+0.tmx": {
-            "scale": 0.75,
+            "scale": 0.5721028645833333,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 575.3333333333334,
-                "y": 936.6666666666666
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 1303.0873399715506,
-                "y": 990.2065433854909
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+0.tmx": {
-            "scale": 1,
+            "scale": 0.5721028645833333,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 758.5,
-                "y": 403.5
+                "x": 745.495305832148,
+                "y": 766.4705547652917
             }
         },
         "Castle+NS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 768.218492176387,
+                "x": 745.495305832148,
                 "y": 768.218492176387
             }
         },
@@ -1419,7 +1419,7 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 768.218492176387,
+                "x": 745.495305832148,
                 "y": 768.218492176387
             }
         },
@@ -1498,16 +1498,16 @@
     "recentFiles": [
         "Castle+NS+2.tmx",
         "Castle+NS+1.tmx",
+        "Castle+NN+1.tmx",
+        "Castle+NN+2.tmx",
+        "Castle+BS+1.tmx",
+        "Castle+BS+2.tmx",
         "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
         "Castle+BS+0.tmx",
         "Castle+BN+0.tmx",
-        "Castle+NN+1.tmx",
         "Castle+BN+1.tmx",
-        "Castle+BS+1.tmx",
-        "Castle+NN+2.tmx",
-        "Castle+BN+2.tmx",
-        "Castle+BS+2.tmx"
+        "Castle+BN+2.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,

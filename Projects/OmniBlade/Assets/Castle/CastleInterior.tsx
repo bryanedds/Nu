@@ -146,57 +146,57 @@
  </tile>
  <tile id="1176">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1177">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1178">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1179">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1180">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1181">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1182">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1183">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1184">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1185">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1186">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1225">

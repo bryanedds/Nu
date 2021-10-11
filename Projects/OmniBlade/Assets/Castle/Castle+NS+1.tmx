@@ -4,6 +4,11 @@
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="10" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0jEKADAIBEEhn7fxz3lBAlaCTLH1XHF5IlKS9Kya8Xf5v03Tn+Tz+Xw+n8/vdAHu5y3D
@@ -16,17 +21,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfnRk7fsnNwPAKiF9zY5enlv2fuRjA4BuQ/g7EP6D8Tm4I7c0DodOA4p+BYl+AOIuLevbvhdqDCwQhySsD3aLCA9FDLfvfErAfG3hLRftlgf4RAGJBIBbiwW0nshqQHmrZ7ws0ywGIHYHYCYf9m7hR1fhSyf5UoBlpaDiPFdP+LCzqUqhgP64wQQfU8Ouo/UPD/lS0NJhFw7SGzw0wQG+7YW0CGKBWXU+s3YVAfIgJYf8eILuATm7Ihdr9Fcn+90wQN9AjDYLsB9mtwYywX4kZ4gZ62Y9sN7Ib6GU/LjBq/6j9Q81+AJ0T/ps=
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYhBYCs3hO4E0j48DAzePAxw8Bko9gWIs7ioZ/9ebga8IAhJXhnoFhUeiB5q2f+WgP3YwFsq2i8L9I8AEAsCsRAPbjuR1YD0UMt+X6BZDkDsCMROOOzfxI2qxpdK9qeC0h8azmPFtD8Li7oUKtiPK0zQATX8Omr/0LA/FS0NZtEwreFzAwzQ225YmwAGqFXXE2t3IRAfYkLYvwfILqCTG3Khdn9Fsv89E8QN9EiDIPtBdmswI+xXYoa4gV72I9uN7AZ62Y8LjNo/av9Qsx8A1qn/AQ==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAKPORkYnnBC2NZcDAw2XBC2BRemGLXBZKC5wkAsAjU/G0jnQNkZaGKiQCxGZXcchpp3DEgfB+ITUP5CmD3cEMoUyD8MZB8BYisahQU2oMRNW/MX0NEv2MB/oP0PgH58CMSP8PgVWQ0TFcPkLNT/84gIhzlQNecHOMxGwSgYBaNgFIyCUTAKRgF2AABNCRca
+   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kjmZeKzeEXggT50bIHQayjwCxFR3DRYmbsBpKwAI6+gUb+A+0/wHQjw+B+BEevyKrYaJimJyF+n8eEeEwB6rm/ACH2SgYBaNgFIyCUTAKRsEowA4AGDARfg==
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztziEKACAQBdFftnhMg/exqMdV2GoRhFWYB9NHAvCDlqS+Gin6ZK8++gUAuKuYFyWbBwA4NwFuOQQj
+   eJztzaENACAMBdFvEEUzIYKRYEAYBJIGD6rmXnL6JAAvpknLYt49S+NUcswfAICrJS9KTR4A4N8GtxcE3Q==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
