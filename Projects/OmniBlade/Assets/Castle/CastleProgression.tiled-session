@@ -1328,43 +1328,43 @@
             }
         },
         "Castle+BN+0.tmx": {
-            "scale": 2,
+            "scale": 0.75,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 743.75,
-                "y": 767.75
+                "x": 863.3333333333333,
+                "y": 359.33333333333337
             }
         },
         "Castle+BN+1.tmx": {
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 743.5,
-                "y": 767.5
+                "x": 1050.5,
+                "y": 895.5
             }
         },
         "Castle+BN+2.tmx": {
             "scale": 2,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 743.75,
-                "y": 767.75
+                "x": 897.25,
+                "y": 831.75
             }
         },
         "Castle+BS+0.tmx": {
-            "scale": 0.5721028645833333,
-            "selectedLayer": 4,
+            "scale": 0.75,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 745.495305832148,
-                "y": 768.218492176387
+                "x": 876.6666666666665,
+                "y": 628.6666666666665
             }
         },
         "Castle+BS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 745.495305832148,
-                "y": 768.218492176387
+                "x": 1278.6162162162163,
+                "y": 990.2065433854909
             }
         },
         "Castle+BS+2.tmx": {
@@ -1377,34 +1377,34 @@
         },
         "Castle+NN+0.tmx": {
             "scale": 0.75,
-            "selectedLayer": 5,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1175.3333333333333,
-                "y": 938
+                "x": 575.3333333333334,
+                "y": 936.6666666666666
             }
         },
         "Castle+NN+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 768.218492176387,
-                "y": 768.218492176387
+                "x": 1303.0873399715506,
+                "y": 990.2065433854909
             }
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 768.218492176387,
-                "y": 768.218492176387
+                "x": 1303.0873399715506,
+                "y": 990.2065433854909
             }
         },
         "Castle+NS+0.tmx": {
             "scale": 1,
-            "selectedLayer": 3,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 622.5,
-                "y": 487.5
+                "x": 758.5,
+                "y": 403.5
             }
         },
         "Castle+NS+1.tmx": {
