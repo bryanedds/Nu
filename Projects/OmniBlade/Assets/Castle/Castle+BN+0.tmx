@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9V0tOwzAQjRJVgjQ5AHRXiY/UC7TcANghwQmgVKBCuUgv0SVdIVaoGzgEghtQWJQFLLpjRvHgiRmbxG0z0kgeezzv2fMa1cMoCIYl/KwWBFfgozT4NRxfwNxprVwtX0cOY4aP46qwOQeyqrEvAe+a4eP4vCIOiH0D/hRq/AmMBxVx6Cvsb4Y/CzMOvYrwEXs30vjNKOOwCnzqNTnePWJ3Y43/GWccBkbuov2gXj+G2vHub9lvjwznJmE+dxFNcJ19Mce7vxfwcW5m5PrqkmMj3k6knffdtGaUz515cDCxXXj/WbMkBwl7He41Bn9JgmAt1fFronHMNR4X5WA7d0P1eprkz8ZjHDdSea3IPUjYc1WjperOjZo8xnErldcodnHoW/rdhpod8L1Ux8+xjrlJuTw276Fn4BP2Xf1v7WUZ1pa+lf1a/twuPZna89mDHEx8fu43lou6cmmPz9k0KNUw8blx/aCuXNrjczYNSjVc+HgXZbRH1lZrtj0dtteFv2rD89n676M9sjJ7OT79p0ZzaU3SkS2XYkmT0n914uDSmqQjWy7FpiZd7wTiUORbZjOeu13Pa7DIG4X3Am0LakzB38E/CnwbMfdB5Z6w/DLvI87hGGpsJFnNhuPuyTB3M8nn+rzNOId9qHUE+Ieq5kjoA81h3kGicxd5F5q9IBsL+NLcMt6kyKHr6VW/C338B2NZjrA=
+   eJy9V0tOwzAQtRJVgjQ5AHRXiY/UC1BuAOyQ4ATQVqBCuUgv0SVdIVaoGzgEghtQWJQFLLpjRsngiRmbxG0z0kgeZzzv2fMSxcNQqWEJP68pdQU+StSv4fgC5s5q5Wr5OnIYM3wcV4XNOZBVjX0JeNcMH8fdijgg9g34U6DxJzAeVMShn2F/M/xZkHLoVYSP2Luhxm+GKYdV4FOvyfHsEbsTafzPKOUwMHIX7Qf1+jHQjmd/y949MpybBPncRTTBdfbFHM/+XsDHuZmR66tLjo14O6F23nfTmmE+d+bBwcR24f1nzZIcJOx1ONcI/CVWai3R8WusccxnPC7KwbbvRtbraZzfG49x3EjkZ0XOQcKeZzVaWd25UZPHOG4l8jOKXRz6ln7vQc02+H6i4+dIx9ykXB6b59Az8An7rv639rIMa0vfyn4tv2+Xnkzt+axBDiY+tzeWi7pyaY/P2TQo1XDhc/2grlza43M2DUo1THyz72W0x9eg2da02VrX/ldtuFcbvo/2fNZyfPqnRnNpTdKRLZdiSZPSvzpxcGlN0pEtl2JTk657AnEo8i2zGc/druc1WOSOwnuBtgU1puDv4B8Fvo2Y+5DlnrL8MvcjzuEEamzEac2G4+zJMHczzuf63M04hwOodQz4R1nNkdAHmsO8w1jnLnIvNHtBNhbwpbll3EmRQ8fTq74X+vgPm5SNNg==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -55,7 +55,7 @@
     <property name="I" value="[Door WoodenDoor [Some IronKey]]"/>
    </properties>
   </object>
-  <object id="8" gid="235" x="1344" y="912" width="48" height="48">
+  <object id="8" gid="235" x="1344" y="960" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [Equipment [ArmorType BronzeMail]] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
    </properties>
