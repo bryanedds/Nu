@@ -94,7 +94,7 @@
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
       [Sequence
-       [[Wait 60]
+       [[Wait 120]
         [Dialog &quot;There's already enough suffering in the world...&quot; True]
         [Wait 120]
         [Dialog &quot;There's too much suffering in the world...&quot; True]
