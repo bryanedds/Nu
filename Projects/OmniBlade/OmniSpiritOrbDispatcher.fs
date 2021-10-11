@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -58,6 +59,9 @@ module SpiritOrbDispatcher =
                     view :: views
                 else views)
                 [] inhabitants
+
+        override this.Initializers (_, _) =
+            [Entity.SwallowMouseLeft == false]
 
         override this.View (spiritOrb, entity, world) =
             let orbTransform = entity.GetTransform world
