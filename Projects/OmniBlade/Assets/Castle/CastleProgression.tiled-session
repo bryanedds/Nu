@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Castle+BN+0.tmx",
+    "activeFile": "Castle+BN+2.tmx",
     "expandedProjectPaths": [
-        "C:/Development/Nu/Projects/OmniBlade/Assets",
-        "."
+        ".",
+        "C:/Development/Nu/Projects/OmniBlade/Assets"
     ],
     "file.lastUsedOpenFilter": "Tiled map files (*.tmx *.xml)",
     "fileStates": {
@@ -1424,7 +1424,7 @@
             }
         },
         "Castle.tsx": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.5,
             "scaleInEditor": 1
         },
         "CastleBattle.tmx": {
@@ -1483,8 +1483,8 @@
     "openFiles": [
         "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
-        "Castle+BN+0.tmx",
         "Castle+BS+0.tmx",
+        "Castle+BN+0.tmx",
         "Castle+NS+1.tmx",
         "Castle+NN+1.tmx",
         "Castle+BN+1.tmx",
@@ -1496,18 +1496,18 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
-        "C:/Development/Nu/Projects/OmniBlade/Assets/Field/TileMaps/TombOuter.tmx",
-        "Castle+BN+0.tmx",
-        "Castle+BN+1.tmx",
-        "Castle+BN+2.tmx",
-        "Castle+BS+1.tmx",
-        "Castle+BS+2.tmx",
         "Castle+NS+0.tmx",
         "Castle+NN+0.tmx",
-        "Castle+NS+2.tmx",
-        "Castle+NN+2.tmx",
+        "Castle+BS+0.tmx",
+        "Castle+BN+0.tmx",
+        "Castle+NS+1.tmx",
         "Castle+NN+1.tmx",
-        "Castle+NS+1.tmx"
+        "Castle+BN+1.tmx",
+        "Castle+BS+1.tmx",
+        "Castle+NN+2.tmx",
+        "Castle+NS+2.tmx",
+        "Castle+BS+2.tmx",
+        "Castle+BN+2.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,
