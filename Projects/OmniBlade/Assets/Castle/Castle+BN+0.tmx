@@ -37,11 +37,11 @@
  <objectgroup id="3" name="Props">
   <object id="5" gid="235" x="696" y="1296" width="144" height="144">
    <properties>
-    <property name="I">[Npc MadTrixterNpc [Some Upward]
+    <property name="I">[Npc MadTrixterNpc [Some Downward]
  [Sequence
   [[Dialog &quot;You've run a fool's errand...!&quot;]
-   [Dialog &quot;Her soul is forever ours!&quot;]
-   [Dialog &quot;And so is yours!&quot;]
+   [Dialog &quot;Her soul is forever ours...&quot;]
+   [Dialog &quot;...and so is yours!&quot;]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
