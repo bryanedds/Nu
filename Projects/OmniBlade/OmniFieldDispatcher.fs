@@ -1452,7 +1452,7 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]]
 
-                 // item
+                 // inventory
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
