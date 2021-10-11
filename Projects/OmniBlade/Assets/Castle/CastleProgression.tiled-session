@@ -1345,10 +1345,10 @@
         },
         "Castle+BN+2.tmx": {
             "scale": 2,
-            "selectedLayer": 3,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 1230.25,
-                "y": 1037.75
+                "x": 767.75,
+                "y": 1127.75
             }
         },
         "Castle+BS+0.tmx": {
@@ -1371,8 +1371,8 @@
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 745.495305832148,
-                "y": 768.218492176387
+                "x": 768.218492176387,
+                "y": 923.7849217638693
             }
         },
         "Castle+NN+0.tmx": {
