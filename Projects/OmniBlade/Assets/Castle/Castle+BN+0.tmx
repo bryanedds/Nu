@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="8">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="9">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -53,6 +53,11 @@
   <object id="7" gid="235" x="720" y="336" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some IronKey]]"/>
+   </properties>
+  </object>
+  <object id="8" gid="235" x="1344" y="912" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Equipment [ArmorType BronzeMail]] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
    </properties>
   </object>
  </objectgroup>
