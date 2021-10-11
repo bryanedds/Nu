@@ -20,14 +20,24 @@ type [<ReferenceEquality; NoComparison>] Dialog =
       DialogPromptOpt : ((string * Cue) * (string * Cue)) option
       DialogBattleOpt : (BattleType * Advent Set) option }
 
-    static member update dialog world =
-        let increment = if World.getUpdateTime world % 3L = 0L then 1 else 0
-        let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+    static member getText (detokenize : string -> string) dialog =
+        let detokenized = detokenize dialog.DialogTokenized
+        let text = detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+        String.tryTake dialog.DialogProgress text
+
+    static member update (detokenize : string -> string) dialog world =
+        let dialog =
+            if World.getUpdateTime world % 3L = 0L
+            then { dialog with DialogProgress = inc dialog.DialogProgress }
+            else dialog
+        let dialog =
+            if Seq.tryLast (Dialog.getText detokenize dialog) = Some ' '
+            then { dialog with DialogProgress = inc dialog.DialogProgress }
+            else dialog
         dialog
 
     static member canAdvance (detokenize : string -> string) dialog =
-        let detokenized = detokenize dialog.DialogTokenized
-        dialog.DialogProgress > detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
+        dialog.DialogProgress > (Dialog.getText detokenize dialog).Length
         
     static member tryAdvance (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
@@ -88,8 +98,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 match dialogOpt with
                 | Some dialog ->
                     let detokenized = detokenize dialog.DialogTokenized
-                    let textPage = dialog.DialogPage
-                    let text = detokenized.Split(Constants.Gameplay.DialogSplit).[textPage] |> Dialog.wordWrap 48
+                    let text = Dialog.getText detokenize dialog
                     let textToShow = String.tryTake dialog.DialogProgress text
                     textToShow
                 | None -> ""
