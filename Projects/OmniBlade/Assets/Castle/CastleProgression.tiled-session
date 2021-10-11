@@ -1331,7 +1331,7 @@
             "scale": 2,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 506,
+                "x": 506.25,
                 "y": 1046.25
             }
         },
@@ -1339,88 +1339,88 @@
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 743.5,
-                "y": 768
+                "x": 767.5,
+                "y": 1037.5
             }
         },
         "Castle+BN+2.tmx": {
             "scale": 2,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 743.75,
-                "y": 768
+                "x": 767.75,
+                "y": 1127.75
             }
         },
         "Castle+BS+0.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 743.7473684210527,
-                "y": 767.3445234708395
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 743.7473684210527,
-                "y": 767.3445234708395
+                "x": 745.495305832148,
+                "y": 768.218492176387
             }
         },
         "Castle+BS+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 743.7473684210527,
-                "y": 767.3445234708395
+                "x": 768.218492176387,
+                "y": 923.7849217638693
             }
         },
         "Castle+NN+0.tmx": {
             "scale": 0.75,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 767.3333333333333,
-                "y": 768
+                "x": 716.6666666666665,
+                "y": 766
             }
         },
         "Castle+NN+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 766.4705547652916,
-                "y": 767.3445234708395
+                "x": 768.218492176387,
+                "y": 768.218492176387
             }
         },
         "Castle+NN+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 766.4705547652916,
-                "y": 767.3445234708395
+                "x": 703.5448079658607,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+0.tmx": {
             "scale": 1,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 767.5,
-                "y": 767
+                "x": 753.5,
+                "y": 668.5
             }
         },
         "Castle+NS+1.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 766.4705547652916,
-                "y": 767.3445234708395
+                "x": 703.5448079658607,
+                "y": 768.218492176387
             }
         },
         "Castle+NS+2.tmx": {
             "scale": 0.5721028645833333,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 766.4705547652916,
-                "y": 767.3445234708395
+                "x": 703.5448079658607,
+                "y": 768.218492176387
             }
         },
         "Castle.tsx": {
@@ -1496,6 +1496,7 @@
     ],
     "project": "CastleProgression.tiled-project",
     "recentFiles": [
+        "C:/Development/Nu/Projects/OmniBlade/Assets/Field/TileMaps/TombOuter.tmx",
         "Castle+BN+0.tmx",
         "Castle+BN+1.tmx",
         "Castle+BN+2.tmx",
@@ -1506,8 +1507,7 @@
         "Castle+NS+2.tmx",
         "Castle+NN+2.tmx",
         "Castle+NN+1.tmx",
-        "Castle+NS+1.tmx",
-        "Castle+BS+0.tmx"
+        "Castle+NS+1.tmx"
     ],
     "textEdit.monospace": true,
     "tileset.embedInMap": false,
