@@ -38,8 +38,10 @@ module PropDispatcher =
                 match prop.PropData with
                 | Sprite _ ->
                     BodyEmpty
-                | Portal _ | Switch _ | SavePoint _ ->
+                | Portal _ | Switch _ ->
                     BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | SavePoint _ ->
+                    BodyCircle { Radius = 0.1f; Center = v2Zero; PropertiesOpt = None }
                 | Door _ ->
                     match prop.PropState with
                     | DoorState true -> BodyEmpty
