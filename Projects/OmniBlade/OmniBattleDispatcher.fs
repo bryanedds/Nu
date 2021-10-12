@@ -664,7 +664,7 @@ module BattleDispatcher =
                 let effectOpt =
                     match techType with
                     | Critical | DarkCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
-                        let hopDirection = Direction.ofVector2 (targetBounds.Bottom - sourceBounds.Bottom)
+                        let hopDirection = Direction.ofVector2 (v2 (targetBounds.Bottom.X - sourceBounds.Bottom.X) 0.0f)
                         let hopStop = targetBounds.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = sourceBounds.Bottom; HopStop = hopStop })
                     | Cyclone ->

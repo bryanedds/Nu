@@ -1731,26 +1731,9 @@ module GuiDispatcherModule =
         member this.GetDisabledColor world : Color = this.Get Property? DisabledColor world
         member this.SetDisabledColor (value : Color) world = this.Set Property? DisabledColor value world
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
-        member this.GetSwallowMouseLeft world : bool = this.Get Property? SwallowMouseLeft world
-        member this.SetSwallowMouseLeft (value : bool) world = this.Set Property? SwallowMouseLeft value world
-        member this.SwallowMouseLeft = lens Property? SwallowMouseLeft this.GetSwallowMouseLeft this.SetSwallowMouseLeft this
 
     type GuiDispatcher () =
         inherit EntityDispatcher ()
-
-        static let handleMouseLeft evt world =
-            let entity = evt.Subscriber : Entity
-            let data = evt.Data : MouseButtonData
-            let handling =
-                if entity.GetVisible world then
-                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                    if data.Down &&
-                       entity.GetSwallowMouseLeft world &&
-                       Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                       Resolve
-                    else Cascade
-                else Cascade
-            (handling, world)
 
         static member Facets =
             [typeof<NodeFacet>]
@@ -1759,30 +1742,10 @@ module GuiDispatcherModule =
             [define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
-             define Entity.SwallowMouseLeft true]
-
-        override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeft Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeft Events.MouseLeftUp entity world
-            world
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
-
-        static let handleMouseLeft evt world =
-            let entity = evt.Subscriber : Entity
-            let data = evt.Data : MouseButtonData
-            let handling =
-                if entity.GetVisible world then
-                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-                    if data.Down &&
-                       entity.GetSwallowMouseLeft world &&
-                       Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                       Resolve
-                    else Cascade
-                else Cascade
-            (handling, world)
 
         static member Facets =
             [typeof<NodeFacet>]
@@ -1790,14 +1753,7 @@ module GuiDispatcherModule =
         static member Properties =
             [define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
-             define Entity.SwallowMouseLeft true]
-
-        override this.Register (entity, world) =
-            let world = base.Register (entity, world)
-            let world = World.monitor handleMouseLeft Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeft Events.MouseLeftUp entity world
-            world
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -1865,7 +1821,6 @@ module ButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.Down false
              define Entity.UpImage Assets.Default.Image
              define Entity.DownImage Assets.Default.Image2
@@ -1917,7 +1872,6 @@ module LabelDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.LabelImage Assets.Default.Image3]
 
         override this.Actualize (entity, world) =
@@ -1963,7 +1917,6 @@ module TextDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
@@ -2072,7 +2025,6 @@ module ToggleDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.Toggled false
              define Entity.Pressed false
              define Entity.UntoggledImage Assets.Default.Image
@@ -2214,7 +2166,6 @@ module FeelerDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.Touched false]
 
         override this.Register (entity, world) =
@@ -2271,7 +2222,6 @@ module FillBarDispatcherModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
-             define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))

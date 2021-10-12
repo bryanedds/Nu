@@ -4,17 +4,17 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
+   [[Name Play]
+    [Position [-96 -48]]
+    [Text Jouer]]]
+  [ButtonDispatcher
    [[Name Credits]
-    [Position [-96 -108]]
-    [Text "Credits"]]]
+    [Position [-96 -114]]
+    [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-96 -174]]
-    [Text "Quitter"]]]
-  [ButtonDispatcher
-   [[Name Play]
-    [Position [-96 -42]]
-    [Text "Jouer"]]]
+    [Position [-96 -180]]
+    [Text Quitter]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui Header]]]
