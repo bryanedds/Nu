@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="14">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="14">
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
- <layer id="2" name="Floor" width="80" height="80">
+ <layer id="8" name="Basement" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="80" height="80">
   <data encoding="base64" compression="zlib">
    eJzt28ttwkAQAFCfEmrIjUtCJSEtUAol0Qmt0EXWiiNFEUiIXe+M8Ts8+Wbtzn5mRrK3wzBsAQAAWK334qPYJRjLEn0W++IrwVgAAIDH6Y3q6I0AYB5qlDpqlH7s1Tr2KkAbL8UmwTiWaszncrn4RRnrIbXQD3dZHWdR/CK5ywAA1ksvV0cvIn6R9HIAkI/6uo76UPwiqa/hurfiEDyGS6P3RHwvHBW/OWqSiO+Fj5Pe8avNqRlqwtNkPz2XFL+15ORbd1Kr+Z8TzHFOGf5hGM/66z/RZ7+3mtz6u4Z/ZTr7Pda31z5uPZd73pd9fR9Zp1ZzeabYAPD8vgFKwEMx
+  </data>
+ </layer>
+ <layer id="7" name="Flooring" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">
@@ -25,37 +35,37 @@
   </object>
   <object id="6" gid="443" x="192" y="3552" width="144" height="144">
    <properties>
-    <property name="I" value="[Shopkeep SchaalShopkeep Downward Chemist]"/>
+    <property name="I" value="[Shopkeep SchaalShopkeep None Chemist]"/>
    </properties>
   </object>
   <object id="7" gid="443" x="624" y="3264" width="144" height="144">
    <properties>
-    <property name="I" value="[Shopkeep RobehnShopkeep Downward Armory]"/>
+    <property name="I" value="[Shopkeep RobehnShopkeep None Armory]"/>
    </properties>
   </object>
   <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc MaelNpc Downward [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc MaelNpc None [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc Downward [Prompt &quot;I hope we can work together, but I cannot work for free... My fee is $FEE gold.&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;I hope we can work together, but I cannot work for free... My fee is $FEE gold.&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc RiainNpc Rightward [Prompt &quot;Join... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc RiainNpc None [Prompt &quot;Join... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShadeNpc Downward [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShamanaNpc Downward [Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored. If you plan on delving into this place, I can offer some guidance to help you make it out alive...^From what I have gathered, the first area has three sections; to proceed to the next section, you will have to destroy its guardian. Be careful as the guardian may be tougher than any of the other enemies you will have faced!^Ah, I see you have a Spirit Orb! With this, you can see the enemies as they approach you. The further you go into an area, the tougher they get! The redder they appear in your orb, the tougher they are!^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it.^When an enemy is glowing, it's about to use a Tech of its own, which can be devastating! Use your Critical Tech to cancel it and keep yourself out of harm's way.^The Tech you learn after Critical is called the Slash Tech. This is a potentially very powerful Tech as it hits all enemies on a line!^Oh, and one last bit of advice... Don't consider anyone here your friend. However, for the right price, some may will be willing to join your party, while others may sell you goods that can save your life.&quot;]]"/>
+    <property name="I" value="[Npc NostrusNpc None [Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored... If you plan on delving into this place, I can offer some guidance to help you make it out alive.^From what has been gathered, the first area has three sections; to proceed to the next section, you will have to destroy its guardian. Be careful as the guardian may be tougher than any other enemies you'll have faced.^Ah, I see you have a Spirit Orb. With this, you can see the enemies as they approach you. The further you go into an area, the tougher they get. The redder they appear in your orb, the tougher they are!^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it.^When an enemy is glowing, it's about to use a Tech of its own, which can be devastating! Use your Critical Tech to cancel the enemy's technique and keep yourself out of harm's way.^The Tech you learn after Critical is called the Slash Tech. This is a potentially very powerful Tech as it hits all enemies on a line.^Oh, and one last bit of advice... Don't consider anyone here your friend. However, for the right price, some may be willing to join your party, while others may sell you goods that can save your life.&quot;]]"/>
    </properties>
   </object>
  </objectgroup>

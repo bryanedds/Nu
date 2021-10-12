@@ -9,13 +9,17 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] SaveSlot =
+type SaveSlot =
     | Slot1
     | Slot2
     | Slot3
 
 type [<ReferenceEquality; NoComparison>] Options =
     { BattleSpeed : BattleSpeed }
+
+type FieldState =
+    | Playing
+    | Quitting
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -29,6 +33,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
+              FieldState_ : FieldState
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
@@ -36,10 +41,12 @@ module Field =
               SpiritActivity_ : single
               Spirits_ : Spirit array
               Advents_ : Advent Set
-              PropStates_ : Map<int, PropState>
+              Props_ : Map<int, Prop>
               Inventory_ : Inventory
               Options_ : Options
               Menu_ : Menu
+              Definitions_ : CueDefinitions
+              DefinitionsOriginal_ : CueDefinitions
               Cue_ : Cue
               ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
@@ -49,22 +56,54 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
+        member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.Team = this.Team_
         member this.SpiritActivity = this.SpiritActivity_
         member this.Spirits = this.Spirits_
         member this.Advents = this.Advents_
-        member this.PropStates = this.PropStates_
+        member this.Props = this.Props_
         member this.Inventory = this.Inventory_
         member this.Options = this.Options_
         member this.Menu = this.Menu_
+        member this.Definitions = this.Definitions_
+        member this.DefinitionsOriginal = this.DefinitionsOriginal_
         member this.Cue = this.Cue_
         member this.ShopOpt = this.ShopOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
+
+    let private makePropState time propDescriptor =
+        match propDescriptor.PropData with
+        | Sprite (_, image, color, blend, glow, flip, visible) -> SpriteState (image, color, blend, glow, flip, visible)
+        | Door _ -> DoorState false
+        | Switch _ -> SwitchState false
+        | Character (characterType, direction, _, _, _, _) ->
+            let animationSheet =
+                match Data.Value.Characters.TryGetValue characterType with
+                | (true, characterData) -> characterData.AnimationSheet
+                | (false, _) -> Assets.Field.JinnAnimationSheet
+            let characterAnimationState =
+                { StartTime = time
+                  AnimationSheet = animationSheet
+                  CharacterAnimationType = IdleAnimation
+                  Direction = direction }
+            CharacterState (colWhite, characterAnimationState)
+        | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+
+    let private makeProps fieldType omniSeedState advents pointOfInterest world =
+        match Map.tryFind fieldType Data.Value.Fields with
+        | Some fieldData ->
+            let time = World.getUpdateTime world
+            FieldData.getPropDescriptors omniSeedState fieldData world |>
+            Map.ofListBy (fun propDescriptor ->
+                let propState = makePropState time propDescriptor
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
+                (propDescriptor.PropId, prop))
+        | None -> Map.empty
 
     let getRecruitmentFee (field : Field) =
         let advents = Set.ofArray [|ShadeRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
@@ -86,63 +125,71 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
-    let getPropState propDescriptor (advents : Advent Set) propStates =
-        match Map.tryFind propDescriptor.PropId propStates with
-        | None ->
-            match propDescriptor.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> PortalState (propDescriptor.PropBounds, advents.IsSupersetOf requirements)
-            | Door (_, _, _, _) -> DoorState false
-            | Switch (_, _, _, _) -> SwitchState false
-            | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-            | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-            | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
-            | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
-        | Some propState -> propState
-
-    let getPropStates (field : Field) world =
-        match Map.tryFind field.FieldType Data.Value.Fields with
-        | Some fieldData ->
-            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, getPropState propDescriptor field.Advents field.PropStates))
-        | None -> Map.empty
-
-    let getProps (field : Field) world =
-        match Map.tryFind field.FieldType Data.Value.Fields with
-        | Some fieldData ->
-            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
-            Map.ofListBy (fun propDescriptor ->
-                let propState = getPropState propDescriptor field.Advents field.PropStates
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation field.Advents propDescriptor.PropData propState propDescriptor.PropId
-                (propDescriptor.PropId, prop))
-        | None -> Map.empty
-
-    let getChests field world =
-        getPropStates field world |>
+    let getChests field =
+        field.Props_ |>
         Map.toValueArray |>
-        Array.choose (function ChestState (bounds, id) -> Some (Chest.make bounds (field.Advents.Contains (Opened id))) | _ -> None)
+        Array.choose (fun prop ->
+            match prop.PropData with
+            | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Bounds (field.Advents.Contains (Opened id)))
+            | _ -> None)
 
-    let getPortals field world =
-        getPropStates field world |>
+    let getPortals field =
+        field.Props_ |>
         Map.toValueArray |>
-        Array.choose (function PortalState (bounds, active) -> Some (Portal.make bounds active) | _ -> None)
+        Array.choose (fun prop ->
+            match prop.PropData with
+            | Portal (_, _, _, _, _, _, requirements) -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
+            | _ -> None)
 
-    let updateFieldType updater field =
-        { field with
-            FieldType_ = updater field.FieldType_
-            SpiritActivity_ = 0.0f }
+    let updateFieldType updater field world =
+        let fieldType = updater field.FieldType_
+        let spiritActivity = 0.0f
+        let props = makeProps fieldType field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
+        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Spirits_ = [||]; Props_ = props }
+
+    let updateFieldState updater field =
+        { field with FieldState_ = updater field.FieldState_ }
 
     let updateAvatar updater field =
-        { field with Avatar_ = updater field.Avatar_ }
+        let avatar = field.Avatar_
+        let pointOfInterest = avatar.BottomOffset
+        let avatar = updater avatar : Avatar
+        let pointOfInterest' = avatar.BottomOffset
+        let props =
+            if pointOfInterest <> pointOfInterest'
+            then Map.map (constant (Prop.updatePointOfInterest (constant pointOfInterest'))) field.Props_
+            else field.Props_
+        { field with
+            Avatar_ = avatar
+            Props_ = props }
 
     let updateTeam updater field =
         { field with Team_ = updater field.Team_ }
 
     let updateAdvents updater field =
-        { field with Advents_ = updater field.Advents_ }
+        let advents = updater field.Advents_
+        if advents <> field.Advents_ then
+            let props = Map.map (fun _ prop -> Prop.updateAdvents (constant advents) prop) field.Props_
+            { field with Advents_ = advents; Props_ = props }
+        else field
 
-    let updatePropStates updater field =
-        { field with PropStates_ = updater field.PropStates_ }
+    let private updateProps updater field =
+        { field with Props_ = updater field.Props_ }
+
+    // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
+    // there's an elegant alternative that is more performant.
+    let tryGetPropIdByData predicate field =
+        Map.tryFindKey (fun _ (prop : Prop) ->
+            predicate prop.PropData)
+            field.Props_
+
+    let updateProp updater propId field =
+        match Map.tryFind propId field.Props_ with
+        | Some prop -> updateProps (Map.add propId (updater prop)) field
+        | None -> field
+    
+    let updatePropState updater propId field =
+        updateProp (Prop.updatePropState updater) propId field
 
     let updateInventory updater field =
         { field with Inventory_ = updater field.Inventory_ }
@@ -152,6 +199,9 @@ module Field =
 
     let updateMenu updater field =
         { field with Menu_ = updater field.Menu_ }
+
+    let updateDefinitions updater field =
+        { field with Definitions_ = updater field.Definitions_ }
 
     let updateCue updater field =
         { field with Cue_ = updater field.Cue_ }
@@ -167,9 +217,7 @@ module Field =
 
     let updateBattleOpt updater field =
         let battleOpt = updater field.BattleOpt_
-        { field with
-            BattleOpt_ = battleOpt
-            SpiritActivity_ = if Option.isSome battleOpt then 0.0f else field.SpiritActivity_ }
+        { field with BattleOpt_ = battleOpt }
 
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
@@ -191,7 +239,9 @@ module Field =
         | (false, _) -> false
 
     let clearSpirits field =
-        { field with Spirits_= [||] }
+        { field with
+            SpiritActivity_ = 0.0f
+            Spirits_ = [||] }
 
     let updateSpirits (field : Field) world =
         match field.FieldTransitionOpt with
@@ -222,7 +272,7 @@ module Field =
                         Array.map (fun _ ->
                             match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
                             | Some spiritType ->
-                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.random ())
+                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.generate ())
                                 let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
@@ -280,21 +330,35 @@ module Field =
     let toSymbolizable field =
         { field with
             Avatar_ = Avatar.toSymbolizable field.Avatar
+            Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
-    let make fieldType randSeedState avatar team advents inventory =
+    let make fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory world =
+        let (debugAdvents, debugKeyItems, definitions) =
+            match Data.Value.Fields.TryGetValue fieldType with
+            | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
+            | (false, _) -> (Set.empty, List.empty, Map.empty)
+        let (advents, inventory) =
+            match fieldType with
+            | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
+            | _ -> (advents, inventory)
+        let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
+        let props = makeProps fieldType omniSeedState advents avatar.BottomOffset world
         { FieldType_ = fieldType
-          SaveSlot_ = Slot1
-          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
+          FieldState_ = Playing
+          SaveSlot_ = saveSlot
+          OmniSeedState_ = omniSeedState
           Avatar_ = avatar
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = team
           Advents_ = advents
-          PropStates_ = Map.empty
+          Props_ = props
           Inventory_ = inventory
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Definitions_ = definitions
+          DefinitionsOriginal_ = definitions
           Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
@@ -303,18 +367,21 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { FieldType_ = DebugRoom
+        { FieldType_ = EmptyField
+          FieldState_ = Quitting
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
-          Avatar_ = Avatar.empty
-          Team_ = Map.empty
+          Avatar_ = Avatar.initial
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
-          Advents_ = Set.empty
-          PropStates_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 0 }
+          Team_ = Map.empty
+          Advents_ = Advents.empty
+          Props_ = Map.empty
+          Inventory_ = Inventory.initial
           Options_ = { BattleSpeed = SwiftSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Definitions_ = Map.empty
+          DefinitionsOriginal_ = Map.empty
           Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
@@ -322,18 +389,11 @@ module Field =
           BattleOpt_ = None
           FieldSongTimeOpt_ = None }
 
-    let debug =
-        { empty with
-            Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
+    let debug world =
+        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
 
-    let initial saveSlot randSeedState =
-        { empty with
-            FieldType_ = TombOuter
-            SaveSlot_ = saveSlot
-            OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
-            Avatar_ = Avatar.initial
-            Team_ = Map.singleton 0 (Teammate.make 0 Jinn)
-            Inventory_ = Inventory.initial }
+    let initial saveSlot randSeedState world =
+        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
 
     let save field =
         let saveFilePath =
@@ -346,14 +406,16 @@ module Field =
         let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    let tryLoad saveSlot =
+    let tryLoad saveSlot world =
         try let saveFilePath =
                 match saveSlot with
                 | Slot1 -> Assets.Global.SaveFilePath1
                 | Slot2 -> Assets.Global.SaveFilePath2
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
-            fieldStr |> scvalue<Field> |> Some
+            let field = scvalue<Field> fieldStr
+            let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
+            Some { field with Props_ = props }
         with _ -> None
 
 type Field = Field.Field

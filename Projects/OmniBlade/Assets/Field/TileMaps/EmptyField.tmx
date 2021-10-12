@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="14">
+ <tileset firstgid="1" source="TombOuter.tsx"/>
+ <tileset firstgid="513" source="Tent.tsx"/>
+ <layer id="8" name="Basement" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxTZGBgUBzFo3gUj+JRPIpH8SgexVTDAEXVTVk=
+  </data>
+ </layer>
+ <layer id="7" name="Flooring" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJybysDAMHWAML3BqL2j9o7aO2rvqL2j9o7aO/LsHQgMAHJ6N+E=
+  </data>
+ </layer>
+ <layer id="6" name="Ceiling" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20JT6AAAHgaCWAAAQ==
+  </data>
+ </layer>
+</map>

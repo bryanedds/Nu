@@ -19,17 +19,13 @@ module ReticlesDispatcher =
         | TargetSelect of CharacterIndex
 
     type Entity with
-        member this.GetReticles = this.GetModel<Reticles>
-        member this.SetReticles = this.SetModel<Reticles>
-        member this.Reticles = this.Model<Reticles> ()
+        member this.GetReticles world = this.GetModelGeneric<Reticles> world
+        member this.SetReticles value world = this.SetModelGeneric<Reticles> value world
+        member this.Reticles = this.ModelGeneric<Reticles> ()
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
         inherit GuiDispatcher<Reticles, unit, ReticlesCommand> (Map.empty)
-
-        static member Properties =
-            [define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
 
         override this.Command (_, command, rets, world) =
             match command with

@@ -1,25 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
- <layer id="2" name="Floor" width="32" height="32">
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="5" name="Basement" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaENADAIAEESlsd05xoGIGBPvPxcZUQte932v8bn8/l8Pp/P5/MladYHw1ItDw==
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzaENADAIAEGSLo9h55ouUJCcOPn5PBHZVE+3n/L33/wHAAD4cQFHMyxl
+  </data>
+ </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlcsJgDAQRLeA5K5WoNanHcQOtAPtQDvQvlxvIoGMkvXHDswhMPIuL5FIo9F8MZUhqs1z/J7Zg/KVL5TEEqXczPrPe35oeyU5f1twS+s/7/mh7Zls97oFunBncHvmnXC87YBO3BHcNgKeSPqH+HTkx3QQ8enIj+Wg+odFyj/UIx8/hoOoRz5+zHcwlL///97Od0L3SnNfVkKKXM8=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlEsOgkAQRAkTLsJGD6ZIJCpehBOx0Qux0b1M4oRhYvdUz8cVndSKal5pqB5UUQwCXaqCnLaSvStE/+Z38ztvlu4Mv3e8p8g83Zf3KBc9S5o/lmtvH5HBsDXvZenN8CfHOwZmsNmat1OL9orm12rtnQIyuGyO55tamCElW5ohBxvNkJONZLgw7PP8rJl1ZXrvDrVjZ2gdPvW7jY+7e5Idk8HlU/+5uWnc3ZPu6Awunxpz07i7F7KD8s1N4+5eyA7KNzdN0glkB+XnGikf6aGkqzb/COwgPUS7qnMenBvoy4D0EPH8YiMZkE75PBzblwHpFOdB2FwGpFOUR8KWfJPIhLBTZYhhx2ZIwbYzNEKlYm/alFMfJstX3Q==
+   eJy9V0tOwzAQjRJVgjQ5AHRXiY/UC1BuAOyQ4ARQKlCgXKSX6JKuECvUDRwCwQ0oLMoCJLpjRsngiTt2E7fNSCN5nOd5Y89LFPcDz+uX8POa512DD2Lv33B8CXNntXK5XB1rGDJ+HFfFzWsgq5r7CvhuGD+OLyqqAblvwZ99xT+Cca+iGpKM+4fxT/y0hm5F/Mi9Gyj+ZpDWsAp+6jU5nj1yd0LF/xWmNfQ07KL9oF4/+crx7O/Yu0eGcyM/j11EE1xn38zx7B8EfpybaFhXXXJu5NsJlPO+69YM8tiJQw06t41vnjVL1sC5XyPPW4MzXQcP49n4LVI8RbDzatD3Pc7yN7Jej6P83niM40YsP6PYdg7SmU+zHK0s71TLyWMct2L5GcW2XiSGfu9Bzjb4fqzil1DF3CQsj9F4DV2Nn7jv67O5l2WYW/pWJrX8vstoz2UN1qDzc3tnWNSVTXt8zqRBKYeN/5dhUVc27fE5kwalHDq/3vcy2uNr0Exr2mytbf+rNtyrid9Fey5rOT/9U6PZtCbpyISlWNKk9K9ONdi0JunIhKVY16TtnkA1FPmWmYxjt+t5DRa5o/BeoG1BjjH4B/hngW8jYh8z7CnDl7kf8RpOIMdGlOZsWM6eDLGbUR7rcjfjNRxArmPgP8pyDoQ+0BziDiOFXeReqPeCbCjwS3PLuJNiDR1Hr/pe6OJ/2JKOjA==
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MRwBN5Hpilh1o4A0YE1kuBKrbigActMSLn2jaZN8QEq6wqV2uKRNctLRaNqjHiAnHVEz7fEQYZY8UA0vEPNT0V45oFlK3AwMMkSYCVI3CkYBsQAAKokLwQ==
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt0jEKgDAUg+G3dOwlO3gMdVM39cQGeoG0KAX5P8gWMiUCvaZUM0pJNQDwlTlHLMqa3+26Nm3tymFstnRdp7Yu5TY2W7rw8D/+NxL/43/AHz2tByET
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="696" y="1056" width="144" height="144">
+  <object id="1" gid="235" x="696" y="1248" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc HeavyArmorosNpc Upward [Sequence [[Dialog &quot;Darkness beckons...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
+    <property name="I">[Npc HeavyArmorosNpc [Some Upward]
+  [Sequence
+   [[Dialog &quot;Through the gate... the soul...&quot;]
+    [Dialog &quot;Through the soul... the gate...&quot;]
+    [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]</property>
    </properties>
   </object>
-  <object id="2" gid="235" x="744" y="1200" width="48" height="48">
+  <object id="2" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward [Castle 2] [IX 1] false [HeavyArmorosDefeated]]"/>
+   </properties>
+  </object>
+  <object id="3" gid="235" x="720" y="336" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some AluminumKey]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -203,6 +203,31 @@ module WorldSimulantModule =
         static member getExists (simulant : Simulant) (world : World) =
             (world :> World EventSystem).GetSimulantExists simulant
 
+        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
+        /// Game is always considered 'selected' as well.
+        [<FunctionBinding>]
+        static member isSelected (simulant : Simulant) world =
+            match Address.getNames simulant.SimulantAddress with
+            | [||] -> true
+            | names ->
+                let screenName = Array.head names
+                match World.getOmniScreenOpt world with
+                | Some omniScreen when omniScreen.Name = screenName -> true
+                | _ ->
+                    match World.getSelectedScreenOpt world with
+                    | Some screen when screen.Name = screenName -> true
+                    | _ -> false
+
+        /// Check that a simulant is ignoring bindings.
+        [<FunctionBinding>]
+        static member ignorePropertyBindings (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Entity as entity -> entity.GetIgnorePropertyBindings world
+            | :? Group -> false
+            | :? Screen -> false
+            | :? Game -> false
+            | _ -> failwithumf ()
+
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
             match address |> Address.getNames |> Array.length with
@@ -240,17 +265,15 @@ module WorldSimulantModule =
 
         /// Bind the left property to the right property.
         static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
-            match left.This :> obj with
-            | null -> failwithumf ()
-            | :? Simulant as simulant -> WorldModule.bind5 simulant left right world
-            | _ -> failwithumf ()
+            if isNull (left.This :> obj) then failwithumf ()
+            WorldModule.bind5 left.This left right world
 
         /// Bind the right property to the left property.
         static member dnib left right world =
             World.bind right left world
 
-        /// Bind the left property to the right and the right property to the left.
-        static member mirror<'a> (left : Lens<'a, World>) right world =
+        /// Link the left property with the right and the right property (two-way bind).
+        static member link left right world =
             let world = World.bind left right world
             let world = World.bind right left world
             world
@@ -264,17 +287,17 @@ module WorldSimulantOperators =
     /// Bind the right property to the left property.
     let dnib<'a> (left : Lens<'a, World>) right world = World.dnib left right world
 
-    /// Bind the left property to the right and the right property to the left.
-    let mirror<'a> (left : Lens<'a, World>) right world = World.mirror left right world
+    /// Link the left property with the right and the right property (two-way bind).
+    let link<'a> (left : Lens<'a, World>) right world = World.link left right world
 
     /// Bind the left property to the right property.
     let inline (<=<) left right = bind left right
 
     /// Bind the right property to the left property.
-    let inline (>=>) left right = dnib left right
+    let inline (>=>) left right = bind right left
 
-    /// Bind the left property to the right and the right property to the left.
-    let inline (<=>) left right = mirror left right
+    /// Link the left property with the right property (two-way bind).
+    let inline (>=<) left right = link left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =

@@ -11,7 +11,6 @@
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
     [Position [-432 138]]
     [Size [864 90]]
     [Text Credits]]]
@@ -19,23 +18,20 @@
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code : Bryan Edds et Dean J. Lee"]]
     [Position [-432 36]]
     [Size [864 90]]
-    [Text "Code : Bryan Edds et Dean J. Lee"]]]
+    [Text "Code: Bryan Edds et Dean J. Lee"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art : FinalBossBlues, SelielTheShaper, et d'autres !"]]
     [Position [-432 -66]]
     [Size [864 90]]
-    [Text "Art : FinalBossBlues, SelielTheShaper, et d'autres !"]]]
+    [Text "Art: FinalBossBlues, SelielTheShaper, et d'autres!"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Musique : DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]
     [Position [-432 -168]]
     [Size [864 90]]
-    [Text "Musique : DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]]]]
+    [Text "Musique: DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]]]]

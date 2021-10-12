@@ -18,18 +18,20 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
 
 /// An overlay.
 [<Syntax
-    ("EntityDispatcher BasicEmitterDispatcher EffectDispatcher StaticSpriteDispatcher AnimatedSpriteDispatcher NodeDispatcher GuiDispatcher " +
-     "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
-     "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher",
-     "BasicEmitterFacet EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
-     "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax);
+     Constants.PrettyPrinter.DetailedThresholdMax);
      StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string
-      OverlayIncludeNames : string list
+      OverlaysInherited : string list
+      OverlaidTypeNames : string list
       OverlayProperties : Map<string, Symbol> }
+
+    static member typeNameToOverlayName (typeName : string) =
+        typeName
+            .Replace("Dispatcher", "Overlay")
+            .Replace("Facet", "FacetOverlay")
 
     /// Make intrinsic overlays.
     static member makeIntrinsicOverlays requiresFacetNames sourceTypes =
@@ -48,16 +50,19 @@ type Overlay =
         let overlayDescriptors =
             List.map
                 (fun (sourceType : Type) ->
-                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
+                    let includeNames =
+                        if sourceType.BaseType <> typeof<obj>
+                        then [Overlay.typeNameToOverlayName sourceType.BaseType.Name]
+                        else []
                     let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
+                    (Overlay.typeNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
                 decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
         let overlays =
             List.map
-                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
+                (fun (overlayName, overlaidTypeName, includeNames, definitions, requiresFacetNames) ->
                     let overlayProperties =
                         List.foldBack
                             (fun definition overlayProperties ->
@@ -75,7 +80,8 @@ type Overlay =
                         then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
-                      OverlayIncludeNames = includeNames
+                      OverlaysInherited = includeNames
+                      OverlaidTypeNames = [overlaidTypeName]
                       OverlayProperties = overlayProperties })
                 overlayDescriptors
 
@@ -99,13 +105,14 @@ module Overlayer =
                 let overlaySymbols' = getOverlaySymbols2 overlayName overlayer
                 Map.concat overlaySymbols' overlaySymbols)
                 overlay.OverlayProperties
-                overlay.OverlayIncludeNames
+                overlay.OverlaysInherited
         | None -> Map.empty
 
     let internal getOverlaySymbols overlayName facetNames overlayer =
         let overlaySymbols = getOverlaySymbols2 overlayName overlayer
         Seq.fold (fun overlaySymbols facetName ->
-            let overlaySymbols' = getOverlaySymbols2 facetName overlayer
+            let facetOverlayName = Overlay.typeNameToOverlayName facetName
+            let overlaySymbols' = getOverlaySymbols2 facetOverlayName overlayer
             Map.concat overlaySymbols' overlaySymbols)
             overlaySymbols
             facetNames
@@ -255,6 +262,10 @@ module Overlayer =
     /// Get extrinsic overlays.
     let getExtrinsicOverlays overlayer =
         overlayer.ExtrinsicOverlays
+
+    /// Get overlays.
+    let getOverlays overlayer =
+        overlayer.Overlays
 
     /// The empty overlayer.
     let empty =

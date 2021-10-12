@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="10" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
+  </data>
+ </layer>
+ <layer id="9" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzTENACAMBdEvoHLBATgAB+AIQXTuwEQ63UtuPgkAAAB4KyaNULW8//LXCe3Ef/PXDPXEPwD8cAE9iQwI
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztls1qwkAQx5eEXJIcbO9ejKCPob37FjaVil8v4suINz3YQvsatneJYG2v/Q9JcNT1IzJsDmbgR5Zkd36zYTZkbCs1zkDPUSej42TLdQuF/779z3D0NTW84l7bgF9Xg0k3ryEN026iy/wvhv3kHjH/0DFbA52BN2vnn1lmep/7t8wf5eCv2zt/xTbvz+Pbk4efen1wwEjjH2rmSZwJ2usc/bVIoDHvfX4GDudJvBPyr5HrJ4HGW40/so7nSfnfXaVqGH/g+unu9z4/A4Edz6slYyn/xo0dv7j+ucfuNEI823jYP5h4cv45ci3BF/j2TvspAl+pqh+vkfKvkKuEnA/g0T/vnyb1rQT9ZTgboAmezvh5jbRGyt+6sOc0eI0tIT/9Z4Q3ksd/SUFBwfX8AxWC/fA=
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioaz+xwBJo72FuBoYjQNzMPTBuGGjQSgN/n4HG5wIC8foAaPdDIH4EcgMV3XGOhPTEBLX3/AClwVEwCkbBKCAWAABl6Q2a
+  </data>
+ </layer>
+ <layer id="5" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzqENACAMBdFvajomgn0wdF1EF8CQpuFecv4kAB1Ny6oMywDgte1SePXFndXkEwDwpwP8fgOB
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="480" y="1152" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Upward True False
+  [Sequence
+   [ClearSpirits
+    [FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
+    [Wait 180]
+    [Dialog &quot;He told me that my beauty was why I suffered their cruelty all these years...&quot;]
+    [Dialog &quot;No one ever said anything like that to me before...&quot;]
+    [Dialog &quot;He said he would take me away from here...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Dialog &quot;But how can I leave now? My plans for revenge are finally all in place...&quot;]
+    [Dialog &quot;The web is already woven...&quot;]
+    [Dialog &quot;For a moment my heart's desire can be felt over my thirst for revenge...&quot;]
+    [Dialog &quot;Until now, vengefulness and fear is all I have ever felt...&quot;]
+    [Dialog &quot;I don't know how to feel anymore...&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [Dialog &quot;How can I leave now...&quot;]
+    [FadeOutSong 2000]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
+    [ReplaceAdvent [KylaAdvent 3] [KylaAdvent 4]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
+    [Wait 120]
+    [PlaySound 0.5 [Field Unlatch]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 3]]]</property>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="576" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some CopperKey]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="912" y="1008" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem AluminumKey] 041e8f5b-efc5-499b-b149-1aad6dfc184e None Nil [[KylaAdvent 4]]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

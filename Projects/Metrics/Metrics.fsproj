@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ELMISH; PROPERTIES</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -38,7 +38,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;ELMISH; FUNCTIONAL</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -131,13 +131,16 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.4.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.5.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS.dll\lib\net20\SDL2-CS.dll</HintPath>
+    </Reference>
+    <Reference Include="TiledSharp">
+      <HintPath>..\..\Nu\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -150,9 +153,6 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="TiledSharp">
-      <HintPath>..\..\packages\TiledSharp.1.0.1\lib\netstandard2.0\TiledSharp.dll</HintPath>
-    </Reference>
     <Reference Include="xunit.abstractions">
       <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
     </Reference>

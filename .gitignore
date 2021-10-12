@@ -40,3 +40,13 @@ packages/
 # LibreOffice Temp Files #
 ##########################
 *.*#
+
+####################
+# Tiled Temp Files #
+####################
+*.tiled-session
+
+##########
+# VSCode #
+##########
+.vscode

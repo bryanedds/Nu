@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="11" nextobjectid="6">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="10" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzbEJACAMAMGAy6dxZxsHkASbcMWXz+WKyGL7Vv278fl8Pp/P5/P/W6/xZ/mS5nUArR4t1w==
+  </data>
+ </layer>
+ <layer id="9" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzTENACAMBdEvoHLBATgAB+AIQXTuwEQ63UtuPgkAAAB4KyaNULW8//LXCe3Ef/PXDPXEPwD8cAE9iQwI
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztls1qwkAQx5eEXJIcbO9ejKCPob37FjaVil8v4suINz3YQvsatneJYG2v/Q9JcNT1IzJsDmbgR5Zkd36zYTZkbCs1zkDPUSej42TLdQuF/779z3D0NTW84l7bgF9Xg0k3ryEN026iy/wvhv3kHjH/0DFbA52BN2vnn1lmep/7t8wf5eCv2zt/xTbvz+Pbk4efen1wwEjjH2rmSZwJ2usc/bVIoDHvfX4GDudJvBPyr5HrJ4HGW40/so7nSfnfXaVqGH/g+unu9z4/A4Edz6slYyn/xo0dv7j+ucfuNEI823jYP5h4cv45ci3BF/j2TvspAl+pqh+vkfKvkKuEnA/g0T/vnyb1rQT9ZTgboAmezvh5jbRGyt+6sOc0eI0tIT/9Z4Q3ksd/SUFBwfX8AxWC/fA=
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUjIJRMApGwSigDDzmZGB4wkldMydzMTA8BZr5jAhzhYFqRbioaz+xwBJo72FuBoYjQNzMPTBuGGjQSgN/n4HG5wIC8foAaPdDIH4EcgMV3XGOhPTEBLX3/AClwVEwCkbBKCAWAABl6Q2a
+  </data>
+ </layer>
+ <layer id="5" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzqENACAMBdFvajomgn0wdF1EF8CQpuFecv4kAB1Ny6oMywDgte1SePXFndXkEwDwpwP8fgOB
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="720" y="576" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some BrassKey]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="528" y="1152" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6 None Nil [[KylaAdvent 2]]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="816" y="1104" width="144" height="144">
+   <properties>
+    <property name="I">[Character [Enemy Kyla] Rightward True False
+  [Sequence
+   [ClearSpirits
+    [FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field SadDarkness]]
+    [Wait 180]
+    [Dialog &quot;Why does every day get worse...?&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;Why must I be spited at every opportunity?&quot;]
+    [Dialog &quot;The fortunes of other servents rise, but I am kept at the bottom...&quot;]
+    [Dialog &quot;Nothing I do goes uncriticized...&quot;]
+    [Dialog &quot;She may be my master, but she herself serves under the Queen.&quot;]
+    [Face [CharacterTarget [Enemy Kyla]] Rightward]
+    [Dialog &quot;She is cruel not because she doesn't understand what it is like...&quot;]
+    [Dialog &quot;She is cruel because she understands exactly what it's like...&quot;]
+    [Dialog &quot;How much longer can this go on...?&quot;]
+    [Dialog &quot;How much more must I bear...?&quot;]
+    [FadeOutSong 2000]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
+    [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
+    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [Wait 120]
+    [PlaySound 0.5 [Field Unlatch]]
+    [Dialog &quot;Something unlatched...&quot;]]]
+ [[KylaAdvent 1]]]</property>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

@@ -7,5 +7,5 @@ type ElmarioPlugin () =
     inherit NuPlugin ()
     
     // this specifies the game dispatcher to use in your application
-    override this.GetGameDispatcher () =
+    override this.StandAloneConfig =
         typeof<ElmarioDispatcher>

@@ -11,7 +11,6 @@ module Assets =
     module Gui =
 
         let PackageName = "Gui"
-        let SplashSound = asset<Sound> PackageName "Splash"
         let MachinerySong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Machinery" }
         let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
         let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"

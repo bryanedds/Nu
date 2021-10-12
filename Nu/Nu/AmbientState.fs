@@ -245,6 +245,10 @@ module AmbientState =
     let getOverlayRouterBy by state =
         by state.OverlayRouter
 
+    /// Set the overlay router.
+    let setOverlayRouter router state =
+        { state with OverlayRouter = router }
+
     /// Make an ambient state value.
     let make imperative standAlone updateRate assetMetadataMap symbolStore overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative

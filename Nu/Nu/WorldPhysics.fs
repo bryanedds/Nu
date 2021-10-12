@@ -67,25 +67,41 @@ module WorldPhysics =
 
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
-        static member createBody (entity : Entity) entityId bodyProperties world =
+        static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
+            let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
+            let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
+            let world = World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world
             let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
             World.enqueuePhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
         [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
+            let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
+            let world =
+                List.fold (fun world (bodyProperties : BodyProperties) ->
+                    let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
+                    World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world)
+                    world bodiesProperties
             let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
             World.enqueuePhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.
         [<FunctionBinding>]
         static member destroyBody physicsId world =
+            let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
+            let world = World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.enqueuePhysicsMessage destroyBodyMessage world
 
         /// Send a message to the physics system to destroy several physics bodies.
         [<FunctionBinding>]
         static member destroyBodies physicsIds world =
+            let eventTrace = EventTrace.debug "World" "destroyBodies" "" EventTrace.empty
+            let world =
+                List.fold (fun world physicsId ->
+                    World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world)
+                    world physicsIds
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyBodiesMessage world
 

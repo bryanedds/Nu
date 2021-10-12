@@ -2,6 +2,8 @@
 open Prime
 open Nu
 open Nu.Declarative
+
+[<RequireQualifiedAccess>]
 module Simulants =
 
     // here we create an entity reference for Elmario. This is useful for simulants that you want
@@ -33,6 +35,12 @@ type ElmarioDispatcher () =
     override this.Command (_, command, _, world) =
         let world =
             match command with
+            | Jump ->
+                let physicsId = Simulants.Elmario.GetPhysicsId world
+                if World.isBodyOnGround physicsId world then
+                    let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
+                    World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
+                else world
             | MoveLeft ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
@@ -43,12 +51,6 @@ type ElmarioDispatcher () =
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
                 else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
-            | Jump ->
-                let physicsId = Simulants.Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
-                    World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                else world
             | Nop -> world
         just world
 

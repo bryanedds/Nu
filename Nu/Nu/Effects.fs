@@ -184,10 +184,11 @@ module Effects =
             "Cycle Iterate " +
             "Rate " +
             "Shift " +
-            "Expand Resource " +
-            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Angle Rotation Elevation Color Glow Volume " +
-            "Expand Enableds Positions Translations Offsets Insets Sizes Angles Rotations Elevations Colors Glows Volumes Aspects " +
-            "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
+            "Resource Expand " +
+            "Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Angle Rotation Elevation Color Glow Volume " +
+            "Enableds Positions Translations Offsets Insets Sizes Angles Rotations Elevations Colors Glows Volumes Aspects " +
+            "Expand " +
+            "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,

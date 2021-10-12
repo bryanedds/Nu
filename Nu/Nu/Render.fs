@@ -5,9 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-#if MULTITHREAD_RENDER_SORT
-open System.Linq
-#endif
 open System.Numerics
 open System.Reflection
 open SDL2
@@ -370,11 +367,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
 // NOTE: for experimenting with sorting render value types.
 //    static member private sortRenderLayeredMessages renderer =
-//#if MULTITHREAD_RENDER_SORT
-//        let messagesSorted = renderer.RenderLayeredMessages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
-//        messages.Clear ()
-//        messages.AddRange messagesSorted
-//#else
 //        let messagesArray =
 //            renderer.RenderLayeredMessages.GetType().GetField("_items", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(messages) :?>
 //            RenderLayeredMessage array
@@ -389,16 +381,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 //                    if assetNameCompare <> 0 then assetNameCompare else
 //                    strCmp left.AssetTag.PackageName right.AssetTag.PackageName)
 //        ValueSort.IntroSort (messagesArray, 0, messages.Count, comparison)
-//#endif
 
     static member private sortRenderLayeredMessages renderer =
-#if MULTITHREAD_RENDER_SORT
-        let messagesSorted = renderer.RenderLayeredMessages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
-        messages.Clear ()
-        messages.AddRange messagesSorted
-#else
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessageComparer ())
-#endif
 
     /// Render sprite.
     static member renderSprite

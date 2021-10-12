@@ -8,8 +8,9 @@ open Nu
 open Nu.Declarative
 
 type [<StructuralEquality; NoComparison>] DialogForm =
-    | DialogThin    
+    | DialogThin
     | DialogThick
+    | DialogNarration
 
 type [<ReferenceEquality; NoComparison>] Dialog =
     { DialogForm : DialogForm
@@ -19,15 +20,25 @@ type [<ReferenceEquality; NoComparison>] Dialog =
       DialogPromptOpt : ((string * Cue) * (string * Cue)) option
       DialogBattleOpt : (BattleType * Advent Set) option }
 
-    static member update dialog world =
-        let increment = if World.getUpdateTime world % 2L = 0L then 1 else 0
-        let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+    static member getText (detokenize : string -> string) dialog =
+        let detokenized = detokenize dialog.DialogTokenized
+        let text = detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+        String.tryTake dialog.DialogProgress text
+
+    static member update (detokenize : string -> string) dialog world =
+        let dialog =
+            if World.getUpdateTime world % 3L = 0L
+            then { dialog with DialogProgress = inc dialog.DialogProgress }
+            else dialog
+        let dialog =
+            if Seq.tryLast (Dialog.getText detokenize dialog) = Some ' '
+            then { dialog with DialogProgress = inc dialog.DialogProgress }
+            else dialog
         dialog
 
     static member canAdvance (detokenize : string -> string) dialog =
-        let detokenized = detokenize dialog.DialogTokenized
-        dialog.DialogProgress > detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
-
+        dialog.DialogProgress > (Dialog.getText detokenize dialog).Length
+        
     static member tryAdvance (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
         if dialog.DialogPage < detokenized.Split(Constants.Gameplay.DialogSplit).Length - 1 then
@@ -69,7 +80,8 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 | Some dialog ->
                     match dialog.DialogForm with
                     | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
-                    | DialogThick -> v4Bounds (v2 -432.0f 60.0f) (v2 864.0f 192.0f)
+                    | DialogThick -> v4Bounds (v2 -432.0f 78.0f) (v2 864.0f 174.0f)
+                    | DialogNarration -> v4Bounds (v2 -432.0f 78.0f) (v2 864.0f 174.0f)
                 | None -> v4Zero
              Entity.Elevation == elevation
              Entity.BackgroundImageOpt <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
@@ -79,18 +91,20 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                         match dialog.DialogForm with
                         | DialogThin -> Assets.Gui.DialogThinImage
                         | DialogThick -> Assets.Gui.DialogThickImage
+                        | DialogNarration -> Assets.Default.ImageEmpty
                     | None -> Assets.Gui.DialogThickImage
                 Some image
              Entity.Text <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                 match dialogOpt with
-                | Some dialog ->
-                    let detokenized = detokenize dialog.DialogTokenized
-                    let textPage = dialog.DialogPage
-                    let text = detokenized.Split(Constants.Gameplay.DialogSplit).[textPage] |> Dialog.wordWrap 48
-                    let textToShow = String.tryTake dialog.DialogProgress text
-                    textToShow
+                | Some dialog -> Dialog.getText detokenize dialog
                 | None -> ""
-             Entity.Justification == Unjustified true
+             Entity.Justification <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
+                match dialogOpt with
+                | Some dialog ->
+                    match dialog.DialogForm with
+                    | DialogThin | DialogThick -> Unjustified true
+                    | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
+                | None -> Unjustified true
              Entity.Margins == v2 30.0f 30.0f]
             [Content.button (name + "+Left")
                 [Entity.PositionLocal == v2 186.0f 18.0f; Entity.ElevationLocal == 2.0f

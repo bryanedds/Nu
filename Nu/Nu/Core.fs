@@ -85,3 +85,21 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+
+/// TODO: P1: get rid of this when Prime is updated.
+[<RequireQualifiedAccess>]
+module Lens =
+    let bimapWorld<'a, 'b, 'w> mapper unmapper (lens : Lens<'a, 'w>) : Lens<'b, 'w> =
+        { Name = lens.Name
+          ValidateOpt = lens.ValidateOpt
+          GetWithoutValidation = fun world -> mapper (lens.GetWithoutValidation world) world
+          SetOpt = match lens.SetOpt with Some set -> Some (fun value world -> set (unmapper value world) world) | None -> None
+          This = lens.This }
+    let narrow validate lens =
+        { lens with
+            ValidateOpt =
+                match lens.ValidateOpt with
+                | Some validate' -> Some (fun world -> validate' world && validate world)
+                | None -> Some validate }
+    let makePlus<'a, 'w> name validateOpt get setOpt this : Lens<'a, 'w> =
+        { Name = name; ValidateOpt = validateOpt; GetWithoutValidation = get; SetOpt = setOpt; This = this }

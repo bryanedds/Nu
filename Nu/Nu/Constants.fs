@@ -61,7 +61,7 @@ module Audio =
     let [<Literal>] SongVolumeDefault = 0.25f
     let [<Literal>] SoundVolumeDefault = 0.5f
     let [<Literal>] BufferSizeDefault = 1024
-    let [<Literal>] FadeInMinimum = 50 // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
+    let [<Literal>] FadeInMinimum = 100 // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
     let [<Literal>] FadeOutMsDefault = 500
     let [<Literal>] SongResumptionMaximum = 90000L // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
 

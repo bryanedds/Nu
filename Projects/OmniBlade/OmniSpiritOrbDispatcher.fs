@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -23,9 +24,9 @@ module SpiritOrbDispatcher =
         | PortalInhabitant of Portal
 
     type Entity with
-        member this.GetSpiritOrb = this.GetModel<SpiritOrb>
-        member this.SetSpiritOrb = this.SetModel<SpiritOrb>
-        member this.SpiritOrb = this.Model<SpiritOrb> ()
+        member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world
+        member this.SetSpiritOrb value world = this.SetModelGeneric<SpiritOrb> value world
+        member this.SpiritOrb = this.ModelGeneric<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =
         inherit GuiDispatcher<SpiritOrb, unit, unit> ({ AvatarLowerCenter = v2Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
@@ -58,6 +59,9 @@ module SpiritOrbDispatcher =
                     view :: views
                 else views)
                 [] inhabitants
+
+        override this.Initializers (_, _) =
+            [Entity.SwallowMouseLeft == false]
 
         override this.View (spiritOrb, entity, world) =
             let orbTransform = entity.GetTransform world

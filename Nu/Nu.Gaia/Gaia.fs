@@ -115,7 +115,8 @@ module Gaia =
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(Routed Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
-        for overlay in World.getExtrinsicOverlays world do
+        let overlays = world |> World.getOverlays |> Map.toValueList
+        for overlay in overlays do
             form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
         form.overlayComboBox.SelectedIndex <- 0
 
@@ -213,10 +214,9 @@ module Gaia =
     let private refreshGroupTabs (form : GaiaForm) world =
 
         // add groups imperatively to preserve existing group tabs
-        // NOTE: adding groups in reverse works better when opening anew
         let groups = World.getGroups Globals.Screen world
         let groupTabPages = form.groupTabControl.TabPages
-        for group in Seq.rev groups do
+        for group in groups do
             let groupName = group.Name
             if not (groupTabPages.ContainsKey groupName) then
                 groupTabPages.Add (groupName, groupName)
@@ -230,18 +230,21 @@ module Gaia =
         Globals.World <- world // must be set for property grid
         let entityTds = { DescribedEntity = entity; Form = form }
         form.entityPropertyGrid.SelectedObject <- entityTds
+        form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
+        form.entityIgnorePropertyBindingsCheckBox.Checked <- false
         form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             Globals.World <- world // must be set for property grid
-            if entityTds.DescribedEntity.Exists world
-            then form.entityPropertyGrid.Refresh ()
+            if entityTds.DescribedEntity.Exists world then
+                form.entityPropertyGrid.Refresh ()
+                form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
             else deselectEntity form world
         | _ -> ()
 
@@ -258,8 +261,9 @@ module Gaia =
         match form.groupPropertyGrid.SelectedObject with
         | :? GroupTypeDescriptorSource as groupTds ->
             Globals.World <- world // must be set for property grid
-            if groupTds.DescribedGroup.Exists world
-            then form.groupPropertyGrid.Refresh ()
+            if groupTds.DescribedGroup.Exists world then
+                //form.groupIgnorePropertyBindingsCheckBox.Checked <- groupTds.DescribedGroup.GetIgnorePropertyBindings world
+                form.groupPropertyGrid.Refresh ()
             else deselectGroup form world
         | _ -> ()
 
@@ -545,8 +549,8 @@ module Gaia =
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
-                                let overlays = World.getIntrinsicOverlays Globals.World @ World.getExtrinsicOverlays Globals.World
-                                let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
+                                let overlays = World.getOverlays Globals.World
+                                let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
                                 (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
                             | "FacetNames" ->
                                 let facetNames = Globals.World |> World.getFacets |> Map.toKeyList
@@ -1300,8 +1304,20 @@ module Gaia =
                 world
             | _ -> world
 
+    let private handleEntityIgnorePropertyBindingsChanged (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger $ fun world ->
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                let world = entity.SetIgnorePropertyBindings form.entityIgnorePropertyBindingsCheckBox.Checked world
+                Globals.World <- world // must be set for property grid
+                form.entityPropertyGrid.Refresh ()
+                world
+            | _ -> world
+
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
-        if form :> Form = Form.ActiveForm then
+        if Form.ActiveForm = (form :> Form) then
             if Keys.F5 = key then form.advancingButton.PerformClick ()
             if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
@@ -1409,7 +1425,7 @@ module Gaia =
             form.redoButton.Enabled <- not (World.getImperative world)
             form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
-    let private updateEditorWorld form world =
+    let private updateEditorWorld (form : GaiaForm) world =
         let worldChangersCopy = List.ofSeq Globals.WorldChangers
         Globals.WorldChangers.Clear ()
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
@@ -1417,10 +1433,11 @@ module Gaia =
         let world = updateCameraDrag form world
         updateUndoButton form world
         updateRedoButton form world
-        if not form.propertyValueTextBox.Focused &&
-           not form.applyPropertyButton.Focused &&
-           not form.IsClosing then
-           refreshPropertyEditor form
+        if  Form.ActiveForm = (form :> Form) &&
+            not form.propertyValueTextBox.Focused &&
+            not form.applyPropertyButton.Focused &&
+            not form.IsClosing then
+            refreshPropertyEditor form
         if form.IsDisposed
         then World.exit world
         else world
@@ -1629,6 +1646,7 @@ module Gaia =
         form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
         form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
         form.entityDesignerPropertyRemoveButton.Click.Add (handleEntityDesignerPropertyRemoveClick form)
+        form.entityIgnorePropertyBindingsCheckBox.CheckedChanged.Add (handleEntityIgnorePropertyBindingsChanged form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords
@@ -1689,6 +1707,11 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[record AssetTag [PackageName \"Default\"] [AssetName \"Image\"]] : AssetTag") |> ignore
 
+#if !DEBUG
+        // disable entity ignore property bindings in non-DEBUG mode.
+        form.entityIgnorePropertyBindingsCheckBox.Enabled <- false
+#endif
+
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()
         form.preludeTextBox.EmptyUndoBuffer ()
@@ -1713,7 +1736,7 @@ module Gaia =
                     world
             let (screen, screenDispatcher) =
                 if useGameplayScreen
-                then plugin.GetEditorScreenDispatcher ()
+                then plugin.EditorConfig
                 else (Simulants.DefaultScreen, typeof<ScreenDispatcher>)
             Globals.Screen <- screen
             let (screen, world) =

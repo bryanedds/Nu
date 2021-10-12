@@ -15,9 +15,9 @@ module WorldEntityModule =
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetModel<'a> world = World.getEntityModel<'a> this world
-        member this.SetModel<'a> value world = World.setEntityModel<'a> value this world |> snd'
-        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetModelGeneric<'a> world = World.getEntityModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setEntityModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetEcs world = World.getScreenEcs this.Parent.Parent world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetFacets world = World.getEntityFacets this world
@@ -75,6 +75,9 @@ module WorldEntityModule =
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> snd'
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetIgnorePropertyBindings world = World.getEntityIgnorePropertyBindings this world
+        member this.SetIgnorePropertyBindings value world = World.setEntityIgnorePropertyBindings value this world |> snd'
+        member this.IgnorePropertyBindings = lens Property? IgnorePropertyBindings this.GetIgnorePropertyBindings this.SetIgnorePropertyBindings this
         member this.GetOptimized world = World.getEntityOptimized this world
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
         member this.GetDestroying world = World.getEntityDestroying this world
@@ -122,20 +125,20 @@ module WorldEntityModule =
             world
 
         /// Set the transform of an entity.
-        member this.SetTransformByRef (transform : Transform inref, world) =
-            World.setEntityTransformByRef (&transform, this, world)
+        member this.SetTransformByRef (value : Transform inref, world) =
+            World.setEntityTransformByRef (&value, this, world)
 
         /// Set the transform of an entity without generating any change events.
-        member this.SetTransformByRefWithoutEvent (transform : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&transform, this, world)
+        member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
+            World.setEntityTransformByRefWithoutEvent (&value, this, world)
 
         /// Set the transform of an entity without generating any change events.
-        member this.SetTransformWithoutEvent transform world =
-            World.setEntityTransformByRefWithoutEvent (&transform, this, world)
+        member this.SetTransformWithoutEvent value world =
+            World.setEntityTransformByRefWithoutEvent (&value, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
+        member this.SetTransformSnapped positionSnap rotationSnap value world =
+            let transform = Math.snapTransform positionSnap rotationSnap value
             this.SetTransform transform world
 
         /// Try to get a property value and type.
@@ -176,7 +179,7 @@ module WorldEntityModule =
         /// Set an xtension property value without publishing an event.
         member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            let (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
+            let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
 
         /// Get an entity's sorting priority.
@@ -212,12 +215,14 @@ module WorldEntityModule =
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
-            let transform = this.GetTransform world
+            let oldTransform = this.GetTransform world
+            let mutable newTransform = oldTransform
             let world =
-                if  transform.Position <> position ||
-                    transform.Rotation <> rotation then
-                    let transform = { transform with Position = position; Rotation = rotation }
-                    this.SetTransformByRefWithoutEvent (&transform, world)
+                if  oldTransform.Position <> position ||
+                    oldTransform.Rotation <> rotation then
+                    newTransform.Position <- position
+                    newTransform.Rotation <- rotation
+                    this.SetTransformByRefWithoutEvent (&newTransform, world)
                 else world
             let world = this.SetXtensionPropertyWithoutEvent Property? LinearVelocity linearVelocity world
             let world = this.SetXtensionPropertyWithoutEvent Property? AngularVelocity angularVelocity world
@@ -412,8 +417,11 @@ module WorldEntityModule =
                             entity
                             world
                     let world =
-                        List.fold (fun world (simulant, left : World Lens, right) ->
-                            WorldModule.bind5 simulant left right world)
+                        List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
+                            if twoWay then
+                                let world = WorldModule.bind5 simulant left right world
+                                WorldModule.bind5 simulant right left world
+                            else WorldModule.bind5 simulant left right world)
                             world binds
                     let world =
                         List.fold (fun world (handler, address, simulant) ->

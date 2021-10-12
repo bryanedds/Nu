@@ -14,16 +14,17 @@ module WorldGameModule =
 
         member this.GetDispatcher world = World.getGameDispatcher world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetModel<'a> world = World.getGameModel<'a> world
-        member this.SetModel<'a> value world = World.setGameModel<'a> value world |> snd'
-        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetModelGeneric<'a> world = World.getGameModel<'a> world
+        member this.SetModelGeneric<'a> value world = World.setGameModel<'a> value world |> snd'
+        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
         member this.SetOmniScreenOpt value world = World.setOmniScreenOptPlus value world |> snd'
         member this.OmniScreenOpt = lens Property? OmniScreenOpt this.GetOmniScreenOpt this.SetOmniScreenOpt this
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
         member this.SelectedScreenOpt = lensReadOnly Property? SelectedScreenOpt this.GetSelectedScreenOpt this
-        member this.GetScreenTransitionDestinationOpt world = World.getScreenTransitionDestinationOpt world
-        member this.ScreenTransitionDestinationOpt = lensReadOnly Property? ScreenTransitionDestinationOpt this.GetScreenTransitionDestinationOpt this
+        member this.GetDesiredScreenOpt world = World.getDesiredScreenOpt world
+        member this.SetDesiredScreenOpt value world = World.setDesiredScreenOpt value world |> snd'
+        member this.DesiredScreenOpt = lens Property? DesiredScreenOpt this.GetDesiredScreenOpt this.SetDesiredScreenOpt this
         member this.GetEyeCenter world = World.getEyeCenter world
         member this.SetEyeCenter value world = World.setEyeCenterPlus value world |> snd'
         member this.EyeCenter = lens Property? EyeCenter this.GetEyeCenter this.SetEyeCenter this
@@ -67,6 +68,8 @@ module WorldGameModule =
         member this.GamepadButtonDownEvent index = Events.GamepadButtonDown index --> this
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUp index --> this
         member this.AssetsReloadEvent = Events.AssetsReload --> this
+        member this.BodyAddingEvent = Events.BodyAdding --> this
+        member this.BodyRemovingEvent = Events.BodyRemoving --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -205,21 +208,6 @@ module WorldGameModule =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
-
-        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
-        /// Game is always considered 'selected' as well.
-        [<FunctionBinding>]
-        static member isSelected (simulant : Simulant) world =
-            match Address.getNames simulant.SimulantAddress with
-            | [||] -> true
-            | names ->
-                let screenName = Array.head names
-                match World.getOmniScreenOpt world with
-                | Some omniScreen when omniScreen.Name = screenName -> true
-                | _ ->
-                    match World.getSelectedScreenOpt world with
-                    | Some screen when screen.Name = screenName -> true
-                    | _ -> false
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =

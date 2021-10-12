@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="10" name="Basement" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt0jEKADAIBEEhn7fxz3lBAlaCTLH1XHF5IlKS9Kya8Xf5v03Tn+Tz+Xw+n8/vdAHu5y3D
+  </data>
+ </layer>
+ <layer id="9" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzTENACAMBdEvoHLBATgAB+AIQXTuRBg63UtuPgkA8KqYNELV8v7LXye0E//NXzPUE/8AAAD4dwFkDQwI
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYiRQSfQXh8eBgZvHoTYZ6DYFyDO4qKe/Xu5GfCCICR5ZaBbVHggeqhl/1sC9mMDb6lovyzQPwJALAjEQjy47URWA9JDLft9gWY5ALEjEDvhsH8TN6oaXyrZnwpKf2g4jxXT/iws6lKoYD+uMEEH1PDrqP1Dw/5UtDSYRcO0hs8NMEBvu2FtAhigVl1PrN2FQHyICWH/HiC7gE5uyIXa/RXJ/vdMEDfQIw2C7AfZrcGMsF+JGeIGetmPbDeyG+hlPy4wav+o/UPNfgBdPP5B
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kjsO8hTBxboTYYSD7CBBb0TFclLgJq6EELKCjX7CB/0D7HwD9+BCIH+HxK7IaJiqGyVmo/+cREQ5zoGrOD3CYjYJRMApGwSgYBaNgFIwC7AAAdRIQ7g==
+  </data>
+ </layer>
+ <layer id="5" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzaENACAMBdFvEEUzIYKRYEAYBJIGD6rmXnL6JAAvpknLYt49S+NUcswfAICrJS9KTR4A4N8GtxcE3Q==
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="3" gid="235" x="720" y="1200" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some PewterKey]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="528" width="144" height="144">
+   <properties>
+    <property name="I">[Character
+  [Enemy Kyla]
+  Upward
+  True
+  False
+  [Sequence
+   [ClearSpirits
+    [FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field HorrorSilent]]
+    [Wait 180]
+    [Dialog &quot;A message from the eastern front?&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;It's about Jean?&quot; False]
+    [Dialog &quot;What!? What did you say!?&quot; False]
+    [Dialog &quot;No... You're lying.&quot; False]
+    [Dialog &quot;You cruel liar... You stupid liar!&quot; False]
+    [Dialog &quot;Jean's not dead!&quot; False]
+    [Dialog &quot;Stop it...!&quot; False]
+    [Dialog &quot;Jean's not dead...&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [Dialog &quot;How can this be happening to me...&quot; True]
+    [Dialog &quot;He's not dead...&quot; False]
+    [Dialog &quot;I witness these events taking place...&quot; True]
+    [Dialog &quot;He can't be dead...!&quot; False]
+    [Dialog &quot;...but in time I am frozen...&quot; True]
+    [Dialog &quot;Stop it...&quot; False]
+    [Dialog &quot;The web is already woven.&quot; True]
+    [Dialog &quot;...&quot;]
+    [Dialog &quot;Wickedness.&quot; True]
+    [Dialog &quot;Darkness.&quot; True]
+    [Dialog &quot;There's nothing left of my heart now.&quot; True]
+    [Dialog &quot;...but blackness... and mercilessness...&quot; True]
+    [Dialog &quot;I will show them all a cruelty that they have never contemplated...&quot; False]
+    [Dialog &quot;My master taught me well.&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Dialog &quot;...but even her terrible nature shall I surpass...&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Dialog &quot;...in darkness... wickedness...&quot; False]
+    [Dialog &quot;Until one of them gives to me...&quot; False]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [FadeOutSong 4000]
+    [Dialog &quot;...the same end I gave to her...&quot; False]
+    [Fade [CharacterTarget [Enemy Kyla]] 150]
+    [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
+    [PlaySong 1000 0 0.5 0 [Castle CastlePart3]]
+    [Wait 120]
+    [PlaySound 0.5 [Field Unlatch]]
+    [Dialog &quot;Something unlatched...&quot; False]]]
+  [[KylaAdvent 5]]]</property>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="576" y="480" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Nil [[KylaAdvent 6]]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

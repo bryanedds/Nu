@@ -27,7 +27,7 @@ open Nu
 
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
-    { mutable TileXXX : TmxLayerTile
+    { mutable Tile : TmxLayerTile
       mutable TileI : int
       mutable TileJ : int
       mutable TilePositionI : Vector2i
@@ -194,6 +194,11 @@ module WorldTypes =
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
+
+    /// The data required to execution screen splashing.
+    and [<NoEquality; NoComparison>] Splash =
+        { IdlingTime : int64
+          Destination : Screen }
 
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
@@ -365,7 +370,8 @@ module WorldTypes =
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true]
+             Define? Persistent true
+             Define? IgnorePropertyBindings false]
 
         /// Register an entity when adding it to a group.
         abstract Register : Entity * World -> World
@@ -460,6 +466,7 @@ module WorldTypes =
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
+          DesiredScreenOpt : Screen option
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
@@ -483,6 +490,7 @@ module WorldTypes =
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
+              DesiredScreenOpt = None
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -529,6 +537,7 @@ module WorldTypes =
           TransitionUpdates : int64
           Incoming : Transition
           Outgoing : Transition
+          SplashOpt : Splash option
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
@@ -549,6 +558,7 @@ module WorldTypes =
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
+              SplashOpt = None
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               CreationTimeStamp = Core.getUniqueTimeStamp ()
@@ -768,6 +778,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+        member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
 
     /// The game type that hosts the various screens used to navigate through a game.
@@ -1272,17 +1283,12 @@ module WorldTypes =
     and NuPlugin () =
 
         /// The game dispatcher that Nu will utilize when running outside the editor.
-        abstract GetGameDispatcher : unit -> Type
-        default this.GetGameDispatcher () = typeof<GameDispatcher>
+        abstract StandAloneConfig : Type
+        default this.StandAloneConfig = typeof<GameDispatcher>
 
-        /// The screen dispatcher that Nu will utilize when running inside the editor.
-        abstract GetEditorScreenDispatcher : unit -> Screen * Type
-        default this.GetEditorScreenDispatcher () = (Screen "Screen", typeof<ScreenDispatcher>)
-
-        /// Make the overlay routes that will allow Nu to use different overlays for the specified
-        /// dispatcher name.
-        abstract MakeOverlayRoutes : unit -> (string * string option) list
-        default this.MakeOverlayRoutes () = []
+        /// The screen / screen dispatcher that Nu will utilize when running inside the editor.
+        abstract EditorConfig : Screen * Type
+        default this.EditorConfig = (Screen "Screen", typeof<ScreenDispatcher>)
 
         /// Make a list of keyed values to hook into the engine.
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
@@ -1323,6 +1329,9 @@ type Unsubscription = WorldTypes.Unsubscription
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
+
+/// The data required to execution screen splashing.
+type Splash = WorldTypes.Splash
 
 /// Generalized interface tag for dispatchers.
 type Dispatcher = WorldTypes.Dispatcher

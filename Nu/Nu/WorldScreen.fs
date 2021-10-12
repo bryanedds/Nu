@@ -16,9 +16,9 @@ module WorldScreenModule =
     
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetModel<'a> world = World.getScreenModel<'a> this world
-        member this.SetModel<'a> value world = World.setScreenModel<'a> value this world |> snd'
-        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetEcs world = World.getScreenEcs this world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetTransitionState world = World.getScreenTransitionState this world
@@ -33,6 +33,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
         member this.Outgoing = lens Property? Outgoing this.GetOutgoing this.SetOutgoing this
+        member this.GetSplashOpt world = World.getScreenSplashOpt this world
+        member this.SetSplashOpt value world = World.setScreenSplashOpt value this world |> snd'
+        member this.SplashOpt = lens Property? SplashOpt this.GetSplashOpt this.SetSplashOpt this
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world |> snd'
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
@@ -306,7 +309,7 @@ module WorldScreenModule =
                 World.setScreenDissolve dissolveDescriptor songOpt screen world
             | Splash (dissolveDescriptor, splashDescriptor, songOpt, destination) ->
                 let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
-                setScreenSplash (Some splashDescriptor) destination screen world
+                setScreenSplash splashDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world
 
@@ -325,8 +328,11 @@ module WorldScreenModule =
                         World.readEntityFromFile filePath (Some entityName) (screen / groupName) world |> snd)
                         world entityFilePaths
                 let world =
-                    List.fold (fun world (simulant, left : World Lens, right) ->
-                        WorldModule.bind5 simulant left right world)
+                    List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
+                        if twoWay then
+                            let world = WorldModule.bind5 simulant left right world
+                            WorldModule.bind5 simulant right left world
+                        else WorldModule.bind5 simulant left right world)
                         world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->

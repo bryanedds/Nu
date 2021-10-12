@@ -20,12 +20,12 @@ module RingMenuDispatcher =
         | ItemSelect of string
 
     type Entity with
-        member this.GetRadius = this.Get Property? Radius
-        member this.SetRadius = this.Set Property? Radius
-        member this.Radius = lens<single> Property? Radius this.GetRadius this.SetRadius this
-        member this.GetRingMenu = this.GetModel<RingMenu>
-        member this.SetRingMenu = this.SetModel<RingMenu>
-        member this.RingMenu = this.Model<RingMenu> ()
+        member this.GetRadius world = this.Get<single> Property? Radius world
+        member this.SetRadius value world = this.Set<single> Property? Radius value world
+        member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
+        member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
+        member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
+        member this.RingMenu = this.ModelGeneric<RingMenu> ()
         member this.ItemSelectEvent = Events.ItemSelect --> this
         member this.CancelEvent = Events.Cancel --> this
 
@@ -33,10 +33,7 @@ module RingMenuDispatcher =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
         static member Properties =
-            [define Entity.Radius Constants.Battle.RingMenuRadius
-             define Entity.Rotation 0.0f
-             define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
+            [define Entity.Radius Constants.Battle.RingMenuRadius]
 
         override this.Command (_, command, menu, world) =
             match command with

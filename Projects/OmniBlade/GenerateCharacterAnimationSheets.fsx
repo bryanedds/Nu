@@ -3,18 +3,18 @@
 
 #I __SOURCE_DIRECTORY__
 #r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
-#r "../../packages/TiledSharp.1.0.1/lib/netstandard2.0/TiledSharp.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.7.4.0/lib/net472/Prime.dll"
+#r "../../packages/Prime.7.5.0/lib/net472/Prime.dll"
 #r "../../packages/Prime.Scripting.7.3.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/FSharpx.Core.1.8.32/lib/40/FSharpx.Core.dll"
 #r "../../packages/FSharpx.Collections.2.1.3/lib/net45/FSharpx.Collections.dll"
 #r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
 #r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
@@ -267,6 +267,8 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Trixter.png" (Some "../
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Vampire.png" (Some "../../Art/Enemies/Walking/VampireWalk.png") "../../Art/Enemies/Walking/Out/Vampire.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Witch.png" (Some "../../Art/Enemies/Walking/WitchWalk.png") "../../Art/Enemies/Walking/Out/Witch.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Wolfman.png" (Some "../../Art/Enemies/Walking/WolfmanWalk.png") "../../Art/Enemies/Walking/Out/Wolfman.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/BlackKnight.png" (Some "../../Art/Enemies/Walking/BlackKnightWalk.png") "../../Art/Enemies/Walking/Out/BlackKnight.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/Kyla.png" (Some "../../Art/Enemies/Walking/KylaWalk.png") "../../Art/Enemies/Walking/Out/Kyla.png"
 
 // generate non-walking enemy characters
 Directory.CreateDirectory "../../Art/Enemies/NonWalking/Out"
@@ -281,10 +283,10 @@ generateWalkingOnlyAnimationSheet 48 48 48 48 1024 1024 "../../Art/Enemies/Walki
 generateWalkingOnlyAnimationSheet 52 53 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/156x212/Gorgon.png" "../../Art/Enemies/WalkingOnly/Out/Gorgon.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Apparition.png" "../../Art/Enemies/WalkingOnly/Out/Apparition.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
+generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Snake.png" "../../Art/Enemies/WalkingOnly/Out/Snake.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Armoros.png" "../../Art/Enemies/WalkingOnly/Out/Armoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/HeavyArmoros.png" "../../Art/Enemies/WalkingOnly/Out/HeavyArmoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
-generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/Ghost.png" "../../Art/Enemies/WalkingOnly/Out/Ghost.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Arachnos.png" "../../Art/Enemies/WalkingOnly/Out/Arachnos.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Chimera.png" "../../Art/Enemies/WalkingOnly/Out/Chimera.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Pharoah.png" "../../Art/Enemies/WalkingOnly/Out/Pharoah.png"

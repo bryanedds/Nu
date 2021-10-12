@@ -24,20 +24,21 @@ type [<StructuralEquality; NoComparison; Struct>] RayCastOutput =
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                0b0000000000000001
-    let [<Literal>] DirtyMask =                 0b0000000000000010
-    let [<Literal>] InvalidatedMask =           0b0000000000000100
-    let [<Literal>] OmnipresentMask =           0b0000000000001000
-    let [<Literal>] AbsoluteMask =              0b0000000000010000
-    let [<Literal>] ImperativeMask =            0b0000000000100000
-    let [<Literal>] PublishChangeBindingsMask = 0b0000000001000000
-    let [<Literal>] PublishChangeEventsMask =   0b0000000010000000
-    let [<Literal>] EnabledMask =               0b0000000100000000
-    let [<Literal>] VisibleMask =               0b0000001000000000
-    let [<Literal>] AlwaysUpdateMask =          0b0000010000000000
-    let [<Literal>] PublishUpdatesMask =        0b0000100000000000
-    let [<Literal>] PublishPostUpdatesMask =    0b0001000000000000
-    let [<Literal>] PersistentMask =            0b0010000000000000
+    let [<Literal>] ActiveMask =                    0b0000000000000001
+    let [<Literal>] DirtyMask =                     0b0000000000000010
+    let [<Literal>] InvalidatedMask =               0b0000000000000100
+    let [<Literal>] OmnipresentMask =               0b0000000000001000
+    let [<Literal>] AbsoluteMask =                  0b0000000000010000
+    let [<Literal>] ImperativeMask =                0b0000000000100000
+    let [<Literal>] PublishChangeBindingsMask =     0b0000000001000000
+    let [<Literal>] PublishChangeEventsMask =       0b0000000010000000
+    let [<Literal>] EnabledMask =                   0b0000000100000000
+    let [<Literal>] VisibleMask =                   0b0000001000000000
+    let [<Literal>] AlwaysUpdateMask =              0b0000010000000000
+    let [<Literal>] PublishUpdatesMask =            0b0000100000000000
+    let [<Literal>] PublishPostUpdatesMask =        0b0001000000000000
+    let [<Literal>] PersistentMask =                0b0010000000000000
+    let [<Literal>] IgnorePropertyBindingsMask =    0b0100000000000000
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -92,6 +93,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+    member this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
     member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| this.Flags &&& PublishChangeEventsMask = 0
     member this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
     member this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open System.IO
 open System.Threading
@@ -97,6 +96,29 @@ module WorldModule2 =
         static member relateGeneralized (address : obj Address) world =
             World.relate address world
 
+        /// Select the given screen without transitioning, even if another transition is taking place.
+        static member internal selectScreenOpt transitionState screenOpt world =
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some selectedScreen ->
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
+                    World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
+                | None -> world
+            let world =
+                match screenOpt with
+                | Some screen ->
+                    let world = World.setScreenTransitionStatePlus transitionState screen world
+                    let world = World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                    World.publish () (Events.Select --> screen) eventTrace screen world
+                | None -> World.setSelectedScreenOpt None world
+            world
+
+        /// Select the given screen without transitioning, even if another transition is taking place.
+        [<FunctionBinding>]
+        static member selectScreen transitionState screen world =
+            World.selectScreenOpt transitionState (Some screen) world
+
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         [<FunctionBinding>]
@@ -124,6 +146,7 @@ module WorldModule2 =
         static member isSelectedScreenTransitioning world =
             not (World.isSelectedScreenIdling world)
 
+        /// Set screen transition state, enabling or disabling input events respectively.
         static member private setScreenTransitionStatePlus state (screen : Screen) world =
             let world = screen.SetTransitionState state world
             match state with
@@ -145,29 +168,150 @@ module WorldModule2 =
                 let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
                 world
 
-        /// Select the given screen without transitioning, even if another transition is taking place.
-        [<FunctionBinding>]
-        static member selectScreenOpt transitionState screenOpt world =
-            let world =
-                match World.getSelectedScreenOpt world with
-                | Some selectedScreen ->
-                    let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
-                    World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
-                | None -> world
-            let world =
-                match screenOpt with
-                | Some screen ->
-                    let world = World.setScreenTransitionStatePlus transitionState screen world
-                    let world = World.setSelectedScreen screen world
-                    let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                    World.publish () (Events.Select --> screen) eventTrace screen world
-                | None -> World.setSelectedScreenOpt None world
-            world
+        static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
+            // NOTE: we do not immediately transition when transition time is zero because we only want screen
+            // transitions to happen outside the update loop!
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+            let transition =
+                match transitionType with
+                | Incoming -> selectedScreen.GetIncoming world
+                | Outgoing -> selectedScreen.GetOutgoing world
+            let transitionUpdates = selectedScreen.GetTransitionUpdates world
+            if transitionUpdates = transition.TransitionLifeTime + 1L then
+                (true, selectedScreen.SetTransitionUpdates 0L world)
+            elif transitionUpdates > transition.TransitionLifeTime then
+                Log.debug ("TransitionLifeTime for screen '" + scstring selectedScreen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
+                (true, selectedScreen.SetTransitionUpdates 0L world)
+            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
 
-        /// Select the given screen without transitioning, even if another transition is taking place.
-        [<FunctionBinding>]
-        static member selectScreen transitionState screen world =
-            World.selectScreenOpt transitionState (Some screen) world
+        static member private updateScreenIdling3 splash (selectedScreen : Screen) world =
+            // NOTE: we do not immediately transition when transition time is zero because we only want screen
+            // transitions to happen outside the update loop!
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+            let transitionUpdates = selectedScreen.GetTransitionUpdates world
+            if transitionUpdates = splash.IdlingTime + 1L then
+                (true, selectedScreen.SetTransitionUpdates 0L world)
+            elif transitionUpdates > splash.IdlingTime then
+                Log.debug ("IdlingTimeOpt for screen '" + scstring selectedScreen.ScreenAddress + "' must be Some consistent multiple of UpdateRate or None.")
+                (true, selectedScreen.SetTransitionUpdates 0L world)
+            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+
+        static member private updateScreenIncoming (selectedScreen : Screen) world =
+            match World.getLiveness world with
+            | Live ->
+                let world =
+                    if selectedScreen.GetTransitionUpdates world = 0L then
+                        let world =
+                            match (selectedScreen.GetIncoming world).SongOpt with
+                            | Some playSong ->
+                                match World.getCurrentSongOpt world with
+                                | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
+                                | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
+                            | None -> world
+                        let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
+                        World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
+                    else world
+                match World.getLiveness world with
+                | Live ->
+                    match World.updateScreenTransition3 Incoming selectedScreen world with
+                    | (true, world) ->
+                        let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
+                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                        World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
+                    | (false, world) -> world
+                | Dead -> world
+            | Dead -> world
+
+        static member private updateScreenIdling (selectedScreen : Screen) world =
+            match World.getLiveness world with
+            | Live ->
+                match selectedScreen.GetSplashOpt world with
+                | Some splash ->
+                    match World.updateScreenIdling3 splash selectedScreen world with
+                    | (true, world) -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    | (false, world) -> world
+                | None ->
+                    match Simulants.Game.GetDesiredScreenOpt world with
+                    | Some desiredScreen ->
+                        if desiredScreen <> selectedScreen then
+                            let world = selectedScreen.SetTransitionUpdates 0L world
+                            World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                        else world
+                    | None -> world
+            | Dead -> world
+
+        static member private updateScreenOutgoing (selectedScreen : Screen) world =
+            let world =
+                if selectedScreen.GetTransitionUpdates world = 0L then
+                    let incoming = selectedScreen.GetIncoming world
+                    let outgoing = selectedScreen.GetOutgoing world
+                    let world =
+                        match outgoing.SongOpt with
+                        | Some playSong ->
+                            let destinationOpt =
+                                match selectedScreen.GetSplashOpt world with
+                                | Some splash -> Some splash.Destination
+                                | None ->
+                                    match World.getScreenTransitionDestinationOpt world with
+                                    | Some destination -> Some destination
+                                    | None ->
+                                        match Simulants.Game.GetDesiredScreenOpt world with
+                                        | Some destination -> Some destination
+                                        | None -> None
+                            match destinationOpt with
+                            | Some destination ->
+                                match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
+                                | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
+                                | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
+                                | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
+                            | None -> world
+                        | None -> world
+                    let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
+                    World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
+                else world
+            match World.getLiveness world with
+            | Live ->
+                match World.updateScreenTransition3 Outgoing selectedScreen world with
+                | (true, world) ->
+                    let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                    let world =
+                        match World.getLiveness world with
+                        | Live ->
+                            let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
+                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
+                        | Dead -> world
+                    match World.getLiveness world with
+                    | Live ->
+                        let destinationOpt =
+                            match selectedScreen.GetSplashOpt world with
+                            | Some splash -> Some splash.Destination
+                            | None ->
+                                match World.getScreenTransitionDestinationOpt world with
+                                | Some destination -> Some destination
+                                | None ->
+                                    match Simulants.Game.GetDesiredScreenOpt world with
+                                    | Some destination -> Some destination
+                                    | None -> None
+                        match destinationOpt with
+                        | Some destination ->
+                            if destination <> selectedScreen
+                            then World.selectScreen IncomingState destination world
+                            else world
+                        | None -> world
+                    | Dead -> world
+                | (false, world) -> world
+            | Dead -> world
+
+        static member private updateScreenTransition world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionState world with
+                | IncomingState -> World.updateScreenIncoming selectedScreen world
+                | IdlingState -> World.updateScreenIdling selectedScreen world
+                | OutgoingState -> World.updateScreenOutgoing selectedScreen world
+            | None -> world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -175,20 +319,9 @@ module WorldModule2 =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
-                    not (World.isSelectedScreenTransitioning world) &&
-                    World.getScreenExists selectedScreen world then
-                    let subscriptionId = Gen.id
-                    let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match World.getScreenTransitionDestinationOpt world with
-                        | Some destination ->
-                            let world = World.unsubscribe subscriptionId world
-                            let world = World.setScreenTransitionDestinationOpt None world |> snd'
-                            let world = World.selectScreen IncomingState destination world
-                            (Cascade, world)
-                        | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
+                    not (World.isSelectedScreenTransitioning world) then
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None ->
@@ -200,156 +333,32 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member transitionScreen destination world =
             World.tryTransitionScreen destination world |> snd
-            
-        // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
-            (handling, World.selectScreenOpt IncomingState (Some destination) world)
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
-
-        static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
-            handling destination (_ : Event<'a, 's>) world =
-            match World.tryTransitionScreen destination world with
-            | (true, world) -> (handling, world)
-            | (false, world) ->
-                Log.trace ("Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'.")
-                (handling, world)
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen.
-        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
-
-        static member private updateScreenTransition3 (screen : Screen) transition world =
-            // NOTE: we do not immediately transition when transition time is zero because we only want screen
-            // transitions to happen outside the update loop!
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and and an extra frame for the render messages to actually get processed.
-            let transitionUpdates = screen.GetTransitionUpdates world
-            if transitionUpdates = transition.TransitionLifeTime + 1L then
-                (true, screen.SetTransitionUpdates 0L world)
-            elif transitionUpdates > transition.TransitionLifeTime then
-                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
-                (true, screen.SetTransitionUpdates 0L world)
-            else (false, screen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
-
-        static member private updateScreenTransition2 (selectedScreen : Screen) world =
-            match selectedScreen.GetTransitionState world with
-            | IncomingState ->
-                match World.getLiveness world with
-                | Live ->
-                    let world =
-                        if selectedScreen.GetTransitionUpdates world = 0L then
-                            let world =
-                                match (selectedScreen.GetIncoming world).SongOpt with
-                                | Some playSong ->
-                                    match World.getCurrentSongOpt world with
-                                    | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                    | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
-                                | None -> world
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
-                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
-                        else world
-                    match World.getLiveness world with
-                    | Live ->
-                        let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetIncoming world) world
-                        if finished then
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
-                            let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
-                        else world
-                    | Dead -> world
-                | Dead -> world
-            | OutgoingState ->
-                let world =
-                    if selectedScreen.GetTransitionUpdates world = 0L then
-                        let incoming = selectedScreen.GetIncoming world
-                        let outgoing = selectedScreen.GetOutgoing world
-                        let world =
-                            match outgoing.SongOpt with
-                            | Some playSong ->
-                                match World.getScreenTransitionDestinationOpt world with
-                                | Some destination ->
-                                    match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                                    | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
-                                    | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                    | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
-                                | None -> world
-                            | None -> world
-                        let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
-                    else world
-                match World.getLiveness world with
-                | Live ->
-                    let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetOutgoing world) world
-                    if finished then
-                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                        match World.getLiveness world with
-                        | Live ->
-                            let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
-                        | Dead -> world
-                    else world
-                | Dead -> world
-            | IdlingState -> world
-
-        static member private handleSplashScreenIdleUpdate idlingTime updates evt world =
-            let world = World.unsubscribe SplashScreenUpdateId world
-            if updates < idlingTime then
-                let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc updates)
-                let world = World.subscribePlus SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
-                (Cascade, world)
-            else
-                match World.getSelectedScreenOpt world with
-                | Some selectedScreen ->
-                    if World.getScreenExists selectedScreen world then
-                        let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                        (Cascade, world)
-                    else
-                        Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
-                        (Resolve, World.exit world)
-                | None ->
-                    Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
-                    (Resolve, World.exit world)
-
-        static member private handleSplashScreenIdle idlingTime destination (splashScreen : Screen) evt world =
-            let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
-            let world = World.subscribePlus SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
-            (Cascade, world)
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+        static member setScreenSplash (splashDescriptor : SplashDescriptor) destination (screen : Screen) world =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            match splashDataOpt with
-            | Some splashDescriptor ->
-                let cameraEyeSize = World.getEyeSize world
-                let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
-                let world = splashGroup.SetPersistent false world
-                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
-                let world = splashSprite.SetPersistent false world
-                let world = splashSprite.SetSize cameraEyeSize world
-                let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
-                let world =
-                    match splashDescriptor.SplashImageOpt with
-                    | Some splashImage ->
-                        let world = splashSprite.SetStaticImage splashImage world
-                        let world = splashSprite.SetVisible true world
-                        world
-                    | None ->
-                        let world = splashSprite.SetStaticImage Assets.Default.Image10 world
-                        let world = splashSprite.SetVisible false world
-                        world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashDescriptor.IdlingTime destination screen) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashGroup) screen world
-                world
-            | None -> world
+            let cameraEyeSize = World.getEyeSize world
+            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
+            let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
+            let world = splashGroup.SetPersistent false world
+            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
+            let world = splashSprite.SetPersistent false world
+            let world = splashSprite.SetSize cameraEyeSize world
+            let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+            let world =
+                match splashDescriptor.SplashImageOpt with
+                | Some splashImage ->
+                    let world = splashSprite.SetStaticImage splashImage world
+                    let world = splashSprite.SetVisible true world
+                    world
+                | None ->
+                    let world = splashSprite.SetStaticImage Assets.Default.Image10 world
+                    let world = splashSprite.SetVisible false world
+                    world
+            world
 
         /// Create a dissolve screen whose content is loaded from the given group file.
         [<FunctionBinding>]
@@ -367,7 +376,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
             let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveDescriptor None world
-            let world = World.setScreenSplash (Some splashDescriptor) destination splashScreen world
+            let world = World.setScreenSplash splashDescriptor destination splashScreen world
             (splashScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -398,9 +407,18 @@ module WorldModule2 =
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
                 | Right overlayer ->
-                
-                    // update overlayer and apply overlays to all entities
+
+                    // update overlayer and overlay router
+                    let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
+                    let overlayRoutes =
+                        overlays |>
+                        List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
+                        List.concat
+                    let overlayRouter = OverlayRouter.make overlayRoutes
                     let world = World.setOverlayer overlayer world
+                    let world = World.setOverlayRouter overlayRouter world
+
+                    // apply overlays to all entities
                     let entities = World.getEntities1 world
                     let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
                     (Right overlayer, world)
@@ -625,8 +643,8 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let transform = entity.GetTransform world
-                    let position = bodyTransformMessage.Position - transform.Size * 0.5f
+                    let size = entity.GetSize world
+                    let position = bodyTransformMessage.Position - size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
@@ -663,11 +681,6 @@ module WorldModule2 =
         /// Get all entities at the given point, including all omnipresent entities.
         static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
-
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> World.updateScreenTransition2 selectedScreen world
-            | None -> world
 
         static member private updateSimulants world =
 
@@ -868,7 +881,7 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Live ->
+                | Live ->                
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
@@ -1032,7 +1045,7 @@ module GameDispatcherModule =
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) signal game world
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
         /// Send a signal to a simulant.
@@ -1047,7 +1060,7 @@ module GameDispatcherModule =
     and Game with
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
@@ -1056,10 +1069,10 @@ module GameDispatcherModule =
         inherit GameDispatcher ()
 
         member this.GetModel (game : Game) world : 'model =
-            game.GetModel<'model> world
+            game.GetModelGeneric<'model> world
 
         member this.SetModel (model : 'model) (game : Game) world =
-            game.SetModel<'model> model world
+            game.SetModelGeneric<'model> model world
 
         member this.Model (game : Game) =
             lens Property? Model (this.GetModel game) (flip this.SetModel game) game
@@ -1067,8 +1080,9 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let world =
                 let property = World.getGameModelProperty world
-                if property.DesignerType = typeof<unit>
-                then game.SetModel<'model> initial world
+                if property.DesignerType = typeof<unit> then
+                    let model = this.Prepare (initial, world)
+                    game.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
@@ -1091,7 +1105,10 @@ module GameDispatcherModule =
                         (Cascade, world))
                         eventAddress (game :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 game left right world)
+                    WorldModule.bind5 game left right world
+                | LinkDefinition (left, right) ->
+                    let world = WorldModule.bind5 game left right world
+                    WorldModule.bind5 right.This right left world)
                 world initializers
 
         override this.Actualize (game, world) =
@@ -1104,11 +1121,14 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Game -> PropertyInitializer list
-        default this.Initializers (_, _) = []
+        abstract member Prepare : 'model * World -> 'model
+        default this.Prepare (model, _) = model
 
         abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
         default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Game -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model

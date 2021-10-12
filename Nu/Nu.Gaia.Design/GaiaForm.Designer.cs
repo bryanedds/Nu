@@ -40,6 +40,7 @@
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.rolloutTabControl = new System.Windows.Forms.TabControl();
             this.propertyEditorTabPage = new System.Windows.Forms.TabPage();
             this.propertyEditor = new System.Windows.Forms.SplitContainer();
@@ -49,34 +50,42 @@
             this.propertyNameLabel = new System.Windows.Forms.Label();
             this.discardPropertyButton = new System.Windows.Forms.Button();
             this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
+            this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.evaluatorTabPage = new System.Windows.Forms.TabPage();
             this.terminal = new System.Windows.Forms.SplitContainer();
+            this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer10 = new System.Windows.Forms.SplitContainer();
             this.evalLineButton = new System.Windows.Forms.Button();
             this.clearOutputButton = new System.Windows.Forms.Button();
             this.evalButton = new System.Windows.Forms.Button();
+            this.evalOutputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.preludeTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             this.discardPreludeButton = new System.Windows.Forms.Button();
             this.applyPreludeButton = new System.Windows.Forms.Button();
+            this.preludeTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.assetGraphTabPage = new System.Windows.Forms.TabPage();
             this.assetGraph = new System.Windows.Forms.SplitContainer();
             this.discardAssetGraphButton = new System.Windows.Forms.Button();
             this.applyAssetGraphButton = new System.Windows.Forms.Button();
+            this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.overlayerTabPage = new System.Windows.Forms.TabPage();
             this.overlayer = new System.Windows.Forms.SplitContainer();
             this.discardOverlayerButton = new System.Windows.Forms.Button();
             this.applyOverlayerButton = new System.Windows.Forms.Button();
+            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.eventTracingTabPage = new System.Windows.Forms.TabPage();
             this.eventTracing = new System.Windows.Forms.SplitContainer();
             this.discardEventFilterButton = new System.Windows.Forms.Button();
             this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
             this.applyEventFilterButton = new System.Windows.Forms.Button();
+            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyTabControl = new System.Windows.Forms.TabControl();
             this.entityTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer7 = new System.Windows.Forms.SplitContainer();
             this.entityPropertyDesigner = new System.Windows.Forms.GroupBox();
+            this.entityIgnorePropertyBindingsCheckBox = new System.Windows.Forms.CheckBox();
             this.entityDesignerPropertyRemoveButton = new System.Windows.Forms.Button();
             this.entityDesignerPropertyNameTextBox = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -158,14 +167,6 @@
             this.incUpdateTime = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.songPlaybackButton = new System.Windows.Forms.ToolStripButton();
-            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
-            this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.evalOutputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.preludeTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -312,7 +313,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1276, 640);
-            this.splitContainer1.SplitterDistance = 958;
+            this.splitContainer1.SplitterDistance = 960;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -330,9 +331,20 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(958, 640);
+            this.splitContainer4.Size = new System.Drawing.Size(960, 640);
             this.splitContainer4.SplitterDistance = 435;
             this.splitContainer4.TabIndex = 1;
+            // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(960, 435);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
             // 
             // rolloutTabControl
             // 
@@ -346,7 +358,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(958, 201);
+            this.rolloutTabControl.Size = new System.Drawing.Size(960, 201);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // propertyEditorTabPage
@@ -355,7 +367,7 @@
             this.propertyEditorTabPage.Location = new System.Drawing.Point(4, 22);
             this.propertyEditorTabPage.Name = "propertyEditorTabPage";
             this.propertyEditorTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyEditorTabPage.Size = new System.Drawing.Size(950, 175);
+            this.propertyEditorTabPage.Size = new System.Drawing.Size(952, 175);
             this.propertyEditorTabPage.TabIndex = 0;
             this.propertyEditorTabPage.Text = "[P]roperty Editor";
             this.propertyEditorTabPage.UseVisualStyleBackColor = true;
@@ -376,7 +388,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(944, 169);
+            this.propertyEditor.Size = new System.Drawing.Size(946, 169);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -449,12 +461,25 @@
             this.propertyDescriptionTextBox.Size = new System.Drawing.Size(176, 67);
             this.propertyDescriptionTextBox.TabIndex = 0;
             // 
+            // propertyValueTextBox
+            // 
+            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyValueTextBox.ExtraDescent = 1;
+            this.propertyValueTextBox.Keywords0 = "";
+            this.propertyValueTextBox.Keywords1 = "";
+            this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
+            this.propertyValueTextBox.Name = "propertyValueTextBox";
+            this.propertyValueTextBox.Size = new System.Drawing.Size(766, 169);
+            this.propertyValueTextBox.TabIndex = 0;
+            // 
             // evaluatorTabPage
             // 
             this.evaluatorTabPage.Controls.Add(this.terminal);
             this.evaluatorTabPage.Location = new System.Drawing.Point(4, 22);
             this.evaluatorTabPage.Name = "evaluatorTabPage";
-            this.evaluatorTabPage.Size = new System.Drawing.Size(950, 175);
+            this.evaluatorTabPage.Size = new System.Drawing.Size(952, 175);
             this.evaluatorTabPage.TabIndex = 4;
             this.evaluatorTabPage.Text = "[E]valuator";
             this.evaluatorTabPage.UseVisualStyleBackColor = true;
@@ -472,9 +497,23 @@
             // terminal.Panel2
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
-            this.terminal.Size = new System.Drawing.Size(950, 175);
+            this.terminal.Size = new System.Drawing.Size(952, 175);
             this.terminal.SplitterDistance = 559;
             this.terminal.TabIndex = 0;
+            // 
+            // evalInputTextBox
+            // 
+            this.evalInputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.evalInputTextBox.ExtraDescent = 1;
+            this.evalInputTextBox.Keywords0 = "";
+            this.evalInputTextBox.Keywords1 = "";
+            this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
+            this.evalInputTextBox.Name = "evalInputTextBox";
+            this.evalInputTextBox.Size = new System.Drawing.Size(559, 175);
+            this.evalInputTextBox.TabIndex = 0;
+            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]\n";
             // 
             // splitContainer10
             // 
@@ -493,7 +532,7 @@
             // splitContainer10.Panel2
             // 
             this.splitContainer10.Panel2.Controls.Add(this.evalOutputTextBox);
-            this.splitContainer10.Size = new System.Drawing.Size(387, 175);
+            this.splitContainer10.Size = new System.Drawing.Size(389, 175);
             this.splitContainer10.SplitterDistance = 44;
             this.splitContainer10.TabIndex = 1;
             // 
@@ -525,13 +564,27 @@
             this.evalButton.Text = "E[v]al";
             this.evalButton.UseVisualStyleBackColor = true;
             // 
+            // evalOutputTextBox
+            // 
+            this.evalOutputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.evalOutputTextBox.ExtraDescent = 1;
+            this.evalOutputTextBox.Keywords0 = "";
+            this.evalOutputTextBox.Keywords1 = "";
+            this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
+            this.evalOutputTextBox.Name = "evalOutputTextBox";
+            this.evalOutputTextBox.ReadOnly = true;
+            this.evalOutputTextBox.Size = new System.Drawing.Size(341, 175);
+            this.evalOutputTextBox.TabIndex = 0;
+            // 
             // preludeTabPage
             // 
             this.preludeTabPage.Controls.Add(this.splitContainer6);
             this.preludeTabPage.Location = new System.Drawing.Point(4, 22);
             this.preludeTabPage.Name = "preludeTabPage";
             this.preludeTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.preludeTabPage.Size = new System.Drawing.Size(950, 175);
+            this.preludeTabPage.Size = new System.Drawing.Size(952, 175);
             this.preludeTabPage.TabIndex = 5;
             this.preludeTabPage.Text = "Prelude";
             this.preludeTabPage.UseVisualStyleBackColor = true;
@@ -552,7 +605,7 @@
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.preludeTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(944, 169);
+            this.splitContainer6.Size = new System.Drawing.Size(946, 169);
             this.splitContainer6.SplitterDistance = 176;
             this.splitContainer6.TabIndex = 3;
             // 
@@ -574,13 +627,26 @@
             this.applyPreludeButton.Text = "[A]pply Changes";
             this.applyPreludeButton.UseVisualStyleBackColor = true;
             // 
+            // preludeTextBox
+            // 
+            this.preludeTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.preludeTextBox.ExtraDescent = 1;
+            this.preludeTextBox.Keywords0 = "";
+            this.preludeTextBox.Keywords1 = "";
+            this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
+            this.preludeTextBox.Name = "preludeTextBox";
+            this.preludeTextBox.Size = new System.Drawing.Size(766, 169);
+            this.preludeTextBox.TabIndex = 0;
+            // 
             // assetGraphTabPage
             // 
             this.assetGraphTabPage.Controls.Add(this.assetGraph);
             this.assetGraphTabPage.Location = new System.Drawing.Point(4, 22);
             this.assetGraphTabPage.Name = "assetGraphTabPage";
             this.assetGraphTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.assetGraphTabPage.Size = new System.Drawing.Size(950, 175);
+            this.assetGraphTabPage.Size = new System.Drawing.Size(952, 175);
             this.assetGraphTabPage.TabIndex = 3;
             this.assetGraphTabPage.Text = "Asset Graph";
             this.assetGraphTabPage.UseVisualStyleBackColor = true;
@@ -601,7 +667,7 @@
             // assetGraph.Panel2
             // 
             this.assetGraph.Panel2.Controls.Add(this.assetGraphTextBox);
-            this.assetGraph.Size = new System.Drawing.Size(944, 169);
+            this.assetGraph.Size = new System.Drawing.Size(946, 169);
             this.assetGraph.SplitterDistance = 176;
             this.assetGraph.TabIndex = 2;
             // 
@@ -623,13 +689,26 @@
             this.applyAssetGraphButton.Text = "[A]pply Changes";
             this.applyAssetGraphButton.UseVisualStyleBackColor = true;
             // 
+            // assetGraphTextBox
+            // 
+            this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.assetGraphTextBox.ExtraDescent = 1;
+            this.assetGraphTextBox.Keywords0 = "";
+            this.assetGraphTextBox.Keywords1 = "";
+            this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
+            this.assetGraphTextBox.Name = "assetGraphTextBox";
+            this.assetGraphTextBox.Size = new System.Drawing.Size(766, 169);
+            this.assetGraphTextBox.TabIndex = 0;
+            // 
             // overlayerTabPage
             // 
             this.overlayerTabPage.Controls.Add(this.overlayer);
             this.overlayerTabPage.Location = new System.Drawing.Point(4, 22);
             this.overlayerTabPage.Name = "overlayerTabPage";
             this.overlayerTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.overlayerTabPage.Size = new System.Drawing.Size(950, 175);
+            this.overlayerTabPage.Size = new System.Drawing.Size(952, 175);
             this.overlayerTabPage.TabIndex = 2;
             this.overlayerTabPage.Text = "Overlayer";
             this.overlayerTabPage.UseVisualStyleBackColor = true;
@@ -650,7 +729,7 @@
             // overlayer.Panel2
             // 
             this.overlayer.Panel2.Controls.Add(this.overlayerTextBox);
-            this.overlayer.Size = new System.Drawing.Size(944, 169);
+            this.overlayer.Size = new System.Drawing.Size(946, 169);
             this.overlayer.SplitterDistance = 176;
             this.overlayer.TabIndex = 1;
             // 
@@ -672,13 +751,26 @@
             this.applyOverlayerButton.Text = "[A]pply Changes";
             this.applyOverlayerButton.UseVisualStyleBackColor = true;
             // 
+            // overlayerTextBox
+            // 
+            this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.overlayerTextBox.ExtraDescent = 1;
+            this.overlayerTextBox.Keywords0 = "";
+            this.overlayerTextBox.Keywords1 = "";
+            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
+            this.overlayerTextBox.Name = "overlayerTextBox";
+            this.overlayerTextBox.Size = new System.Drawing.Size(766, 169);
+            this.overlayerTextBox.TabIndex = 0;
+            // 
             // eventTracingTabPage
             // 
             this.eventTracingTabPage.Controls.Add(this.eventTracing);
             this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
             this.eventTracingTabPage.Name = "eventTracingTabPage";
             this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.eventTracingTabPage.Size = new System.Drawing.Size(950, 175);
+            this.eventTracingTabPage.Size = new System.Drawing.Size(952, 175);
             this.eventTracingTabPage.TabIndex = 1;
             this.eventTracingTabPage.Text = "Event Tracing";
             this.eventTracingTabPage.UseVisualStyleBackColor = true;
@@ -700,7 +792,7 @@
             // eventTracing.Panel2
             // 
             this.eventTracing.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.eventTracing.Size = new System.Drawing.Size(944, 169);
+            this.eventTracing.Size = new System.Drawing.Size(946, 169);
             this.eventTracing.SplitterDistance = 176;
             this.eventTracing.TabIndex = 0;
             // 
@@ -732,6 +824,19 @@
             this.applyEventFilterButton.Text = "[A]pply Changes";
             this.applyEventFilterButton.UseVisualStyleBackColor = true;
             // 
+            // eventFilterTextBox
+            // 
+            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.eventFilterTextBox.ExtraDescent = 1;
+            this.eventFilterTextBox.Keywords0 = "";
+            this.eventFilterTextBox.Keywords1 = "";
+            this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
+            this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.Size = new System.Drawing.Size(766, 169);
+            this.eventFilterTextBox.TabIndex = 0;
+            // 
             // splitContainer3
             // 
             this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -746,7 +851,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.tabControl1);
-            this.splitContainer3.Size = new System.Drawing.Size(315, 640);
+            this.splitContainer3.Size = new System.Drawing.Size(313, 640);
             this.splitContainer3.SplitterDistance = 419;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -758,7 +863,7 @@
             this.propertyTabControl.Location = new System.Drawing.Point(0, 0);
             this.propertyTabControl.Name = "propertyTabControl";
             this.propertyTabControl.SelectedIndex = 0;
-            this.propertyTabControl.Size = new System.Drawing.Size(315, 419);
+            this.propertyTabControl.Size = new System.Drawing.Size(313, 419);
             this.propertyTabControl.TabIndex = 1;
             // 
             // entityTabPage
@@ -767,7 +872,7 @@
             this.entityTabPage.Location = new System.Drawing.Point(4, 22);
             this.entityTabPage.Name = "entityTabPage";
             this.entityTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.entityTabPage.Size = new System.Drawing.Size(307, 393);
+            this.entityTabPage.Size = new System.Drawing.Size(305, 393);
             this.entityTabPage.TabIndex = 0;
             this.entityTabPage.Text = "Entity Properties";
             this.entityTabPage.UseVisualStyleBackColor = true;
@@ -786,12 +891,13 @@
             // splitContainer7.Panel2
             // 
             this.splitContainer7.Panel2.Controls.Add(this.panel1);
-            this.splitContainer7.Size = new System.Drawing.Size(301, 387);
-            this.splitContainer7.SplitterDistance = 59;
+            this.splitContainer7.Size = new System.Drawing.Size(299, 387);
+            this.splitContainer7.SplitterDistance = 60;
             this.splitContainer7.TabIndex = 1;
             // 
             // entityPropertyDesigner
             // 
+            this.entityPropertyDesigner.Controls.Add(this.entityIgnorePropertyBindingsCheckBox);
             this.entityPropertyDesigner.Controls.Add(this.entityDesignerPropertyRemoveButton);
             this.entityPropertyDesigner.Controls.Add(this.entityDesignerPropertyNameTextBox);
             this.entityPropertyDesigner.Controls.Add(this.label2);
@@ -802,15 +908,24 @@
             this.entityPropertyDesigner.Dock = System.Windows.Forms.DockStyle.Fill;
             this.entityPropertyDesigner.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyDesigner.Name = "entityPropertyDesigner";
-            this.entityPropertyDesigner.Size = new System.Drawing.Size(301, 59);
+            this.entityPropertyDesigner.Size = new System.Drawing.Size(299, 60);
             this.entityPropertyDesigner.TabIndex = 0;
             this.entityPropertyDesigner.TabStop = false;
-            this.entityPropertyDesigner.Text = "Property Designer";
+            // 
+            // entityIgnorePropertyBindingsCheckBox
+            // 
+            this.entityIgnorePropertyBindingsCheckBox.AutoSize = true;
+            this.entityIgnorePropertyBindingsCheckBox.Location = new System.Drawing.Point(6, 60);
+            this.entityIgnorePropertyBindingsCheckBox.Name = "entityIgnorePropertyBindingsCheckBox";
+            this.entityIgnorePropertyBindingsCheckBox.Size = new System.Drawing.Size(211, 17);
+            this.entityIgnorePropertyBindingsCheckBox.TabIndex = 5;
+            this.entityIgnorePropertyBindingsCheckBox.Text = "Ignore Property Bindings (Session Only)";
+            this.entityIgnorePropertyBindingsCheckBox.UseVisualStyleBackColor = true;
             // 
             // entityDesignerPropertyRemoveButton
             // 
             this.entityDesignerPropertyRemoveButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.entityDesignerPropertyRemoveButton.Location = new System.Drawing.Point(285, 31);
+            this.entityDesignerPropertyRemoveButton.Location = new System.Drawing.Point(277, 32);
             this.entityDesignerPropertyRemoveButton.Name = "entityDesignerPropertyRemoveButton";
             this.entityDesignerPropertyRemoveButton.Size = new System.Drawing.Size(17, 23);
             this.entityDesignerPropertyRemoveButton.TabIndex = 4;
@@ -821,14 +936,14 @@
             // 
             this.entityDesignerPropertyNameTextBox.Location = new System.Drawing.Point(5, 33);
             this.entityDesignerPropertyNameTextBox.Name = "entityDesignerPropertyNameTextBox";
-            this.entityDesignerPropertyNameTextBox.Size = new System.Drawing.Size(115, 20);
+            this.entityDesignerPropertyNameTextBox.Size = new System.Drawing.Size(113, 20);
             this.entityDesignerPropertyNameTextBox.TabIndex = 0;
             this.entityDesignerPropertyNameTextBox.Text = "MyProperty";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(121, 16);
+            this.label2.Location = new System.Drawing.Point(117, 16);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(34, 13);
             this.label2.TabIndex = 2;
@@ -838,9 +953,9 @@
             // 
             this.entityDesignerPropertyTypeComboBox.DropDownWidth = 152;
             this.entityDesignerPropertyTypeComboBox.FormattingEnabled = true;
-            this.entityDesignerPropertyTypeComboBox.Location = new System.Drawing.Point(124, 33);
+            this.entityDesignerPropertyTypeComboBox.Location = new System.Drawing.Point(120, 33);
             this.entityDesignerPropertyTypeComboBox.Name = "entityDesignerPropertyTypeComboBox";
-            this.entityDesignerPropertyTypeComboBox.Size = new System.Drawing.Size(123, 21);
+            this.entityDesignerPropertyTypeComboBox.Size = new System.Drawing.Size(117, 21);
             this.entityDesignerPropertyTypeComboBox.TabIndex = 1;
             // 
             // label1
@@ -848,13 +963,13 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(3, 16);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(35, 13);
+            this.label1.Size = new System.Drawing.Size(91, 13);
             this.label1.TabIndex = 1;
-            this.label1.Text = "Name";
+            this.label1.Text = "Designer Property";
             // 
             // entityDesignerPropertyDefaultButton
             // 
-            this.entityDesignerPropertyDefaultButton.Location = new System.Drawing.Point(267, 31);
+            this.entityDesignerPropertyDefaultButton.Location = new System.Drawing.Point(259, 32);
             this.entityDesignerPropertyDefaultButton.Name = "entityDesignerPropertyDefaultButton";
             this.entityDesignerPropertyDefaultButton.Size = new System.Drawing.Size(17, 23);
             this.entityDesignerPropertyDefaultButton.TabIndex = 3;
@@ -864,7 +979,7 @@
             // entityDesignerPropertyAddButton
             // 
             this.entityDesignerPropertyAddButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.entityDesignerPropertyAddButton.Location = new System.Drawing.Point(249, 31);
+            this.entityDesignerPropertyAddButton.Location = new System.Drawing.Point(241, 32);
             this.entityDesignerPropertyAddButton.Name = "entityDesignerPropertyAddButton";
             this.entityDesignerPropertyAddButton.Size = new System.Drawing.Size(17, 23);
             this.entityDesignerPropertyAddButton.TabIndex = 2;
@@ -877,7 +992,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(301, 324);
+            this.panel1.Size = new System.Drawing.Size(299, 323);
             this.panel1.TabIndex = 2;
             // 
             // entityPropertyGrid
@@ -888,17 +1003,17 @@
             this.entityPropertyGrid.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.entityPropertyGrid.Name = "entityPropertyGrid";
-            this.entityPropertyGrid.Size = new System.Drawing.Size(301, 324);
+            this.entityPropertyGrid.Size = new System.Drawing.Size(299, 323);
             this.entityPropertyGrid.TabIndex = 0;
             this.entityPropertyGrid.ToolbarVisible = false;
             // 
-            // layerTabPage
+            // groupTabPage
             // 
             this.groupTabPage.Controls.Add(this.groupPropertyGrid);
             this.groupTabPage.Location = new System.Drawing.Point(4, 22);
             this.groupTabPage.Name = "groupTabPage";
             this.groupTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.groupTabPage.Size = new System.Drawing.Size(307, 393);
+            this.groupTabPage.Size = new System.Drawing.Size(305, 393);
             this.groupTabPage.TabIndex = 1;
             this.groupTabPage.Text = "Group Properties";
             this.groupTabPage.UseVisualStyleBackColor = true;
@@ -909,7 +1024,7 @@
             this.groupPropertyGrid.LineColor = System.Drawing.SystemColors.ControlDark;
             this.groupPropertyGrid.Location = new System.Drawing.Point(3, 3);
             this.groupPropertyGrid.Name = "groupPropertyGrid";
-            this.groupPropertyGrid.Size = new System.Drawing.Size(301, 387);
+            this.groupPropertyGrid.Size = new System.Drawing.Size(299, 387);
             this.groupPropertyGrid.TabIndex = 0;
             this.groupPropertyGrid.ToolbarVisible = false;
             // 
@@ -921,7 +1036,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(315, 217);
+            this.tabControl1.Size = new System.Drawing.Size(313, 217);
             this.tabControl1.TabIndex = 2;
             // 
             // tabPage4
@@ -930,7 +1045,7 @@
             this.tabPage4.Location = new System.Drawing.Point(4, 22);
             this.tabPage4.Name = "tabPage4";
             this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(307, 191);
+            this.tabPage4.Size = new System.Drawing.Size(305, 191);
             this.tabPage4.TabIndex = 0;
             this.tabPage4.Text = "Entities";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -941,7 +1056,7 @@
             this.entityTreeView.HideSelection = false;
             this.entityTreeView.Location = new System.Drawing.Point(3, 3);
             this.entityTreeView.Name = "entityTreeView";
-            this.entityTreeView.Size = new System.Drawing.Size(301, 185);
+            this.entityTreeView.Size = new System.Drawing.Size(299, 185);
             this.entityTreeView.TabIndex = 1;
             // 
             // tabPage3
@@ -950,7 +1065,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(307, 191);
+            this.tabPage3.Size = new System.Drawing.Size(305, 191);
             this.tabPage3.TabIndex = 1;
             this.tabPage3.Text = "Hierarchy";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -961,7 +1076,7 @@
             this.hierarchyTreeView.HideSelection = false;
             this.hierarchyTreeView.Location = new System.Drawing.Point(3, 3);
             this.hierarchyTreeView.Name = "hierarchyTreeView";
-            this.hierarchyTreeView.Size = new System.Drawing.Size(301, 185);
+            this.hierarchyTreeView.Size = new System.Drawing.Size(299, 185);
             this.hierarchyTreeView.TabIndex = 0;
             // 
             // openFileDialog
@@ -1100,7 +1215,7 @@
             // creationElevationLabel
             // 
             this.creationElevationLabel.Name = "creationElevationLabel";
-            this.creationElevationLabel.Size = new System.Drawing.Size(52, 22);
+            this.creationElevationLabel.Size = new System.Drawing.Size(69, 22);
             this.creationElevationLabel.Text = "@ elevation";
             // 
             // createElevationMinusButton
@@ -1199,7 +1314,7 @@
             this.advancingButton.Image = ((System.Drawing.Image)(resources.GetObject("advancingButton.Image")));
             this.advancingButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.advancingButton.Name = "advancingButton";
-            this.advancingButton.Size = new System.Drawing.Size(72, 22);
+            this.advancingButton.Size = new System.Drawing.Size(91, 22);
             this.advancingButton.Text = "Advancing (F5)";
             // 
             // decUpdateTime
@@ -1266,7 +1381,7 @@
             this.songPlaybackButton});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1313, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1349, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1293,58 +1408,54 @@
             // newGroupToolStripMenuItem
             // 
             this.newGroupToolStripMenuItem.Name = "newGroupToolStripMenuItem";
-            this.newGroupToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.newGroupToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.newGroupToolStripMenuItem.Text = "[&N]ew Group";
+            this.newGroupToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.newGroupToolStripMenuItem.Text = "&New Group (Ctrl+N)";
             // 
             // openGroupToolStripMenuItem
             // 
             this.openGroupToolStripMenuItem.Name = "openGroupToolStripMenuItem";
-            this.openGroupToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openGroupToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.openGroupToolStripMenuItem.Text = "[&O]pen Group";
+            this.openGroupToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.openGroupToolStripMenuItem.Text = "&Open Group (Ctrl+O)";
             // 
             // saveGroupToolStripMenuItem
             // 
             this.saveGroupToolStripMenuItem.Name = "saveGroupToolStripMenuItem";
-            this.saveGroupToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveGroupToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.saveGroupToolStripMenuItem.Text = "[&S]ave Group";
+            this.saveGroupToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.saveGroupToolStripMenuItem.Text = "&Save Group (Ctrl+S)";
             // 
             // saveGroupAsToolStripMenuItem
             // 
             this.saveGroupAsToolStripMenuItem.Name = "saveGroupAsToolStripMenuItem";
-            this.saveGroupAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.saveGroupAsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.saveGroupAsToolStripMenuItem.Text = "Save Group [&A]s";
+            this.saveGroupAsToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
+            this.saveGroupAsToolStripMenuItem.Text = "Save Group &As (Ctrl+A)";
             // 
             // toolStripMenuItem7
             // 
             this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-            this.toolStripMenuItem7.Size = new System.Drawing.Size(192, 6);
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(193, 6);
             // 
             // clearGroupToolStripMenuItem
             // 
             this.clearGroupToolStripMenuItem.Enabled = false;
             this.clearGroupToolStripMenuItem.Name = "clearGroupToolStripMenuItem";
-            this.clearGroupToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.clearGroupToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.clearGroupToolStripMenuItem.Text = "Clear Group";
             // 
             // closeGroupToolStripMenuItem
             // 
             this.closeGroupToolStripMenuItem.Name = "closeGroupToolStripMenuItem";
-            this.closeGroupToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.closeGroupToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.closeGroupToolStripMenuItem.Text = "Close Group";
             // 
             // toolStripMenuItem8
             // 
             this.toolStripMenuItem8.Name = "toolStripMenuItem8";
-            this.toolStripMenuItem8.Size = new System.Drawing.Size(192, 6);
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(193, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(196, 22);
             this.exitToolStripMenuItem.Text = "E[&x]it";
             // 
             // editDropDownButton
@@ -1375,91 +1486,82 @@
             // undoToolStripMenuItem
             // 
             this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
-            this.undoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z)));
-            this.undoToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.undoToolStripMenuItem.Text = "[&U]ndo";
+            this.undoToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.undoToolStripMenuItem.Text = "&Undo (Ctrl+Z)";
             // 
             // redoToolStripMenuItem
             // 
             this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
-            this.redoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
-            this.redoToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.redoToolStripMenuItem.Text = "[&R]edo";
+            this.redoToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.redoToolStripMenuItem.Text = "&Redo (Ctrl+Y)";
             // 
             // toolStripMenuItem9
             // 
             this.toolStripMenuItem9.Name = "toolStripMenuItem9";
-            this.toolStripMenuItem9.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem9.Size = new System.Drawing.Size(213, 6);
             // 
             // cutToolStripMenuItem
             // 
             this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
-            this.cutToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
-            this.cutToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.cutToolStripMenuItem.Text = "C[&u]t";
+            this.cutToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.cutToolStripMenuItem.Text = "C&ut (Ctrl+X)";
             // 
             // copyToolStripMenuItem
             // 
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.copyToolStripMenuItem.Text = "[&C]opy";
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.copyToolStripMenuItem.Text = "&Copy (Ctrl+C)";
             // 
             // pasteToolStripMenuItem
             // 
             this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
-            this.pasteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
-            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.pasteToolStripMenuItem.Text = "[&P]aste";
+            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.pasteToolStripMenuItem.Text = "&Paste (Ctrl+V)";
             // 
             // toolStripMenuItem10
             // 
             this.toolStripMenuItem10.Name = "toolStripMenuItem10";
-            this.toolStripMenuItem10.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem10.Size = new System.Drawing.Size(213, 6);
             // 
             // createToolStripMenuItem
             // 
             this.createToolStripMenuItem.Name = "createToolStripMenuItem";
-            this.createToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.createToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.createToolStripMenuItem.Text = "Cr[&e]ate";
+            this.createToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.createToolStripMenuItem.Text = "Cr&eate (Ctrl+E)";
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.deleteToolStripMenuItem.Text = "[&D]elete";
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.deleteToolStripMenuItem.Text = "&Delete (Ctrl+D)";
             // 
             // quickSizeToolStripMenuItem
             // 
             this.quickSizeToolStripMenuItem.Name = "quickSizeToolStripMenuItem";
-            this.quickSizeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Q)));
-            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.quickSizeToolStripMenuItem.Text = "[&Q]uick Size";
+            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.quickSizeToolStripMenuItem.Text = "&Quick Size (Ctrl+Q)";
             // 
             // toolStripMenuItem11
             // 
             this.toolStripMenuItem11.Name = "toolStripMenuItem11";
-            this.toolStripMenuItem11.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem11.Size = new System.Drawing.Size(213, 6);
             // 
             // startStopAdvancingToolStripMenuItem
             // 
             this.startStopAdvancingToolStripMenuItem.Name = "startStopAdvancingToolStripMenuItem";
-            this.startStopAdvancingToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.startStopAdvancingToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.startStopAdvancingToolStripMenuItem.Text = "[&S]tart / Stop Advancing";
+            this.startStopAdvancingToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.startStopAdvancingToolStripMenuItem.Text = "&Start / Stop Advancing (F5)";
             // 
             // toolStripMenuItem12
             // 
             this.toolStripMenuItem12.Name = "toolStripMenuItem12";
-            this.toolStripMenuItem12.Size = new System.Drawing.Size(198, 6);
+            this.toolStripMenuItem12.Size = new System.Drawing.Size(213, 6);
             // 
             // changeGroupNameToolStripMenuItem
             // 
             this.changeGroupNameToolStripMenuItem.Enabled = false;
             this.changeGroupNameToolStripMenuItem.Name = "changeGroupNameToolStripMenuItem";
-            this.changeGroupNameToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.changeGroupNameToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.changeGroupNameToolStripMenuItem.Text = "Change Group Name";
             // 
             // toolStripSeparator11
@@ -1505,110 +1607,6 @@
             this.songPlaybackButton.Size = new System.Drawing.Size(23, 22);
             this.songPlaybackButton.Text = "toolStripButton1";
             this.songPlaybackButton.ToolTipText = "Toggle Song Playback";
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(958, 435);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
-            // 
-            // propertyValueTextBox
-            // 
-            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyValueTextBox.ExtraDescent = 1;
-            this.propertyValueTextBox.Keywords0 = "";
-            this.propertyValueTextBox.Keywords1 = "";
-            this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
-            this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(764, 169);
-            this.propertyValueTextBox.TabIndex = 0;
-            // 
-            // evalInputTextBox
-            // 
-            this.evalInputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalInputTextBox.ExtraDescent = 1;
-            this.evalInputTextBox.Keywords0 = "";
-            this.evalInputTextBox.Keywords1 = "";
-            this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalInputTextBox.Name = "evalInputTextBox";
-            this.evalInputTextBox.Size = new System.Drawing.Size(559, 175);
-            this.evalInputTextBox.TabIndex = 0;
-            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]\n";
-            // 
-            // evalOutputTextBox
-            // 
-            this.evalOutputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalOutputTextBox.ExtraDescent = 1;
-            this.evalOutputTextBox.Keywords0 = "";
-            this.evalOutputTextBox.Keywords1 = "";
-            this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalOutputTextBox.Name = "evalOutputTextBox";
-            this.evalOutputTextBox.ReadOnly = true;
-            this.evalOutputTextBox.Size = new System.Drawing.Size(339, 175);
-            this.evalOutputTextBox.TabIndex = 0;
-            // 
-            // preludeTextBox
-            // 
-            this.preludeTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.preludeTextBox.ExtraDescent = 1;
-            this.preludeTextBox.Keywords0 = "";
-            this.preludeTextBox.Keywords1 = "";
-            this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
-            this.preludeTextBox.Name = "preludeTextBox";
-            this.preludeTextBox.Size = new System.Drawing.Size(764, 169);
-            this.preludeTextBox.TabIndex = 0;
-            // 
-            // assetGraphTextBox
-            // 
-            this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.assetGraphTextBox.ExtraDescent = 1;
-            this.assetGraphTextBox.Keywords0 = "";
-            this.assetGraphTextBox.Keywords1 = "";
-            this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
-            this.assetGraphTextBox.Name = "assetGraphTextBox";
-            this.assetGraphTextBox.Size = new System.Drawing.Size(764, 169);
-            this.assetGraphTextBox.TabIndex = 0;
-            // 
-            // overlayerTextBox
-            // 
-            this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.overlayerTextBox.ExtraDescent = 1;
-            this.overlayerTextBox.Keywords0 = "";
-            this.overlayerTextBox.Keywords1 = "";
-            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
-            this.overlayerTextBox.Name = "overlayerTextBox";
-            this.overlayerTextBox.Size = new System.Drawing.Size(764, 169);
-            this.overlayerTextBox.TabIndex = 0;
-            // 
-            // eventFilterTextBox
-            // 
-            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.ExtraDescent = 1;
-            this.eventFilterTextBox.Keywords0 = "";
-            this.eventFilterTextBox.Keywords1 = "";
-            this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(764, 169);
-            this.eventFilterTextBox.TabIndex = 0;
             // 
             // GaiaForm
             // 
@@ -1842,6 +1840,7 @@
         public System.Windows.Forms.ToolStripButton resetUpdateTime;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         public System.Windows.Forms.ToolStripButton songPlaybackButton;
+        public System.Windows.Forms.CheckBox entityIgnorePropertyBindingsCheckBox;
     }
 }
 

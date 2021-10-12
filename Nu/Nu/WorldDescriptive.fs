@@ -99,6 +99,7 @@ type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address
     | BindDefinition of World Lens * World Lens
+    | LinkDefinition of World Lens * World Lens
 
 /// Contains primitives for describing simulants.
 [<RequireQualifiedAccess>]
@@ -110,7 +111,8 @@ module Describe =
             match initializer with
             | PropertyDefinition def -> Some (def.PropertyType, def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
-            | BindDefinition _ -> None) |>
+            | BindDefinition _ -> None
+            | LinkDefinition _ -> None) |>
         List.definitize |>
         List.map (fun (ty, name, expr) ->
             let valueOpt =
@@ -129,23 +131,25 @@ module Describe =
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition (handler, partialAddress) -> Some (handler, partialAddress --> simulant.SimulantAddress, simulant)
-            | BindDefinition _ -> None) |>
+            | BindDefinition _ -> None
+            | LinkDefinition _ -> None) |>
         List.definitize
 
-    let private initializersTobinds initializers (simulant : Simulant) =
+    let private initializersToBinds initializers (simulant : Simulant) =
         initializers |>
         List.map (fun initializer ->
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | BindDefinition (left, right) -> Some (simulant, left, right)) |>
+            | BindDefinition (left, right) -> Some (simulant, left, right, false)
+            | LinkDefinition (left, right) -> Some (simulant, left, right, true)) |>
         List.definitize
 
     /// Describe a simulant with the given initializers and contained children.
     let simulant5 dispatcherName nameOpt (initializers : PropertyInitializer list) children simulant world =
         let properties = initializersToProperties initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
-        let binds = initializersTobinds initializers simulant
+        let binds = initializersToBinds initializers simulant
         let descriptor = { SimulantNameOpt = nameOpt; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
         (descriptor, eventHandlers, binds)
 

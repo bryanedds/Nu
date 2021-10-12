@@ -125,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         characterState
 
 type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
-    { TimeStart : int64
+    { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
       Direction : Direction }
@@ -136,7 +136,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member setCharacterAnimationType timeOpt characterAnimationType state =
         if state.CharacterAnimationType <> characterAnimationType then
             match timeOpt with
-            | Some time -> { state with TimeStart = time; CharacterAnimationType = characterAnimationType }
+            | Some time -> { state with StartTime = time; CharacterAnimationType = characterAnimationType }
             | None -> { state with CharacterAnimationType = characterAnimationType }
         else state
 
@@ -147,12 +147,12 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         | Downward -> 2
         | Leftward -> 3
 
-    static member timeLocal time state =
-        time - state.TimeStart
+    static member localTime time state =
+        time - state.StartTime
 
     static member indexCel delay time state =
-        let timeLocal = CharacterAnimationState.timeLocal time state
-        int (timeLocal / delay)
+        let localTime = CharacterAnimationState.localTime time state
+        int (localTime / delay)
 
     static member indexLooped run delay time state =
         CharacterAnimationState.indexCel delay time state % run
@@ -194,22 +194,28 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
             | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
         | None -> v2iZero
 
+    static member inset time (celSize : Vector2) state =
+        let index = CharacterAnimationState.index time state
+        let offset = v2 (single index.X) (single index.Y) * celSize
+        let inset = v4Bounds offset celSize
+        inset
+
     static member progressOpt time state =
         match Map.tryFind state.CharacterAnimationType Data.Value.CharacterAnimations with
         | Some animationData ->
-            let timeLocal = CharacterAnimationState.timeLocal time state
+            let localTime = CharacterAnimationState.localTime time state
             match animationData.LengthOpt with
-            | Some length -> Some (min 1.0f (single timeLocal / single length))
+            | Some length -> Some (min 1.0f (single localTime / single length))
             | None -> None
         | None -> None
 
     static member getFinished time state =
         match CharacterAnimationState.progressOpt time state with
         | Some progress -> progress = 1.0f
-        | None -> false
+        | None -> true
 
     static member empty =
-        { TimeStart = 0L
+        { StartTime = 0L
           AnimationSheet = Assets.Field.JinnAnimationSheet
           CharacterAnimationType = IdleAnimation
           Direction = Downward }
@@ -314,7 +320,7 @@ module Character =
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
 
         (* Animation Properties *)
-        member this.TimeStart = this.CharacterAnimationState_.TimeStart
+        member this.TimeStart = this.CharacterAnimationState_.StartTime
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
@@ -427,6 +433,7 @@ module Character =
                 | Slash -> 1.25f
                 | TechType.Flame -> 1.45f
                 | Snowball -> 1.125f
+                | Cure -> 1.5f
                 | Aura -> 1f
                 | Empower -> 0.75f
                 | Enlighten -> 0.75f
@@ -472,6 +479,9 @@ module Character =
 
     let getAttackResult effectType source target =
         CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
+
+    let getAnimationInset time (character : Character) =
+        CharacterAnimationState.inset time character.CelSize_ character.CharacterAnimationState_
 
     let getAnimationIndex time character =
         CharacterAnimationState.index time character.CharacterAnimationState_
@@ -642,7 +652,7 @@ module Character =
 
     let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
-        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
+        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
@@ -655,7 +665,7 @@ module Character =
           CelSize_ = celSize
           InputState_ = NoInput }
 
-    let tryMakeEnemy index indexMax offsetCharacters waitSpeed enemyData =
+    let tryMakeEnemy index offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -674,11 +684,10 @@ module Character =
                 let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-                let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
                 let actionTime =
                     if waitSpeed
-                    then 500.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
-                    else 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                    then Constants.Battle.EnemyActionTimeSpacing * single index + 225.0f
+                    else Constants.Battle.EnemyActionTimeSpacing * single index + 150.0f
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
@@ -686,7 +695,7 @@ module Character =
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let characterAnimationState = { TimeStart = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0

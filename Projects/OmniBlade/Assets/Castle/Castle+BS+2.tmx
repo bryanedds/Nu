@@ -1,25 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="7">
  <tileset firstgid="1" source="Castle.tsx"/>
- <layer id="2" name="Floor" width="32" height="32">
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="5" name="Basement" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaEJAAAIADDB5y3+bPEBo7CwvMqIAs56+f1+v9/v9/v9fv+HfwD9TS0j
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzaEJAAAIADDB5y3+bPEAq7CwvMqIAt7p5ff7/X6/3+/3+/0XA325LRk=
+  </data>
+ </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUkApKeBgYpkBxKQ/97V8CtPMKFC8dxvZL8DIwSAKxFC/x9uPSQw7QAJqhCcRaJNiPSw81wUiJ/1H7B9b+0fyHHQyF+J89wv0/nO1vAdo5FYpbB8D+UTAKRsHQBwDDmzut
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlksKgzAQhkPFi7hpD9aHtNjqRTyRm/ZCbuq+ERIIQzKvxEXBgdmYmXxfHz84VsaMSD9qY17KvtX43VSv7MH2+6DrPsPBsz/2nq+yJ6VDyF5sHytdzwoHyD7ZZ9pqhA4l2VIHin23Z1fbzzrNSs1QDpzP3bqdDuFjM5hDx/jOe5fpAeFTM6FDC/jU7z25TK+eOTPeAfKp/9rsMr0gd3NmvAPkU9W4TGOenBlfUn7pCvkXJFec3El31vMzyGDKgZM7yU6MjTlwcgcrtYOxUw6cTMGK7XDYMQdupsKCOxI2dJBkyle4o2FzcsGpHHauQwm21qEkW+qwBZvrsCXbN+f9Y+fv/J3/H/wf8PVzKQ==
+   eJy9lztOAzEQhq2s0mTJASCigSIRlHAJhKh5CKh4CQQkF8khaHlUVIgUpIaDAAUSAkTJjHZHGQ1j76yTzS/9ysqx5/uH2MjbT5zrB3xWd+4y0sf1cO0iI7sHfqrFuTtGBmIPoc5XpB8jM3D2N7idZF5MRs8Wf0RkkOwOjK00nVsFD1LnbsC3Ht+l2ZznGedewAslM2hsrnmouQv198D76Wicj+EcLmsGyR42svWnMHYEvgBviNqacA5fg8JaoQwa+zPnd/Oz1MtrdVKdi2qn+hqsFcpw7mGjcP6gln2P2grwN1N9jZbhRPDp98Z5SwGGpX9Uqzl6pnpYm/aD5PO9thNgWPpHLTM+1aNPzCD5pFeY8wB+93Cs/XNhzTdR08efhf07B2559rq1fy6siT3xmpx/yM7KGszZhrnr+Vx5liz9yzVazQNxBnkGLnmWLP3LNVwaO5RBniVL/9r5K2KHMvCzFPP7W9m+DPwsxez/Muyi/VC2/xg2z/DT+F/zqmkb+23Es0N/h2uFJcfG6bsow73C52OTZBftB6kq2NYMVbKLMkyD7cswTTbPQJo2m97JSJN41yrDprsqKfY9J8b8rkrS7pRV8uW7iXanrJKPbP7/Dp/lndLqP0Z1n4w=
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyieqpaSapbiUFkGM2BzA+OYGYi4R4JUcPPYAWN2E1INA2gO5eAIyjfqD9i6iYDmD5hlh/aQLDaT6V0yHIzP5Blh6GAhhO+W8UkA7yWMnXm0WB3lEwCkbBKBisYBEvdja9wGpe7OyhBgD3TSjt
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztkzEKgDAQBK9JmU9a+Ay1Uzv1DbbWSl7nQhIMwUJCQgp3YMDD41KNyDc6LdLDwfn2P9zJzYibE5zh7vT4OdzJzYKbK9zg4fT4OdwpwYm7FzT6+Y5nU+htUoeUpnJ2mNJUzg5TmirdIfkP7I/9EUJITKustWiUlZBUbmuhL4w=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="606" y="576" width="324" height="276">
+  <object id="2" gid="235" x="606" y="768" width="324" height="276">
    <properties>
-    <property name="I" value="[Npc AraneaImplicitumNpc Downward [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
+    <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
+  [Sequence
+   [[Dialog &quot;What a delightful addition...&quot;]
+    [Dialog &quot;...to my web of souls!&quot;]
+    [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]</property>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [AraneaImplicitumDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="1488" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="1" x="552" y="564" width="432" height="720">
+   <properties>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
+   </properties>
+  </object>
+  <object id="6" gid="235" x="696" y="492" width="144" height="144">
+   <properties>
+    <property name="I">[Character
+  [Enemy Kyla]
+  Downward
+  True
+  True
+  [Sequence
+   [ClearSpirits
+    [FadeOutSong 2000]
+    [Wait 120]
+    [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
+    [Wait 300]
+    [Dialog &quot;One hundred years...&quot; False]
+    [Dialog &quot;For one hundred years that demon crawled its way into this world through the open wound in my soul...&quot; False]
+    [Dialog &quot;One hundred years of sorrow... anguish...&quot; False]
+    [Dialog &quot;...living through unbearable memories over and over...&quot; False]
+    [Dialog &quot;All for a fleeting moment of vengeance...&quot; False]
+    [Wait 120]
+    [Dialog &quot;The truth is clear now.&quot; False]
+    [Wait 60]
+    [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [Wait 60]
+    [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
+    [Wait 120]
+    [Dialog &quot;You cannot answer darkness with darkness...&quot; False]
+    [Wait 180]
+    [FadeOutSong 4000]
+    [Dialog &quot;What is that sound?&quot; False]
+    [Wait 90]
+    [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Wait 90]
+    [Dialog &quot;I think I can feel the wind...&quot; False]
+    [PlaySong 1000 0 0.5 0 [Field ItsTimeToGo]]
+    [Parallel
+     [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 558]]]
+    [Parallel
+     [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
+      [Sequence
+       [[Wait 120]
+        [Dialog &quot;There's already enough suffering in the world...&quot; True]
+        [Wait 120]
+        [Dialog &quot;There's too much suffering in the world...&quot; True]
+        [Wait 180]
+        [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
+    [Wait 240]
+    [FadeOutSong 5000]
+    [Fade [SpriteTarget HeavenlyLight] 300 False]
+    [Wait 120]
+    [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
+    [PlaySound 0.5 [Field Unlatch]]]]
+  [[KylaAdvent 6] AraneaImplicitumDefeated]]</property>
    </properties>
   </object>
  </objectgroup>

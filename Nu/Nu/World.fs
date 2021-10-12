@@ -220,6 +220,10 @@ module Nu =
             WorldModule.isSelected <- fun simulant world ->
                 World.isSelected simulant world
 
+            // init ignorePropertyBindings F# reach-around
+            WorldModule.ignorePropertyBindings <- fun simulant world ->
+                World.ignorePropertyBindings simulant world
+
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 
                 World.getScreenEcs
@@ -309,12 +313,16 @@ module Nu =
                                 World.trySetPropertyFast left.Name property simulant world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
-                let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }
-                let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
+                let rightFixup = Lens.makePlus right.Name right.ValidateOpt right.GetWithoutValidation None right.This
+                let world =
+                    // propagate immediately to start things out synchronized if possible.
+                    if World.getExists rightFixup.This world
+                    then tryPropagateByLens leftFixup rightFixup world
+                    else world
                 let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
                 let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
-                let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
+                let world = World.monitor (fun _ world -> (Cascade, if not (World.ignorePropertyBindings leftFixup.This world) then tryPropagate simulant leftFixup rightFixup world else world)) (Events.Register --> right.This.SimulantAddress) simulant world
                 let world = World.increaseBindingCount right.This world
                 World.addPropertyBinding propertyBindingKey propertyAddress leftFixup rightFixup world
 
@@ -394,6 +402,7 @@ module WorldModule3 =
                  EffectFacet () :> Facet
                  ScriptFacet () :> Facet
                  TextFacet () :> Facet
+                 RigidBodyFastFacet () :> Facet
                  RigidBodyFacet () :> Facet
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
@@ -445,8 +454,7 @@ module WorldModule3 =
 
             // make the world's ambient state
             let ambientState =
-                let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
-                let overlayRouter = OverlayRouter.make overlayRoutes
+                let overlayRouter = OverlayRouter.empty
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
 
@@ -511,7 +519,7 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherType = if config.StandAlone then plugin.GetGameDispatcher () else typeof<GameDispatcher>
+                let activeGameDispatcherType = if config.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
                 let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems
@@ -543,9 +551,11 @@ module WorldModule3 =
                     // make the world's ambient state
                     let ambientState =
                         let assetMetadataMap = Metadata.make config.Imperative assetGraph
-                        let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
-                        let userOverlayRoutes = plugin.MakeOverlayRoutes ()
-                        let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
+                        let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
+                        let overlayRoutes =
+                            overlays |>
+                            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
+                            List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)

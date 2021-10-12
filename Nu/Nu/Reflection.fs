@@ -31,6 +31,7 @@ module Reflection =
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
+             ("IgnorePropertyBindings", true)
              ("CreationTimeStamp", true)
              ("Optimized", true)
              ("ScriptFrame", true)
@@ -38,6 +39,13 @@ module Reflection =
              ("ScriptUnsubscriptions", true)
              ("TmxMap", true)
              ("NodeUnsubscribe", true)
+             ("BodyPosition", true)
+             ("BodySize", true)
+             ("BodyAngle", true)
+             ("BodyRotation", true)
+             ("BodyBounds", true)
+             ("BodyCenter", true)
+             ("BodyBottom", true)
 
              // emitter properties
              ("ParticleSystem", true)

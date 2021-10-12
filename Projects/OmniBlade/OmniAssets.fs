@@ -16,7 +16,7 @@ module Assets =
 
     [<RequireQualifiedAccess>]
     module Data =
-        
+
         let WeaponDataFilePath = "Assets/Data/WeaponData.csv"
         let ArmorDataFilePath = "Assets/Data/ArmorData.csv"
         let AccessoryDataFilePath = "Assets/Data/AccessoryData.csv"
@@ -73,19 +73,18 @@ module Assets =
     module Field =
 
         let PackageName = "Field"
-        let DebugRoomTileMap = asset<TileMap> PackageName "DebugRoom" // TODO: P1: Convert tile sheet.
         let WoodenChestOpenedImage = asset<Image> PackageName "WoodenChestOpened"
         let WoodenChestClosedImage = asset<Image> PackageName "WoodenChestClosed"
         let BrassChestOpenedImage = asset<Image> PackageName "BrassChestOpened"
         let BrassChestClosedImage = asset<Image> PackageName "BrassChestClosed"
-        let WoodenDoorOpenedImage = asset<Image> PackageName "WoodenDoorOpened" // TODO: P1: Convert art.
-        let WoodenDoorClosedImage = asset<Image> PackageName "WoodenDoorClosed" // TODO: P1: Convert art.
+        let WoodenDoorOpenedImage = asset<Image> PackageName "WoodenDoorOpened"
+        let WoodenDoorClosedImage = asset<Image> PackageName "WoodenDoorClosed"
         let ThrowSwitchOffImage = asset<Image> PackageName "ThrowSwitchOff" // TODO: P1: Convert art.
         let ThrowSwitchOnImage = asset<Image> PackageName "ThrowSwitchOn" // TODO: P1: Convert art.
         let StepPlateImage = asset<Image> PackageName "StepPlate" // TODO: P1: Convert art.
-        let FlameImage = asset<Image> PackageName "Flame"
         let SavePointImage = asset<Image> PackageName "SavePoint" // TODO: P1: Convert art.
         let StairsImage = asset<Image> PackageName "Stairs"
+        let FlameImage = asset<Image> PackageName "Flame"
         let SpiritImage = asset<Image> PackageName "Spirit"
         let SpiritChestClosedImage = asset<Image> PackageName "SpiritChestClosed"
         let SpiritChestOpenedImage = asset<Image> PackageName "SpiritChestOpened"
@@ -112,7 +111,7 @@ module Assets =
         let BeastGrowlSound = asset<Sound> PackageName "BeastGrowl"
         let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
-        let AuraSound = asset<Sound> PackageName "Aura"
+        let CureSound = asset<Sound> PackageName "Cure"
         let PurchaseSound = asset<Sound> PackageName "Purchase"
         let DoorOpenSound = asset<Sound> PackageName "DoorOpen"
         let ChestOpenSound = asset<Sound> PackageName "ChestOpen"
@@ -138,9 +137,8 @@ module Assets =
 
     [<RequireQualifiedAccess>]
     module Battle =
-        
+
         let PackageName = "Battle"
-        let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle"
         let CancelImage = asset<Image> PackageName "Cancel"
         let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert effect art.
         let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur" // TODO: P1: Convert effect art.

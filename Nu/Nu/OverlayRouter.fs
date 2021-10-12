@@ -6,13 +6,14 @@ open System
 open Prime
 open Nu
 
+// TODO: collapse OverlayRouter into Overlayer,
 [<RequireQualifiedAccess>]
 module OverlayRouter =
 
     /// Maps from type names to overlay descriptors.
     type OverlayRouter =
         private
-            { Routes : Map<string, string option> }
+            { Routes : Map<string, string> }
 
     /// Try to find an optional overlay name for a given classification.
     let tryFindOverlayNameOpt dispatcherName overlayRouter =
@@ -21,6 +22,10 @@ module OverlayRouter =
     /// Make an OverlayRouter.
     let make userRoutes =
         { Routes = Map.ofList userRoutes }
+
+    /// The empty OverlayRouter.
+    let empty =
+        { Routes = Map.empty }
         
 /// Maps from type names to overlay descriptors.
 type OverlayRouter = OverlayRouter.OverlayRouter

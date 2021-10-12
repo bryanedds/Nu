@@ -17,8 +17,8 @@ type BattleSpeed =
 type BattleState =
     | BattleReady of int64
     | BattleRunning
-    | BattleResults of bool * int64
-    | BattleCease of bool * Advent Set * int64
+    | BattleResults of int64 * bool
+    | BattleQuitting of int64 * bool * Advent Set
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
     { Action : ActionType
@@ -31,11 +31,11 @@ type [<ReferenceEquality; NoComparison>] ActionCommand =
           TargetOpt = targetOpt }
 
 type [<ReferenceEquality; NoComparison>] CurrentCommand =
-    { TimeStart : int64
+    { StartTime : int64
       ActionCommand : ActionCommand }
 
-    static member make timeStart actionCommand =
-        { TimeStart = timeStart; ActionCommand = actionCommand }
+    static member make startTime actionCommand =
+        { StartTime = startTime; ActionCommand = actionCommand }
 
 [<RequireQualifiedAccess>]
 module Battle =
@@ -48,6 +48,7 @@ module Battle =
               PrizePool_ : PrizePool
               TileMap_ : TileMap AssetTag
               TileIndexOffset_ : int
+              TileIndexOffsetRange_ : int * int
               BattleSongOpt_ : Song AssetTag option
               BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
@@ -62,6 +63,7 @@ module Battle =
         member this.PrizePool = this.PrizePool_
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
+        member this.TileIndexOffsetRange = this.TileIndexOffsetRange_
         member this.BattleSongOpt = this.BattleSongOpt_
         member this.BattleSpeed = this.BattleSpeed_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
@@ -449,7 +451,6 @@ module Battle =
         let origin = v2 -288.0f -240.0f
         let tile = v2 48.0f 48.0f
         let layout = randomizeEnemyLayout w h enemies
-        let enemyIndexMax = dec enemies.Length
         let enemies =
             layout |>
             Array.mapi (fun x arr ->
@@ -459,7 +460,7 @@ module Battle =
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
                         let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
-                        Character.tryMakeEnemy enemyIndex enemyIndexMax offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>
@@ -474,6 +475,7 @@ module Battle =
         let prizePool = { prizePool with Items = List.fold (fun items (enemy : Character) -> match enemy.ItemPrizeOpt with Some item -> item :: items | None -> items) prizePool.Items enemies }
         let tileMap = battleData.BattleTileMap
         let tileIndexOffset = battleData.BattleTileIndexOffset
+        let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
             { BattleState_ = BattleReady time
               Characters_ = characters
@@ -481,6 +483,7 @@ module Battle =
               PrizePool_ = prizePool
               TileMap_ = tileMap
               TileIndexOffset_ = tileIndexOffset
+              TileIndexOffsetRange_ = tileIndexOffsetRange
               BattleSongOpt_ = battleData.BattleSongOpt
               BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
@@ -519,28 +522,31 @@ module Battle =
         battle
 
     let empty =
-        { BattleState_ = BattleReady 0L
-          Characters_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 0 }
-          PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-          TileMap_ = Assets.Battle.DebugBattleTileMap
-          TileIndexOffset_ = 0
-          BattleSongOpt_ = None
-          BattleSpeed_ = SwiftSpeed
-          CurrentCommandOpt_ = None
-          ActionCommands_ = Queue.empty
-          DialogOpt_ = None }
+        match Map.tryFind EmptyBattle Data.Value.Battles with
+        | Some battle ->
+            { BattleState_ = BattleQuitting (0L, false, Set.empty)
+              Characters_ = Map.empty
+              Inventory_ = Inventory.empty
+              PrizePool_ = PrizePool.empty
+              TileMap_ = battle.BattleTileMap
+              TileIndexOffset_ = 0
+              TileIndexOffsetRange_ = (0, 0)
+              BattleSongOpt_ = None
+              BattleSpeed_ = SwiftSpeed
+              CurrentCommandOpt_ = None
+              ActionCommands_ = Queue.empty
+              DialogOpt_ = None }
+        | None -> failwith "Expected data for DebugBattle to be available."
 
     let debug =
         match Map.tryFind DebugBattle Data.Value.Battles with
         | Some battle ->
             let level = 50
-            let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
                 Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
                 Map.add 2 (Teammate.makeAtLevel level 2 Mael)
-            makeFromTeam Inventory.initial prizePool team SwiftSpeed battle 0L
+            makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle 0L
         | None -> empty
 
 type Battle = Battle.Battle

@@ -7,9 +7,5 @@ open OmniBlade
 
 type OmniPlugin () =
     inherit NuPlugin ()
-    override this.GetGameDispatcher () = typeof<OmniDispatcher>
-    override this.GetEditorScreenDispatcher () = (Simulants.Battle.Screen, typeof<BattleDispatcher>)
-    override this.MakeOverlayRoutes () =
-        [(typeof<ButtonDispatcher>.Name, Some "ButtonDispatcherRoute")
-         (typeof<TextDispatcher>.Name, Some "TextDispatcherRoute")
-         (typeof<ToggleDispatcher>.Name, Some "ToggleDispatcherRoute")]
+    override this.StandAloneConfig = typeof<OmniBladeDispatcher>
+    override this.EditorConfig = (Simulants.Battle.Screen, typeof<DebugBattleDispatcher>)

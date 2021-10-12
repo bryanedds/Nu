@@ -150,7 +150,7 @@ module TmxMap =
                 match tileSet.Tiles.TryGetValue tileId with
                 | (true, tileSetTile) -> Some tileSetTile
                 | (false, _) -> None
-            tileDescriptor.TileXXX <- tile
+            tileDescriptor.Tile <- tile
             tileDescriptor.TileI <- i
             tileDescriptor.TileJ <- j
             tileDescriptor.TilePositionI <- tilePositionI
@@ -197,6 +197,38 @@ module TmxMap =
                                 l.Add (v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF)
                             | (false, _) ->
                                 tileBoxes.Add (tileCenter.Y, List [v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF])
+                        | "Top" ->
+                            let tileShape = BodyBox { Extent = v2 1.0f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "Bottom" ->
+                            let tileShape = BodyBox { Extent = v2 1.0f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "Left" ->
+                            let tileShape = BodyBox { Extent = v2 -0.5f 1.0f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "Right" ->
+                            let tileShape = BodyBox { Extent = v2 0.5f 1.0f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "TopLeft" ->
+                            let tileShape = BodyBox { Extent = v2 -0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "TopRight" ->
+                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "BottomLeft" ->
+                            let tileShape = BodyBox { Extent = v2 -0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                        | "BottomRight" ->
+                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
                         | _ ->
                             let tileShape = scvalue<BodyShape> cexpr
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
@@ -229,7 +261,7 @@ module TmxMap =
         bodyShapes
 
     let getBodyShapes tileMapDescriptor =
-        tileMapDescriptor.TileMap.Layers |>
+        tileMapDescriptor.TileMap.TileLayers |>
         Seq.fold (fun shapess tileLayer ->
             let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
             shapes :: shapess)
@@ -264,8 +296,8 @@ module TmxMap =
         bodyProperties
 
     /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
-    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset (tileMap : TmxMap) =
-        let layers = List.ofSeq tileMap.Layers
+    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
+        let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let tileAssets = tileMap.ImageAssets
@@ -320,7 +352,9 @@ module TmxMap =
                                         let xTileIndex = xI + yI * tileMap.Width
                                         let xTile = layer.Tiles.[xTileIndex]
                                         let xTileGid =
-                                            if xTile.Gid <> 0 then // never offset the zero tile!
+                                            if  xTile.Gid <> 0 && // never offset the zero tile!
+                                                xTile.Gid >= fst tileIndexOffsetRange &&
+                                                xTile.Gid < snd tileIndexOffsetRange then
                                                 let xTileGidOffset = xTile.Gid + tileIndexOffset
                                                 if xTileGidOffset > 0 && xTileGidOffset < tileGidCount then xTileGidOffset
                                                 else xTile.Gid

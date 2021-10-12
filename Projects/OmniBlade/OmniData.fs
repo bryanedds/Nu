@@ -10,25 +10,6 @@ open TiledSharp
 open Prime
 open Nu
 
-
- type FrenchWordGender =
-     |Masculin
-     |Feminin
-     member this.UndefinedArticle =
-            match this with
-            |Masculin -> "un "
-            |Feminin -> "une "
- type NumberAndGender = 
-        |Singular of FrenchWordGender
-        |Plural of FrenchWordGender 
-        member this.UndefinedArticle =
-             match this with
-             |Singular gender -> gender.UndefinedArticle
-             |Plural _ -> "des"
-            
- 
-
-
 type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
@@ -52,28 +33,6 @@ type CharacterIndex =
         | AllyIndex i -> "Ally+" + scstring i
         | EnemyIndex i -> "Enemy+" + scstring i
 
-type Advent =
-    | DebugSwitch
-    | DebugSwitch2
-    | Opened of Guid
-    | ShadeRecruited
-    | MaelRecruited
-    | RiainRecruited
-    | PericRecruited
-    | MadTrixterDefeated
-    | HeavyArmorosDefeated
-    | AraneaImplicitumDefeated
-    | CastleUnsealed
-    | ForestUnsealed
-    | FactoryUnsealed
-    | MountainUnsealed
-    | DeadSeaUnsealed
-    | RuinsUnsealed
-    | DesertUnsealed
-    | Castle2Unsealed
-    | SeasonsUnsealed
-    | VolcanoUnsealed
-
 type Direction =
     | Upward
     | Rightward
@@ -88,6 +47,16 @@ type Direction =
         | Leftward -> Rightward
 
     static member ofVector2 (v2 : Vector2) =
+        let angle = double (atan2 v2.Y v2.X)
+        let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
+        let direction =
+            if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
+            elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
+            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then  Upward
+            else                                                            Downward
+        direction
+
+    static member ofVector2Biased (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
@@ -145,7 +114,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Silence
     | Sleep
     | Confuse
-    // Blind - maybe in the sequal
+    //| Blind - maybe in the sequal
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
@@ -159,7 +128,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Silence -> Gen.random1 3 = 0
         | Sleep -> Gen.random1 4 = 0
         | Confuse -> Gen.random1 3 = 0
-        | Time _ | Power (_, _) | Magic (_, _) | Shield (_, _) -> true
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
+        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
 
     static member enumerate this =
         match this with
@@ -195,192 +165,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
     override this.GetHashCode () =
         StatusType.enumerate this
 
-type WeaponType =
-    | Bare
-    | ShortSword
-    | Dagger
-    | OakRod
-    | OakBow
-    | Paws
-    | BronzeSword
-    | BronzeKatana
-    | BronzeRod
-    | LightBow
-    | Claws
-    | IronSword
-    | IronKatana
-    | SightedBow
-    | IvoryRod
-    | Fangs
-    static member frenchName wt = match wt with 
-                                  |Bare -> "Mains Nues"
-                                  |ShortSword -> "Epee Courte"
-                                  |Dagger -> "Dague"
-                                  |OakRod -> "Baguette en Bois "
-                                  |OakBow -> "Arc en Bois"
-                                  |Paws -> "Pattes"
-                                  |BronzeSword -> "Epee de Bronze"
-                                  |BronzeKatana -> "Katana de Bronze"
-                                  |BronzeRod -> "Baguette de Bronze"
-                                  |LightBow -> "Arc de Lumiere"
-                                  |Claws -> "Griffes"
-                                  |IronSword -> "Epee de Fer"
-                                  |IronKatana -> "Katana de Fer"
-                                  |SightedBow -> "Arc Droit"
-    static member NumberAndGender wt = match wt with
-                                        |Bare -> Plural Feminin
-                                        |ShortSword -> Singular Feminin
-                                        |Dagger -> Singular Feminin
-                                        |OakRod -> Singular Feminin
-                                        |OakBow -> Singular Masculin 
-                                        |Paws -> Plural Feminin
-                                        |BronzeSword -> Singular Feminin
-                                        |BronzeKatana -> Singular Masculin 
-                                        |BronzeRod -> Singular Feminin  
-                                        |LightBow -> Singular Masculin 
-                                        |Claws -> Plural Feminin
-                                        |IronSword -> Singular Feminin 
-                                        |IronKatana -> Singular Masculin 
-                                        |SightedBow -> Singular Masculin 
-    static member frenchWithUndefinedArticle wt = 
-                    let article = (WeaponType.NumberAndGender wt).UndefinedArticle
-                            in article + WeaponType.frenchName wt 
-
-type ArmorType =
-    | MicroFur
-    | TinMail
-    | CottonVest
-    | CottonRobe
-    | ThinFur
-    | BronzeMail
-    | LeatherVest
-    | LeatherRobe
-    | ThickFur
-    | IronMail
-    | RubberVest
-    | SilkRobe
-    | ToughHide
-    | StoneHide
-    static member frenchName at = match at with
-                                  |MicroFur -> "Fourrure Fine"
-                                  |TinMail -> "Cotte de Fer Blanc"
-                                  |CottonVest -> "Veste de Coton"
-                                  |CottonRobe -> "Robe de Coton"
-                                  |ThinFur -> "Fourrure Fine"
-                                  |BronzeMail -> "Cotte de Bronze"
-                                  |LeatherVest -> "Veste de Cuir"
-                                  |LeatherRobe -> "Robe de Cuir"
-                                  |ThickFur -> "Fourrure"
-                                  |IronMail -> "Cotte de Fer"
-                                  |RubberVest -> "Veste de Caoutchouc"
-                                  |SilkRobe -> "Robe de Soie"
-                                  |ToughHide -> "Peau Rigide"
-                                  |StoneHide -> "Armure de Pierre"
-    static member frenchNameGender _ = Feminin 
-    static member frenchWithUndefinedArticle at = 
-                    let article =  (ArmorType.frenchNameGender at).UndefinedArticle
-                        in article + ArmorType.frenchName at  
-                        
-     
-
-            
- 
-type AccessoryType =
-    | SilverRing
-    | IronBrace
-    static member frenchName at = match at with
-                                  |SilverRing -> "Bague d'Argent"
-                                  |IronBrace -> "Corset de Fer"
-    static member frenchNameGender at = match at with
-                                        |SilverRing -> Feminin
-                                        |IronBrace -> Masculin 
-    static member frenchWithUndefinedArticle at = let article = match AccessoryType.frenchNameGender at with
-                                                                      |Feminin -> "une "
-                                                                      |Masculin -> "un "
-                                                                         in article + AccessoryType.frenchName at 
-
-
-type WeaponSubtype =
-    | Melee
-    | Sword
-    | Knife
-    | Rod
-    | Bow
-
-type ArmorSubtype =
-    | Robe
-    | Vest
-    | Mail
-    | Pelt
-    static member frenchName ast =
-        match ast with
-        |Robe -> "Robe"
-        |Vest -> "Veste"
-        |Mail -> "Cotte de Mailles"
-        |Pelt -> "Peau"
-
-type EquipmentType =
-    | WeaponType of WeaponType
-    | ArmorType of ArmorType
-    | AccessoryType of AccessoryType
-
-type ConsumableType =
-    | GreenHerb
-    | RedHerb
-    | GoldHerb
-    | Remedy
-    | Ether
-    | HighEther
-    | TurboEther
-    | Revive
-    
-    static member frenchName ct =
-        match ct with
-        |GreenHerb -> "Herbe Verte"
-        |RedHerb -> "Herbe Rouge"
-        |GoldHerb -> "Herbe Doree"
-        |Remedy -> "Remede"
-        |Ether -> "Ether"
-        |HighEther -> "Ether Fort"
-        |TurboEther -> "Ether Turbo"
-        |Revive -> "Remontant"
-    static member frenchGender ct = match ct with 
-                                    |GreenHerb -> Feminin
-                                    |RedHerb -> Feminin
-                                    |GoldHerb -> Feminin 
-                                    | _ -> Masculin 
-    static member frenchWithUndefinedArticle ct = 
-                    let article = (ConsumableType.frenchGender ct).UndefinedArticle 
-                        in article + ConsumableType.frenchName ct  
-type KeyItemType =
-    | BrassKey
-    static member frenchName kt = match kt with
-                                  |BrassKey -> "Cle de Laiton"
-    static member frenchGender kt = Feminin 
-    
-    static member frenchWithUndefinedArticle kt = 
-                    let article = (KeyItemType.frenchGender kt).UndefinedArticle
-                        in article + KeyItemType.frenchName kt  
-
-type ItemType =
-    | Consumable of ConsumableType
-    | Equipment of EquipmentType
-    | KeyItem of KeyItemType
-    | Stash of int
-
-    static member getName item = match item with
-                                 | Consumable ty -> ConsumableType.frenchName ty
-                                 | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchName ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
-                                 | KeyItem ty -> KeyItemType.frenchName ty
-                                 | Stash gold -> string gold + " Ors"
-    
-    static member frenchWithQuantity item =
-                  match item with
-                         | Consumable ty -> ConsumableType.frenchWithUndefinedArticle ty
-                         | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
-                         | KeyItem ty -> KeyItemType.frenchWithUndefinedArticle ty
-                         | Stash gold -> string gold + " Ors"
-                   
 type AimType =
     | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy
@@ -415,7 +199,7 @@ type TechType =
     | Cyclone
     | PoisonCut
     | PowerCut
-    | SilenceCut
+    | DispelCut
     | DoubleCut
     | Fire
     | Flame
@@ -425,8 +209,9 @@ type TechType =
     | BoltBeam
     | Stone
     | Quake
-    | Aura
+    | Cure
     | Empower
+    | Aura
     | Enlighten
     | Protect
     | Weaken
@@ -527,8 +312,8 @@ type ShopkeepAppearanceType =
     | Fancy
 
 type FieldType =
-    | DebugRoom
-    | DebugRoom2
+    | EmptyField
+    | DebugField
     | TombOuter
     | TombGround
     | TombBasement
@@ -560,6 +345,7 @@ type FieldType =
         | _ -> failwithumf ()
 
 type BattleType =
+    | EmptyBattle
     | DebugBattle
     | CastleBattle
     | CastleBattle2
@@ -632,7 +418,7 @@ type NpcType =
     | RavelNpc
     | AdvenNpc
     | EildaenNpc
-    | ShamanaNpc
+    | NostrusNpc
     | MadTrixterNpc
     | HeavyArmorosNpc
     | AraneaImplicitumNpc
@@ -646,7 +432,7 @@ type NpcType =
         | MadTrixterNpc -> not (Set.contains MadTrixterDefeated advents)
         | HeavyArmorosNpc -> not (Set.contains HeavyArmorosDefeated advents)
         | AraneaImplicitumNpc -> not (Set.contains AraneaImplicitumDefeated advents)
-        | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
+        | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc -> true
 
 type ShopkeepType =
     | RobehnShopkeep
@@ -714,6 +500,7 @@ type EnemyType =
     | Cloak
     | BloodArmoros
     | AraneaImplicitum
+    | Kyla
 
 type CharacterType =
     | Ally of AllyType
@@ -737,52 +524,121 @@ type [<NoEquality; NoComparison>] SpiritType =
 
 type [<NoEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
+    | CharacterTarget of CharacterType // (field only)
     | NpcTarget of NpcType // (field only)
     | ShopkeepTarget of ShopkeepType // (field only)
-    | AllyTarget of int // (battle only)
-    | EnemyTarget of int // (battle only)
+    | CharacterIndexTarget of CharacterIndex // (battle only)
+    | SpriteTarget of string
 
+type [<NoEquality; NoComparison>] CuePredicate =
+    | Gold of int
+    | Item of ItemType
+    | Items of ItemType list
+    | Advent of Advent
+    | Advents of Advent Set
+
+type [<NoEquality; NoComparison>] CueWait =
+    | Wait
+    | Timed of int64
+    | NoWait
+
+type [<NoEquality; NoComparison>] MoveType =
+    | Walk
+    | Run
+    | Mosey
+    | Instant
+
+    member this.MoveSpeedOpt =
+        match this with
+        | Walk -> Some Constants.Gameplay.CueWalkSpeed
+        | Run -> Some Constants.Gameplay.CueRunSpeed
+        | Mosey -> Some Constants.Gameplay.CueMoseySpeed
+        | Instant -> None
+
+    static member computeStepAndStepCount (translation : Vector2) (moveType : MoveType) =
+        match moveType.MoveSpeedOpt with
+        | Some moveSpeed ->
+            let stepCount = translation.Length () / moveSpeed
+            let step = translation / stepCount
+            (step, int (ceil stepCount))
+        | None -> (translation, 1)
+
+[<Syntax   ("Gold Item Items Advent Advents " +
+            "Wait Timed NoWait " +
+            "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
+            "AddItem RemoveItem AddAdvent RemoveAdvent " +
+            "Wait Animate Fade Warp Battle Dialog Prompt " +
+            "If Not Define Assign Parallel Sequence",
+            "", "", "", "",
+            Constants.PrettyPrinter.DefaultThresholdMin,
+            Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<NoEquality; NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
-    | Face of Direction * CueTarget
-    | Glow of Color * CueTarget
-    | Animate of CharacterAnimationType * CueTarget
+    | Face of CueTarget * Direction
+    | ClearSpirits
     | Recruit of AllyType
     | Unseal of int * Advent
     | AddItem of ItemType
     | RemoveItem of ItemType
     | AddAdvent of Advent
     | RemoveAdvent of Advent
+    | ReplaceAdvent of Advent * Advent
     | Wait of int64
     | WaitState of int64
-    | Fade of int64 * bool * CueTarget
-    | FadeState of int64 * int64 * bool * CueTarget
+    | Fade of CueTarget * int64 * bool
+    | FadeState of int64 * CueTarget * int64 * bool
+    | Animate of CueTarget * CharacterAnimationType * CueWait
+    | AnimateState of int64 * CueWait
+    | Move of CueTarget * Vector2 * MoveType
+    | MoveState of int64 * CueTarget * Vector2 * Vector2 * MoveType
     | Warp of FieldType * Vector2 * Direction
     | WarpState
     | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
     | BattleState
-    | Dialog of string
+    | Dialog of string * bool
     | DialogState
     | Prompt of string * (string * Cue) * (string * Cue)
     | PromptState
-    | If of Advent Set * Cue * Cue
-    | Not of Advent Set * Cue * Cue
+    | If of CuePredicate * Cue * Cue
+    | Not of CuePredicate * Cue * Cue
+    | Define of string * Cue
+    | Assign of string * Cue
+    | Expand of string
     | Parallel of Cue list
     | Sequence of Cue list
     static member isNil cue = match cue with Nil -> true | _ -> false
     static member notNil cue = match cue with Nil -> false | _ -> true
-    static member isInterrupting (advents : Advent Set) cue =
+    static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Animate _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
-        | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
-        | If (r, c, a) -> if advents.IsSupersetOf r then Cue.isInterrupting advents c else Cue.isInterrupting advents a
-        | Not (r, c, a) -> if not (advents.IsSupersetOf r) then Cue.isInterrupting advents c else Cue.isInterrupting advents a
-        | Parallel cues -> List.exists (Cue.isInterrupting advents) cues
-        | Sequence cues -> List.exists (Cue.isInterrupting advents) cues
-    static member notInterrupting advents cue = not (Cue.isInterrupting advents cue)
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ | Unseal _ -> false
+        | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
+        | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+        | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
+        | If (p, c, a) ->
+            match p with
+            | Gold gold -> if inventory.Gold >= gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Item itemType -> if Inventory.containsItem itemType inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Items itemTypes -> if Inventory.containsItems itemTypes inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advent advent -> if advents.Contains advent then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advents advents2 -> if advents.IsSupersetOf advents2 then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+        | Not (p, c, a) ->
+            match p with
+            | Gold gold -> if inventory.Gold < gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Item itemType -> if not (Inventory.containsItem itemType inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Items itemTypes -> if not (Inventory.containsItems itemTypes inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advent advent -> if not (advents.Contains advent) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Advents advents2 -> if not (advents.IsSupersetOf advents2) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+        | Define (_, _) | Assign (_, _) -> false
+        | Expand _ -> true // NOTE: we just assume this expands into something interrupting to be safe.
+        | Parallel cues -> List.exists (Cue.isInterrupting inventory advents) cues
+        | Sequence cues -> List.exists (Cue.isInterrupting inventory advents) cues
+    static member notInterrupting inventory advents cue = not (Cue.isInterrupting inventory advents cue)
+
+type CueDefinitions =
+    Map<string, Cue>
 
 type [<NoEquality; NoComparison>] Branch =
     { Cue : Cue
@@ -798,7 +654,7 @@ module OmniSeedState =
     let rotate isFade fieldType state =
         if not isFade then
             match fieldType with
-            | DebugRoom | DebugRoom2 | TombOuter | TombGround | TombBasement
+            | EmptyField | DebugField | TombOuter | TombGround | TombBasement
             | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
             | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
             | Castle n -> state.RandSeedState <<< n
@@ -929,6 +785,7 @@ type [<NoEquality; NoComparison>] BattleData =
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
       BattleTileIndexOffset : int
+      BattleTileIndexOffsetRange : int * int
       BattleSongOpt : Song AssetTag option }
 
 type [<NoEquality; NoComparison>] EncounterData =
@@ -957,15 +814,17 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
       Delay : int64
       Offset : Vector2i }
 
-type [<NoEquality; NoComparison>] PropData =
+type [<ReferenceEquality; NoComparison>] PropData =
+    | Sprite of string * Image AssetTag * Color * Blend * Color * Flip * bool
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
-    | Door of DoorType * Cue * Cue * Advent Set // for simplicity, we'll just have north / south doors
+    | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
-    | Switch of SwitchType * Cue * Cue * Advent Set // anything that can affect another thing on the field through interaction
-    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set // anything that can affect another thing on the field through traversal
-    | Npc of NpcType * Direction * Cue * Advent Set
-    | NpcBranching of NpcType * Direction * Branch list * Advent Set
-    | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
+    | Switch of SwitchType * Cue * Cue * Advent Set
+    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
+    | Character of CharacterType * Direction * bool * bool * Cue * Advent Set
+    | Npc of NpcType * Direction option * Cue * Advent Set
+    | NpcBranching of NpcType * Direction option * Branch list * Advent Set
+    | Shopkeep of ShopkeepType * Direction option * ShopType * Advent Set
     | Seal of Color * Cue * Advent Set
     | Flame of FlameType * bool
     | SavePoint
@@ -987,9 +846,13 @@ type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
       FieldTileIndexOffset : int
+      FieldTileIndexOffsetRange : int * int
       FieldBackgroundColor : Color
+      FieldDebugAdvents : Advent Set
+      FieldDebugKeyItems : KeyItemType list
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option
+      Definitions : CueDefinitions
       Treasures : ItemType list }
 
 [<RequireQualifiedAccess>]
@@ -1130,13 +993,12 @@ module FieldData =
                         | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
                         | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
                         | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                    let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
+                    let battleIndex = int (3.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
-                    | 0 | 1 -> Some WeakSpirit
-                    | 2 | 3 -> Some NormalSpirit
+                    | 0 -> Some WeakSpirit
+                    | 1 -> Some NormalSpirit
                     | _ -> Some StrongSpirit
-                | FieldConnector _ -> None
-                | FieldStatic _ -> None
+                | FieldStatic _ | FieldConnector _ -> None
             | Choice1Of3 _ -> None
             | Choice2Of3 _ -> None
         | None -> None

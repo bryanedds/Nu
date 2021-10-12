@@ -157,12 +157,12 @@ module WorldModuleGroup =
 
         static member internal getGroupProperty propertyName group world =
             match GroupGetters.TryGetValue propertyName with
+            | (true, getter) -> getter group world
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
                 | true -> property
                 | false -> failwithf "Could not find property '%s'." propertyName
-            | (true, getter) -> getter group world
 
         static member internal trySetGroupPropertyFast propertyName property group world =
             if World.getGroupExists group world then
@@ -213,6 +213,7 @@ module WorldModuleGroup =
         static member internal setGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
+                | (true, setter) -> setter property group world
                 | (false, _) ->
                     World.updateGroupState
                         (fun groupState ->
@@ -221,7 +222,6 @@ module WorldModuleGroup =
                             then GroupState.setProperty propertyName property groupState
                             else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
-                | (true, setter) -> setter property group world
             else struct (false, world)
 
         static member internal attachGroupProperty propertyName property group world =

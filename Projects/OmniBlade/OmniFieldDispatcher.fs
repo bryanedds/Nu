@@ -17,6 +17,7 @@ module FieldDispatcher =
         | Update
         | UpdateAvatar of Avatar
         | UpdateFieldTransition
+        | UpdateProp of Prop
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemOpen
@@ -53,66 +54,65 @@ module FieldDispatcher =
         | Nop
 
     type Screen with
-        member this.GetField = this.GetModel<Field>
-        member this.SetField = this.SetModel<Field>
-        member this.Field = this.Model<Field> ()
+        member this.GetField world = this.GetModelGeneric<Field> world
+        member this.SetField value world = this.SetModelGeneric<Field> value world
+        member this.Field = this.ModelGeneric<Field> ()
 
     [<RequireQualifiedAccess>]
     module Cue =
 
-        let rec run (cue : Cue) (field : Field) (world : World) : Cue * (Signal<FieldMessage, FieldCommand> list * Field) =
+        let rec run
+            (cue : Cue)
+            (definitions : CueDefinitions)
+            (field : Field)
+            (world : World) :
+            Cue * CueDefinitions * (Signal<FieldMessage, FieldCommand> list * Field) =
 
             match cue with
             | Cue.Nil ->
-                (cue, just field)
+                (cue, definitions, just field)
 
             | Cue.PlaySound (volume, sound) ->
-                (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
+                (Cue.Nil, definitions, withCmd (PlaySound (0L, volume, sound)) field)
 
             | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-                (Cue.Nil, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+                (Cue.Nil, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
             | Cue.FadeOutSong fade ->
-                (Cue.Nil, withCmd (FadeOutSong fade) field)
+                (Cue.Nil, definitions, withCmd (FadeOutSong fade) field)
 
-            | Cue.Face (direction, target) ->
+            | Cue.Face (target, direction) ->
                 match target with
                 | AvatarTarget ->
                     let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
-                    (Cue.Nil, just field)
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, _, color, glow, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                    (Cue.Nil, definitions, just field)
+                | CharacterTarget characterType ->
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
+                    | Some propId ->
+                        let field =
+                            Field.updatePropState
+                                (function
+                                 | CharacterState (color, animationState) ->
+                                    let animationState = CharacterAnimationState.face direction animationState
+                                    CharacterState (color, animationState)
+                                 | propState -> propState)
+                                propId
+                                field
+                        (Cue.Nil, definitions, just field)
+                    | None ->
+                        (Cue.Nil, definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                    (Cue.Nil, definitions, just field)
 
-            | Glow (glow, target) ->
-                match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, direction, color, _, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
-
-            | Animate (characterAnimationType, target) ->
-                match target with
-                | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
-                    (Cue.Nil, just field)
-                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+            | Cue.ClearSpirits ->
+                let field = Field.clearSpirits field
+                (Cue.Nil, definitions, just field)
 
             | Recruit allyType ->
                 let fee = Field.getRecruitmentFee field
@@ -127,60 +127,197 @@ module FieldDispatcher =
                     let field = Field.recruit allyType field
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                    (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                else run (Parallel [Dialog ("Tu n'as pas assez ...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
-            | Unseal (fee, consequent) ->
+            | Unseal (fee, advent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    let field = Field.updateAdvents (Set.add consequent) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
+                    let field = Field.updateAdvents (Set.remove advent) field
+                    (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
+                else run (Parallel [Dialog ("Tu n'as pas assez ...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | AddItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
+                (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
 
             | RemoveItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
+                (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
 
             | AddAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.add advent) field))
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.add advent) field))
 
             | RemoveAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove advent) field))
+
+            | ReplaceAdvent (remove, add) ->
+                (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove remove >> Set.add add) field))
 
             | Wait time ->
-                (WaitState (World.getUpdateTime world + time), just field)
+                (WaitState (World.getUpdateTime world + time), definitions, just field)
 
             | WaitState time ->
                 if World.getUpdateTime world < time
-                then (cue, just field)
-                else (Cue.Nil, just field)
+                then (cue, definitions, just field)
+                else (Cue.Nil, definitions, just field)
 
-            | Fade (time, fadeIn, target) ->
-                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
+            | Fade (target, length, fadeIn) ->
+                (FadeState (World.getUpdateTime world, target, length, fadeIn), definitions, just field)
 
-            | FadeState (startTime, totalTime, fadeIn, target) ->
+            | FadeState (startTime, target, length, fadeIn) ->
+                let time = World.getUpdateTime world
+                let localTime = time - startTime
+                let progress = single localTime / single length
+                let progress = if fadeIn then progress else 1.0f - progress
+                let field =
+                    match target with
+                    | CharacterTarget characterType ->
+                        let propIdOpt =
+                            Field.tryGetPropIdByData
+                                (function
+                                 | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                                 | _ -> false)
+                                field
+                        match propIdOpt with
+                        | Some propId ->
+                            Field.updatePropState
+                                (function
+                                 | CharacterState (_, animationState) -> CharacterState (colWhite.MapA (single >> (*) progress >> byte), animationState)
+                                 | propState -> propState)
+                                propId
+                                field
+                        | None -> field
+                    | SpriteTarget spriteName ->
+                        match Field.tryGetPropIdByData (function Sprite (spriteName2, _, _, _, _, _, _) -> spriteName = spriteName2 | _ -> false) field with
+                        | Some propId ->
+                            Field.updateProp
+                                (fun prop ->
+                                    match prop.PropData with
+                                    | Sprite (_, _, color, _, _, _, _) ->
+                                        Prop.updatePropState
+                                            (function
+                                             | SpriteState (image, _, blend, glow, flip, _) -> SpriteState (image, color.MapA (single >> (*) progress >> byte), blend, glow, flip, true)
+                                             | propState -> propState)
+                                            prop
+                                    | _ -> prop)
+                                propId
+                                field
+                        | None -> field
+                    | _ -> field
+                if  fadeIn && progress >= 1.0f ||
+                    not fadeIn && progress <= 0.0f then
+                    (Cue.Nil, definitions, just field)
+                else (cue, definitions, just field)
+
+            | Animate (target, characterAnimationType, wait) ->
                 match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, direction, _, glow, exists) ->
-                            let localTime = World.getUpdateTime world - startTime
-                            let progress = single localTime / single totalTime
-                            let color = colWhite * if fadeIn then progress else 1.0f - progress
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
+                | AvatarTarget ->
+                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
+                    match wait with
+                    | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
+                    | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
+                | CharacterTarget characterType ->
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
+                    | Some propId ->
+                        let field =
+                            Field.updatePropState
+                                (function
+                                 | CharacterState (color, animationState) ->
+                                    let animationState = CharacterAnimationState.setCharacterAnimationType (Some (World.getUpdateTime world)) characterAnimationType animationState
+                                    CharacterState (color, animationState)
+                                 | propState -> propState)
+                                propId
+                                field
+                        (Cue.Nil, definitions, just field)
+                    | None ->
+                        (Cue.Nil, definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                    (Cue.Nil, definitions, just field)
+
+            | AnimateState (startTime, wait) ->
+                let time = World.getUpdateTime world
+                match wait with
+                | CueWait.Wait ->
+                    if Avatar.getAnimationFinished time field.Avatar
+                    then (Cue.Nil, definitions, just field)
+                    else (cue, definitions, just field)
+                | Timed waitTime ->
+                    let localTime = time - startTime
+                    if localTime < waitTime
+                    then (cue, definitions, just field)
+                    else (Cue.Nil, definitions, just field)
+                | NoWait ->
+                    (Cue.Nil, definitions, just field)
+
+            | Move (target, destination, moveType) ->
+                match target with
+                | AvatarTarget ->
+                    let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
+                    (cue, definitions, just field)
+                | CharacterTarget characterType ->
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
+                    | Some propId ->
+                        let prop = field.Props.[propId]
+                        let cue = MoveState (World.getUpdateTime world, target, prop.Bounds.Bottom, destination, moveType)
+                        (cue, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                    (Cue.Nil, definitions, just field)
+
+            | MoveState (startTime, target, origin, translation, moveType) ->
+                match target with
+                | AvatarTarget ->
+                    let time = World.getUpdateTime world
+                    let localTime = time - startTime
+                    let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
+                    let totalTime = int64 (dec stepCount)
+                    if localTime < totalTime then
+                        let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
+                        (cue, definitions, just field)
+                    else
+                        let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
+                        (Cue.Nil, definitions, just field)
+                | CharacterTarget characterType ->
+                    let propIdOpt =
+                        Field.tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
+                    | Some propId ->
+                        let prop = field.Props.[propId]
+                        let time = World.getUpdateTime world
+                        let localTime = time - startTime
+                        let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
+                        let finishTime = int64 (dec stepCount)
+                        if localTime < finishTime then
+                            let bounds = prop.Bounds.Translate step
+                            let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
+                            (cue, definitions, just field)
+                        else
+                            let bounds = prop.Bounds.WithBottom (origin + translation)
+                            let field = Field.updateProp (Prop.updateBounds (constant bounds)) propId field
+                            (Cue.Nil, definitions, just field)
+                    | None -> (Cue.Nil, definitions, just field)
+                | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                    (Cue.Nil, definitions, just field)
 
             | Warp (fieldType, fieldDestination, fieldDirection) ->
                 match field.FieldTransitionOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
                     let fieldTransition =
                         { FieldType = fieldType
@@ -188,102 +325,136 @@ module FieldDispatcher =
                           FieldDirection = fieldDirection
                           FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                     let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
-                    (WarpState, just field)
+                    (WarpState, definitions, just field)
 
             | WarpState ->
                 match field.FieldTransitionOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (Cue.Nil, definitions, just field)
 
             | Battle (battleType, consequents) ->
                 match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (BattleState, withMsg (TryBattle (battleType, consequents)) field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (BattleState, definitions, withMsg (TryBattle (battleType, consequents)) field)
 
             | BattleState ->
                 match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
+                | Some _ -> (cue, definitions, just field)
+                | None -> (Cue.Nil, definitions, just field)
 
-            | Dialog text ->
+            | Dialog (text, isNarration) ->
                 match field.DialogOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
-                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
+                    let dialogForm = if isNarration then DialogNarration else DialogThick
+                    let dialog = { DialogForm = dialogForm; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (DialogState, just field)
+                    (DialogState, definitions, just field)
 
             | DialogState ->
                 match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, definitions, just field)
+                | Some _ -> (cue, definitions, just field)
 
             | Prompt (text, leftPrompt, rightPrompt) ->
                 match field.DialogOpt with
                 | Some _ ->
-                    (cue, just field)
+                    (cue, definitions, just field)
                 | None ->
                     let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = Some (leftPrompt, rightPrompt); DialogBattleOpt = None }
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (PromptState, just field)
+                    (PromptState, definitions, just field)
 
             | PromptState ->
                 match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
+                | None -> (Cue.Nil, definitions, just field)
+                | Some _ -> (cue, definitions, just field)
+                
+            | If (p, c, a) ->
+                match p with
+                | Gold gold -> if field.Inventory.Gold >= gold then (c, definitions, just field) else (a, definitions, just field)
+                | Item itemType -> if Inventory.containsItem itemType field.Inventory then (c, definitions, just field) else (a, definitions, just field)
+                | Items itemTypes -> if Inventory.containsItems itemTypes field.Inventory then (c, definitions, just field) else (a, definitions, just field)
+                | Advent advent -> if field.Advents.Contains advent then (c, definitions, just field) else (a, definitions, just field)
+                | Advents advents -> if field.Advents.IsSupersetOf advents then (c, definitions, just field) else (a, definitions, just field)
 
-            | If (requirements, consequent, alternate) ->
-                if field.Advents.IsSupersetOf requirements
-                then (consequent, just field)
-                else (alternate, just field)
+            | Not (p, c, a) ->
+                match p with
+                | Gold gold -> if field.Inventory.Gold < gold then (c, definitions, just field) else (a, definitions, just field)
+                | Item itemType -> if not (Inventory.containsItem itemType field.Inventory) then (c, definitions, just field) else (a, definitions, just field)
+                | Items itemTypes -> if not (Inventory.containsItems itemTypes field.Inventory) then (c, definitions, just field) else (a, definitions, just field)
+                | Advent advent -> if not (field.Advents.Contains advent) then (c, definitions, just field) else (a, definitions, just field)
+                | Advents advents -> if not (field.Advents.IsSupersetOf advents) then (c, definitions, just field) else (a, definitions, just field)
 
-            | Not (requirements, consequent, alternate) ->
-                if not (field.Advents.IsSupersetOf requirements)
-                then (consequent, just field)
-                else (alternate, just field)
+            | Define (name, body) ->
+                if not (Map.containsKey name definitions) then
+                    (Cue.Nil, Map.add name body definitions, just field)
+                else
+                    Log.debug ("Cue definition '" + name + "' already found.")
+                    (Cue.Nil, definitions, just field)
+
+            | Assign (name, body) ->
+                if Map.containsKey name definitions then
+                    (Cue.Nil, Map.add name body definitions, just field)
+                else
+                    Log.debug ("Cue definition '" + name + "' not found.")
+                    (Cue.Nil, definitions, just field)
+
+            | Expand name ->
+                match Map.tryFind name definitions with
+                | Some body ->
+                    run body definitions field world
+                | None ->
+                    Log.debug ("Cue definition '" + name + "' not found.")
+                    (Cue.Nil, definitions, ([], field))
 
             | Parallel cues ->
-                let (cues, (signals, field)) =
-                    List.fold (fun (cues, (signals, field)) cue ->
-                        let (cue, (signals2, field)) = run cue field world
+                let (cues, definitions, (signals, field)) =
+                    List.fold (fun (cues, definitions, (signals, field)) cue ->
+                        let (cue, definitions, (signals2, field)) = run cue definitions field world
                         if Cue.isNil cue
-                        then (cues, (signals @ signals2, field))
-                        else (cues @ [cue], (signals @ signals2, field)))
-                        ([], ([], field))
+                        then (cues, definitions, (signals @ signals2, field))
+                        else (cues @ [cue], definitions, (signals @ signals2, field)))
+                        ([], definitions, ([], field))
                         cues
                 match cues with
-                | _ :: _ -> (Parallel cues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
+                | _ :: _ -> (Parallel cues, definitions, (signals, field))
+                | [] -> (Cue.Nil, definitions, (signals, field))
 
             | Sequence cues ->
-                let (_, haltedCues, (signals, field)) =
-                    List.fold (fun (halted, haltedCues, (signals, field)) cue ->
+                let (_, haltedCues, definitions, (signals, field)) =
+                    List.fold (fun (halted, haltedCues, definitions, (signals, field)) cue ->
                         if halted
-                        then (halted, haltedCues @ [cue], (signals, field))
+                        then (halted, haltedCues @ [cue], definitions, (signals, field))
                         else
-                            let (cue, (signals2, field)) = run cue field world
+                            let (cue, definitions, (signals2, field)) = run cue definitions field world
                             if Cue.isNil cue
-                            then (false, [], (signals @ signals2, field))
-                            else (true, [cue], (signals @ signals2, field)))
-                        (false, [], ([], field))
+                            then (false, [], definitions, (signals @ signals2, field))
+                            else (true, [cue], definitions, (signals @ signals2, field)))
+                        (false, [], definitions, ([], field))
                         cues
                 match haltedCues with
-                | _ :: _ -> (Sequence haltedCues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
+                | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
+                | [] -> (Cue.Nil, definitions, (signals, field))
 
     [<RequireQualifiedAccess>]
     module Content =
 
-        let private pageItems pageIndex pageSize items =
+        let private pageItems pageSize pageIndex filter sort (items : Map<ItemType, int>) =
             items |>
+            Map.toSeq |>
+            (fun items -> if filter then ItemType.filterSellableItems items else items) |>
+            (fun items -> if sort then ItemType.sortItems items else items) |>
+            Seq.index |>
             Seq.chunkBySize pageSize |>
             Seq.trySkip pageIndex |>
             Seq.map List.ofArray |>
             Seq.tryHead |>
             Option.defaultValue [] |>
             Seq.indexed |>
-            Map.ofSeq
+            Map.ofSeq |>
+            Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
 
         let sidebar position elevation (field : Lens<Field, World>) =
             Content.association Gen.name []
@@ -336,30 +507,22 @@ module FieldDispatcher =
                          Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
-        let items (position : Vector2) elevation columns field fieldMsg =
+        let items (position : Vector2) elevation rows columns field fieldMsg =
             Content.entities field
                 (fun (field : Field) _ ->
                     (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
-                    let sorter (item, _) = match item with Consumable _ -> 0 | Equipment _ -> 1 | KeyItem _ -> 2 | Stash _ -> 3
                     match menu.MenuState with
-                    | MenuItem menu -> inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |> pageItems menu.ItemPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                    | MenuItem menu -> pageItems rows menu.ItemPage true false inventory.Items
                     | _ ->
                         match shopOpt with
                         | Some shop ->
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
+                                | Some shopData -> pageItems rows shop.ShopPage true false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                                 | None -> Map.empty
-                            | ShopSelling ->
-                                inventory.Items |>
-                                Map.toSeq |>
-                                Seq.sortBy sorter |>
-                                Seq.index |>
-                                Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 8 |>
-                                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                            | ShopSelling -> pageItems rows shop.ShopPage false true inventory.Items
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
@@ -403,7 +566,7 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.debug)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
         static let detokenize (text : string) (field : Field) =
             text
@@ -434,37 +597,44 @@ module FieldDispatcher =
                 | _ -> false)
                 avatar.IntersectedBodyShapes
 
-        static let tryGetFacingInteraction dialogOpt advents prop field =
+        static let tryGetFacingInteraction avatarPositionY advents (prop : Prop) =
+            match prop.PropData with
+            | Sprite _ -> None
+            | Portal (_, _, _, _, _, _, _) -> None
+            | Door _ -> Some "Ouvrir"
+            | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
+            | Switch (_, _, _, _) -> Some "Utiliser"
+            | Sensor (_, _, _, _, _) -> None
+            | Character (_, _, _, isRising, _, _) ->
+                if isRising then
+                    if prop.Bottom.Y - avatarPositionY > 46.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                    then Some "Talk"
+                    else None
+                else Some "Talk"
+            | Npc _ | NpcBranching _ -> Some "Parler"
+            | Shopkeep _ -> Some "Vendeur"
+            | Seal _ -> Some "Toucher"
+            | Flame _ -> None
+            | SavePoint -> None
+            | ChestSpawn -> None
+            | EmptyProp -> None
+
+        static let tryGetInteraction dialogOpt advents (avatar : Avatar) (field : Field) world =
             match dialogOpt with
-            | None ->
-                match prop with
-                | Portal (_, _, _, _, _, _, _) -> None
-                | Door _ -> Some "Ouvrir"
-                | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Ouvrir"
-                | Switch (_, _, _, _) -> Some "Utiliser"
-                | Sensor (_, _, _, _, _) -> None
-                | Npc _ | NpcBranching _ -> Some "Parler"
-                | Shopkeep _ -> Some "Vendeur"
-                | Seal _ -> Some "Toucher"
-                | Flame _ -> None
-                | SavePoint -> None
-                | ChestSpawn -> None
-                | EmptyProp -> None
             | Some dialog ->
                 if  Dialog.canAdvance (flip detokenize field) dialog &&
                     not
                         (Dialog.isExhausted (flip detokenize field) dialog &&
-                         Option.isSome dialog.DialogPromptOpt)
+                            Option.isSome dialog.DialogPromptOpt)
                 then Some "Suivant"
                 else None
-
-        static let tryGetInteraction dialogOpt advents (avatar : Avatar) field world =
-            if isTouchingSavePoint avatar world then
-                Some "Sauveg."
-            else
-                match tryGetFacingProp avatar world with
-                | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData field
-                | None -> None
+            | None ->
+                if isTouchingSavePoint avatar world then
+                    Some "Sauveg."
+                else
+                    match tryGetFacingProp avatar world with
+                    | Some prop -> tryGetFacingInteraction avatar.Position.Y advents (prop.GetProp world)
+                    | None -> None
 
         static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
@@ -522,30 +692,31 @@ module FieldDispatcher =
             if field.Advents.IsSupersetOf requirements then
                 let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
-                // TODO: P1: rewrite this to use two new cues, Find and Guarded.
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field =
                     match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve " + ItemType.frenchWithQuantity itemType + " ! ^Mais un truc s'approche !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
-                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve " + ItemType.frenchWithQuantity itemType + " !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve " + ItemType.frenchWithQuantity itemType + "! ^Mais un truc s'approche!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Tu as trouve " + ItemType.frenchWithQuantity itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
-                let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
-                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a clef!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 just field
 
-        static let interactDoor cue requirements (prop : Prop) (field : Field) =
+        static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
             | DoorState false ->
-                if field.Advents.IsSupersetOf requirements then
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
+                if  field.Advents.IsSupersetOf requirements &&
+                    Option.mapOrDefault (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
-                    let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
+                    let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    // TODO: P1: add jiggle locked sound.
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a clef!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
 
@@ -554,21 +725,28 @@ module FieldDispatcher =
             | SwitchState on ->
                 if field.Advents.IsSupersetOf requirements then
                     let on = not on
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
-                    let field = Field.updatePropStates (Map.add prop.PropId (SwitchState on)) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    let field = Field.updatePropState (constant (SwitchState on)) prop.PropId field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ca veut pas bouger !"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    // TODO: P1: add jiggle locked sound.
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
+
+        static let interactCharacter cue (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let field = Field.updateCue (constant cue) field
+            let field = Field.updateCue (constant cue) field
+            just field
         
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
                 let field = Field.updateAvatar (Avatar.lookAt prop.Position) field
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
-                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog "..."
+                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
                 let field = Field.updateCue (constant branchCue) field
                 just field
             else just field
@@ -579,222 +757,14 @@ module FieldDispatcher =
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
+        static let interactSeal cue (field : Field) =
+            let field = Field.updateCue (constant cue) field
+            just field
+
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
-
-        static let rec runCue cue (field : Field) world : Cue * (Signal<FieldMessage, FieldCommand> list * Field) =
-
-            match cue with
-            | Cue.Nil ->
-                (cue, just field)
-
-            | Cue.PlaySound (volume, sound) ->
-                (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
-
-            | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-                (Cue.Nil, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
-
-            | Cue.FadeOutSong fade ->
-                (Cue.Nil, withCmd (FadeOutSong fade) field)
-
-            | Cue.Face (direction, target) ->
-                match target with
-                | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
-                    (Cue.Nil, just field)
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, _, color, glow, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
-
-            | Glow (glow, target) ->
-                match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, direction, color, _, exists) ->
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
-
-            | Animate (characterAnimationType, target) ->
-                match target with
-                | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
-                    (Cue.Nil, just field)
-                | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
-
-            | Recruit allyType ->
-                let fee = Field.getRecruitmentFee field
-                if field.Inventory.Gold >= fee then
-                    let advent =
-                        match allyType with
-                        | Jinn -> failwithumf ()
-                        | Shade -> ShadeRecruited
-                        | Mael -> MaelRecruited
-                        | Riain -> RiainRecruited
-                        | Peric -> PericRecruited
-                    let field = Field.recruit allyType field
-                    let field = Field.updateAdvents (Set.add advent) field
-                    let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else runCue (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
-
-            | Unseal (fee, consequent) ->
-                if field.Inventory.Gold >= fee then
-                    let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                    let field = Field.updateAdvents (Set.add consequent) field
-                    (Cue.Nil, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else runCue (Parallel [Dialog "Tu n'as pas assez ..."; Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) field world
-
-            | AddItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
-
-            | RemoveItem itemType ->
-                (Cue.Nil, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
-
-            | AddAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.add advent) field))
-
-            | RemoveAdvent advent ->
-                (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
-
-            | Wait time ->
-                (WaitState (World.getUpdateTime world + time), just field)
-
-            | WaitState time ->
-                if World.getUpdateTime world < time
-                then (cue, just field)
-                else (Cue.Nil, just field)
-
-            | Fade (time, fadeIn, target) ->
-                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
-
-            | FadeState (startTime, totalTime, fadeIn, target) ->
-                match target with
-                | NpcTarget npcType ->
-                    match Map.tryFindKey (constant (function NpcState (npcType2, _, _, _, _) -> npcType2 = npcType | _ -> false)) field.PropStates with
-                    | Some propKey ->
-                        match field.PropStates.[propKey] with
-                        | NpcState (_, direction, _, glow, exists) ->
-                            let localTime = World.getUpdateTime world - startTime
-                            let progress = single localTime / single totalTime
-                            let color = colWhite * if fadeIn then progress else 1.0f - progress
-                            let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
-                            (Cue.Nil, just field)
-                        | _ -> (Cue.Nil, just field)
-                    | None -> (Cue.Nil, just field)
-                | AvatarTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
-                    (Cue.Nil, just field)
-
-            | Warp (fieldType, fieldDestination, fieldDirection) ->
-                match field.FieldTransitionOpt with
-                | Some _ ->
-                    (cue, just field)
-                | None ->
-                    let fieldTransition =
-                        { FieldType = fieldType
-                          FieldDestination = fieldDestination
-                          FieldDirection = fieldDirection
-                          FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
-                    let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
-                    (WarpState, just field)
-
-            | WarpState ->
-                match field.FieldTransitionOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
-
-            | Battle (battleType, consequents) ->
-                match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (BattleState, withMsg (TryBattle (battleType, consequents)) field)
-
-            | BattleState ->
-                match field.BattleOpt with
-                | Some _ -> (cue, just field)
-                | None -> (Cue.Nil, just field)
-
-            | Dialog text ->
-                match field.DialogOpt with
-                | Some _ ->
-                    (cue, just field)
-                | None ->
-                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
-                    let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (DialogState, just field)
-
-            | DialogState ->
-                match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
-
-            | Prompt (text, leftPrompt, rightPrompt) ->
-                match field.DialogOpt with
-                | Some _ ->
-                    (cue, just field)
-                | None ->
-                    let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = Some (leftPrompt, rightPrompt); DialogBattleOpt = None }
-                    let field = Field.updateDialogOpt (constant (Some dialog)) field
-                    (PromptState, just field)
-
-            | PromptState ->
-                match field.DialogOpt with
-                | None -> (Cue.Nil, just field)
-                | Some _ -> (cue, just field)
-
-            | If (requirements, consequent, alternate) ->
-                if field.Advents.IsSupersetOf requirements
-                then (consequent, just field)
-                else (alternate, just field)
-
-            | Not (requirements, consequent, alternate) ->
-                if not (field.Advents.IsSupersetOf requirements)
-                then (consequent, just field)
-                else (alternate, just field)
-
-            | Parallel cues ->
-                let (cues, (signals, field)) =
-                    List.fold (fun (cues, (signals, field)) cue ->
-                        let (cue, (signals2, field)) = runCue cue field world
-                        if Cue.isNil cue
-                        then (cues, (signals @ signals2, field))
-                        else (cues @ [cue], (signals @ signals2, field)))
-                        ([], ([], field))
-                        cues
-                match cues with
-                | _ :: _ -> (Parallel cues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
-
-            | Sequence cues ->
-                let (_, haltedCues, (signals, field)) =
-                    List.fold (fun (halted, haltedCues, (signals, field)) cue ->
-                        if halted
-                        then (halted, haltedCues @ [cue], (signals, field))
-                        else
-                            let (cue, (signals2, field)) = runCue cue field world
-                            if Cue.isNil cue
-                            then (false, [], (signals @ signals2, field))
-                            else (true, [cue], (signals @ signals2, field)))
-                        (false, [], ([], field))
-                        cues
-                match haltedCues with
-                | _ :: _ -> (Sequence haltedCues, (signals, field))
-                | [] -> (Cue.Nil, (signals, field))
 
         override this.Channel (_, field) =
             [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
@@ -809,15 +779,19 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // update cue
-                let (cue, (signals, field)) = Cue.run field.Cue field world
+                // update cue, resetting definitions if finished
+                let (cue, definitions, (signals, field)) = Cue.run field.Cue field.Definitions field world
+                let field =
+                    match cue with
+                    | Cue.Nil -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
+                    | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
 
                 // update dialog
                 let field =
                     match field.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.update dialog world
+                        let dialog = Dialog.update (flip detokenize field) dialog world
                         Field.updateDialogOpt (constant (Some dialog)) field
                     | None -> field
 
@@ -859,7 +833,7 @@ module FieldDispatcher =
                 // update spirits
                 let (signals, field) =
                     if  field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
@@ -871,6 +845,7 @@ module FieldDispatcher =
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData (World.getUpdateTime world)
+                            let field = Field.clearSpirits field
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
@@ -908,7 +883,7 @@ module FieldDispatcher =
 
                         // just past half-way point of transition
                         elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
-                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field
+                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
                             let field =
                                 Field.updateAvatar (fun avatar ->
                                     let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
@@ -939,6 +914,10 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
+
+            | UpdateProp prop ->
+                let field = Field.updateProp (constant prop) prop.PropId field
+                just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
@@ -1122,15 +1101,17 @@ module FieldDispatcher =
                         | Some prop ->
                             let prop = prop.GetProp world
                             match prop.PropData with
-                            | Portal (_, _, _, _, _, _, _) -> just field
-                            | Door (_, cue, _, requirements) -> interactDoor cue requirements prop field
+                            | Sprite _ -> just field
+                            | Portal _ -> just field
+                            | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
                             | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
-                            | Sensor (_, _, _, _, _) -> just field
+                            | Sensor _ -> just field
+                            | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
                             | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
-                            | Seal (_, cue, _) -> just (Field.updateCue (constant cue) field)
+                            | Seal (_, cue, _) -> interactSeal cue field
                             | Flame _ -> just field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
@@ -1180,12 +1161,14 @@ module FieldDispatcher =
                 else just world
 
             | UpdateEye ->
-                let world = World.setEyeCenter field.Avatar.Center world
-                let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
-                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
-                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
-                let world = World.constrainEyeBounds eyeBounds world
-                just world
+                if World.getUpdateRate world <> 0L then
+                    let world = World.setEyeCenter field.Avatar.Center world
+                    let tileMapBounds = Simulants.Field.Scene.TileMap.GetBounds world
+                    let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
+                    let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
+                    let world = World.constrainEyeBounds eyeBounds world
+                    just world
+                else just world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
@@ -1243,7 +1226,31 @@ module FieldDispatcher =
             [// scene group
              Content.group Simulants.Field.Scene.Group.Name []
 
-                [// backdrop sprite
+                [// avatar
+                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
+                    [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                     Entity.Enabled <== field --> fun field ->
+                        field.Menu.MenuState = MenuClosed &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
+                     Entity.LinearDamping == Constants.Field.LinearDamping
+                     Entity.Avatar <== field --> fun field -> field.Avatar]
+
+                 // props
+                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
+                    Content.entity<PropDispatcher> Gen.name
+                        [Entity.Prop <== prop
+                         Entity.Prop.ChangeEvent ==|> fun evt -> msg (UpdateProp (evt.Data.Value :?> Prop))]
+
+                 // spirit orb
+                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
+                    Content.entity<SpiritOrbDispatcher> Gen.name
+                        [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
+                         
+                 // backdrop sprite
                  Content.staticSprite Gen.name
                     [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image9
@@ -1288,6 +1295,10 @@ module FieldDispatcher =
                          match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData -> fieldData.FieldTileIndexOffset
                          | None -> failwithumf ()
+                     Entity.TileIndexOffsetRange <== field --> fun field ->
+                         match Map.tryFind field.FieldType Data.Value.Fields with
+                         | Some fieldData -> fieldData.FieldTileIndexOffsetRange
+                         | None -> failwithumf ()
                      Entity.TileLayerClearance == 10.0f]
 
                  // tmx map fade
@@ -1310,21 +1321,9 @@ module FieldDispatcher =
                         | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                      Entity.TileLayerClearance == 10.0f]
 
-                 // avatar
-                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Enabled <== field --> fun field ->
-                        field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
-                     Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.Avatar <== field --> fun field -> field.Avatar]
-
                  // feeler
                  Content.feeler Simulants.Field.Scene.Feeler.Name
-                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.GuiElevation - 1.0f; Entity.Size == Constants.Render.ResolutionF
+                    [Entity.Position == -Constants.Render.ResolutionF * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF
                      Entity.TouchingEvent ==|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
@@ -1334,7 +1333,7 @@ module FieldDispatcher =
                      Entity.Text == "Menu"
                      Entity.Visible <== field --> fun field ->
                         field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Advents field.Cue &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
@@ -1346,7 +1345,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Menu.MenuState = MenuClosed &&
-                        (Cue.notInterrupting field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
@@ -1357,27 +1356,6 @@ module FieldDispatcher =
                         | None -> ""
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> msg Interact]
-
-                 // props
-                 Content.entities field
-                    (fun field _ -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
-                    (fun (fieldType, rotatedSeedState, advents, propStates) world ->
-                        match Map.tryFind fieldType Data.Value.Fields with
-                        | Some fieldData ->
-                            FieldData.getPropDescriptors rotatedSeedState fieldData world |>
-                            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, advents, propStates)))
-                        | None -> Map.empty)
-                    (fun _ propLens _ ->
-                        let prop = flip Lens.map propLens (fun (propDescriptor, advents, propStates) ->
-                            let propState = Field.getPropState propDescriptor advents propStates
-                            Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId)
-                        Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
-
-                 // spirit orb
-                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field world ->
-                    Content.entity<SpiritOrbDispatcher> Gen.name
-                        [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field world; Portals = Field.getPortals field world }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->
@@ -1428,7 +1406,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Arme :  " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                   | Some teammate -> "Arme:  " + Option.mapOrDefault string "None" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1437,7 +1415,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Armure :  " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                   | Some teammate -> "Armr:  " + Option.mapOrDefault string "None" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1472,14 +1450,14 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]]
 
-                 // item
+                 // inventory
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
                        [Content.sidebar (v2 24.0f 417.0f) 1.0f field
-                        Content.items (v2 138.0f 417.0f) 1.0f 5 field MenuItemSelect
+                        Content.items (v2 138.0f 417.0f) 1.0f 10 5 field MenuItemSelect
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -1541,9 +1519,9 @@ module FieldDispatcher =
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
-                            Entity.Text == "Swift"
-                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]
+                            Entity.Text == "Wait"
+                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
@@ -1553,9 +1531,9 @@ module FieldDispatcher =
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
-                            Entity.Text == "Wait"
-                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]]
+                            Entity.Text == "Swift"
+                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 
                  // shop
                  Content.entityIf field (fun field _ -> Option.isSome field.ShopOpt) $ fun field _ ->
@@ -1563,7 +1541,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
-                       [Content.items (v2 96.0f 347.0f) 1.0f 4 field ShopSelect
+                       [Content.items (v2 96.0f 347.0f) 1.0f 8 4 field ShopSelect
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Acheter"
@@ -1572,7 +1550,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Qu'achetes tu ?"
+                            Entity.Text == "Qu'achetes tu?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 2.0f
@@ -1582,7 +1560,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Que vends-tu ?"
+                            Entity.Text == "Que vends-tu?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 678.0f 438.0f; Entity.ElevationLocal == 2.0f
@@ -1627,3 +1605,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 60.0f 96.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmLine2]]]]
+
+    type DebugFieldDispatcher () =
+        inherit FieldDispatcher ()
+        override this.Prepare (_, world) = Field.debug world

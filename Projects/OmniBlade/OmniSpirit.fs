@@ -30,16 +30,18 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         | 4 -> Ambushing
         | _ -> failwithumf ()
 
-    static member random () =
-        Gen.random1 5 |> SpiritPattern.fromInt
+    static member generate () =
+        if Gen.randomb // 50% less chance of Stalking and Ambushing spirit
+        then Gen.random1 5 |> SpiritPattern.fromInt
+        else Gen.random1 3 |> SpiritPattern.fromInt
 
     static member toSpiritMovement pattern =
         match pattern with
         | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
         | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
-        | Steadfast ->      [|Chase;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
-        | Stalking ->       [|Chase;     Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase;    Creep; Chase; Chase|]
-        | Ambushing ->      [|Chase;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
+        | Steadfast ->      [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Stalking ->       [|Creep;     Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
+        | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
 type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array

@@ -223,8 +223,7 @@ module WorldModuleGame =
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        [<FunctionBinding>]
-        static member setSelectedScreenOpt value world =
+        static member internal setSelectedScreenOpt value world =
             World.setSelectedScreenOptPlus value world |> snd
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
@@ -246,6 +245,21 @@ module WorldModuleGame =
         /// Get the current destination screen if a screen transition is currently underway.
         static member getScreenTransitionDestinationOpt world =
             (World.getGameState world).ScreenTransitionDestinationOpt
+
+        /// Get the screens desired to which to transition.
+        static member getDesiredScreenOpt world =
+            (World.getGameState world).DesiredScreenOpt
+
+        /// Set the screen desired to which to transition.
+        static member setDesiredScreenOpt screens world =
+            World.updateGameState
+                (fun gameState ->
+                    if screens <> gameState.DesiredScreenOpt
+                    then { gameState with DesiredScreenOpt = screens }
+                    else Unchecked.defaultof<_>)
+                Property? DesiredScreenOpt
+                screens
+                world
 
         /// Set the current destination screen or None. Be careful using this function as calling
         /// it is predicated that no screen transition is currently underway.
@@ -358,12 +372,12 @@ module WorldModuleGame =
 
         static member internal getGameProperty propertyName world =
             match GameGetters.TryGetValue propertyName with
+            | (true, getter) -> getter world
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
                 | true -> property
                 | false -> failwithf "Could not find property '%s'." propertyName
-            | (true, getter) -> getter world
 
         static member internal trySetGamePropertyFast propertyName property world =
             match GameSetters.TryGetValue propertyName with
@@ -409,6 +423,7 @@ module WorldModuleGame =
 
         static member internal setGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
+            | (true, setter) -> setter property world
             | (false, _) ->
                 World.updateGameState
                     (fun gameState ->
@@ -417,7 +432,6 @@ module WorldModuleGame =
                         then (GameState.setProperty propertyName property gameState)
                         else Unchecked.defaultof<_>)
                     propertyName property.PropertyValue world
-            | (true, setter) -> setter property world
 
         static member internal attachGameProperty propertyName property world =
             let struct (_, world) =
@@ -480,6 +494,7 @@ module WorldModuleGame =
         GameGetters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GameGetters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
+        GameGetters.Add ("DesiredScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getDesiredScreenOpt world })
         GameGetters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
         GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
@@ -490,6 +505,7 @@ module WorldModuleGame =
     let private initSetters () =
         GameSetters.Add ("Model", fun property world -> World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
+        GameSetters.Add ("DesiredScreenOpt", fun property world -> World.setDesiredScreenOpt (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("EyeCenter", fun property world -> World.setEyeCenterPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize", fun property world -> World.setEyeSizePlus (property.PropertyValue :?> Vector2) world)
 

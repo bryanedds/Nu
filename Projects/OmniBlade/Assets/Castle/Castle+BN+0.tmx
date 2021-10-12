@@ -1,25 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="9">
  <tileset firstgid="1" source="Castle.tsx"/>
- <layer id="2" name="Floor" width="32" height="32">
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
+ <layer id="5" name="Basement" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaENADAIAEESlsd05xoGIGBPvPxcZUQte932v8bn8/l8Pp/P5/MladYHw1ItDw==
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzaENADAIAEGSLo9h55ouUJCcOPn5PBHZVE+3n/L33/wHAAD4cQFHMyxl
+  </data>
+ </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlcsJgDAQRLeA5K5WoNanHcQOtAPtQDvQvlxvIoGMkvXHDswhMPIuL5FIo9F8MZUhqs1z/J7Zg/KVL5TEEqXczPrPe35oeyU5f1twS+s/7/mh7Zls97oFunBncHvmnXC87YBO3BHcNgKeSPqH+HTkx3QQ8enIj+Wg+odFyj/UIx8/hoOoRz5+zHcwlL///97Od0L3SnNfVkKKXM8=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlEsOgkAQRAkTLsJGD6ZIJCpehBOx0Qux0b1M4oRhYvdUz8cVndSKal5pqB5UUQwCXaqCnLaSvStE/+Z38ztvlu4Mv3e8p8g83Zf3KBc9S5o/lmtvH5HBsDXvZenN8CfHOwZmsNmat1OL9orm12rtnQIyuGyO55tamCElW5ohBxvNkJONZLgw7PP8rJl1ZXrvDrVjZ2gdPvW7jY+7e5Idk8HlU/+5uWnc3ZPu6Awunxpz07i7F7KD8s1N4+5eyA7KNzdN0glkB+XnGikf6aGkqzb/COwgPUS7qnMenBvoy4D0EPH8YiMZkE75PBzblwHpFOdB2FwGpFOUR8KWfJPIhLBTZYhhx2ZIwbYzNEKlYm/alFMfJstX3Q==
+   eJy9V0tOwzAQtRJVgjQ5AHRXiY/UC1BuAOyQ4ATQVqBCuUgv0SVdIVaoGzgEghtQWJQFLLpjRsngiRmbxG0z0kgeZzzv2fMSxcNQqWEJP68pdQU+StSv4fgC5s5q5Wr5OnIYM3wcV4XNOZBVjX0JeNcMH8fdijgg9g34U6DxJzAeVMShn2F/M/xZkHLoVYSP2Luhxm+GKYdV4FOvyfHsEbsTafzPKOUwMHIX7Qf1+jHQjmd/y949MpybBPncRTTBdfbFHM/+XsDHuZmR66tLjo14O6F23nfTmmE+d+bBwcR24f1nzZIcJOx1ONcI/CVWai3R8WusccxnPC7KwbbvRtbraZzfG49x3EjkZ0XOQcKeZzVaWd25UZPHOG4l8jOKXRz6ln7vQc02+H6i4+dIx9ykXB6b59Az8An7rv639rIMa0vfyn4tv2+Xnkzt+axBDiY+tzeWi7pyaY/P2TQo1XDhc/2grlza43M2DUo1THyz72W0x9eg2da02VrX/ldtuFcbvo/2fNZyfPqnRnNpTdKRLZdiSZPSvzpxcGlN0pEtl2JTk657AnEo8i2zGc/druc1WOSOwnuBtgU1puDv4B8Fvo2Y+5DlnrL8MvcjzuEEamzEac2G4+zJMHczzuf63M04hwOodQz4R1nNkdAHmsO8w1jnLnIvNHtBNhbwpbll3EmRQ8fTq74X+vgPm5SNNg==
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MZzADR4GBg5gmuLmRfDR5ZHZ3LzY5bh4MfUSA17yEM8nRe1QA9ZE5mti1Q0FgC+tYePDxHClQW4S0yA56Wm4pkFS0hUutUMpbeJLa4TSETa9uNIkLkBJOhquaRAGyElH1Ex7PESYJQ9UwwvE/FS0Vw5olhI3A4MMEWaC1I2CUUAsAAD1ay0X
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt0jEKgDAUg+G3dOwlO3gMdVM39cQGeoG0KAX5P8gWMiUCvaZUM0pJNQDwlTlHLMqa3+26Nm3tymFstnRdp7Yu5TY2W7rw8D/+NxL/43/AHz2tByET
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="696" y="1056" width="144" height="144">
+  <object id="5" gid="235" x="696" y="1296" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc MadTrixterNpc Upward [Sequence [[Dialog &quot;You've run a fool's errand...!&quot;] [Battle MadTrixterBattle [MadTrixterDefeated]]]]]"/>
+    <property name="I">[Npc MadTrixterNpc [Some Upward]
+ [Sequence
+  [[Dialog &quot;You've run a fool's errand...!&quot;]
+   [Dialog &quot;Her soul is forever ours...&quot;]
+   [Dialog &quot;...and so is yours!&quot;]
+   [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
-  <object id="2" gid="235" x="744" y="1200" width="48" height="48">
+  <object id="6" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward [Castle 1] [IX 1] false [MadTrixterDefeated]]"/>
+   </properties>
+  </object>
+  <object id="7" gid="235" x="720" y="336" width="96" height="144">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [Some IronKey]]"/>
+   </properties>
+  </object>
+  <object id="8" gid="235" x="1344" y="960" width="48" height="48">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Equipment [ArmorType BronzeMail]] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
    </properties>
   </object>
  </objectgroup>

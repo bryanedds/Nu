@@ -86,6 +86,10 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for checking that a simulant is ignoring bindings.
+    let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
+        Unchecked.defaultof<_>
+
     /// F# reach-around for getting a screen's Ecs.
     let mutable internal getScreenEcs : Screen -> World -> World Ecs =
         Unchecked.defaultof<_>
@@ -130,7 +134,7 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal expandContent : (SplashDescriptor option -> Screen -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
+    let mutable internal expandContent : (SplashDescriptor -> Screen -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
         Unchecked.defaultof<_>
 
     let mutable internal destroyImmediate : Simulant -> World -> World =
@@ -503,13 +507,9 @@ module WorldModule =
         static member internal setOverlayer overlayer world =
             World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
-        /// Get intrinsic overlays.
-        static member getIntrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getIntrinsicOverlays world
-
-        /// Get extrinsic overlays.
-        static member getExtrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getExtrinsicOverlays world
+        /// Get overlays.
+        static member getOverlays world =
+            World.getOverlayerBy Overlayer.getOverlays world
 
         static member internal getOverlayRouter world =
             World.getAmbientStateBy AmbientState.getOverlayRouter world
@@ -518,14 +518,11 @@ module WorldModule =
             let overlayRouter = World.getOverlayRouter world
             by overlayRouter
 
+        static member internal setOverlayRouter router world =
+            World.updateAmbientState (AmbientState.setOverlayRouter router) world
+
         static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
             World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
-
-        /// Make vanilla overlay routes from dispatchers.
-        static member internal dispatchersToOverlayRoutes entityDispatchers =
-            entityDispatchers |>
-            Map.toValueList |>
-            List.map (fun dispatcher -> (getTypeName dispatcher, None))
 
     type World with // EntityTree
 
@@ -798,8 +795,17 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let value = binding.PBRight.GetWithoutValidation world
-                            let setter = Option.get binding.PBLeft.SetOpt
-                            setter value world
+                            let allowPropertyBinding =
+#if DEBUG
+                                // OPTIMIZATION: only compute in DEBUG mode.
+                                not (ignorePropertyBindings binding.PBLeft.This world)
+#else
+                                true
+#endif
+                            if allowPropertyBinding then
+                                let setter = Option.get binding.PBLeft.SetOpt
+                                setter value world
+                            else world
                         else world
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then

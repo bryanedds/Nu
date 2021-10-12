@@ -3,18 +3,18 @@
 
 #I __SOURCE_DIRECTORY__
 #r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
-#r "../../packages/TiledSharp.1.0.1/lib/netstandard2.0/TiledSharp.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.7.4.0/lib/net472/Prime.dll"
+#r "../../packages/Prime.7.5.0/lib/net472/Prime.dll"
 #r "../../packages/Prime.Scripting.7.3.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/FSharpx.Core.1.8.32/lib/40/FSharpx.Core.dll"
 #r "../../packages/FSharpx.Collections.2.1.3/lib/net45/FSharpx.Collections.dll"
 #r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
 #r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 #r "../../Nu/Nu.Gaia.Design/bin/x64/Debug/Nu.Gaia.Design.exe"
@@ -49,10 +49,10 @@ form.Closing.Add (fun args ->
         args.Cancel <- true)
 
 // initialize sdl dependencies using the form as its rendering surface
-let (sdlConfig, sdlDeps) = Gaia.tryMakeSdlDeps form |> Either.getRightValue
+let (sdlConfig, sdlDeps) = Gaia.tryMakeSdlDeps form |> Either.getRight
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld false sdlDeps { WorldConfig.defaultConfig with SdlConfig = sdlConfig } plugin |> Either.getRightValue
+let world = Gaia.tryMakeWorld false sdlDeps { WorldConfig.defaultConfig with SdlConfig = sdlConfig } plugin |> Either.getRight
 
 // stop world from advancing (new variable since you can't shadow in repl for some reason...)
 let world' = World.setUpdateRate 0L world

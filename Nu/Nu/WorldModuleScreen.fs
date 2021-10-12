@@ -115,6 +115,8 @@ module WorldModuleScreen =
         static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming value screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
+        static member internal getScreenSplashOpt screen world = (World.getScreenState screen world).SplashOpt
+        static member internal setScreenSplashOpt value screen world = World.updateScreenState (fun screenState -> { screenState with SplashOpt = value }) Property? SplashOpt value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then { screenState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value screen world
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.WorldExtension.DestructionListRev
@@ -150,12 +152,12 @@ module WorldModuleScreen =
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
+            | (true, getter) -> getter screen world
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
                 | true -> property
                 | false -> failwithf "Could not find property '%s'." propertyName
-            | (true, getter) -> getter screen world
 
         static member internal trySetScreenPropertyFast propertyName property screen world =
             if World.getScreenExists screen world then
@@ -206,6 +208,7 @@ module WorldModuleScreen =
         static member internal setScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
+                | (true, setter) -> setter property screen world
                 | (false, _) ->
                     World.updateScreenState
                         (fun screenState ->
@@ -214,7 +217,6 @@ module WorldModuleScreen =
                             then ScreenState.setProperty propertyName property screenState
                             else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
-                | (true, setter) -> setter property screen world
             else struct (false, world)
 
         static member internal attachScreenProperty propertyName property screen world =
@@ -319,6 +321,7 @@ module WorldModuleScreen =
         ScreenGetters.Add ("TransitionUpdates", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionUpdates screen world })
         ScreenGetters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
         ScreenGetters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
+        ScreenGetters.Add ("SplashOpt", fun screen world -> { PropertyType = typeof<Splash option>; PropertyValue = World.getScreenSplashOpt screen world })
         ScreenGetters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
         ScreenGetters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
         ScreenGetters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
@@ -332,6 +335,7 @@ module WorldModuleScreen =
         ScreenSetters.Add ("TransitionUpdates", fun property screen world -> World.setScreenTransitionUpdates (property.PropertyValue :?> int64) screen world)
         ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
         ScreenSetters.Add ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
+        ScreenSetters.Add ("SplashOpt", fun property screen world -> World.setScreenSplashOpt (property.PropertyValue :?> Splash option) screen world)
         ScreenSetters.Add ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
 
     /// Initialize getters and setters

@@ -47,6 +47,9 @@ module Constants =
         let DialogSplit = '^'
         let ArmorStatBaseDisplayDivisor = 4
         let ItemLimit = 9
+        let CueWalkSpeed = 1.0f
+        let CueRunSpeed = 2.0f
+        let CueMoseySpeed = 0.4f
 
     [<RequireQualifiedAccess>]
     module Field =
@@ -56,10 +59,11 @@ module Constants =
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
 #if DEV
-        let AvatarWalkForce = 20000.0f
+        let AvatarWalkForce = 30000.0f
+        let AvatarWalkForceMouse = 33000.0f
 #else
-        let AvatarWalkForce = 11000.0f
-        let AvatarWalkForceMouse = 12000.0f
+        let AvatarWalkForce = 10100.0f
+        let AvatarWalkForceMouse = 11100.0f
 #endif
         let AvatarIdleSpeedMax = 5.0f
         let CharacterBottomOffset = v2 0.0f 24.0f
@@ -69,14 +73,16 @@ module Constants =
         let SpiritOrbSize = v2Dup 192.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v2Dup 21.0f
-        let SpiritActivityMinimum = 180L
-        let SpiritActivityThreshold = 180L
+        let SpiritActivityMinimum = 120L
+        let SpiritActivityThreshold = 120L
         let SpiritRadius = 90.0f / SpiritOrbRatio
-        let WalkLengthScalar = 1.0f / 16.0f
+        let WalkLengthScalar = 1.0f / 12.0f // NOTE: higher is shorter distance to stronger spirits.
         let TreasureProbability = 0.667f
         let RecruitmentFees = [|200; 1000; 5000; 20000|]
         let ConnectorFadeYMax = 1440.0f
-        let BackgroundElevation = -10.0f
+        let FeelerElevation = -100.0f
+        let BackgroundElevation = -30.0f
+        let FlooringElevation = -10.0f
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
         let SpiritOrbElevation = 20.0f
@@ -119,7 +125,7 @@ module Constants =
         let CharacterOffset = v2 -96.0f 0.0f
         let CharacterPulseLength = 60L
         let RingMenuRadius = 84.0f
-        let BackgroundElevation = -10.0f
+        let BackgroundElevation = -30.0f
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
         let GuiElevation = 20.0f
