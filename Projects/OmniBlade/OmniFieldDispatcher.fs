@@ -20,7 +20,9 @@ module FieldDispatcher =
         | UpdateProp of Prop
         | MenuTeamOpen
         | MenuTeamAlly of int
-        | MenuItemOpen
+        | MenuItemsOpen
+        | MenuItemsPageUp
+        | MenuInventoryPageDown
         | MenuItemSelect of Lens<int * (ItemType * int Option), World>
         | MenuItemUse of int
         | MenuItemCancel
@@ -469,7 +471,7 @@ module FieldDispatcher =
                      Entity.UpImage == asset "Field" "InventoryButtonUp"
                      Entity.DownImage == asset "Field" "InventoryButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
-                     Entity.ClickEvent ==> msg MenuItemOpen]
+                     Entity.ClickEvent ==> msg MenuItemsOpen]
                  Content.button Gen.name
                     [Entity.PositionLocal == position - v2 0.0f 162.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                      Entity.UpImage == asset "Field" "TechButtonUp"
@@ -513,16 +515,16 @@ module FieldDispatcher =
                     (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
                     match menu.MenuState with
-                    | MenuItem menu -> pageItems rows menu.ItemPage true false inventory.Items
+                    | MenuItem menu -> pageItems rows menu.ItemPage false true inventory.Items
                     | _ ->
                         match shopOpt with
                         | Some shop ->
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> pageItems rows shop.ShopPage true false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
+                                | Some shopData -> pageItems rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                                 | None -> Map.empty
-                            | ShopSelling -> pageItems rows shop.ShopPage false true inventory.Items
+                            | ShopSelling -> pageItems rows shop.ShopPage true true inventory.Items
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
@@ -607,7 +609,7 @@ module FieldDispatcher =
             | Sensor (_, _, _, _, _) -> None
             | Character (_, _, _, isRising, _, _) ->
                 if isRising then
-                    if prop.Bottom.Y - avatarPositionY > 46.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                    if prop.Bottom.Y - avatarPositionY > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
                     then Some "Talk"
                     else None
                 else Some "Talk"
@@ -937,9 +939,27 @@ module FieldDispatcher =
                         field
                 just field
 
-            | MenuItemOpen ->
+            | MenuItemsOpen ->
                 let itemState = MenuItem { ItemPage = 0 }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = itemState }) field
+                just field
+
+            | MenuItemsPageUp ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        match menu.MenuState with
+                        | MenuItem menuItem -> { menu with MenuState = MenuItem { ItemPage = max 0 (dec menuItem.ItemPage) }}
+                        | _ -> menu)
+                        field
+                just field
+
+            | MenuInventoryPageDown ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        match menu.MenuState with
+                        | MenuItem menuItem -> { menu with MenuState = MenuItem { ItemPage = inc menuItem.ItemPage }}
+                        | _ -> menu)
+                        field
                 just field
 
             | MenuItemSelect selectionLens ->
@@ -1452,7 +1472,7 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]]
 
-                 // inventory
+                 // items
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
@@ -1463,7 +1483,19 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
+                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]
+                        Content.button Gen.name
+                          [Entity.PositionLocal == v2 138.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
+                           Entity.Text == "<"
+                           Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                           Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                           Entity.ClickEvent ==> msg MenuItemsPageUp]
+                        Content.button Gen.name
+                          [Entity.PositionLocal == v2 804.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
+                           Entity.Text == ">"
+                           Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                           Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                           Entity.ClickEvent ==> msg MenuInventoryPageDown]]
 
                  // tech team
                  Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
