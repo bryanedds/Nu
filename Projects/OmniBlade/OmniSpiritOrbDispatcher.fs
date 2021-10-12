@@ -60,9 +60,6 @@ module SpiritOrbDispatcher =
                 else views)
                 [] inhabitants
 
-        override this.Initializers (_, _) =
-            [Entity.SwallowMouseLeft == false]
-
         override this.View (spiritOrb, entity, world) =
             let orbTransform = entity.GetTransform world
             let orbImage = Assets.Field.SpiritOrbImage
