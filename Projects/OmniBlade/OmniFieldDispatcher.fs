@@ -742,7 +742,7 @@ module FieldDispatcher =
         static let interactCharacter cue (prop : Prop) (field : Field) =
             let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
             let field = Field.updateCue (constant cue) field
-            just field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
         
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
@@ -750,7 +750,7 @@ module FieldDispatcher =
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
                 let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
                 let field = Field.updateCue (constant branchCue) field
-                just field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
             else just field
 
         static let interactShopkeep shopType (prop : Prop) (field : Field) =
@@ -761,7 +761,7 @@ module FieldDispatcher =
 
         static let interactSeal cue (field : Field) =
             let field = Field.updateCue (constant cue) field
-            just field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
