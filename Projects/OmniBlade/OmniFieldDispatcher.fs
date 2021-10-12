@@ -1550,7 +1550,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 24.0f 438.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text == "Qu'achetes tu?"
+                            Entity.Text == "Que veux-tu?"
                             Entity.VisibleLocal <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 352.0f 438.0f; Entity.ElevationLocal == 2.0f
