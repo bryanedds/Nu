@@ -1424,7 +1424,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Acc :  " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "Acc:  " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name

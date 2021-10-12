@@ -86,13 +86,13 @@ type WeaponType =
                                   |Bare -> "Mains Nues"
                                   |ShortSword -> "Epee Courte"
                                   |Dagger -> "Dague"
-                                  |OakRod -> "Baguette en Bois "
+                                  |OakRod -> "Baguette de Bois "
                                   |OakBow -> "Arc en Bois"
                                   |Paws -> "Pattes"
                                   |BronzeSword -> "Epee de Bronze"
                                   |BronzeKatana -> "Katana de Bronze"
                                   |BronzeRod -> "Baguette de Bronze"
-                                  |LightBow -> "Arc de Lumiere"
+                                  |LightBow -> "Arc Leger"
                                   |Claws -> "Griffes"
                                   |IronSword -> "Epee de Fer"
                                   |IronKatana -> "Katana de Fer"
@@ -114,7 +114,7 @@ type WeaponType =
                                         |SightedBow -> Singular Masculin 
     static member frenchWithUndefinedArticle wt = 
                     let article = (WeaponType.NumberAndGender wt).UndefinedArticle
-                            in article + WeaponType.frenchName wt 
+                            in article + WeaponType.frenchName wt
 
 type ArmorType =
     | MicroFur
@@ -149,17 +149,15 @@ type ArmorType =
     static member frenchNameGender _ = Feminin 
     static member frenchWithUndefinedArticle at = 
                     let article =  (ArmorType.frenchNameGender at).UndefinedArticle
-                        in article + ArmorType.frenchName at  
-                        
-     
-
-            
+                        in article + ArmorType.frenchName at
  
+
+
 type AccessoryType =
     | SilverRing
     | IronBrace
     static member frenchName at = match at with
-                                  |SilverRing -> "Bague d'Argent"
+                                  |SilverRing -> "Bague en Argent"
                                   |IronBrace -> "Corset de Fer"
     static member frenchNameGender at = match at with
                                         |SilverRing -> Feminin
@@ -167,8 +165,7 @@ type AccessoryType =
     static member frenchWithUndefinedArticle at = let article = match AccessoryType.frenchNameGender at with
                                                                       |Feminin -> "une "
                                                                       |Masculin -> "un "
-                                                                         in article + AccessoryType.frenchName at 
-
+                                                                         in article + AccessoryType.frenchName at
 
 type WeaponSubtype =
     | Melee
@@ -214,6 +211,7 @@ type ConsumableType =
         |HighEther -> "Ether Fort"
         |TurboEther -> "Ether Turbo"
         |Revive -> "Remontant"
+
     static member frenchGender ct = match ct with 
                                     |GreenHerb -> Feminin
                                     |RedHerb -> Feminin
@@ -224,18 +222,14 @@ type ConsumableType =
                         in article + ConsumableType.frenchName ct  
 type KeyItemType =
     | BrassKey
-    | IronKey
-    | CopperKey
-    | AluminumKey
-    | PewterKey
-    | SteelKey
+
     static member frenchName kt = match kt with
                                   |BrassKey -> "Cle de Laiton"
     static member frenchGender kt = Feminin 
     
     static member frenchWithUndefinedArticle kt = 
                     let article = (KeyItemType.frenchGender kt).UndefinedArticle
-                        in article + KeyItemType.frenchName kt  
+                        in article + KeyItemType.frenchName kt
 
 type ItemType =
     | Consumable of ConsumableType
@@ -264,13 +258,14 @@ type ItemType =
                                  | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchName ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
                                  | KeyItem ty -> KeyItemType.frenchName ty
                                  | Stash gold -> string gold + " Ors"
-    
+
     static member frenchWithQuantity item =
                   match item with
                          | Consumable ty -> ConsumableType.frenchWithUndefinedArticle ty
                          | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
                          | KeyItem ty -> KeyItemType.frenchWithUndefinedArticle ty
                          | Stash gold -> string gold + " Ors"
+
 
 type [<ReferenceEquality; NoComparison>] PrizePool =
     { Consequents : Advent Set

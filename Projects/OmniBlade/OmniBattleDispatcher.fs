@@ -430,7 +430,7 @@ module BattleDispatcher =
                     List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
-                    | _ :: _ -> "" + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + " monte en niveau ! ^"
+                    | _ :: _ -> "" + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + " monte en niveau!^"
                     | [] -> "Victoire!^"
                 let textB =
                     alliesLevelingUp |>
