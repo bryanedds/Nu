@@ -113,8 +113,8 @@ type WeaponType =
                                         |IronKatana -> Singular Masculin 
                                         |SightedBow -> Singular Masculin 
     static member frenchWithUndefinedArticle wt = 
-                    let article = (WeaponType.NumberAndGender wt).UndefinedArticle
-                            in article + WeaponType.frenchName wt
+        let article = (WeaponType.NumberAndGender wt).UndefinedArticle
+        article + WeaponType.frenchName wt
 
 type ArmorType =
     | MicroFur
@@ -148,10 +148,8 @@ type ArmorType =
                                   |StoneHide -> "Armure de Pierre"
     static member frenchNameGender _ = Feminin 
     static member frenchWithUndefinedArticle at = 
-                    let article =  (ArmorType.frenchNameGender at).UndefinedArticle
-                        in article + ArmorType.frenchName at
- 
-
+        let article =  (ArmorType.frenchNameGender at).UndefinedArticle
+        article + ArmorType.frenchName at
 
 type AccessoryType =
     | SilverRing
@@ -162,10 +160,11 @@ type AccessoryType =
     static member frenchNameGender at = match at with
                                         |SilverRing -> Feminin
                                         |IronBrace -> Masculin 
-    static member frenchWithUndefinedArticle at = let article = match AccessoryType.frenchNameGender at with
-                                                                      |Feminin -> "une "
-                                                                      |Masculin -> "un "
-                                                                         in article + AccessoryType.frenchName at
+    static member frenchWithUndefinedArticle at =
+        let article =   match AccessoryType.frenchNameGender at with
+                        |Feminin -> "une "
+                        |Masculin -> "un "
+        article + AccessoryType.frenchName at
 
 type WeaponSubtype =
     | Melee
@@ -216,20 +215,27 @@ type ConsumableType =
                                     |GreenHerb -> Feminin
                                     |RedHerb -> Feminin
                                     |GoldHerb -> Feminin 
-                                    | _ -> Masculin 
+                                    | _ -> Masculin
+
     static member frenchWithUndefinedArticle ct = 
-                    let article = (ConsumableType.frenchGender ct).UndefinedArticle 
-                        in article + ConsumableType.frenchName ct  
+        let article = (ConsumableType.frenchGender ct).UndefinedArticle 
+        article + ConsumableType.frenchName ct
+
 type KeyItemType =
     | BrassKey
+    | IronKey
+    | CopperKey
+    | AluminumKey
+    | PewterKey
+    | SteelKey
 
     static member frenchName kt = match kt with
                                   |BrassKey -> "Cle de Laiton"
     static member frenchGender kt = Feminin 
     
     static member frenchWithUndefinedArticle kt = 
-                    let article = (KeyItemType.frenchGender kt).UndefinedArticle
-                        in article + KeyItemType.frenchName kt
+        let article = (KeyItemType.frenchGender kt).UndefinedArticle
+        article + KeyItemType.frenchName kt
 
 type ItemType =
     | Consumable of ConsumableType
