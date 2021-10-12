@@ -5,7 +5,7 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-96 -228]]
+    [Position [-96 -240]]
     [Text Back]]]
   [TextDispatcher
    [[BackgroundImageOpt
