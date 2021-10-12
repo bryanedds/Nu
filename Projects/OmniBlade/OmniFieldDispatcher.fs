@@ -130,14 +130,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog ("Tu n'as pas assez ...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("Tu n'as pas assez...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | Unseal (fee, advent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.remove advent) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog ("Tu n'as pas assez ...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("Tu n'as pas assez...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
 
             | AddItem itemType ->
                 (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
