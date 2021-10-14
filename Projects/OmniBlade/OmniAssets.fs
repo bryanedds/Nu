@@ -147,6 +147,7 @@ module Assets =
         let ImpactSplashAnimationSheet = asset<Image> PackageName "ImpactSplash"
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"
+        let ShurikenAnimationSheet = asset<Image> PackageName "Shuriken"
         let AfflictionsAnimationSheet = asset<Image> PackageName "Afflictions"
         let ChargeOrbAnimationSheet = asset<Image> PackageName "ChargeOrb"
         let SilenceAnimationSheet = asset<Image> PackageName "Silence"

@@ -545,7 +545,7 @@ module Battle =
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
                 Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
-                Map.add 2 (Teammate.makeAtLevel level 2 Mael)
+                Map.add 2 (Teammate.makeAtLevel level 2 Shade)
             makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle 0L
         | None -> empty
 

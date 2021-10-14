@@ -157,6 +157,18 @@ module Effects =
                       { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
+    let makeShurikenEffect position position2 =
+        { EffectName = "Shuriken"
+          LifeTimeOpt = Some 30L
+          Definitions = Map.empty
+          Content =
+              AnimatedSprite
+               (Resource (AssetTag.toPair Assets.Battle.ShurikenAnimationSheet),
+                v2i 192 192, 2, 2, 3L, Loop,
+                [|Size (v2 192.0f 192.0f);
+                  Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 30L }; { TweenValue = position2; TweenLength = 0L }|])|],
+                Nil) }
+    
     let makeSlashSpikeEffect position position2 =
         let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =

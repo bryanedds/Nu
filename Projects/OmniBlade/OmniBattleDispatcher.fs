@@ -63,6 +63,7 @@ module BattleDispatcher =
         | DisplayCycloneBlur of int64 * CharacterIndex * single
         | DisplayImpactSplash of int64 * CharacterIndex
         | DisplayCut of int64 * bool * CharacterIndex
+        | DisplayShuriken of int64 * CharacterIndex * CharacterIndex
         | DisplaySlashSpike of int64 * Vector2 * CharacterIndex
         | DisplayArcaneCast of int64 * CharacterIndex
         | DisplayFire of int64 * CharacterIndex * CharacterIndex
@@ -1032,6 +1033,17 @@ module BattleDispatcher =
             | DisplayCut (delay, light, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v2 48.0f 144.0f) (Bottom target.Bottom) (Effects.makeCutEffect light) world |> just
+                | None -> just world
+            
+            | DisplayShuriken (delay, sourceIndex, targetIndex) ->
+                match Battle.tryGetCharacter sourceIndex battle with
+                | Some source ->
+                    match Battle.tryGetCharacter targetIndex battle with
+                    | Some target ->
+                        let effect = Effects.makeShurikenEffect (source.Bottom + (v2 0.0f 0.0f)) (target.Bottom + (v2 0.0f 0.0f))
+                        let world = displayEffect delay (v2 100.0f 100.0f) (Bottom (source.Bottom - v2 0.0f 0.0f)) effect world
+                        just world
+                    | None -> just world
                 | None -> just world
             
             | DisplaySlashSpike (delay, bottom, targetIndex) ->
