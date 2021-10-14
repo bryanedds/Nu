@@ -738,6 +738,11 @@ module BattleDispatcher =
                     let cut = DisplayCut (30L, false, targetIndex)
                     let battle = Battle.animateCharacter time AttackAnimation sourceIndex battle
                     withCmds [playHit; cut] battle
+                | PoisonShuriken ->
+                    let time = World.getUpdateTime world
+                    let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                    let shuriken = DisplayShuriken (30L, sourceIndex, targetIndex)
+                    withCmds [playHit; shuriken] battle
                 | DoubleCut ->
                     let time = World.getUpdateTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -1040,7 +1045,7 @@ module BattleDispatcher =
                 | Some source ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
-                        let effect = Effects.makeShurikenEffect (source.Bottom + (v2 0.0f 0.0f)) (target.Bottom + (v2 0.0f 0.0f))
+                        let effect = Effects.makeShurikenEffect (source.Bottom + (v2 0.0f 40.0f)) (target.Bottom + (v2 0.0f 40.0f))
                         let world = displayEffect delay (v2 100.0f 100.0f) (Bottom (source.Bottom - v2 0.0f 0.0f)) effect world
                         just world
                     | None -> just world

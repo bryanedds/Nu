@@ -4,6 +4,7 @@ Slash,2,Magical,1.15,False,False,False,0,None,[],[],[LineTarget 60 [EnemyAim Tru
 DarkCritical,3,Physical,1.4,False,False,True,0,[Some Dark],[],[],[SingleTarget [EnemyAim True]],
 Cyclone,3,Physical,1,False,False,False,0,None,[],[],[RadialTarget 156 [EnemyAim True]],
 PoisonCut,2,Physical,1,False,False,False,0,None,[Poison],[],[SingleTarget [EnemyAim True]],
+PoisonShuriken,2,Physical,1,False,False,False,0,None,[Poison],[],[SingleTarget [EnemyAim True]],
 PowerCut,2,Physical,1.4,False,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],
 DispelCut,4,Physical,1.2,False,False,False,0,None,[],[[Time True] [Power True False] [Power True True] [Magic True False] [Magic True True] [Shield True False] [Shield True True]],[SingleTarget [EnemyAim True]],
 DoubleCut,4,Physical,1.8,False,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],

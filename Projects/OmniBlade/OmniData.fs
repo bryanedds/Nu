@@ -198,6 +198,7 @@ type TechType =
     | DarkCritical
     | Cyclone
     | PoisonCut
+    | PoisonShuriken
     | PowerCut
     | DispelCut
     | DoubleCut

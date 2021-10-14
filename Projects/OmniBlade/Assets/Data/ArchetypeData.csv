@@ -1,7 +1,7 @@
 Type,Stamina,Strength,Intelligence,Defense,Absorb,Focus,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs,ChargeTechs,Immunities,AffinityOpt,Stature,Description
 Apprentice,1,1,1,1,1,1,1,1,Sword,Vest,[],[],[],None,SmallStature,Generic character.
 Fighter,1.2,1.1,0.8,1,1,0.9,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],[],[],None,SmallStature,
-Ninja,1.1,1,0.9,1,1,1,1,1,Knife,Vest,[[2 PoisonCut] [4 PowerCut] [6 DispelCut] [8 DoubleCut]],[],[],None,SmallStature,
+Ninja,1.1,1,0.9,1,1,1,1,1,Knife,Vest,[[2 PoisonShuriken] [4 PowerCut] [6 DispelCut] [8 DoubleCut]],[],[],None,SmallStature,
 Wizard,0.9,0.8,1.1,1,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],[],[],None,SmallStature,
 Conjuror,0.9,0.8,1.1,1,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 Slow] [8 ConjureIfrit]],[],[],None,SmallStature,
 Cleric,1,1,1,1,1,1,1,1,Bow,Vest,[[2 Cure] [4 Empower] [6 Aura] [8 Enlighten] [12 Protect]],[],[],None,SmallStature,
