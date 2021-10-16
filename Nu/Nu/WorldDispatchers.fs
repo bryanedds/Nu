@@ -1913,9 +1913,6 @@ module TextDispatcherModule =
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
-        override this.Register (entity, world) =
-            link (entity.ModelGeneric<string> ()) entity.Text world
-
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 match entity.GetBackgroundImageOpt world with
@@ -2026,7 +2023,6 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = link (entity.ModelGeneric<bool> ()) entity.Toggled world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2221,9 +2217,6 @@ module FillBarDispatcherModule =
              define Entity.FillImage Assets.Default.Image9
              define Entity.BorderColor (Color (byte 0, byte 0, byte 0, byte 255))
              define Entity.BorderImage Assets.Default.Image12]
-
-        override this.Register (entity, world) =
-            link (entity.ModelGeneric<single> ()) entity.Fill world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
