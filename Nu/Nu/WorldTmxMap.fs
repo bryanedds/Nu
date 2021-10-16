@@ -295,7 +295,6 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
     let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
