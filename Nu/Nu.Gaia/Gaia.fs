@@ -229,7 +229,19 @@ module Gaia =
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
         let entityTds = { DescribedEntity = entity; Form = form }
+        let previousGridItem = form.entityPropertyGrid.SelectedGridItem
         form.entityPropertyGrid.SelectedObject <- entityTds
+        if notNull previousGridItem then
+            let gridItems = form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems.["\rScene Properties"].GridItems
+            match Seq.tryFind (fun (gridItem : GridItem) -> gridItem.Label = previousGridItem.Label) (enumerable gridItems) with
+            | Some gridItem -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+            | None ->
+                if entity.GetModelGeneric<obj> world <> box () then
+                    let gridItems = form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems.["\rScene Properties"].GridItems
+                    form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
+        elif entity.GetModelGeneric<obj> world <> box () then
+            let gridItems = form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems.["\rScene Properties"].GridItems
+            form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
         form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
         form.propertyTabControl.SelectTab 0 // show entity properties
 
