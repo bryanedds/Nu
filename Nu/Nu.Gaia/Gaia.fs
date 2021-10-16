@@ -1023,7 +1023,9 @@ module Gaia =
         addWorldChanger $ fun world ->
             let updateRate = if form.advancingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setUpdateRate updateRate world)
-            if updateRate = 1L then Globals.pushPastWorld pastWorld
+            if updateRate <> 0L then
+                form.displayPanel.Focus () |> ignore
+                Globals.pushPastWorld pastWorld
             world
 
     let private handleFormResetUpdateTime (_ : GaiaForm) (_ : EventArgs) =
