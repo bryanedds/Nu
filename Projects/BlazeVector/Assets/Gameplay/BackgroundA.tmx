@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="32" height="9" tilewidth="64" tileheight="64">
- <tileset firstgid="1" name="SkylineTileSet" tilewidth="64" tileheight="64">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="9" tilewidth="64" tileheight="64" infinite="0" nextlayerid="3" nextobjectid="1">
+ <tileset firstgid="1" name="SkylineTileSet" tilewidth="64" tileheight="64" tilecount="256" columns="16">
   <properties>
    <property name="Image" value="[Gameplay SkylineTileSet]"/>
   </properties>
   <image source="SkylineTileSet.png" width="1024" height="1024"/>
  </tileset>
- <layer name="Scenery" width="32" height="9">
+ <layer id="1" name="Scenery" width="32" height="9" parallaxx="0.25">
   <data encoding="base64" compression="zlib">
    eJyty9cilgEAANDfI8ueJRlFmzIjyWwKmUWZKRVCNgkZieyMzjv4Ls7lCQ+FQheIIJIoookhljjiSSCRJJK5yCXCz/lTuEwqV0gjnQwyuco1ssjmOje4ya0A/m3ucJcccrnHffLIp4BCiijmASWUBvAfUsYjynlMBZVUUU0NtTzhKc94zosA/kvqeEU9DTTymiaaaaGVNtp5w1s6AvidvOM9XXTTQy999POBAT7yiUE+8yWA/5UhhhnhG6OMMc53JphkimlmmGUugD/PAj9Y5CdLLLPCL1ZZY50NfrPJnwD+Ftv8ZYdd9tjngEOO+McxJ5xyRijs/P8/GC7Nkw==
   </data>
  </layer>
- <layer name="Buildings" width="32" height="9">
+ <layer id="2" name="Buildings" width="32" height="9" parallaxx="0.5">
   <data encoding="base64" compression="zlib">
    eJztjV0KgCAQhO0PCgpKvUDmBVLvf7ZWWGESHyToqT4YdmdnXYW405F6UUdDaivfpN0n/7zNRpLca9JYmCcfcwUeGbhK2ME7Kss1+51kuLekuTBPPuYHeGTiamAH7xxZbtmfJMd9IK2FefIx9+CRhauDHbzjszyIn69zAcXmBzA=
   </data>
