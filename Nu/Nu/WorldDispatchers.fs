@@ -1017,9 +1017,6 @@ module TileMapFacetModule =
         member this.GetGlow world : Color = this.Get Property? Glow world
         member this.SetGlow (value : Color) world = this.Set Property? Glow value world
         member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
-        member this.GetParallax world : single = this.Get Property? Parallax world
-        member this.SetParallax (value : single) world = this.Set Property? Parallax value world
-        member this.Parallax = lens Property? Parallax this.GetParallax this.SetParallax this
         member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
         member this.SetTileLayerClearance (value : single) world = this.Set Property? TileLayerClearance value world
         member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
@@ -1045,7 +1042,6 @@ module TileMapFacetModule =
              define Entity.CollisionMask "@"
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
-             define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -1107,7 +1103,6 @@ module TileMapFacetModule =
                             (entity.GetElevation world)
                             (entity.GetColor world)
                             (entity.GetGlow world)
-                            (entity.GetParallax world)
                             (entity.GetTileLayerClearance world)
                             (entity.GetTileIndexOffset world)
                             (entity.GetTileIndexOffsetRange world)
@@ -1141,7 +1136,6 @@ module TmxMapFacetModule =
              define Entity.CollisionMask "@"
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
-             define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -1199,7 +1193,6 @@ module TmxMapFacetModule =
                         (entity.GetElevation world)
                         (entity.GetColor world)
                         (entity.GetGlow world)
-                        (entity.GetParallax world)
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
@@ -1920,9 +1913,6 @@ module TextDispatcherModule =
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
-        override this.Register (entity, world) =
-            link (entity.ModelGeneric<string> ()) entity.Text world
-
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 match entity.GetBackgroundImageOpt world with
@@ -2033,7 +2023,6 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = link (entity.ModelGeneric<bool> ()) entity.Toggled world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2228,9 +2217,6 @@ module FillBarDispatcherModule =
              define Entity.FillImage Assets.Default.Image9
              define Entity.BorderColor (Color (byte 0, byte 0, byte 0, byte 255))
              define Entity.BorderImage Assets.Default.Image12]
-
-        override this.Register (entity, world) =
-            link (entity.ModelGeneric<single> ()) entity.Fill world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2429,7 +2415,6 @@ module TileMapDispatcherModule =
              define Entity.CollisionMask "@"
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
-             define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -2452,7 +2437,6 @@ module TmxMapDispatcherModule =
              define Entity.CollisionMask "@"
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
-             define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
              define Entity.TmxMap (TmxMap.makeDefault ())]
 

@@ -73,14 +73,14 @@ module TmxMap =
             </map>"""
 
     /// Make a TmxLayerTile.
-    let makeLayerTile gid x y hflip vflip dflip =
+    let makeLayerTile gid hflip vflip dflip =
         let tid =
             gid |||
             (if hflip then 0x80000000 else 0x0) |||
             (if vflip then 0x40000000 else 0x0) |||
             (if dflip then 0x20000000 else 0x0) |>
             uint
-        TmxLayerTile (tid, x, y)
+        TmxLayerTile tid
 
     /// Make a TmxObject.
     let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
@@ -177,7 +177,7 @@ module TmxMap =
         // construct a list of body shapes
         let bodyShapes = List<BodyShape> ()
         let tileBoxes = dictPlus<single, Vector4 List> HashIdentity.Structural []
-        for i in 0 .. dec tileLayer.Tiles.Count do
+        for i in 0 .. dec tileLayer.Tiles.Length do
 
             // construct a dictionary of tile boxes, adding non boxes to the result list
             let mutable tileDescriptor = Unchecked.defaultof<_>
@@ -295,8 +295,7 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    /// TODO: remove as much allocation from this as possible! See related issue, https://github.com/bryanedds/Nu/issues/324 .
-    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileMapParallax tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
+    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
@@ -315,10 +314,11 @@ module TmxMap =
                     let elevation = tileMapElevation + elevationOffset
 
                     // compute parallax position
+                    let parallax = v2 (single layer.ParallaxX) (single layer.ParallaxY)
                     let parallaxPosition =
                         if absolute
                         then tileMapPosition
-                        else tileMapPosition + tileMapParallax * elevation * -viewBounds.Center
+                        else tileMapPosition + (viewBounds.Center - parallax * viewBounds.Center)
 
                     // compute positions relative to tile map
                     let (r, r2) =
@@ -364,9 +364,9 @@ module TmxMap =
                                             | ValueSome xTileAnimationDescriptor ->
                                                 let compressedTime = time / xTileAnimationDescriptor.TileAnimationDelay
                                                 let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
-                                                makeLayerTile (xTileGid + xTileOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
+                                                makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | ValueNone ->
-                                                makeLayerTile xTileGid xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
+                                                makeLayerTile xTileGid xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                         tiles.Add xTile
                                 else xS <- xS + tileSize.X
                                 xO <- xO + tileSize.X

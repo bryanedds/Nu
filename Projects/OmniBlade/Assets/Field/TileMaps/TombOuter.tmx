@@ -45,7 +45,8 @@
   </object>
   <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc MaelNpc None [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
+    <property name="I">[Npc MaelNpc None [Prompt &quot;I can make your acquaintence... at a price.
+$FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]</property>
    </properties>
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
