@@ -16,7 +16,7 @@
  </layer>
  <layer id="4" name="Flooring" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlcsJgDAQRLeA5K5WoNanHcQOtAPtQDvQvlxvIoGMkvXHDswhMPIuL5FIo9F8MZUhqs1z/J7Zg/KVL5TEEqXczPrPe35oeyU5f1twS+s/7/mh7Zls97oFunBncHvmnXC87YBO3BHcNgKeSPqH+HTkx3QQ8enIj+Wg+odFyj/UIx8/hoOoRz5+zHcwlL///97Od0L3SnNfVkKKXM8=
+   eJztlcsJgDAQRLcAc1crUOvTDrQD7UA7MB1oX643kYWMksUPOzCHhA3v8pIQWSyWL6ZOiJrkOf7I7Mn4xldK6ogybu7k9ZEfmr2Tgs+W3MrJ6yM/NHsl+73uga7cBZy98k60PDsA9dwZnO0UPNH0D/HpzI/pIOLTmR/LQfMPi5Z/qEcSP4aDqEcSP+Y7GMrf/7+381ule/X2eMFlae8L2QBoh15T
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
@@ -26,12 +26,12 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MZzALR4GBg5gmuLmRfDR5ZHZ3LzY5bh4MfUSA17xEM8nRe1QA9ZE5mti1Q0FgC+tYePDxHClQW4S0yA56Wm4pkFS0hUutUMpbeJLa4TSETa9uNIkLkBJOhquaRAGyElH1Ex7PESYJQ9UwwvE/FS0Vw5olhI3A4MMEWaC1I2CUUAsAAB0dS1N
+   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MZzALR4GBg5gmuLmRfDR5ZHZ3LzY5bh4MfUSA17xEM8nRe1QA9ZE5mti1Q0FgC+tYePDxHClQW4S0yA56Wm4pkFS0hUutUMpbeJLa4TSETa9uNIkLkBJOhquaRAGyElH1Eh7MlAzeIgwSx6ohheI+amc5pW4qatuFIwCEAAAJNYtIg==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0jEKgDAUg+G3dOwlO3gMdVM39cQGeoG0KAX5P8gWMiUCvaZUM0pJNQDwlTlHLMqa3+26Nm3tymFstnRdp7Yu5TY2W7rw8D/+NxL/43/AHz2tByET
+   eJztzqENACAMAMGaSpZEMAazI7oBpklzl7z/CH6drLrsrABgoru6DwBglgffsAIw
   </data>
  </layer>
  <objectgroup id="3" name="Props">

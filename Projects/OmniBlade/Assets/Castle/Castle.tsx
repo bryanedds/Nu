@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="Castle" tilewidth="48" tileheight="48" tilecount="1479" columns="51">
+<tileset version="1.5" tiledversion="1.7.2" name="Castle" tilewidth="48" tileheight="48" tilecount="1479" columns="51">
  <properties>
   <property name="Image" value="[Castle Castle]"/>
  </properties>
  <image source="Castle.png" width="2448" height="1392"/>
+ <tile id="52">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
  <tile id="218">
   <properties>
    <property name="C" value=""/>
