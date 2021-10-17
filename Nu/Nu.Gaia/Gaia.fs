@@ -1749,7 +1749,9 @@ module Gaia =
                 else (Simulants.DefaultScreen, typeof<ScreenDispatcher>)
             Globals.Screen <- screen
             let (screen, world) =
-                World.createScreen3 screenDispatcher.Name (Some screen.Name) world
+                if not (screen.Exists world)
+                then World.createScreen3 screenDispatcher.Name (Some screen.Name) world
+                else (screen, world)
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
