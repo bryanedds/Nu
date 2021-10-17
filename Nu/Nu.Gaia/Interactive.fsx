@@ -36,10 +36,11 @@ open Nu.Gaia
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
 // initialize Gaia
-Gaia.init NuConfig.defaultConfig
+let nuConfig = NuConfig.defaultConfig
+Gaia.init nuConfig
 
 // decide on a target directory and plugin
-let (_, targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
+let (savedState, targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
 
 // initialize Gaia's form
 let form = Gaia.createForm ()
@@ -52,10 +53,13 @@ form.Closing.Add (fun args ->
 let (sdlConfig, sdlDeps) = Gaia.tryMakeSdlDeps form |> Either.getRight
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld false sdlDeps { WorldConfig.defaultConfig with SdlConfig = sdlConfig } plugin |> Either.getRight
+let worldConfig =
+    { Imperative = savedState.UseImperativeExecution
+      StandAlone = false
+      UpdateRate = 0L
+      SdlConfig = sdlConfig
+      NuConfig = nuConfig }
+let world = Gaia.tryMakeWorld savedState.UseGameplayScreen sdlDeps worldConfig plugin |> Either.getRight
 
-// stop world from advancing (new variable since you can't shadow in repl for some reason...)
-let world' = World.setUpdateRate 0L world
-
-//run Gaia from repl
-Gaia.runFromRepl tautology targetDir sdlDeps form world'
+// run Gaia from repl
+Gaia.runFromRepl tautology targetDir sdlDeps form world
