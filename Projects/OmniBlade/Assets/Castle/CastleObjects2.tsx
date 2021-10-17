@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.5" tiledversion="1.7.2" name="CastleObjects2" tilewidth="48" tileheight="48" tilecount="99" columns="9">
- <image source="CastleObjects2.png" width="432" height="528"/>
  <properties>
   <property name="Image" value="[Castle CastleObjects2]"/>
  </properties>
+ <image source="CastleObjects2.png" width="432" height="528"/>
  <tile id="10">
   <properties>
    <property name="C" value=""/>
@@ -122,6 +122,26 @@
  <tile id="93">
   <properties>
    <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="95">
+  <properties>
+   <property name="C" value="Right"/>
+  </properties>
+ </tile>
+ <tile id="96">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="97">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="98">
+  <properties>
+   <property name="C" value="Left"/>
   </properties>
  </tile>
 </tileset>
