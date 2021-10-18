@@ -214,13 +214,14 @@ and Renderer =
 type RenderLayeredMessageComparer () =
     interface IComparer<RenderLayeredMessage> with
         member this.Compare (left, right) =
-            let elevationCompare = left.Elevation.CompareTo right.Elevation
-            if elevationCompare <> 0 then elevationCompare else
-            let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
-            if positionYCompare <> 0 then positionYCompare else
-            let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
-            if assetNameCompare <> 0 then assetNameCompare else
-            strCmp left.AssetTag.PackageName right.AssetTag.PackageName
+            if left.Elevation < right.Elevation then -1
+            elif left.Elevation > right.Elevation then 1
+            elif left.PositionY > right.PositionY then -1
+            elif left.PositionY < right.PositionY then 1
+            else
+                let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+                if assetNameCompare <> 0 then assetNameCompare
+                else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
 /// The mock implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] MockRenderer =
