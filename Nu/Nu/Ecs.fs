@@ -704,7 +704,10 @@ type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
 /// An ECS query.
 type Query<'c, 'w when
             'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
-            
+
+    // TODO: the problem with OrderedDictionary is that it keeps it entries in an ArrayList, which loses type info and
+    // keeps the GC from seeing them as Unmanaged types that then have to be scanned. We must use a dictionary that
+    // doesn't have this issue.
     let cache = OrderedDictionary<Guid, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
