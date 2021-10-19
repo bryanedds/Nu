@@ -17,7 +17,6 @@ module FieldDispatcher =
         | Update
         | UpdateAvatar of Avatar
         | UpdateFieldTransition
-        | UpdateProp of Prop
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemsOpen
@@ -918,10 +917,6 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
-
-            | UpdateProp prop ->
-                let field = Field.updateProp (constant prop) prop.PropId field
-                just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
