@@ -128,29 +128,9 @@ type MyGameDispatcher () =
         // create movers query
         let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
 
-        //// create object references
-        //let count = 2500000
-        //let ps = Array.init count (fun _ -> { Active = true; P = v2Zero })
-        //let vs = Array.init count (fun _ -> { Active = true; V = v2Zero })
-        //let objs = Array.init count (fun i -> { Active = true; P = ps.[i]; V = vs.[i]})
-        ////let objs = Array.init count (fun _ -> { P = { P = v2Zero }; V = { V = v2One }})
-        //
-        ////// randomize elements in memory
-        ////for i in 0 .. objs.Length - 1 do
-        ////    objs.[i] <- objs.[Gen.random1 (objs.Length - 1)]
-        ////    objs.[i].P <- objs.[Gen.random1 (objs.Length - 1)].P
-        ////    objs.[i].V <- objs.[Gen.random1 (objs.Length - 1)].V
-        //
-        //// define update for out-of-place movers
-        //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-        //    for obj in objs do
-        //        if  obj.Active then
-        //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
-        //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
-
         // create 3M movers (goal: 60FPS, current: 60FPS)
         for _ in 0 .. 3000000 - 1 do
-            movers.Register false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
+            movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->

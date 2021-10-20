@@ -701,6 +701,122 @@ type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
             'c7 : struct and 'c7 :> 'c7 Component> =
             delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
 
+/// A SystemHierarchical node.
+type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
+    { EntityId : uint64
+      ComponentRef : 'c ComponentRef}
+
+/// Tracks changes in a hierarchical system.
+type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
+    { /// Whether change involves registeration (true) or unregistration (false).
+      Registered : bool
+      /// The node entity's id.
+      NodeId : uint64
+      /// The parent's entity id or 0UL if no parent.
+      ParentIdOpt : uint64 }
+
+/// An Ecs system that stores components in a hierarchy.
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c, 'w> (isolated, buffered, ecs)
+
+    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
+    let mutable hierarchyChanges = List<ChangeHierarchical> ()
+    
+    new (buffered, ecs) = SystemHierarchical (false, buffered, ecs)
+    new (ecs) = SystemHierarchical (false, false, ecs)
+    
+    member this.Hierarchy = hierarchy
+    member this.HierarchyFlattened = this.Correlateds
+    member this.WithHierarchyFlattenedBuffered fn worldOpt = this.WithCorrelatedsBuffered fn worldOpt
+
+    member this.PopHierarchyChanges () =
+        let popped = hierarchyChanges
+        hierarchyChanges <- List<ChangeHierarchical> ()
+        popped
+
+    member this.IndexHierarchical entityId =
+        this.IndexCorrelated entityId
+
+    member this.RegisterHierarchical ordered (parentIdOpt : uint64 option) comp entityId =
+        let this' = this :> SystemCorrelated<'c, 'w>
+        let cref = this'.RegisterCorrelated ordered comp entityId
+        let node = { EntityId = entityId; ComponentRef = cref }
+        let addedOpt =
+            match parentIdOpt with
+            | Some parentId -> ListTree.tryInsert (fun node -> node.EntityId = parentId) node hierarchy
+            | None -> ListTree.tryAdd tautology node hierarchy
+        if Option.isSome addedOpt then
+            let hierarchyChange = { Registered = true; NodeId = entityId; ParentIdOpt = Option.getOrDefault 0UL parentIdOpt }
+            hierarchyChanges.Add hierarchyChange
+            Some cref
+        else None
+
+    member this.UnregisterHierarchical entityId =
+        let result = ListTree.removeFirst (fun node -> node.EntityId = entityId) hierarchy
+        if result then
+            let hierarchyChage = { Registered = false; NodeId = entityId; ParentIdOpt = 0UL }
+            hierarchyChanges.Add hierarchyChage
+        result
+
+    member this.QualifyHierarchical entityId =
+        this.QualifyCorrelated entityId
+
+    override this.UnregisterComponent entityId =
+        this.UnregisterHierarchical entityId
+
+    type 'w EntityRef with
+    
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
+            &hierarchical.Index
+    
+        member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
+            hierarchical.IndexBuffered
+
+    type 'w Ecs with
+
+        member this.IndexSystemHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+
+        member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.Hierarchy
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.IndexHierarchyFlattened<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.HierarchyFlattened
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.PopHierarchyChanges ()
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.IndexHierarchical entityId
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> ordered parentIdOpt comp entityId =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.RegisterHierarchical ordered parentIdOpt comp entityId
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.UnregisterHierarchical parentIdOpt
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
+            let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyHierarchical entityId
+
 /// An ECS query.
 type Query<'c, 'w when
             'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
@@ -719,8 +835,17 @@ type Query<'c, 'w when
         while enr.MoveNext () do
             iter.Invoke &array.[enr.Current]
 
-    member this.Register ordered comp entityId =
+    member this.RegisterCorrelated ordered comp entityId =
         ecs.RegisterCorrelated ordered comp entityId
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        ecs.UnregisterCorrelated<'c> entityId
+
+    member this.RegisterHierarchical ordered parentIdOpt comp entityId =
+        ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+
+    member this.UnregisterHierarchical parentIdOpt =
+        ecs.UnregisterHierarchical<'c> parentIdOpt
     
     interface Query<'w> with
 
@@ -758,10 +883,25 @@ type Query<'c, 'c2, 'w when
             let struct (index, index2) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2])
 
-    member this.Register ordered comp comp2 entityId =
+    member this.RegisterCorrelated ordered comp comp2 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         struct (comp, comp2)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        result || result2
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        struct (comp, comp2)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        result || result2
     
     interface Query<'w> with
 
@@ -805,11 +945,29 @@ type Query<'c, 'c2, 'c3, 'w when
             let struct (index, index2, index3) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3])
 
-    member this.Register ordered comp comp2 comp3 entityId =
+    member this.RegisterCorrelated ordered comp comp2 comp3 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
         struct (comp, comp2, comp3)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        result || result2 || result3
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        struct (comp, comp2, comp3)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        result || result2 || result3
     
     interface Query<'w> with
 
@@ -858,12 +1016,33 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             let struct (index, index2, index3, index4) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
 
-    member this.Register ordered comp comp2 comp3 comp4 entityId =
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
         let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
         struct (comp, comp2, comp3, comp4)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        result || result2 || result3 || result4
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        struct (comp, comp2, comp3, comp4)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        result || result2 || result3 || result4
     
     interface Query<'w> with
 
@@ -917,13 +1096,37 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let struct (index, index2, index3, index4, index5) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
 
-    member this.Register ordered comp comp2 comp3 comp4 comp5 entityId =
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
         let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
         let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
         struct (comp, comp2, comp3, comp4, comp5)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        result || result2 || result3 || result4 || result5
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        struct (comp, comp2, comp3, comp4, comp5)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        result || result2 || result3 || result4 || result5
     
     interface Query<'w> with
 
@@ -982,7 +1185,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let struct (index, index2, index3, index4, index5, index6) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
 
-    member this.Register ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
@@ -990,6 +1193,33 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
         let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        let result6 = ecs.UnregisterCorrelated<'c6> entityId
+        result || result2 || result3 || result4 || result5 || result6
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        struct (comp, comp2, comp3, comp4, comp5, comp6)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        let result6 = ecs.UnregisterCorrelated<'c6> entityId
+        result || result2 || result3 || result4 || result5 || result6
     
     interface Query<'w> with
 
@@ -1053,7 +1283,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let struct (index, index2, index3, index4, index5, index6, index7) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
 
-    member this.Register ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
         let comp = ecs.RegisterCorrelated ordered comp entityId
         let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
         let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
@@ -1062,6 +1292,36 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
         let comp7 = ecs.RegisterCorrelated ordered comp7 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
+
+    member this.UnregisterCorrelated (entityId : uint64) =
+        let result = ecs.UnregisterCorrelated<'c> entityId
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        let result6 = ecs.UnregisterCorrelated<'c6> entityId
+        let result7 = ecs.UnregisterCorrelated<'c7> entityId
+        result || result2 || result3 || result4 || result5 || result6 || result7
+
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
+        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        let comp7 = ecs.RegisterCorrelated ordered comp7 entityId
+        struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
+
+    member this.UnregisterHierarchical parentIdOpt entityId =
+        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
+        let result2 = ecs.UnregisterCorrelated<'c2> entityId
+        let result3 = ecs.UnregisterCorrelated<'c3> entityId
+        let result4 = ecs.UnregisterCorrelated<'c4> entityId
+        let result5 = ecs.UnregisterCorrelated<'c5> entityId
+        let result6 = ecs.UnregisterCorrelated<'c6> entityId
+        let result7 = ecs.UnregisterCorrelated<'c7> entityId
+        result || result2 || result3 || result4 || result5 || result6 || result7
     
     interface Query<'w> with
 
@@ -1210,122 +1470,6 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
             | Some system -> system.UnregisterMultiplexed simplexName entityId
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-/// A SystemHierarchical node.
-type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
-    { EntityId : uint64
-      ComponentRef : 'c ComponentRef}
-
-/// Tracks changes in a hierarchical system.
-type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
-    { /// Whether change involves registeration (true) or unregistration (false).
-      Registered : bool
-      /// The node entity's id.
-      NodeId : uint64
-      /// The parent's entity id or 0UL if no parent.
-      ParentIdOpt : uint64 }
-
-/// An Ecs system that stores components in a hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c, 'w> (isolated, buffered, ecs)
-
-    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
-    let mutable hierarchyChanges = List<ChangeHierarchical> ()
-    
-    new (buffered, ecs) = SystemHierarchical (false, buffered, ecs)
-    new (ecs) = SystemHierarchical (false, false, ecs)
-    
-    member this.Hierarchy = hierarchy
-    member this.HierarchyFlattened = this.Correlateds
-    member this.WithHierarchyFlattenedBuffered fn worldOpt = this.WithCorrelatedsBuffered fn worldOpt
-
-    member this.PopHierarchyChanges () =
-        let popped = hierarchyChanges
-        hierarchyChanges <- List<ChangeHierarchical> ()
-        popped
-
-    member this.IndexHierarchical entityId =
-        this.IndexCorrelated entityId
-
-    member this.RegisterHierarchical ordered (parentIdOpt : uint64 option) comp entityId =
-        let this' = this :> SystemCorrelated<'c, 'w>
-        let cref = this'.RegisterCorrelated ordered comp entityId
-        let node = { EntityId = entityId; ComponentRef = cref }
-        let addedOpt =
-            match parentIdOpt with
-            | Some parentId -> ListTree.tryInsert (fun node -> node.EntityId = parentId) node hierarchy
-            | None -> ListTree.tryAdd tautology node hierarchy
-        if Option.isSome addedOpt then
-            let hierarchyChange = { Registered = true; NodeId = entityId; ParentIdOpt = Option.getOrDefault 0UL parentIdOpt }
-            hierarchyChanges.Add hierarchyChange
-            Some cref
-        else None
-
-    member this.UnregisterHierarchical entityId =
-        let result = ListTree.removeFirst (fun node -> node.EntityId = entityId) hierarchy
-        if result then
-            let hierarchyChage = { Registered = false; NodeId = entityId; ParentIdOpt = 0UL }
-            hierarchyChanges.Add hierarchyChage
-        result
-
-    member this.QualifyHierarchical entityId =
-        this.QualifyCorrelated entityId
-
-    override this.UnregisterComponent entityId =
-        this.UnregisterHierarchical entityId
-
-    type 'w EntityRef with
-    
-        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
-            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
-            &hierarchical.Index
-    
-        member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> () =
-            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
-            hierarchical.IndexBuffered
-
-    type 'w Ecs with
-
-        member this.IndexSystemHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-
-        member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.Hierarchy
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.IndexHierarchyFlattened<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.HierarchyFlattened
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.PopHierarchyChanges ()
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.IndexHierarchical entityId
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RegisterHierarchical parentIdOpt
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.UnregisterHierarchical parentIdOpt
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.QualifyHierarchical entityId
 
 /// The type of a familial change.
 type [<NoEquality; NoComparison; Struct>] FamilyChangeType =
