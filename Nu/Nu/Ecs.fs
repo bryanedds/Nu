@@ -105,6 +105,7 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// systems. If anything, it might be better to be renamed to 'w Storage.
 and [<AbstractClass>] 'w System (name) =
     member this.Name : string = name
+    member this.Id : Guid = Gen.id
     abstract UnregisterComponent : Guid -> bool
 
 /// Potentially-buffered array objects.
@@ -175,8 +176,9 @@ and 'w Ecs () as this =
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
-    let correlations = dictPlus<Guid, string HashSet> HashIdentity.Structural []
-    let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystemNames
+    let systemsByGuid = dictPlus<Guid, 'w System> HashIdentity.Structural [] // TODO: see if the quadratic searching map could improve perf here.
+    let correlations = dictPlus<Guid, Guid HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
+    let emptySystemIds = hashSetPlus<Guid> HashIdentity.Structural []
     let queries = Queries<'w> ()
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
@@ -209,6 +211,7 @@ and 'w Ecs () as this =
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
+        systemsByGuid.Add (system.Id, system)
         system
 
     member this.TryIndexSystem systemName =
@@ -242,14 +245,14 @@ and 'w Ecs () as this =
         let systemName = Unchecked.defaultof<'c>.TypeName
         this.IndexSystem systemName :?> 's
 
-    member this.IndexSystemNames entityId =
+    member this.IndexSystemIds entityId =
         match correlations.TryGetValue entityId with
         | (true, correlation) -> correlation
-        | (false, _) -> emptySystemNames
+        | (false, _) -> emptySystemIds
 
     member this.IndexSystems entityId =
-        this.IndexSystemNames entityId |>
-        Seq.map this.IndexSystem
+        this.IndexSystemIds entityId |>
+        Seq.map (fun id -> systemsByGuid.[id])
 
     member this.IndexEntities correlation =
         correlations |>
@@ -547,10 +550,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             if not isolated then
                 match ecs.Correlations.TryGetValue entityId with
                 | (true, correlation) ->
-                    correlation.Add this.Name |> ignore<bool>
+                    correlation.Add this.Id |> ignore<bool>
                     ecs.FilterForQueries this.Name entityId
                 | (false, _) ->
-                    let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+                    let correlation = HashSet.singleton HashIdentity.Structural this.Id
                     ecs.Correlations.Add (entityId, correlation)
                     ecs.FilterForQueries this.Name entityId
 
@@ -590,7 +593,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
         if unregistered && not isolated then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
-                correlation.Remove this.Name |> ignore<bool>
+                correlation.Remove this.Id |> ignore<bool>
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
                 ecs.FilterForQueries this.Name entityId
@@ -1086,10 +1089,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
         // register correlation with ecs
         match ecs.Correlations.TryGetValue entityId with
         | (true, correlation) ->
-            correlation.Add this.Name |> ignore<bool>
+            correlation.Add this.Id |> ignore<bool>
             ecs.FilterForQueries this.Name entityId
         | (false, _) ->
-            let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+            let correlation = HashSet.singleton HashIdentity.Structural this.Id
             ecs.Correlations.Add (entityId, correlation)
             ecs.FilterForQueries this.Name entityId
 
@@ -1108,7 +1111,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
         if unregistered then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
-                correlation.Remove this.Name |> ignore<bool>
+                correlation.Remove this.Id |> ignore<bool>
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
                 ecs.FilterForQueries this.Name entityId
@@ -1392,10 +1395,10 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         if registered && not isolated then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
-                correlation.Add this.Name |> ignore<bool>
+                correlation.Add this.Id |> ignore<bool>
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
-                let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+                let correlation = HashSet.singleton HashIdentity.Structural this.Id
                 ecs.Correlations.Add (entityId, correlation)
                 ecs.FilterForQueries this.Name entityId
 
@@ -1418,7 +1421,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         if unregistered && not isolated then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
-                correlation.Remove this.Name |> ignore<bool>
+                correlation.Remove this.Id |> ignore<bool>
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
                 ecs.FilterForQueries this.Name entityId
