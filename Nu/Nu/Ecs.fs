@@ -91,7 +91,7 @@ and SystemCallbackBoxed<'w> =
 
 /// The event type recommended for SynchronizeCorrelationChanges.
 and 'w SynchronizeCorrelationEvent =
-    SystemEvent<Dictionary<Guid, string HashSet>, 'w>
+    SystemEvent<Dictionary<uint64, string HashSet>, 'w>
 
 /// The type of synchronization used.
 and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
@@ -105,8 +105,8 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// systems. If anything, it might be better to be renamed to 'w Storage.
 and [<AbstractClass>] 'w System (name) =
     member this.Name : string = name
-    member this.Id : uint = Gen.counter32
-    abstract UnregisterComponent : Guid -> bool
+    member this.Id : uint = Gen.id32
+    abstract UnregisterComponent : uint64 -> bool
 
 /// Potentially-buffered array objects.
 /// ArrayObjsUnbuffered will be refEq to ArrayObjsBuffered if buffering is disabled.
@@ -121,7 +121,7 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
 and [<NoEquality; NoComparison; Struct>] 'w EntityRef =
-    { EntityId : Guid
+    { EntityId : uint64
       EntityEcs : 'w Ecs }
     static member make<'w> entityId ecs =
         { EntityId = entityId; EntityEcs = ecs } : 'w EntityRef
@@ -129,7 +129,7 @@ and [<NoEquality; NoComparison; Struct>] 'w EntityRef =
 /// An ECS query.
 and 'w Query =
     abstract Correlation : string HashSet
-    abstract Filter : Guid -> bool
+    abstract Filter : uint64 -> bool
 
 /// A collection of ECS queries.
 and 'w Queries () =
@@ -173,11 +173,11 @@ and 'w Ecs () as this =
     let mutable systemCached = { new System<'w> (typeof<unit>.Name) with member this.UnregisterComponent _ = false }
     let systemGlobal = systemCached
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
-    let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
+    let systemSubscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
     let systemsById = dictPlus<uint, 'w System> HashIdentity.Structural [] // TODO: see if a quadratic searching dictionary could improve perf here.
-    let correlations = dictPlus<Guid, uint HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
+    let correlations = dictPlus<uint64, uint HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
     let emptySystemIds = hashSetPlus<uint> HashIdentity.Structural []
     let queries = Queries<'w> ()
 
@@ -277,7 +277,7 @@ and 'w Ecs () as this =
             subscriptionId
 
     member this.Subscribe<'d, 'w> eventName callback =
-        this.SubscribePlus<'d> Gen.id eventName (fun evt system ecs worldOpt -> callback evt system ecs; worldOpt) |> ignore
+        this.SubscribePlus<'d> Gen.id32 eventName (fun evt system ecs worldOpt -> callback evt system ecs; worldOpt) |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
         match systemSubscriptions.TryGetValue eventName with
@@ -466,14 +466,14 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-/// An ECS system with components correlated by entity id (Guid).
+/// An ECS system with components correlated by entity id (uint64).
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
-    let correlations = dictPlus<Guid, int> HashIdentity.Structural []
+    let correlations = dictPlus<uint64, int> HashIdentity.Structural []
     
     new (buffered, ecs) = SystemCorrelated (false, buffered, ecs)
     new (ecs) = SystemCorrelated (false, false, ecs)
@@ -705,7 +705,7 @@ type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
 type Query<'c, 'w when
             'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<Guid, int> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
 
@@ -737,7 +737,7 @@ type Query<'c, 'c2, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<Guid, struct (int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -776,7 +776,7 @@ type Query<'c, 'c2, 'c3, 'w when
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component> (ecs : 'w Ecs) =
             
-    let cache = OrderedDictionary<Guid, struct (int * int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -820,7 +820,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component> (ecs : 'w Ecs) =
             
-    let cache = OrderedDictionary<Guid, struct (int * int * int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -869,7 +869,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -923,7 +923,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             'c5 : struct and 'c5 :> 'c5 Component and
             'c6 : struct and 'c6 :> 'c6 Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -982,7 +982,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             'c6 : struct and 'c6 :> 'c6 Component and
             'c7 : struct and 'c7 :> 'c7 Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
+    let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -1165,7 +1165,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
 
 /// A SystemHierarchical node.
 type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
-    { EntityId : Guid
+    { EntityId : uint64
       ComponentRef : 'c ComponentRef}
 
 /// Tracks changes in a hierarchical system.
@@ -1173,9 +1173,9 @@ type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
     { /// Whether change involves registeration (true) or unregistration (false).
       Registered : bool
       /// The node entity's id.
-      NodeId : Guid
-      /// The parent's entity id or Guid.Empty if no parent.
-      ParentIdOpt : Guid }
+      NodeId : uint64
+      /// The parent's entity id or 0UL if no parent.
+      ParentIdOpt : uint64 }
 
 /// An Ecs system that stores components in a hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
@@ -1199,7 +1199,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
     member this.IndexHierarchical entityId =
         this.IndexCorrelated entityId
 
-    member this.RegisterHierarchical ordered (parentIdOpt : Guid option) comp entityId =
+    member this.RegisterHierarchical ordered (parentIdOpt : uint64 option) comp entityId =
         let this' = this :> SystemCorrelated<'c, 'w>
         let cref = this'.RegisterCorrelated ordered comp entityId
         let node = { EntityId = entityId; ComponentRef = cref }
@@ -1208,7 +1208,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
             | Some parentId -> ListTree.tryInsert (fun node -> node.EntityId = parentId) node hierarchy
             | None -> ListTree.tryAdd tautology node hierarchy
         if Option.isSome addedOpt then
-            let hierarchyChange = { Registered = true; NodeId = entityId; ParentIdOpt = Option.getOrDefault Guid.Empty parentIdOpt }
+            let hierarchyChange = { Registered = true; NodeId = entityId; ParentIdOpt = Option.getOrDefault 0UL parentIdOpt }
             hierarchyChanges.Add hierarchyChange
             Some cref
         else None
@@ -1216,7 +1216,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
     member this.UnregisterHierarchical entityId =
         let result = ListTree.removeFirst (fun node -> node.EntityId = entityId) hierarchy
         if result then
-            let hierarchyChage = { Registered = false; NodeId = entityId; ParentIdOpt = Guid.Empty }
+            let hierarchyChage = { Registered = false; NodeId = entityId; ParentIdOpt = 0UL }
             hierarchyChanges.Add hierarchyChage
         result
 
@@ -1289,15 +1289,15 @@ type [<NoEquality; NoComparison; Struct>] FamilyChangeType =
 /// Tracks changes in a familial system.
 type [<NoEquality; NoComparison; Struct>] FamilyChange =
     { FamilyChangeType : FamilyChangeType
-      MemberId : Guid
-      AncestorIdOpt : Guid }
+      MemberId : uint64
+      AncestorIdOpt : uint64 }
 
 /// An Ecs system that stores components in a family tree.
 type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
-    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
+    let systemDict = dictPlus<uint64, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
     let mutable familyChanges = List<FamilyChange> ()
     
     new (buffered, ecs) = SystemFamilial (false, buffered, ecs)
@@ -1322,8 +1322,8 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         | (true, system) -> system.Correlateds
         | (false, _) -> failwith ("Member with id '" + scstring memberId + "' not found.")
 
-    member this.AddMember (ancestorIdOpt : Guid option) =
-        let memberId = Gen.id
+    member this.AddMember (ancestorIdOpt : uint64 option) =
+        let memberId = Gen.id64
         let system = SystemCorrelated<'c, 'w> (buffered, true, ecs)
         let addedOpt =
             match ancestorIdOpt with
@@ -1333,7 +1333,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | None ->
                 systemTree |> ListTree.tryAdd tautology system
         if Option.isSome addedOpt then
-            familyChanges.Add { FamilyChangeType = MemberAdded; MemberId = memberId; AncestorIdOpt = match ancestorIdOpt with Some pid -> pid | None -> Guid.Empty }
+            familyChanges.Add { FamilyChangeType = MemberAdded; MemberId = memberId; AncestorIdOpt = match ancestorIdOpt with Some pid -> pid | None -> 0UL }
             systemDict.Add (memberId, system)
             Some memberId
         else None
@@ -1359,7 +1359,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         let result = systemDict.Remove memberId
 
         // log change
-        if result then familyChanges.Add { FamilyChangeType = MemberRemoved; MemberId = memberId; AncestorIdOpt = Guid.Empty }
+        if result then familyChanges.Add { FamilyChangeType = MemberRemoved; MemberId = memberId; AncestorIdOpt = 0UL }
 
         // fin
         result
