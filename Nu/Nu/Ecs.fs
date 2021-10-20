@@ -718,6 +718,9 @@ type Query<'c, 'w when
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             iter.Invoke &array.[enr.Current]
+
+    member this.Register ordered comp entityId =
+        ecs.RegisterCorrelated ordered comp entityId
     
     interface Query<'w> with
 
@@ -754,6 +757,11 @@ type Query<'c, 'c2, 'w when
         while enr.MoveNext () do
             let struct (index, index2) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2])
+
+    member this.Register ordered comp comp2 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        struct (comp, comp2)
     
     interface Query<'w> with
 
@@ -796,6 +804,12 @@ type Query<'c, 'c2, 'c3, 'w when
         while enr.MoveNext () do
             let struct (index, index2, index3) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3])
+
+    member this.Register ordered comp comp2 comp3 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        struct (comp, comp2, comp3)
     
     interface Query<'w> with
 
@@ -843,6 +857,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         while enr.MoveNext () do
             let struct (index, index2, index3, index4) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
+
+    member this.Register ordered comp comp2 comp3 comp4 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        struct (comp, comp2, comp3, comp4)
     
     interface Query<'w> with
 
@@ -895,6 +916,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
+
+    member this.Register ordered comp comp2 comp3 comp4 comp5 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        struct (comp, comp2, comp3, comp4, comp5)
     
     interface Query<'w> with
 
@@ -952,6 +981,15 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5, index6) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
+
+    member this.Register ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        struct (comp, comp2, comp3, comp4, comp5, comp6)
     
     interface Query<'w> with
 
@@ -1014,6 +1052,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5, index6, index7) = enr.Current
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
+
+    member this.Register ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
+        let comp = ecs.RegisterCorrelated ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        let comp7 = ecs.RegisterCorrelated ordered comp7 entityId
+        struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
     
     interface Query<'w> with
 

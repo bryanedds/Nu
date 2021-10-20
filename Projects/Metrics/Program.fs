@@ -122,11 +122,11 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create systems
-        let positionSystem = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let velocitySystem = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
 
-        // create query
-        let query = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
+        // create movers query
+        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -150,14 +150,11 @@ type MyGameDispatcher () =
 
         // create 3M movers (goal: 60FPS, current: 60FPS)
         for _ in 0 .. 3000000 - 1 do
-            let entityId = Gen.id64
-            let _ = positionSystem.RegisterCorrelated false Unchecked.defaultof<Position> entityId
-            let _ = velocitySystem.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
-            ()
+            movers.Register false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
 
-        // define update for query
+        // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            query.Iter (fun position velocity ->
+            movers.Iter (fun position velocity ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
 
