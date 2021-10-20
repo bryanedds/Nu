@@ -474,7 +474,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
-    let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
     
     new (buffered, ecs) = SystemCorrelated (false, buffered, ecs)
     new (ecs) = SystemCorrelated (false, false, ecs)
@@ -543,7 +542,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
 
             // allocate component
             correlations.Add (entityId, index)
-            correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
 
             // register correlation with ecs if needed
@@ -572,7 +570,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
 
                 // deallocate component
                 correlations.Remove entityId |> ignore<bool>
-                correlationsBack.Remove index |> ignore<bool>
 
                 // deallocate index for component
                 if index <> freeIndex
