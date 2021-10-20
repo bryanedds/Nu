@@ -15,8 +15,8 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let mutable private Counter = 0UL
-    let mutable private Counter32 = 0u
+    let mutable private Id32 = 0u
+    let mutable private Id64 = 0UL
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -182,16 +182,14 @@ module Gen =
             (id, name)
 
         /// Generate a 32-bit unique counter.
-        static member counter32 =
+        static member id32 =
             lock Lock (fun () ->
-                if Counter32 = UInt32.MaxValue then failwith "Overflowed Gen.counter32."
-                Counter32 <- inc Counter32; Counter32)
+                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
+                Id32 <- inc Id32; Id32)
 
-        /// Generate a unique counter.
-        static member counter64 =
-            lock Lock (fun () ->
-                if Counter = UInt64.MaxValue then failwith "Overflowed Gen.counter64."
-                Counter <- inc Counter; Counter)
+        /// Generate a unique non-zero 64-bit id.
+        static member id64 =
+            lock Lock (fun () -> Id64 <- inc Id64; Id64)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen
