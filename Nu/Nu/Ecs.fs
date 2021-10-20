@@ -105,7 +105,7 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// systems. If anything, it might be better to be renamed to 'w Storage.
 and [<AbstractClass>] 'w System (name) =
     member this.Name : string = name
-    member this.Id : Guid = Gen.id
+    member this.Id : uint = Gen.counter32
     abstract UnregisterComponent : Guid -> bool
 
 /// Potentially-buffered array objects.
@@ -176,9 +176,9 @@ and 'w Ecs () as this =
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
-    let systemsByGuid = dictPlus<Guid, 'w System> HashIdentity.Structural [] // TODO: see if the quadratic searching map could improve perf here.
-    let correlations = dictPlus<Guid, Guid HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
-    let emptySystemIds = hashSetPlus<Guid> HashIdentity.Structural []
+    let systemsById = dictPlus<uint, 'w System> HashIdentity.Structural [] // TODO: see if the quadratic searching map could improve perf here.
+    let correlations = dictPlus<Guid, uint HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
+    let emptySystemIds = hashSetPlus<uint> HashIdentity.Structural []
     let queries = Queries<'w> ()
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
@@ -211,7 +211,7 @@ and 'w Ecs () as this =
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
-        systemsByGuid.Add (system.Id, system)
+        systemsById.Add (system.Id, system)
         system
 
     member this.TryIndexSystem systemName =
@@ -252,7 +252,7 @@ and 'w Ecs () as this =
 
     member this.IndexSystems entityId =
         this.IndexSystemIds entityId |>
-        Seq.map (fun id -> systemsByGuid.[id])
+        Seq.map (fun id -> systemsById.[id])
 
     member this.IndexEntities correlation =
         correlations |>
