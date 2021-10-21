@@ -106,10 +106,6 @@ type MetricsEntityDispatcher () =
   #endif
 #endif
 
-//type P = { mutable Active : bool; mutable P : Vector2 }
-//type V = { mutable Active : bool; mutable V : Vector2 }
-//type O = { mutable Active : bool; mutable P : P; mutable V : V }
-
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
