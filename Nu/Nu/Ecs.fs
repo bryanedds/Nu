@@ -457,7 +457,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An ECS system with components correlated by entity id (uint64).
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
@@ -465,8 +465,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<uint64, int> HashIdentity.Structural []
     
-    new (buffered, ecs) = SystemCorrelated (false, buffered, ecs)
-    new (ecs) = SystemCorrelated (false, false, ecs)
+    new (ecs) = SystemCorrelated (false, ecs)
 
     member this.FreeListCount = freeList.Count
     member this.EntitiesCorrelated = correlations |> Seq.map (fun kvp -> kvp.Key)
@@ -534,16 +533,15 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             correlations.Add (entityId, index)
             correlateds.Array.[index] <- comp
 
-            // register correlation with ecs if needed
-            if not isolated then
-                match ecs.Correlations.TryGetValue entityId with
-                | (true, correlation) ->
-                    correlation.Add this.Id |> ignore<bool>
-                    ecs.FilterForQueries this.Name entityId
-                | (false, _) ->
-                    let correlation = HashSet.singleton HashIdentity.Structural this.Id
-                    ecs.Correlations.Add (entityId, correlation)
-                    ecs.FilterForQueries this.Name entityId
+            // register correlation with ecs
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Add this.Id |> ignore<bool>
+                ecs.FilterForQueries this.Name entityId
+            | (false, _) ->
+                let correlation = HashSet.singleton HashIdentity.Structural this.Id
+                ecs.Correlations.Add (entityId, correlation)
+                ecs.FilterForQueries this.Name entityId
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -576,8 +574,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 true
             | (false, _) -> false
 
-        // unregister correlation from ecs if needed
-        if unregistered && not isolated then
+        // unregister correlation from ecs
+        if unregistered then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Id |> ignore<bool>
@@ -623,62 +621,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | Some system -> system.UnregisterComponent entityId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'w when
-            'c : struct and 'c :> 'c Component> =
-            delegate of 'c byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component> =
-             delegate of 'c byref * 'c2 byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component and
-            'c5 : struct and 'c5 :> 'c5 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component and
-            'c5 : struct and 'c5 :> 'c5 Component and
-            'c6 : struct and 'c6 :> 'c6 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'w -> 'w
-
-/// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
-            'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component and
-            'c5 : struct and 'c5 :> 'c5 Component and
-            'c6 : struct and 'c6 :> 'c6 Component and
-            'c7 : struct and 'c7 :> 'c7 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref * 'w -> 'w
-
 /// A SystemHierarchical node.
 type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
     { EntityId : uint64
@@ -694,14 +636,13 @@ type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
       ParentIdOpt : uint64 }
 
 /// An Ecs system that stores components in a hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c, 'w> (isolated, buffered, ecs)
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c, 'w> (buffered, ecs)
 
     let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
     let mutable hierarchyChanges = List<ChangeHierarchical> ()
     
-    new (buffered, ecs) = SystemHierarchical (false, buffered, ecs)
-    new (ecs) = SystemHierarchical (false, false, ecs)
+    new (ecs) = SystemHierarchical (false, ecs)
     
     member this.Hierarchy = hierarchy
     member this.HierarchyFlattened = this.Correlateds
@@ -804,11 +745,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove simplexName
 
 /// An ECS system that stores zero to many of the same component per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (isolated, buffered, ecs)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
 
-    new (buffered, ecs) = SystemMultiplexed (false, buffered, ecs)
-    new (ecs) = SystemMultiplexed (false, false, ecs)
+    new (ecs) = SystemMultiplexed (false, ecs)
 
     member this.QualifyMultiplexed simplexName entityId =
         if this.QualifyCorrelated entityId then
