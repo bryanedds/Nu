@@ -17,6 +17,13 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
 #endif
 
 #if ECS
+type [<NoEquality; NoComparison; Struct>] Position =
+    { mutable Active : bool
+      mutable Position : Vector2 }
+    interface Position Component with
+        member this.TypeName = nameof Position
+        member this.Active with get () = this.Active and set value = this.Active <- value
+
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
@@ -24,11 +31,12 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
         member this.TypeName = nameof Velocity
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<NoEquality; NoComparison; Struct>] Position =
+type [<NoEquality; NoComparison; Struct>] Shake =
     { mutable Active : bool
-      mutable Position : Vector2 }
-    interface Position Component with
-        member this.TypeName = nameof Position
+      mutable Origin : Vector2
+      mutable Offset : Vector2 }
+    interface Shake Component with
+        member this.TypeName = nameof Shake
         member this.Active with get () = this.Active and set value = this.Active <- value
 #endif
 
@@ -124,19 +132,33 @@ type MyGameDispatcher () =
         // create systems
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
 
         // create movers query
         let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
 
+        // create shakers query
+        let shakers = ecs.RegisterQuery (Query<Position, Shake, World> ecs)
+
         // create 3M movers (goal: 60FPS, current: 60FPS)
         for _ in 0 .. 3000000 - 1 do
             movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
+
+        // create 3 shakers (goal: 60FPS, current: 60FPS)
+        for _ in 0 .. 3 - 1 do
+            shakers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Shake> with Offset = v2One } Gen.id64 |> ignore
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             movers.Iter (fun position velocity ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
+
+        // define update for shakers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            shakers.Iter (fun position shake ->
+                position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //

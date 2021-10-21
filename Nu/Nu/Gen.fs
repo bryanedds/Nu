@@ -59,15 +59,15 @@ module Gen =
             lock Lock (fun () -> Random.Next ceiling)
             
         /// Get the next random number single below ceiling.
-        static member random1y (ceiling : byte) =
+        static member randomy1 (ceiling : byte) =
             lock Lock (fun () -> byte (Random.Next (int ceiling)))
             
         /// Get the next random number single below ceiling.
-        static member random1f ceiling =
-            lock Lock (fun () -> single (Random.NextDouble ()) * single ceiling)
+        static member randomf1 ceiling =
+            lock Lock (fun () -> single (Random.NextDouble ()) * ceiling)
             
         /// Get the next random number single below ceiling.
-        static member random1d ceiling =
+        static member randomd1 ceiling =
             lock Lock (fun () -> Random.NextDouble () * ceiling)
 
         /// Get the next random number integer GTE minValue and LT ceiling.
