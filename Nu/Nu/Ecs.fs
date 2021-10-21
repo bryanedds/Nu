@@ -836,13 +836,13 @@ type Query<'c, 'w when
             iter.Invoke &array.[enr.Current]
 
     member this.RegisterCorrelated ordered comp entityId =
-        ecs.RegisterCorrelated ordered comp entityId
+        ecs.RegisterCorrelated<'c> ordered comp entityId
 
     member this.UnregisterCorrelated (entityId : uint64) =
         ecs.UnregisterCorrelated<'c> entityId
 
     member this.RegisterHierarchical ordered parentIdOpt comp entityId =
-        ecs.RegisterHierarchical ordered parentIdOpt comp entityId
+        ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
 
     member this.UnregisterHierarchical parentIdOpt =
         ecs.UnregisterHierarchical<'c> parentIdOpt
@@ -884,8 +884,8 @@ type Query<'c, 'c2, 'w when
             iter.Invoke (&array.[index], &array2.[index2])
 
     member this.RegisterCorrelated ordered comp comp2 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
         struct (comp, comp2)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -894,8 +894,8 @@ type Query<'c, 'c2, 'w when
         result || result2
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
         struct (comp, comp2)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
@@ -946,9 +946,9 @@ type Query<'c, 'c2, 'c3, 'w when
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3])
 
     member this.RegisterCorrelated ordered comp comp2 comp3 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
         struct (comp, comp2, comp3)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -958,9 +958,9 @@ type Query<'c, 'c2, 'c3, 'w when
         result || result2 || result3
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
         struct (comp, comp2, comp3)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
@@ -1017,10 +1017,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
         struct (comp, comp2, comp3, comp4)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -1031,10 +1031,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         result || result2 || result3 || result4
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
         struct (comp, comp2, comp3, comp4)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
@@ -1097,11 +1097,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
         struct (comp, comp2, comp3, comp4, comp5)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -1113,11 +1113,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         result || result2 || result3 || result4 || result5
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
         struct (comp, comp2, comp3, comp4, comp5)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
@@ -1186,12 +1186,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -1204,12 +1204,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         result || result2 || result3 || result4 || result5 || result6
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
@@ -1284,13 +1284,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
-        let comp = ecs.RegisterCorrelated ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
-        let comp7 = ecs.RegisterCorrelated ordered comp7 entityId
+        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
+        let comp7 = ecs.RegisterCorrelated<'c7> ordered comp7 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
 
     member this.UnregisterCorrelated (entityId : uint64) =
@@ -1304,13 +1304,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         result || result2 || result3 || result4 || result5 || result6 || result7
 
     member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
-        let comp = ecs.RegisterHierarchical ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated ordered comp6 entityId
-        let comp7 = ecs.RegisterCorrelated ordered comp7 entityId
+        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
+        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
+        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
+        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
+        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
+        let comp7 = ecs.RegisterCorrelated<'c7> ordered comp7 entityId
         struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
 
     member this.UnregisterHierarchical parentIdOpt entityId =
