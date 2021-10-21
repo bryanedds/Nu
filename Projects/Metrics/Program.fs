@@ -150,13 +150,13 @@ type MyGameDispatcher () =
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            movers.Iter (fun position velocity ->
+            movers.Iterate (fun position velocity ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
 
         // define update for shakers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            shakers.Iter (fun position shake ->
+            shakers.Iterate (fun position shake ->
                 position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
                 position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y)
 
