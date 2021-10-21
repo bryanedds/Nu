@@ -144,21 +144,25 @@ type MyGameDispatcher () =
         for _ in 0 .. 3000000 - 1 do
             movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
 
-        // create 3 shakers (goal: 60FPS, current: 60FPS)
-        for _ in 0 .. 3 - 1 do
+        // create 200 shakers (goal: 60FPS, current: 50FPS)
+        for _ in 0 .. 200 - 1 do
             shakers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Shake> with Offset = v2One } Gen.id64 |> ignore
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            movers.Iterate (fun position velocity ->
-                position.Position.X <- position.Position.X + velocity.Velocity.X
-                position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
+            movers.Iterate $
+                new Index<_, _, _> (fun position velocity world ->
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+                    world)
 
         // define update for shakers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            shakers.Iterate (fun position shake ->
-                position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
-                position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y)
+            shakers.Iterate $
+                new Index<_, _, _> (fun position shake world ->
+                    position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                    position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+                    world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //

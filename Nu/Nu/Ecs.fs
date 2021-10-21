@@ -83,11 +83,11 @@ and [<NoEquality; NoComparison>] SystemEvent<'d, 'w> =
 
 /// An ECS event callback.
 and SystemCallback<'d, 'w> =
-    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
+    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
 
 /// A boxed ECS event callback.
 and SystemCallbackBoxed<'w> =
-    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
+    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
 
 /// The event type recommended for SynchronizeCorrelationChanges.
 and 'w SynchronizeCorrelationEvent =
@@ -266,7 +266,7 @@ and 'w Ecs () as this =
             subscriptionId
 
     member this.Subscribe<'d, 'w> eventName callback =
-        this.SubscribePlus<'d> Gen.id32 eventName (fun evt system ecs worldOpt -> callback evt system ecs; worldOpt) |> ignore
+        this.SubscribePlus<'d> Gen.id32 eventName callback |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
         match systemSubscriptions.TryGetValue eventName with
@@ -280,12 +280,12 @@ and 'w Ecs () as this =
                 match callback with
                 | :? SystemCallback<obj, 'w> as objCallback ->
                     let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                    objCallback evt publisher this (Some world) |> Option.get
+                    objCallback evt publisher this world
                 | _ -> failwithumf ())
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.PublishAsync<'d> eventName (eventData : 'd) publisher =
+    member this.PublishAsync<'d> eventName (eventData : 'd) publisher world =
         let vsync =
             match systemSubscriptions.TryGetValue eventName with
             | (true, subscriptions) ->
@@ -295,7 +295,8 @@ and 'w Ecs () as this =
                         match subscription.Value with
                         | :? SystemCallback<obj, 'w> as objCallback ->
                             let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                            objCallback evt publisher this None |> ignore<'w option>
+                            let world2 = objCallback evt publisher this world
+                            if not (refEq world world2) then failwith "Cannot transform the world in an async context."
                         | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
                 Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
@@ -323,13 +324,13 @@ and 'w Ecs () as this =
         | (true, arrayObjs) -> arrayObjs.ArrayObjsUnbuffered |> Seq.map (fun arefObj -> (arefObj :?> 'c ArrayRef).Array) |> Seq.toArray
         | (false, _) -> [||]
 
-    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (worldOpt : 'w option) =
+    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (world : 'w) =
         let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             let arefsBuffered = arrayObjs.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            fn arefsBuffered worldOpt
-        | (false, _) -> worldOpt
+            fn arefsBuffered world
+        | (false, _) -> world
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = Unchecked.defaultof<'c>.TypeName
@@ -386,7 +387,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
     member this.FreeListCount = freeList.Count
 
     member this.Components = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
+    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
 
     member this.RewindFreeIndex () =
         while freeList.Remove (dec freeIndex) do
@@ -471,7 +472,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     member this.EntitiesCorrelated = correlations |> Seq.map (fun kvp -> kvp.Key)
 
     member this.Correlateds = correlateds
-    member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock correlatedsBuffered (fun () -> fn correlatedsBuffered worldOpt)
+    member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock correlatedsBuffered (fun () -> fn correlatedsBuffered world)
 
     member this.RewindFreeIndex () =
         while freeList.Remove (dec freeIndex) do
@@ -623,52 +624,52 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'r when
+type Index<'c, 'w when
             'c : struct and 'c :> 'c Component> =
-            delegate of 'c byref -> 'r
+            delegate of 'c byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'r when
+type Index<'c, 'c2, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component> =
-             delegate of 'c byref * 'c2 byref -> 'r
+             delegate of 'c byref * 'c2 byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'r when
+type Index<'c, 'c2, 'c3, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref -> 'r
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'r when
+type Index<'c, 'c2, 'c3, 'c4, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> 'r
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'r when
+type Index<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> 'r
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'r when
+type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component and
             'c6 : struct and 'c6 :> 'c6 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> 'r
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'w -> 'w
 
 /// A delegate for interfacing with correlated components.
-type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'r when
+type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
@@ -676,7 +677,7 @@ type Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'r when
             'c5 : struct and 'c5 :> 'c5 Component and
             'c6 : struct and 'c6 :> 'c6 Component and
             'c7 : struct and 'c7 :> 'c7 Component> =
-            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> 'r
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref * 'w -> 'w
 
 /// A SystemHierarchical node.
 type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
@@ -704,7 +705,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
     
     member this.Hierarchy = hierarchy
     member this.HierarchyFlattened = this.Correlateds
-    member this.WithHierarchyFlattenedBuffered fn worldOpt = this.WithCorrelatedsBuffered fn worldOpt
+    member this.WithHierarchyFlattenedBuffered fn world = this.WithCorrelatedsBuffered fn world
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
@@ -793,18 +794,38 @@ type Query<'c, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let array = system.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
-            fn.Invoke &array.[enr.Current]
+            world <- fn.Invoke (&array.[enr.Current], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'r>) =
+    member inline this.IterateBuffered (fn : Index<'c, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            let mutable world = world
+            let mutable enr = this.Cache.ValuesEnumerator
+            while enr.MoveNext () do
+                let index = enr.Current
+                world <- fn.Invoke (&array.[index], world)
+            world)
+            world
+
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let array = system.Correlateds.Array
         let index = this.Cache.[entityId]
-        fn.Invoke &array.[index]
+        fn.Invoke (&array.[index], world)
+
+    member inline this.IndexBuffered (entityId : uint64) (fn : Index<'c, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            let index = this.Cache.[entityId]
+            fn.Invoke (&array.[index], world))
+            world
 
     member this.RegisterCorrelated ordered comp entityId =
         ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -844,23 +865,49 @@ type Query<'c, 'c2, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2])
+            world <- fn.Invoke (&array.[index], &array2.[index2], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'r>) =
+    member inline this.IterateBuffered (fn : Index<'c, 'c2, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            system2.WithCorrelatedsBuffered (fun array2 world ->
+                let mutable world = world
+                let mutable enr = this.Cache.ValuesEnumerator
+                while enr.MoveNext () do
+                    let struct (index, index2) = enr.Current
+                    world <- fn.Invoke (&array.[index], &array2.[index2], world)
+                world)
+                world)
+            world
+
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
         let struct (index, index2) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2])
+        fn.Invoke (&array.[index], &array2.[index2], world)
+        
+    member inline this.IndexBuffered (entityId : uint64) (fn : Index<'c, 'c2, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            system2.WithCorrelatedsBuffered (fun array2 world ->
+                let struct (index, index2) = this.Cache.[entityId]
+                fn.Invoke (&array.[index], &array2.[index2], world))
+                world)
+            world
 
     member this.RegisterCorrelated ordered comp comp2 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -912,19 +959,38 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2, index3) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2], &array3.[index3])
+            world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'r>) =
+    member inline this.IterateBuffered (fn : Index<'c, 'c2, 'c3, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+        let system3 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c3, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            system2.WithCorrelatedsBuffered (fun array2 world ->
+                system3.WithCorrelatedsBuffered (fun array3 world ->
+                    let mutable world = world
+                    let mutable enr = this.Cache.ValuesEnumerator
+                    while enr.MoveNext () do
+                        let struct (index, index2, index3) = enr.Current
+                        world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], world)
+                    world)
+                    world)
+                world)
+            world
+
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -932,7 +998,20 @@ type Query<'c, 'c2, 'c3, 'w when
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
         let struct (index, index2, index3) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3])
+        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], world)
+        
+    member inline this.IndexBuffered (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'w>) world =
+        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+        system.WithCorrelatedsBuffered (fun array world ->
+            system2.WithCorrelatedsBuffered (fun array2 world ->
+                system3.WithCorrelatedsBuffered (fun array3 world ->
+                    let struct (index, index2, index3) = this.Cache.[entityId]
+                    fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], world))
+                    world)
+                world)
+            world
 
     member this.RegisterCorrelated ordered comp comp2 comp3 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -991,7 +1070,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1000,12 +1079,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2, index3, index4) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
+            world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'r>) =
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1015,7 +1096,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
         let struct (index, index2, index3, index4) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
+        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], world)
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -1081,7 +1162,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1092,12 +1173,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
+            world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'r>) =
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1109,7 +1192,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
         let struct (index, index2, index3, index4, index5) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
+        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], world)
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -1182,7 +1265,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1195,12 +1278,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5, index6) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
+            world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'r>) =
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1214,7 +1299,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
         let struct (index, index2, index3, index4, index5, index6) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
+        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], world)
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -1294,7 +1379,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     member this.Ecs = ecs
     member this.Cache = cache
 
-    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, unit>) =
+    member inline this.Iterate (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1309,12 +1394,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
         let array7 = system7.Correlateds.Array
+        let mutable world = world
         let mutable enr = this.Cache.ValuesEnumerator
         while enr.MoveNext () do
             let struct (index, index2, index3, index4, index5, index6, index7) = enr.Current
-            fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
+            world <- fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7], world)
+        world
 
-    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'r>) =
+    member inline this.Index (entityId : uint64) (fn : Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -1330,7 +1417,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let array6 = system6.Correlateds.Array
         let array7 = system7.Correlateds.Array
         let struct (index, index2, index3, index4, index5, index6, index7) = this.Cache.[entityId]
-        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
+        fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7], world)
 
     member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
         let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
@@ -1536,7 +1623,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
     member this.EntitiesCorrelated = systemDict.Values |> Seq.map (fun system -> system.EntitiesCorrelated) |> Seq.concat
 
     member this.Family = systemTree |> ListTree.map (fun system -> system.Correlateds)
-    member this.WithFamilyBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
+    member this.WithFamilyBuffered fn world = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn world)
     
     member this.RewindFreeIndices () =
         systemDict.Values |> Seq.iter (fun system -> system.RewindFreeIndex ())
