@@ -282,7 +282,7 @@ and 'w Ecs () as this =
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.PublishAsync<'d> eventName (eventData : 'd) publisher world =
+    member this.PublishAsync<'d> eventName (eventData : 'd) publisher =
         let vsync =
             match systemSubscriptions.TryGetValue eventName with
             | (true, subscriptions) ->
@@ -292,8 +292,7 @@ and 'w Ecs () as this =
                         match subscription.Value with
                         | :? SystemCallback<obj, 'w> as objCallback ->
                             let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                            let world2 = objCallback evt publisher this world
-                            if not (refEq world world2) then failwith "Cannot transform the world in an async context."
+                            objCallback evt publisher this Unchecked.defaultof<'w> |> ignore<'w>
                         | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
                 Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
