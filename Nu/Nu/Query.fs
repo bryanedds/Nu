@@ -170,25 +170,25 @@ type Query<'c, 'c2, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        struct (comp, comp2)
+    member this.RegisterCorrelated ordered comp comp2 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        result || result2
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        struct (unregistered || unregistered2, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        struct (comp, comp2)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        result || result2
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        struct (unregistered || unregistered2, world)
     
     interface Query<'w> with
 
@@ -259,29 +259,29 @@ type Query<'c, 'c2, 'c3, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 comp3 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        struct (comp, comp2, comp3)
+    member this.RegisterCorrelated ordered comp comp2 comp3 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        result || result2 || result3
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        struct (unregistered || unregistered2 || unregistered3, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        struct (comp, comp2, comp3)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        result || result2 || result3
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        struct (unregistered || unregistered2 || unregistered3, world)
     
     interface Query<'w> with
 
@@ -361,33 +361,33 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        struct (comp, comp2, comp3, comp4)
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        result || result2 || result3 || result4
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        struct (comp, comp2, comp3, comp4)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        result || result2 || result3 || result4
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4, world)
     
     interface Query<'w> with
 
@@ -476,37 +476,37 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        struct (comp, comp2, comp3, comp4, comp5)
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        result || result2 || result3 || result4 || result5
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        struct (comp, comp2, comp3, comp4, comp5)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        result || result2 || result3 || result4 || result5
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5, world)
     
     interface Query<'w> with
 
@@ -604,41 +604,41 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
-        struct (comp, comp2, comp3, comp4, comp5, comp6)
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        let world = ecs.RegisterCorrelated<'c6> ordered comp6 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        let result6 = ecs.UnregisterCorrelated<'c6> entityId
-        result || result2 || result3 || result4 || result5 || result6
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
-        struct (comp, comp2, comp3, comp4, comp5, comp6)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        let world = ecs.RegisterCorrelated<'c6> ordered comp6 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        let result6 = ecs.UnregisterCorrelated<'c6> entityId
-        result || result2 || result3 || result4 || result5 || result6
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6, world)
     
     interface Query<'w> with
 
@@ -745,45 +745,45 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
                 world)
             world
 
-    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
-        let comp = ecs.RegisterCorrelated<'c> ordered comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
-        let comp7 = ecs.RegisterCorrelated<'c7> ordered comp7 entityId
-        struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
+    member this.RegisterCorrelated ordered comp comp2 comp3 comp4 comp5 comp6 comp7 entityId world =
+        let world = ecs.RegisterCorrelated<'c> ordered comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        let world = ecs.RegisterCorrelated<'c6> ordered comp6 entityId world
+        let world = ecs.RegisterCorrelated<'c7> ordered comp7 entityId world
+        world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        let result = ecs.UnregisterCorrelated<'c> entityId
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        let result6 = ecs.UnregisterCorrelated<'c6> entityId
-        let result7 = ecs.UnregisterCorrelated<'c7> entityId
-        result || result2 || result3 || result4 || result5 || result6 || result7
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        let struct (unregistered, world) = ecs.UnregisterCorrelated<'c> entityId world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
+        let struct (unregistered7, world) = ecs.UnregisterCorrelated<'c7> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6 || unregistered7, world)
 
-    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 comp7 entityId =
-        let comp = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
-        let comp2 = ecs.RegisterCorrelated<'c2> ordered comp2 entityId
-        let comp3 = ecs.RegisterCorrelated<'c3> ordered comp3 entityId
-        let comp4 = ecs.RegisterCorrelated<'c4> ordered comp4 entityId
-        let comp5 = ecs.RegisterCorrelated<'c5> ordered comp5 entityId
-        let comp6 = ecs.RegisterCorrelated<'c6> ordered comp6 entityId
-        let comp7 = ecs.RegisterCorrelated<'c7> ordered comp7 entityId
-        struct (comp, comp2, comp3, comp4, comp5, comp6, comp7)
+    member this.RegisterHierarchical ordered parentIdOpt comp comp2 comp3 comp4 comp5 comp6 comp7 entityId world =
+        let world = ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
+        let world = ecs.RegisterCorrelated<'c2> ordered comp2 entityId world
+        let world = ecs.RegisterCorrelated<'c3> ordered comp3 entityId world
+        let world = ecs.RegisterCorrelated<'c4> ordered comp4 entityId world
+        let world = ecs.RegisterCorrelated<'c5> ordered comp5 entityId world
+        let world = ecs.RegisterCorrelated<'c6> ordered comp6 entityId world
+        let world = ecs.RegisterCorrelated<'c7> ordered comp7 entityId world
+        world
 
-    member this.UnregisterHierarchical parentIdOpt entityId =
-        let result = ecs.UnregisterHierarchical<'c> parentIdOpt
-        let result2 = ecs.UnregisterCorrelated<'c2> entityId
-        let result3 = ecs.UnregisterCorrelated<'c3> entityId
-        let result4 = ecs.UnregisterCorrelated<'c4> entityId
-        let result5 = ecs.UnregisterCorrelated<'c5> entityId
-        let result6 = ecs.UnregisterCorrelated<'c6> entityId
-        let result7 = ecs.UnregisterCorrelated<'c7> entityId
-        result || result2 || result3 || result4 || result5 || result6 || result7
+    member this.UnregisterHierarchical parentIdOpt entityId world =
+        let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
+        let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
+        let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
+        let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
+        let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
+        let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
+        let struct (unregistered7, world) = ecs.UnregisterCorrelated<'c7> entityId world
+        struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6 || unregistered7, world)
     
     interface Query<'w> with
 
