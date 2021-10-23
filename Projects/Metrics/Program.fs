@@ -137,12 +137,16 @@ type MyGameDispatcher () =
         let shakers = ecs.RegisterQuery (Query<Position, Shake, World> ecs)
 
         // create 3M movers (goal: 60FPS, current: 60FPS)
-        for _ in 0 .. 3000000 - 1 do
-            movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 |> ignore
+        let world =
+            Seq.fold (fun world _ ->
+                movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 world)
+                world [|0 .. 3000000 - 1|] // TODO: implement Seq.range function.
 
-        // create 200 shakers (goal: 60FPS, current: 50FPS)
-        for _ in 0 .. 200 - 1 do
-            shakers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Shake> with Offset = v2One } Gen.id64 |> ignore
+        // create 300 shakers (goal: 60FPS, current: 60FPS)
+        let world =
+            Seq.fold (fun world _ ->
+                shakers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Shake> with Offset = v2One } Gen.id64 world)
+                world [|0 .. 300 - 1|]
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
