@@ -70,6 +70,8 @@ type Query<'c, 'w when
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
 
+    member this.System = system
+
     member this.Iterate (fn : Statement<'c, 's>) state =
         let array = system.Correlateds.Array
         let mutable world = state
@@ -133,6 +135,9 @@ type Query<'c, 'c2, 'w when
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
 
     member this.Iterate (fn : Statement<'c, 'c2, 's>) state =
         let array = system.Correlateds.Array
@@ -216,6 +221,10 @@ type Query<'c, 'c2, 'c3, 'w when
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
+    member this.System3 = system3
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 's>) state =
         let array = system.Correlateds.Array
@@ -312,6 +321,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
+    member this.System3 = system3
+    member this.System4 = system4
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 's>) state =
         let array = system.Correlateds.Array
@@ -421,6 +435,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
+    member this.System3 = system3
+    member this.System4 = system4
+    member this.System5 = system5
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) state =
         let array = system.Correlateds.Array
@@ -543,6 +563,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
+    member this.System3 = system3
+    member this.System4 = system4
+    member this.System5 = system5
+    member this.System6 = system6
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) state =
         let array = system.Correlateds.Array
@@ -678,6 +705,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
     let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+
+    member this.System = system
+    member this.System2 = system2
+    member this.System3 = system3
+    member this.System4 = system4
+    member this.System5 = system5
+    member this.System6 = system6
+    member this.System7 = system7
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) state =
         let array = system.Correlateds.Array
