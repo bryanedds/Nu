@@ -408,18 +408,18 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         if ordered then this.RewindFreeIndex ()
 
         // assign component
-        let cref =
+        let index =
             if  not ordered &&
                 freeList.Count > 0 then
                 let index = Seq.head freeList
                 freeList.Remove index |> ignore<bool>
                 components.[index] <- comp
-                ComponentRef.make index components componentsBuffered
+                index
             elif freeIndex < components.Length then
                 let index = freeIndex
                 components.[index] <- comp
                 freeIndex <- inc index
-                ComponentRef.make index components componentsBuffered
+                index
             else
                 let index = freeIndex
                 let arr = Array.zeroCreate (components.Length * Constants.Ecs.ArrayGrowth)
@@ -427,15 +427,14 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
                 components.Array <- arr
                 components.[index] <- comp
                 freeIndex <- inc index
-                ComponentRef.make index components componentsBuffered
+                index
 
         // raise event
-        let world = ecs.Publish this.UncorellatedRegisterEvent cref this world
-        struct (cref, world)
+        let world = ecs.Publish this.UncorellatedRegisterEvent index this world
+        struct (index, world)
 
     member this.UnregisterUncorrelated index (world : 'w) =
-        let cref = ComponentRef.make index components componentsBuffered
-        let world = ecs.Publish this.UncorellatedUnregisteringEvent cref this world
+        let world = ecs.Publish this.UncorellatedUnregisteringEvent index this world
         if index <> freeIndex then
             components.[index].Active <- false
             freeList.Add index |> ignore<bool>
