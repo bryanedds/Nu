@@ -479,7 +479,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
     member this.CorellatedRegisterEvent = corellatedRegisterEvent
     member this.CorellatedUnregisteringEvent = corellatedUnregisteringEvent
-    
+
     new (ecs) = SystemCorrelated (false, ecs)
 
     member this.FreeListCount = freeList.Count
