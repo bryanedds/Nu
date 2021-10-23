@@ -559,8 +559,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
                 ecs.FilterForQueries this.Name entityId
 
             // raise event
-            let cref = ComponentRef.make index correlateds correlatedsBuffered
-            ecs.Publish this.CorellatedRegisterEvent struct (cref, entityId) this world
+            ecs.Publish this.CorellatedRegisterEvent entityId this world
 
         // component is already registered
         else failwith ("Component registered multiple times for entity '" + scstring entityId + "'.")
@@ -573,8 +572,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | (true, index) ->
 
                 // raise removing event
-                let cref = ComponentRef.make index correlateds correlatedsBuffered
-                let world = ecs.Publish this.CorellatedUnregisteringEvent struct (cref, entityId) this world
+                let world = ecs.Publish this.CorellatedUnregisteringEvent entityId this world
 
                 // deallocate component
                 correlations.Remove entityId |> ignore<bool>
