@@ -115,7 +115,7 @@ type Query<'c, 'w when
     member this.UnregisterHierarchical parentIdOpt world =
         ecs.UnregisterHierarchical<'c> parentIdOpt world
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -124,7 +124,7 @@ type Query<'c, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -134,10 +134,10 @@ type Query<'c, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp world =
+    member this.Allocate comp world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -145,7 +145,7 @@ type Query<'c, 'w when
         let world = this.Index entityId (new Statement<_, _> (fun comp' world -> comp' <- comp; world)) world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -237,7 +237,7 @@ type Query<'c, 'c2, 'w when
         let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
         struct (unregistered || unregistered2, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -246,7 +246,7 @@ type Query<'c, 'c2, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -256,10 +256,10 @@ type Query<'c, 'c2, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 world =
+    member this.Allocate comp comp2 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -272,7 +272,7 @@ type Query<'c, 'c2, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -384,7 +384,7 @@ type Query<'c, 'c2, 'c3, 'w when
         let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
         struct (unregistered || unregistered2 || unregistered3, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -393,7 +393,7 @@ type Query<'c, 'c2, 'c3, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -403,10 +403,10 @@ type Query<'c, 'c2, 'c3, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 comp3 world =
+    member this.Allocate comp comp2 comp3 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -420,7 +420,7 @@ type Query<'c, 'c2, 'c3, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -547,7 +547,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -556,7 +556,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -566,10 +566,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 comp3 comp4 world =
+    member this.Allocate comp comp2 comp3 comp4 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -584,7 +584,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -726,7 +726,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -735,7 +735,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -745,10 +745,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 comp3 comp4 comp5 world =
+    member this.Allocate comp comp2 comp3 comp4 comp5 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -764,7 +764,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -921,7 +921,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -930,7 +930,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -940,10 +940,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 comp3 comp4 comp5 comp6 world =
+    member this.Allocate comp comp2 comp3 comp4 comp5 comp6 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -960,7 +960,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore
@@ -1132,7 +1132,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let struct (unregistered7, world) = ecs.UnregisterCorrelated<'c7> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6 || unregistered7, world)
 
-    member this.PreallocateCorrelated count world =
+    member this.Preallocate count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -1141,7 +1141,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> Unchecked.defaultof<'c7> entityId world
         world
 
-    member this.ClearPreallocationsCorrelatedWhenNoneAllocated world =
+    member this.TryClear world =
         if Seq.isEmpty allocated then
             let mutable world = world
             for entityIdInv in unallocated do
@@ -1151,10 +1151,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             struct (true, world)
         else struct (false, world)
 
-    member this.AllocateCorrelated comp comp2 comp3 comp4 comp5 comp6 comp7 world =
+    member this.Allocate comp comp2 comp3 comp4 comp5 comp6 comp7 world =
         let world =
             if Seq.isEmpty unallocated
-            then this.PreallocateCorrelated Constants.Ecs.PreallocateAmount world
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -1172,7 +1172,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
                 world
         struct (entityId, world)
 
-    member this.DeallocateCorrelated entityId world =
+    member this.Deallocate entityId world =
         if allocated.Remove entityId then
             let entityIdInv = UInt64.MaxValue - entityId
             unallocated.Add entityIdInv |> ignore

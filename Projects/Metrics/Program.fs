@@ -139,13 +139,13 @@ type MyGameDispatcher () =
         // create 3M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                movers.AllocateCorrelated { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
                 world [|0 .. 3000000 - 1|] // TODO: implement Seq.range function.
 
         // create 300 shakers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                shakers.AllocateCorrelated { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                shakers.Allocate { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
                 world [|0 .. 300 - 1|]
 
         // define update for movers
