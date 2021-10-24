@@ -454,14 +454,14 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             let system = Option.get systemOpt
             system.IndexUncorrelated index
 
-        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp =
+        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp (world : 'w) =
             match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterUncorrelated ordered comp
+            | Some system -> system.RegisterUncorrelated ordered comp world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
+        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index (world : 'w) =
             match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterUncorrelated index
+            | Some system -> system.UnregisterUncorrelated index world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An ECS system with components correlated by entity id (uint64).
@@ -622,20 +622,15 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
 
-        member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp entityId =
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp entityId (world : 'w) =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterCorrelated ordered comp entityId
+            | Some system -> system.RegisterCorrelated ordered comp entityId world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
+        member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId (world : 'w) =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterCorrelated entityId
+            | Some system -> system.UnregisterCorrelated entityId world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.UnregisterCorrelated (systemName, entityId) =
-            match this.TryIndexSystem systemName with
-            | Some system -> system.UnregisterComponent entityId
-            | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// A SystemHierarchical node.
 type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
@@ -725,9 +720,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.IndexHierarchical entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> ordered parentIdOpt comp entityId =
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> ordered parentIdOpt comp entityId (world : 'w) =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RegisterHierarchical ordered parentIdOpt comp entityId
+            | Some system -> system.RegisterHierarchical ordered parentIdOpt comp entityId world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt (world : 'w) =
@@ -846,14 +841,14 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             let simplex = system.IndexMultiplexedBuffered simplexName entityId
             simplex.Simplex
 
-        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> ordered comp simplexName entityId =
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> ordered comp simplexName entityId (world : 'w) =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.RegisterMultiplexed ordered comp simplexName entityId
+            | Some system -> system.RegisterMultiplexed ordered comp simplexName entityId world
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
+        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId (world : 'w) =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.UnregisterMultiplexed simplexName entityId
+            | Some system -> system.UnregisterMultiplexed simplexName entityId world
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 [<RequireQualifiedAccess>]
