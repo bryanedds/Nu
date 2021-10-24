@@ -400,10 +400,6 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     member this.RegisterUncorrelated ordered (comp : 'c) (world : 'w) =
 
-        // ensure component is marked active
-        let mutable comp = comp
-        comp.Active <- true
-
         // rewind the freeIndex when requesting ordered registration
         if ordered then this.RewindFreeIndex ()
 
@@ -511,10 +507,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         ComponentRef<'c>.make index correlateds correlatedsBuffered
 
     member this.RegisterCorrelated ordered (comp : 'c) entityId (world : 'w) =
-
-        // activate component
-        let mutable comp = comp
-        comp.Active <- true
 
         // check if component is already registered
         if not (correlations.ContainsKey entityId) then
