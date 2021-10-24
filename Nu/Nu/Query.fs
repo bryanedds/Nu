@@ -91,10 +91,13 @@ type Query<'c, 'w when
             struct (entityId, world)
         else struct (0UL, world)
 
-    member this.TryDeallocateCorrelated entityId =
-        if allocated.Remove entityId
-        then unallocated.Add (UInt64.MaxValue - entityId)
-        else false
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world = this.Index entityId (new Statement<'c, 's> (fun comp world -> comp <- Unchecked.defaultof<'c>; world)) world
+            struct (true, world)
+        else struct (false, world)
 
     member this.Iterate (fn : Statement<'c, 's>) state =
         let array = system.Correlateds.Array
