@@ -139,13 +139,13 @@ type MyGameDispatcher () =
         // create 3M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                movers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Velocity> with Velocity = v2One } Gen.id64 world)
+                movers.RegisterCorrelated false { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } Gen.id64 world)
                 world [|0 .. 3000000 - 1|] // TODO: implement Seq.range function.
 
         // create 300 shakers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                shakers.RegisterCorrelated false Unchecked.defaultof<Position> { Unchecked.defaultof<Shake> with Offset = v2One } Gen.id64 world)
+                shakers.RegisterCorrelated false { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } Gen.id64 world)
                 world [|0 .. 300 - 1|]
 
         // define update for movers

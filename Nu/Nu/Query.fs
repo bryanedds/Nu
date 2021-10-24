@@ -69,8 +69,32 @@ type Query<'c, 'w when
     let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
+
+    member this.TryAllocateCorrelated comp world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world = this.Index entityId (new Statement<'c, 's> (fun comp' world -> comp' <- comp; world)) world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId =
+        if allocated.Remove entityId
+        then unallocated.Add (UInt64.MaxValue - entityId)
+        else false
 
     member this.Iterate (fn : Statement<'c, 's>) state =
         let array = system.Correlateds.Array
@@ -101,17 +125,17 @@ type Query<'c, 'w when
             fn.Invoke (&array.[index], world))
             world
 
-    member this.RegisterCorrelated ordered comp entityId =
-        ecs.RegisterCorrelated<'c> ordered comp entityId
+    member this.RegisterCorrelated ordered comp entityId world =
+        ecs.RegisterCorrelated<'c> ordered comp entityId world
 
-    member this.UnregisterCorrelated (entityId : uint64) =
-        ecs.UnregisterCorrelated<'c> entityId
+    member this.UnregisterCorrelated (entityId : uint64) world =
+        ecs.UnregisterCorrelated<'c> entityId world
 
-    member this.RegisterHierarchical ordered parentIdOpt comp entityId =
-        ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId
+    member this.RegisterHierarchical ordered parentIdOpt comp entityId world =
+        ecs.RegisterHierarchical<'c> ordered parentIdOpt comp entityId world
 
-    member this.UnregisterHierarchical parentIdOpt =
-        ecs.UnregisterHierarchical<'c> parentIdOpt
+    member this.UnregisterHierarchical parentIdOpt world =
+        ecs.UnregisterHierarchical<'c> parentIdOpt world
     
     interface Query<'w> with
 
