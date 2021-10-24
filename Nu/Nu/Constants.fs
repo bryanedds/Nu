@@ -96,3 +96,4 @@ module Ecs =
 
     let [<Literal>] ArrayReserve = 256
     let [<Literal>] ArrayGrowth = 2
+    let [<Literal>] PreallocateAmount = 256
