@@ -74,31 +74,6 @@ type Query<'c, 'w when
 
     member this.System = system
 
-    member this.PreallocateCorrelated count world =
-        let mutable world = world
-        for _ in 0 .. count - 1 do
-            let entityId = Gen.id64
-            let entityIdInv = UInt64.MaxValue - entityId
-            unallocated.Add entityIdInv |> ignore
-            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
-
-    member this.TryAllocateCorrelated comp world =
-        if Seq.notEmpty unallocated then
-            let entityIdInv = Seq.head unallocated
-            unallocated.Remove entityIdInv |> ignore
-            let entityId = UInt64.MaxValue - entityIdInv
-            let world = this.Index entityId (new Statement<'c, 's> (fun comp' world -> comp' <- comp; world)) world
-            struct (entityId, world)
-        else struct (0UL, world)
-
-    member this.TryDeallocateCorrelated entityId world =
-        if allocated.Remove entityId then
-            let entityIdInv = UInt64.MaxValue - entityId
-            unallocated.Add entityIdInv |> ignore
-            let world = this.Index entityId (new Statement<'c, 's> (fun comp world -> comp <- Unchecked.defaultof<'c>; world)) world
-            struct (true, world)
-        else struct (false, world)
-
     member this.Iterate (fn : Statement<'c, 's>) state =
         let array = system.Correlateds.Array
         let mutable world = state
@@ -139,7 +114,32 @@ type Query<'c, 'w when
 
     member this.UnregisterHierarchical parentIdOpt world =
         ecs.UnregisterHierarchical<'c> parentIdOpt world
-    
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
+
+    member this.TryAllocateCorrelated comp world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world = this.Index entityId (new Statement<_, _> (fun comp' world -> comp' <- comp; world)) world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world = this.Index entityId (new Statement<_, _> (fun comp world -> comp <- Unchecked.defaultof<'c>; world)) world
+            struct (true, world)
+        else struct (false, world)
+
     interface Query<'w> with
 
         override this.Correlation = correlation
@@ -162,6 +162,8 @@ type Query<'c, 'c2, 'w when
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -221,6 +223,41 @@ type Query<'c, 'c2, 'w when
         let struct (unregistered, world) = ecs.UnregisterHierarchical<'c> parentIdOpt world
         let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
         struct (unregistered || unregistered2, world)
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _> (fun comp' comp2' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _> (fun comp comp2 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
     
     interface Query<'w> with
 
@@ -248,6 +285,8 @@ type Query<'c, 'c2, 'c3, 'w when
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -318,6 +357,43 @@ type Query<'c, 'c2, 'c3, 'w when
         let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
         let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
         struct (unregistered || unregistered2 || unregistered3, world)
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 comp3 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _, _> (fun comp' comp2' comp3' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    comp3' <- comp3
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _, _> (fun comp comp2 comp3 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    comp3 <- Unchecked.defaultof<'c3>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
     
     interface Query<'w> with
 
@@ -348,6 +424,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -429,6 +507,45 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
         let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4, world)
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 comp3 comp4 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _> (fun comp' comp2' comp3' comp4' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    comp3' <- comp3
+                    comp4' <- comp4
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _> (fun comp comp2 comp3 comp4 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    comp3 <- Unchecked.defaultof<'c3>
+                    comp4 <- Unchecked.defaultof<'c4>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
     
     interface Query<'w> with
 
@@ -462,6 +579,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -554,6 +673,47 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
         let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5, world)
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 comp3 comp4 comp5 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _> (fun comp' comp2' comp3' comp4' comp5' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    comp3' <- comp3
+                    comp4' <- comp4
+                    comp5' <- comp5
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _> (fun comp comp2 comp3 comp4 comp5 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    comp3 <- Unchecked.defaultof<'c3>
+                    comp4 <- Unchecked.defaultof<'c4>
+                    comp5 <- Unchecked.defaultof<'c5>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
     
     interface Query<'w> with
 
@@ -590,6 +750,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -693,7 +855,50 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
         let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6, world)
-    
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 comp3 comp4 comp5 comp6 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _, _> (fun comp' comp2' comp3' comp4' comp5' comp6' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    comp3' <- comp3
+                    comp4' <- comp4
+                    comp5' <- comp5
+                    comp6' <- comp6
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _, _> (fun comp comp2 comp3 comp4 comp5 comp6 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    comp3 <- Unchecked.defaultof<'c3>
+                    comp4 <- Unchecked.defaultof<'c4>
+                    comp5 <- Unchecked.defaultof<'c5>
+                    comp6 <- Unchecked.defaultof<'c6>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
+
     interface Query<'w> with
 
         override this.Correlation = correlation
@@ -732,6 +937,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
     let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+    let unallocated = HashSet<uint64> HashIdentity.Structural
+    let allocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -846,6 +1053,51 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
         let struct (unregistered7, world) = ecs.UnregisterCorrelated<'c7> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6 || unregistered7, world)
+
+    member this.PreallocateCorrelated count world =
+        let mutable world = world
+        for _ in 0 .. count - 1 do
+            let entityId = Gen.id64
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> Unchecked.defaultof<'c7> entityId world
+
+    member this.TryAllocateCorrelated comp comp2 comp3 comp4 comp5 comp6 comp7 world =
+        if Seq.notEmpty unallocated then
+            let entityIdInv = Seq.head unallocated
+            unallocated.Remove entityIdInv |> ignore
+            let entityId = UInt64.MaxValue - entityIdInv
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _, _, _> (fun comp' comp2' comp3' comp4' comp5' comp6' comp7' world ->
+                    comp' <- comp
+                    comp2' <- comp2
+                    comp3' <- comp3
+                    comp4' <- comp4
+                    comp5' <- comp5
+                    comp6' <- comp6
+                    comp7' <- comp7
+                    world))
+                    world
+            struct (entityId, world)
+        else struct (0UL, world)
+
+    member this.TryDeallocateCorrelated entityId world =
+        if allocated.Remove entityId then
+            let entityIdInv = UInt64.MaxValue - entityId
+            unallocated.Add entityIdInv |> ignore
+            let world =
+                this.Index entityId (new Statement<_, _, _, _, _, _, _, _> (fun comp comp2 comp3 comp4 comp5 comp6 comp7 world ->
+                    comp <- Unchecked.defaultof<'c>
+                    comp2 <- Unchecked.defaultof<'c2>
+                    comp3 <- Unchecked.defaultof<'c3>
+                    comp4 <- Unchecked.defaultof<'c4>
+                    comp5 <- Unchecked.defaultof<'c5>
+                    comp6 <- Unchecked.defaultof<'c6>
+                    comp7 <- Unchecked.defaultof<'c7>
+                    world))
+                    world
+            struct (true, world)
+        else struct (false, world)
     
     interface Query<'w> with
 
