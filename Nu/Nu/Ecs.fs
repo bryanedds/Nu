@@ -560,7 +560,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             ecs.Publish this.CorellatedRegisterEvent entityId this world
 
         // component is already registered
-        else failwith ("Component registered multiple times for entity '" + scstring entityId + "'.")
+        else world
 
     member this.UnregisterCorrelated entityId (world : 'w) =
 
