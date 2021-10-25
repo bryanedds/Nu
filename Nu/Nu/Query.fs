@@ -64,14 +64,24 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
 /// An ECS query.
 type Query<'c, 'w when
-    'c : struct and 'c :> 'c Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c : struct and 'c :> 'c Component> (excluding : Type array, ecs : 'w Ecs) =
     
     let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _> ([||], ecs)
 
     member this.System = system
 
@@ -211,15 +221,25 @@ type Query<'c, 'w when
 /// An ECS query.
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c2 : struct and 'c2 :> 'c2 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2
@@ -360,16 +380,26 @@ type Query<'c, 'c2, 'w when
 type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c3 : struct and 'c3 :> 'c3 Component> (excluding : Type array, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2
@@ -527,10 +557,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c4 : struct and 'c4 :> 'c4 Component> (excluding : Type array, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -538,6 +568,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    
+    new (ecs) = Query<_, _, _, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2
@@ -712,10 +752,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c5 : struct and 'c5 :> 'c5 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -724,6 +764,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _, _, _, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2
@@ -915,10 +965,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c6 : struct and 'c6 :> 'c6 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -928,6 +978,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _, _, _, _, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2
@@ -1136,10 +1196,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
     'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    'c7 : struct and 'c7 :> 'c7 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -1150,6 +1210,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
+
+    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+
+    new (ecs) = Query<_, _, _, _, _, _, _, _> ([||], ecs)
 
     member this.System = system
     member this.System2 = system2

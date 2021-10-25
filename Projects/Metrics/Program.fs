@@ -132,28 +132,28 @@ type MyGameDispatcher () =
         let _ = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query<EntityId, Position, Velocity, World> ecs)
+        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
 
         // create shakers query
-        let shakers = ecs.RegisterQuery (Query<Position, Shake, World> ecs)
+        let shakers = ecs.RegisterQuery (Query<EntityId, Position, Shake, World>.Excluding<Velocity> ecs)
 
-        // create 3M movers (goal: 60FPS, current: 50FPS)
+        // create 3M movers (goal: 60FPS, current: 60FPS)
+        let world =
+            Seq.fold (fun world _ ->
+                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                world (Seq.init 3000000 id)
+
+        // create 3000 shakers
         let world =
             Seq.fold (fun world _ ->
                 let struct (entityId, world) = movers.NextEntityId world
-                movers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
-                world [|0 .. 3000000 - 1|] // TODO: implement Seq.range function.
-
-        // create 300 shakers (goal: 60FPS, current: 50FPS)
-        let world =
-            Seq.fold (fun world _ ->
-                shakers.Allocate { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
-                world [|0 .. 300 - 1|]
+                shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                world (Seq.init 3000 id)
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             movers.Iterate $
-                new Statement<_, _, _, _> (fun _ position velocity world ->
+                new Statement<_, _, _> (fun position velocity world ->
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
                     world)
@@ -161,7 +161,7 @@ type MyGameDispatcher () =
         // define update for shakers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             shakers.Iterate $
-                new Statement<_, _, _> (fun position shake world ->
+                new Statement<_, _, _, _> (fun _ position shake world ->
                     position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
                     position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
                     world)
