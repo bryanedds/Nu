@@ -66,7 +66,6 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 type Query<'c, 'w when
     'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
 
-    let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let unallocated = HashSet<uint64> HashIdentity.Structural
@@ -75,32 +74,29 @@ type Query<'c, 'w when
     member this.System = system
 
     member this.Iterate (fn : Statement<'c, 's>) state =
-        let array = system.Correlateds.Array
         let mutable world = state
-        let mutable enr = cache.ValuesEnumerator
-        while enr.MoveNext () do
-            world <- fn.Invoke (&array.[enr.Current], world)
+        let array = system.Correlateds.Array
+        for i in 0 .. array.Length - 1 do
+            world <- fn.Invoke (&array.[i], world)
         world
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
             let mutable world = world
-            let mutable enr = cache.ValuesEnumerator
-            while enr.MoveNext () do
-                let index = enr.Current
-                world <- fn.Invoke (&array.[index], world)
+            let array = aref.Array
+            for i in 0 .. array.Length - 1 do
+                world <- fn.Invoke (&array.[i], world)
             world)
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
-        let array = system.Correlateds.Array
-        let index = cache.[entityId]
-        fn.Invoke (&array.[index], state)
+        let cref = system.IndexCorrelated entityId
+        fn.Invoke (&cref.Index, state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            let index = cache.[entityId]
-            fn.Invoke (&array.[index], world))
+        system.WithCorrelatedsBuffered (fun array state ->
+            let index = system.IndexCorrelatedToI entityId
+            fn.Invoke (&array.[index], state))
             world
 
     member this.RegisterCorrelated ordered comp entityId world =
@@ -154,17 +150,8 @@ type Query<'c, 'w when
         else struct (false, world)
 
     interface Query<'w> with
-
         override this.Correlation = correlation
-
-        override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            if indexOpt > -1 then
-                cache.[entityId] <- indexOpt
-                true
-            else
-                cache.Remove entityId |> ignore<bool>
-                false
+        override this.Filter entityId = system.TryIndexCorrelatedToI entityId > -1
 
 /// An ECS query.
 type Query<'c, 'c2, 'w when
