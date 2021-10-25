@@ -126,23 +126,25 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create systems
+        let _ = ecs.RegisterSystem (SystemCorrelated<EntityId, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
+        let movers = ecs.RegisterQuery (Query<EntityId, Position, Velocity, World> ecs)
 
         // create shakers query
         let shakers = ecs.RegisterQuery (Query<Position, Shake, World> ecs)
 
-        // create 3M movers (goal: 60FPS, current: 60FPS)
+        // create 3M movers (goal: 60FPS, current: 50FPS)
         let world =
             Seq.fold (fun world _ ->
-                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                let struct (entityId, world) = movers.NextEntityId world
+                movers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
                 world [|0 .. 3000000 - 1|] // TODO: implement Seq.range function.
 
-        // create 300 shakers (goal: 60FPS, current: 60FPS)
+        // create 300 shakers (goal: 60FPS, current: 50FPS)
         let world =
             Seq.fold (fun world _ ->
                 shakers.Allocate { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
@@ -151,7 +153,7 @@ type MyGameDispatcher () =
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             movers.Iterate $
-                new Statement<_, _, _> (fun position velocity world ->
+                new Statement<_, _, _, _> (fun _ position velocity world ->
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
                     world)
