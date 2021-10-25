@@ -124,12 +124,14 @@ type Query<'c, 'w when
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
         if excluding.Count = 0 then
-            system.WithCorrelatedsBuffered (fun array world ->
+            system.WithCorrelatedsBuffered (fun aref world ->
+                let array = aref.Array
                 let index = system.IndexCorrelatedToI entityId
                 fn.Invoke (&array.[index], world))
                 world
         else
-            system.WithCorrelatedsBuffered (fun array world ->
+            system.WithCorrelatedsBuffered (fun aref world ->
+                let array = aref.Array
                 let index = cache.[entityId]
                 fn.Invoke (&array.[index], world))
                 world
@@ -155,15 +157,12 @@ type Query<'c, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp world =
         let world =
@@ -230,8 +229,10 @@ type Query<'c, 'c2, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                let array = aref.Array
+                let array2 = aref2.Array
                 let mutable world = world
                 let mutable enr = cache.ValuesEnumerator
                 while enr.MoveNext () do
@@ -248,8 +249,10 @@ type Query<'c, 'c2, 'w when
         fn.Invoke (&array.[index], &array2.[index2], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                let array = aref.Array
+                let array2 = aref2.Array
                 let struct (index, index2) = cache.[entityId]
                 fn.Invoke (&array.[index], &array2.[index2], world))
                 world)
@@ -284,15 +287,12 @@ type Query<'c, 'c2, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 world =
         let world =
@@ -372,9 +372,12 @@ type Query<'c, 'c2, 'c3, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    let array = aref.Array
+                    let array2 = aref2.Array
+                    let array3 = aref3.Array
                     let mutable world = world
                     let mutable enr = cache.ValuesEnumerator
                     while enr.MoveNext () do
@@ -393,9 +396,12 @@ type Query<'c, 'c2, 'c3, 'w when
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    let array = aref.Array
+                    let array2 = aref2.Array
+                    let array3 = aref3.Array
                     let struct (index, index2, index3) = cache.[entityId]
                     fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], world))
                     world)
@@ -435,15 +441,12 @@ type Query<'c, 'c2, 'c3, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 comp3 world =
         let world =
@@ -530,10 +533,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        let array = aref.Array
+                        let array2 = aref2.Array
+                        let array3 = aref3.Array
+                        let array4 = aref4.Array
                         let mutable world = world
                         let mutable enr = cache.ValuesEnumerator
                         while enr.MoveNext () do
@@ -554,10 +561,14 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        let array = aref.Array
+                        let array2 = aref2.Array
+                        let array3 = aref3.Array
+                        let array4 = aref4.Array
                         let struct (index, index2, index3, index4) = cache.[entityId]
                         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], world))
                         world)
@@ -602,15 +613,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 comp3 comp4 world =
         let world =
@@ -704,11 +712,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            let array = aref.Array
+                            let array2 = aref2.Array
+                            let array3 = aref3.Array
+                            let array4 = aref4.Array
+                            let array5 = aref5.Array
                             let mutable world = world
                             let mutable enr = cache.ValuesEnumerator
                             while enr.MoveNext () do
@@ -731,11 +744,16 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            let array = aref.Array
+                            let array2 = aref2.Array
+                            let array3 = aref3.Array
+                            let array4 = aref4.Array
+                            let array5 = aref5.Array
                             let struct (index, index2, index3, index4, index5) = cache.[entityId]
                             fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], world))
                             world)
@@ -785,15 +803,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 comp3 comp4 comp5 world =
         let world =
@@ -894,12 +909,18 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
-                            system6.WithCorrelatedsBuffered (fun array6 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+                                let array = aref.Array
+                                let array2 = aref2.Array
+                                let array3 = aref3.Array
+                                let array4 = aref4.Array
+                                let array5 = aref5.Array
+                                let array6 = aref6.Array
                                 let mutable world = world
                                 let mutable enr = cache.ValuesEnumerator
                                 while enr.MoveNext () do
@@ -924,12 +945,18 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
-                            system6.WithCorrelatedsBuffered (fun array6 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+                                let array = aref.Array
+                                let array2 = aref2.Array
+                                let array3 = aref3.Array
+                                let array4 = aref4.Array
+                                let array5 = aref5.Array
+                                let array6 = aref6.Array
                                 let struct (index, index2, index3, index4, index5, index6) = cache.[entityId]
                                 fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], world))
                                 world)
@@ -984,15 +1011,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 world =
         let world =
@@ -1100,13 +1124,20 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
-                            system6.WithCorrelatedsBuffered (fun array6 world ->
-                                system7.WithCorrelatedsBuffered (fun array7 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+                                system7.WithCorrelatedsBuffered (fun aref7 world ->
+                                    let array = aref.Array
+                                    let array2 = aref2.Array
+                                    let array3 = aref3.Array
+                                    let array4 = aref4.Array
+                                    let array5 = aref5.Array
+                                    let array6 = aref6.Array
+                                    let array7 = aref7.Array
                                     let mutable world = world
                                     let mutable enr = cache.ValuesEnumerator
                                     while enr.MoveNext () do
@@ -1133,13 +1164,20 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array world ->
-            system2.WithCorrelatedsBuffered (fun array2 world ->
-                system3.WithCorrelatedsBuffered (fun array3 world ->
-                    system4.WithCorrelatedsBuffered (fun array4 world ->
-                        system5.WithCorrelatedsBuffered (fun array5 world ->
-                            system6.WithCorrelatedsBuffered (fun array6 world ->
-                                system7.WithCorrelatedsBuffered (fun array7 world ->
+        system.WithCorrelatedsBuffered (fun aref world ->
+            system2.WithCorrelatedsBuffered (fun aref2 world ->
+                system3.WithCorrelatedsBuffered (fun aref3 world ->
+                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+                                system7.WithCorrelatedsBuffered (fun aref7 world ->
+                                    let array = aref.Array
+                                    let array2 = aref2.Array
+                                    let array3 = aref3.Array
+                                    let array4 = aref4.Array
+                                    let array5 = aref5.Array
+                                    let array6 = aref6.Array
+                                    let array7 = aref7.Array
                                     let struct (index, index2, index3, index4, index5, index6, index7) = cache.[entityId]
                                     fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7], world))
                                     world)
@@ -1199,15 +1237,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> Unchecked.defaultof<'c7> entityId world
         world
 
-    member this.TryClear world =
-        if allocated.Count = 0 then
-            let mutable world = world
-            for entityIdInv in unallocated do
-                let entityId = UInt64.MaxValue - entityIdInv
-                world <- this.UnregisterCorrelated entityId world |> snd'
-            unallocated.Clear ()
-            struct (true, world)
-        else struct (false, world)
+    member this.Clear world =
+        let mutable world = world
+        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+            world <- this.UnregisterCorrelated entityId world |> snd'
+        unallocated.Clear ()
+        world
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 comp7 world =
         let world =
