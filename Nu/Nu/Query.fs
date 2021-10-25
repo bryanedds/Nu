@@ -70,8 +70,8 @@ type Query<'c, 'w when
     let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
 
@@ -207,8 +207,8 @@ type Query<'c, 'c2, 'w when
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -344,8 +344,8 @@ type Query<'c, 'c2, 'c3, 'w when
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -497,8 +497,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -666,8 +666,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -851,8 +851,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
@@ -1052,8 +1052,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
     let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
-    let unallocated = HashSet<uint64> HashIdentity.Structural
     let allocated = HashSet<uint64> HashIdentity.Structural
+    let unallocated = HashSet<uint64> HashIdentity.Structural
 
     member this.System = system
     member this.System2 = system2
