@@ -24,6 +24,14 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract Active : bool with get, set
         end
 
+/// The component that holds an entity's id.
+type [<NoEquality; NoComparison; Struct>] EntityId =
+    { mutable Active : bool
+      mutable EntityId : uint64 }
+    interface EntityId Component with
+        member this.TypeName = nameof EntityId
+        member this.Active with get () = this.Active and set value = this.Active <- value
+
 /// A storable reference to a component in its containing array.
 /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
 /// OPTIMIZATION: Inlined everything for speed.

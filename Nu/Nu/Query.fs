@@ -164,6 +164,15 @@ type Query<'c, 'w when
         unallocated.Clear ()
         world
 
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
+
     member this.Allocate comp world =
         let world =
             if unallocated.Count = 0
@@ -293,6 +302,15 @@ type Query<'c, 'c2, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 world =
         let world =
@@ -447,6 +465,15 @@ type Query<'c, 'c2, 'c3, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 comp3 world =
         let world =
@@ -619,6 +646,15 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 comp3 comp4 world =
         let world =
@@ -809,6 +845,15 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 comp3 comp4 comp5 world =
         let world =
@@ -1017,6 +1062,15 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 world =
         let world =
@@ -1243,6 +1297,15 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
+
+    member this.NextEntityId world =
+        let world =
+            if unallocated.Count = 0
+            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            else world
+        let entityIdInv = Seq.head unallocated
+        let entityId = UInt64.MaxValue - entityIdInv
+        struct (entityId, world)
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 comp7 world =
         let world =
