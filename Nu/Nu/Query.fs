@@ -76,7 +76,7 @@ type Query<'c, 'w when
     member this.System = system
 
     member this.Iterate (fn : Statement<'c, 's>) state =
-        if Seq.isEmpty excluding then
+        if excluding.Count = 0 then
             let array = system.Correlateds.Array
             let mutable state = state
             for i in 0 .. array.Length - 1 do
@@ -91,7 +91,7 @@ type Query<'c, 'w when
             state
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
-        if Seq.isEmpty excluding then
+        if excluding.Count = 0 then
             system.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let mutable world = world
@@ -111,7 +111,7 @@ type Query<'c, 'w when
                 world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
-        if Seq.isEmpty excluding then
+        if excluding.Count = 0 then
             let cref = system.IndexCorrelated entityId
             fn.Invoke (&cref.Index, state)
         else
@@ -120,7 +120,7 @@ type Query<'c, 'w when
             fn.Invoke (&array.[index], state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
-        if Seq.isEmpty excluding then
+        if excluding.Count = 0 then
             system.WithCorrelatedsBuffered (fun array world ->
                 let index = system.IndexCorrelatedToI entityId
                 fn.Invoke (&array.[index], world))
@@ -153,7 +153,7 @@ type Query<'c, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -164,7 +164,7 @@ type Query<'c, 'w when
 
     member this.Allocate comp world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -186,7 +186,7 @@ type Query<'c, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            if Seq.isEmpty excluding then
+            if excluding.Count = 0 then
                 () // just pulls from lone associated system
             else
                 let indexOpt = system.TryIndexCorrelatedToI entityId
@@ -279,7 +279,7 @@ type Query<'c, 'c2, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -290,7 +290,7 @@ type Query<'c, 'c2, 'w when
 
     member this.Allocate comp comp2 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -326,7 +326,7 @@ type Query<'c, 'c2, 'w when
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -427,7 +427,7 @@ type Query<'c, 'c2, 'c3, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -438,7 +438,7 @@ type Query<'c, 'c2, 'c3, 'w when
 
     member this.Allocate comp comp2 comp3 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -477,7 +477,7 @@ type Query<'c, 'c2, 'c3, 'w when
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -591,7 +591,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -602,7 +602,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
 
     member this.Allocate comp comp2 comp3 comp4 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -644,7 +644,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -771,7 +771,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -782,7 +782,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
 
     member this.Allocate comp comp2 comp3 comp4 comp5 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -827,7 +827,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -967,7 +967,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -978,7 +978,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -1026,7 +1026,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -1179,7 +1179,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         world
 
     member this.TryClear world =
-        if Seq.isEmpty allocated then
+        if allocated.Count = 0 then
             let mutable world = world
             for entityIdInv in unallocated do
                 let entityId = UInt64.MaxValue - entityIdInv
@@ -1190,7 +1190,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 comp7 world =
         let world =
-            if Seq.isEmpty unallocated
+            if unallocated.Count = 0
             then this.Preallocate Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
@@ -1241,7 +1241,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let indexOpt7 = system7.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
                 let systemIds = ecs.IndexSystemIds entityId
-                if not (systemIds.IsSupersetOf excluding)
+                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
