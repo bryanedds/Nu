@@ -64,8 +64,10 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
 /// An ECS query.
 type Query<'c, 'w when
-    'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
-
+    'c : struct and 'c :> 'c Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
+    
+    let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let unallocated = HashSet<uint64> HashIdentity.Structural
@@ -74,30 +76,60 @@ type Query<'c, 'w when
     member this.System = system
 
     member this.Iterate (fn : Statement<'c, 's>) state =
-        let mutable world = state
-        let array = system.Correlateds.Array
-        for i in 0 .. array.Length - 1 do
-            world <- fn.Invoke (&array.[i], world)
-        world
+        if Seq.isEmpty excluding then
+            let array = system.Correlateds.Array
+            let mutable state = state
+            for i in 0 .. array.Length - 1 do
+                state <- fn.Invoke (&array.[i], state)
+            state
+        else
+            let array = system.Correlateds.Array
+            let mutable state = state
+            let mutable enr = cache.ValuesEnumerator
+            while enr.MoveNext () do
+                state <- fn.Invoke (&array.[enr.Current], state)
+            state
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            let mutable world = world
-            let array = aref.Array
-            for i in 0 .. array.Length - 1 do
-                world <- fn.Invoke (&array.[i], world)
-            world)
-            world
+        if Seq.isEmpty excluding then
+            system.WithCorrelatedsBuffered (fun aref world ->
+                let array = aref.Array
+                let mutable world = world
+                for i in 0 .. array.Length - 1 do
+                    world <- fn.Invoke (&array.[i], world)
+                world)
+                world
+        else
+            system.WithCorrelatedsBuffered (fun aref world ->
+                let array = aref.Array
+                let mutable world = world
+                let mutable enr = cache.ValuesEnumerator
+                while enr.MoveNext () do
+                    let index = enr.Current
+                    world <- fn.Invoke (&array.[index], world)
+                world)
+                world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
-        let cref = system.IndexCorrelated entityId
-        fn.Invoke (&cref.Index, state)
+        if Seq.isEmpty excluding then
+            let cref = system.IndexCorrelated entityId
+            fn.Invoke (&cref.Index, state)
+        else
+            let array = system.Correlateds.Array
+            let index = cache.[entityId]
+            fn.Invoke (&array.[index], state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
-        system.WithCorrelatedsBuffered (fun array state ->
-            let index = system.IndexCorrelatedToI entityId
-            fn.Invoke (&array.[index], state))
-            world
+        if Seq.isEmpty excluding then
+            system.WithCorrelatedsBuffered (fun array world ->
+                let index = system.IndexCorrelatedToI entityId
+                fn.Invoke (&array.[index], world))
+                world
+        else
+            system.WithCorrelatedsBuffered (fun array world ->
+                let index = cache.[entityId]
+                fn.Invoke (&array.[index], world))
+                world
 
     member this.RegisterCorrelated ordered comp entityId world =
         ecs.RegisterCorrelated<'c> ordered comp entityId world
@@ -150,15 +182,28 @@ type Query<'c, 'w when
         else struct (false, world)
 
     interface Query<'w> with
+
         override this.Correlation = correlation
-        override this.Filter _ = ()
+
+        override this.Filter entityId =
+            if Seq.isEmpty excluding then
+                () // just pulls from lone associated system
+            else
+                let indexOpt = system.TryIndexCorrelatedToI entityId
+                if indexOpt > -1 then
+                    let systemIds = ecs.IndexSystemIds entityId
+                    if not (systemIds.IsSupersetOf excluding)
+                    then cache.[entityId] <- indexOpt
+                    else cache.Remove entityId |> ignore<bool>
+                else cache.Remove entityId |> ignore<bool>
 
 /// An ECS query.
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component> (ecs : 'w Ecs) =
+    'c2 : struct and 'c2 :> 'c2 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
 
     let cache = OrderedDictionary<uint64, struct (int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -279,8 +324,11 @@ type Query<'c, 'c2, 'w when
         override this.Filter entityId =
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2)
+            if indexOpt > -1 && indexOpt2 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
@@ -288,9 +336,10 @@ type Query<'c, 'c2, 'w when
 type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component> (ecs : 'w Ecs) =
+    'c3 : struct and 'c3 :> 'c3 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -426,8 +475,11 @@ type Query<'c, 'c2, 'c3, 'w when
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
+            if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
@@ -436,9 +488,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component> (ecs : 'w Ecs) =
+    'c4 : struct and 'c4 :> 'c4 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -589,8 +642,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
+            if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
@@ -600,9 +656,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component> (ecs : 'w Ecs) =
+    'c5 : struct and 'c5 :> 'c5 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -768,8 +825,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
+            if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
@@ -780,9 +840,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component> (ecs : 'w Ecs) =
+    'c6 : struct and 'c6 :> 'c6 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -963,8 +1024,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
+            if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
@@ -976,9 +1040,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
     'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component> (ecs : 'w Ecs) =
+    'c7 : struct and 'c7 :> 'c7 Component> (ecs : 'w Ecs, [<ParamArray>] excluding : Type array) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun ty -> (ecs.IndexSystem (getTypeName ty)).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
     let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
     let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
@@ -1174,7 +1239,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
             let indexOpt7 = system7.TryIndexCorrelatedToI entityId
-            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
-                cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
+            if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
+                let systemIds = ecs.IndexSystemIds entityId
+                if not (systemIds.IsSupersetOf excluding)
+                then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
+                else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
