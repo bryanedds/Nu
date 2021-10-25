@@ -75,6 +75,9 @@ type Query<'c, 'w when
 
     member this.System = system
 
+    member this.Contains entityId =
+        cache.ContainsKey entityId
+
     member this.Iterate (fn : Statement<'c, 's>) state =
         if excluding.Count = 0 then
             let array = system.Correlateds.Array
@@ -213,6 +216,9 @@ type Query<'c, 'c2, 'w when
     member this.System = system
     member this.System2 = system2
 
+    member this.Contains entityId =
+        cache.ContainsKey entityId
+
     member this.Iterate (fn : Statement<'c, 'c2, 's>) state =
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
@@ -350,6 +356,9 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.System = system
     member this.System2 = system2
     member this.System3 = system3
+
+    member this.Contains entityId =
+        cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 's>) state =
         let array = system.Correlateds.Array
@@ -504,6 +513,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     member this.System2 = system2
     member this.System3 = system3
     member this.System4 = system4
+
+    member this.Contains entityId =
+        cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 's>) state =
         let array = system.Correlateds.Array
@@ -674,6 +686,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     member this.System3 = system3
     member this.System4 = system4
     member this.System5 = system5
+
+    member this.Contains entityId =
+        cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) state =
         let array = system.Correlateds.Array
@@ -860,6 +875,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     member this.System4 = system4
     member this.System5 = system5
     member this.System6 = system6
+
+    member this.Contains entityId =
+        cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) state =
         let array = system.Correlateds.Array
@@ -1062,6 +1080,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     member this.System5 = system5
     member this.System6 = system6
     member this.System7 = system7
+
+    member this.Contains entityId =
+        cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) state =
         let array = system.Correlateds.Array
