@@ -151,7 +151,7 @@ type Query<'c, 'w when
 
     interface Query<'w> with
         override this.Correlation = correlation
-        override this.Filter entityId = system.TryIndexCorrelatedToI entityId > -1
+        override this.Filter _ = ()
 
 /// An ECS query.
 type Query<'c, 'c2, 'w when
@@ -281,11 +281,8 @@ type Query<'c, 'c2, 'w when
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'w when
@@ -431,11 +428,8 @@ type Query<'c, 'c2, 'c3, 'w when
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'w when
@@ -597,11 +591,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
@@ -779,11 +770,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
@@ -977,11 +965,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
@@ -1191,8 +1176,5 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let indexOpt7 = system7.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
                 cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
-                true
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
-                false
-            else false

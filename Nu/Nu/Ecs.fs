@@ -121,7 +121,7 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
 /// An ECS query.
 and 'w Query =
     abstract Correlation : string HashSet
-    abstract Filter : uint64 -> bool
+    abstract Filter : uint64 -> unit
 
 /// A collection of ECS queries.
 and 'w Queries () =
@@ -147,7 +147,7 @@ and 'w Queries () =
         match queries.TryGetValue systemName with
         | (true, querySet) ->
             for query in querySet do
-                query.Filter entityId |> ignore<bool>
+                query.Filter entityId
         | (false, _) -> ()
 
 /// Nu's custom Entity-Component-System implementation.
