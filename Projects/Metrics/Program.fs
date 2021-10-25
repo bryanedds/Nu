@@ -126,10 +126,10 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create systems
-        let _ = ecs.RegisterSystem (SystemCorrelated<EntityId, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
+        let entityIds = ecs.RegisterSystem (SystemCorrelated<EntityId, World> ecs)
+        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        let shakes = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
 
         // create movers query
         let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
@@ -193,6 +193,8 @@ type MyGameDispatcher () =
         // ecs                                                  100,000's
         //
         // compute shaders                                      1,000,000's
+
+        ignore (entityIds, positions, velocities, shakes) // shut up, meg
 
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
