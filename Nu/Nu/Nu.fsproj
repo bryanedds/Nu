@@ -74,7 +74,7 @@
     <Compile Include="ListTree.fs" />
     <Compile Include="KeyedArray.fs" />
     <Compile Include="Ecs.fs" />
-    <Compile Include="Query.fs" />
+    <Compile Include="Systems.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="SpatialTree.fs" />
     <Compile Include="Reflection.fs" />

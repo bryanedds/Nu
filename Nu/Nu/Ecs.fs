@@ -85,33 +85,20 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
         }
 
 /// An ECS event.
-and [<NoEquality; NoComparison>] SystemEvent<'d, 'w> =
-    { SystemEventData : 'd
-      SystemPublisher : 'w System }
+and [<NoEquality; NoComparison>] StoreEvent<'d, 'w> =
+    { StoreEventData : 'd
+      StorePublisher : 'w Store }
 
 /// An ECS event callback.
-and SystemCallback<'d, 'w> =
-    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+and StoreCallback<'d, 'w> =
+    StoreEvent<'d, 'w> -> 'w Store -> 'w Ecs -> 'w -> 'w
 
 /// A boxed ECS event callback.
-and SystemCallbackBoxed<'w> =
-    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+and StoreCallbackBoxed<'w> =
+    StoreEvent<obj, 'w> -> 'w Store -> 'w Ecs -> 'w -> 'w
 
-/// The event type recommended for SynchronizeCorrelationChanges.
-and 'w SynchronizeCorrelationEvent =
-    SystemEvent<Dictionary<uint64, string HashSet>, 'w>
-
-/// The type of synchronization used.
-and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
-    | Registered
-    | Unregistered
-    | Unchanged of bool
-
-/// A base system type of an ECS.
-/// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
-/// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
-/// systems. If anything, it might be better to be renamed to 'w Storage.
-and [<AbstractClass>] 'w System (name) =
+/// A base type that represents a means of storing components in an ECS.
+and [<AbstractClass>] 'w Store (name) =
     member this.Name : string = name
     member this.Id : uint = Gen.id32
     abstract UnregisterComponent : uint64 -> 'w -> struct (bool * 'w)
@@ -126,125 +113,123 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
             this.ArrayObjsBuffered
             this.ArrayObjsUnbuffered
 
-/// An ECS query.
-and 'w Query =
+/// An ECS system.
+and 'w System =
     abstract Correlation : string HashSet
     abstract Filter : uint64 -> unit
 
-/// A collection of ECS queries.
-and 'w Queries () =
+/// A collection of ECS systems.
+and 'w Systems () =
 
-    let queries = dictPlus<string, 'w Query HashSet> StringComparer.Ordinal []
+    let systems = dictPlus<string, 'w System HashSet> StringComparer.Ordinal []
 
-    member this.RegisterQuery (query : 'w Query) =
-        for systemName in query.Correlation do
-            match queries.TryGetValue systemName with
-            | (true, querySet) -> querySet.Add query |> ignore<bool>
-            | (false, _) -> queries.Add (systemName, hashSetPlus<'w Query> HashIdentity.Reference [query])
+    member this.RegisterSystem (system : 'w System) =
+        for storeName in system.Correlation do
+            match systems.TryGetValue storeName with
+            | (true, systemSet) -> systemSet.Add system |> ignore<bool>
+            | (false, _) -> systems.Add (storeName, hashSetPlus<'w System> HashIdentity.Reference [system])
 
-    member this.UnregisterQuery (query : 'w Query) =
-        for systemName in query.Correlation do
-            match queries.TryGetValue systemName with
-            | (true, querySet) ->
-                querySet.Remove query |> ignore<bool>
-                if querySet.Count = 0 then
-                    queries.Remove systemName |> ignore<bool>
+    member this.UnregisterSystem (system : 'w System) =
+        for storeName in system.Correlation do
+            match systems.TryGetValue storeName with
+            | (true, systemSet) ->
+                systemSet.Remove system |> ignore<bool>
+                if systemSet.Count = 0 then
+                    systems.Remove storeName |> ignore<bool>
             | (false, _) -> ()
 
-    member this.Filter systemName entityId =
-        match queries.TryGetValue systemName with
-        | (true, querySet) ->
-            for query in querySet do
-                query.Filter entityId
+    member this.Filter storeName entityId =
+        match systems.TryGetValue storeName with
+        | (true, systemSet) ->
+            for system in systemSet do
+                system.Filter entityId
         | (false, _) -> ()
 
-/// Nu's custom Entity-Component-System implementation.
-/// Nu's conception of an ECS is primarily as an abstraction over user-definable component storage formats.
-/// The default formats include SoA-style formats for non-correlated, correlated, multiplexed, and hierarchichal value
-/// types. User can add formats of their own design by implementing the 'w System interface and providing related
-/// extension methods on this 'w Ecs type.
+/// Nu's custom Entity-Component-System implementation. It presents a dynamic, striped, archetype-based ECS. Users can
+/// add new component storage formats by implementing the 'w Store interface and providing related extension methods
+/// on this 'w Ecs type.
 and 'w Ecs () as this =
 
-    let mutable systemCached = { new System<'w> (typeof<unit>.Name) with member this.UnregisterComponent _ world = struct (false, world) }
-    let systemGlobal = systemCached
+    let mutable cachedStore = { new Store<'w> (typeof<unit>.Name) with member this.UnregisterComponent _ world = struct (false, world) }
+    let globalStore = cachedStore
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
-    let systemSubscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
-    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
-    let systemsOrdered = List<string * 'w System> ()
-    let systemsById = dictPlus<uint, 'w System> HashIdentity.Structural [] // TODO: see if a quadratic searching dictionary could improve perf here.
-    let correlations = dictPlus<uint64, uint HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by System.Ids to keep their dictionary entry types unmanaged.
-    let emptySystemIds = hashSetPlus<uint> HashIdentity.Structural []
-    let queries = Queries<'w> ()
+    let storeSubscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
+    let storesUnordered = dictPlus<string, 'w Store> StringComparer.Ordinal []
+    let storesOrdered = List<string * 'w Store> ()
+    let storesById = dictPlus<uint, 'w Store> HashIdentity.Structural [] // TODO: see if a quadratic searching dictionary could improve perf here.
+    let correlations = dictPlus<uint64, uint HashSet> HashIdentity.Structural [] // NOTE: correlations are keyed by Store.Ids to keep their dictionary entry types unmanaged.
+    let emptyStoreIds = hashSetPlus<uint> HashIdentity.Structural []
+    let systems = Systems<'w> ()
 
-    do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
+    do this.RegisterStoreGeneralized globalStore |> ignore<'w Store>
 
-    member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
-        let boxableCallback = fun (evt : SystemEvent<obj, 'w>) system ->
+    member private this.BoxCallback<'a> (callback : StoreCallback<'a, 'w>) =
+        let boxableCallback = fun (evt : StoreEvent<obj, 'w>) store ->
             let evt =
-                { SystemEventData = evt.SystemEventData :?> 'a
-                  SystemPublisher = evt.SystemPublisher }
-            callback evt system
+                { StoreEventData = evt.StoreEventData :?> 'a
+                  StorePublisher = evt.StorePublisher }
+            callback evt store
         boxableCallback :> obj
 
     member internal this.Correlations = correlations
-    member this.SystemGlobal = systemGlobal
+    member this.StoreGlobal = globalStore
 
-    member this.RegisterQuery query =
-        queries.RegisterQuery query
-        query
-
-    member this.UnregisterQuery query =
-        queries.UnregisterQuery query
-        query
-
-    member this.FilterForQueries systemName entityId =
-        queries.Filter systemName entityId
-
-    member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
-        systemsUnordered.Add (system.Name, system)
-        systemsOrdered.Add (system.Name, system)
-        systemsById.Add (system.Id, system)
+    member this.RegisterSystem system =
+        systems.RegisterSystem system
         system
 
-    member this.TryIndexSystem systemName =
-        if systemCached.Name <> systemName then
-            match systemsUnordered.TryGetValue systemName with
-            | (true, system) -> 
-                systemCached <- system
-                Some system
+    member this.UnregisterSystem system =
+        systems.UnregisterSystem system
+        system
+
+    member this.FilterForSystems storeName entityId =
+        systems.Filter storeName entityId
+
+    member this.RegisterStoreGeneralized (store : 'w Store) : 'w Store =
+        storesUnordered.Add (store.Name, store)
+        storesOrdered.Add (store.Name, store)
+        storesById.Add (store.Id, store)
+        store
+
+    member this.TryIndexStore storeName =
+        if cachedStore.Name <> storeName then
+            match storesUnordered.TryGetValue storeName with
+            | (true, store) -> 
+                cachedStore <- store
+                Some store
             | (false, _) -> None
-        else Some systemCached
+        else Some cachedStore
 
-    member this.IndexSystem systemName =
-        if systemCached.Name <> systemName then
-            match systemsUnordered.TryGetValue systemName with
-            | (true, system) -> 
-                systemCached <- system
-                system
-            | (false, _) -> failwith ("Could not index system '" + systemName + "'.")
-        else systemCached
+    member this.IndexStore storeName =
+        if cachedStore.Name <> storeName then
+            match storesUnordered.TryGetValue storeName with
+            | (true, store) -> 
+                cachedStore <- store
+                store
+            | (false, _) -> failwith ("Could not index store '" + storeName + "'.")
+        else cachedStore
 
-    member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
-        let systemName = Unchecked.defaultof<'c>.TypeName
-        match this.TryIndexSystem systemName with
-        | Some system ->
-            match system with
-            | :? 's as systemAsS -> Some systemAsS
+    member this.TryIndexStore<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w Store> () =
+        let storeName = Unchecked.defaultof<'c>.TypeName
+        match this.TryIndexStore storeName with
+        | Some store ->
+            match store with
+            | :? 's as storeAsS -> Some storeAsS
             | _ -> None
         | None -> None
 
-    member this.IndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
-        let systemName = Unchecked.defaultof<'c>.TypeName
-        this.IndexSystem systemName :?> 's
+    member this.IndexStore<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w Store> () =
+        let storeName = Unchecked.defaultof<'c>.TypeName
+        this.IndexStore storeName :?> 's
 
-    member this.IndexSystemIds entityId =
+    member this.IndexStoreIds entityId =
         match correlations.TryGetValue entityId with
         | (true, correlation) -> correlation
-        | (false, _) -> emptySystemIds
+        | (false, _) -> emptyStoreIds
 
-    member this.IndexSystems entityId =
-        this.IndexSystemIds entityId |>
-        Seq.map (fun id -> systemsById.[id])
+    member this.IndexStores entityId =
+        this.IndexStoreIds entityId |>
+        Seq.map (fun id -> storesById.[id])
 
     member this.IndexEntities correlation =
         correlations |>
@@ -254,37 +239,37 @@ and 'w Ecs () as this =
     member this.UnregisterComponents entityId world =
         let mutable unregistered = false
         let mutable world = world
-        for system in this.IndexSystems entityId do
-            let struct (unregistered', world') = system.UnregisterComponent entityId world
+        for store in this.IndexStores entityId do
+            let struct (unregistered', world') = store.UnregisterComponent entityId world
             if unregistered' then unregistered <- true
             world <- world'
         struct (unregistered, world)
 
-    member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
-        match systemSubscriptions.TryGetValue eventName with
+    member this.SubscribePlus<'d> subscriptionId eventName (callback : StoreCallback<'d, 'w>) =
+        match storeSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
             subscriptions.Add (subscriptionId, this.BoxCallback<'d> callback)
             subscriptionId
         | (false, _) ->
             let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d> callback)]
-            systemSubscriptions.Add (eventName, subscriptions)
+            storeSubscriptions.Add (eventName, subscriptions)
             subscriptionId
 
     member this.Subscribe<'d, 'w> eventName callback =
         this.SubscribePlus<'d> Gen.id32 eventName callback |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
-        match systemSubscriptions.TryGetValue eventName with
+        match storeSubscriptions.TryGetValue eventName with
         | (true, subscriptions) -> subscriptions.Remove subscriptionId
         | (false, _) -> false
 
     member this.Publish<'d> eventName (eventData : 'd) publisher world =
-        match systemSubscriptions.TryGetValue eventName with
+        match storeSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
             Seq.fold (fun world (callback : obj) ->
                 match callback with
-                | :? SystemCallback<obj, 'w> as objCallback ->
-                    let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                | :? StoreCallback<obj, 'w> as objCallback ->
+                    let evt = { StoreEventData = eventData :> obj; StorePublisher = publisher }
                     objCallback evt publisher this world
                 | _ -> failwithumf ())
                 world subscriptions.Values
@@ -292,14 +277,14 @@ and 'w Ecs () as this =
 
     member this.PublishAsync<'d> eventName (eventData : 'd) publisher =
         let vsync =
-            match systemSubscriptions.TryGetValue eventName with
+            match storeSubscriptions.TryGetValue eventName with
             | (true, subscriptions) ->
                 subscriptions |>
                 Seq.map (fun subscription ->
                     Task.Run (fun () ->
                         match subscription.Value with
-                        | :? SystemCallback<obj, 'w> as objCallback ->
-                            let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                        | :? StoreCallback<obj, 'w> as objCallback ->
+                            let evt = { StoreEventData = eventData :> obj; StorePublisher = publisher }
                             objCallback evt publisher this Unchecked.defaultof<'w> |> ignore<'w>
                         | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
                 Vsync.Parallel
@@ -309,7 +294,7 @@ and 'w Ecs () as this =
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
-        | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'. Do you have multiple systems with the same component type? (not allowed)")
+        | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'. Do you have multiple stores with the same component type? (not allowed)")
         | (false, _) ->
             if not buffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
@@ -354,12 +339,12 @@ and 'w Ecs () as this =
 type EcsExtensions =
 
     [<Extension>]
-    static member RegisterSystem<'s, 'w when 's :> 'w System> (this : 'w Ecs, system : 's) : 's =
-        this.RegisterSystemGeneralized system :?> 's
+    static member RegisterStore<'s, 'w when 's :> 'w Store> (this : 'w Ecs, store : 's) : 's =
+        this.RegisterStoreGeneralized store :?> 's
 
-/// An ECS system with just a single component.
-type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c) =
-    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
+/// An ECS store with just a single component.
+type SingletonStore<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c) =
+    inherit Store<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable comp = comp
 
@@ -369,29 +354,29 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
 
     type 'w Ecs with
 
-        member this.IndexSystemSingleton<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemSingleton<'c, 'w>> ()
+        member this.IndexSingletonStore<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexStore<'c, SingletonStore<'c, 'w>> ()
 
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
-            let systemOpt = this.TryIndexSystem<'c, SystemSingleton<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            &system.Component
+            let storeOpt = this.TryIndexStore<'c, SingletonStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            &store.Component
 
-/// An ECS system with components stored by an integer index.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) as this =
-    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
+/// An ECS store with components stored by an integer index.
+type UncorrelatedStore<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) as this =
+    inherit Store<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
-    let uncorellatedRegisterEvent = getTypeName this + "UncorellatedRegister"
-    let uncorellatedUnregisteringEvent = getTypeName this + "UncorellatedUnregistering"
+    let registerUncorrelatedEvent = getTypeName this + "RegisterUncorrelated"
+    let unregisteringUncorellatedEvent = getTypeName this + "UnregisteringUncorellated"
 
-    member this.UncorellatedRegisterEvent = uncorellatedRegisterEvent
-    member this.UncorellatedUnregisteringEvent = uncorellatedUnregisteringEvent
+    member this.RegisterUncorellatedEvent = registerUncorrelatedEvent
+    member this.UnregisteringUncorellatedEvent = unregisteringUncorellatedEvent
 
-    new (ecs) = SystemUncorrelated (false, ecs)
+    new (ecs) = UncorrelatedStore (false, ecs)
 
     member this.FreeListCount = freeList.Count
 
@@ -434,11 +419,11 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
                 index
 
         // raise event
-        let world = ecs.Publish this.UncorellatedRegisterEvent index this world
+        let world = ecs.Publish this.RegisterUncorellatedEvent index this world
         struct (index, world)
 
     member this.UnregisterUncorrelated index (world : 'w) =
-        let world = ecs.Publish this.UncorellatedUnregisteringEvent index this world
+        let world = ecs.Publish this.UnregisteringUncorellatedEvent index this world
         if index <> freeIndex then
             components.[index].Active <- false
             freeList.Add index |> ignore<bool>
@@ -449,40 +434,40 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     type 'w Ecs with
 
-        member this.IndexSystemUncorrelated<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemUncorrelated<'c, 'w>> ()
+        member this.IndexUncorrelatedStore<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexStore<'c, UncorrelatedStore<'c, 'w>> ()
 
         member this.IndexUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
-            let systemOpt = this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.IndexUncorrelated index
+            let storeOpt = this.TryIndexStore<'c, UncorrelatedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            store.IndexUncorrelated index
 
         member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp (world : 'w) =
-            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterUncorrelated ordered comp world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, UncorrelatedStore<'c, 'w>> () with
+            | Some store -> store.RegisterUncorrelated ordered comp world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index (world : 'w) =
-            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterUncorrelated index world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, UncorrelatedStore<'c, 'w>> () with
+            | Some store -> store.UnregisterUncorrelated index world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-/// An ECS system with components correlated by entity id (uint64).
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) as this =
-    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
+/// An ECS store with components correlated by entity id (uint64).
+type CorrelatedStore<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) as this =
+    inherit Store<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<uint64, int> HashIdentity.Structural []
-    let corellatedRegisterEvent = getTypeName this + "CorellatedRegister"
-    let corellatedUnregisteringEvent = getTypeName this + "CorellatedUnregistering"
+    let registerCorellatedEvent = getTypeName this + "RegisterCorellated"
+    let unregisteringCorellatedEvent = getTypeName this + "UnregisteringCorellated"
 
-    member this.CorellatedRegisterEvent = corellatedRegisterEvent
-    member this.CorellatedUnregisteringEvent = corellatedUnregisteringEvent
+    member this.RegisterCorellatedEvent = registerCorellatedEvent
+    member this.UnregisteringCorellatedEvent = unregisteringCorellatedEvent
 
-    new (ecs) = SystemCorrelated (false, ecs)
+    new (ecs) = CorrelatedStore (false, ecs)
 
     member this.FreeListCount = freeList.Count
     member this.EntitiesCorrelated = correlations |> Seq.map (fun kvp -> kvp.Key)
@@ -550,14 +535,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Add this.Id |> ignore<bool>
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
             | (false, _) ->
                 let correlation = HashSet.singleton HashIdentity.Structural this.Id
                 ecs.Correlations.Add (entityId, correlation)
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
 
             // raise event
-            ecs.Publish this.CorellatedRegisterEvent entityId this world
+            ecs.Publish this.RegisterCorellatedEvent entityId this world
 
         // component is already registered
         else world
@@ -570,7 +555,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | (true, index) ->
 
                 // raise removing event
-                let world = ecs.Publish this.CorellatedUnregisteringEvent entityId this world
+                let world = ecs.Publish this.UnregisteringCorellatedEvent entityId this world
 
                 // deallocate component
                 correlations.Remove entityId |> ignore<bool>
@@ -595,9 +580,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Id |> ignore<bool>
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
             | (false, _) ->
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
 
         // fin
         struct (unregistered, world)
@@ -607,38 +592,38 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
     type 'w Ecs with
 
-        member this.IndexSystemCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+        member this.IndexCorrelatedStore<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
 
         member this.QualifyCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.QualifyCorrelated entityId
+            let storeOpt = this.TryIndexStore<'c, CorrelatedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            store.QualifyCorrelated entityId
 
         member inline this.IndexCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId : 'c ComponentRef =
-            let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.IndexCorrelated entityId
+            let storeOpt = this.TryIndexStore<'c, CorrelatedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            store.IndexCorrelated entityId
 
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp entityId (world : 'w) =
-            match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterCorrelated ordered comp entityId world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, CorrelatedStore<'c, 'w>> () with
+            | Some store -> store.RegisterCorrelated ordered comp entityId world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId (world : 'w) =
-            match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterCorrelated entityId world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, CorrelatedStore<'c, 'w>> () with
+            | Some store -> store.UnregisterCorrelated entityId world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-/// A SystemHierarchical node.
-type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
+/// A HierarchicalStore node.
+type [<NoEquality; NoComparison>] HierarchicalNode<'c when 'c : struct and 'c :> 'c Component> =
     { EntityId : uint64
       ComponentRef : 'c ComponentRef}
 
-/// Tracks changes in a hierarchical system.
-type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
+/// Tracks changes in a hierarchical store.
+type [<NoEquality; NoComparison; Struct>] HierarchicalChange =
     { /// Whether change involves registeration (true) or unregistration (false).
       Registered : bool
       /// The node entity's id.
@@ -646,14 +631,15 @@ type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
       /// The parent's entity id or 0UL if no parent.
       ParentIdOpt : uint64 }
 
-/// An Ecs system that stores components in a hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c, 'w> (buffered, ecs)
+/// An ECS store that stores components in a hierarchy.
+/// TODO: make hierarchy changes into ECS events.
+type HierarchicalStore<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit CorrelatedStore<'c, 'w> (buffered, ecs)
 
-    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
-    let mutable hierarchyChanges = List<ChangeHierarchical> ()
+    let hierarchy = ListTree.makeEmpty<'c HierarchicalNode> ()
+    let mutable hierarchyChanges = List<HierarchicalChange> ()
     
-    new (ecs) = SystemHierarchical (false, ecs)
+    new (ecs) = HierarchicalStore (false, ecs)
     
     member this.Hierarchy = hierarchy
     member this.HierarchyFlattened = this.Correlateds
@@ -661,14 +647,14 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
-        hierarchyChanges <- List<ChangeHierarchical> ()
+        hierarchyChanges <- List<HierarchicalChange> ()
         popped
 
     member this.IndexHierarchical entityId =
         this.IndexCorrelated entityId
 
     member this.RegisterHierarchical ordered (parentIdOpt : uint64 option) comp entityId world =
-        let this' = this :> SystemCorrelated<'c, 'w>
+        let this' = this :> CorrelatedStore<'c, 'w>
         let world = this'.RegisterCorrelated ordered comp entityId world
         let cref = this'.IndexCorrelated entityId
         let node = { EntityId = entityId; ComponentRef = cref }
@@ -697,44 +683,44 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     type 'w Ecs with
 
-        member this.IndexSystemHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+        member this.IndexHierarchicalStore<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexStore<'c, HierarchicalStore<'c, 'w>> ()
 
         member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.Hierarchy
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.Hierarchy
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.IndexHierarchyFlattened<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.HierarchyFlattened
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.HierarchyFlattened
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.PopHierarchyChanges ()
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.PopHierarchyChanges ()
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.IndexHierarchical entityId
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.IndexHierarchical entityId
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> ordered parentIdOpt comp entityId (world : 'w) =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RegisterHierarchical ordered parentIdOpt comp entityId world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.RegisterHierarchical ordered parentIdOpt comp entityId world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt (world : 'w) =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.UnregisterHierarchical parentIdOpt world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> () with
+            | Some store -> store.UnregisterHierarchical parentIdOpt world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.QualifyHierarchical entityId
+            let storeOpt = this.TryIndexStore<'c, HierarchicalStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            store.QualifyHierarchical entityId
 
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
@@ -744,11 +730,11 @@ type Simplex<'c when 'c : struct> =
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multiplexing is used).
-type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct and 'c :> 'c Component> =
+type [<NoEquality; NoComparison; Struct>] MultiplexedComponent<'c when 'c : struct and 'c :> 'c Component> =
     { mutable Active : bool
       Simplexes : Dictionary<string, 'c Simplex>
       TypeName : string }
-    interface Component<'c ComponentMultiplexed> with
+    interface Component<'c MultiplexedComponent> with
         member this.TypeName = getTypeName this
         member this.Active with get() = this.Active and set value = this.Active <- value
     member this.RegisterMultiplexed (simplexName, comp) =
@@ -756,11 +742,11 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
     member this.UnregisterMultiplexed simplexName =
         this.Simplexes.Remove simplexName
 
-/// An ECS system that stores zero to many of the same component per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
+/// An ECS store that stores zero to many of the same component per entity id.
+type MultiplexedStore<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit CorrelatedStore<'c MultiplexedComponent, 'w> (buffered, ecs)
 
-    new (ecs) = SystemMultiplexed (false, ecs)
+    new (ecs) = MultiplexedStore (false, ecs)
 
     member this.QualifyMultiplexed simplexName entityId =
         if this.QualifyCorrelated entityId then
@@ -787,11 +773,11 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         match ecs.Correlations.TryGetValue entityId with
         | (true, correlation) ->
             correlation.Add this.Id |> ignore<bool>
-            ecs.FilterForQueries this.Name entityId
+            ecs.FilterForSystems this.Name entityId
         | (false, _) ->
             let correlation = HashSet.singleton HashIdentity.Structural this.Id
             ecs.Correlations.Add (entityId, correlation)
-            ecs.FilterForQueries this.Name entityId
+            ecs.FilterForSystems this.Name entityId
 
         // fin
         struct (componentMultiplexed, world)
@@ -809,52 +795,51 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Id |> ignore<bool>
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
             | (false, _) ->
-                ecs.FilterForQueries this.Name entityId
+                ecs.FilterForSystems this.Name entityId
 
         // fin
         struct (unregistered, world)
 
     type 'w Ecs with
 
-        member this.IndexSystemMultiplexed<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
+        member this.IndexMultiplexedStore<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexStore<'c, MultiplexedStore<'c, 'w>> ()
 
         member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.QualifyMultiplexed simplexName entityId
+            let storeOpt = this.TryIndexStore<'c, MultiplexedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            store.QualifyMultiplexed simplexName entityId
 
         member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            let simplex = system.IndexMultiplexed simplexName entityId
+            let storeOpt = this.TryIndexStore<'c, MultiplexedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            let simplex = store.IndexMultiplexed simplexName entityId
             &simplex.Simplex
 
         member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            let simplex = system.IndexMultiplexedBuffered simplexName entityId
+            let storeOpt = this.TryIndexStore<'c, MultiplexedStore<'c, 'w>> ()
+            if Option.isNone storeOpt then failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let store = Option.get storeOpt
+            let simplex = store.IndexMultiplexedBuffered simplexName entityId
             simplex.Simplex
 
         member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> ordered comp simplexName entityId (world : 'w) =
-            match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.RegisterMultiplexed ordered comp simplexName entityId world
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, MultiplexedStore<'c, 'w>> () with
+            | Some store -> store.RegisterMultiplexed ordered comp simplexName entityId world
+            | None -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId (world : 'w) =
-            match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.UnregisterMultiplexed simplexName entityId world
-            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            match this.TryIndexStore<'c, MultiplexedStore<'c, 'w>> () with
+            | Some store -> store.UnregisterMultiplexed simplexName entityId world
+            | _ -> failwith ("Could not find expected store '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
-    let [<Literal>] SynchronizeCorrelationChanges = "SynchronizeCorrelationChanges"
     let [<Literal>] Update = "Update"
     let [<Literal>] UpdateParallel = "UpdateParallel"
     let [<Literal>] PostUpdate = "PostUpdate"

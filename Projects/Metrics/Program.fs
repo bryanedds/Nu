@@ -118,24 +118,24 @@ type MyGameDispatcher () =
         // grab ecs from current screen
         let ecs = screen.GetEcs world
 
-        // create static sprite system
-        ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ecs)
+        // create static sprite store
+        ecs.RegisterStore (StoreCorrelated<StaticSpriteComponent, World> ecs)
 #endif
 #if ECS
         // get ecs
         let ecs = screen.GetEcs world
 
-        // create systems
-        let entityIds = ecs.RegisterSystem (SystemCorrelated<EntityId, World> ecs)
-        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        let shakes = ecs.RegisterSystem (SystemCorrelated<Shake, World> ecs)
+        // create component stores
+        let _ = ecs.RegisterStore (CorrelatedStore<EntityId, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Position, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Velocity, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Shake, World> ecs)
 
-        // create movers query
-        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
+        // create movers system
+        let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
 
-        // create shakers query
-        let shakers = ecs.RegisterQuery (Query<EntityId, Position, Shake, World>.Excluding<Velocity> ecs)
+        // create shakers system
+        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World>.Excluding<Velocity> ecs)
 
         // create 3M movers (goal: 60FPS, current: 60FPS)
         let world =
@@ -193,8 +193,6 @@ type MyGameDispatcher () =
         // ecs                                                  100,000's
         //
         // compute shaders                                      1,000,000's
-
-        ignore (entityIds, positions, velocities, shakes) // shut up, meg
 
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd

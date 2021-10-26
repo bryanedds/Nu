@@ -62,28 +62,27 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c7 : struct and 'c7 :> 'c7 Component> =
     delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref * 'w -> 'w
 
-/// An ECS query.
-type Query<'c, 'w when
+/// An ECS system.
+type System<'c, 'w when
     'c : struct and 'c :> 'c Component> (excluding : Type array, ecs : 'w Ecs) =
     
     let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _> ([||], ecs)
+    new (ecs) = System<_, _> ([||], ecs)
 
-    member this.System = system
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -92,13 +91,13 @@ type Query<'c, 'w when
 
     member this.Iterate (fn : Statement<'c, 's>) state =
         if excluding.Count = 0 then
-            let array = system.Correlateds.Array
+            let array = store.Correlateds.Array
             let mutable state = state
             for i in 0 .. array.Length - 1 do
                 state <- fn.Invoke (&array.[i], state)
             state
         else
-            let array = system.Correlateds.Array
+            let array = store.Correlateds.Array
             let mutable state = state
             let mutable enr = cache.ValuesEnumerator
             while enr.MoveNext () do
@@ -107,7 +106,7 @@ type Query<'c, 'w when
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
         if excluding.Count = 0 then
-            system.WithCorrelatedsBuffered (fun aref world ->
+            store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let mutable world = world
                 for i in 0 .. array.Length - 1 do
@@ -115,7 +114,7 @@ type Query<'c, 'w when
                 world)
                 world
         else
-            system.WithCorrelatedsBuffered (fun aref world ->
+            store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let mutable world = world
                 let mutable enr = cache.ValuesEnumerator
@@ -127,22 +126,22 @@ type Query<'c, 'w when
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
         if excluding.Count = 0 then
-            let cref = system.IndexCorrelated entityId
+            let cref = store.IndexCorrelated entityId
             fn.Invoke (&cref.Index, state)
         else
-            let array = system.Correlateds.Array
+            let array = store.Correlateds.Array
             let index = cache.[entityId]
             fn.Invoke (&array.[index], state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
         if excluding.Count = 0 then
-            system.WithCorrelatedsBuffered (fun aref world ->
+            store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
-                let index = system.IndexCorrelatedToI entityId
+                let index = store.IndexCorrelatedToI entityId
                 fn.Invoke (&array.[index], world))
                 world
         else
-            system.WithCorrelatedsBuffered (fun aref world ->
+            store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let index = cache.[entityId]
                 fn.Invoke (&array.[index], world))
@@ -204,47 +203,45 @@ type Query<'c, 'w when
             struct (true, world)
         else struct (false, world)
 
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
             if excluding.Count = 0 then
-                () // just pulls from lone associated system
+                () // just pulls from lone associated store
             else
-                let indexOpt = system.TryIndexCorrelatedToI entityId
+                let indexOpt = store.TryIndexCorrelatedToI entityId
                 if indexOpt > -1 then
-                    let systemIds = ecs.IndexSystemIds entityId
-                    if not (systemIds.IsSupersetOf excluding)
+                    let storeIds = ecs.IndexStoreIds entityId
+                    if not (storeIds.IsSupersetOf excluding)
                     then cache.[entityId] <- indexOpt
                     else cache.Remove entityId |> ignore<bool>
                 else cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -252,8 +249,8 @@ type Query<'c, 'c2, 'w when
         cache.ContainsKey entityId
 
     member this.Iterate (fn : Statement<'c, 'c2, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -262,8 +259,8 @@ type Query<'c, 'c2, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
                 let array = aref.Array
                 let array2 = aref2.Array
                 let mutable world = world
@@ -276,14 +273,14 @@ type Query<'c, 'c2, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
         let struct (index, index2) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
                 let array = aref.Array
                 let array2 = aref2.Array
                 let struct (index, index2) = cache.[entityId]
@@ -365,49 +362,46 @@ type Query<'c, 'c2, 'w when
             struct (true, world)
         else struct (false, world)
     
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'c3, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component> (excluding : Type array, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
+    let store3 = ecs.IndexStore<'c3, CorrelatedStore<'c3, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
-    member this.System3 = system3
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -415,9 +409,9 @@ type Query<'c, 'c2, 'c3, 'w when
         cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -426,9 +420,9 @@ type Query<'c, 'c2, 'c3, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
                     let array = aref.Array
                     let array2 = aref2.Array
                     let array3 = aref3.Array
@@ -443,16 +437,16 @@ type Query<'c, 'c2, 'c3, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
         let struct (index, index2, index3) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
                     let array = aref.Array
                     let array2 = aref2.Array
                     let array3 = aref3.Array
@@ -542,53 +536,49 @@ type Query<'c, 'c2, 'c3, 'w when
             struct (true, world)
         else struct (false, world)
     
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = store3.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'c3, 'c4, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'c3, 'c4, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component> (excluding : Type array, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
+    let store3 = ecs.IndexStore<'c3, CorrelatedStore<'c3, 'w>> ()
+    let store4 = ecs.IndexStore<'c4, CorrelatedStore<'c4, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
     
-    new (ecs) = Query<_, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
-    member this.System3 = system3
-    member this.System4 = system4
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -596,10 +586,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -608,10 +598,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
                         let array = aref.Array
                         let array2 = aref2.Array
                         let array3 = aref3.Array
@@ -628,18 +618,18 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
         let struct (index, index2, index3, index4) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
                         let array = aref.Array
                         let array2 = aref2.Array
                         let array3 = aref3.Array
@@ -737,25 +727,25 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             struct (true, world)
         else struct (false, world)
     
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = store3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = store4.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
@@ -763,31 +753,26 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     'c5 : struct and 'c5 :> 'c5 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
+    let store3 = ecs.IndexStore<'c3, CorrelatedStore<'c3, 'w>> ()
+    let store4 = ecs.IndexStore<'c4, CorrelatedStore<'c4, 'w>> ()
+    let store5 = ecs.IndexStore<'c5, CorrelatedStore<'c5, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
-    member this.System3 = system3
-    member this.System4 = system4
-    member this.System5 = system5
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -795,11 +780,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -808,11 +793,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
                             let array = aref.Array
                             let array2 = aref2.Array
                             let array3 = aref3.Array
@@ -831,20 +816,20 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
         let struct (index, index2, index3, index4, index5) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
                             let array = aref.Array
                             let array2 = aref2.Array
                             let array3 = aref3.Array
@@ -950,26 +935,26 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             struct (true, world)
         else struct (false, world)
     
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = store3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = store4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = store5.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
@@ -978,33 +963,27 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     'c6 : struct and 'c6 :> 'c6 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-    let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
+    let store3 = ecs.IndexStore<'c3, CorrelatedStore<'c3, 'w>> ()
+    let store4 = ecs.IndexStore<'c4, CorrelatedStore<'c4, 'w>> ()
+    let store5 = ecs.IndexStore<'c5, CorrelatedStore<'c5, 'w>> ()
+    let store6 = ecs.IndexStore<'c6, CorrelatedStore<'c6, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
-    member this.System3 = system3
-    member this.System4 = system4
-    member this.System5 = system5
-    member this.System6 = system6
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -1012,12 +991,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
-        let array6 = system6.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
+        let array6 = store6.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -1026,12 +1005,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
-                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
+                            store6.WithCorrelatedsBuffered (fun aref6 world ->
                                 let array = aref.Array
                                 let array2 = aref2.Array
                                 let array3 = aref3.Array
@@ -1052,22 +1031,22 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
-        let array6 = system6.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
+        let array6 = store6.Correlateds.Array
         let struct (index, index2, index3, index4, index5, index6) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
-                            system6.WithCorrelatedsBuffered (fun aref6 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
+                            store6.WithCorrelatedsBuffered (fun aref6 world ->
                                 let array = aref.Array
                                 let array2 = aref2.Array
                                 let array3 = aref3.Array
@@ -1181,27 +1160,27 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             struct (true, world)
         else struct (false, world)
 
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-            let indexOpt6 = system6.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = store3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = store4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = store5.TryIndexCorrelatedToI entityId
+            let indexOpt6 = store6.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
 
-/// An ECS query.
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
+/// An ECS system.
+type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
@@ -1211,35 +1190,28 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c7 : struct and 'c7 :> 'c7 Component> (excluding : Type array, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexSystem ty.Name).Id) excluding)
+    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
-    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-    let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-    let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+    let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
+    let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
+    let store3 = ecs.IndexStore<'c3, CorrelatedStore<'c3, 'w>> ()
+    let store4 = ecs.IndexStore<'c4, CorrelatedStore<'c4, 'w>> ()
+    let store5 = ecs.IndexStore<'c5, CorrelatedStore<'c5, 'w>> ()
+    let store6 = ecs.IndexStore<'c6, CorrelatedStore<'c6, 'w>> ()
+    let store7 = ecs.IndexStore<'c7, CorrelatedStore<'c7, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
+    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>|], ecs)
+    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
+    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
+    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
 
-    new (ecs) = Query<_, _, _, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _, _, _> ([||], ecs)
 
-    member this.System = system
-    member this.System2 = system2
-    member this.System3 = system3
-    member this.System4 = system4
-    member this.System5 = system5
-    member this.System6 = system6
-    member this.System7 = system7
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
 
@@ -1247,13 +1219,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         cache.ContainsKey entityId
     
     member this.Iterate (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
-        let array6 = system6.Correlateds.Array
-        let array7 = system7.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
+        let array6 = store6.Correlateds.Array
+        let array7 = store7.Correlateds.Array
         let mutable state = state
         let mutable enr = cache.ValuesEnumerator
         while enr.MoveNext () do
@@ -1262,13 +1234,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         state
 
     member this.IterateBuffered (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
-                            system6.WithCorrelatedsBuffered (fun aref6 world ->
-                                system7.WithCorrelatedsBuffered (fun aref7 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
+                            store6.WithCorrelatedsBuffered (fun aref6 world ->
+                                store7.WithCorrelatedsBuffered (fun aref7 world ->
                                     let array = aref.Array
                                     let array2 = aref2.Array
                                     let array3 = aref3.Array
@@ -1291,24 +1263,24 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) state =
-        let array = system.Correlateds.Array
-        let array2 = system2.Correlateds.Array
-        let array3 = system3.Correlateds.Array
-        let array4 = system4.Correlateds.Array
-        let array5 = system5.Correlateds.Array
-        let array6 = system6.Correlateds.Array
-        let array7 = system7.Correlateds.Array
+        let array = store.Correlateds.Array
+        let array2 = store2.Correlateds.Array
+        let array3 = store3.Correlateds.Array
+        let array4 = store4.Correlateds.Array
+        let array5 = store5.Correlateds.Array
+        let array6 = store6.Correlateds.Array
+        let array7 = store7.Correlateds.Array
         let struct (index, index2, index3, index4, index5, index6, index7) = cache.[entityId]
         fn.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7], state)
         
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>) world =
-        system.WithCorrelatedsBuffered (fun aref world ->
-            system2.WithCorrelatedsBuffered (fun aref2 world ->
-                system3.WithCorrelatedsBuffered (fun aref3 world ->
-                    system4.WithCorrelatedsBuffered (fun aref4 world ->
-                        system5.WithCorrelatedsBuffered (fun aref5 world ->
-                            system6.WithCorrelatedsBuffered (fun aref6 world ->
-                                system7.WithCorrelatedsBuffered (fun aref7 world ->
+        store.WithCorrelatedsBuffered (fun aref world ->
+            store2.WithCorrelatedsBuffered (fun aref2 world ->
+                store3.WithCorrelatedsBuffered (fun aref3 world ->
+                    store4.WithCorrelatedsBuffered (fun aref4 world ->
+                        store5.WithCorrelatedsBuffered (fun aref5 world ->
+                            store6.WithCorrelatedsBuffered (fun aref6 world ->
+                                store7.WithCorrelatedsBuffered (fun aref7 world ->
                                     let array = aref.Array
                                     let array2 = aref2.Array
                                     let array3 = aref3.Array
@@ -1430,21 +1402,21 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             struct (true, world)
         else struct (false, world)
     
-    interface Query<'w> with
+    interface System<'w> with
 
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let indexOpt = system.TryIndexCorrelatedToI entityId
-            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-            let indexOpt6 = system6.TryIndexCorrelatedToI entityId
-            let indexOpt7 = system7.TryIndexCorrelatedToI entityId
+            let indexOpt = store.TryIndexCorrelatedToI entityId
+            let indexOpt2 = store2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = store3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = store4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = store5.TryIndexCorrelatedToI entityId
+            let indexOpt6 = store6.TryIndexCorrelatedToI entityId
+            let indexOpt7 = store7.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
-                let systemIds = ecs.IndexSystemIds entityId
-                if excluding.Count = 0 || not (systemIds.IsSupersetOf excluding)
+                let storeIds = ecs.IndexStoreIds entityId
+                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
