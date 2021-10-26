@@ -84,6 +84,8 @@ type Query<'c, 'w when
     new (ecs) = Query<_, _> ([||], ecs)
 
     member this.System = system
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -158,7 +160,7 @@ type Query<'c, 'w when
     member this.UnregisterHierarchical parentIdOpt world =
         ecs.UnregisterHierarchical<'c> parentIdOpt world
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -167,9 +169,9 @@ type Query<'c, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -177,7 +179,7 @@ type Query<'c, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -186,7 +188,7 @@ type Query<'c, 'w when
     member this.Allocate comp world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -243,6 +245,8 @@ type Query<'c, 'c2, 'w when
 
     member this.System = system
     member this.System2 = system2
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -307,7 +311,7 @@ type Query<'c, 'c2, 'w when
         let struct (unregistered2, world) = ecs.UnregisterCorrelated<'c2> entityId world
         struct (unregistered || unregistered2, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -316,9 +320,9 @@ type Query<'c, 'c2, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -326,7 +330,7 @@ type Query<'c, 'c2, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -335,7 +339,7 @@ type Query<'c, 'c2, 'w when
     member this.Allocate comp comp2 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -404,6 +408,8 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.System = system
     member this.System2 = system2
     member this.System3 = system3
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -480,7 +486,7 @@ type Query<'c, 'c2, 'c3, 'w when
         let struct (unregistered3, world) = ecs.UnregisterCorrelated<'c3> entityId world
         struct (unregistered || unregistered2 || unregistered3, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -489,9 +495,9 @@ type Query<'c, 'c2, 'c3, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -499,7 +505,7 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -508,7 +514,7 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.Allocate comp comp2 comp3 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -583,6 +589,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     member this.System2 = system2
     member this.System3 = system3
     member this.System4 = system4
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -671,7 +679,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let struct (unregistered4, world) = ecs.UnregisterCorrelated<'c4> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -680,9 +688,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -690,7 +698,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -699,7 +707,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
     member this.Allocate comp comp2 comp3 comp4 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -780,6 +788,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     member this.System3 = system3
     member this.System4 = system4
     member this.System5 = system5
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -880,7 +890,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let struct (unregistered5, world) = ecs.UnregisterCorrelated<'c5> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -889,9 +899,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -899,7 +909,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -908,7 +918,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     member this.Allocate comp comp2 comp3 comp4 comp5 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -995,6 +1005,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     member this.System4 = system4
     member this.System5 = system5
     member this.System6 = system6
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -1107,7 +1119,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let struct (unregistered6, world) = ecs.UnregisterCorrelated<'c6> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -1116,9 +1128,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -1126,7 +1138,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -1135,7 +1147,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
@@ -1228,6 +1240,8 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     member this.System5 = system5
     member this.System6 = system6
     member this.System7 = system7
+    member this.Cached = cache.Keys
+    member this.Allocated = allocated.AsReadOnly ()
 
     member this.Contains entityId =
         cache.ContainsKey entityId
@@ -1352,7 +1366,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let struct (unregistered7, world) = ecs.UnregisterCorrelated<'c7> entityId world
         struct (unregistered || unregistered2 || unregistered3 || unregistered4 || unregistered5 || unregistered6 || unregistered7, world)
 
-    member this.Preallocate count world =
+    member this.Expand count world =
         let mutable world = world
         for _ in 0 .. count - 1 do
             let entityId = Gen.id64
@@ -1361,9 +1375,9 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             world <- this.RegisterCorrelated true Unchecked.defaultof<'c> Unchecked.defaultof<'c2> Unchecked.defaultof<'c3> Unchecked.defaultof<'c4> Unchecked.defaultof<'c5> Unchecked.defaultof<'c6> Unchecked.defaultof<'c7> entityId world
         world
 
-    member this.Clear world =
+    member this.Shrink world =
         let mutable world = world
-        for entityId in Seq.append allocated (Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated) do
+        for entityId in Seq.map (fun inv -> UInt64.MaxValue - inv) unallocated do
             world <- this.UnregisterCorrelated entityId world |> snd'
         unallocated.Clear ()
         world
@@ -1371,7 +1385,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     member this.NextEntityId world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         let entityId = UInt64.MaxValue - entityIdInv
@@ -1380,7 +1394,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     member this.Allocate comp comp2 comp3 comp4 comp5 comp6 comp7 world =
         let world =
             if unallocated.Count = 0
-            then this.Preallocate Constants.Ecs.PreallocateAmount world
+            then this.Expand Constants.Ecs.PreallocateAmount world
             else world
         let entityIdInv = Seq.head unallocated
         unallocated.Remove entityIdInv |> ignore
