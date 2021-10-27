@@ -10,7 +10,7 @@ namespace System.Collections.Generic
         }
     }
 
-    public class ReadOnlySet<T> : IReadOnlyCollection<T>, ISet<T>
+    public struct ReadOnlySet<T> : IReadOnlyCollection<T>, ISet<T>
     {
         public ReadOnlySet(ISet<T> set)
         {
