@@ -64,16 +64,16 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
 /// An ECS system.
 type System<'c, 'w when
-    'c : struct and 'c :> 'c Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
+    'c : struct and 'c :> 'c Component> (filterOpt : (uint64 -> bool) option, ecs : 'w Ecs) =
     
-    let tautology = tautology
+    let filter = Option.getOrDefault tautology filterOpt
     let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    new (ecs) = System<_, _> (tautology, ecs)
+    new (ecs) = System<_, _> (None, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -82,7 +82,7 @@ type System<'c, 'w when
         cache.ContainsKey entityId
 
     member this.Iterate (fn : Statement<'c, 's>) state =
-        if refEq filter tautology then
+        if Option.isNone filterOpt then
             let array = store.Correlateds.Array
             let mutable state = state
             for i in 0 .. array.Length - 1 do
@@ -97,7 +97,7 @@ type System<'c, 'w when
             state
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
-        if refEq filter tautology then
+        if Option.isNone filterOpt then
             store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let mutable world = world
@@ -117,7 +117,7 @@ type System<'c, 'w when
                 world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
-        if refEq filter tautology then
+        if Option.isNone filterOpt then
             let cref = store.IndexCorrelated entityId
             fn.Invoke (&cref.Index, state)
         else
@@ -126,7 +126,7 @@ type System<'c, 'w when
             fn.Invoke (&array.[index], state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
-        if refEq filter tautology then
+        if Option.isNone filterOpt then
             store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let index = store.IndexCorrelatedToI entityId
@@ -200,7 +200,7 @@ type System<'c, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            if refEq filter tautology then
+            if Option.isNone filterOpt then
                 () // just pulls from lone associated store
             else
                 let indexOpt = store.TryIndexCorrelatedToI entityId
