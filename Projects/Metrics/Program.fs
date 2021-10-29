@@ -135,7 +135,7 @@ type MyGameDispatcher () =
         let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
 
         // create shakers system
-        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World>.Excluding<Velocity> ecs)
+        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
 
         // create 3M movers (goal: 60FPS, current: 60FPS)
         let world =

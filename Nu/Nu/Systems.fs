@@ -64,24 +64,16 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
 /// An ECS system.
 type System<'c, 'w when
-    'c : struct and 'c :> 'c Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c : struct and 'c :> 'c Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
     
+    let tautology = tautology
     let cache = OrderedDictionary<uint64, int> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _> ([||], ecs)
+    new (ecs) = System<_, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -90,7 +82,7 @@ type System<'c, 'w when
         cache.ContainsKey entityId
 
     member this.Iterate (fn : Statement<'c, 's>) state =
-        if excluding.Count = 0 then
+        if refEq filter tautology then
             let array = store.Correlateds.Array
             let mutable state = state
             for i in 0 .. array.Length - 1 do
@@ -105,7 +97,7 @@ type System<'c, 'w when
             state
 
     member this.IterateBuffered (fn : Statement<'c, 'w>) world =
-        if excluding.Count = 0 then
+        if refEq filter tautology then
             store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let mutable world = world
@@ -125,7 +117,7 @@ type System<'c, 'w when
                 world
 
     member this.Index (entityId : uint64) (fn : Statement<'c, 's>) state =
-        if excluding.Count = 0 then
+        if refEq filter tautology then
             let cref = store.IndexCorrelated entityId
             fn.Invoke (&cref.Index, state)
         else
@@ -134,7 +126,7 @@ type System<'c, 'w when
             fn.Invoke (&array.[index], state)
 
     member this.IndexBuffered (entityId : uint64) (fn : Statement<'c, 'w>) world =
-        if excluding.Count = 0 then
+        if refEq filter tautology then
             store.WithCorrelatedsBuffered (fun aref world ->
                 let array = aref.Array
                 let index = store.IndexCorrelatedToI entityId
@@ -208,39 +200,27 @@ type System<'c, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            if excluding.Count = 0 then
+            if refEq filter tautology then
                 () // just pulls from lone associated store
             else
                 let indexOpt = store.TryIndexCorrelatedToI entityId
-                if indexOpt > -1 then
-                    let storeIds = ecs.IndexStoreIds entityId
-                    if not (storeIds.IsSupersetOf excluding)
-                    then cache.[entityId] <- indexOpt
-                    else cache.Remove entityId |> ignore<bool>
+                if indexOpt > -1 && filter entityId
+                then cache.[entityId] <- indexOpt
                 else cache.Remove entityId |> ignore<bool>
 
 /// An ECS system.
 type System<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c2 : struct and 'c2 :> 'c2 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -370,8 +350,7 @@ type System<'c, 'c2, 'w when
             let indexOpt = store.TryIndexCorrelatedToI entityId
             let indexOpt2 = store2.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -381,10 +360,9 @@ type System<'c, 'c2, 'w when
 type System<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c3 : struct and 'c3 :> 'c3 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
@@ -392,15 +370,7 @@ type System<'c, 'c2, 'c3, 'w when
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -545,8 +515,7 @@ type System<'c, 'c2, 'c3, 'w when
             let indexOpt2 = store2.TryIndexCorrelatedToI entityId
             let indexOpt3 = store3.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -557,10 +526,9 @@ type System<'c, 'c2, 'c3, 'c4, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c4 : struct and 'c4 :> 'c4 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
             
     let cache = OrderedDictionary<uint64, struct (int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
@@ -568,16 +536,8 @@ type System<'c, 'c2, 'c3, 'c4, 'w when
     let store4 = ecs.IndexStore<'c4, CorrelatedStore<'c4, 'w>> ()
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
-
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
     
-    new (ecs) = System<_, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -737,8 +697,7 @@ type System<'c, 'c2, 'c3, 'c4, 'w when
             let indexOpt3 = store3.TryIndexCorrelatedToI entityId
             let indexOpt4 = store4.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -750,10 +709,9 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c5 : struct and 'c5 :> 'c5 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
@@ -763,15 +721,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'w when
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -946,8 +896,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let indexOpt4 = store4.TryIndexCorrelatedToI entityId
             let indexOpt5 = store5.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -960,10 +909,9 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     'c3 : struct and 'c3 :> 'c3 Component and
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c6 : struct and 'c6 :> 'c6 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
@@ -974,15 +922,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -1172,8 +1112,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let indexOpt5 = store5.TryIndexCorrelatedToI entityId
             let indexOpt6 = store6.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
@@ -1187,10 +1126,9 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     'c4 : struct and 'c4 :> 'c4 Component and
     'c5 : struct and 'c5 :> 'c5 Component and
     'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component> (excluding : Type array, ecs : 'w Ecs) =
+    'c7 : struct and 'c7 :> 'c7 Component> (filter : uint64 -> bool, ecs : 'w Ecs) =
 
     let cache = OrderedDictionary<uint64, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
-    let excluding = hashSetPlus<uint> HashIdentity.Structural (Seq.map (fun (ty : Type) -> (ecs.IndexStore ty.Name).Id) excluding)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
     let store = ecs.IndexStore<'c, CorrelatedStore<'c, 'w>> ()
     let store2 = ecs.IndexStore<'c2, CorrelatedStore<'c2, 'w>> ()
@@ -1202,15 +1140,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
     let allocated = HashSet<uint64> HashIdentity.Structural
     let unallocated = HashSet<uint64> HashIdentity.Structural
 
-    static member Excluding<'x> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>|], ecs)
-    static member Excluding<'x, 'x2> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>|], ecs)
-    static member Excluding<'x, 'x2, 'x3> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>|], ecs)
-    static member Excluding<'x, 'x2, 'x3, 'x4, 'x5, 'x6, 'x7> ecs = new System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w> ([|typeof<'x>; typeof<'x2>; typeof<'x3>; typeof<'x4>; typeof<'x5>; typeof<'x6>; typeof<'x7>|], ecs)
-
-    new (ecs) = System<_, _, _, _, _, _, _, _> ([||], ecs)
+    new (ecs) = System<_, _, _, _, _, _, _, _> (tautology, ecs)
 
     member this.Cached = cache.Keys
     member this.Allocated = allocated.AsReadOnly ()
@@ -1415,8 +1345,7 @@ type System<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let indexOpt6 = store6.TryIndexCorrelatedToI entityId
             let indexOpt7 = store7.TryIndexCorrelatedToI entityId
             if indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
-                let storeIds = ecs.IndexStoreIds entityId
-                if excluding.Count = 0 || not (storeIds.IsSupersetOf excluding)
+                if filter entityId
                 then cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
                 else cache.Remove entityId |> ignore<bool>
             elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
