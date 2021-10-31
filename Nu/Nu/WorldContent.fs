@@ -60,8 +60,8 @@ module Content =
         groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be optionally instantiated from a lens.
-    let groupOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> GroupContent) =
-        let (sieve : 'a -> World -> Map<int, 'b>) = fun a w -> match sieve a w with Some b -> Map.singleton 0 b | None -> Map.empty
+    let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> GroupContent) =
+        let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
         groups lens sieve constant mapper
 
@@ -104,8 +104,8 @@ module Content =
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
-    let entityOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> EntityContent) =
-        let (sieve : 'a -> World -> Map<int, 'b>) = fun a w -> match sieve a w with Some b -> Map.singleton 0 b | None -> Map.empty
+    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
+        let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
         entities lens sieve constant mapper
 
