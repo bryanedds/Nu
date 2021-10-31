@@ -52,12 +52,12 @@ module Content =
     /// Describe a group to be optionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper a world
-        groups lens (fun a world -> if predicate a world then Map.singleton 0 a else Map.empty) constant mapper
+        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
 
     /// Describe a group to be instantiated when a screen is selected.
     let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> GroupContent) =
         let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
-        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt _ -> screenOpt = Some screen) mapper
+        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be optionally instantiated from a lens.
     let groupOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> GroupContent) =
@@ -96,12 +96,12 @@ module Content =
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
         let mapper = fun _ a world -> mapper a world
-        entities lens (fun a world -> if predicate a world then Map.singleton 0 a else Map.empty) constant mapper
+        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
         let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
-        entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt _ -> screenOpt = Some screen) mapper
+        entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> EntityContent) =
