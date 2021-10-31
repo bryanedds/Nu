@@ -67,7 +67,7 @@ module RingMenuDispatcher =
                          Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
                          Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
                          Entity.ClickEvent ==> cmd (ItemSelect itemName)])
-             Content.entityOpt ringMenu (fun ringMenu _ -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
+             Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)
                     [Entity.ParentNodeOpt == None
