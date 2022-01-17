@@ -39,9 +39,9 @@
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Downward]
  [Sequence
-  [[Dialog &quot;You've run a fool's errand...!&quot;]
-   [Dialog &quot;Her soul is forever ours...&quot;]
-   [Dialog &quot;...and so is yours!&quot;]
+  [[Dialog &quot;Tu es bien sot de t'aventurer la...!&quot;]
+   [Dialog &quot;Son ame est notre a jamais...&quot;]
+   [Dialog &quot;...ainsi que la tienne!&quot;]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
