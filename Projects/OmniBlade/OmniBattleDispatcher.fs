@@ -1164,12 +1164,12 @@ module BattleDispatcher =
                  // allies
                  Content.entities battle
                     (fun battle _ -> Battle.getAllies battle) constant
-                    (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])
+                    (fun index ally _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== ally])
 
                  // enemies
                  Content.entities battle
                     (fun battle _ -> Battle.getEnemies battle) constant
-                    (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])]
+                    (fun index enemy _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== enemy])]
 
              // input groups
              Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) constant $ fun index ally _ ->
