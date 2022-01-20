@@ -498,7 +498,7 @@ module FieldDispatcher =
                 (fun field _ -> (field.Team, field.Menu))
                 (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
                 (fun index teammateAndMenu _ ->
-                    let x = position.X + if index >= rows then 252.0f + 48.0f else 0.0f
+                    let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
                     let y = position.Y - single (index % rows) * 81.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 252.0f 72.0f
