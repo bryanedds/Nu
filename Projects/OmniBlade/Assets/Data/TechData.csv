@@ -1,6 +1,6 @@
 Type,TechCost,EffectType,Scalar,Split,Curative,Cancels,Absorb,ElementType,StatusesAdded,StatusesRemoved,TargetType,Description
 Critical,1,Physical,1,False,False,True,0,None,[],[],[SingleTarget [EnemyAim True]],
-Slash,2,Magical,1.15,False,False,False,0,None,[],[],[LineTarget 60 [EnemyAim True]],
+Slash,2,Magical,1.2,False,False,False,0,None,[],[],[LineTarget 60 [EnemyAim True]],
 DarkCritical,3,Physical,1.4,False,False,True,0,[Some Dark],[],[],[SingleTarget [EnemyAim True]],
 Cyclone,3,Physical,1,False,False,False,0,None,[],[],[RadialTarget 156 [EnemyAim True]],
 PoisonCut,2,Physical,1,False,False,False,0,None,[Poison],[],[SingleTarget [EnemyAim True]],

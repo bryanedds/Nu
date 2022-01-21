@@ -39,9 +39,9 @@
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Downward]
  [Sequence
-  [[Dialog &quot;You've run a fool's errand...!&quot;]
+  [[Dialog &quot;You've run a fool's errand...&quot;]
    [Dialog &quot;Her soul is forever ours...&quot;]
-   [Dialog &quot;...and so is yours!&quot;]
+   [Dialog &quot;...and now so is yours!&quot;]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
@@ -57,7 +57,7 @@
   </object>
   <object id="5" gid="235" x="432" y="576" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [Equipment [ArmorType BronzeMail]] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
+    <property name="I" value="[Chest WoodenChest [Consumable Ether] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
    </properties>
   </object>
  </objectgroup>
