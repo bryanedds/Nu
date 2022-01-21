@@ -227,7 +227,7 @@ module PropDispatcher =
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileCelSize
-                        (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
+                        (false, image, colWhite, Additive, colZero, Some inset, FlipNone)
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
