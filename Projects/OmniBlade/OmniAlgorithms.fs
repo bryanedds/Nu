@@ -213,6 +213,6 @@ module Algorithms =
 
     let itemPrizeOpt (_ : ArchetypeType) (_ : int) =
         // TODO: pull this from data.
-        if Gen.random1 32 = 0
+        if Gen.randomf < Constants.Battle.ItemDropRate
         then Some (Consumable GreenHerb)
         else None

@@ -346,7 +346,7 @@ module Character =
     let shouldCounter (character : Character) =
         // TODO: pull this from stats
         character.ArchetypeType = Fighter &&
-        Gen.random1 8 = 0
+        Gen.random1 12 = 0
 
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
