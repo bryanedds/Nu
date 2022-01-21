@@ -72,7 +72,6 @@ module BattleDispatcher =
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
         | DisplayCure of int64 * CharacterIndex
-        | DisplayEmpower of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
         | DisplayBuff of int64 * StatusType * CharacterIndex
@@ -1094,11 +1093,6 @@ module BattleDispatcher =
             | DisplayCure (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeCureEffect ()) world |> just
-                | None -> just world
-
-            | DisplayEmpower (delay, targetIndex) ->
-                match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom target.Bottom) (Effects.makeEmpowerEffect ()) world |> just
                 | None -> just world
             
             | DisplayProtect (delay, targetIndex) ->
