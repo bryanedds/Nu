@@ -1257,8 +1257,7 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
-                    Content.entity<PropDispatcher> Gen.name
-                        [Entity.Prop <== prop]
+                    Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop]
 
                  // spirit orb
                  Content.entityIf field Field.hasEncounters $ fun field _ ->
