@@ -690,7 +690,7 @@ module WorldModule =
         static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
             let config = World.getCollectionConfig world
             let mutable current = USet.makeEmpty (LensComparer ()) config
-            for key in mapGeneralized.ToKeys do
+            for key in mapGeneralized.Keys do
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
