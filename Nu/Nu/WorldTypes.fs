@@ -150,13 +150,13 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 /// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
 /// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : IComparable List
+    { Keys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj }
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { ToKeys =
+        { Keys =
             let list = List ()
             for entry in map do list.Add (entry.Key :> IComparable)
             list
