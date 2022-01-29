@@ -775,7 +775,10 @@ module WorldModule =
                     USet.makeEmpty (LensComparer ()) config
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
-            let removed = USet.differenceFast previous current
+            let removed =
+                if added.Count <> USet.length previous
+                then USet.differenceFast previous current
+                else HashSet ()
             let changed = added.Count <> 0 || removed.Count <> 0
             let world =
                 if changed then
