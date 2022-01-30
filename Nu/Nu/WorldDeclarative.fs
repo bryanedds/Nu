@@ -137,28 +137,28 @@ module DeclarativeOperators =
         set left right
 
     /// Bind the left property to the value of the right.
-    /// HACK: bind3 allows the use of fake lenses in declarative usage.
+    /// HACK: bind2 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let bind3 (left : Lens<'a, World>) (right : Lens<'a, World>) =
+    let bind2 (left : Lens<'a, World>) (right : Lens<'a, World>) =
         if right.This :> obj |> isNull
         then failwith "bind3 expects an authentic right lens (where its This field is not null)."
         else BindDefinition (left, right)
 
     /// Bind the left property to the value of the right.
     let inline (<==) left right =
-        bind3 left right
+        bind2 left right
 
     /// Link the left property with the value of the right (two-way binding).
-    /// HACK: link3 allows the use of fake lenses in declarative usage.
+    /// HACK: link2 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let link3 (left : Lens<'a, World>) (right : Lens<'a, World>) =
+    let link2 (left : Lens<'a, World>) (right : Lens<'a, World>) =
         if right.This :> obj |> isNull
         then failwith "link3 expects an authentic right lens (where its This field is not null)."
         else LinkDefinition (left, right)
 
     /// Link the left property with the value of the right (two-way bind).
     let inline (<=>) left right =
-        link3 left right
+        link2 left right
 
 [<AutoOpen>]
 module WorldDeclarative =
