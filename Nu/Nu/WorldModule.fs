@@ -690,26 +690,26 @@ module WorldModule =
         static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
             let config = World.getCollectionConfig world
             let mutable current = USet.makeEmpty (LensComparer ()) config
-            let mutable mapCached = Unchecked.defaultof<MapGeneralized>
             for key in mapGeneralized.Keys do
-                // OPTIMIZATION: ensure map is cached only on the first key lens.
-                let isFirstKey = key === mapGeneralized.Keys.[0]
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
+                let mutable mapCached = Unchecked.defaultof<MapGeneralized>
                 let validateOpt =
                     match lensGeneralized.ValidateOpt with
                     | Some validate -> Some (fun world ->
                         if validate world then
-                            if isFirstKey then mapCached <- Lens.getWithoutValidation lensGeneralized world
+                            mapCached <- Lens.getWithoutValidation lensGeneralized world
                             mapCached.ContainsKey key
                         else false)
                     | None -> Some (fun world ->
-                        if isFirstKey then mapCached <- Lens.getWithoutValidation lensGeneralized world
+                        mapCached <- Lens.getWithoutValidation lensGeneralized world
                         mapCached.ContainsKey key)
                 let getWithoutValidation =
                     fun _ ->
-                        mapCached.GetValue key
+                        let result = mapCached.GetValue key
+                        mapCached <- Unchecked.defaultof<MapGeneralized>
+                        result
                 let lensItem =
                     { Name = lensGeneralized.Name
                       ValidateOpt = validateOpt
