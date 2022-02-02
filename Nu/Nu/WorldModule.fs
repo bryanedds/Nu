@@ -694,7 +694,7 @@ module WorldModule =
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
-                let mutable mapCached = Unchecked.defaultof<MapGeneralized>
+                let mutable mapCached = Unchecked.defaultof<MapGeneralized> // ELMISH_CACHE
                 let validateOpt =
                     match lensGeneralized.ValidateOpt with
                     | Some validate -> Some (fun world ->
@@ -708,7 +708,7 @@ module WorldModule =
                 let getWithoutValidation =
                     fun _ ->
                         let result = mapCached.GetValue key
-                        mapCached <- Unchecked.defaultof<MapGeneralized>
+                        mapCached <- Unchecked.defaultof<MapGeneralized> // elide GC promotion by throwing away map ASAP
                         result
                 let lensItem =
                     { Name = lensGeneralized.Name
@@ -801,7 +801,7 @@ module WorldModule =
                             let changed =
                                 match binding.PBPrevious with
                                 | ValueSome previous ->
-                                    if value =/= previous
+                                    if value =/= previous // ELMISH_CACHE
                                     then binding.PBPrevious <- ValueSome value; true
                                     else false
                                 | _ -> binding.PBPrevious <- ValueSome value; true
