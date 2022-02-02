@@ -324,7 +324,7 @@ module WorldDeclarative =
             let world =
                 if Lens.validate contentBinding.CBSource world then
                     let mapGeneralized = Lens.getWithoutValidation contentBinding.CBSource world
-                    let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
+                    let lensesCurrent = World.makeLensesCurrent mapGeneralized.Keys contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else
                     let config = World.getCollectionConfig world
