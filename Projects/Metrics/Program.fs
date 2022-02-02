@@ -282,7 +282,7 @@ type ElmishGameDispatcher () =
                 [Content.entity<ElmishEntityDispatcher> Gen.name
                     (seq {
                         yield Entity.Omnipresent == true
-                        for index in 0 .. 49999 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 50,000 property bindings (goal: 60FPS, currently: 59FPS)
+                        for index in 0 .. 49999 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 50,000 property bindings (goal: 60FPS, currently: 50FPS)
                         Seq.toList)]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
@@ -303,7 +303,7 @@ type [<ReferenceEquality>] Intss =
         //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current 35FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current 33FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
