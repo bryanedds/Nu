@@ -687,28 +687,32 @@ module WorldModule =
 
     type World with // ElmishBindingsMap
 
-        static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
+        static member internal makeLensesCurrent (keys : IComparable List) lensGeneralized world =
             let config = World.getCollectionConfig world
             let mutable current = USet.makeEmpty (LensComparer ()) config
-            for key in mapGeneralized.Keys do
-                // OPTIMIZATION: ensure map is extracted during validation only.
+            for key in keys do
+                // OPTIMIZATION: ensure item is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
-                let mutable mapCached = Unchecked.defaultof<MapGeneralized> // ELMISH_CACHE
+                let mutable itemCached = Unchecked.defaultof<obj> // ELMISH_CACHE
                 let validateOpt =
                     match lensGeneralized.ValidateOpt with
                     | Some validate -> Some (fun world ->
                         if validate world then
-                            mapCached <- Lens.getWithoutValidation lensGeneralized world
-                            mapCached.ContainsKey key
+                            let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
+                            if mapGeneralized.ContainsKey key
+                            then itemCached <- mapGeneralized.GetValue key; true
+                            else false
                         else false)
                     | None -> Some (fun world ->
-                        mapCached <- Lens.getWithoutValidation lensGeneralized world
-                        mapCached.ContainsKey key)
+                        let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
+                        if mapGeneralized.ContainsKey key
+                        then itemCached <- mapGeneralized.GetValue key; true
+                        else false)
                 let getWithoutValidation =
                     fun _ ->
-                        let result = mapCached.GetValue key
-                        mapCached <- Unchecked.defaultof<MapGeneralized> // elide GC promotion by throwing away map ASAP
+                        let result = itemCached
+                        itemCached <- Unchecked.defaultof<obj> // elide GC promotion by throwing away map ASAP
                         result
                 let lensItem =
                     { Name = lensGeneralized.Name
@@ -820,7 +824,7 @@ module WorldModule =
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
+                            let current = World.makeLensesCurrent mapGeneralized.Keys binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else 
                             let config = World.getCollectionConfig world
