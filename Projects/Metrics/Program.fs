@@ -294,36 +294,26 @@ type [<ReferenceEquality>] Ints =
     static member inc ints =
         { Ints = ints.Ints |> Seq.map (fun kvp -> (kvp.Key, inc kvp.Value)) |> Map.ofSeq }
 
-type [<ReferenceEquality>] Intss =
-    { Intss : Map<int, Ints> }
-    static member init n =
-        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
-    static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
-        //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
-
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current 33FPS)
+    inherit GameDispatcher<Ints, int, unit> (Ints.init 5000) // 5,000 ints (goal: 60FPS, current 58FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
 
-    override this.Message (intss, message, _, _) =
+    override this.Message (ints, message, _, _) =
         match message with
-        | 0 -> just (Intss.inc intss)
-        | _ -> just intss
+        | 0 -> just (Ints.inc ints)
+        | _ -> just ints
 
-    override this.Content (intss, _) =
+    override this.Content (ints, _) =
         [Content.screen Gen.name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) constant $ fun i intss _ ->
-                Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) constant $ fun j int _ ->
-                        Content.entity<ElmishEntityDispatcher> (string j)
-                            [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]
-             Content.group Gen.name []
-                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+            [Content.group Gen.name []
+                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]
+                 Content.entities ints (fun ints _ -> ints.Ints) constant $ fun i int _ ->
+                    Content.entity<ElmishEntityDispatcher> (string i)
+                        [Entity.Omnipresent == true
+                         Entity.Position == v2 (single (i / 100) * 10.0f - 480.0f) (single (i % 100) * 6.0f - 272.0f)
+                         Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]]]
 #endif
 #endif
 
