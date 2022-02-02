@@ -287,7 +287,7 @@ module WorldDeclarative =
                 let mutable unfoldResultOpt = None
                 Lens.mapWorld (fun a world ->
                     let struct (b, c) =
-                        if a === lensResult then
+                        if a === lensResult then // ELMISH_CACHE
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (Some sieveResult, Some unfoldResult) -> struct (sieveResult, unfoldResult)
                             | (Some sieveResult, None) -> struct (sieveResult, unfold sieveResult world)
