@@ -808,7 +808,7 @@ module WorldModule =
                                     if value =/= previous // ELMISH_CACHE
                                     then binding.PBPrevious <- ValueSome value; true
                                     else false
-                                | _ -> binding.PBPrevious <- ValueSome value; true
+                                | ValueNone -> binding.PBPrevious <- ValueSome value; true
                             let allowPropertyBinding =
 #if DEBUG
                                 // OPTIMIZATION: only compute in DEBUG mode.
