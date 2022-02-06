@@ -283,25 +283,25 @@ module WorldDeclarative =
             // construct the generalized lens with internal caching
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
-                let mutable sieveResultOpt = None
-                let mutable unfoldResultOpt = None
+                let mutable sieveResultOpt = ValueNone
+                let mutable unfoldResultOpt = ValueNone
                 Lens.mapWorld (fun a world ->
                     let struct (b, c) =
                         if a === lensResult then // ELMISH_CACHE
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> struct (sieveResult, unfoldResult)
-                            | (Some sieveResult, None) -> struct (sieveResult, unfold sieveResult world)
-                            | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueSome sieveResult, ValueSome unfoldResult) -> struct (sieveResult, unfoldResult)
+                            | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult world)
+                            | (ValueNone, ValueSome _) -> failwithumf ()
+                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
-                            | (Some _, None) -> let b = sieve a world in struct (b, unfold b world)
-                            | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueSome sieveResult, ValueSome unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
+                            | (ValueSome _, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueNone, ValueSome _) -> failwithumf ()
+                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
                     lensResult <- a
-                    sieveResultOpt <- Some b
-                    unfoldResultOpt <- Some c
+                    sieveResultOpt <- ValueSome b
+                    unfoldResultOpt <- ValueSome c
                     c)
                     lens
 

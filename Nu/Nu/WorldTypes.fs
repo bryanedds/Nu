@@ -158,7 +158,7 @@ type [<NoEquality; NoComparison>] MapGeneralized =
     static member make (map : Map<'k, 'v>) =
         { Keys =
             let list = List ()
-            for entry in map do list.Add (entry.Key :> IComparable)
+            for key in Map.keys map do list.Add (key :> IComparable)
             list
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
