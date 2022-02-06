@@ -87,7 +87,7 @@
     [Dialog &quot; On ne peut defaire la cruaute par la cruaute...&quot; False]
     [Wait 240]
     [FadeOutSong 4000]
-    [Dialog &quot;Qu'entends-je là ?&quot; False]
+    [Dialog &quot;Qu'entends-je la?&quot; False]
     [Wait 90]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Wait 90]
