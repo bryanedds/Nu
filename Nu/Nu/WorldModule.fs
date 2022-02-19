@@ -149,6 +149,10 @@ module WorldModule =
     let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
+    // OPTIMIZATION: slightly reduce Elmish simulant synchronization allocation.
+    let private emptyLensComparableHashSet =
+        HashSet ()
+
     type World with // Reflection
 
         /// Initialize a property's dynamic attributes.
@@ -781,7 +785,7 @@ module WorldModule =
             let added = USet.differenceFast current previous
             let removed =
                 if added.Count = 0 && USet.length current = USet.length previous
-                then HashSet () // infer no removals
+                then emptyLensComparableHashSet // infer no removals
                 else USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
