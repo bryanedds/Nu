@@ -780,18 +780,17 @@ module WorldModule =
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
             let removed =
-                if added.Count <> USet.length previous
-                then USet.differenceFast previous current
-                else HashSet ()
+                if added.Count = 0 && USet.length current = USet.length previous
+                then HashSet () // infer no removals
+                else USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
-            let world =
-                if changed then
-                    let contentKeyInc = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
-                    let world = World.removeSynchronizedSimulants contentKeyInc removed world
-                    let world = World.addSynchronizedSimulants contentMapper contentKeyInc mapGeneralized added origin owner parent world
-                    world
-                else world
-            World.addKeyedValue contentKey current world
+            if changed then
+                let contentKeyInc = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
+                let world = World.removeSynchronizedSimulants contentKeyInc removed world
+                let world = World.addSynchronizedSimulants contentMapper contentKeyInc mapGeneralized added origin owner parent world
+                let world = World.addKeyedValue contentKey current world
+                world
+            else world
 
         static member internal publishChangeBinding propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
