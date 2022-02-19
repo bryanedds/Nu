@@ -150,7 +150,11 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     // OPTIMIZATION: slightly reduce Elmish simulant synchronization allocation.
-    let private emptyLensComparableHashSet =
+    let private emptyPreviousSimulants =
+        USet.makeEmpty (LensComparer ()) Imperative
+
+    // OPTIMIZATION: slightly reduce Elmish simulant synchronization allocation.
+    let private emptyRemovedSimulants =
         HashSet ()
 
     type World with // Reflection
@@ -778,14 +782,12 @@ module WorldModule =
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
                 match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
-                | (false, _) ->
-                    let config = World.getCollectionConfig world
-                    USet.makeEmpty (LensComparer ()) config
+                | (false, _) -> emptyPreviousSimulants
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
             let removed =
                 if added.Count = 0 && USet.length current = USet.length previous
-                then emptyLensComparableHashSet // infer no removals
+                then emptyRemovedSimulants // infer no removals
                 else USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
