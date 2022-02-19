@@ -85,13 +85,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-    
-/// TODO: P1: get rid of this when Prime is updated.
-[<RequireQualifiedAccess>]
-module Lens =
-    let narrow validate lens =
-        { lens with
-            ValidateOpt =
-                match lens.ValidateOpt with
-                | Some validate' -> Some (fun world -> validate' world && validate world)
-                | None -> Some validate }
