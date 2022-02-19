@@ -53,7 +53,7 @@ module AmbientState =
         StandAlone
 
     /// Get the collection config value.
-    let getCollectionConfig (_ : 'w AmbientState) =
+    let getConfig (_ : 'w AmbientState) =
         if Imperative then TConfig.Imperative else TConfig.Functional
 
     /// Get the the liveness state of the engine.

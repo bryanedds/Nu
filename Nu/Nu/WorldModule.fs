@@ -190,7 +190,7 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher =
-            let config = AmbientState.getCollectionConfig ambientState
+            let config = AmbientState.getConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
@@ -271,7 +271,7 @@ module WorldModule =
         /// Get collection config value.
         [<FunctionBinding>]
         static member getCollectionConfig world =
-            World.getAmbientStateBy AmbientState.getCollectionConfig world
+            World.getAmbientStateBy AmbientState.getConfig world
 
         /// Get the the liveness state of the engine.
         [<FunctionBinding>]
@@ -821,9 +821,8 @@ module WorldModule =
 #else
                                 true
 #endif
-                            if changed && allowPropertyBinding then
-                                let setter = Option.get binding.PBLeft.SetOpt
-                                setter value world
+                            if changed && allowPropertyBinding
+                            then binding.PBLeft.TrySet value world
                             else world
                         else world
                     | ContentBinding binding ->

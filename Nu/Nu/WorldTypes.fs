@@ -1185,6 +1185,9 @@ module WorldTypes =
 
         interface World EventSystem with
 
+            member this.GetConfig () =
+                AmbientState.getConfig this.AmbientState
+
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState
 
