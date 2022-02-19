@@ -137,18 +137,18 @@ type MyGameDispatcher () =
         // create shakers system
         let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
 
-        // create 3M movers (goal: 60FPS, current: 60FPS)
+        // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
                 movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
-                world (Seq.init 3000000 id)
+                world (Seq.init 4000000 id)
 
-        // create 3000 shakers
+        // create 4000 shakers
         let world =
             Seq.fold (fun world _ ->
                 let struct (entityId, world) = movers.NextEntityId world
                 shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
-                world (Seq.init 3000 id)
+                world (Seq.init 4000 id)
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
