@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYiRQSfQXh8eBgZvHoTYZ6DYFyDO4qKe/Xu5GfCCICR5ZaBbVHggeqhl/1sC9mMDb6lovyzQPwJALAjEQjy47URWA9JDLft9gWY5ALEjEDvhsH8TN6oaXyrZnwpKf2g4jxXT/iws6lKoYD+uMEEH1PDrqP1Dw/5UtDSYRcO0hs8NMEBvu2FtAhigVl1PrN2FQHyICWH/HiC7gE5uyIXa/RXJ/vdMEDfQIw2C7AfZrcGMsF+JGeIGetmPbDeyG+hlPy4wav+o/UPNfgBdPP5B
+   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYiRgScPA4MPEHvzIMQ+A93yBYizuKhn/15uBrwgCEleGegWFR6IHmrZ/5aA/djAWyraLwv0jwAQCwKxEA9uO5HVgPRQy35foFkOQOwIxE447N/EjarGl0r2p4LSHxrOY8W0PwuLuhQq2I8rTNABNfw6av/QsD8VLQ1m0TCt4XMDDNDbblibAAaoVdcTa3chEB9iQti/B8guoJMbcqF2f0Wy/z0TxA30SIMg+0F2azAj7FdihriBXvYj243sBnrZjwuM2j9q/1CzHwCXUv4C
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
