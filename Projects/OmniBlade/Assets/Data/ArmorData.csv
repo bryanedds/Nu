@@ -5,7 +5,7 @@ CottonVest,Vest,13,13,10,Thick cotton vest for Clerics & Ninjas.
 CottonRobe,Robe,12,14,10,Cotton robe for Wizards & Conjurors.
 ThinFur,Pelt,16,13,10,
 BronzeMail,Mail,19,16,50,Small bronze mail for Fighters only.
-LeatherVest,Vest,17,17,50,Leather vest for Clerics only.
+LeatherVest,Vest,17,17,50,Leather vest for Clerics & Ninjas.
 LeatherRobe,Robe,16,18,50,Thin leather robe for Wizards & Conjurors.
 ThickFur,Pelt,32,17,50,
 IronMail,Mail,25,20,100,Iron mail for Fighters only.
