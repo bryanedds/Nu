@@ -57,7 +57,7 @@
     [Dialog &quot;Why does every day get worse...?&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;Why must I be spited at every opportunity?&quot;]
-    [Dialog &quot;The fortunes of other servents rise, but I am kept at the bottom...&quot;]
+    [Dialog &quot;The fortunes of other servants rise, but I am kept at the bottom...&quot;]
     [Dialog &quot;Nothing I do goes uncriticized...&quot;]
     [Dialog &quot;She may be my master, but she herself serves under the Queen.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Rightward]
