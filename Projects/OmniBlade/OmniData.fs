@@ -997,10 +997,10 @@ module FieldData =
                         | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
                         | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
                         | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                    let battleIndex = int (4.0f / distanceFromOriginMax * distanceFromOrigin)
+                    let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
                     | 0 | 1 -> Some WeakSpirit
-                    | 2 -> Some NormalSpirit
+                    | 2 | 3 -> Some NormalSpirit
                     | _ -> Some StrongSpirit
                 | FieldStatic _ | FieldConnector _ -> None
             | Choice1Of3 _ -> None
