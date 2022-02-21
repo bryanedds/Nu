@@ -978,7 +978,11 @@ module FieldData =
                 | FieldRandom (walkLength, _, _, _, _) ->
                     let tileMapBounds = v4Bounds v2Zero (v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
                     let distanceFromOriginMax =
-                        let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
+                        let walkLengthScalar =
+                            match origin with
+                            | OriginC -> Constants.Field.WalkLengthScalarOpened
+                            | _ -> Constants.Field.WalkLengthScalarClosed
+                        let walkRatio = single walkLength * walkLengthScalar
                         let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
                         let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
                         delta.Length ()
@@ -993,10 +997,10 @@ module FieldData =
                         | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
                         | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
                         | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                    let battleIndex = int (3.0f / distanceFromOriginMax * distanceFromOrigin)
+                    let battleIndex = int (4.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
-                    | 0 -> Some WeakSpirit
-                    | 1 -> Some NormalSpirit
+                    | 0 | 1 -> Some WeakSpirit
+                    | 2 -> Some NormalSpirit
                     | _ -> Some StrongSpirit
                 | FieldStatic _ | FieldConnector _ -> None
             | Choice1Of3 _ -> None
