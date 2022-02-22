@@ -19,10 +19,10 @@ module Simulants =
 
     /// The default screen - may or may not exist.
     let DefaultScreen = Screen "Screen"
-    
+
     /// The default group - may or may not exist.
     let DefaultGroup = DefaultScreen / "Group"
-    
+
     /// The default entity - may or may not exist.
     let DefaultEntity = DefaultGroup / "Entity"
 
@@ -782,7 +782,7 @@ module WorldModule =
 
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
-                match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
+                match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with // ELMISH_CACHE
                 | (false, _) -> emptyPreviousSimulants
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
@@ -794,7 +794,7 @@ module WorldModule =
             if changed then
                 // HACK: we need to use content key for an additional purpose, so we add 2 (key with add 1 may already be used in invoking function).
                 // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
-                let contentKeyPlus2 = Gen.idDeterministic 2 contentKey
+                let contentKeyPlus2 = Gen.idDeterministic 2 contentKey // ELMISH_CACHE
                 let world = World.removeSynchronizedSimulants contentKeyPlus2 removed world
                 let world = World.addSynchronizedSimulants contentMapper contentKeyPlus2 mapGeneralized added origin owner parent world
                 let world = World.addKeyedValue contentKey current world
@@ -836,15 +836,15 @@ module WorldModule =
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let currentKeys = mapGeneralized.Keys
                             let previousKeys =
-                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
-                                | (false, _) -> List ()
+                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with // ELMISH_CACHE
+                                | (false, _) -> List () // TODO: use cached module binding of empty List.
                                 | (true, previous) -> previous
                             if not (currentKeys.SequenceEqual previousKeys) then
                                 let world = World.addKeyedValue contentKeyPlus1 currentKeys world
                                 let current = World.makeLensesCurrent currentKeys binding.CBSource world
                                 World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                             else world
-                        else 
+                        else
                             let config = World.getCollectionConfig world
                             let lensesCurrent = USet.makeEmpty (LensComparer ()) config
                             let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
