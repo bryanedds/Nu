@@ -63,7 +63,7 @@ module WorldModule =
     /// Declarative lens comparer.
     type internal LensComparer<'k when 'k : equality> () =
         interface IEqualityComparer<'k LensComparable> with
-            member this.Equals (left, right) = left.LensKey = right.LensKey
+            member this.Equals (left, right) = left.LensHash = right.LensHash && left.LensKey.Equals right.LensKey
             member this.GetHashCode value = value.LensHash
 
     /// F# reach-around for evaluating a script expression.
