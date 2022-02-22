@@ -200,7 +200,7 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Wealth
             | None -> 1.0f
-        let algo = single level * 1.5f
+        let algo = single level * 1.75f
         max (int (wealth * scalar * algo)) 1
 
     let expPrize archetypeType scalar (level : int) =
@@ -208,7 +208,7 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Mythos
             | None -> 1.0f
-        let algo = single level * 1.5f
+        let algo = single level * 1.75f
         max (int (mythos * scalar * algo)) 1
 
     let itemPrizeOpt (_ : ArchetypeType) (_ : int) =

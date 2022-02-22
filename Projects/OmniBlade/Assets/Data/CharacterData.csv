@@ -5,9 +5,9 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Ally Riain],Conjuror,3,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
 [Ally Peric],Cleric,3,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
 [Enemy DebugGoblin],Goblin,4,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],1,1,An enemy for battle debugging.
-[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.4],1,1,A bat from the darkest parts of the tomb.
-[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],1,1,A minor goblin from the Golobogos Islands.
-[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.5],1,1,A minotaur gone mad with vengeance.
+[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.4],3,3,A bat from the darkest parts of the tomb.
+[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],1.25,1.25,A minor goblin from the Golobogos Islands.
+[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.5],1.25,1.25,A minotaur gone mad with vengeance.
 [Enemy MadTrixter],Trixter,4,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.5],10,5,???
 [Enemy LowerGorgon],Gorgon,5,[Castle LowerGorgon],None,[Some Paws],None,[],[Some 0.4],1,1,A gorgon of the Lower Order.
 [Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.5],1,1,A soldier whose face is long forgotten.
