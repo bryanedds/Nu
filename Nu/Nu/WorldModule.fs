@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Linq
 open System.Reflection
 open FSharpx.Collections
 open Prime
@@ -720,7 +721,7 @@ module WorldModule =
                 let getWithoutValidation =
                     fun _ ->
                         let result = itemCached
-                        itemCached <- Unchecked.defaultof<obj> // elide GC promotion by throwing away map ASAP
+                        itemCached <- Unchecked.defaultof<obj> // avoid GC promotion by throwing away map ASAP
                         result
                 let lensItem =
                     { Name = lensGeneralized.Name
@@ -791,9 +792,11 @@ module WorldModule =
                 else USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
-                let contentKeyInc = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
-                let world = World.removeSynchronizedSimulants contentKeyInc removed world
-                let world = World.addSynchronizedSimulants contentMapper contentKeyInc mapGeneralized added origin owner parent world
+                // HACK: we need to use content key for an additional purpose, so we add 2 (key with add 1 may already be used in invoking function).
+                // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+                let contentKeyPlus2 = Gen.idDeterministic 2 contentKey
+                let world = World.removeSynchronizedSimulants contentKeyPlus2 removed world
+                let world = World.addSynchronizedSimulants contentMapper contentKeyPlus2 mapGeneralized added origin owner parent world
                 let world = World.addKeyedValue contentKey current world
                 world
             else world
@@ -826,14 +829,26 @@ module WorldModule =
                             else world
                         else world
                     | ContentBinding binding ->
+                        // HACK: we need to use content key for an additional purpose, so we add 1.
+                        // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let current = World.makeLensesCurrent mapGeneralized.Keys binding.CBSource world
-                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            let currentKeys = mapGeneralized.Keys
+                            let previousKeys =
+                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
+                                | (false, _) -> List ()
+                                | (true, previous) -> previous
+                            if not (currentKeys.SequenceEqual previousKeys) then
+                                let world = World.addKeyedValue contentKeyPlus1 currentKeys world
+                                let current = World.makeLensesCurrent currentKeys binding.CBSource world
+                                World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            else world
                         else 
                             let config = World.getCollectionConfig world
                             let lensesCurrent = USet.makeEmpty (LensComparer ()) config
-                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
+                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
+                            World.removeKeyedValue contentKeyPlus1 world)
                     world elmishBindings
             | (false, _) -> world
 
