@@ -42,7 +42,7 @@
   </object>
   <object id="4" gid="235" x="606" y="1320" width="324" height="276">
    <properties>
-    <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
+    <property name="I">[Npc AraneaImplicitumNpc [Some Upward]
   [Sequence
    [[Dialog &quot;What a delightful addition...&quot;]
     [Dialog &quot;...to my web of souls!&quot;]
