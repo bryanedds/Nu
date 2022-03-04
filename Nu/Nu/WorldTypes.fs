@@ -979,7 +979,7 @@ module WorldTypes =
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
+        do if Address.length entityAddress < 3 then failwith "Entity address must be length >= 3."
 
         /// The entity's cached state.
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
@@ -1026,13 +1026,13 @@ module WorldTypes =
         /// The entity's update event.
         member this.UpdateEvent =
             let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            rtoa<unit> (Array.append [|"Update"; "Event"|] entityNames)
 
 #if !DISABLE_ENTITY_POST_UPDATE
         /// The entity's post update event.
         member this.PostUpdateEvent =
             let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] entityNames)
 #endif
 
         /// Get the name of an entity.
@@ -1179,7 +1179,7 @@ module WorldTypes =
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
+              ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, USet<Entity>>>>>
               Dispatchers : Dispatchers
               WorldExtension : WorldExtension }
 
@@ -1192,16 +1192,17 @@ module WorldTypes =
                 AmbientState.getLiveness this.AmbientState
 
             member this.GetSimulantExists simulant =
-                // OPTIMIZATION: constant-time look-up here improve non-entity existence queries.
-                match simulant.SimulantAddress.Names.Length with
-                | 3 ->
+                let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+                if namesLength >= 3 then
                     let entity = simulant :?> Entity
                     notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
                     UMap.containsKey (simulant :?> Entity) this.EntityStates
-                | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
-                | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
-                | 0 -> true
-                | _  -> false
+                else
+                    match namesLength with
+                    | 0 -> true
+                    | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
+                    | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
+                    | _  -> failwithumf ()
 
             member this.GetGlobalSimulantSpecialized () =
                 EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate

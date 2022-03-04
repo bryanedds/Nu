@@ -53,7 +53,7 @@ module WorldModuleEntity =
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
 
-    // OPTIMIZATION: cache one entity change address
+    // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
     let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
@@ -84,12 +84,12 @@ module WorldModuleEntity =
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [|screenName; groupName; entityName|] ->
+                | [|screenName; groupName; _|] ->
                     match UMap.tryFind screenName world.ScreenDirectory with
                     | Some groupDirectory ->
                         match UMap.tryFind groupName groupDirectory.Value with
                         | Some entityDirectory ->
-                            let entityDirectory' = UMap.add entityName entity entityDirectory.Value
+                            let entityDirectory' = USet.add entity entityDirectory.Value
                             let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                         | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
@@ -101,12 +101,12 @@ module WorldModuleEntity =
         static member private entityStateRemover (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [|screenName; groupName; entityName|] ->
+                | [|screenName; groupName; _|] ->
                     match UMap.tryFind screenName world.ScreenDirectory with
                     | Some groupDirectory ->
                         match UMap.tryFind groupName groupDirectory.Value with
                         | Some entityDirectory ->
-                            let entityDirectory' = UMap.remove entityName entityDirectory.Value
+                            let entityDirectory' = USet.remove entity entityDirectory.Value
                             let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                         | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent group.")
@@ -144,7 +144,10 @@ module WorldModuleEntity =
                     let entityNames = Address.getNames entity.EntityAddress
                     let mutable changeEventNamesUtilized = false
                     let changeEventAddress =
-                        if  changeEventNamesFree then
+                        // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
+                        // it isn't should be acceptable.
+                        if  Array.length entityNames = 3 &&
+                            changeEventNamesFree then
                             changeEventNamesFree <- false
                             changeEventNamesUtilized <- true
                             changeEventNamesCached.[1] <- propertyName
@@ -152,7 +155,7 @@ module WorldModuleEntity =
                             changeEventNamesCached.[4] <- entityNames.[1]
                             changeEventNamesCached.[5] <- entityNames.[2]
                             rtoa<ChangeData> changeEventNamesCached
-                        else rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+                        else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
                     let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                     let sorted = propertyName = "ParentNodeOpt"
                     let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted false world
