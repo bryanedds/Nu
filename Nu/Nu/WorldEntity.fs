@@ -310,7 +310,7 @@ module WorldEntityModule =
                 match UMap.tryFind screenName (World.getScreenDirectory world) with
                 | Some groupDirectory ->
                     match UMap.tryFind groupName groupDirectory.Value with
-                    | Some entityDirectory -> entityDirectory.Value |> UMap.toSeq |> Seq.map snd
+                    | Some entityDirectory -> entityDirectory.Value |> USet.toSeq
                     | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")

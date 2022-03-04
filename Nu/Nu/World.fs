@@ -83,75 +83,80 @@ module Nu =
             WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
-                // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
+                // that these optimizations do not support, and warn the developer if they are invoked. Additionally, we
                 // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
                 let world = worldObj :?> World
                 let eventNames = Address.getNames eventAddress
-                match eventNames with
-                | [|eventFirstName; _; screenName; groupName; entityName|] ->
-                    let entity = Entity [|screenName; groupName; entityName|]
-                    match eventFirstName with
-                    | "Update" ->
-#if DEBUG
-                        if Array.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug
-                                ("Subscribing to entity update events with a wildcard is not supported. " +
-                                 "This will cause a bug where some entity update events are not published.")
-#endif
-                        World.updateEntityPublishUpdateFlag entity world |> snd' :> obj
-#if !DISABLE_ENTITY_POST_UPDATE
-                    | "PostUpdate" ->
-#if DEBUG
-                        if Array.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug
-                                ("Subscribing to entity post-update events with a wildcard is not supported. " +
-                                 "This will cause a bug where some entity post-update events are not published.")
-#endif
-                        World.updateEntityPublishPostUpdateFlag entity world |> snd' :> obj
-#endif
-                    | _ -> world :> obj
-                | eventNames when eventNames.Length >= 3 ->
-                    let eventFirstName = eventNames.[0]
-                    let eventSecondName = eventNames.[1]
-                    match eventFirstName with
-                    | "Change" ->
-                        let world =
-                            if eventNames.Length = 6 then
-                                let entityAddress = rtoa (Array.skip 3 eventNames)
-                                let entity = Entity entityAddress
-                                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
-                                | (true, entityChangeCounts) ->
-                                    match entityChangeCounts.TryGetValue entityAddress with
-                                    | (true, entityChangeCount) ->
-                                        let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
-                                        let entityChangeCounts =
-                                            if entityChangeCount = 0
-                                            then UMap.remove entityAddress entityChangeCounts
-                                            else UMap.add entityAddress entityChangeCount entityChangeCounts
-                                        let world =
-                                            if entity.Exists world then
-                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
-                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
+                let eventNamesLength = Array.length eventNames
+                let world =
+                    if eventNamesLength >= 5 then
+                        let eventFirstName = eventNames.[0]
+                        let entity = Entity (Array.skip 2 eventNames)
+                        match eventFirstName with
+                        | "Update" ->
+    #if DEBUG
+                            if Array.contains (Address.head Events.Wildcard) eventNames then
+                                Log.debug
+                                    ("Subscribing to entity update events with a wildcard is not supported. " +
+                                     "This will cause a bug where some entity update events are not published.")
+    #endif
+                            World.updateEntityPublishUpdateFlag entity world |> snd'
+    #if !DISABLE_ENTITY_POST_UPDATE
+                        | "PostUpdate" ->
+    #if DEBUG
+                            if Array.contains (Address.head Events.Wildcard) eventNames then
+                                Log.debug
+                                    ("Subscribing to entity post-update events with a wildcard is not supported. " +
+                                     "This will cause a bug where some entity post-update events are not published.")
+    #endif
+                            World.updateEntityPublishPostUpdateFlag entity world |> snd'
+    #endif
+                        | _ -> world
+                    else world
+                let world =
+                    if eventNamesLength >= 3 then
+                        let eventFirstName = eventNames.[0]
+                        let eventSecondName = eventNames.[1]
+                        match eventFirstName with
+                        | "Change" ->
+                            let world =
+                                if eventNamesLength >= 6 then
+                                    let entityAddress = rtoa (Array.skip 3 eventNames)
+                                    let entity = Entity entityAddress
+                                    match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                    | (true, entityChangeCounts) ->
+                                        match entityChangeCounts.TryGetValue entityAddress with
+                                        | (true, entityChangeCount) ->
+                                            let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
+                                            let entityChangeCounts =
+                                                if entityChangeCount = 0
+                                                then UMap.remove entityAddress entityChangeCounts
+                                                else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                            let world =
+                                                if entity.Exists world then
+                                                    if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
+                                                    elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
+                                                    else world
                                                 else world
-                                            else world
-                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                            World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                        | (false, _) ->
+                                            if not subscribing then failwithumf ()
+                                            let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                            World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
+                                        let config = World.getCollectionConfig world
+                                        let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
-                                | (false, _) ->
-                                    if not subscribing then failwithumf ()
-                                    let config = World.getCollectionConfig world
-                                    let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
-                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
-                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
-                            else world
-                        if  eventSecondName <> "ParentNodeOpt" &&
-                            Array.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentNodeOpt)."
-                        world :> obj
-                    | _ -> world :> obj
-                | _ -> world :> obj
+                                else world
+                            if  eventSecondName <> "ParentNodeOpt" &&
+                                Array.contains (Address.head Events.Wildcard) eventNames then
+                                Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentNodeOpt)."
+                            world
+                        | _ -> world
+                    else world
+                world :> obj
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...

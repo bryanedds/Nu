@@ -32,7 +32,7 @@ module WorldModuleGroup =
                             UMap.add screenName entityDirectory' world.ScreenDirectory
                         | None ->
                             let config = World.getCollectionConfig world
-                            let entityDirectory' = (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal config))
+                            let entityDirectory' = (KeyValuePair (group, USet.makeEmpty HashIdentity.Structural config))
                             let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                     | None -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
