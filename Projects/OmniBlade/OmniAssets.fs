@@ -109,6 +109,7 @@ module Assets =
         let StepStairSound = asset<Sound> PackageName "StepStair"
         let StepPlateSound = asset<Sound> PackageName "StepPlate"
         let StepSaveSound = asset<Sound> PackageName "StepSave"
+        let StepWarpSound = asset<Sound> PackageName "StepWarp"
         let BeastGrowlSound = asset<Sound> PackageName "BeastGrowl"
         let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
