@@ -1268,7 +1268,7 @@ module FieldDispatcher =
                  Content.entityIf field Field.hasEncounters $ fun field _ ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
                  Content.staticSprite Gen.name

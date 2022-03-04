@@ -133,12 +133,12 @@ module Field =
             | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Bounds (field.Advents.Contains (Opened id)))
             | _ -> None)
 
-    let getPortals field =
+    let getNonWarpPortals field =
         field.Props_ |>
         Map.toValueArray |>
         Array.choose (fun prop ->
             match prop.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
+            | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
             | _ -> None)
 
     let updateFieldType updater field world =
