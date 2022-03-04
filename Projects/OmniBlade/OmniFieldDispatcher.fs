@@ -761,7 +761,7 @@ module FieldDispatcher =
 
         static let interactSeal cue (field : Field) =
             let field = Field.updateCue (constant cue) field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
