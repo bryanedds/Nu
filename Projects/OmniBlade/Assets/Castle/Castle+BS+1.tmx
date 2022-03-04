@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lztOAzEQhq2s0mTJASCigSIRlHAJhKh5CKh4CQQkF8khaHlUVIgUpIaDAAUSAkTJjHZHGQ1j76yTzS/9ysqx5/uH2MjbT5zrB3xWd+4y0sf1cO0iI7sHfqrFuTtGBmIPoc5XpB8jM3D2N7idZF5MRs8Wf0RkkOwOjK00nVsFD1LnbsC3Ht+l2ZznGedewAslM2hsrnmouQv198D76Wicj+EcLmsGyR42svWnMHYEvgBviNqacA5fg8JaoQwa+zPnd/Oz1MtrdVKdi2qn+hqsFcpw7mGjcP6gln2P2grwN1N9jZbhRPDp98Z5SwGGpX9Uqzl6pnpYm/aD5PO9thNgWPpHLTM+1aNPzCD5pFeY8wB+93Cs/XNhzTdR08efhf07B2559rq1fy6siT3xmpx/yM7KGszZhrnr+Vx5liz9yzVazQNxBnkGLnmWLP3LNVwaO5RBniVL/9r5K2KHMvCzFPP7W9m+DPwsxez/Muyi/VC2/xg2z/DT+F/zqmkb+23Es0N/h2uFJcfG6bsow73C52OTZBftB6kq2NYMVbKLMkyD7cswTTbPQJo2m97JSJN41yrDprsqKfY9J8b8rkrS7pRV8uW7iXanrJKPbP7/Dp/lndLqP0Z1n4w=
+   eJy9l71KA0EQx5ccaXLmATTYaJGgpb6EiLUfqJVRUdTkRfIQtn5UVmIKU+uDqIUgKpbOcBlumMx+3CZ3A39y7M3O77/JTtgdJMYMHDqvG3MVqZO6u7ZPyO6Dnmtx6k3hgdgjqPMdqadID5z9A2onmZaT/DlEnxEeJLsDY2tNY9ZBw9SYW9CdRfdplvMyZ8wraKmgB43NYxFq7kP9A9Bhmo/zMczhEepBskeNbP4ZjB2DLkFborYWmMPnYGAtlweN/TXm98a91K/72RRyDtZyebiwsDEwf1jL3mN00kkeRTvV52geTgWffm/MW3Ewdhzvttm7VjN/pnpYm/aD5PO9tudghKwfY5XxqR59ogfJp3iDnEfQh4UTun4eWPNd1LTx52H/LoBalr0eun4eWBPXxGtyfpf1ygbk7ELu5jhX9lLI+uUcreaR6EHugYfspZD1u3pWY7s8yF4KWb/Wfz62ywPvpZjfP5Rt88B7KWb/F2H79oMrNH4Mm3v4bUzWvG6Gjf014tmu7+FGYcmxadbt8/Cg8PnYLNlF90MZ7FAPZbJ9Hqpg2zxUyeYeKKpm052MYhZ3rSJsOqtSxN5zYsTPqhTambJMvrybaGfKMvnI5v93+CzPlKH6B92HnsQ=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -52,6 +52,11 @@
   <object id="4" gid="235" x="720" y="1488" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some AluminumKey]]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="912" y="384" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal Warp Leftward CastleConnector East false [HeavyArmorosDefeated]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -90,7 +90,16 @@ module PropDispatcher =
                     | Portal (portalType, _, direction, _, _, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements then
                             match portalType with
-                            | AirPortal -> (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
+                            | AirPortal ->
+                                (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
+                            | WarpPortal ->
+                                let time = World.getUpdateTime world
+                                let localTime = time / 10L
+                                let celSize = Constants.Gameplay.TileCelSize
+                                let celColumn = single (localTime % 4L)
+                                let inset = v4Bounds (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                                let image = Assets.Field.WarpAnimationSheet
+                                (true, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                             | StairsPortal descending ->
                                 let offsetY = if descending then Constants.Gameplay.TileCelSize.Y else 0.0f
                                 let offsetX =

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="9">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="11">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -35,7 +35,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="5" gid="235" x="696" y="1296" width="144" height="144">
+  <object id="5" gid="235" x="696" y="1248" width="144" height="144">
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Upward]
  [Sequence
@@ -48,6 +48,11 @@
   <object id="6" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
     <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward [Castle 1] [IX 1] false [MadTrixterDefeated]]"/>
+   </properties>
+  </object>
+  <object id="9" gid="235" x="624" y="1296" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal Warp Rightward CastleConnector West false [MadTrixterDefeated]]"/>
    </properties>
   </object>
   <object id="7" gid="235" x="720" y="336" width="96" height="144">

@@ -404,10 +404,12 @@ type PortalIndex =
     | SE
     | NW
     | SW
+    | Warp
     | IX of int
 
 type PortalType =
     | AirPortal
+    | WarpPortal
     | StairsPortal of bool
 
 type NpcType =

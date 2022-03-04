@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lztOAzEQhq2s0mTJASCigSIRlHAJhKh5CKh4CQQkF8khaHlUVIgUpIaDAAUSAkTJjHZHGQ1j76yTzS/9ysqx5/uH2MjbT5zrB3xWd+4y0sf1cO0iI7sHfqrFuTtGBmIPoc5XpB8jM3D2N7idZF5MRs8Wf0RkkOwOjK00nVsFD1LnbsC3Ht+l2ZznGedewAslM2hsrnmouQv198D76Wicj+EcLmsGyR42svWnMHYEvgBviNqacA5fg8JaoQwa+zPnd/Oz1MtrdVKdi2qn+hqsFcpw7mGjcP6gln2P2grwN1N9jZbhRPDp98Z5SwGGpX9Uqzl6pnpYm/aD5PO9thNgWPpHLTM+1aNPzCD5pFeY8wB+93Cs/XNhzTdR08efhf07B2559rq1fy6siT3xmpx/yM7KGszZhrnr+Vx5liz9yzVazQNxBnkGLnmWLP3LNVwaO5RBniVL/9r5K2KHMvCzFPP7W9m+DPwsxez/Muyi/VC2/xg2z/DT+F/zqmkb+23Es0N/h2uFJcfG6bsow73C52OTZBftB6kq2NYMVbKLMkyD7cswTTbPQJo2m97JSJN41yrDprsqKfY9J8b8rkrS7pRV8uW7iXanrJKPbP7/Dp/lndLqP0Z1n4w=
+   eJy9lztOw0AQhlex3Nj4ABDRQJEISrgEQtQ8BFQEEAhILpJD0PKoqBApSA0HAQokBIiSGdkjjyb78ib2SL9irWfn+zfZiXaHkVJDi85jpa4CdRLba7uE7AHouRWm/hQeiD2GOt+Begr0wNk/oE6Uazkqn330GeBBsrswtpYptQ4apUrdgu4Muk/znJc5pV5BSxU96Ng8FqHmPtQ/AB2m5Tgfwxwevh4ke5zk889g7Bh0CdoStXWBOXwOBtayedCxvwp+v+ilQexmU8g5WMvm4cLAxsD8USt/j9FNJ3kUnVQ/R+fhVPDp98a8FQtjx/Jum71rZ+Uz1cPatB8kn++1PQvDZ/0Yq4xP9egTPUg+xRvkPII+DBzf9fPAmu+ipok/D/t3AdQ27HXf9fPAmrgmXpPze6xXNiBnF3I3i1zZSz7rl3N0NY9ED3IPPGQv+azf1rM6ts2D7CWf9ev6z8W2eeC9FPL7+7JNHngvhez/KmzXfqgaIWzu4TeZrHmd+Y39JeFs2/dwo2HJsWnW7fLwoOHzsVmyq+6HOti+Hupkuzw0wTZ5aJLNPVA0zaY7GcUs7lpV2HRWpQi954SIn1UpdGfKOvnybqI7U9bJRzb/v8Nneab01T9MjJ5i
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -46,7 +46,7 @@
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+    <property name="I" value="[Portal WarpPortal Warp Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="4" gid="235" x="720" y="1488" width="96" height="144">
