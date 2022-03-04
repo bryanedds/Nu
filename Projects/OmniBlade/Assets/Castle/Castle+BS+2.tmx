@@ -21,12 +21,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lztOw0AQhlex3Nj4ABDRQJEISrgEQtQ8BFQEEAhILpJD0PKoqBApSA0HAQokBIiSGdkjjyb78ib2SL9irWfn+zfZiXaHkVJDi85jpa4CdRLba7uE7AHouRWm/hQeiD2GOt+Begr0wNk/oE6Uazkqn330GeBBsrswtpYptQ4apUrdgu4Muk/znJc5pV5BSxU96Ng8FqHmPtQ/AB2m5Tgfwxwevh4ke5zk889g7Bh0CdoStXWBOXwOBtayedCxvwp+v+ilQexmU8g5WMvm4cLAxsD8USt/j9FNJ3kUnVQ/R+fhVPDp98a8FQtjx/Jum71rZ+Uz1cPatB8kn++1PQvDZ/0Yq4xP9egTPUg+xRvkPII+DBzf9fPAmu+ipok/D/t3AdQ27HXf9fPAmrgmXpPze6xXNiBnF3I3i1zZSz7rl3N0NY9ED3IPPGQv+azf1rM6ts2D7CWf9ev6z8W2eeC9FPL7+7JNHngvhez/KmzXfqgaIWzu4TeZrHmd+Y39JeFs2/dwo2HJsWnW7fLwoOHzsVmyq+6HOti+Hupkuzw0wTZ5aJLNPVA0zaY7GcUs7lpV2HRWpQi954SIn1UpdGfKOvnybqI7U9bJRzb/v8Nneab01T9MjJ5i
+   eJy9lz1Ow0AQhVex3GB8AIhooEgEJVwCIWp+BFQEEAhILpJD0PJTUSFSkBoOAhRICHpmZI88GmbX643tJz1hrXfne6vsoPU4Mmbs8EVszHWgT2N37TIjewR+6YR5OEMGYk+hzk+gnwMzcPYvuBdlXomKZx9/BWSQ7D6MrafGbIAniTF34HuLH5Jszuu8MW/g5YoZNDbXEtQ8gPqH4KOkGOdjOIfLN4NkT+ey9ecwdgK+Am+L2ppwDl+DwlquDBr7O+cP814axeVsklyDtVwZLi1sFM6fdLL3qH7yn0fqJfoaLcOZ4NPvjfNWHYxdx7sd9q6bFs9UD2vTeZB8ftb2HQyf/aPWGJ/q0V/MIPmkd5jzBP60cHz3z4U1P0RNG38Bzu8iuGs5677758KauCdek/MHrFc2Yc4ezN3K58pe8tm/XKPVPBY9yDNwyV7y2b+rZzW2K4PsJZ/9a/1XxnZl4L0U8vv7sm0ZeC+FnP8q7LLzUFUh7LIMN6nf2CxsV4ZbhSXH6mDbMjwqfD5WJ7vqeWiC7ZuhSXZZhjbYtgxtsnkGUtts+iYj1fGtVYVNd1VS6HdOiPldlaTdKZvky28T7U7ZJB/Z/P8dPss7pa//AEKhnUI=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyieqpaSapbiUFkGM2BzA+OYGYi4R4JUcPPYAWN2E1INA2gO5eAIyjfqD9i6iYDmD5hlh/aQLDaT6V0yHIzP5Blh6GAhhO+W8UkA7yWMnXm0WB3lEwCkbBKBisYBEvdja9wGpe7OyhBgD3TSjt
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyieqpaSapbiUFkGM2BzA+OYGYi4R4JUcPPYAWN2E1INA2gO5eAIyjfqD9i6iYDmD5hlh/aQLDaT6V0yHIzP5Blh6GAhhO+W8UjIJRMApGwSigFCzixc6mF1jNi5091AAAcFAoCw==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
