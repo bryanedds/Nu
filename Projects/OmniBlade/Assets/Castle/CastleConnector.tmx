@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="7">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="9">
  <tileset firstgid="1" source="../Field/TileMaps/TombInner.tsx"/>
  <tileset firstgid="1480" source="Castle.tsx"/>
  <layer id="5" name="Basement" width="32" height="32">
@@ -9,7 +9,7 @@
  </layer>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0qERACAMQ9Ec2axLAZ0eFqhElPviia9iEkMKtDItLdf9Wt6t7brxN/4HAAAA9HQA5xITiA==
+   eJzt0qERACAMQ9Ec2axLAZ0eFqhAVHD3xRNfxSSGFHgyLS3X3S3v1nbdQCf+DwAAAPzpAMUhE4g=
   </data>
  </layer>
  <layer id="4" name="Flooring" width="32" height="32">
@@ -39,6 +39,16 @@
   <object id="6" gid="235" x="624" y="48" width="288" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal [IX 0] Downward [Castle 0] [IX 0]]"/>
+   </properties>
+  </object>
+  <object id="7" gid="235" x="648" y="312" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal West Rightward [Castle 0] Warp false [MadTrixterDefeated]]"/>
+   </properties>
+  </object>
+  <object id="8" gid="235" x="840" y="312" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal East Leftward [Castle 1] Warp false [HeavyArmorosDefeated]]"/>
    </properties>
   </object>
  </objectgroup>

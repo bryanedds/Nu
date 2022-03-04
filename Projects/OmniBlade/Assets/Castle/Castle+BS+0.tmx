@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="6">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="7">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lz1Ow0AQhVex0tj4ABDRQJEISrgEQtT8CKj4EwhILpJD0NJSIEQKUsNBgAIJAaJkRvHIo2G8Hm9iP+kp1mZ3vjdkF62HkXNDjy/azl0H+rTtr11mZA/AT60w96fIQOwx1PkK9GNgBs7+BnejiZej/Nnij4AMkt2DsbXUuXXwKHHuPvUb5zzPOfcCXqqYQWNzLULNfah/AD5M8nE+hnO4rBkkexxP1p/D2An4CrwlamvCOXwNCmv5Mmjsz4zfz87SIKvVS3Quqpvoa7CWL8NlARuF80etyfeoHQ9/O9HXaBnOBJ9+b5y34mFY+kd10vyZ6mFt2g+Sz/fanodh6R+1yvhUjz4xg+STXmHOA/i9gGPtnwtrvomaRfx52L8L4E7BXrf2z4U1sSdek/OP2VnZgDm7MHczmyvPkqV/uUareSTOIM/AJc+SpX+5hktj+zLIs2TpXzt/ZWxfBn6WQn5/K7soAz9LIfu/CrtsP1TtP4TNM/zE/2vepLax3zic7fs73CosOTZN32UZ7hQ+H5slu2w/SNXBtmaok12WoQl2UYYm2TwDqWk2vZORZvGuVYVNd1VS6HtOiPldlaTdKevky3cT7U5ZJx/Z/P8dPss7pdV/3Zyf9A==
+   eJy9l79OwzAQxq1GWRryAFCxwNAKRngJhJj5I2CigEBA+yJ9CFZWBoToQGd4EGBAQoAYuVNyyulqOxe3yUmfGjnn+31ufZU9iowZeXQZG3MTqLPYX7tMyB6CnlthGszggdgTqPMdqKdAD5z9A+pGmVaj4lmjzwAPkt2DsY3UmE3QODHmIfULc14WjHkFrVT0YGPzWIaah1D/CHScFON8DHN4aD1I9qSdzb+AsVPQNWhH1LYF5vA5GFjL58HG/sr5g7yXhnE5m0LOwVo+D1cONgbmj1vZe4xeMs2j6Cb2OTYP54JPvzfmrXkYe553u+xdJy2eqR7Wpv0g+XyvHXgYmvVjrDM+1aNP9CD5FG+Q8wj6cHC06+eBNd9FTRd/EfbvEqjj2Ova9fPAmrgmXpPz+6xXtiBnH3K381zZS5r1yzm2mieiB7kHHrKXNOv39ayN7fMge0mzflv/lbF9Hngvhfz+WrbLA++lkP1fhV22H6pGCJt7+G1P17xNdWN/7XC273u4s7Dk2CzrLvNwb+HzsXmyq+6HOthaD3Wyyzw0wXZ5aJLNPVA0zaY7GcU87lpV2HRWpQi954SIn1UpbGfKOvnybmI7U9bJRzb/v8NneabU6h/js57K
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -58,6 +58,11 @@
   <object id="5" gid="235" x="432" y="576" width="48" height="48">
    <properties>
     <property name="I" value="[Chest WoodenChest [Consumable Ether] 8afdcdf9-d96e-4620-8fd2-e67c0a152f6b]"/>
+   </properties>
+  </object>
+  <object id="6" gid="235" x="576" y="384" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal Warp Rightward CastleConnector West false [MadTrixterDefeated]]"/>
    </properties>
   </object>
  </objectgroup>
