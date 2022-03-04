@@ -641,7 +641,7 @@ module FieldDispatcher =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
-                | Portal (_, _, _, fieldType, portalIndex, _, requirements) ->
+                | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
                     if advents.IsSupersetOf requirements then
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
@@ -655,7 +655,8 @@ module FieldDispatcher =
                                         | Rightward -> portal.PropBounds.Right + v2 32.0f 0.0f + if extended then v2 48.0f 0.0f else v2Zero
                                         | Downward -> portal.PropBounds.Bottom + v2 0.0f -54.0f - if extended then v2 0.0f 48.0f else v2Zero
                                         | Leftward -> portal.PropBounds.Left + v2 -32.0f 0.0f - if extended then v2 48.0f 0.0f else v2Zero
-                                    Some (fieldType, destination, direction)
+                                    let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
+                                    Some (fieldType, destination, direction, isWarp)
                                 | _ -> None
                             | None -> None
                         | None -> None
@@ -801,7 +802,7 @@ module FieldDispatcher =
                     match field.FieldTransitionOpt with
                     | None ->
                         match tryGetTouchingPortal field.OmniSeedState field.Advents field.Avatar world with
-                        | Some (fieldType, destination, direction) ->
+                        | Some (fieldType, destination, direction, isWarp) ->
                             if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
                                 let transition =
                                     { FieldType = fieldType
@@ -809,7 +810,11 @@ module FieldDispatcher =
                                       FieldDirection = direction
                                       FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                                (cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)) :: signals, field)
+                                let playSound =
+                                    if isWarp
+                                    then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                                    else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                                (cmd playSound :: signals, field)
                             else (signals, field)
                         | None -> (signals, field)
                     | Some _ -> (signals, field)
