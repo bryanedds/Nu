@@ -9,7 +9,7 @@
  </layer>
  <layer id="2" name="Ground" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt28GNwjAQAMC8gBr48QEqIbRwpVASnVwr1wWOCBJC4ZCwwzpkHqNIeZD1amPvSmHTNM0GAACA2domu2RfQSxTdEja5FhBLAAAwPvMRnnMRgAwDj1KHj3K56jVPGoVoIxFsqogjqnqznNnufxF6fohvdCVvSyPd1H+ItnLAADmyyyXxywif5HMcgBQH/11Hv2h/EXSX8OwdfITHMNfod+J+F44Kn9j9CQR3wufep/OX+6ZWkNPeO61/XVK+ZvLmfxsTyq1/t8n97v6XN6JrtWcOon4D8PtuW3Q82tT4myttSYf4xojthJ1/F9NDq2h1Dpe5ecxrim+L0NrKLWOb8gPAPNwAc6vQ20=
+   eJzt28FtwkAQAEC/CDXw45OkkpgWUkpKSie0ki5yFo6EkImi7Jm9k+cxQuJh7y3ru13JHIdhOAIAALBZz8VL8dpALD16K8bi1EAsAADA/5mNYsxGALAOPUqMHuVx1GqMWgWoY1fsG4ijV9N57iyXvyxTP6QXurCXxXgW5S+TvQwAYLvMcjFmEfnLZJYDgPbor2P0h/KXSX8Nyw7Fe3IMX5Wuk/G+cFb+1uhJMt4X/pg9On/RM7WFnvBzNs6fPeVvK2fyvT2p1vrPd76f6vPpSnatRuok4z8MP/cdk+7fmhpna4s1eRvTWnHVqOPfanJpHdG1/OWatzH1+qwsraP279VzfgDYhm8BRkN5
   </data>
  </layer>
  <layer id="7" name="Flooring" width="80" height="80">
