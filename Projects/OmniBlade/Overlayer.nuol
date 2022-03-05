@@ -2,6 +2,7 @@
   [ButtonOverlay]
   [ButtonDispatcher]
   [[ClickSoundOpt [Some [Gui Affirm]]]
+   [DownTextOffset [0 -3]]
    [DownImage [Gui ButtonDown]]
    [Font [Gui Font]]
    [TextColor [255 255 255 255]]
