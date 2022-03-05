@@ -315,9 +315,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen Gen.name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) constant $ fun i intss _ ->
+            [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) constant $ fun j int _ ->
+                    [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
                              Entity.Position == v2 (single i * 10.0f - 480.0f) (single j * 6.0f - 272.0f)

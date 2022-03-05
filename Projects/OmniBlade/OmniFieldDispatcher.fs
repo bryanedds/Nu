@@ -495,8 +495,7 @@ module FieldDispatcher =
 
         let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
-                (fun field _ -> (field.Team, field.Menu))
-                (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
+                (fun field _ -> Map.map (fun _ teammate -> (teammate, field.Menu)) field.Team)
                 (fun index teammateAndMenu _ ->
                     let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
                     let y = position.Y - single (index % rows) * 81.0f
@@ -511,19 +510,17 @@ module FieldDispatcher =
         let items (position : Vector2) elevation rows columns field fieldMsg =
             Content.entities field
                 (fun (field : Field) _ ->
-                    (field.Menu, field.ShopOpt, field.Inventory))
-                (fun (menu, shopOpt, inventory : Inventory) _ ->
-                    match menu.MenuState with
-                    | MenuItem menu -> pageItems rows menu.ItemPage false true inventory.Items
+                    match field.Menu.MenuState with
+                    | MenuItem menu -> pageItems rows menu.ItemPage false true field.Inventory.Items
                     | _ ->
-                        match shopOpt with
+                        match field.ShopOpt with
                         | Some shop ->
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
                                 | Some shopData -> pageItems rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                                 | None -> Map.empty
-                            | ShopSelling -> pageItems rows shop.ShopPage true true inventory.Items
+                            | ShopSelling -> pageItems rows shop.ShopPage true true field.Inventory.Items
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
@@ -546,11 +543,10 @@ module FieldDispatcher =
 
         let techs (position : Vector2) elevation field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ -> (field.Menu, field.Team))
-                (fun (menu, team) _ ->
-                    match menu.MenuState with
+                (fun (field : Field) _ ->
+                    match field.Menu.MenuState with
                     | MenuTech menuTech ->
-                        match Map.tryFind menuTech.TeammateIndex team with
+                        match Map.tryFind menuTech.TeammateIndex field.Team with
                         | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
                         | None -> Map.empty
                     | _ -> Map.empty)
@@ -1261,8 +1257,9 @@ module FieldDispatcher =
                      Entity.Avatar <== field --> fun field -> field.Avatar]
 
                  // props
-                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
-                    Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop]
+                 Content.entities field
+                    (fun field _ -> field.Props)
+                    (fun _ prop _ -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
                  Content.entityIf field Field.hasEncounters $ fun field _ ->
