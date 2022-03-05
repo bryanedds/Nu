@@ -46,18 +46,19 @@
   </object>
   <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
    <properties>
-    <property name="I">[Npc MaelNpc None [Prompt &quot;I can make your acquaintence... at a price.
+    <property name="I">[Npc MaelNpc None [Prompt &quot;If it is my dark power you desire, I can make your acquaintence... at a price.
 $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]</property>
    </properties>
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc None [Prompt &quot;I hope we can work together, but I cannot work for free... My fee is $FEE gold.&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;I am here to provide aid, but I cannot protect you for free... Perhaps a donation of $FEE gold?&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc RiainNpc None [Prompt &quot;Join... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
+    <property name="I">[Npc RiainNpc None [Prompt &quot;Another world... I can touch...
+Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]</property>
    </properties>
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
