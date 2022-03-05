@@ -740,6 +740,9 @@ module TextFacetModule =
         member this.GetTextDisabledColor world : Color = this.Get Property? TextDisabledColor world
         member this.SetTextDisabledColor (value : Color) world = this.Set Property? TextDisabledColor value world
         member this.TextDisabledColor = lens Property? TextDisabledColor this.GetTextDisabledColor this.SetTextDisabledColor this
+        member this.GetTextOffset world : Vector2 = this.Get Property? TextOffset world
+        member this.SetTextOffset (value : Vector2) world = this.Set Property? TextOffset value world
+        member this.TextOffset = lens Property? TextOffset this.GetTextOffset this.SetTextOffset this
 
     type TextFacet () =
         inherit Facet ()
@@ -750,13 +753,14 @@ module TextFacetModule =
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextColor Color.Black
-             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))]
+             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))
+             define Entity.TextOffset v2Zero]
 
         override this.Actualize (entity, world) =
             let text = entity.GetText world
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
                 let transform =
-                    { Position = entity.GetPosition world + entity.GetMargins world
+                    { Position = entity.GetPosition world + entity.GetMargins world + entity.GetTextOffset world
                       Size = entity.GetSize world - entity.GetMargins world * 2.0f
                       Rotation = 0.0f
                       Elevation = entity.GetElevation world + 0.5f
@@ -1755,6 +1759,9 @@ module ButtonDispatcherModule =
         member this.GetDown world : bool = this.Get Property? Down world
         member this.SetDown (value : bool) world = this.Set Property? Down value world
         member this.Down = lens Property? Down this.GetDown this.SetDown this
+        member this.GetDownTextOffset world : Vector2 = this.Get Property? DownTextOffset world
+        member this.SetDownTextOffset (value : Vector2) world = this.Set Property? DownTextOffset value world
+        member this.DownTextOffset = lens Property? DownTextOffset this.GetDownTextOffset this.SetDownTextOffset this
         member this.GetUpImage world : Image AssetTag = this.Get Property? UpImage world
         member this.SetUpImage (value : Image AssetTag) world = this.Set Property? UpImage value world
         member this.UpImage = lens Property? UpImage this.GetUpImage this.SetUpImage this
@@ -1782,6 +1789,7 @@ module ButtonDispatcherModule =
                 Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                 if entity.GetEnabled world then
                     let world = entity.SetDown true world
+                    let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
                     let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
                     let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
                     (Resolve, world)
@@ -1793,6 +1801,7 @@ module ButtonDispatcherModule =
             let data = evt.Data : MouseButtonData
             let wasDown = entity.GetDown world
             let world = entity.SetDown false world
+            let world = entity.SetTextOffset v2Zero world
             let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
             if  entity.GetVisible world &&
                 Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
@@ -1815,6 +1824,7 @@ module ButtonDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Down false
+             define Entity.DownTextOffset v2Zero
              define Entity.UpImage Assets.Default.Image
              define Entity.DownImage Assets.Default.Image2
              define Entity.ClickSoundOpt (Some Assets.Default.Sound)
