@@ -1403,7 +1403,7 @@ module FieldDispatcher =
                                    | None -> Assets.Default.ImageEmpty
                                | _ -> Assets.Default.ImageEmpty]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 666.0f 372.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 650.0f 372.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
@@ -1412,12 +1412,12 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 666.0f 336.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 650.0f 336.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Level " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                   | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
