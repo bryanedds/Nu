@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Immutable
 open Prime
 open Nu
 
@@ -72,6 +73,18 @@ module Content =
         (mapper : 'k -> Lens<'v, World> -> World -> GroupContent) =
         groups lens constant mapper
 
+    /// Describe groups to be instantiated from a block lens.
+    let groupBlock
+        (lens : Lens<'a ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        groupMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
+
+    /// Describe groups to be instantiated from a partially-populated block lens.
+    let groupOptBlock
+        (lens : Lens<'a option ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        groupMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
+
     /// Describe a group to be loaded from a file.
     let groupFromFile<'d when 'd :> GroupDispatcher> groupName filePath =
         GroupFromFile (groupName, filePath)
@@ -122,6 +135,18 @@ module Content =
         (lens : Lens<Map<'k, 'v>, World>)
         (mapper : 'k -> Lens<'v, World> -> World -> EntityContent) =
         entities lens constant mapper
+
+    /// Describe entities to be instantiated from a block lens.
+    let entityBlock
+        (lens : Lens<'a ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entityMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
+
+    /// Describe entities to be instantiated from a block partially-populated lens.
+    let entityOptBlock
+        (lens : Lens<'a option ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entityMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
