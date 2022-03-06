@@ -1132,8 +1132,8 @@ module BattleDispatcher =
 
         override this.Content (battle, _) =
 
-            // scene group
-            [Content.group Simulants.Battle.Scene.Group.Name []
+            [// scene group
+             Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
                  Content.tileMap Gen.name
