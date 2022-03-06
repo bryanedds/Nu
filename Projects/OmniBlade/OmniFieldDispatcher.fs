@@ -1506,7 +1506,7 @@ module FieldDispatcher =
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
-                       [Content.team (v2 160.0f 182.0f) 1.0f 3 field
+                       [Content.team (v2 160.0f 183.0f) 1.0f 3 field
                            (fun teammate menu ->
                                match menu.MenuUseOpt with
                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
@@ -1518,19 +1518,19 @@ module FieldDispatcher =
                             Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 30.0f 344.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 36.0f 354.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
                                | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 302.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 66.0f 312.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine2
                                 | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 66.0f 270.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine3
