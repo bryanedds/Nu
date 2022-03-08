@@ -90,12 +90,8 @@ and [<NoEquality; NoComparison>] StoreEvent<'d, 'w> =
       StorePublisher : 'w Store }
 
 /// An ECS event callback.
-and StoreCallback<'d, 'w> =
-    StoreEvent<'d, 'w> -> 'w Store -> 'w Ecs -> 'w -> 'w
-
-/// A boxed ECS event callback.
-and StoreCallbackBoxed<'w> =
-    StoreEvent<obj, 'w> -> 'w Store -> 'w Ecs -> 'w -> 'w
+and StoreCallback<'d, 's, 'w> =
+    StoreEvent<'d, 'w> -> 'w Store -> 'w Ecs -> 's -> 's
 
 /// A base type that represents a means of storing components in an ECS.
 and [<AbstractClass>] 'w Store (name) =
@@ -163,10 +159,10 @@ and 'w Ecs () as this =
 
     do this.RegisterStoreGeneralized globalStore |> ignore<'w Store>
 
-    member private this.BoxCallback<'a> (callback : StoreCallback<'a, 'w>) =
+    member private this.BoxCallback<'d, 's> (callback : StoreCallback<'d, 's, 'w>) =
         let boxableCallback = fun (evt : StoreEvent<obj, 'w>) store ->
             let evt =
-                { StoreEventData = evt.StoreEventData :?> 'a
+                { StoreEventData = evt.StoreEventData :?> 'd
                   StorePublisher = evt.StorePublisher }
             callback evt store
         boxableCallback :> obj
@@ -245,18 +241,31 @@ and 'w Ecs () as this =
             world <- world'
         struct (unregistered, world)
 
-    member this.SubscribePlus<'d> subscriptionId eventName (callback : StoreCallback<'d, 'w>) =
+    member this.SubscribePlus<'d> subscriptionId eventName (callback : StoreCallback<'d, 'w, 'w>) =
         match storeSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
-            subscriptions.Add (subscriptionId, this.BoxCallback<'d> callback)
+            subscriptions.Add (subscriptionId, this.BoxCallback<'d, 'w> callback)
             subscriptionId
         | (false, _) ->
-            let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d> callback)]
+            let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 'w> callback)]
             storeSubscriptions.Add (eventName, subscriptions)
             subscriptionId
 
     member this.Subscribe<'d> eventName callback =
         this.SubscribePlus<'d> Gen.id32 eventName callback |> ignore
+
+    member this.SubscribeParallelPlus<'d, 's> subscriptionId eventName (callback : StoreCallback<'d, 's, 'w>) =
+        match storeSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            subscriptions.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
+            subscriptionId
+        | (false, _) ->
+            let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
+            storeSubscriptions.Add (eventName, subscriptions)
+            subscriptionId
+
+    member this.SubscribeParallel<'d, 's> eventName callback =
+        this.SubscribeParallelPlus<'d, 's> Gen.id32 eventName callback |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
         match storeSubscriptions.TryGetValue eventName with
@@ -268,14 +277,16 @@ and 'w Ecs () as this =
         | (true, subscriptions) ->
             Seq.fold (fun world (callback : obj) ->
                 match callback with
-                | :? StoreCallback<obj, 'w> as objCallback ->
+                | :? StoreCallback<obj, 'w, 'w> as objCallback ->
                     let evt = { StoreEventData = eventData :> obj; StorePublisher = publisher }
                     objCallback evt publisher this world
                 | _ -> failwithumf ())
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.PublishAsync<'d> eventName (eventData : 'd) publisher =
+    member this.PublishAsync<'d, 's> eventName (eventData : 'd) publisher (state : 's) =
+        if typeof<'s> = typeof<'w> then
+            failwith "Cannot use world as parallel state."
         let vsync =
             match storeSubscriptions.TryGetValue eventName with
             | (true, subscriptions) ->
@@ -283,10 +294,10 @@ and 'w Ecs () as this =
                 Seq.map (fun subscription ->
                     Task.Run (fun () ->
                         match subscription.Value with
-                        | :? StoreCallback<obj, 'w> as objCallback ->
+                        | :? StoreCallback<obj, 's, 'w> as objCallback ->
                             let evt = { StoreEventData = eventData :> obj; StorePublisher = publisher }
-                            objCallback evt publisher this Unchecked.defaultof<'w> |> ignore<'w>
-                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                            objCallback evt publisher this state
+                        | _ -> state) |> Vsync.AwaitTaskT) |>
                 Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
