@@ -442,20 +442,44 @@ module FieldDispatcher =
     [<RequireQualifiedAccess>]
     module Content =
 
-        let private pageItems pageSize pageIndex filter sort (items : Map<ItemType, int>) =
-            items |>
-            Map.toSeq |>
-            (fun items -> if filter then ItemType.filterSellableItems items else items) |>
-            (fun items -> if sort then ItemType.sortItems items else items) |>
-            Seq.index |>
-            Seq.chunkBySize pageSize |>
-            Seq.trySkip pageIndex |>
-            Seq.map List.ofArray |>
-            Seq.tryHead |>
-            Option.defaultValue [] |>
-            Seq.indexed |>
-            Map.ofSeq |>
-            Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+        let private pageItems5 pageSize pageIndex filter sort (items : Map<ItemType, int>) =
+            let items =
+                items |>
+                Map.toSeq |>
+                (fun items -> if filter then ItemType.filterSellableItems items else items) |>
+                (fun items -> if sort then ItemType.sortItems items else items)
+            let itemsPaged =
+                items |>
+                Seq.index |>
+                Seq.chunkBySize pageSize |>
+                Seq.trySkip pageIndex |>
+                Seq.map List.ofArray |>
+                Seq.tryHead |>
+                Option.defaultValue [] |>
+                Seq.indexed |>
+                Map.ofSeq |>
+                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+            let pageUp =
+                itemsPaged.Count <> 0 &&
+                (fst (snd (Seq.head itemsPaged).Value)) <> fst (Seq.head items)
+            let pageDown =
+                itemsPaged.Count <> 0 &&
+                (fst (snd (Seq.last itemsPaged).Value)) <> fst (Seq.last items)
+            (pageUp, pageDown, itemsPaged)
+
+        let pageItems rows (field : Field) =
+            match field.Menu.MenuState with
+            | MenuItem menu -> pageItems5 rows menu.ItemPage false true field.Inventory.Items
+            | _ ->
+                match field.ShopOpt with
+                | Some shop ->
+                    match shop.ShopState with
+                    | ShopBuying ->
+                        match Map.tryFind shop.ShopType Data.Value.Shops with
+                        | Some shopData -> pageItems5 rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
+                        | None -> (false, false, Map.empty)
+                    | ShopSelling -> pageItems5 rows shop.ShopPage true true field.Inventory.Items
+                | None -> (false, false, Map.empty)
 
         let sidebar position elevation (field : Lens<Field, World>) =
             Content.association Gen.name []
@@ -509,19 +533,7 @@ module FieldDispatcher =
 
         let items (position : Vector2) elevation rows columns field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ ->
-                    match field.Menu.MenuState with
-                    | MenuItem menu -> pageItems rows menu.ItemPage false true field.Inventory.Items
-                    | _ ->
-                        match field.ShopOpt with
-                        | Some shop ->
-                            match shop.ShopState with
-                            | ShopBuying ->
-                                match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> pageItems rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
-                                | None -> Map.empty
-                            | ShopSelling -> pageItems rows shop.ShopPage true true field.Inventory.Items
-                        | None -> Map.empty)
+                (fun (field : Field) _ -> pageItems rows field |> __c)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
                     let y = position.Y - single (i % columns) * 81.0f
@@ -1467,7 +1479,7 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]]
 
-                 // items
+                 // inventory
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
@@ -1476,18 +1488,20 @@ module FieldDispatcher =
                        [Content.sidebar (v2 24.0f 417.0f) 1.0f field
                         Content.items (v2 138.0f 417.0f) 1.0f 10 5 field MenuItemSelect
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 399.0f 24.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]
                         Content.button Gen.name
                           [Entity.PositionLocal == v2 138.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                            Entity.Text == "<"
+                           Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> a__
                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                            Entity.ClickEvent ==> msg MenuItemsPageUp]
                         Content.button Gen.name
-                          [Entity.PositionLocal == v2 804.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
+                          [Entity.PositionLocal == v2 777.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                            Entity.Text == ">"
+                           Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> _b_
                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                            Entity.ClickEvent ==> msg MenuInventoryPageDown]]
@@ -1598,12 +1612,14 @@ module FieldDispatcher =
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == "<"
+                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 8 field |> a__
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageUp]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 804.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == ">"
+                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 8 field |> _b_
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageDown]
