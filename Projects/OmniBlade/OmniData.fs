@@ -125,13 +125,22 @@ type [<CustomEquality; CustomComparison>] StatusType =
     //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequal
     //| Provoke of CharacterIndex - maybe in the sequal
 
-    static member randomize this =
+    static member randomizeWeak this =
         match this with
         | Poison -> Gen.random1 2 = 0
         | Silence -> Gen.random1 3 = 0
         | Sleep -> Gen.random1 4 = 0
         | Confuse -> Gen.random1 3 = 0
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
+        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+
+    static member randomizeStrong this =
+        match this with
+        | Poison -> Gen.random1 4 <> 0
+        | Silence -> Gen.random1 2 = 0
+        | Sleep -> Gen.random1 3 = 0
+        | Confuse -> Gen.random1 2 = 0
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 4 <> 0
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
 
     static member enumerate this =

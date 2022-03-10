@@ -897,7 +897,8 @@ module BattleDispatcher =
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
-                        let added = added |> Set.toSeq |> Seq.filter (StatusType.randomize) |> Set.ofSeq
+                        let randomizer = if sourceIndex.IsAlly then StatusType.randomizeStrong else StatusType.randomizeWeak
+                        let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
                         let battle = Battle.applyCharacterStatuses added removed characterIndex battle
                         let wounded = Battle.isCharacterWounded characterIndex battle
                         let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
