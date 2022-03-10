@@ -17,7 +17,8 @@
  [OmniToggleOverlay
   [ToggleOverlay]
   [ToggleDispatcher]
-  [[Font [Gui Font]]
+  [[DownTextOffset [0 -3]]
+   [Font [Gui Font]]
    [TextColor [255 255 255 255]]
    [TextDisabledColor [192 192 192 192]]
    [ToggleSoundOpt [Some [Gui Affirm]]]]]]
