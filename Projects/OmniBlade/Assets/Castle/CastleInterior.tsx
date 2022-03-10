@@ -281,12 +281,12 @@
  </tile>
  <tile id="1320">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1321">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1322">
