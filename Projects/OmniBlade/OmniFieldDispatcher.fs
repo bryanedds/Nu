@@ -1564,23 +1564,19 @@ module FieldDispatcher =
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Wait"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)
-                            Entity.UntoggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Paced"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)
-                            Entity.UntoggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Swift"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)
-                            Entity.UntoggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 
                  // shop
                  Content.entityIf field (fun field -> Option.isSome field.ShopOpt) $ fun field _ ->
