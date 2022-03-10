@@ -1,9 +1,9 @@
 Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
-[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
-[Ally Shade],Ninja,3,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,A ninja from an unknown land.
-[Ally Mael],Wizard,3,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
-[Ally Riain],Conjuror,3,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
-[Ally Peric],Cleric,3,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
+[Ally Jinn],Fighter,1,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
+[Ally Shade],Ninja,1,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,A ninja from an unknown land.
+[Ally Mael],Wizard,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
+[Ally Riain],Conjuror,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
+[Ally Peric],Cleric,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
 [Enemy DebugGoblin],Goblin,4,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],1,1,An enemy for battle debugging.
 [Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.4],1,3,A bat from the darkest parts of the tomb.
 [Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],1,1.25,A minor goblin from the Golobogos Islands.
