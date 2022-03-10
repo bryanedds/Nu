@@ -563,10 +563,17 @@ module Character =
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.IsHealthy then
-            updateStatuses (fun statuses ->
-                let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
-                let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
-                statuses)
+            let character =
+                updateStatuses (fun statuses ->
+                    let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
+                    let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+                    statuses)
+                    character
+            updateActionTime (fun actionTime ->
+                if  statusesAdded.Contains (Time false) &&
+                    actionTime < Constants.Battle.ActionTime then
+                    actionTime * 0.5f
+                else actionTime)
                 character
         else character
 
