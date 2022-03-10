@@ -1962,9 +1962,15 @@ module ToggleDispatcherModule =
         member this.GetToggled world : bool = this.Get Property? Toggled world
         member this.SetToggled (value : bool) world = this.Set Property? Toggled value world
         member this.Toggled = lens Property? Toggled this.GetToggled this.SetToggled this
+        member this.GetToggledTextOffset world : Vector2 = this.Get Property? ToggledTextOffset world
+        member this.SetToggledTextOffset (value : Vector2) world = this.Set Property? ToggledTextOffset value world
+        member this.ToggledTextOffset = lens Property? ToggledTextOffset this.GetToggledTextOffset this.SetToggledTextOffset this
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = lens Property? Pressed this.GetPressed this.SetPressed this
+        member this.GetPressedTextOffset world : Vector2 = this.Get Property? PressedTextOffset world
+        member this.SetPressedTextOffset (value : Vector2) world = this.Set Property? PressedTextOffset value world
+        member this.PressedTextOffset = lens Property? PressedTextOffset this.GetPressedTextOffset this.SetPressedTextOffset this
         member this.GetUntoggledImage world : Image AssetTag = this.Get Property? UntoggledImage world
         member this.SetUntoggledImage (value : Image AssetTag) world = this.Set Property? UntoggledImage value world
         member this.UntoggledImage = lens Property? UntoggledImage this.GetUntoggledImage this.SetUntoggledImage this
@@ -2026,7 +2032,9 @@ module ToggleDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Toggled false
+             define Entity.ToggledTextOffset v2Zero
              define Entity.Pressed false
+             define Entity.PressedTextOffset v2Zero
              define Entity.UntoggledImage Assets.Default.Image
              define Entity.ToggledImage Assets.Default.Image2
              define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
@@ -2036,6 +2044,13 @@ module ToggleDispatcherModule =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
+
+        override this.Update (entity, world) =
+            let textOffset =
+                if entity.GetPressed world then entity.GetPressedTextOffset world
+                elif entity.GetToggled world then entity.GetToggledTextOffset world
+                else v2Zero
+            entity.SetTextOffset textOffset world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
