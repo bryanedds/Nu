@@ -321,9 +321,11 @@ module Battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
 
-    let shouldCounter characterIndex battle =
-        getCharacterBy Character.shouldCounter characterIndex battle
-    
+    let shouldCounter sourceIndex targetIndex battle =
+        if CharacterIndex.isUnfriendly sourceIndex targetIndex
+        then getCharacterBy Character.shouldCounter targetIndex battle
+        else false
+
     let evalAttack effectType sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle

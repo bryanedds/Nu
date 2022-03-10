@@ -28,6 +28,9 @@ type CharacterIndex =
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
+    static member isUnfriendly index index2 =
+        not (CharacterIndex.isFriendly index index2)
+
     static member toEntityName index =
         match index with
         | AllyIndex i -> "Ally+" + scstring i

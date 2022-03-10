@@ -112,7 +112,7 @@ module BattleDispatcher =
                             if target.IsHealthy then
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter targetIndex battle
+                                        Battle.shouldCounter sourceIndex targetIndex battle
                                     then Battle.counterAttack sourceIndex targetIndex battle
                                     else battle
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -916,7 +916,7 @@ module BattleDispatcher =
                 let battle = Battle.updateCharacterTechPoints -techCost sourceIndex battle
                 let battle = Battle.advanceChargeTech sourceIndex battle
                 let battle =
-                    if Battle.shouldCounter targetIndex battle
+                    if Battle.shouldCounter sourceIndex targetIndex battle
                     then Battle.counterAttack sourceIndex targetIndex battle
                     else battle
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
