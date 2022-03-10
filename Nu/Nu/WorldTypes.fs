@@ -1111,7 +1111,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          mutable PBPrevious : obj ValueOption }
+          (*mutable PBPrevious : obj ValueOption*) }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
