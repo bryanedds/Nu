@@ -136,11 +136,11 @@ type [<CustomEquality; CustomComparison>] StatusType =
 
     static member randomizeStrong this =
         match this with
-        | Poison -> Gen.random1 4 <> 0
+        | Poison -> Gen.random1 5 <> 0
         | Silence -> Gen.random1 2 = 0
         | Sleep -> Gen.random1 3 = 0
         | Confuse -> Gen.random1 2 = 0
-        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 4 <> 0
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
 
     static member enumerate this =
