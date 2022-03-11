@@ -24,7 +24,7 @@ Knight,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],[],None,NormalStature,Ph
 Imp,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attacks with Debuff effects.
 Zombie,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Poison Silence Sleep],[Some Dark],NormalStature,Physical attacks with Status effects.
 Skeleton,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Poison Silence Sleep],[Some Dark],NormalStature,Physical attacks with Countering.
-Shaman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 Flame] [3 Enlighten]],[],[],None,NormalStature,Elemental and buff magic.
+Shaman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Weaken] [2 Flame] [3 Enlighten]],[],[],None,NormalStature,Elemental and buff magic.
 Glurble,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],[Some Water],NormalStature,Elemental magic and Countering.
 Wolfman,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attacks with Countering.
 Dryad,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[],[Some Earth],NormalStature,Physical attack and Earth magic.
