@@ -26,7 +26,7 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyieqpaSapbiUFkGM2BzA+OYGYi4R4JUcPPYAWN2E1INA2gO5eAIyjfqD9i6iYDmD5hlh/aQLDaT6V0yHIzP5Blh6GAhhO+W8UjIJRMApGwSigFCzixc6mF1jNi5091AAAcFAoCw==
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDB/+xqMFmFj4wmUT11DSTVLeSAsgxmwMYn5xAzEVCvJKjhx5Ai5uwGhBoG0B3LwDGUT/Q/kVUTAewfEOsvzSB4TSfyukQZGb/IEsPQwEMp/w3CkbBKBgFo2AUUAoW8WJn0wus5sXOHmoAAH+aJ9I=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
