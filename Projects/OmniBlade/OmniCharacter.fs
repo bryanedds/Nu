@@ -443,7 +443,7 @@ module Character =
         let splitScalar =
             if source.IsAlly then
                 if techData.Split && targetCount > 1
-                then 1.25f / min 2.5f (single targetCount)
+                then 1.5f / min 3.0f (single targetCount)
                 else 1.0f
             else
                 if techData.Split
