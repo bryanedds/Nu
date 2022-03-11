@@ -35,7 +35,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="606" y="768" width="324" height="276">
+  <object id="2" gid="235" x="606" y="816" width="324" height="276">
    <properties>
     <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
   [Sequence
@@ -59,7 +59,7 @@
     <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
-  <object id="6" gid="235" x="696" y="492" width="144" height="144">
+  <object id="6" gid="235" x="696" y="528" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -97,7 +97,7 @@
      [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 557]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
-      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world.&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it.&quot; True]]]]]
+      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world.&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
     [Wait 240]
     [FadeOutSong 5000]
     [Fade [SpriteTarget HeavenlyLight] 300 False]

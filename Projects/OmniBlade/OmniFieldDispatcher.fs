@@ -1274,7 +1274,7 @@ module FieldDispatcher =
                     (fun _ prop _ -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
-                 Content.entityIf field Field.hasEncounters $ fun field _ ->
+                 Content.entityIf field (fun field -> Field.hasEncounters field && Cue.isNil field.Cue) $ fun field _ ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
                          Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
