@@ -13,7 +13,7 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.4],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.4],1,1,A vengeful avian.
 [Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],10,5,The heaviest armoros you’ve ever seen!
-[Enemy PitViper],Snake,7,[Castle PitViper],None,[Some Paws],None,[],[Some 1],1,1,A poisonous pit viper.
+[Enemy PitViper],Snake,6,[Castle PitViper],None,[Some Paws],None,[],[Some 1],1,1,A poisonous pit viper.
 [Enemy Cloak],Shaman,6,[Castle Cloak],None,[Some Paws],None,[],[Some 0.5],1,1,A conjurer of the darkness and malice.
 [Enemy BloodArmoros],Armoros,6,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.5],1,1,A long-dead warrior shadow that lives off of blood.
 [Enemy AraneaImplicitum],Arachnos,8,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],10,5,Demon of Entanglement.
