@@ -1,0 +1,33 @@
+[GroupDispatcher
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Gui]
+  [Persistent True]
+  [Visible True]]
+ [[LabelDispatcher
+   [[LabelImage [Gui ProgrammingLabel]]
+    [Position [-384 -40]]
+    [Size [384 96]]]]
+  [ButtonDispatcher
+   [[Name Back]
+    [Position [-144 -216]]
+    [Size [288 48]]
+    [Text Back]]]
+  [LabelDispatcher
+   [[Elevation -1]
+    [LabelImage [Gui CreditsLabel]]
+    [Name Credits]
+    [Position [-384 32]]
+    [Size [768 192]]]]
+  [LabelDispatcher
+   [[LabelImage [Gui BryanEddsLabel]]
+    [Position [32 -136]]
+    [Size [384 96]]]]
+  [LabelDispatcher
+   [[LabelImage [Gui MusicAndArtLabel]]
+    [Position [-336 -136]]
+    [Size [384 96]]]]
+  [LabelDispatcher
+   [[LabelImage [Gui BryanEddsLabel]]
+    [Position [32 -40]]
+    [Size [384 96]]]]]]

@@ -1,0 +1,32 @@
+[GroupDispatcher
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Gui]
+  [Persistent True]
+  [Visible True]]
+ [[ButtonDispatcher
+   [[Name NewGame]
+    [Position [-144 -24]]
+    [Size [288 48]]
+    [Text "New Game"]]]
+  [ButtonDispatcher
+   [[Name LoadGame]
+    [Position [-144 -88]]
+    [Size [288 48]]
+    [Text "Load Game"]]]
+  [ButtonDispatcher
+   [[Name Credits]
+    [Position [-144 -152]]
+    [Size [288 48]]
+    [Text Credits]]]
+  [ButtonDispatcher
+   [[Name Exit]
+    [Position [-144 -216]]
+    [Size [288 48]]
+    [Text Exit]]]
+  [LabelDispatcher
+   [[Elevation -1]
+    [LabelImage [Gui TitleLabel]]
+    [Name Title]
+    [Position [-384 48]]
+    [Size [768 192]]]]]]
