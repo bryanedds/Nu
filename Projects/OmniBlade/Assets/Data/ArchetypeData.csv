@@ -8,7 +8,7 @@ Cleric,1,1,1,1,1,1,1,1,Bow,Vest,[[2 Cure] [4 Empower] [6 Aura] [8 Enlighten] [12
 Bat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[],None,SmallStature,Weak physical attacks and Drain Techs.
 Spider,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Poison],[Some Insect],SmallStature,Weak physical attacks with Status effects.
 Snake,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 PoisonCut]],[],[Poison],None,SmallStature,Weak physical attacks with Status effects.
-Gorgon,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 Weaken] [2 Muddle]],[],[],None,SmallStature,Physical attacks and Debuff magic.
+Gorgon,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[2 Muddle]],[],[],None,SmallStature,Physical attacks and Debuff magic.
 Willowisp,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Poison],[Some Fire],SmallStature,Weak physical attacks and Fire magic.
 Chillowisp,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[],[Some Ice],SmallStature,Weak physical attacks and Ice magic.
 Fairy,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[],None,SmallStature,Weak physical attacks and Elemental magic.
