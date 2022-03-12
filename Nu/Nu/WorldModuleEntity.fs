@@ -58,27 +58,30 @@ module WorldModuleEntity =
     let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
     type World with
-    
+
         // OPTIMIZATION: a ton of optimization has gone down in here...!
+        static member private entityStateRefresher (entity : Entity) world =
+            getFreshKeyAndValueEntity <- entity
+            getFreshKeyAndValueWorld <- world
+            let entityStateOpt =
+                KeyedCache.getValueFast
+                    keyEquality
+                    getFreshKeyAndValueCached
+                    (KeyValuePair (entity, world.EntityStates))
+                    (World.getEntityCachedOpt world)
+            getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
+            getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
+            match entityStateOpt :> obj with
+            | null ->
+                Unchecked.defaultof<EntityState>
+            | _ ->
+                if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
+                entityStateOpt
+    
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
-                getFreshKeyAndValueEntity <- entity
-                getFreshKeyAndValueWorld <- world
-                let entityStateOpt =
-                    KeyedCache.getValueFast
-                        keyEquality
-                        getFreshKeyAndValueCached
-                        (KeyValuePair (entity, world.EntityStates))
-                        (World.getEntityCachedOpt world)
-                getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
-                getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
-                match entityStateOpt :> obj with
-                | null ->
-                    Unchecked.defaultof<EntityState>
-                | _ ->
-                    if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
-                    entityStateOpt
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated
+            then World.entityStateRefresher entity world
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
