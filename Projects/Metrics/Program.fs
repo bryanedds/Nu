@@ -206,8 +206,8 @@ type MyGameDispatcher () =
                         for k in 0 .. 6 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
-            Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None NoOverlay Simulants.DefaultGroup world
+            Seq.foldi (fun i world position ->
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string i)) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
@@ -314,7 +314,7 @@ type ElmishGameDispatcher () =
         | _ -> just intss
 
     override this.Content (intss, _) =
-        [Content.screen Gen.name Vanilla []
+        [Content.screen Simulants.DefaultScreen.Name Vanilla []
             [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
                 Content.group (string i) []
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
