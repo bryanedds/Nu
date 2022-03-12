@@ -418,9 +418,9 @@ module WorldModuleEntity =
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
 
-        static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entity, world) =
+        static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity, world) =
             let oldWorld = world
-            let oldEntityState = World.getEntityState entity world
+            let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
@@ -440,9 +440,9 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
             else world
 
-        static member internal setEntityTransformByRef (value : Transform inref, entity, world) =
+        static member internal setEntityTransformByRef (value : Transform inref, entityState : EntityState, entity, world) =
             let oldWorld = world
-            let oldEntityState = World.getEntityState entity world
+            let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldTransform = oldEntityState.Transform
             let struct (changed, world) =
@@ -481,39 +481,44 @@ module WorldModuleEntity =
             else struct (changed, world)
 
         static member internal setEntityPosition value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             if v2Neq value transform.Position then
                 transform.Position <- value
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
         
         static member internal setEntitySize value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             if v2Neq value transform.Size then
                 transform.Size <- value
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
         
         static member internal setEntityAngle value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             let radians = Math.degreesToRadians value
             if radians <> transform.Rotation then
                 transform.Rotation <- radians
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
         
         static member internal setEntityRotation value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             if value <> transform.Rotation then
                 transform.Rotation <- value
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
         
         static member internal setEntityElevation value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             if value <> transform.Elevation then
                 transform.Elevation <- value
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
 
         static member internal getEntityBounds entity world =
@@ -521,13 +526,14 @@ module WorldModuleEntity =
             v4Bounds transform.Position transform.Size
 
         static member internal setEntityBounds (value : Vector4) entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             let position = value.Position
             let size = value.Size
             if v2Neq transform.Position position || v2Neq transform.Size size then
                 transform.Position <- position
                 transform.Size <- size
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
 
         static member internal getEntityCenter entity world =
@@ -535,11 +541,12 @@ module WorldModuleEntity =
             transform.Position + transform.Size * 0.5f
 
         static member internal setEntityCenter value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             let position = value - transform.Size * 0.5f
             if v2Neq transform.Position position then
                 transform.Position <- position
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
 
         static member internal getEntityBottom entity world =
@@ -547,11 +554,12 @@ module WorldModuleEntity =
             transform.Position + transform.Size.WithY 0.0f * 0.5f
 
         static member internal setEntityBottom value entity world =
-            let mutable transform = (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let mutable transform = entityState.Transform
             let position = value - transform.Size.WithY 0.0f * 0.5f
             if v2Neq transform.Position position then
                 transform.Position <- position
-                World.setEntityTransformByRef (&transform, entity, world)
+                World.setEntityTransformByRef (&transform, entityState, entity, world)
             else (false, world)
 
         static member private tryGetFacet facetName world =
@@ -1477,7 +1485,7 @@ module WorldModuleEntity =
 
     /// Initialize property setters.
     let private initSetters () =
-        EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, entity, world))
+        EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
         EntitySetters.Assign ("Bounds", fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world)
         EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
