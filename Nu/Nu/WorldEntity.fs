@@ -23,7 +23,7 @@ module WorldEntityModule =
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
         member this.GetTransform world = (World.getEntityState this world).Transform
-        member this.SetTransform value world = World.setEntityTransformByRef (&value, this, world) |> snd'
+        member this.SetTransform value world = World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
         member this.GetBounds world = World.getEntityBounds this world
         member this.SetBounds value world = World.setEntityBounds value this world |> snd'
@@ -126,15 +126,15 @@ module WorldEntityModule =
 
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform inref, world) =
-            World.setEntityTransformByRef (&value, this, world)
+            World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&value, this, world)
+            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformWithoutEvent value world =
-            World.setEntityTransformByRefWithoutEvent (&value, this, world)
+            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap value world =
