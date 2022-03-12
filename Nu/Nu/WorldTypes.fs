@@ -780,6 +780,9 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.Bounds with get () = this.Transform.Bounds
+        member this.Center with get () = this.Transform.Center
+        member this.Bottom with get () = this.Transform.Bottom
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
