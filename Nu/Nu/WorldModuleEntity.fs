@@ -436,7 +436,7 @@ module WorldModuleEntity =
                         else Unchecked.defaultof<_>)
                     entity world
             if changed then
-                let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
+                let ignoredFlags = TransformMasks.DirtyMask ||| TransformMasks.InvalidatedMask
                 let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
                 let newFlags = valueInRef.Flags ||| ignoredFlags
                 if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
@@ -472,7 +472,7 @@ module WorldModuleEntity =
                     struct (changed, world)
             if changed then
 #if DEBUG
-                let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
+                let ignoredFlags = TransformMasks.DirtyMask ||| TransformMasks.InvalidatedMask
                 let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
                 let newFlags = value.Flags ||| ignoredFlags
                 if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransform."

@@ -659,8 +659,8 @@ module WorldTypes =
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1 (assuming 16 byte header)
-          Dispatcher : EntityDispatcher
           mutable Transform : Transform
+          Dispatcher : EntityDispatcher
           // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
@@ -700,9 +700,9 @@ module WorldTypes =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         /// Copy an entity state, invalidating the incoming reference.
-        /// OPTIMIZATION: inlined invalidation masking for speed.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
+            /// OPTIMIZATION: inlined invalidation masking for speed.
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
 
