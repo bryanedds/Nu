@@ -60,7 +60,7 @@ module WorldModuleEntity =
     type World with
     
         // OPTIMIZATION: a ton of optimization has gone down in here...!
-        static member inline private entityStateFinder (entity : Entity) world =
+        static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
                 getFreshKeyAndValueEntity <- entity
@@ -129,7 +129,7 @@ module WorldModuleEntity =
         static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
-        static member inline private publishEntityChange propertyName (propertyValue : obj) publishChangeBindings publishChangeEvents (entity : Entity) world =
+        static member private publishEntityChange propertyName (propertyValue : obj) publishChangeBindings publishChangeEvents (entity : Entity) world =
 
             // publish change binding
             let world =
@@ -201,7 +201,7 @@ module WorldModuleEntity =
             World.updateEntityStateInternal updater entityState entity world
 
         // OPTIMIZATION: inlined to elide updater closure allocation.
-        static member inline private updateEntityState updater propertyName propertyValue entity world =
+        static member private updateEntityState updater propertyName propertyValue entity world =
             let entityState = World.getEntityState entity world
             let struct (changed, world) = World.updateEntityStateInternal updater entityState entity world
             let world =
@@ -213,7 +213,7 @@ module WorldModuleEntity =
             struct (changed, world)
 
         // OPTIMIZATION: inlined to elide updater closure allocation.
-        static member inline private updateEntityStatePlus updater propertyName propertyValue entity world =
+        static member private updateEntityStatePlus updater propertyName propertyValue entity world =
 
             // cache old values
             let oldWorld = world
