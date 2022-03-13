@@ -541,7 +541,7 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Elevation = slice.Elevation
-                      Flags = 0 }
+                      Flags = 0u }
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
@@ -586,7 +586,7 @@ module EffectSystem =
                           Size = slice.Size
                           Rotation = slice.Rotation
                           Elevation = slice.Elevation
-                          Flags = 0 }
+                          Flags = 0u }
                     let animatedSpriteView =
                         Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
@@ -624,7 +624,7 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Elevation = slice.Elevation
-                      Flags = 0 }
+                      Flags = 0u }
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
