@@ -268,10 +268,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Update (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+            let world = Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
                 World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
@@ -282,10 +279,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.PostUpdate (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+            let world = Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
                 World.publishPlus () entity.PostUpdateEvent eventTrace Simulants.Game false false world
@@ -296,11 +290,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Actualize (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
-            world
+            Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
 
         /// Get all the entities contained by a group.
         [<FunctionBinding>]
