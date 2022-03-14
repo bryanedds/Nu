@@ -37,7 +37,7 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
-            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            match simulant.SimulantAddress.Names.Length with
             | 0 -> World.tryGetGameProperty (name, world, &property)
             | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
             | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
@@ -45,7 +45,7 @@ module WorldSimulantModule =
             | _ -> false
 
         static member internal getProperty name (simulant : Simulant) world =
-            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            match simulant.SimulantAddress.Names.Length with
             | 0 -> World.getGameProperty name world
             | 1 -> World.getScreenProperty name (simulant :?> Screen) world
             | 2 -> World.getGroupProperty name (simulant :?> Group) world
@@ -53,7 +53,7 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         static member internal trySetPropertyFast name property (simulant : Simulant) world =
-            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            match simulant.SimulantAddress.Names.Length with
             | 0 -> World.trySetGamePropertyFast name property world
             | 1 -> World.trySetScreenPropertyFast name property (simulant :?> Screen) world
             | 2 -> World.trySetGroupPropertyFast name property (simulant :?> Group) world
@@ -61,7 +61,7 @@ module WorldSimulantModule =
             | _ -> world
 
         static member internal trySetProperty name property (simulant : Simulant) world =
-            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            match simulant.SimulantAddress.Names.Length with
             | 0 -> World.trySetGameProperty name property world
             | 1 -> World.trySetScreenProperty name property (simulant :?> Screen) world
             | 2 -> World.trySetGroupProperty name property (simulant :?> Group) world
@@ -69,7 +69,7 @@ module WorldSimulantModule =
             | _ -> (false, false, world)
 
         static member internal setProperty name property (simulant : Simulant) world =
-            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            match simulant.SimulantAddress.Names.Length with
             | 0 -> World.setGameProperty name property world
             | 1 -> World.setScreenProperty name property (simulant :?> Screen) world
             | 2 -> World.setGroupProperty name property (simulant :?> Group) world

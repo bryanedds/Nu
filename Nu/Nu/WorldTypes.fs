@@ -659,8 +659,8 @@ module WorldTypes =
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1 (assuming 16 byte header)
-          Dispatcher : EntityDispatcher
           mutable Transform : Transform
+          Dispatcher : EntityDispatcher
           // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
@@ -700,9 +700,9 @@ module WorldTypes =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         /// Copy an entity state, invalidating the incoming reference.
-        /// OPTIMIZATION: inlined invalidation masking for speed.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
+            /// OPTIMIZATION: inlined invalidation masking for speed.
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
 
@@ -780,6 +780,9 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.Bounds with get () = this.Transform.Bounds
+        member this.Center with get () = this.Transform.Center
+        member this.Bottom with get () = this.Transform.Bottom
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

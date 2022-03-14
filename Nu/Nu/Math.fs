@@ -24,21 +24,21 @@ type [<StructuralEquality; NoComparison; Struct>] RayCastOutput =
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                    0b0000000000000001
-    let [<Literal>] DirtyMask =                     0b0000000000000010
-    let [<Literal>] InvalidatedMask =               0b0000000000000100
-    let [<Literal>] OmnipresentMask =               0b0000000000001000
-    let [<Literal>] AbsoluteMask =                  0b0000000000010000
-    let [<Literal>] ImperativeMask =                0b0000000000100000
-    let [<Literal>] PublishChangeBindingsMask =     0b0000000001000000
-    let [<Literal>] PublishChangeEventsMask =       0b0000000010000000
-    let [<Literal>] EnabledMask =                   0b0000000100000000
-    let [<Literal>] VisibleMask =                   0b0000001000000000
-    let [<Literal>] AlwaysUpdateMask =              0b0000010000000000
-    let [<Literal>] PublishUpdatesMask =            0b0000100000000000
-    let [<Literal>] PublishPostUpdatesMask =        0b0001000000000000
-    let [<Literal>] PersistentMask =                0b0010000000000000
-    let [<Literal>] IgnorePropertyBindingsMask =    0b0100000000000000
+    let [<Literal>] ActiveMask =                    0b0000000000000001u
+    let [<Literal>] DirtyMask =                     0b0000000000000010u
+    let [<Literal>] InvalidatedMask =               0b0000000000000100u
+    let [<Literal>] OmnipresentMask =               0b0000000000001000u
+    let [<Literal>] AbsoluteMask =                  0b0000000000010000u
+    let [<Literal>] ImperativeMask =                0b0000000000100000u
+    let [<Literal>] PublishChangeBindingsMask =     0b0000000001000000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000010000000u
+    let [<Literal>] EnabledMask =                   0b0000000100000000u
+    let [<Literal>] VisibleMask =                   0b0000001000000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000100000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b0001000000000000u
+    let [<Literal>] PersistentMask =                0b0010000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b0100000000000000u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -50,7 +50,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Elevation : single // NOTE: will *NOT* become part of Position if Nu gets 3D capabilities
-      mutable Flags : int }
+      mutable Flags : uint }
       // 4 bytes free
 
     /// Test transforms for equality.
@@ -79,22 +79,22 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     static member inline assign (source : Transform, target : Transform byref) =
         Transform.assignByRef (&source, &target)
 
-    member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
-    member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
-    member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
-    member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
-    member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
-    member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
-    member this.PublishChangeBindings with get () = this.Flags &&& PublishChangeBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangeBindingsMask else this.Flags &&& ~~~PublishChangeBindingsMask
-    member this.PublishChangeEvents with get () = this.Flags &&& PublishChangeEventsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangeEventsMask else this.Flags &&& ~~~PublishChangeEventsMask
-    member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
-    member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
-    member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
-    member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
-    member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
-    member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-    member this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
-    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| this.Flags &&& PublishChangeEventsMask = 0
+    member this.Active with get () = this.Flags &&& ActiveMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
+    member this.Dirty with get () = this.Flags &&& DirtyMask <> 0u and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
+    member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0u and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
+    member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
+    member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
+    member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
+    member this.PublishChangeBindings with get () = this.Flags &&& PublishChangeBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeBindingsMask else this.Flags &&& ~~~PublishChangeBindingsMask
+    member this.PublishChangeEvents with get () = this.Flags &&& PublishChangeEventsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeEventsMask else this.Flags &&& ~~~PublishChangeEventsMask
+    member this.Enabled with get () = this.Flags &&& EnabledMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
+    member this.Visible with get () = this.Flags &&& VisibleMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
+    member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
+    member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
+    member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
+    member this.Persistent with get () = this.Flags &&& PersistentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+    member this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
+    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| this.Flags &&& PublishChangeBindingsMask ||| this.Flags &&& PublishChangeEventsMask = 0u
     member this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
     member this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)
     member this.Bottom with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y)
@@ -105,7 +105,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Size = Vector2.One
           Rotation = 0.0f
           Elevation = 0.0f
-          Flags = 0 }
+          Flags = 0u }
 
     /// Make the default transform.
     static member makeDefault () =
@@ -113,11 +113,11 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Size = Constants.Engine.EntitySizeDefault
           Rotation = 0.0f
           Elevation = 0.0f
-          Flags = 0b0010001100100001 }
+          Flags = 0b0010001100100001u }
 
     interface Transform Component with
         member this.TypeName = nameof Transform
-        member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
+        member this.Active with get () = this.Flags &&& ActiveMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
 
 [<AutoOpen>]
 module TransformOperators =

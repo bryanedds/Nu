@@ -50,7 +50,7 @@ module SpiritOrbDispatcher =
                 if distance < Constants.Field.SpiritRadius then
                     let position = orbTransform.Center + delta * Constants.Field.SpiritOrbRatio - Constants.Field.SpiritOrbBlipSize * 0.5f
                     let bounds = v4Bounds position Constants.Field.SpiritOrbBlipSize
-                    let transform = { Position = bounds.Position; Size = bounds.Size; Elevation = orbTransform.Elevation + 2.0f; Rotation = 0.0f; Flags = 0 }
+                    let transform = { Position = bounds.Position; Size = bounds.Size; Elevation = orbTransform.Elevation + 2.0f; Rotation = 0.0f; Flags = 0u }
                     let colorFadeIn =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
                         if distanceNormalized < 0.25f then color.MapA (fun a -> single a * (distanceNormalized / 0.25f) |> byte) else color
@@ -65,7 +65,7 @@ module SpiritOrbDispatcher =
             let orbImage = Assets.Field.SpiritOrbImage
             let orbDescriptor = { Transform = orbTransform; Absolute = entity.GetAbsolute world; Offset = v2Zero; InsetOpt = None; Image = orbImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
             let orbView = Render (orbTransform.Elevation, orbTransform.Position.Y, AssetTag.generalize orbImage, SpriteDescriptor orbDescriptor)
-            let avatarTransform = { Position = orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f; Size = Constants.Field.SpiritOrbBlipSize; Elevation = orbTransform.Elevation + 1.0f; Rotation = 0.0f; Flags = 0 }
+            let avatarTransform = { Position = orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f; Size = Constants.Field.SpiritOrbBlipSize; Elevation = orbTransform.Elevation + 1.0f; Rotation = 0.0f; Flags = 0u }
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; Absolute = entity.GetAbsolute world; Offset = v2Zero; InsetOpt = None; Image = avatarImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
             let avatarView = Render (avatarTransform.Elevation, avatarTransform.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
