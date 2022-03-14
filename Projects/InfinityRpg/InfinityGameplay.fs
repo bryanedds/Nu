@@ -125,11 +125,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateGameboard (Gameboard.setFieldSpaces fieldMap) gameplay
-        Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
+        Gameplay.updateField (constant (Field.make fieldMap)) gameplay
     
     static member resetFieldMapWithPlayer fieldMap gameplay =
         let gameplay = Gameplay.updateGameboard (Gameboard.transitionMap fieldMap) gameplay
-        Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
+        Gameplay.updateField (constant (Field.make fieldMap)) gameplay
     
     static member transitionFieldMap direction gameplay =
         let player = Gameboard.tryGetCharacter PlayerIndex gameplay.Gameboard |> Option.get // assume player exists

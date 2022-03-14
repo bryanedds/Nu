@@ -1,10 +1,12 @@
-﻿[[ButtonDispatcherRoute
+﻿[[InfinityButtonOverlay
+  [ButtonOverlay]
   [ButtonDispatcher]
   [[DownImage [Gui ButtonDown]]
    [UpImage [Gui ButtonUp]]
    [ClickSoundOpt
     [Some [Gui Affirm]]]
    [Font [Gui Font]]]]
- [TextDispatcherRoute
+ [InfinityTextOverlay
+  [TextOverlay]
   [TextDispatcher]
   [[Font [Gui Font]]]]]

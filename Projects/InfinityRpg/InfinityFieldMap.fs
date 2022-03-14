@@ -186,3 +186,10 @@ module FieldMap =
         let rand = Rand.makeFromSeedState metaTile.RandSeed
         let (fieldMap, _) = make Assets.Gameplay.FieldTileSheetImage v2iZero Constants.Gameplay.FieldMapSizeC [(metaTile.PathStart, metaTile.PathEnd)] rand
         fieldMap
+
+    let initial =
+        let defaultRand = Rand.make ()
+        let defaultSizeC = v2i 4 4
+        let defaultPathEdgesC = [(v2i 1 1, v2i 2 2)]
+        let defaultFieldMap = fst (make Assets.Gameplay.FieldTileSheetImage v2iZero defaultSizeC defaultPathEdgesC defaultRand)
+        defaultFieldMap
