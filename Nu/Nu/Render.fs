@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Reflection
 open SDL2
 open TiledSharp
 open Prime
