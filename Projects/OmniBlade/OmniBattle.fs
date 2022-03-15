@@ -441,7 +441,7 @@ module Battle =
 
     let private randomizeEnemyLayout w h (enemies : EnemyType list) =
         let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
-        layout.[0].[0] <- Left () // don't put enemies in the corners
+        layout.[0].[0] <- Left () // no one puts enemy in a corner
         layout.[w-1].[0] <- Left ()
         layout.[0].[h-1] <- Left ()
         layout.[w-1].[h-1] <- Left ()

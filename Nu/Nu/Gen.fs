@@ -100,6 +100,15 @@ module Gen =
         static member randomValueOpt (dict : IDictionary<'k, 'v>) =
             Gen.randomItemOpt dict.Values
 
+        /// Randomly shuffle a sequence.
+        static member shuffle (seq : 'a seq) =
+            seq |>
+            Array.ofSeq |>
+            Array.map (fun a -> (Gen.random, a)) |>
+            Array.sortBy fst |>
+            Array.map snd |>
+            Array.toSeq
+
         /// The prefix of a generated name
         static member namePrefix =
             "@"
