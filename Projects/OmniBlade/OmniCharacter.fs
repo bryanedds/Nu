@@ -694,7 +694,7 @@ module Character =
                 let actionTime =
                     if waitSpeed
                     then 1000.0f - 175.0f - Gen.randomf1 9.0f * 75.0f
-                    else 1000.0f - 375.0f - Gen.randomf1 9.0f * 75.0f
+                    else 1000.0f - 450.0f - Gen.randomf1 8.0f * 75.0f
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
