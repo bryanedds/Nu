@@ -672,7 +672,7 @@ module Character =
           CelSize_ = celSize
           InputState_ = NoInput }
 
-    let tryMakeEnemy index offsetCharacters waitSpeed enemyData =
+    let tryMakeEnemy allyCount index offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -693,8 +693,8 @@ module Character =
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
                     if waitSpeed
-                    then 1000.0f - 175.0f - Gen.randomf1 9.0f * 75.0f
-                    else 1000.0f - 450.0f - Gen.randomf1 8.0f * 75.0f
+                    then 1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
+                    else 1000.0f - (if allyCount = 1 then 525.0f else 450.0f) - Gen.randomf1 8.0f * 75.0f
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
