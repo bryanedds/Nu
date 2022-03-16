@@ -460,11 +460,15 @@ module FieldDispatcher =
                 Map.ofSeq |>
                 Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
             let pageUp =
-                itemsPaged.Count <> 0 &&
-                (fst (snd (Seq.head itemsPaged).Value)) <> fst (Seq.head items)
+                if itemsPaged.Count <> 0 then
+                    let firstItemPaged = Seq.head itemsPaged
+                    fst (snd firstItemPaged.Value) <> fst (Seq.head items)
+                else false
             let pageDown =
-                itemsPaged.Count <> 0 &&
-                (fst (snd (Seq.last itemsPaged).Value)) <> fst (Seq.last items)
+                if itemsPaged.Count <> 0 then
+                    let lastItemPaged = Seq.last itemsPaged
+                    fst (snd lastItemPaged.Value) <> fst (Seq.last items)
+                else false
             (pageUp, pageDown, itemsPaged)
 
         let pageItems rows (field : Field) =
