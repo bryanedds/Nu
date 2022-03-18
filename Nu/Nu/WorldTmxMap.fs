@@ -198,35 +198,35 @@ module TmxMap =
                             | (false, _) ->
                                 tileBoxes.Add (tileCenter.Y, List [v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF])
                         | "Top" ->
-                            let tileShape = BodyBox { Extent = v2 1.0f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 1.0f 0.5f; Center = v2 0.0f 0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Bottom" ->
-                            let tileShape = BodyBox { Extent = v2 1.0f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 1.0f -0.5f; Center = v2 0.0f -0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Left" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f 1.0f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 -0.5f 1.0f; Center = v2 -0.25f -0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Right" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f 1.0f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 0.5f 1.0f; Center = v2 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopLeft" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 -0.5f 0.5f; Center = v2 -0.25f 0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopRight" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2 0.25f 0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomLeft" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 -0.5f -0.5f; Center = v2 -0.25f -0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomRight" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2Zero; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2 0.25f -0.25f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | _ ->
@@ -377,7 +377,7 @@ module TmxMap =
                                   Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
                                   Rotation = 0.0f
                                   Elevation = elevation
-                                  Flags = 0 }
+                                  Flags = 0u }
 
                             // check if in view bounds
                             if Math.isBoundsIntersectingBounds (v4Bounds transform.Position transform.Size) viewBounds then

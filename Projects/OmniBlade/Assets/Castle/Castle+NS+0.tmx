@@ -21,17 +21,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3iQ4mxWBoZ8MnE6K+X25wLNOMhEHs6gkv1fmMjD1LJfHUgf42JgOM4FYcPwS24GhldA/JobVRyGqWV/GtDeb0D8HYiRQSfQXh8eBgZvHoTYZ6DYFyDO4qKe/Xu5GfCCICR5ZaBbVHggeqhl/1sC9mMDb6lovyzQPwJALAjEQjy47URWA9JDLft9gWY5ALEjEDvhsH8TN6oaXyrZnwpKf2g4jxXT/iws6lKoYD+uMEEH1PDrqP1Dw/5UtDSYRcO0hs8NMEBvu2FtAhigVl1PrN2FQHyICWH/HiC7gE5uyIXa/RXJ/vdMEDfQIw2C7AfZrcGMsF+JGeIGetmPbDeyG+hlPy4wav+o/UPNfgBdPP5B
+   eJztlssOwUAUhk8q3bRdiL0NEnY8AnaCjWdwC6nLi3giFix4FkQs3Lb+SYlRLVJHQzIn+dLJ9Mx8Z5qTdEYRopFC8aN0daJ+QFr6534be0y1YLSZ/HstGFz+NJ5zg2hhOOMrS5NoBdbm/fwVLn8T3iM4ATlKFlEFlK3b3A617EHH4PNPTHoaNel9ErWkLGcNl3/zwu8VG0Z/HOeJgiz2jFn+TpGTu+SINVz+KvbKgwIoPvHLOVUmf0P0n4ue/ujueOTVGfx+38QdHGdV/v/wNzz83+o1P9wRprvrcX6Of/277iGYaTf3GOMB033jFfbFfZD8W82pIYweFH7hzkg9kIg4NYTll91yDWH5/UL5lf/f/Gf+hfrj
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kjsO8hTBxboTYYSD7CBBb0TFclLgJq6EELKCjX7CB/0D7HwD9+BCIH+HxK7IaJiqGyVmo/+cREQ5zoGrOD3CYjYJRMApGwSgYBaNgFIwC7AAAdRIQ7g==
+   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kTsg8bgTzMJB9BIit6BguStyE1Qxl8B8Ylg+AfnwIxI/w+BVZDdMwD5NRMApGwSgYBaNgFIyCUUAeAAAuSgyb
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaENACAMBdFvEEUzIYKRYEAYBJIGD6rmXnL6JAAvpknLYt49S+NUcswfAICrJS9KTR4A4N8GtxcE3Q==
+   eJxjYBgFo2AUEAMeczIwPOEcGLuncTEwTAdiEa6BsX8UjIJRMApGweAAeawIdhYrbnW0AqlAO9OgOGUA7M8H2pkExfkDYP8oGAWjYBQMdQAAwPIHeg==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -57,7 +57,7 @@
     [Dialog &quot;What is freedom...?&quot;]
     [Dialog &quot;It must be the death of purpose...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
-    [Dialog &quot;I was born a servent of a servent...&quot;]
+    [Dialog &quot;I was born a servant of a servant...&quot;]
     [Dialog &quot;My master is cruel, but unlike the world, her cruelty is predictable.&quot;]
     [Dialog &quot;I came under her ward when my mother passed, but I think she always hated me.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]

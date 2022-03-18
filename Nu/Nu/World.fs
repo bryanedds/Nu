@@ -18,7 +18,7 @@ module Nu =
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
             let value = right.GetWithoutValidation world
-            (Option.get left.SetOpt) value world
+            left.TrySet value world
         else world
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =

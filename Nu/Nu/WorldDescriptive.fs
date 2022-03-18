@@ -95,6 +95,7 @@ module GameDescriptor =
           ScreenDescriptors = [] }
 
 /// Initializes a property.
+/// TODO: see if we can find a better name for this.
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address

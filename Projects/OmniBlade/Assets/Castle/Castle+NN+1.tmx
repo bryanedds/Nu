@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztls1qwkAQx5eEXJIcbO9ejKCPob37FjaVil8v4suINz3YQvsatneJYG2v/Q9JcNT1IzJsDmbgR5Zkd36zYTZkbCs1zkDPUSej42TLdQuF/779z3D0NTW84l7bgF9Xg0k3ryEN026iy/wvhv3kHjH/0DFbA52BN2vnn1lmep/7t8wf5eCv2zt/xTbvz+Pbk4efen1wwEjjH2rmSZwJ2usc/bVIoDHvfX4GDudJvBPyr5HrJ4HGW40/so7nSfnfXaVqGH/g+unu9z4/A4Edz6slYyn/xo0dv7j+ucfuNEI823jYP5h4cv45ci3BF/j2TvspAl+pqh+vkfKvkKuEnA/g0T/vnyb1rQT9ZTgboAmezvh5jbRGyt+6sOc0eI0tIT/9Z4Q3ksd/SUFBwfX8AxWC/fA=
+   eJztljsKwkAQhpcEmySF2tuooMdQe2/hC8XXRbyM2Gmhgl5D7UXBV+s/JME1rkpk2BRm4CNLsplvdpkNGZlCjELQTYi30UqEy/ULsf+//XU4eooa2rhX0+D3awiGLrdPMHS6o/Z3FPvf1Lj/dAYWxsM9NfT0vuy/SP5DBP6i1ANZU78/im9PFH7q9X6AocI/UMzjOBO01hn6a+5BY7n35TMQnMexJ+Q/ItfZg8YXhf9gvM7j8i8tIQoYr3BdW8+9L5+BnOnOK3hjLv/Jch1XXG/Wq9uPBp6dbKwfjG0+/wy5NmALdvZ7P0XOESLvuO9w+ffIlUTOFEg7n/0Tr749oz8DZwmUQeWDX66R3uHyV7+s2Q+5xiqTn/51Gj+i+58oJiYmHHdFAPp0
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -31,7 +31,7 @@
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzqENACAMBdFvajomgn0wdF1EF8CQpuFecv4kAB1Ny6oMywDgte1SePXFndXkEwDwpwP8fgOB
+   eJxjYBgFo2AUkAryWBHsLFbc6mgFUoF2pkFxygDYnw20MwmK0wfA/kIkOwsGwP5RMApGAX3BNC4GhulcA+0K4sDEIeLOUTAKRsEoGAUjEwAAzQAG/Q==
   </data>
  </layer>
  <objectgroup id="3" name="Props">

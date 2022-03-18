@@ -53,7 +53,7 @@ module AmbientState =
         StandAlone
 
     /// Get the collection config value.
-    let getCollectionConfig (_ : 'w AmbientState) =
+    let getConfig (_ : 'w AmbientState) =
         if Imperative then TConfig.Imperative else TConfig.Functional
 
     /// Get the the liveness state of the engine.
@@ -192,9 +192,10 @@ module AmbientState =
     let shouldSleep state =
         match tryGetWindowFlags state with
         | Some flags ->
+            let minimized = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
             let focused = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS <> 0u
             let fullScreen = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u
-            not focused && fullScreen
+            minimized || not focused && fullScreen
         | None -> false
 
     /// Get the margin around the camera eye given the display mode's full screen state and resolution.

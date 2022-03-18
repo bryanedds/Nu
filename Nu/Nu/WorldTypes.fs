@@ -150,15 +150,15 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 /// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
 /// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : IComparable List
+    { Keys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj }
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { ToKeys =
+        { Keys =
             let list = List ()
-            for entry in map do list.Add (entry.Key :> IComparable)
+            for key in Map.keys map do list.Add (key :> IComparable)
             list
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
@@ -659,8 +659,8 @@ module WorldTypes =
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1 (assuming 16 byte header)
-          Dispatcher : EntityDispatcher
           mutable Transform : Transform
+          Dispatcher : EntityDispatcher
           // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
@@ -700,9 +700,9 @@ module WorldTypes =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         /// Copy an entity state, invalidating the incoming reference.
-        /// OPTIMIZATION: inlined invalidation masking for speed.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
+            /// OPTIMIZATION: inlined invalidation masking for speed.
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
 
@@ -780,6 +780,9 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.Bounds with get () = this.Transform.Bounds
+        member this.Center with get () = this.Transform.Center
+        member this.Bottom with get () = this.Transform.Bottom
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1110,7 +1113,8 @@ module WorldTypes =
     /// Describes a property binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
-          PBRight : World Lens }
+          PBRight : World Lens
+          (*mutable PBPrevious : obj ValueOption*) }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1183,6 +1187,9 @@ module WorldTypes =
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
+
+            member this.GetConfig () =
+                AmbientState.getConfig this.AmbientState
 
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState

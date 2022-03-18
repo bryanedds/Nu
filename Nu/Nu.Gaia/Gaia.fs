@@ -1749,7 +1749,9 @@ module Gaia =
                 else (Simulants.DefaultScreen, typeof<ScreenDispatcher>)
             Globals.Screen <- screen
             let (screen, world) =
-                World.createScreen3 screenDispatcher.Name (Some screen.Name) world
+                if not (screen.Exists world)
+                then World.createScreen3 screenDispatcher.Name (Some screen.Name) world
+                else (screen, world)
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
@@ -1762,8 +1764,8 @@ module Gaia =
     let tryMakeSdlDeps (form : GaiaForm) =
         let sdlConfig =
             { ViewConfig = ExistingWindow form.displayPanel.Handle
-              ViewW = form.displayPanel.MaximumSize.Width
-              ViewH = form.displayPanel.MaximumSize.Height
+              ViewW = Constants.Render.ResolutionX
+              ViewH = Constants.Render.ResolutionY
               RendererFlags = Constants.Render.RendererFlagsDefault
               AudioChunkSize = Constants.Audio.BufferSizeDefault }
         match SdlDeps.tryMake sdlConfig with

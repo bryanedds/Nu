@@ -15,7 +15,8 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let mutable private Counter = -1L
+    let mutable private Id32 = 0u
+    let mutable private Id64 = 0UL
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -58,15 +59,15 @@ module Gen =
             lock Lock (fun () -> Random.Next ceiling)
             
         /// Get the next random number single below ceiling.
-        static member random1y (ceiling : byte) =
+        static member randomy1 (ceiling : byte) =
             lock Lock (fun () -> byte (Random.Next (int ceiling)))
             
         /// Get the next random number single below ceiling.
-        static member random1f ceiling =
-            lock Lock (fun () -> single (Random.NextDouble ()) * single ceiling)
+        static member randomf1 ceiling =
+            lock Lock (fun () -> single (Random.NextDouble ()) * ceiling)
             
         /// Get the next random number single below ceiling.
-        static member random1d ceiling =
+        static member randomd1 ceiling =
             lock Lock (fun () -> Random.NextDouble () * ceiling)
 
         /// Get the next random number integer GTE minValue and LT ceiling.
@@ -98,6 +99,15 @@ module Gen =
         /// Get a random value if there are any or None.
         static member randomValueOpt (dict : IDictionary<'k, 'v>) =
             Gen.randomItemOpt dict.Values
+
+        /// Randomly shuffle a sequence.
+        static member shuffle (seq : 'a seq) =
+            seq |>
+            Array.ofSeq |>
+            Array.map (fun a -> (Gen.random, a)) |>
+            Array.sortBy fst |>
+            Array.map snd |>
+            Array.toSeq
 
         /// The prefix of a generated name
         static member namePrefix =
@@ -180,9 +190,15 @@ module Gen =
             let name = Gen.nameIf nameOpt
             (id, name)
 
-        /// Generate a unique counter.
-        static member counter =
-            lock Lock (fun () -> Counter <- inc Counter; Counter)
+        /// Generate a 32-bit unique counter.
+        static member id32 =
+            lock Lock (fun () ->
+                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
+                Id32 <- inc Id32; Id32)
+
+        /// Generate a unique non-zero 64-bit id.
+        static member id64 =
+            lock Lock (fun () -> Id64 <- inc Id64; Id64)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen

@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Reflection
 open SDL2
 open TiledSharp
 open Prime
@@ -214,13 +213,14 @@ and Renderer =
 type RenderLayeredMessageComparer () =
     interface IComparer<RenderLayeredMessage> with
         member this.Compare (left, right) =
-            let elevationCompare = left.Elevation.CompareTo right.Elevation
-            if elevationCompare <> 0 then elevationCompare else
-            let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
-            if positionYCompare <> 0 then positionYCompare else
-            let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
-            if assetNameCompare <> 0 then assetNameCompare else
-            strCmp left.AssetTag.PackageName right.AssetTag.PackageName
+            if left.Elevation < right.Elevation then -1
+            elif left.Elevation > right.Elevation then 1
+            elif left.PositionY > right.PositionY then -1
+            elif left.PositionY < right.PositionY then 1
+            else
+                let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+                if assetNameCompare <> 0 then assetNameCompare
+                else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
 /// The mock implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] MockRenderer =
@@ -757,7 +757,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = { Position = v2Zero; Size = v2Zero; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0 }
+                let transform = { Position = v2Zero; Size = v2Zero; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0u }
                 let sprite = { Transform = transform; Absolute = true; Offset = v2Zero; Inset = v4Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let bottomMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft; Size = v2 eyeMarginBounds.Size.X eyeMargin.Y }}
                 let leftMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft; Size = v2 eyeMargin.X eyeMarginBounds.Size.Y }}

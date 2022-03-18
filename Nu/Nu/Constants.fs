@@ -69,7 +69,7 @@ module Audio =
 module Physics =
 
     let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
-    let [<Literal>] PhysicsToPixelRatio = 64.0f
+    let [<Literal>] PhysicsToPixelRatio = 64.0f // 64 pixels = 1 meter
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f
     let (*Literal*) GravityDefault = Engine.GravityDefault * PhysicsToPixelRatio
@@ -94,5 +94,6 @@ module Effects =
 
 module Ecs =
 
-    let [<Literal>] ArrayReserve = 256
+    let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
     let [<Literal>] ArrayGrowth = 2
+    let [<Literal>] PreallocateAmount = ArrayReserve

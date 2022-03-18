@@ -21,21 +21,21 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lztOAzEQhq2s0mTJASCigSIRlHAJhKh5CKh4CQQkF8khaHlUVIgUpIaDAAUSAkTJjHZHGQ1j76yTzS/9ysqx5/uH2MjbT5zrB3xWd+4y0sf1cO0iI7sHfqrFuTtGBmIPoc5XpB8jM3D2N7idZF5MRs8Wf0RkkOwOjK00nVsFD1LnbsC3Ht+l2ZznGedewAslM2hsrnmouQv198D76Wicj+EcLmsGyR42svWnMHYEvgBviNqacA5fg8JaoQwa+zPnd/Oz1MtrdVKdi2qn+hqsFcpw7mGjcP6gln2P2grwN1N9jZbhRPDp98Z5SwGGpX9Uqzl6pnpYm/aD5PO9thNgWPpHLTM+1aNPzCD5pFeY8wB+93Cs/XNhzTdR08efhf07B2559rq1fy6siT3xmpx/yM7KGszZhrnr+Vx5liz9yzVazQNxBnkGLnmWLP3LNVwaO5RBniVL/9r5K2KHMvCzFPP7W9m+DPwsxez/Muyi/VC2/xg2z/DT+F/zqmkb+23Es0N/h2uFJcfG6bsow73C52OTZBftB6kq2NYMVbKLMkyD7cswTTbPQJo2m97JSJN41yrDprsqKfY9J8b8rkrS7pRV8uW7iXanrJKPbP7/Dp/lndLqP0Z1n4w=
+   eJy9lz1Ow0AQhVex3GB8AIhooEgEJVwCIWp+BFQEEAhILpJD0PJTUSFSkBoOAhRICHpmZI88GmbX643tJz1hrXfne6vsoPU4Mmbs8EVszHWgT2N37TIjewR+6YR5OEMGYk+hzk+gnwMzcPYvuBdlXomKZx9/BWSQ7D6MrafGbIAniTF34HuLH5Jszuu8MW/g5YoZNDbXEtQ8gPqH4KOkGOdjOIfLN4NkT+ey9ecwdgK+Am+L2ppwDl+DwlquDBr7O+cP814axeVsklyDtVwZLi1sFM6fdLL3qH7yn0fqJfoaLcOZ4NPvjfNWHYxdx7sd9q6bFs9UD2vTeZB8ftb2HQyf/aPWGJ/q0V/MIPmkd5jzBP60cHz3z4U1P0RNG38Bzu8iuGs5677758KauCdek/MHrFc2Yc4ezN3K58pe8tm/XKPVPBY9yDNwyV7y2b+rZzW2K4PsJZ/9a/1XxnZl4L0U8vv7sm0ZeC+FnP8q7LLzUFUh7LIMN6nf2CxsV4ZbhSXH6mDbMjwqfD5WJ7vqeWiC7ZuhSXZZhjbYtgxtsnkGUtts+iYj1fGtVYVNd1VS6HdOiPldlaTdKZvky28T7U7ZJB/Z/P8dPss7pa//AEKhnUI=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4MMUuYBFDBiD7/2NRg80sfGAyieqpaSapbiUFkGM2BzA+OYGYi4R4JUcPPYAWN2E1INA2gO5eAIyjfqD9i6iYDmD5hlh/aQLDaT6V0yHIzP5Blh6GAhhO+W8UkA7yWMnXm0WB3lEwCkbBKBisYBEvdja9wGpe7OyhBgD3TSjt
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4qGMOOWZNpqLdpJpJTX9Tw2wOYHxyAjEXCfFKjh56AC1uwmpAoG0A3b0AGEf9QPsXUTEdXICaRay/NIkMJ1IAyMz+QZYehgIYTvlvFIyCUTAKRsEooBQs4sXOphdYzYudPdQAAPN4JUY=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztkzEKgDAQBK9JmU9a+Ay1Uzv1DbbWSl7nQhIMwUJCQgp3YMDD41KNyDc6LdLDwfn2P9zJzYibE5zh7vT4OdzJzYKbK9zg4fT4OdwpwYm7FzT6+Y5nU+htUoeUpnJ2mNJUzg5TmirdIfkP7I/9EUJITKustWiUlZBUbmuhL4w=
+   eJztkzEKgDAQBNNY+klRCwv9gdqpnfoGW2slr3OLCwmiICEhojcwkCPHbbVCPKOOhWhgS179mzuu6XCzhwNcSIWazR3XjLg5wRmupELN5o4PNtzdoYz1+zxLT9lMGGw65bKHNp1y2UObTvnuIfMfuH/cP4Zh3kUZ6XcR3e/5IkNmTqYB8itkJmQVIJ/5BgeeBDIp
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="606" y="768" width="324" height="276">
+  <object id="2" gid="235" x="606" y="816" width="324" height="276">
    <properties>
     <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
   [Sequence
@@ -46,7 +46,7 @@
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+    <property name="I" value="[Portal WarpPortal Warp Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="4" gid="235" x="720" y="1488" width="96" height="144">
@@ -59,7 +59,7 @@
     <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
-  <object id="6" gid="235" x="696" y="492" width="144" height="144">
+  <object id="6" gid="235" x="696" y="528" width="144" height="144">
    <properties>
     <property name="I">[Character
   [Enemy Kyla]
@@ -102,7 +102,7 @@
     [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
-    [PlaySound 0.5 [Field Unlatch]]]]
+    [PlaySound 0.5 [Field StepWarp]]]]
   [[KylaAdvent 6] AraneaImplicitumDefeated]]</property>
    </properties>
   </object>

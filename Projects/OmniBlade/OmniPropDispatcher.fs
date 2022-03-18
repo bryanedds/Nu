@@ -90,7 +90,16 @@ module PropDispatcher =
                     | Portal (portalType, _, direction, _, _, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements then
                             match portalType with
-                            | AirPortal -> (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
+                            | AirPortal ->
+                                (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
+                            | WarpPortal ->
+                                let time = World.getUpdateTime world
+                                let localTime = time / 10L
+                                let celSize = Constants.Gameplay.TileCelSize
+                                let celColumn = single (localTime % 4L)
+                                let inset = v4Bounds (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                                let image = Assets.Field.WarpAnimationSheet
+                                (true, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                             | StairsPortal descending ->
                                 let offsetY = if descending then Constants.Gameplay.TileCelSize.Y else 0.0f
                                 let offsetX =
@@ -227,7 +236,7 @@ module PropDispatcher =
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileCelSize
-                        (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
+                        (false, image, colWhite, Additive, colZero, Some inset, FlipNone)
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation

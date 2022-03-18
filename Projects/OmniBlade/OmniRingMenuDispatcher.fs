@@ -42,11 +42,10 @@ module RingMenuDispatcher =
 
         override this.Content (ringMenu, menu) =
             [Content.entities ringMenu
-                (fun ringMenu _ -> ringMenu.Items)
-                (fun items _ ->
+                (fun ringMenu _ ->
                     let items =
                         let mutable i = -1
-                        items |>
+                        ringMenu.Items |>
                         Map.toSeq |>
                         Map.ofSeqBy (fun (k, (v, v2)) -> (v, (k, v2))) |>
                         Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>
@@ -67,7 +66,7 @@ module RingMenuDispatcher =
                          Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
                          Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
                          Entity.ClickEvent ==> cmd (ItemSelect itemName)])
-             Content.entityOpt ringMenu (fun ringMenu _ -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
+             Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)
                     [Entity.ParentNodeOpt == None

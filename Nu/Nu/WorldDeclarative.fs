@@ -137,28 +137,28 @@ module DeclarativeOperators =
         set left right
 
     /// Bind the left property to the value of the right.
-    /// HACK: bind3 allows the use of fake lenses in declarative usage.
+    /// HACK: bind2 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let bind3 (left : Lens<'a, World>) (right : Lens<'a, World>) =
+    let bind2 (left : Lens<'a, World>) (right : Lens<'a, World>) =
         if right.This :> obj |> isNull
         then failwith "bind3 expects an authentic right lens (where its This field is not null)."
         else BindDefinition (left, right)
 
     /// Bind the left property to the value of the right.
     let inline (<==) left right =
-        bind3 left right
+        bind2 left right
 
     /// Link the left property with the value of the right (two-way binding).
-    /// HACK: link3 allows the use of fake lenses in declarative usage.
+    /// HACK: link2 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let link3 (left : Lens<'a, World>) (right : Lens<'a, World>) =
+    let link2 (left : Lens<'a, World>) (right : Lens<'a, World>) =
         if right.This :> obj |> isNull
         then failwith "link3 expects an authentic right lens (where its This field is not null)."
         else LinkDefinition (left, right)
 
     /// Link the left property with the value of the right (two-way bind).
     let inline (<=>) left right =
-        link3 left right
+        link2 left right
 
 [<AutoOpen>]
 module WorldDeclarative =
@@ -221,13 +221,13 @@ module WorldDeclarative =
         static member internal addPropertyBinding propertyBindingKey propertyAddress left right world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right }) elmishBindings
+                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right(*; PBPrevious = ValueNone*) }) elmishBindings
                 let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) ->
                 let config = World.getCollectionConfig world
                 let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right }) elmishBindings
+                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right(*; PBPrevious = ValueNone*) }) elmishBindings
                 let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
@@ -283,25 +283,25 @@ module WorldDeclarative =
             // construct the generalized lens with internal caching
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
-                let mutable sieveResultOpt = None
-                let mutable unfoldResultOpt = None
+                let mutable sieveResultOpt = ValueNone
+                let mutable unfoldResultOpt = ValueNone
                 Lens.mapWorld (fun a world ->
                     let struct (b, c) =
-                        if a === lensResult then
+                        if a === lensResult then // ELMISH_CACHE
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> struct (sieveResult, unfoldResult)
-                            | (Some sieveResult, None) -> struct (sieveResult, unfold sieveResult world)
-                            | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueSome sieveResult, ValueSome unfoldResult) -> struct (sieveResult, unfoldResult)
+                            | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult world)
+                            | (ValueNone, ValueSome _) -> failwithumf ()
+                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
-                            | (Some _, None) -> let b = sieve a world in struct (b, unfold b world)
-                            | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueSome sieveResult, ValueSome unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
+                            | (ValueSome _, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueNone, ValueSome _) -> failwithumf ()
+                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
                     lensResult <- a
-                    sieveResultOpt <- Some b
-                    unfoldResultOpt <- Some c
+                    sieveResultOpt <- ValueSome b
+                    unfoldResultOpt <- ValueSome c
                     c)
                     lens
 
@@ -324,7 +324,7 @@ module WorldDeclarative =
             let world =
                 if Lens.validate contentBinding.CBSource world then
                     let mapGeneralized = Lens.getWithoutValidation contentBinding.CBSource world
-                    let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
+                    let lensesCurrent = World.makeLensesCurrent mapGeneralized.Keys contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else
                     let config = World.getCollectionConfig world

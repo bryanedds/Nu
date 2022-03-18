@@ -17,6 +17,13 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
 #endif
 
 #if ECS
+type [<NoEquality; NoComparison; Struct>] Position =
+    { mutable Active : bool
+      mutable Position : Vector2 }
+    interface Position Component with
+        member this.TypeName = nameof Position
+        member this.Active with get () = this.Active and set value = this.Active <- value
+
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
@@ -24,11 +31,12 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
         member this.TypeName = nameof Velocity
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<NoEquality; NoComparison; Struct>] Position =
+type [<NoEquality; NoComparison; Struct>] Shake =
     { mutable Active : bool
-      mutable Position : Vector2 }
-    interface Position Component with
-        member this.TypeName = nameof Position
+      mutable Origin : Vector2
+      mutable Offset : Vector2 }
+    interface Shake Component with
+        member this.TypeName = nameof Shake
         member this.Active with get () = this.Active and set value = this.Active <- value
 #endif
 
@@ -98,10 +106,6 @@ type MetricsEntityDispatcher () =
   #endif
 #endif
 
-//type P = { mutable Active : bool; mutable P : Vector2 }
-//type V = { mutable Active : bool; mutable V : Vector2 }
-//type O = { mutable Active : bool; mutable P : P; mutable V : V }
-
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
@@ -114,52 +118,53 @@ type MyGameDispatcher () =
         // grab ecs from current screen
         let ecs = screen.GetEcs world
 
-        // create static sprite system
-        ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ecs)
+        // create static sprite store
+        ecs.RegisterStore (StoreCorrelated<StaticSpriteComponent, World> ecs)
 #endif
 #if ECS
         // get ecs
         let ecs = screen.GetEcs world
 
-        // create systems
-        let positionSystem = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let velocitySystem = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        // create component stores
+        let _ = ecs.RegisterStore (CorrelatedStore<EntityId, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Position, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Velocity, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Shake, World> ecs)
 
-        // create query
-        let query = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
+        // create movers system
+        let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
 
-        //// create object references
-        //let count = 2500000
-        //let ps = Array.init count (fun _ -> { Active = true; P = v2Zero })
-        //let vs = Array.init count (fun _ -> { Active = true; V = v2Zero })
-        //let objs = Array.init count (fun i -> { Active = true; P = ps.[i]; V = vs.[i]})
-        ////let objs = Array.init count (fun _ -> { P = { P = v2Zero }; V = { V = v2One }})
-        //
-        ////// randomize elements in memory
-        ////for i in 0 .. objs.Length - 1 do
-        ////    objs.[i] <- objs.[Gen.random1 (objs.Length - 1)]
-        ////    objs.[i].P <- objs.[Gen.random1 (objs.Length - 1)].P
-        ////    objs.[i].V <- objs.[Gen.random1 (objs.Length - 1)].V
-        //
-        //// define update for out-of-place movers
-        //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-        //    for obj in objs do
-        //        if  obj.Active then
-        //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
-        //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
+        // create shakers system
+        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
 
-        // create 3M movers (goal: 60FPS, current: 60FPS)
-        for _ in 0 .. 3000000 - 1 do
-            let entityId = Gen.id
-            let _ = positionSystem.RegisterCorrelated false Unchecked.defaultof<Position> entityId
-            let _ = velocitySystem.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
-            ()
+        // create 4M movers (goal: 60FPS, current: 60FPS)
+        let world =
+            Seq.fold (fun world _ ->
+                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                world (Seq.init 4000000 id)
 
-        // define update for query
+        // create 4000 shakers
+        let world =
+            Seq.fold (fun world _ ->
+                let struct (entityId, world) = movers.NextEntityId world
+                shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                world (Seq.init 4000 id)
+
+        // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            query.Iter (fun position velocity ->
-                position.Position.X <- position.Position.X + velocity.Velocity.X
-                position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
+            movers.Iterate $
+                new Statement<_, _, _> (fun position velocity world ->
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+                    world)
+
+        // define update for shakers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            shakers.Iterate $
+                new Statement<_, _, _, _> (fun _ position shake world ->
+                    position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                    position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+                    world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
@@ -194,15 +199,15 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS
-        let positions = // 24,200 entity positions (goal: 60FPS, current: 40FPS)
+        let positions = // 19,663 entity positions (goal: 60FPS, current: 60FPS)
             seq {
-                for i in 0 .. 54 do
-                    for j in 0 .. 54 do
-                        for k in 0 .. 7 do
+                for i in 0 .. 52 do
+                    for j in 0 .. 52 do
+                        for k in 0 .. 6 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
-            Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None NoOverlay Simulants.DefaultGroup world
+            Seq.foldi (fun i world position ->
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string i)) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
@@ -277,7 +282,7 @@ type ElmishGameDispatcher () =
                 [Content.entity<ElmishEntityDispatcher> Gen.name
                     (seq {
                         yield Entity.Omnipresent == true
-                        for index in 0 .. 49999 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 50,000 property bindings (goal: 60FPS, currently: 59FPS)
+                        for index in 0 .. 100000 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 100,000 property bindings (goal: 60FPS, current: 40FPS)
                         Seq.toList)]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
@@ -295,9 +300,10 @@ type [<ReferenceEquality>] Intss =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
         { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
+        //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 80) // 6400 ints (goal: 60FPS, current 55FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current: 44FPS [55FPS w/o rendering])
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -308,13 +314,13 @@ type ElmishGameDispatcher () =
         | _ -> just intss
 
     override this.Content (intss, _) =
-        [Content.screen Gen.name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) constant $ fun i intss _ ->
+        [Content.screen Simulants.DefaultScreen.Name Vanilla []
+            [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) constant $ fun j int _ ->
+                    [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
+                             Entity.Position == v2 (single i * 10.0f - 480.0f) (single j * 6.0f - 272.0f)
                              Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]

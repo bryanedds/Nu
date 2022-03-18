@@ -33,7 +33,7 @@ type Advent =
     | MadTrixterDefeated
     | HeavyArmorosDefeated
     | AraneaImplicitumDefeated
-    | CastleSealed
+    | TombSealed
     | ForestSealed
     | FactorySealed
     | MountainSealed
@@ -53,7 +53,7 @@ module Advents =
 
     let initial =
         Set.ofList
-            [CastleSealed
+            [TombSealed
              ForestSealed
              FactorySealed
              MountainSealed

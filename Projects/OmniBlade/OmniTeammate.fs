@@ -101,25 +101,21 @@ type [<ReferenceEquality; NoComparison>] Teammate =
             HitPoints = teammate.HitPointsMax
             TechPoints = teammate.TechPointsMax }
 
-    static member make index allyType =
+    static member make level index allyType =
         let characterType = Ally allyType
         let character = Map.find characterType Data.Value.Characters
-        let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
         let weaponOpt = character.WeaponOpt
         let armorOpt = character.ArmorOpt
         let accessories = character.Accessories
+        let expPoints = Algorithms.levelToExpPoints level
         { ArchetypeType = archetypeType
           TeamIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
-          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
-          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
+          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType level
+          TechPoints = Algorithms.techPointsMax armorOpt archetypeType level
           ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
           Accessories = accessories }
-
-    // for debugging
-    static member makeAtLevel level index allyType =
-        { Teammate.make index allyType with ExpPoints = Algorithms.levelToExpPoints level }

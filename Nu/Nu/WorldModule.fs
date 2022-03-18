@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Linq
 open System.Reflection
 open FSharpx.Collections
 open Prime
@@ -18,10 +19,10 @@ module Simulants =
 
     /// The default screen - may or may not exist.
     let DefaultScreen = Screen "Screen"
-    
+
     /// The default group - may or may not exist.
     let DefaultGroup = DefaultScreen / "Group"
-    
+
     /// The default entity - may or may not exist.
     let DefaultEntity = DefaultGroup / "Entity"
 
@@ -63,7 +64,7 @@ module WorldModule =
     /// Declarative lens comparer.
     type internal LensComparer<'k when 'k : equality> () =
         interface IEqualityComparer<'k LensComparable> with
-            member this.Equals (left, right) = left.LensKey = right.LensKey
+            member this.Equals (left, right) = left.LensHash = right.LensHash && left.LensKey.Equals right.LensKey
             member this.GetHashCode value = value.LensHash
 
     /// F# reach-around for evaluating a script expression.
@@ -149,6 +150,14 @@ module WorldModule =
     let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
+    // OPTIMIZATION: slightly reduce Elmish simulant synchronization allocation.
+    let private emptyPreviousSimulants =
+        USet.makeEmpty (LensComparer ()) Imperative
+
+    // OPTIMIZATION: slightly reduce Elmish simulant synchronization allocation.
+    let private emptyRemovedSimulants =
+        HashSet ()
+
     type World with // Reflection
 
         /// Initialize a property's dynamic attributes.
@@ -182,7 +191,7 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher =
-            let config = AmbientState.getCollectionConfig ambientState
+            let config = AmbientState.getConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
@@ -263,7 +272,7 @@ module WorldModule =
         /// Get collection config value.
         [<FunctionBinding>]
         static member getCollectionConfig world =
-            World.getAmbientStateBy AmbientState.getCollectionConfig world
+            World.getAmbientStateBy AmbientState.getConfig world
 
         /// Get the the liveness state of the engine.
         [<FunctionBinding>]
@@ -687,28 +696,32 @@ module WorldModule =
 
     type World with // ElmishBindingsMap
 
-        static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
+        static member internal makeLensesCurrent (keys : IComparable List) lensGeneralized world =
             let config = World.getCollectionConfig world
             let mutable current = USet.makeEmpty (LensComparer ()) config
-            for key in mapGeneralized.ToKeys do
-                // OPTIMIZATION: ensure map is extracted during validation only.
+            for key in keys do
+                // OPTIMIZATION: ensure item is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
-                let mutable mapCached = Unchecked.defaultof<MapGeneralized>
+                let mutable itemCached = Unchecked.defaultof<obj> // ELMISH_CACHE
                 let validateOpt =
                     match lensGeneralized.ValidateOpt with
                     | Some validate -> Some (fun world ->
                         if validate world then
-                            mapCached <- Lens.getWithoutValidation lensGeneralized world
-                            mapCached.ContainsKey key
+                            let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
+                            if mapGeneralized.ContainsKey key
+                            then itemCached <- mapGeneralized.GetValue key; true
+                            else false
                         else false)
                     | None -> Some (fun world ->
-                        mapCached <- Lens.getWithoutValidation lensGeneralized world
-                        mapCached.ContainsKey key)
+                        let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
+                        if mapGeneralized.ContainsKey key
+                        then itemCached <- mapGeneralized.GetValue key; true
+                        else false)
                 let getWithoutValidation =
                     fun _ ->
-                        let result = mapCached.GetValue key
-                        mapCached <- Unchecked.defaultof<MapGeneralized>
+                        let result = itemCached
+                        itemCached <- Unchecked.defaultof<obj> // avoid GC promotion by throwing away map ASAP
                         result
                 let lensItem =
                     { Name = lensGeneralized.Name
@@ -769,22 +782,24 @@ module WorldModule =
 
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
-                match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
-                | (false, _) ->
-                    let config = World.getCollectionConfig world
-                    USet.makeEmpty (LensComparer ()) config
+                match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with // ELMISH_CACHE
+                | (false, _) -> emptyPreviousSimulants
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
-            let removed = USet.differenceFast previous current
+            let removed =
+                if added.Count = 0 && USet.length current = USet.length previous
+                then emptyRemovedSimulants // infer no removals
+                else USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
-            let world =
-                if changed then
-                    let contentKeyInc = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
-                    let world = World.removeSynchronizedSimulants contentKeyInc removed world
-                    let world = World.addSynchronizedSimulants contentMapper contentKeyInc mapGeneralized added origin owner parent world
-                    world
-                else world
-            World.addKeyedValue contentKey current world
+            if changed then
+                // HACK: we need to use content key for an additional purpose, so we add 2 (key with add 1 may already be used in invoking function).
+                // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+                let contentKeyPlus2 = Gen.idDeterministic 2 contentKey // ELMISH_CACHE
+                let world = World.removeSynchronizedSimulants contentKeyPlus2 removed world
+                let world = World.addSynchronizedSimulants contentMapper contentKeyPlus2 mapGeneralized added origin owner parent world
+                let world = World.addKeyedValue contentKey current world
+                world
+            else world
 
         static member internal publishChangeBinding propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
@@ -795,6 +810,14 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let value = binding.PBRight.GetWithoutValidation world
+                            let changed =
+                                true
+                                (*match binding.PBPrevious with
+                                | ValueSome previous ->
+                                    if value =/= previous // ELMISH_CACHE
+                                    then binding.PBPrevious <- ValueSome value; true
+                                    else false
+                                | ValueNone -> binding.PBPrevious <- ValueSome value; true*)
                             let allowPropertyBinding =
 #if DEBUG
                                 // OPTIMIZATION: only compute in DEBUG mode.
@@ -802,20 +825,31 @@ module WorldModule =
 #else
                                 true
 #endif
-                            if allowPropertyBinding then
-                                let setter = Option.get binding.PBLeft.SetOpt
-                                setter value world
+                            if changed && allowPropertyBinding
+                            then binding.PBLeft.TrySet value world
                             else world
                         else world
                     | ContentBinding binding ->
+                        // HACK: we need to use content key for an additional purpose, so we add 1.
+                        // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
-                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
-                        else 
+                            let currentKeys = mapGeneralized.Keys
+                            let previousKeys =
+                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with // ELMISH_CACHE
+                                | (false, _) -> List () // TODO: use cached module binding of empty List.
+                                | (true, previous) -> previous
+                            if not (currentKeys.SequenceEqual previousKeys) then
+                                let world = World.addKeyedValue contentKeyPlus1 currentKeys world
+                                let current = World.makeLensesCurrent currentKeys binding.CBSource world
+                                World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            else world
+                        else
                             let config = World.getCollectionConfig world
                             let lensesCurrent = USet.makeEmpty (LensComparer ()) config
-                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
+                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
+                            World.removeKeyedValue contentKeyPlus1 world)
                     world elmishBindings
             | (false, _) -> world
 

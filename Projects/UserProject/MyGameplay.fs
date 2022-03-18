@@ -54,24 +54,24 @@ module MyGameplay =
             let world =
                 match command with
                 | Jump ->
-                    let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
                     if World.isBodyOnGround physicsId world then
                         let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                         World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     else world
                 | MoveLeft ->
-                    let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
                     then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
                     else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
                 | MoveRight ->
-                    let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
                     then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
                     else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
                 | UpdateEye ->
                     if World.getUpdateRate world <> 0L
-                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
+                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Player.Player.GetCenter world) world
                     else world
                 | Nop -> world
             just world
@@ -87,13 +87,13 @@ module MyGameplay =
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent ==> msg Quit]]
 
-             // the scene group
+             // the player group
              Content.groupIfScreenSelected screen $ fun _ _ ->
-                Content.group Simulants.Gameplay.Scene.Group.Name []
-                    [Content.character Simulants.Gameplay.Scene.Player.Name
+                Content.group Simulants.Gameplay.Player.Group.Name []
+                    [Content.character Simulants.Gameplay.Player.Player.Name
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 108.0f 108.0f]]
 
-             // the level group
+             // the scene group
              Content.groupIfScreenSelected screen $ fun _ _ ->
-                Content.groupFromFile Simulants.Gameplay.Level.Group.Name "Assets/Gameplay/Level.nugroup"]
+                Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup"]
