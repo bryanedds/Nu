@@ -810,14 +810,6 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let value = binding.PBRight.GetWithoutValidation world
-                            let changed =
-                                true
-                                (*match binding.PBPrevious with
-                                | ValueSome previous ->
-                                    if value =/= previous // ELMISH_CACHE
-                                    then binding.PBPrevious <- ValueSome value; true
-                                    else false
-                                | ValueNone -> binding.PBPrevious <- ValueSome value; true*)
                             let allowPropertyBinding =
 #if DEBUG
                                 // OPTIMIZATION: only compute in DEBUG mode.
@@ -825,7 +817,7 @@ module WorldModule =
 #else
                                 true
 #endif
-                            if changed && allowPropertyBinding
+                            if allowPropertyBinding
                             then binding.PBLeft.TrySet value world
                             else world
                         else world
