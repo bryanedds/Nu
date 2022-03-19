@@ -1113,8 +1113,7 @@ module WorldTypes =
     /// Describes a property binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
-          PBRight : World Lens
-          (*mutable PBPrevious : obj ValueOption*) }
+          PBRight : World Lens }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
