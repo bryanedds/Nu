@@ -235,6 +235,12 @@ type KeyItemType =
 
     static member frenchName kt = match kt with
                                   |BrassKey -> "Cle de Laiton"
+                                  |IronKey -> "Cle de Fer"
+                                  |CopperKey -> "Cle de Cuivre"
+                                  |AluminumKey -> "Cle d'Aluminium"
+                                  |PewterKey -> "Cle d'Etain"
+                                  |SteelKey -> "Cle d'Acier"
+
     static member frenchGender kt = Feminin 
     
     static member frenchWithUndefinedArticle kt = 
