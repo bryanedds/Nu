@@ -82,21 +82,23 @@ type WeaponType =
     | SightedBow
     | IvoryRod
     | Fangs
-    static member frenchName wt = match wt with 
+   static member frenchName wt = match wt with 
                                   |Bare -> "Mains Nues"
                                   |ShortSword -> "Epee Courte"
                                   |Dagger -> "Dague"
-                                  |OakRod -> "Baguette de Bois "
+                                  |OakRod -> "Canne de Bois "
                                   |OakBow -> "Arc en Bois"
                                   |Paws -> "Pattes"
                                   |BronzeSword -> "Epee de Bronze"
                                   |BronzeKatana -> "Katana de Bronze"
-                                  |BronzeRod -> "Baguette de Bronze"
-                                  |LightBow -> "Arc Leger"
+                                  |BronzeRod -> "Canne de Bronze"
+                                  |LightBow -> "Arc Nu"
                                   |Claws -> "Griffes"
                                   |IronSword -> "Epee de Fer"
                                   |IronKatana -> "Katana de Fer"
-                                  |SightedBow -> "Arc Droit"
+                                  |SightedBow -> "Arc et Viseur"
+                                  |IvoryRod -> "Canne d'Ivoire"
+                                  |Fangs -> "Crocs"
     static member NumberAndGender wt = match wt with
                                         |Bare -> Plural Feminin
                                         |ShortSword -> Singular Feminin
@@ -112,6 +114,8 @@ type WeaponType =
                                         |IronSword -> Singular Feminin 
                                         |IronKatana -> Singular Masculin 
                                         |SightedBow -> Singular Masculin 
+                                        |IvoryRod -> Singular Feminin
+                                        |Fangs -> Plural Masculin  
     static member frenchWithUndefinedArticle wt = 
         let article = (WeaponType.NumberAndGender wt).UndefinedArticle
         article + WeaponType.frenchName wt
