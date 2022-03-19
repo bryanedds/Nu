@@ -96,12 +96,13 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
-        world
+        let id = UInt64.Parse entity.Name
+        ecs.RegisterCorrelated<StaticSpriteComponent> false { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } id world
 
     override this.Unregister (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
+        let id = UInt64.Parse entity.Name
+        let struct (_, world) = ecs.UnregisterCorrelated<StaticSpriteComponent> id world
         world
   #endif
 #endif
@@ -119,7 +120,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create static sprite store
-        ecs.RegisterStore (StoreCorrelated<StaticSpriteComponent, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<StaticSpriteComponent, World> ecs)
 #endif
 #if ECS
         // get ecs
@@ -207,7 +208,7 @@ type MyGameDispatcher () =
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.foldi (fun i world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string i)) NoOverlay Simulants.DefaultGroup world
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string Gen.id64)) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
@@ -217,27 +218,29 @@ type MyGameDispatcher () =
         let world = World.selectScreen IdlingState Simulants.DefaultScreen world
 #if ECS_HYBRID
         // define update for static sprites
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ world ->
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
                     let comp = &components.[i]
                     if comp.Active then
                         let state = comp.Entity.State world
                         state.Rotation <- state.Rotation + 0.03f
+            world
 
         // define actualize for static sprites
-        ecs.SubscribePlus Gen.id EcsEvents.Actualize $ fun _ _ _ world ->
-            let messages = List ()
-            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                for i in 0 .. components.Length - 1 do
-                    let comp = &components.[i]
-                    if comp.Active then
-                        let state = comp.Entity.State world
-                        if state.Visible then
-                            let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-                            let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                            messages.Add layeredMessage
-            World.enqueueRenderLayeredMessages messages world
+        let _ =
+            ecs.SubscribePlus Gen.id32 EcsEvents.Actualize $ fun _ _ _ world ->
+                let messages = List ()
+                for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                    for i in 0 .. components.Length - 1 do
+                        let comp = &components.[i]
+                        if comp.Active then
+                            let state = comp.Entity.State world
+                            if state.Visible then
+                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                                let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                                messages.Add layeredMessage
+                World.enqueueRenderLayeredMessages messages world
 #else
         ignore screen
 #endif
