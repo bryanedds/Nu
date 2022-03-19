@@ -1157,15 +1157,10 @@ module BattleDispatcher =
                      Entity.Text == "Next"
                      Entity.ClickEvent ==> msg InteractDialog]
 
-                 // allies
+                 // characters
                  Content.entities battle
-                    (fun battle _ -> Battle.getAllies battle)
-                    (fun index ally _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== ally])
-
-                 // enemies
-                 Content.entities battle
-                    (fun battle _ -> Battle.getEnemies battle)
-                    (fun index enemy _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== enemy])]
+                    (fun battle _ -> Battle.getCharacters battle)
+                    (fun index character _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== character])]
 
              // input groups
              Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally _ ->
