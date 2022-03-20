@@ -82,7 +82,7 @@ type WeaponType =
     | SightedBow
     | IvoryRod
     | Fangs
-   static member frenchName wt = match wt with 
+    static member frenchName wt = match wt with 
                                   |Bare -> "Mains Nues"
                                   |ShortSword -> "Epee Courte"
                                   |Dagger -> "Dague"
