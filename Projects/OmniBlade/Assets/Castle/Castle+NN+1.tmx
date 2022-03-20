@@ -61,7 +61,7 @@
     [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
-    [Dialog &quot;Nouveau coffre deverouille...&quot;]]]
+    [Dialog &quot;Un coffre s'est deverouille...&quot;]]]
  [[KylaAdvent 3]]]</property>
    </properties>
   </object>
