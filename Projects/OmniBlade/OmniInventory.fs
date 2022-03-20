@@ -278,7 +278,7 @@ type ItemType =
     static member frenchWithQuantity item =
                   match item with
                          | Consumable ty -> ConsumableType.frenchWithUndefinedArticle ty
-                         | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
+                         | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchWithUndefinedArticle ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
                          | KeyItem ty -> KeyItemType.frenchWithUndefinedArticle ty
                          | Stash gold -> string gold + " Ors"
 
