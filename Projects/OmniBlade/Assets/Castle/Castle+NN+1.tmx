@@ -45,7 +45,7 @@
     [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
     [Wait 180]
     [Dialog &quot;Il m'a dit que, toutes ces annees, c'etait ma beaute qui m'avait valu leur cruaute...&quot;]
-    [Dialog &quot;Personne ne m'avait jamais rien dit de semblable...&quot;]
+    [Dialog &quot;Personne ne m'avais jamais parle ainsi..&quot;]
     [Dialog &quot;Il a promis de m'emmener loin d'ici...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;Mais comment pourrais-je partir maintenant? Alors que tout est en place pour me venger?...&quot;]
