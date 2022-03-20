@@ -39,8 +39,8 @@
    <properties>
     <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
   [Sequence
-   [[Dialog &quot;Il me sera delectable...&quot;]
-    [Dialog &quot;...de collecter une telle ame!&quot;]
+   [[Dialog &quot;Quelle delicieuse piece...&quot;]
+    [Dialog &quot;...pour enrichir ma collection d'ames!&quot;]
     [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]</property>
    </properties>
   </object>

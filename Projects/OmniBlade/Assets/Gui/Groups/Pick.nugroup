@@ -14,7 +14,7 @@
     [Name LoadGame3]
     [Position [-168 -108]]
     [Size [336 72]]
-    [Text "Charger la partie 3"]
+    [Text "Charger la Partie 3"]
     [UpImage [Gui ButtonLongUp]]]]
   [ButtonDispatcher
    [[ClickSoundOpt
@@ -23,7 +23,7 @@
     [Name LoadGame2]
     [Position [-168 0]]
     [Size [336 72]]
-    [Text "Charger la partie 2"]
+    [Text "Charger la Partie 2"]
     [UpImage [Gui ButtonLongUp]]]]
   [ButtonDispatcher
    [[ClickSoundOpt
@@ -41,7 +41,7 @@
     [Name LoadGame1]
     [Position [-168 108]]
     [Size [336 72]]
-    [Text "Charger la partie 1"]
+    [Text "Charger la Partie 1"]
     [UpImage [Gui ButtonLongUp]]]]
   [ButtonDispatcher
    [[ClickSoundOpt

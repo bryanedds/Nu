@@ -87,7 +87,7 @@
     [Dialog &quot;Jusqu'a ce qu'il me soit donne par l'un d'eux...&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
     [FadeOutSong 4000]
-    [Dialog &quot;...la même fin que je lui ai donnee a elle...&quot; False]
+    [Dialog &quot;...la meme fin que je lui ai donnee a elle...&quot; False]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
     [PlaySong 1000 0 0.5 0 [Castle CastlePart3]]

@@ -44,8 +44,8 @@
    <properties>
     <property name="I">[Npc AraneaImplicitumNpc [Some Upward]
   [Sequence
-   [[Dialog &quot;Quelle superbe piece...&quot;]
-    [Dialog &quot;...pour completer ma collection d'ames!&quot;]
+   [[Dialog &quot;Quelle delicieuse piece...&quot;]
+    [Dialog &quot;...pour enrichir ma collection d'ames!&quot;]
     [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]</property>
    </properties>
   </object>

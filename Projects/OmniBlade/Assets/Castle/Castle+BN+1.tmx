@@ -39,8 +39,8 @@
    <properties>
     <property name="I">[Npc HeavyArmorosNpc [Some Upward]
   [Sequence
-   [[Dialog &quot;Through the gate... the soul...&quot;]
-    [Dialog &quot;Through the soul... the gate...&quot;]
+   [[Dialog &quot;Via la porte... l'ame...&quot;]
+    [Dialog &quot;Via l'ame... la porte...&quot;]
     [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]</property>
    </properties>
   </object>
