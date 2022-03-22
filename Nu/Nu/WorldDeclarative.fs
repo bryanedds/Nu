@@ -282,12 +282,12 @@ module WorldDeclarative =
 
             // construct the generalized lens with internal caching
             let lensGeneralized =
-                let mutable lensResult = Unchecked.defaultof<obj>
-                let mutable sieveResultOpt = ValueNone
-                let mutable unfoldResultOpt = ValueNone
+                let mutable lensResult = Unchecked.defaultof<obj> // ELMISH_CACHE
+                let mutable sieveResultOpt = ValueNone // ELMISH_CACHE
+                let mutable unfoldResultOpt = ValueNone // ELMISH_CACHE
                 Lens.mapWorld (fun a world ->
                     let struct (b, c) =
-                        if a === lensResult then // ELMISH_CACHE
+                        if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (ValueSome sieveResult, ValueSome unfoldResult) -> struct (sieveResult, unfoldResult)
                             | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult world)
