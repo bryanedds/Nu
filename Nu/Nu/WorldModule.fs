@@ -733,10 +733,7 @@ module WorldModule =
                 current <- USet.add item current
             current
 
-        static member internal removeSynchronizedSimulants
-            (contentKey : Guid)
-            (removed : _ HashSet)
-            world =
+        static member internal removeSynchronizedSimulants contentKey (removed : _ HashSet) world =
             Seq.fold (fun world lensComparable ->
                 let key = lensComparable.LensKey
                 match World.tryGetKeyedValueFast (contentKey, world) with
@@ -824,12 +821,12 @@ module WorldModule =
                     | ContentBinding binding ->
                         // HACK: we need to use content key for an additional purpose, so we add 1.
                         // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
-                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey
+                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey // ELMISH_CACHE
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let currentKeys = mapGeneralized.Keys
                             let previousKeys =
-                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with // ELMISH_CACHE
+                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
                                 | (false, _) -> List () // TODO: use cached module binding of empty List.
                                 | (true, previous) -> previous
                             if not (currentKeys.SequenceEqual previousKeys) then
