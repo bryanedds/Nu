@@ -384,7 +384,8 @@ module WorldModule3 =
                  ButtonDispatcher () :> EntityDispatcher
                  LabelDispatcher () :> EntityDispatcher
                  TextDispatcher () :> EntityDispatcher
-                 ToggleDispatcher () :> EntityDispatcher
+                 ToggleButtonDispatcher () :> EntityDispatcher
+                 RadioButtonDispatcher () :> EntityDispatcher
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
