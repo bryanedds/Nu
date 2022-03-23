@@ -147,8 +147,6 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           NuConfig = NuConfig.defaultConfig }
 
 /// Efficiently emulates root type casting of a Map.
-/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
     { Keys : IComparable List
       ContainsKey : IComparable -> bool
