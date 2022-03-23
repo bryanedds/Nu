@@ -152,7 +152,8 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 type [<NoEquality; NoComparison>] MapGeneralized =
     { Keys : IComparable List
       ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj }
+      GetValue : IComparable -> obj
+      TryGetValue : IComparable -> struct (bool * obj) }
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
@@ -165,7 +166,11 @@ type [<NoEquality; NoComparison>] MapGeneralized =
           GetValue = fun (key : IComparable) ->
             match map.TryGetValue (key :?> 'k) with
             | (true, value) -> value :> obj
-            | (false, _) -> failwithumf () }
+            | (false, _) -> failwithumf ()
+          TryGetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> struct (true, value :> obj)
+            | (false, _) -> struct (false, null) }
 
 /// Extensions for EventTrace.
 module EventTrace =

@@ -709,15 +709,15 @@ module WorldModule =
                     | Some validate -> Some (fun world ->
                         if validate world then
                             let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
-                            if mapGeneralized.ContainsKey key
-                            then itemCached <- mapGeneralized.GetValue key; true
-                            else false
+                            let struct (found, itemOpt) = mapGeneralized.TryGetValue key
+                            if found then itemCached <- itemOpt
+                            found
                         else false)
                     | None -> Some (fun world ->
                         let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
-                        if mapGeneralized.ContainsKey key
-                        then itemCached <- mapGeneralized.GetValue key; true
-                        else false)
+                        let struct (found, itemOpt) = mapGeneralized.TryGetValue key
+                        if found then itemCached <- itemOpt
+                        found)
                 let getWithoutValidation =
                     fun _ ->
                         let result = itemCached
