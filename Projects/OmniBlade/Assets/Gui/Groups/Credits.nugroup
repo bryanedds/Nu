@@ -27,11 +27,11 @@
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Position [-432 -66]]
     [Size [864 90]]
-    [Text "Art: FinalBossBlues, SelielTheShaper, et d'autres!"]]]
+    [Text "Art: FinalBossBlues,SelielTheShaper et d'autres!"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Position [-432 -168]]
     [Size [864 90]]
-    [Text "Musique: DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]]]]
+    [Text "Musique: DrassRay,JPS,OwlThery,Pdk,PeriTune,Suat"]]]]]

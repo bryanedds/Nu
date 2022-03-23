@@ -51,7 +51,7 @@
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je suis la pour aider, mais je ne te protegerai pas gratuitement... Peut-être si tu me files $FEE Ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je suis la pour aider, mais je ne te protegerai pas gratuitement... Peut-etre si tu me files $FEE Ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
@@ -67,7 +67,26 @@ Voyageons ensemble... $FEE Ors...?&quot; [&quot;Oui&quot; [Recruit Riain]] [&quo
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;Hehe... Bienvenue au Tombeau des Neuf Demons... enfin on l'appelle comme ça. Si tu veux l'explorer en profondeur, J'ai des conseils pour t'aider a en sortir vivant.^D'apres ce qu'on sait, la premiere partie a trois sections; pour passer a la section suivante, tu dois detruire son guardien. Mais prends garde car le gardien peut etre s'averer plus coriace que les ennemis que tu auras croises.^Je vois que tu as une Sphere Spirituelle. Elle te montrera les ennemis qui s'approchent. Plus tu t'enfonceras dans la section, plus ils seront forts. Plus ils seront forts, plus dans ta Sphere ils seront rouges!^Chaque combattant apprend des Techs, c'est a dire des techniques de combat. Pour user d'une Tech, le guerrier doit avoir assez de Points de Tech, ou PT, en reserve.^Quand un ennemi est flamboyant, c'est qu'il s'apprete a utiliser une Tech a lui. Ca peut etre devastateur! Utilise ta Critique Tech pour annuler la technique ennemie et te preserver du danger.^La Tech que tu vas apprendre apres la Critique Tech est le Slash. Elle peut etre tres puissante car elle blesse tous les ennemis d'une meme ligne.^Ah, et un dernier conseil... Personne ici n'est ton ami. Cependant, moyennant finance certain te suivront, et d'autres te proposeront des objets qui peuvent te sauver la vie.&quot;] [RemoveAdvent TombSealed]]]]"/>
+    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;
+Hehe... Bienvenue au Tombeau des Neuf Demons... 
+^enfin on l'appelle comme ca.
+^Si tu veux l'explorer en profondeur, J'ai des conseils pour t'aider a en sortir vivant.
+^D'apres ce qu'on sait, la premiere partie a trois sections;
+pour passer a la section suivante, tu dois detruire son gardien.
+^Mais prends garde car le gardien peut s'averer plus coriace que les ennemis que tu auras croises.
+^Je vois que tu as une Sphere Spirituelle. Elle te montrera les ennemis qui s'approchent. 
+^Plus tu t'enfonceras dans la section, plus ils seront forts. Plus ils seront forts,
+plus dans ta Sphere ils seront rouges!
+^Chaque combattant apprend des Techs, c'est a dire des techniques de combat.
+Pour utiliser une Tech, le guerrier doit avoir assez de Points de Tech, ou PT, en reserve.
+^Quand un ennemi est flamboyant, c'est qu'il s'apprete a utiliser une Tech a lui.
+Ca peut etre devastateur!
+^A ce moment la, utilise ta Critique Tech pour annuler la technique ennemie et te preserver du danger.
+^La Tech que tu vas apprendre apres la Critique Tech est le Slash.
+Elle peut etre tres puissante car elle blesse tous les ennemis d'une meme ligne.
+^Ah, et un dernier conseil... Personne ici n'est ton ami.
+^Cependant, moyennant finance certain te suivront,
+et d'autres te proposeront des objets qui peuvent te sauver la vie.&quot;] [RemoveAdvent TombSealed]]]]"/>
    </properties>
   </object>
   <object id="14" gid="1161" x="2016" y="3264" width="96" height="96">
