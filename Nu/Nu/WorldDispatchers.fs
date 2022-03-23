@@ -1956,7 +1956,7 @@ module TextDispatcherModule =
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
-module ToggleDispatcherModule =
+module ToggleButtonDispatcherModule =
 
     type Entity with
         member this.GetToggled world : bool = this.Get Property? Toggled world
@@ -1987,7 +1987,7 @@ module ToggleDispatcherModule =
         member this.ToggledEvent = Events.Toggled --> this
         member this.UntoggledEvent = Events.Untoggled --> this
 
-    type ToggleDispatcher () =
+    type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
         
         let handleMouseLeftDown evt world =
@@ -2006,7 +2006,7 @@ module ToggleDispatcherModule =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let wasPressed = entity.GetPressed world
-            let world = entity.SetPressed false world
+            let world = if wasPressed then entity.SetPressed false world else world
             let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
             if  entity.GetVisible world &&
                 Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
@@ -2081,7 +2081,129 @@ module ToggleDispatcherModule =
             match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
             | Some size -> size
             | None -> Constants.Engine.EntitySizeDefault
-            
+
+[<AutoOpen>]
+module RadioButtonDispatcherModule =
+
+    type Entity with
+        member this.GetDialed world : bool = this.Get Property? Dialed world
+        member this.SetDialed (value : bool) world = this.Set Property? Dialed value world
+        member this.Dialed = lens Property? Dialed this.GetDialed this.SetDialed this
+        member this.GetDialedTextOffset world : Vector2 = this.Get Property? DialedTextOffset world
+        member this.SetDialedTextOffset (value : Vector2) world = this.Set Property? DialedTextOffset value world
+        member this.DialedTextOffset = lens Property? DialedTextOffset this.GetDialedTextOffset this.SetDialedTextOffset this
+        member this.GetUndialedImage world : Image AssetTag = this.Get Property? UndialedImage world
+        member this.SetUndialedImage (value : Image AssetTag) world = this.Set Property? UndialedImage value world
+        member this.UndialedImage = lens Property? UndialedImage this.GetUndialedImage this.SetUndialedImage this
+        member this.GetDialedImage world : Image AssetTag = this.Get Property? DialedImage world
+        member this.SetDialedImage (value : Image AssetTag) world = this.Set Property? DialedImage value world
+        member this.DialedImage = lens Property? DialedImage this.GetDialedImage this.SetDialedImage this
+        member this.GetDialSoundOpt world : Sound AssetTag option = this.Get Property? DialSoundOpt world
+        member this.SetDialSoundOpt (value : Sound AssetTag option) world = this.Set Property? DialSoundOpt value world
+        member this.DialSoundOpt = lens Property? DialSoundOpt this.GetDialSoundOpt this.SetDialSoundOpt this
+        member this.GetDialSoundVolume world : single = this.Get Property? DialSoundVolume world
+        member this.SetDialSoundVolume (value : single) world = this.Set Property? DialSoundVolume value world
+        member this.DialSoundVolume = lens Property? DialSoundVolume this.GetDialSoundVolume this.SetDialSoundVolume this
+        member this.DialEvent = Events.Dial --> this
+        member this.DialedEvent = Events.Dialed --> this
+        member this.UndialedEvent = Events.Undialed --> this
+
+    type RadioButtonDispatcher () =
+        inherit GuiDispatcher ()
+        
+        let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            let data = evt.Data : MouseButtonData
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world then
+                    let world = entity.SetPressed true world
+                    (Resolve, world)
+                else (Resolve, world)
+            else (Cascade, world)
+
+        let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let data = evt.Data : MouseButtonData
+            let wasPressed = entity.GetPressed world
+            let world = if wasPressed then entity.SetPressed false world else world
+            let wasDialed = entity.GetDialed world
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            if  entity.GetVisible world &&
+                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                if entity.GetEnabled world && wasPressed && not wasDialed then
+                    let world = entity.SetDialed true world
+                    let dialed = entity.GetDialed world
+                    let eventAddress = if dialed then Events.Dialed else Events.Undialed
+                    let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "" EventTrace.empty
+                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                    let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "Dial" EventTrace.empty
+                    let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
+                    let world =
+                        match entity.GetDialSoundOpt world with
+                        | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                        | None -> world
+                    (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static member Facets =
+            [typeof<TextFacet>]
+
+        static member Properties =
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
+             define Entity.Dialed false
+             define Entity.DialedTextOffset v2Zero
+             define Entity.Pressed false
+             define Entity.PressedTextOffset v2Zero
+             define Entity.UndialedImage Assets.Default.Image
+             define Entity.DialedImage Assets.Default.Image2
+             define Entity.DialSoundOpt (Some Assets.Default.Sound)
+             define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            world
+
+        override this.Update (entity, world) =
+            let textOffset =
+                if entity.GetPressed world then entity.GetPressedTextOffset world
+                elif entity.GetDialed world then entity.GetDialedTextOffset world
+                else v2Zero
+            entity.SetTextOffset textOffset world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let transform = entity.GetTransform world
+                let image =
+                    if entity.GetDialed world || entity.GetPressed world
+                    then entity.GetDialedImage world
+                    else entity.GetUndialedImage world
+                World.enqueueRenderLayeredMessage
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize image
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Absolute = entity.GetAbsolute world
+                              Offset = Vector2.Zero
+                              InsetOpt = None
+                              Image = image
+                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
+                    world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetUndialedImage world) world with
+            | Some size -> size
+            | None -> Constants.Engine.EntitySizeDefault
+
 [<AutoOpen>]
 module FpsDispatcherModule =
 

@@ -807,6 +807,13 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let value = binding.PBRight.GetWithoutValidation world
+                            let changed =
+                                match binding.PBPrevious with
+                                | ValueSome previous ->
+                                    if value =/= previous
+                                    then binding.PBPrevious <- ValueSome value; true
+                                    else false
+                                | ValueNone -> binding.PBPrevious <- ValueSome value; true
                             let allowPropertyBinding =
 #if DEBUG
                                 // OPTIMIZATION: only compute in DEBUG mode.
@@ -814,7 +821,7 @@ module WorldModule =
 #else
                                 true
 #endif
-                            if allowPropertyBinding
+                            if changed && allowPropertyBinding
                             then binding.PBLeft.TrySet value world
                             else world
                         else world

@@ -221,13 +221,13 @@ module WorldDeclarative =
         static member internal addPropertyBinding propertyBindingKey propertyAddress left right world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right }) elmishBindings
+                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings
                 let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) ->
                 let config = World.getCollectionConfig world
                 let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right }) elmishBindings
+                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings
                 let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
