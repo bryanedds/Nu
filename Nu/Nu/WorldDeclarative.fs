@@ -218,28 +218,79 @@ module WorldDeclarative =
                 | (false, _) -> failwithumf ()
             | _ -> world
 
-        static member internal addPropertyBinding propertyBindingKey propertyAddress left right world =
-            match world.ElmishBindingsMap.TryGetValue propertyAddress with
-            | (true, elmishBindings) ->
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings
-                let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-            | (false, _) ->
-                let config = World.getCollectionConfig world
-                let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings
-                let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+        static member internal addPropertyBinding propertyBindingKey propertyAddress left (right : World Lens) world =
+            match right.ParentOpt with
+            | Some parent ->
+                match world.ElmishBindingsMap.TryGetValue propertyAddress with
+                | (true, elmishBindings) ->
+                    let elmishBindings =
+                        { elmishBindings with
+                            EBSParents = UMap.add propertyBindingKey parent elmishBindings.EBSParents
+                            EBSBindings =
+                                let key = Right parent
+                                let config = World.getCollectionConfig world
+                                match elmishBindings.EBSBindings.TryGetValue key with
+                                | (true, binding) ->
+                                    match binding with
+                                    | PropertyBindings bindings ->
+                                        let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
+                                        let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.add propertyBindingKey binding bindings.PBSPropertyBindings }
+                                        OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings
+                                    | _ -> failwithumf ()
+                                | (false, _) ->
+                                    let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
+                                    let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey binding }
+                                    OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+                | (false, _) ->
+                    let config = World.getCollectionConfig world
+                    let elmishBindings =
+                        { EBSParents = UMap.singleton HashIdentity.Structural config propertyBindingKey parent
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Right parent) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+            | None ->
+                match world.ElmishBindingsMap.TryGetValue propertyAddress with
+                | (true, elmishBindings) ->
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings.EBSBindings }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+                | (false, _) ->
+                    let config = World.getCollectionConfig world
+                    let elmishBindings =
+                        { EBSParents = UMap.makeEmpty HashIdentity.Structural config
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
         static member internal removePropertyBinding propertyBindingKey propertyAddress world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
-            | (true, propertyBindings) ->
-                let propertyBindings = OMap.remove propertyBindingKey propertyBindings
-                if OMap.notEmpty propertyBindings then
-                    let elmishBindingsMap = UMap.add propertyAddress propertyBindings world.ElmishBindingsMap
+            | (true, elmishBindings) ->
+                match elmishBindings.EBSParents.TryGetValue propertyBindingKey with
+                | (true, parent) ->
+                    let elmishBindings =
+                        { elmishBindings with
+                            EBSParents = UMap.remove propertyBindingKey elmishBindings.EBSParents
+                            EBSBindings =
+                                let key = Right parent
+                                match elmishBindings.EBSBindings.TryGetValue key with
+                                | (true, binding) ->
+                                    match binding with
+                                    | PropertyBindings _ -> OMap.remove key elmishBindings.EBSBindings
+                                    | _ -> failwithumf ()
+                                | (false, _) -> OMap.remove key elmishBindings.EBSBindings }
+                    let elmishBindingsMap =
+                        if OMap.isEmpty elmishBindings.EBSBindings
+                        then UMap.remove propertyAddress world.ElmishBindingsMap
+                        else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-                else
-                    let elmishBindingsMap = UMap.remove propertyAddress world.ElmishBindingsMap
+                | (false, _) ->
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.remove (Left propertyBindingKey) elmishBindings.EBSBindings }
+                    let elmishBindingsMap =
+                        if OMap.isEmpty elmishBindings.EBSBindings
+                        then UMap.remove propertyAddress world.ElmishBindingsMap
+                        else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) -> world
 
@@ -248,12 +299,13 @@ module WorldDeclarative =
             let bindingsMap =
                 match world.ElmishBindingsMap.TryGetValue propertyAddress  with
                 | (true, elmishBindings) ->
-                    let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left contentBinding.CBSimulantKey) (ContentBinding contentBinding) elmishBindings.EBSBindings }
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) ->
                     let config = World.getCollectionConfig world
-                    let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                    let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
+                    let elmishBindings =
+                        { EBSParents = UMap.makeEmpty HashIdentity.Structural config
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left contentBinding.CBSimulantKey) (ContentBinding contentBinding) }
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
             World.choose { world with ElmishBindingsMap = bindingsMap }
 
@@ -262,8 +314,8 @@ module WorldDeclarative =
             let bindingsMap =
                 match world.ElmishBindingsMap.TryGetValue propertyAddress with
                 | (true, elmishBindings) -> 
-                    let elmishBindings = OMap.remove contentBinding.CBSimulantKey elmishBindings
-                    if OMap.isEmpty elmishBindings
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.remove (Left contentBinding.CBSimulantKey) elmishBindings.EBSBindings }
+                    if OMap.isEmpty elmishBindings.EBSBindings
                     then UMap.remove propertyAddress world.ElmishBindingsMap
                     else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) -> world.ElmishBindingsMap
