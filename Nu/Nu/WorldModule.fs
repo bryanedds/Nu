@@ -849,12 +849,12 @@ module WorldModule =
                                         else false
                                     | ValueNone -> binding.PBPrevious <- ValueSome value; true
                                 let allowPropertyBinding =
-    #if DEBUG
+#if DEBUG
                                     // OPTIMIZATION: only compute in DEBUG mode.
                                     not (ignorePropertyBindings binding.PBLeft.This world)
-    #else
+#else
                                     true
-    #endif
+#endif
                                 if changed && allowPropertyBinding
                                 then binding.PBLeft.TrySet value world
                                 else world)
