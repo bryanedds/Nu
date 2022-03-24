@@ -147,7 +147,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           NuConfig = NuConfig.defaultConfig }
 
 /// Efficiently emulates root type casting of a Map.
-type [<NoEquality; NoComparison>] MapGeneralized =
+type [<ReferenceEquality; NoComparison>] MapGeneralized =
     { Keys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj
@@ -1129,13 +1129,22 @@ module WorldTypes =
           CBSimulantKey : Guid
           CBContentKey : Guid }
 
-    /// Describes an binding for Nu's optimized Elmish implementation.
+    /// Describes a group of property bindings.
+    and [<NoEquality; NoComparison>] internal PropertyBindings =
+        { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
+          PBSParent : World Lens
+          PBSPropertyBindings : OMap<Guid, PropertyBinding> }
+
+    /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
         | PropertyBinding of PropertyBinding
+        | PropertyBindings of PropertyBindings
         | ContentBinding of ContentBinding
 
-    /// Describes bindings for Nu's optimized Elmish implementation.
-    and internal ElmishBindings = OMap<Guid, ElmishBinding>
+    /// Describe an map of elmish bindings.
+    and [<NoEquality; NoComparison>] internal ElmishBindings =
+        { EBSParents : UMap<Guid, World Lens>
+          EBSBindings : OMap<Either<Guid, World Lens>, ElmishBinding> }
 
     /// The world's dispatchers (including facets).
     /// 
