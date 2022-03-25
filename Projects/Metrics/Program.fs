@@ -302,11 +302,11 @@ type [<ReferenceEquality>] Intss =
     static member init n =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
+        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
+        //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 130) // 10,000 ints (goal: 60FPS, current: 44FPS [55FPS w/o rendering])
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current: 44FPS [55FPS w/o rendering])
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
