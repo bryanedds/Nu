@@ -1144,7 +1144,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBindings =
         { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
           PBSParent : World Lens
-          PBSPropertyBindings : OMap<Guid, PropertyBinding> }
+          PBSPropertyBindings : Guid OSet }
 
     /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
