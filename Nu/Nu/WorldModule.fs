@@ -869,7 +869,6 @@ module WorldModule =
                                 world
                                 bindings.PBSPropertyBindings
                         else world
-
                     | ContentBinding binding ->
                         // HACK: we need to use content key for an additional purpose, so we add 1.
                         // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
