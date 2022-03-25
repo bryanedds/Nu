@@ -232,7 +232,7 @@ module WorldDeclarative =
                                 match elmishBindings.EBSBindings.TryGetValue key with
                                 | (true, PropertyBindings bindings) ->
                                     let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                    let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.add propertyBindingKey binding bindings.PBSPropertyBindings }
+                                    let bindings = { bindings with PBSParentPrevious = ValueNone; PBSPropertyBindings = OMap.add propertyBindingKey binding bindings.PBSPropertyBindings }
                                     OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings
                                 | (_, _) ->
                                     let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
