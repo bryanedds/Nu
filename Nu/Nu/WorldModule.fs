@@ -803,6 +803,11 @@ module WorldModule =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
+                //let values = elmishBindings.EBSBindings |> OMap.toSeq |> Seq.map snd |> Seq.toArray
+                //let contentBindings = Array.filter (fun v -> match v with ContentBinding _ -> true | _ -> false) values
+                //let propertyBindingss = Array.filter (fun v -> match v with PropertyBindings _ -> true | _ -> false) values
+                //let propertyBindings = Array.filter (fun v -> match v with PropertyBinding _ -> true | _ -> false) values
+                //let elmishBindings = Array.concat [|contentBindings; propertyBindingss; propertyBindings|]
                 OMap.foldv (fun world elmishBinding ->
                     match elmishBinding with
                     | PropertyBinding binding ->
@@ -826,49 +831,48 @@ module WorldModule =
                             then binding.PBLeft.TrySet value world
                             else world
                         else world
-                    | PropertyBindings bindings -> world
-                    //    let parentChanged =
-                    //        match bindings.PBSParentPrevious with
-                    //        | ValueSome parentPrevious ->
-                    //            let parent = bindings.PBSParent
-                    //            if parent.Validate world then
-                    //                let parentValue = parent.GetWithoutValidation world
-                    //                if parentValue =/= parentPrevious
-                    //                then bindings.PBSParentPrevious <- ValueSome parentValue; true
-                    //                else false
-                    //            else true
-                    //        | ValueNone ->
-                    //            let parent = bindings.PBSParent
-                    //            if parent.Validate world then
-                    //                let parentValue = parent.GetWithoutValidation world
-                    //                bindings.PBSParentPrevious <- ValueSome parentValue
-                    //                true
-                    //            else true
-                    //    if parentChanged then
-                    //        OMap.foldv (fun world binding ->
-                    //            if binding.PBRight.Validate world then
-                    //                let value = binding.PBRight.GetWithoutValidation world
-                    //                let changed =
-                    //                    match binding.PBPrevious with
-                    //                    | ValueSome previous ->
-                    //                        if value =/= previous
-                    //                        then binding.PBPrevious <- ValueSome value; true
-                    //                        else false
-                    //                    | ValueNone -> binding.PBPrevious <- ValueSome value; true
-                    //                let allowPropertyBinding =
-    #if DEBUG       //
-                    //                    // OPTIMIZATION: only compute in DEBUG mode.
-                    //                    not (ignorePropertyBindings binding.PBLeft.This world)
-    #else           //
-                    //                    true
-    #endif          //
-                    //                if changed && allowPropertyBinding
-                    //                then binding.PBLeft.TrySet value world
-                    //                else world
-                    //            else world)
-                    //            world
-                    //            bindings.PBSPropertyBindings
-                    //    else world
+                    | PropertyBindings bindings ->
+                        let parentChanged =
+                            match bindings.PBSParentPrevious with
+                            | ValueSome parentPrevious ->
+                                let parent = bindings.PBSParent
+                                if parent.Validate world then
+                                    let parentValue = parent.GetWithoutValidation world
+                                    if parentValue =/= parentPrevious
+                                    then bindings.PBSParentPrevious <- ValueSome parentValue; true
+                                    else false
+                                else true
+                            | ValueNone ->
+                                let parent = bindings.PBSParent
+                                if parent.Validate world then
+                                    let parentValue = parent.GetWithoutValidation world
+                                    bindings.PBSParentPrevious <- ValueSome parentValue
+                                    true
+                                else true
+                        if parentChanged then
+                            OMap.foldv (fun world binding ->
+                                if binding.PBRight.Validate world then
+                                    let value = binding.PBRight.GetWithoutValidation world
+                                    let changed =
+                                        match binding.PBPrevious with
+                                        | ValueSome previous ->
+                                            if value =/= previous
+                                            then binding.PBPrevious <- ValueSome value; true
+                                            else false
+                                        | ValueNone -> binding.PBPrevious <- ValueSome value; true
+                                    let allowPropertyBinding =
+#if DEBUG       
+                                        // OPTIMIZATION: only compute in DEBUG mode.
+                                        not (ignorePropertyBindings binding.PBLeft.This world)
+#else           
+                                        true
+#endif
+                                    if changed && allowPropertyBinding
+                                    then binding.PBLeft.TrySet value world
+                                    else world
+                                else world)
+                                world bindings.PBSPropertyBindings
+                        else world
                     | ContentBinding binding ->
                         // HACK: we need to use content key for an additional purpose, so we add 1.
                         // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
