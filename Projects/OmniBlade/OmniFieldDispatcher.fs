@@ -371,7 +371,7 @@ module FieldDispatcher =
                 match field.DialogOpt with
                 | None -> (Cue.Nil, definitions, just field)
                 | Some _ -> (cue, definitions, just field)
-                
+
             | If (p, c, a) ->
                 match p with
                 | Gold gold -> if field.Inventory.Gold >= gold then (c, definitions, just field) else (a, definitions, just field)
