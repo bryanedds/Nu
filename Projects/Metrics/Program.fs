@@ -305,7 +305,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key % 2 = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current: 60FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 141) // 19,881 ints (goal: 30FPS, current: 60FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -322,8 +322,8 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 10.0f - 480.0f) (single j * 6.0f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]
+                             Entity.Position == v2 (single i * 6.85f - 480.0f) (single j * 3.85f - 272.0f)
+                             Entity.Size <== int --> fun int -> v2 (single (int % 8)) (single (int % 8))]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
