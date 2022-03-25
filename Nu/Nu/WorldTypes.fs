@@ -150,6 +150,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 type [<CustomEquality; NoComparison>] MapGeneralized =
     { MapObj : obj
       Keys : IComparable List
+      Equality : MapGeneralized -> obj -> bool
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj
       TryGetValue : IComparable -> struct (bool * obj) }
@@ -158,9 +159,7 @@ type [<CustomEquality; NoComparison>] MapGeneralized =
         this.MapObj.GetHashCode ()
 
     override this.Equals (that : obj) =
-        match that with
-        | :? MapGeneralized as that -> this.MapObj = that.MapObj
-        | _ -> false
+        this.Equality this that
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
@@ -170,6 +169,19 @@ type [<CustomEquality; NoComparison>] MapGeneralized =
             let list = List ()
             for key in Map.keys map do list.Add (key :> IComparable)
             list
+          Equality = fun this (that : obj) ->
+            match that with
+            | :? MapGeneralized as that ->
+                if this.MapObj = that.MapObj then
+#if ELMISH_MAP_GENERALIZED_DEEP_EQUALITY
+                    match that.MapObj with
+                    | :? Map<'k, 'v> as map2 -> System.Linq.Enumerable.SequenceEqual (map, map2)
+                    | _ -> false
+#else
+                    true
+#endif
+                else false
+            | _ -> false
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
           GetValue = fun (key : IComparable) ->
