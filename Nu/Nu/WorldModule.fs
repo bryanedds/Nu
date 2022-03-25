@@ -799,96 +799,81 @@ module WorldModule =
                 world
             else world
 
+        static member private publishPropertyBinding binding world =
+            if binding.PBRight.Validate world then
+                let value = binding.PBRight.GetWithoutValidation world
+                let changed =
+                    match binding.PBPrevious with
+                    | ValueSome previous ->
+                        if value =/= previous
+                        then binding.PBPrevious <- ValueSome value; true
+                        else false
+                    | ValueNone -> binding.PBPrevious <- ValueSome value; true
+                let allowPropertyBinding =
+#if DEBUG
+                    // OPTIMIZATION: only compute in DEBUG mode.
+                    not (ignorePropertyBindings binding.PBLeft.This world)
+#else
+                    true
+#endif
+                if changed && allowPropertyBinding
+                then binding.PBLeft.TrySet value world
+                else world
+            else world
+
+        static member private publishPropertyBindingGroup bindings world =
+            let parentChanged =
+                match bindings.PBSParentPrevious with
+                | ValueSome parentPrevious ->
+                    let parent = bindings.PBSParent
+                    if parent.Validate world then
+                        let parentValue = parent.GetWithoutValidation world
+                        if parentValue =/= parentPrevious
+                        then bindings.PBSParentPrevious <- ValueSome parentValue; true
+                        else false
+                    else true
+                | ValueNone ->
+                    let parent = bindings.PBSParent
+                    if parent.Validate world then
+                        let parentValue = parent.GetWithoutValidation world
+                        bindings.PBSParentPrevious <- ValueSome parentValue
+                        true
+                    else true
+            if parentChanged
+            then OMap.foldv (flip World.publishPropertyBinding) world bindings.PBSPropertyBindings
+            else world
+
+        static member private publishContentBinding binding world =
+            // HACK: we need to use content key for an additional purpose, so we add 1.
+            // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+            let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey // ELMISH_CACHE
+            if Lens.validate binding.CBSource world then
+                let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
+                let currentKeys = mapGeneralized.Keys
+                let previousKeys =
+                    match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
+                    | (false, _) -> List () // TODO: use cached module binding of empty List.
+                    | (true, previous) -> previous
+                if not (currentKeys.SequenceEqual previousKeys) then
+                    let world = World.addKeyedValue contentKeyPlus1 currentKeys world
+                    let current = World.makeLensesCurrent currentKeys binding.CBSource world
+                    World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
+                else world
+            else
+                let config = World.getCollectionConfig world
+                let lensesCurrent = USet.makeEmpty (LensComparer ()) config
+                let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
+                World.removeKeyedValue contentKeyPlus1 world
+
         static member internal publishChangeBinding propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
                 OMap.foldv (fun world elmishBinding ->
                     match elmishBinding with
-                    | PropertyBinding binding ->
-                        if binding.PBRight.Validate world then
-                            let value = binding.PBRight.GetWithoutValidation world
-                            let changed =
-                                match binding.PBPrevious with
-                                | ValueSome previous ->
-                                    if value =/= previous
-                                    then binding.PBPrevious <- ValueSome value; true
-                                    else false
-                                | ValueNone -> binding.PBPrevious <- ValueSome value; true
-                            let allowPropertyBinding =
-#if DEBUG
-                                // OPTIMIZATION: only compute in DEBUG mode.
-                                not (ignorePropertyBindings binding.PBLeft.This world)
-#else
-                                true
-#endif
-                            if changed && allowPropertyBinding
-                            then binding.PBLeft.TrySet value world
-                            else world
-                        else world
-                    | PropertyBindingGroup bindings ->
-                        let parentChanged =
-                            match bindings.PBSParentPrevious with
-                            | ValueSome parentPrevious ->
-                                let parent = bindings.PBSParent
-                                if parent.Validate world then
-                                    let parentValue = parent.GetWithoutValidation world
-                                    if parentValue =/= parentPrevious
-                                    then bindings.PBSParentPrevious <- ValueSome parentValue; true
-                                    else false
-                                else true
-                            | ValueNone ->
-                                let parent = bindings.PBSParent
-                                if parent.Validate world then
-                                    let parentValue = parent.GetWithoutValidation world
-                                    bindings.PBSParentPrevious <- ValueSome parentValue
-                                    true
-                                else true
-                        if parentChanged then
-                            OMap.foldv (fun world binding ->
-                                if binding.PBRight.Validate world then
-                                    let value = binding.PBRight.GetWithoutValidation world
-                                    let changed =
-                                        match binding.PBPrevious with
-                                        | ValueSome previous ->
-                                            if value =/= previous
-                                            then binding.PBPrevious <- ValueSome value; true
-                                            else false
-                                        | ValueNone -> binding.PBPrevious <- ValueSome value; true
-                                    let allowPropertyBinding =
-#if DEBUG       
-                                        // OPTIMIZATION: only compute in DEBUG mode.
-                                        not (ignorePropertyBindings binding.PBLeft.This world)
-#else           
-                                        true
-#endif
-                                    if changed && allowPropertyBinding
-                                    then binding.PBLeft.TrySet value world
-                                    else world
-                                else world)
-                                world bindings.PBSPropertyBindings
-                        else world
-                    | ContentBinding binding ->
-                        // HACK: we need to use content key for an additional purpose, so we add 1.
-                        // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
-                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey // ELMISH_CACHE
-                        if Lens.validate binding.CBSource world then
-                            let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let currentKeys = mapGeneralized.Keys
-                            let previousKeys =
-                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
-                                | (false, _) -> List () // TODO: use cached module binding of empty List.
-                                | (true, previous) -> previous
-                            if not (currentKeys.SequenceEqual previousKeys) then
-                                let world = World.addKeyedValue contentKeyPlus1 currentKeys world
-                                let current = World.makeLensesCurrent currentKeys binding.CBSource world
-                                World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
-                            else world
-                        else
-                            let config = World.getCollectionConfig world
-                            let lensesCurrent = USet.makeEmpty (LensComparer ()) config
-                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
-                            World.removeKeyedValue contentKeyPlus1 world)
+                    | PropertyBinding binding -> World.publishPropertyBinding binding world
+                    | PropertyBindingGroup bindings -> World.publishPropertyBindingGroup bindings world
+                    | ContentBinding binding -> World.publishContentBinding binding world)
                     world elmishBindings.EBSBindings
             | (false, _) -> world
 
