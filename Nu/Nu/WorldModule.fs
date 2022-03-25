@@ -837,26 +837,34 @@ module WorldModule =
                                     then bindings.PBSParentPrevious <- ValueSome parentValue; true
                                     else false
                                 else true
-                            | ValueNone -> true
+                            | ValueNone ->
+                                let parent = bindings.PBSParent
+                                if parent.Validate world then
+                                    let parentValue = parent.GetWithoutValidation world
+                                    bindings.PBSParentPrevious <- ValueSome parentValue
+                                    true
+                                else true
                         if parentChanged then
                             OMap.foldv (fun world binding ->
-                                let value = binding.PBRight.GetWithoutValidation world
-                                let changed =
-                                    match binding.PBPrevious with
-                                    | ValueSome previous ->
-                                        if value =/= previous
-                                        then binding.PBPrevious <- ValueSome value; true
-                                        else false
-                                    | ValueNone -> binding.PBPrevious <- ValueSome value; true
-                                let allowPropertyBinding =
-#if DEBUG
-                                    // OPTIMIZATION: only compute in DEBUG mode.
-                                    not (ignorePropertyBindings binding.PBLeft.This world)
-#else
-                                    true
-#endif
-                                if changed && allowPropertyBinding
-                                then binding.PBLeft.TrySet value world
+                                if binding.PBRight.Validate world then
+                                    let value = binding.PBRight.GetWithoutValidation world
+                                    let changed =
+                                        match binding.PBPrevious with
+                                        | ValueSome previous ->
+                                            if value =/= previous
+                                            then binding.PBPrevious <- ValueSome value; true
+                                            else false
+                                        | ValueNone -> binding.PBPrevious <- ValueSome value; true
+                                    let allowPropertyBinding =
+    #if DEBUG
+                                        // OPTIMIZATION: only compute in DEBUG mode.
+                                        not (ignorePropertyBindings binding.PBLeft.This world)
+    #else
+                                        true
+    #endif
+                                    if changed && allowPropertyBinding
+                                    then binding.PBLeft.TrySet value world
+                                    else world
                                 else world)
                                 world
                                 bindings.PBSPropertyBindings

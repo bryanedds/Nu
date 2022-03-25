@@ -147,15 +147,26 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           NuConfig = NuConfig.defaultConfig }
 
 /// Efficiently emulates root type casting of a Map.
-type [<ReferenceEquality; NoComparison>] MapGeneralized =
-    { Keys : IComparable List
+type [<CustomEquality; NoComparison>] MapGeneralized =
+    { MapObj : obj
+      Keys : IComparable List
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj
       TryGetValue : IComparable -> struct (bool * obj) }
 
+    override this.GetHashCode () =
+        this.MapObj.GetHashCode ()
+
+    override this.Equals (that : obj) =
+        match that with
+        | :? MapGeneralized as that -> this.MapObj = that.MapObj
+        | _ -> false
+
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { Keys =
+        { MapObj =
+            map
+          Keys =
             let list = List ()
             for key in Map.keys map do list.Add (key :> IComparable)
             list

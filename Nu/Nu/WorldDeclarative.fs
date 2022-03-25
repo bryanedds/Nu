@@ -230,14 +230,11 @@ module WorldDeclarative =
                                 let key = Right parent
                                 let config = World.getCollectionConfig world
                                 match elmishBindings.EBSBindings.TryGetValue key with
-                                | (true, binding) ->
-                                    match binding with
-                                    | PropertyBindings bindings ->
-                                        let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                        let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.add propertyBindingKey binding bindings.PBSPropertyBindings }
-                                        OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings
-                                    | _ -> failwithumf ()
-                                | (false, _) ->
+                                | (true, PropertyBindings bindings) ->
+                                    let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
+                                    let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.add propertyBindingKey binding bindings.PBSPropertyBindings }
+                                    OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings
+                                | (_, _) ->
                                     let binding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
                                     let bindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey binding }
                                     OMap.add key (PropertyBindings bindings) elmishBindings.EBSBindings }
@@ -272,14 +269,7 @@ module WorldDeclarative =
                     let elmishBindings =
                         { elmishBindings with
                             EBSParents = UMap.remove propertyBindingKey elmishBindings.EBSParents
-                            EBSBindings =
-                                let key = Right parent
-                                match elmishBindings.EBSBindings.TryGetValue key with
-                                | (true, binding) ->
-                                    match binding with
-                                    | PropertyBindings _ -> OMap.remove key elmishBindings.EBSBindings
-                                    | _ -> failwithumf ()
-                                | (false, _) -> OMap.remove key elmishBindings.EBSBindings }
+                            EBSBindings = OMap.remove (Right parent) elmishBindings.EBSBindings }
                     let elmishBindingsMap =
                         if OMap.isEmpty elmishBindings.EBSBindings
                         then UMap.remove propertyAddress world.ElmishBindingsMap
