@@ -731,7 +731,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (entities, world) = World.getEntitiesInView2 world
+            let (entities, world) = World.getEntitiesInView world
 #endif
             PostUpdateGatherTimer.Stop ()
 
