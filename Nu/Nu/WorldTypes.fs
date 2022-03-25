@@ -1141,7 +1141,7 @@ module WorldTypes =
           CBContentKey : Guid }
 
     /// Describes a group of property bindings.
-    and [<NoEquality; NoComparison>] internal PropertyBindings =
+    and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
         { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
           PBSParent : World Lens
           PBSPropertyBindings : OMap<Guid, PropertyBinding> }
@@ -1149,7 +1149,7 @@ module WorldTypes =
     /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
         | PropertyBinding of PropertyBinding
-        | PropertyBindings of PropertyBindings
+        | PropertyBindingGroup of PropertyBindingGroup
         | ContentBinding of ContentBinding
 
     /// Describe an map of elmish bindings.

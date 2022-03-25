@@ -803,11 +803,6 @@ module WorldModule =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
-                //let values = elmishBindings.EBSBindings |> OMap.toSeq |> Seq.map snd |> Seq.toArray
-                //let contentBindings = Array.filter (fun v -> match v with ContentBinding _ -> true | _ -> false) values
-                //let propertyBindingss = Array.filter (fun v -> match v with PropertyBindings _ -> true | _ -> false) values
-                //let propertyBindings = Array.filter (fun v -> match v with PropertyBinding _ -> true | _ -> false) values
-                //let elmishBindings = Array.concat [|contentBindings; propertyBindingss; propertyBindings|]
                 OMap.foldv (fun world elmishBinding ->
                     match elmishBinding with
                     | PropertyBinding binding ->
@@ -831,7 +826,7 @@ module WorldModule =
                             then binding.PBLeft.TrySet value world
                             else world
                         else world
-                    | PropertyBindings bindings ->
+                    | PropertyBindingGroup bindings ->
                         let parentChanged =
                             match bindings.PBSParentPrevious with
                             | ValueSome parentPrevious ->

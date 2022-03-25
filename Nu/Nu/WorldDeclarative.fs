@@ -229,14 +229,14 @@ module WorldDeclarative =
                             EBSBindings =
                                 let config = World.getCollectionConfig world
                                 match elmishBindings.EBSBindings.TryGetValue (Right parent) with
-                                | (true, PropertyBindings propertyBindings) ->
+                                | (true, PropertyBindingGroup propertyBindingGroup) ->
                                     let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                    let propertyBindings = { propertyBindings with PBSParentPrevious = ValueNone; PBSPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindings.PBSPropertyBindings }
-                                    OMap.add (Right parent) (PropertyBindings propertyBindings) elmishBindings.EBSBindings
+                                    let propertyBindingGroup = { propertyBindingGroup with PBSParentPrevious = ValueNone; PBSPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindingGroup.PBSPropertyBindings }
+                                    OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
                                 | (_, _) ->
                                     let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                    let propertyBindings = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
-                                    OMap.add (Right parent) (PropertyBindings propertyBindings) elmishBindings.EBSBindings }
+                                    let propertyBindingGroup = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
+                                    OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 | (false, _) ->
@@ -270,11 +270,11 @@ module WorldDeclarative =
                             EBSParents = UMap.remove propertyBindingKey elmishBindings.EBSParents
                             EBSBindings =
                                 match elmishBindings.EBSBindings.TryGetValue (Right parent) with
-                                | (true, PropertyBindings propertyBindings) ->
-                                    let propertyBindings = { propertyBindings with PBSPropertyBindings = OMap.remove propertyBindingKey propertyBindings.PBSPropertyBindings }
-                                    if OMap.isEmpty propertyBindings.PBSPropertyBindings
+                                | (true, PropertyBindingGroup propertyBindingGroup) ->
+                                    let propertyBindingGroup = { propertyBindingGroup with PBSPropertyBindings = OMap.remove propertyBindingKey propertyBindingGroup.PBSPropertyBindings }
+                                    if OMap.isEmpty propertyBindingGroup.PBSPropertyBindings
                                     then OMap.remove (Right parent) elmishBindings.EBSBindings
-                                    else OMap.add (Right parent) (PropertyBindings propertyBindings) elmishBindings.EBSBindings
+                                    else OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
                                 | (_, _) -> elmishBindings.EBSBindings }
                     let elmishBindingsMap =
                         if OMap.isEmpty elmishBindings.EBSBindings
