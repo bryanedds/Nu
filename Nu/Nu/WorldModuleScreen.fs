@@ -143,81 +143,108 @@ module WorldModuleScreen =
                     else Unchecked.defaultof<_>)
                 Property? Model value screen world
 
-        static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
-            if World.getScreenExists screen world then
-                match ScreenGetters.TryGetValue propertyName with
-                | (false, _) -> ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
-                | (true, getter) -> property <- getter screen world; true
+        static member internal tryGetScreenXtensionProperty (propertyName, screen, world, property : _ outref) =
+            if World.getScreenExists screen world
+            then ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
             else false
+
+        static member internal getScreenXtensionProperty propertyName screen world =
+            let mutable property = Unchecked.defaultof<_>
+            match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
+            | true -> property
+            | false -> failwithf "Could not find property '%s'." propertyName
+
+        static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
+            match ScreenGetters.TryGetValue propertyName with
+            | (true, getter) ->
+                if World.getScreenExists screen world then
+                    property <- getter screen world
+                    true
+                else false
+            | (false, _) ->
+                World.tryGetScreenXtensionProperty (propertyName, screen, world, &property)
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
             | (true, getter) -> getter screen world
-            | (false, _) ->
-                let mutable property = Unchecked.defaultof<_>
-                match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
-                | true -> property
-                | false -> failwithf "Could not find property '%s'." propertyName
+            | (false, _) -> World.getScreenXtensionProperty propertyName screen world
 
-        static member internal trySetScreenPropertyFast propertyName property screen world =
+        static member internal trySetScreenXtensionPropertyFast propertyName property screen world =
             if World.getScreenExists screen world then
-                match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property screen world |> snd'
-                | (false, _) ->
-                    let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let struct (_, world) =
-                        World.updateScreenState
-                            (fun screenState ->
-                                let mutable propertyOld = Unchecked.defaultof<_>
-                                match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
-                                | true ->
-                                    if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
-                                        success <- successInner
-                                        gameState
-                                    else Unchecked.defaultof<_>
-                                | false -> Unchecked.defaultof<_>)
-                            propertyName property.PropertyValue screen world
-                    world
-            else world
-
-        static member internal trySetScreenProperty propertyName property screen world =
-            if World.getScreenExists screen world then
-                match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) ->
-                    let struct (changed, world) = setter property screen world
-                    struct (true, changed, world)
-                | (false, _) ->
-                    let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let struct (changed, world) =
-                        World.updateScreenState
-                            (fun screenState ->
-                                let mutable propertyOld = Unchecked.defaultof<_>
-                                match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
-                                | true ->
-                                    if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
-                                        success <- successInner
-                                        gameState
-                                    else Unchecked.defaultof<_>
-                                | false -> Unchecked.defaultof<_>)
-                            propertyName property.PropertyValue screen world
-                    struct (success, changed, world)
-            else (false, false, world)
-
-        static member internal setScreenProperty propertyName property screen world =
-            if World.getScreenExists screen world then
-                match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property screen world
-                | (false, _) ->
+                let mutable success = false // bit of a hack to get additional state out of the lambda
+                let struct (_, world) =
                     World.updateScreenState
                         (fun screenState ->
-                            let propertyOld = ScreenState.getProperty propertyName screenState
-                            if property.PropertyValue =/= propertyOld.PropertyValue
-                            then ScreenState.setProperty propertyName property screenState
-                            else Unchecked.defaultof<_>)
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
+                            | true ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                    success <- successInner
+                                    gameState
+                                else Unchecked.defaultof<_>
+                            | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
+                world
+            else world
+
+        static member internal trySetScreenXtensionProperty propertyName property screen world =
+            if World.getScreenExists screen world then
+                let mutable success = false // bit of a hack to get additional state out of the lambda
+                let struct (changed, world) =
+                    World.updateScreenState
+                        (fun screenState ->
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
+                            | true ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                    success <- successInner
+                                    gameState
+                                else Unchecked.defaultof<_>
+                            | false -> Unchecked.defaultof<_>)
+                        propertyName property.PropertyValue screen world
+                struct (success, changed, world)
+            else (false, false, world)
+
+        static member internal setScreenXtensionProperty propertyName property screen world =
+            if World.getScreenExists screen world then
+                World.updateScreenState
+                    (fun screenState ->
+                        let propertyOld = ScreenState.getProperty propertyName screenState
+                        if property.PropertyValue =/= propertyOld.PropertyValue
+                        then ScreenState.setProperty propertyName property screenState
+                        else Unchecked.defaultof<_>)
+                    propertyName property.PropertyValue screen world
             else struct (false, world)
+
+        static member internal trySetScreenPropertyFast propertyName property screen world =
+            match ScreenSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getScreenExists screen world
+                then setter property screen world |> snd'
+                else world
+            | (false, _) ->
+                World.trySetScreenXtensionPropertyFast propertyName property screen world
+
+        static member internal trySetScreenProperty propertyName property screen world =
+            match ScreenSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getScreenExists screen world then
+                    let struct (changed, world) = setter property screen world
+                    struct (true, changed, world)
+                else (false, false, world)
+            | (false, _) ->
+                World.trySetScreenXtensionProperty propertyName property screen world
+
+        static member internal setScreenProperty propertyName property screen world =
+            match ScreenSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getScreenExists screen world
+                then setter property screen world
+                else struct (false, world)
+            | (false, _) ->
+                World.setScreenXtensionProperty propertyName property screen world
 
         static member internal attachScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
