@@ -184,9 +184,9 @@ module WorldModuleGroup =
                             match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
+                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
                                     success <- successInner
-                                    gameState
+                                    groupState
                                 else Unchecked.defaultof<_>
                             | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
@@ -203,9 +203,9 @@ module WorldModuleGroup =
                             match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
+                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
                                     success <- successInner
-                                    gameState
+                                    groupState
                                 else Unchecked.defaultof<_>
                             | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
