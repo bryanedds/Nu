@@ -154,6 +154,11 @@ module WorldModuleScreen =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
+        static member internal getScreenXtensionValue<'a> propertyName screen world =
+            let screenState = World.getScreenState screen world
+            let property = ScreenState.getProperty propertyName screenState
+            property.PropertyValue :?> 'a
+
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with
             | (true, getter) ->

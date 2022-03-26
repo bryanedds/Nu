@@ -61,7 +61,7 @@ module WorldGroupModule =
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
-            (World.getGroupXtensionProperty propertyName this world).PropertyValue :?> 'a
+            World.getGroupXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =

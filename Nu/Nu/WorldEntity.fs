@@ -160,7 +160,7 @@ module WorldEntityModule =
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
-            (World.getEntityXtensionProperty propertyName this world).PropertyValue :?> 'a
+            World.getEntityXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =

@@ -90,7 +90,7 @@ module WorldGameModule =
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
-            (World.getGameXtensionProperty propertyName world).PropertyValue :?> 'a
+            World.getGameXtensionValue<'a> propertyName world
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =
