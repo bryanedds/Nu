@@ -863,15 +863,25 @@ module WorldModuleEntity =
                             | None -> struct (false, false, world)
                         | _ ->
                             if property.PropertyValue =/= propertyOld.PropertyValue then
-                                match EntityState.trySetProperty propertyName property entityState with
-                                | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
-                                | struct (false, _) -> struct (false, false, world)
+                                if entityState.Imperative then
+                                    // OPTIMIZATION: special-case for imperative
+                                    propertyOld.PropertyValue <- property.PropertyValue
+                                    struct (true, true, world)
+                                else
+                                    match EntityState.trySetProperty propertyName property entityState with
+                                    | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                                    | struct (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
                     else
                         if property.PropertyValue =/= propertyOld.PropertyValue then
-                            match EntityState.trySetProperty propertyName property entityState with
-                            | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
-                            | struct (false, _) -> struct (false, false, world)
+                            if entityState.Imperative then
+                                // OPTIMIZATION: special-case for imperative
+                                propertyOld.PropertyValue <- property.PropertyValue
+                                struct (true, true, world)
+                            else
+                                match EntityState.trySetProperty propertyName property entityState with
+                                | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                                | struct (false, _) -> struct (false, false, world)
                         else struct (true, false, world)
                 | false -> struct (false, false, world)
             struct (success, changed, world)
