@@ -883,17 +883,16 @@ module WorldModuleEntity =
                                     | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
                                     | struct (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
-                    else
-                        if property.PropertyValue =/= propertyOld.PropertyValue then
-                            if entityState.Imperative then
-                                // OPTIMIZATION: special-case for imperative
-                                propertyOld.PropertyValue <- property.PropertyValue
-                                struct (true, true, world)
-                            else
-                                match EntityState.trySetProperty propertyName property entityState with
-                                | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
-                                | struct (false, _) -> struct (false, false, world)
-                        else struct (true, false, world)
+                    elif property.PropertyValue =/= propertyOld.PropertyValue then
+                        if entityState.Imperative then
+                            // OPTIMIZATION: special-case for imperative
+                            propertyOld.PropertyValue <- property.PropertyValue
+                            struct (true, true, world)
+                        else
+                            match EntityState.trySetProperty propertyName property entityState with
+                            | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                            | struct (false, _) -> struct (false, false, world)
+                    else struct (true, false, world)
                 | false -> struct (false, false, world)
             struct (success, changed, world)
 
@@ -930,6 +929,60 @@ module WorldModuleEntity =
             match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, world) -> struct (true, changed, world)
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+
+        static member internal setEntityXtensionValue<'a> propertyName (value : 'a) entity world =
+            let entityStateOpt = World.getEntityStateOpt entity world
+            if notNull (entityStateOpt :> obj) then
+                let entityState = entityStateOpt
+                let propertyOld = EntityState.getProperty propertyName entityState
+                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                let world =
+                    if EntityState.containsRuntimeProperties entityState then
+                        match propertyOld.PropertyValue with
+                        | :? DesignerProperty as dp ->
+                            if value =/= dp.DesignerValue then
+                                changed <- true
+                                let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                                let entityState = EntityState.setProperty propertyName property entityState
+                                if entityState.Imperative then world else World.setEntityState entityState entity world
+                            else world
+                        | :? ComputedProperty as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet ->
+                                if value =/= cp.ComputedGet (box entity) (box world) then
+                                    changed <- true
+                                    computedSet propertyOld.PropertyValue entity world :?> World
+                                else world
+                            | None -> world
+                        | _ ->
+                            if value =/= propertyOld.PropertyValue then
+                                changed <- true
+                                if entityState.Imperative then
+                                    // OPTIMIZATION: special-case for imperative
+                                    propertyOld.PropertyValue <- value
+                                    world
+                                else
+                                    let property = { propertyOld with PropertyValue = value }
+                                    let entityState = EntityState.setProperty propertyName property entityState
+                                    if entityState.Imperative then world else World.setEntityState entityState entity world
+                            else world
+                    elif value =/= propertyOld.PropertyValue then
+                        changed <- true
+                        if entityState.Imperative then
+                            // OPTIMIZATION: special-case for imperative
+                            propertyOld.PropertyValue <- value
+                            world
+                        else
+                            let property = { propertyOld with PropertyValue = value }
+                            let entityState = EntityState.setProperty propertyName property entityState
+                            if entityState.Imperative then world else World.setEntityState entityState entity world
+                    else world
+                if changed then
+                    let publishChangeBindings = entityStateOpt.PublishChangeBindings
+                    let publishChangeEvents = entityStateOpt.PublishChangeEvents
+                    World.publishEntityChange propertyName propertyOld.PropertyValue publishChangeBindings publishChangeEvents entity world
+                else world
+            else failwithf "Could not find entity '%s'." (scstring entity)
 
         static member internal setEntityXtensionProperty propertyName property entity world =
             match World.trySetEntityXtensionProperty propertyName property entity world with
