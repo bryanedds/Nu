@@ -71,12 +71,9 @@ type MetricsEntityDispatcher () =
     inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
   #endif
 
-    static member Properties =
-        [define Entity.EmitterTwist 0.0f]
-
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetEmitterTwist (entity.GetEmitterTwist world + 0.01f) world
+        entity.SetRotation (entity.GetRotation world + 0.01f) world
 
     override this.View (staticImage, entity, world) =
         let transform = entity.GetTransform world
