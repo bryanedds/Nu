@@ -62,7 +62,7 @@ Voyageons ensemble... $FEE Ors...?&quot; [&quot;Oui&quot; [Recruit Riain]] [&quo
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;On peut combiner nos efforts... for $FEE gold...?&quot; [&quot;Oui&quot; [Recruit Shade]] [&quot;Non&quot; Nil]]]"/>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;On peut combiner nos efforts... pour $FEE ors...?&quot; [&quot;Oui&quot; [Recruit Shade]] [&quot;Non&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">

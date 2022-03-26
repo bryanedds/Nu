@@ -79,7 +79,7 @@
     [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Wait 60]
-    [Dialog &quot;Mon maitre me l'a dit.&quot; False]
+    [Dialog &quot;Ma maitresse me l'a dit.&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;...mais sa terrible nature sera surpassee...&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Downward]

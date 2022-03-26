@@ -58,7 +58,7 @@
     [Dialog &quot;Surement de n'avoir plus de fin...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Dialog &quot;Je suis nee servante d'une servante...&quot;]
-    [Dialog &quot;Mon maitre est cruelle, mais sa cruaute est previsible, contrairement a celle du monde.&quot;]
+    [Dialog &quot;Ma maitresse est cruelle, mais sa cruaute est previsible, contrairement a celle du monde.&quot;]
     [Dialog &quot;C'est ma tutrice depuis que ma mere est partie, mais je pense qu'elle m'a toujours detestee.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;Pourtant je me suis habitue a sa hargne.&quot;]

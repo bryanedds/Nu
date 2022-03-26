@@ -1,17 +1,17 @@
 Type,Subtype,PowerBase,MindBase,Cost,Description
 Bare,Melee,0,1,5,
-ShortSword,Sword,1,1,10,Jinn's initial weapon.
-Dagger,Knife,1,1,10,Shade's initial weapon.
-OakRod,Rod,1,2,10,Mael and Riain's initial weapon.
-OakBow,Bow,1,1,10,Peric's initial weapon.
+ShortSword,Sword,1,1,10,L'arme initiale de Jinn.
+Dagger,Knife,1,1,10,L'arme initiale de Shade.
+OakRod,Rod,1,2,10,L'arme initiale de Mael et Riain.
+OakBow,Bow,1,1,10,L'arme initiale de Peric.
 Paws,Melee,1,1,10,
-BronzeSword,Sword,2,2,50,Bronze sword for Fighters only.
-BronzeKatana,Knife,2,2,50,Bronze katana for Ninjas only.
-BronzeRod,Rod,2,2,50,Bronze rod for Wizards and Conjurors.
-LightBow,Bow,1,2,50,Light bow for Clerics only.
+BronzeSword,Sword,2,2,50,Eppee de bronze pour les Combattants.
+BronzeKatana,Knife,2,2,50,Katana de bronze pour les Ninjas.
+BronzeRod,Rod,2,2,50,Canne de bronze pour Sorciers et Conjureurs.
+LightBow,Bow,1,2,50,Arc leger; pour les Clercs.
 Claws,Melee,2,2,50,
-IronSword,Sword,4,2,100,A heavy iron sword.
-IronKatana,Knife,3,3,100,A heavy iron katana.
-SightedBow,Bow,3,3,100,A bow with a sight for aiming.
-IvoryRod,Rod,2,4,100,A rod made of ivory.
+IronSword,Sword,4,2,100,Lourde epee de fer.
+IronKatana,Knife,3,3,100,Lourd katana de fer.
+SightedBow,Bow,3,3,100,Arc particulierement precis.
+IvoryRod,Rod,2,4,100,
 Fangs,Melee,3,3,100,
