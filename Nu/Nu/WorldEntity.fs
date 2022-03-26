@@ -151,6 +151,24 @@ module WorldEntityModule =
         member this.GetProperty propertyName world =
             World.getEntityProperty propertyName this world
 
+        /// Get an xtension property value.
+        member this.TryGetX<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetEntityXtensionProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
+        member this.GetX<'a> propertyName world : 'a =
+            (World.getEntityXtensionProperty propertyName this world).PropertyValue :?> 'a
+
+        /// Try to get a property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetEntityProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
         /// Get a property value.
         member this.Get<'a> propertyName world : 'a =
             (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
@@ -163,13 +181,20 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world =
             World.setEntityProperty propertyName property this world |> snd'
 
-        /// Attach a property.
-        member this.AttachProperty propertyName property world =
-            World.attachEntityProperty propertyName property this world
+        /// To try set an xtension property value.
+        member this.TrySetX<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetEntityXtensionProperty propertyName property this world
 
-        /// Detach a property.
-        member this.DetachProperty propertyName world =
-            World.detachEntityProperty propertyName this world
+        /// Set an xtension property value.
+        member this.SetX<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setEntityXtensionProperty propertyName property this world |> snd'
+
+        /// Set a property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetEntityProperty propertyName property this world
 
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
@@ -181,6 +206,14 @@ module WorldEntityModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
+
+        /// Attach a property.
+        member this.AttachProperty propertyName property world =
+            World.attachEntityProperty propertyName property this world
+
+        /// Detach a property.
+        member this.DetachProperty propertyName world =
+            World.detachEntityProperty propertyName this world
 
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world
