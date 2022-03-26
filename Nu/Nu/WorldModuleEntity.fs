@@ -837,7 +837,7 @@ module WorldModuleEntity =
         static member internal getEntityXtensionValue<'a> propertyName entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
-            | null -> failwithf "Could not find state for entity '%s'." (scstring entity)
+            | null -> failwithf "Could not find entity '%s'." (scstring entity)
             | _ ->
                 let property = EntityState.getProperty propertyName entityStateOpt
                 match property.PropertyValue with
