@@ -374,6 +374,11 @@ module WorldModuleGame =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
+        static member internal getGameXtensionValue<'a> propertyName world =
+            let gameState = World.getGameState world
+            let property = GameState.getProperty propertyName gameState
+            property.PropertyValue :?> 'a
+
         static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with
             | (true, getter) ->

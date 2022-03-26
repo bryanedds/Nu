@@ -159,6 +159,11 @@ module WorldModuleGroup =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
+        static member internal getGroupXtensionValue<'a> propertyName group world =
+            let groupState = World.getGroupState group world
+            let property = GroupState.getProperty propertyName groupState
+            property.PropertyValue :?> 'a
+
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
             match GroupGetters.TryGetValue propertyName with
             | (true, getter) ->

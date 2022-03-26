@@ -834,6 +834,17 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find xtension property '%s'." propertyName
 
+        static member internal getEntityXtensionValue<'a> propertyName entity world =
+            let entityStateOpt = World.getEntityStateOpt entity world
+            match entityStateOpt :> obj with
+            | null -> failwithf "Could not find state for entity '%s'." (scstring entity)
+            | _ ->
+                let property = EntityState.getProperty propertyName entityStateOpt
+                match property.PropertyValue with
+                | :? DesignerProperty as dp -> dp.DesignerValue :?> 'a
+                | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj) :?> 'a
+                | _ -> property.PropertyValue :?> 'a
+
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
             match World.tryGetEntityProperty (propertyName, entity, world, &property) with
