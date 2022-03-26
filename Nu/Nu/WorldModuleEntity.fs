@@ -193,10 +193,7 @@ module WorldModuleEntity =
             let entityStateOpt = updater entityState : EntityState
             match entityStateOpt :> obj with
             | null -> struct (false, world)
-            | _ ->
-                if entityStateOpt.Imperative
-                then struct (true, world)
-                else struct (true, World.setEntityState entityStateOpt entity world)
+            | _ -> struct (true, if entityStateOpt.Imperative then world else World.setEntityState entityStateOpt entity world)
 
         // OPTIMIZATION: inlined to elide updater closure allocation.
         static member inline private updateEntityStateWithoutEvent updater entity world =
@@ -823,40 +820,40 @@ module WorldModuleEntity =
             | false -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world =
-                let mutable propertyOld = Unchecked.defaultof<_>
-                let struct (success, changed, world) =
-                    match EntityState.tryGetProperty (propertyName, entityState, &propertyOld) with
-                    | true ->
-                        if EntityState.containsRuntimeProperties entityState then
-                            match propertyOld.PropertyValue with
-                            | :? DesignerProperty as dp ->
-                                if property.PropertyValue =/= dp.DesignerValue then
-                                    let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                                    match EntityState.trySetProperty propertyName property entityState with
-                                    | (true, entityState) -> struct (true, true, World.setEntityState entityState entity world)
-                                    | (false, _) -> struct (false, false, world)
-                                else (true, false, world)
-                            | :? ComputedProperty as cp ->
-                                match cp.ComputedSetOpt with
-                                | Some computedSet ->
-                                    if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
-                                    then struct (true, true, computedSet property.PropertyValue entity world :?> World)
-                                    else struct (true, false, world)
-                                | None -> struct (false, false, world)
-                            | _ ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    match EntityState.trySetProperty propertyName property entityState with
-                                    | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
-                                    | (false, _) -> struct (false, false, world)
+            let mutable propertyOld = Unchecked.defaultof<_>
+            let struct (success, changed, world) =
+                match EntityState.tryGetProperty (propertyName, entityState, &propertyOld) with
+                | true ->
+                    if EntityState.containsRuntimeProperties entityState then
+                        match propertyOld.PropertyValue with
+                        | :? DesignerProperty as dp ->
+                            if property.PropertyValue =/= dp.DesignerValue then
+                                let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                                match EntityState.trySetProperty propertyName property entityState with
+                                | struct (true, entityState) -> struct (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                                | struct (false, _) -> struct (false, false, world)
+                            else (true, false, world)
+                        | :? ComputedProperty as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet ->
+                                if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
+                                then struct (true, true, computedSet property.PropertyValue entity world :?> World)
                                 else struct (true, false, world)
-                        else
+                            | None -> struct (false, false, world)
+                        | _ ->
                             if property.PropertyValue =/= propertyOld.PropertyValue then
                                 match EntityState.trySetProperty propertyName property entityState with
-                                | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
-                                | (false, _) -> struct (false, false, world)
+                                | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                                | struct (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
-                    | false -> struct (false, false, world)
-                struct (success, changed, world)
+                    else
+                        if property.PropertyValue =/= propertyOld.PropertyValue then
+                            match EntityState.trySetProperty propertyName property entityState with
+                            | struct (true, entityState) -> (true, true, if entityState.Imperative then world else World.setEntityState entityState entity world)
+                            | struct (false, _) -> struct (false, false, world)
+                        else struct (true, false, world)
+                | false -> struct (false, false, world)
+            struct (success, changed, world)
 
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
             let entityState = World.getEntityState entity world
@@ -1385,7 +1382,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | Left error -> (Left error, world)
-            
+
         /// Try to set the entity's facet names from script.
         [<FunctionBinding "trySetEntityFacetNames">]
         static member trySetEntityFacetNamesFromScript facetNames entity world =
