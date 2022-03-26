@@ -71,26 +71,15 @@ module WorldScreenModule =
             World.getScreenProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGetX<'a> propertyName world : 'a =
+        member this.TryGet<'a> propertyName world : 'a =
             let mutable property = Unchecked.defaultof<Property>
             if World.tryGetScreenXtensionProperty (propertyName, this, world, &property)
             then property.PropertyValue :?> 'a
             else Unchecked.defaultof<'a>
 
         /// Get an xtension property value.
-        member this.GetX<'a> propertyName world : 'a =
-            (World.getScreenXtensionProperty propertyName this world).PropertyValue :?> 'a
-
-        /// Try to get a property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            let mutable property = Unchecked.defaultof<Property>
-            if World.tryGetScreenProperty (propertyName, this, world, &property)
-            then property.PropertyValue :?> 'a
-            else Unchecked.defaultof<'a>
-
-        /// Get a property value.
         member this.Get<'a> propertyName world : 'a =
-            (World.getScreenProperty propertyName this world).PropertyValue :?> 'a
+            (World.getScreenXtensionProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =
@@ -101,24 +90,14 @@ module WorldScreenModule =
             World.setScreenProperty propertyName property this world |> snd'
 
         /// To try set an xtension property value.
-        member this.TrySetX<'a> propertyName (value : 'a) world =
+        member this.TrySet<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             World.trySetScreenXtensionProperty propertyName property this world
 
         /// Set an xtension property value.
-        member this.SetX<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setScreenXtensionProperty propertyName property this world
-
-        /// Set a property value.
-        member this.TrySet<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetScreenProperty propertyName property this world
-
-        /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setScreenProperty propertyName property this world |> snd'
+            World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false

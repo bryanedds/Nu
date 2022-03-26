@@ -20,8 +20,8 @@ module RingMenuDispatcher =
         | ItemSelect of string
 
     type Entity with
-        member this.GetRadius world : single = this.GetX Property? Radius world
-        member this.SetRadius (value : single) world = this.SetX Property? Radius value world
+        member this.GetRadius world : single = this.Get Property? Radius world
+        member this.SetRadius (value : single) world = this.Set Property? Radius value world
         member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
