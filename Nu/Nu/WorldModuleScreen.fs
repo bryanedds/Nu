@@ -179,9 +179,9 @@ module WorldModuleScreen =
                             match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                    let struct (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
                                     success <- successInner
-                                    gameState
+                                    screenState
                                 else Unchecked.defaultof<_>
                             | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
@@ -198,9 +198,9 @@ module WorldModuleScreen =
                             match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                    let struct (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
                                     success <- successInner
-                                    gameState
+                                    screenState
                                 else Unchecked.defaultof<_>
                             | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
