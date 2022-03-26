@@ -733,7 +733,7 @@ module WorldTypes =
             entityState'
 
         /// Check that there exists an xtenstion proprty that is a runtime property.
-        static member containsRuntimeProperties entityState =
+        static member inline containsRuntimeProperties entityState =
             Xtension.containsRuntimeProperties entityState.Xtension
 
         /// Try to get an xtension property and its type information.
