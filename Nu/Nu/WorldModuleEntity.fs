@@ -1298,7 +1298,7 @@ module WorldModuleEntity =
         /// Create an entity from an simulant descriptor.
         static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
-                World.createEntity5 descriptor.SimulantDispatcherName (Some descriptor.SimulantNames) overlayDescriptor group world
+                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNamesOpt overlayDescriptor group world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName property entity world |> snd')
