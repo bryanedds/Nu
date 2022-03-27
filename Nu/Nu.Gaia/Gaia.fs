@@ -520,7 +520,7 @@ module Gaia =
                 match parentEntityName with
                 | Constants.Editor.NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
                 | _ ->
-                    let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
+                    let parentRelation = Relation.makeFromString (Constants.Relation.ParentStr + Constants.Address.SeparatorStr + parentEntityName)
                     form.propertyValueTextBoxText <- scstring parentRelation
                     if propertyDescriptor.Name = "ParentNodeOpt"
                     then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
