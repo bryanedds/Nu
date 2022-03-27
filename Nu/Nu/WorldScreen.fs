@@ -244,10 +244,10 @@ module WorldScreenModule =
         static member createScreen2 descriptor world =
             let (screen, world) =
                 let screenNameOpt =
-                    match descriptor.SimulantNames with
-                    | [||] -> None
-                    | [|name|] -> Some name
-                    | _ -> failwith "Screen cannot have multiple names."
+                    match descriptor.SimulantNamesOpt with
+                    | None -> None
+                    | Some [|name|] -> Some name
+                    | Some _ -> failwith "Screen cannot have multiple names."
                 World.createScreen3 descriptor.SimulantDispatcherName screenNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->

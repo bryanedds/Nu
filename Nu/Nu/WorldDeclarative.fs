@@ -26,7 +26,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, sieve, unfold, mapper) ->
             Choice1Of3 (lens, sieve, unfold, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
-            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName [|name|] initializers (group / name) world
+            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some [|name|]) initializers (group / name) world
             Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (group / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -52,7 +52,7 @@ type [<NoEquality; NoComparison>] GroupContent =
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, handlersGroup, bindsGroup) = Describe.group5 dispatcherName [|name|] initializers descriptors group world
+            let (descriptor, handlersGroup, bindsGroup) = Describe.group5 dispatcherName (Some [|name|]) initializers descriptors group world
             Choice2Of3 (name, descriptor, handlers @ handlersGroup, binds @ bindsGroup, streams, filePaths, entityContents)
         | GroupFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -78,7 +78,7 @@ type [<NoEquality; NoComparison>] ScreenContent =
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (groupName, entityName, filePath) -> (name, groupName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
             let groupFilePaths = List.map (function Choice3Of3 (groupName, filePath) -> Some (name, groupName, filePath) | _ -> None) expansions |> List.definitize
-            let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName [|name|] initializers descriptors screen world
+            let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName (Some [|name|]) initializers descriptors screen world
             Left (name, descriptor, handlers @ handlersScreen, binds @ bindsScreen, behavior, streams, entityStreams, groupFilePaths, entityFilePaths, entityContents)
         | ScreenFromGroupFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
