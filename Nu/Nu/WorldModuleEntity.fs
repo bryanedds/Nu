@@ -86,8 +86,10 @@ module WorldModuleEntity =
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
-                match Address.getNames entity.EntityAddress with
-                | [|screenName; groupName; _|] ->
+                let names = Address.getNames entity.EntityAddress
+                if names.Length >= 3 then
+                    let screenName = names.[0]
+                    let groupName = names.[1]
                     match UMap.tryFind screenName world.ScreenDirectory with
                     | Some groupDirectory ->
                         match UMap.tryFind groupName groupDirectory.Value with
@@ -97,14 +99,16 @@ module WorldModuleEntity =
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                         | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
                     | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent screen.")
-                | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
+                else failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.add entity entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateRemover (entity : Entity) world =
             let screenDirectory =
-                match Address.getNames entity.EntityAddress with
-                | [|screenName; groupName; _|] ->
+                let names = Address.getNames entity.EntityAddress
+                if names.Length >= 3 then
+                    let screenName = names.[0]
+                    let groupName = names.[1]
                     match UMap.tryFind screenName world.ScreenDirectory with
                     | Some groupDirectory ->
                         match UMap.tryFind groupName groupDirectory.Value with
@@ -114,7 +118,7 @@ module WorldModuleEntity =
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                         | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent group.")
                     | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent screen.")
-                | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
+                else failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.remove entity world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
@@ -1558,6 +1562,25 @@ module WorldModuleEntity =
                 else world
             else world
 
+        /// Duplicate an entity.
+        static member duplicateEntity source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id; Name = Address.getName destination.EntityAddress }
+                World.addEntity false entityState destination world
+
+        /// Rename an entity.
+        static member renameEntity source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id; Name = Address.getName destination.EntityAddress }
+                let world = World.destroyEntityImmediate source world
+                World.addEntity false entityState destination world
+
         /// Copy an entity to the clipboard.
         static member copyEntityToClipboard entity world =
             let entityState = World.getEntityState entity world
@@ -1575,7 +1598,7 @@ module WorldModuleEntity =
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
                 let name = Gen.name
-                let entityState = { entityState with Id = id; Name = name } // no need to diverge here
+                let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world

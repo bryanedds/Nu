@@ -370,7 +370,7 @@ module WorldScreenModule =
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
-                        let group = owner.Parent
+                        let group = owner.Group
                         List.fold (fun world entityContent ->
                             World.expandEntityContent entityContent origin owner group world |> snd)
                             world entityContents)

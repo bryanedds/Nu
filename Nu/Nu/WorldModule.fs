@@ -647,16 +647,19 @@ module WorldModule =
                         let subscriber = subscriptionEntry.Subscriber
                         if not selectedOnly || isSelected subscriber world then
                             let result =
-                                match Array.length subscriber.SimulantAddress.Names with
-                                | 0 ->
-                                    match subscriber with
-                                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                let namesLength = subscriber.SimulantAddress.Names.Length
+                                if namesLength >= 3
+                                then EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                else
+                                    match namesLength with
+                                    | 0 ->
+                                        match subscriber with
+                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | _ -> failwithumf ()
+                                    | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                     | _ -> failwithumf ()
-                                | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | 3 -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result
                             world |> World.choose |> ignore

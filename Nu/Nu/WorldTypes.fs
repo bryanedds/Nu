@@ -881,11 +881,11 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// The parent game of the screen.
-        member this.Parent = Game ()
+        /// Get the names of a screen.
+        member inline this.AddressNames = Address.getNames this.ScreenAddress
 
         /// Get the name of a screen.
-        member inline this.Name = this.ScreenAddress.Names.[0]
+        member inline this.Name = Address.getName this.ScreenAddress
 
 #if DEBUG
         /// Get the latest value of a screen's properties.
@@ -954,11 +954,14 @@ module WorldTypes =
         /// The address of the group.
         member this.GroupAddress = groupAddress
 
-        /// The parent screen of the group.
-        member this.Parent = let names = this.GroupAddress.Names in Screen names.[0]
+        /// The containing screen of the group.
+        member this.Screen = let names = this.GroupAddress.Names in Screen names.[0]
+
+        /// Get the names of a group.
+        member inline this.AddressNames = Address.getNames this.GroupAddress
 
         /// Get the name of a group.
-        member this.Name = Address.getName this.GroupAddress
+        member inline this.Name = Address.getName this.GroupAddress
 
 #if DEBUG
         /// Get the latest value of a group's properties.
@@ -1037,8 +1040,11 @@ module WorldTypes =
         /// The address of the entity.
         member this.EntityAddress = entityAddress
 
-        /// The parent group of the entity.
-        member this.Parent = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
+        /// The containing screen of the entity.
+        member this.Screen = let names = this.EntityAddress.Names in Screen names.[0]
+
+        /// The containing group of the entity.
+        member this.Group = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
 
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt
@@ -1064,8 +1070,14 @@ module WorldTypes =
             rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] entityNames)
 #endif
 
+        /// Get the names of an entity's address.
+        member inline this.AddressNames = Address.getNames this.EntityAddress
+
+        /// Get the names of an entity, not including group or screen.
+        member inline this.Names = Address.getNames this.EntityAddress |> Array.skip 2
+
         /// Get the name of an entity.
-        member this.Name = Address.getName this.EntityAddress
+        member inline this.Name = Address.getName this.EntityAddress
 
 #if DEBUG
         /// Get the latest value of an entity's properties.

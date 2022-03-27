@@ -77,7 +77,7 @@ module AvatarDispatcher =
 
         override this.Channel (_, entity) =
             [entity.UpdateEvent => msg Update
-             entity.Parent.PostUpdateEvent => msg PostUpdate
+             entity.Group.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)
              Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
