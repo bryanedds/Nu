@@ -1644,7 +1644,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
         EntityGetters.Assign ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         EntityGetters.Assign ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
-        EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityNames entity world })
+        EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntityNames entity world })
 
     /// Initialize property setters.
     let private initSetters () =
