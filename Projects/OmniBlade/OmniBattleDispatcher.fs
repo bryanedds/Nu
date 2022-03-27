@@ -438,7 +438,7 @@ module BattleDispatcher =
                         let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool.Exp ally.ArchetypeType
                         if Set.notEmpty techs then Some (ally, techs) else None) |>
                     List.map (fun (ally, techs) ->
-                        let text = techs |> Set.toList |> List.map scstring |> String.join ", "
+                        let text = techs |> Set.toList |> List.map TechType.frenchName |> String.join ", "
                         ally.Name + " apprend " + text + "!") |>
                     function
                     | _ :: _ as texts -> String.join "\n" texts + "^"

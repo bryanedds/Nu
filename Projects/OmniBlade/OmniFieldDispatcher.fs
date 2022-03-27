@@ -572,7 +572,7 @@ module FieldDispatcher =
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 60.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== techLens --> scstringm
+                         Entity.Text <== techLens --> TechType.frenchName
                          Entity.EnabledLocal == false
                          Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                          Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
@@ -715,7 +715,7 @@ module FieldDispatcher =
                 withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a clef!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a cle!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 just field
 
         static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
@@ -730,7 +730,7 @@ module FieldDispatcher =
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     // TODO: P1: add jiggle locked sound.
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a clef!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Ferme a cle!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                     just field
             | _ -> failwithumf ()
 
@@ -1427,7 +1427,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> string teammate.ArchetypeType + " Nv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                   | Some teammate -> ArchetypeType.frenchName teammate.ArchetypeType + " Nv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1436,7 +1436,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Arme: " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                   | Some teammate -> "Arme: " + Option.mapOrDefault WeaponType.frenchName "Aucune" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1445,7 +1445,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Armr: " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                   | Some teammate -> "Armr: " + Option.mapOrDefault ArmorType.frenchName "Aucune" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1454,7 +1454,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Acc:  " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "Acc:  " + Option.mapOrDefault AccessoryType.frenchName "Aucun" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1559,23 +1559,23 @@ module FieldDispatcher =
                        [Content.sidebar (v2 24.0f 417.0f) 1.0f field
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 384.0f 432.0f; Entity.ElevationLocal == 1.0f
-                            Entity.Text == "Battle Speed"]
+                            Entity.Text == "Mode de Combat"]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
-                            Entity.Text == "Wait"
+                            Entity.Text == "Tours"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
                             Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
-                            Entity.Text == "Paced"
+                            Entity.Text == "Normal"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
                             Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
                         Content.toggle Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
-                            Entity.Text == "Swift"
+                            Entity.Text == "Rapide"
                             Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                             Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 

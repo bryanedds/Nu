@@ -51,7 +51,7 @@
     [Wait 180]
     [Dialog &quot;C'est fait.&quot;]
     [Dialog &quot;Tout le monde a le regard vide desormais...&quot;]
-    [Dialog &quot;Le messager de la Reine m'a dit que je succederai a mon maitre.&quot;]
+    [Dialog &quot;Le messager de la Reine m'a dit que je succederai a ma maitresse.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;Aucun ne savait mon plan, pas meme Jean.&quot;]
     [Dialog &quot;Il m'a propose de demissionner pour qu'on se retrouve...&quot;]

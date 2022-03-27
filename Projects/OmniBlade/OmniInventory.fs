@@ -137,7 +137,7 @@ type ArmorType =
     | StoneHide
     static member frenchName at = match at with
                                   |MicroFur -> "Fourrure Fine"
-                                  |TinMail -> "Cotte de Fer Blanc"
+                                  |TinMail -> "Cotte d'Etain"
                                   |CottonVest -> "Veste de Coton"
                                   |CottonRobe -> "Robe de Coton"
                                   |ThinFur -> "Fourrure Fine"

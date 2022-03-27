@@ -231,6 +231,11 @@ type TechType =
     | ConjureIfrit
     | Slow
     | Purify
+    static member frenchName tt = 
+        match tt with 
+            |Critical -> "Coup Critique"
+            |Slash -> "Entaille"
+            |_ -> string tt 
 
 type ActionType =
     | Attack
@@ -313,6 +318,12 @@ type ArchetypeType =
     | RobotBig
     | Dinoman
     | Arachnos
+    static member frenchName at = match at with 
+                                   |Fighter -> "Combattant"
+                                   |Wizard -> "Sorcier"
+                                   |Conjuror -> "Conjureur"
+                                   |Cleric -> "Clerc"
+                                   |_ -> string at 
 
 type ShopType =
     | Chemist
