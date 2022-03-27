@@ -35,7 +35,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             Reflection.getPropertyDefinitions typeof<RigidBodyFastFacet> @
             Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
-        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
+        elif propertyName = "Names" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
@@ -85,17 +85,17 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             match propertyName with
             
             // change the name property
-            | "Name" ->
-                let name = value :?> string
-                if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let (entity, world) = World.reassignEntityImmediate entity (Some name) entity.Group world
+            | "Names" ->
+                let names = value :?> string array
+                if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) names then
+                    let (entity, world) = World.reassignEntityImmediate entity (Some names) entity.Group world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity entity Globals.Form world
                     world
                 else
                     MessageBox.Show
-                        ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + (String.escape Symbol.IllegalNameChars) + "'.",
-                         "Invalid Name",
+                        ("Invalid entity names '" + scstring names + "'.",
+                         "Invalid Names",
                          MessageBoxButtons.OK) |>
                         ignore
                     world

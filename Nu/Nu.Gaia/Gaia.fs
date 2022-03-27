@@ -521,13 +521,13 @@ module Gaia =
                     match parentEntityNamesStr with
                     | Constants.Editor.NonePick ->
                         let entity = entityTds.DescribedEntity
-                        let entity2 = Entity (Array.add entity.Name entity.Group.AddressNames)
+                        let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
                         let world = World.renameEntity entity entity2 world
                         entity2.SetParentNodeOptWithAdjustment None world
                     | _ ->
                         let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let entity = entityTds.DescribedEntity
-                        let entity2 = Entity (Array.append parent.AddressNames [|entity.Name|])
+                        let entity2 = Entity (Array.append parent.EntityAddress.Names [|entity.Name|])
                         let world = World.renameEntity entity entity2 world
                         let parentRelation = Relation.makeParent ()
                         form.propertyValueTextBoxText <- scstring parentRelation

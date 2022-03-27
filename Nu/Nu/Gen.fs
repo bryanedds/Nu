@@ -190,6 +190,16 @@ module Gen =
             let name = Gen.nameIf nameOpt
             (id, name)
 
+        /// Derive a unique id and names if given none.
+        static member idAndNamesIf namesOpt =
+            match namesOpt with
+            | Some names ->
+                (Gen.id, names)
+            | None ->
+                let id = Gen.id
+                let name = Gen.namePrefix + string id
+                (id, [|name|])
+
         /// Generate a 32-bit unique counter.
         static member id32 =
             lock Lock (fun () ->

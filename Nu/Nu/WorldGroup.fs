@@ -171,7 +171,12 @@ module WorldGroupModule =
         /// Create a group from a simulant descriptor.
         static member createGroup3 descriptor screen world =
             let (group, world) =
-                World.createGroup4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
+                let groupNameOpt =
+                    match descriptor.SimulantNames with
+                    | [||] -> None
+                    | [|name|] -> Some name
+                    | _ -> failwith "Group cannot have multiple names."
+                World.createGroup4 descriptor.SimulantDispatcherName groupNameOpt screen world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setGroupProperty propertyName property group world |> snd')
@@ -279,7 +284,7 @@ module WorldGroupModule =
                         World.createGroup3 descriptor screen world
                     let world =
                         List.fold (fun world (_, entityName, filePath) ->
-                            World.readEntityFromFile filePath (Some entityName) group world |> snd)
+                            World.readEntityFromFile filePath (Some [|entityName|]) group world |> snd)
                             world entityFilePaths
                     let world =
                         List.fold (fun world (simulant, left : World Lens, right, twoWay) ->

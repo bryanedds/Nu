@@ -344,7 +344,7 @@ module WorldModule2 =
             let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
-            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
+            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Names) DefaultOverlay splashGroup world |> snd
             let world = splashSprite.SetPersistent false world
             let world = splashSprite.SetSize cameraEyeSize world
             let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
