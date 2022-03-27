@@ -45,24 +45,41 @@ module WorldGroupModule =
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
-            if World.tryGetGroupProperty (propertyName, this, world, &property)
-            then Some property
-            else None
+            let found = World.tryGetGroupProperty (propertyName, this, world, &property)
+            if found then Some property else None
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getGroupProperty propertyName this world
+        member this.GetProperty propertyName world =
+            World.getGroupProperty propertyName this world
 
-        /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getGroupProperty propertyName this world).PropertyValue :?> 'a
+        /// Get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetGroupXtensionProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
+        member this.Get<'a> propertyName world : 'a =
+            World.getGroupXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName property world = World.trySetGroupProperty propertyName property this world
+        member this.TrySetProperty propertyName property world =
+            World.trySetGroupProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world |> snd'
+        member this.SetProperty propertyName property world =
+            World.setGroupProperty propertyName property this world |> snd'
 
-        /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd'
+        /// To try set an xtension property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGroupXtensionProperty propertyName property this world
+
+        /// Set an xtension property value.
+        member this.Set<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setGroupXtensionProperty propertyName property this world
 
         /// Check that a group is selected.
         member this.IsSelected world =

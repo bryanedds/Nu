@@ -28,6 +28,9 @@ type CharacterIndex =
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
+    static member isUnfriendly index index2 =
+        not (CharacterIndex.isFriendly index index2)
+
     static member toEntityName index =
         match index with
         | AllyIndex i -> "Ally+" + scstring i
@@ -122,13 +125,22 @@ type [<CustomEquality; CustomComparison>] StatusType =
     //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequal
     //| Provoke of CharacterIndex - maybe in the sequal
 
-    static member randomize this =
+    static member randomizeWeak this =
         match this with
         | Poison -> Gen.random1 2 = 0
         | Silence -> Gen.random1 3 = 0
         | Sleep -> Gen.random1 4 = 0
         | Confuse -> Gen.random1 3 = 0
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
+        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+
+    static member randomizeStrong this =
+        match this with
+        | Poison -> Gen.random1 5 <> 0
+        | Silence -> Gen.random1 2 = 0
+        | Sleep -> Gen.random1 3 = 0
+        | Confuse -> Gen.random1 2 = 0
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
 
     static member enumerate this =
@@ -404,10 +416,12 @@ type PortalIndex =
     | SE
     | NW
     | SW
+    | Warp
     | IX of int
 
 type PortalType =
     | AirPortal
+    | WarpPortal
     | StairsPortal of bool
 
 type NpcType =

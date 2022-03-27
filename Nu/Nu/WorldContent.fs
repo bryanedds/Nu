@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Immutable
 open Prime
 open Nu
 
@@ -29,8 +30,8 @@ module Content =
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers groups =
         ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, groups)
 
-    /// Describe groups to be instantiated from a lens.
-    let groups
+    /// Describe groups to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
+    let groupsFast
         (lens : Lens<'a, World>)
         (sieve : 'a -> World -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
@@ -40,19 +41,18 @@ module Content =
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         GroupsFromStream (lens, sieve, unfold, mapper)
-
-    /// Describe groups to be instantiated from a map lens.
-    /// Unless the lens is very efficiently producing the map, you may want to use the Content.groups function instead
-    /// to cache map creation where possible.
-    let groupMap
-        (lens : Lens<Map<'k, 'v>, World>)
-        (mapper : 'k -> Lens<'v, World> -> World -> GroupContent) =
-        groups lens constant constant mapper
+        
+    /// Describe groups to be instantiated from a lens.
+    let groups
+        (lens : Lens<'a, World>)
+        (unfold : 'a -> World -> Map<'k, 'b>)
+        (mapper : 'k -> Lens<'b, World> -> World -> GroupContent) =
+        groupsFast lens unfold constant mapper
 
     /// Describe a group to be optionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper a world
-        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
+        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe a group to be instantiated when a screen is selected.
     let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> GroupContent) =
@@ -63,7 +63,27 @@ module Content =
     let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> GroupContent) =
         let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
-        groups lens sieve constant mapper
+        groups lens sieve mapper
+
+    /// Describe groups to be instantiated from a map lens.
+    /// Unless the lens is very efficiently producing the map, you may want to use the Content.groups function instead
+    /// to cache map creation where possible.
+    let groupMap
+        (lens : Lens<Map<'k, 'v>, World>)
+        (mapper : 'k -> Lens<'v, World> -> World -> GroupContent) =
+        groups lens constant mapper
+
+    /// Describe groups to be instantiated from a block lens.
+    let groupBlock
+        (lens : Lens<'a ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        groupMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
+
+    /// Describe groups to be instantiated from a partially-populated block lens.
+    let groupOptBlock
+        (lens : Lens<'a option ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        groupMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
 
     /// Describe a group to be loaded from a file.
     let groupFromFile<'d when 'd :> GroupDispatcher> groupName filePath =
@@ -73,8 +93,8 @@ module Content =
     let group<'d when 'd :> GroupDispatcher> groupName initializers entities =
         GroupFromInitializers (typeof<'d>.Name, groupName, initializers, entities)
 
-    /// Describe entities to be instantiated from a lens.
-    let entities
+    /// Describe entities to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
+    let entitiesFast
         (lens : Lens<'a, World>)
         (sieve : 'a -> World -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
@@ -85,18 +105,17 @@ module Content =
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         EntitiesFromStream (lens, sieve, unfold, mapper)
 
-    /// Describe entities to be instantiated from a map lens.
-    /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function
-    /// instead to cache map creation where possible.
-    let entityMap
-        (lens : Lens<Map<'k, 'v>, World>)
-        (mapper : 'k -> Lens<'v, World> -> World -> EntityContent) =
-        entities lens constant constant mapper
+    /// Describe entities to be instantiated from a lens.
+    let entities
+        (lens : Lens<'a, World>)
+        (unfold : 'a -> World -> Map<'k, 'b>)
+        (mapper : 'k -> Lens<'b, World> -> World -> EntityContent) =
+        entitiesFast lens unfold constant mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
         let mapper = fun _ a world -> mapper a world
-        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
+        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -107,7 +126,27 @@ module Content =
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
         let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
-        entities lens sieve constant mapper
+        entities lens sieve mapper
+
+    /// Describe entities to be instantiated from a map lens.
+    /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function
+    /// instead to cache map creation where possible.
+    let entityMap
+        (lens : Lens<Map<'k, 'v>, World>)
+        (mapper : 'k -> Lens<'v, World> -> World -> EntityContent) =
+        entities lens constant mapper
+
+    /// Describe entities to be instantiated from a block lens.
+    let entityBlock
+        (lens : Lens<'a ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entityMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
+
+    /// Describe entities to be instantiated from a block partially-populated lens.
+    let entityOptBlock
+        (lens : Lens<'a option ImmutableArray, World>)
+        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entityMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
@@ -151,8 +190,11 @@ module Content =
     /// Describe a text with the given initializers.
     let text entityName initializers = entity<TextDispatcher> entityName initializers
 
-    /// Describe a toggle with the given initializers.
-    let toggle entityName initializers = entity<ToggleDispatcher> entityName initializers
+    /// Describe a toggle button with the given initializers.
+    let toggleButton entityName initializers = entity<ToggleButtonDispatcher> entityName initializers
+
+    /// Describe a radio button with the given initializers.
+    let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
 
     /// Describe an fps gui with the given initializers.
     let fps entityName initializers = entity<FpsDispatcher> entityName initializers

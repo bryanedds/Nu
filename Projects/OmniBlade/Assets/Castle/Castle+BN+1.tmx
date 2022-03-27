@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -21,17 +21,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9V0tOwzAQtRJVgjQ5AHRXiY/UC1BuAOyQ4ARQKlChXKSX6JKuECvUDRwCwQ0oLMoCFrBiRonxZBi7idtmpJE8zvO8secligehUoMSflpT6hJ8mKg/w/E5zJ3UyuXydaxhRPhxXBU3rUFb1dwXwHdF+HF8VlENyH0N/hgY/jGM+xXV0Mu4vwj/NEhr6FbEj9zboeFvhmkNy+DXvdaOZ4/cncjwf0RpDX2GnbcfutcPgXE8+xvy7mnDuXGQx86jCaqzT+J49ncCP85NGdZXl5Qb+bZC47Tv3JphHjv1qIFzu/hmWbNkDRL3KpxrBP4cK7WSmPglNjz8GY2L1mDbdyPr9STO743GOG4k8rMi5yBx/2Q5WlneH5aTxjhuEf5vAeuqoWfp9w7kbIPvJiZ+ikxMTcLSmJ9Dl/Fr7tv6/9yLMswtfSt7tfy+XXri2vNZgzVwfmqvBIu6cmmPztk0KOVw8VNtoa5c2qNzVIOzcnB+3vcy2qNr0Gxr2mSta//LNtyrjd9Hez5rKb/+p0ZzaU3SkQ2rY0mT0r+6rsGlNUlHNqyOuSZd9wRdQ5Fvmc0odrOe12CROwrtBdoG5JiAv4G/F/g2IvY+wx4TfJn7Ea3hCHKsxWnOhuPstSF2Pc5jfe5mtIY9yHUI/AdZzqHQBz2HuP3YYOe5F/JeaBsJ/NLcIu6kWEPH06u+F/r4LwObjUc=
+   eJy9V0tOwzAQjRJFgjQ5AHRXiY/UC1BuAOyQ4ARQKlChXKSX6JKuECvUDRwCwQ0oLMoCFnTFjBLjyXTsJm6bkUbyOM/zxp6XKO4Hntcv4eeh512DDxLv33B8CXNnYblcro41DAk/jqviVs6tSu6rcJb/oqL9I/ct+LOvuUcw7oXV1NDNuH8I/8RPa+hUxI/cu0QDjSCtYRX8eN43xPHskbsdaf6vKK2hx7CL9kP1+snXjmd/R949ZTg38vPYRTRBdfZNHM/+QeDHuQnDuuqSciPfTqCd9p1bI8hjJw41cG4b3zxrlKxB4l6Hc43AX2PPW0t0/BZrHv6MxkVrMO27nvV6HOf3RmMc1xP5WZFzkLinWY5mlnfKctIYx03C/ytgbTV0Df3eg5wt8P1Exy+RjqlJWBrzc+gwfsV9X5vNvSzD3NK3shvm923TE9eeyxqsgfNTeydY1JVNe3TOpEEph42fagt1ZdMenaManJeD8/O+l9EeXYNmWtMia237X7XhXk38LtpzWUv51T81mk1rko5MWBVLmpT+1VUNNq1JOjJhVcw1absnqBqKfMtMRrHbtbwGi9xRaC/QtiDHGPwD/LPAtxGxjxn2lODL3I9oDSeQYyNOc9YtZ68MsZtxHutyN6M1HECuY+A/ynIOhD6oOcQdxhq7yL2Q90LZUOCX5pZxJ8Ua2o5e9Z3Uxf8A7G2LjA==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MZzALR4GBg5gmuLmRfDR5ZHZ3LzY5bh4MfUSA17xEM8nRe1QA9ZE5mti1Q0FgC+tYePDxHClQW4S0yA56Wm4pkFS0hUutUMpbeJLa4TSETa9uNIkLkBJOhquaRAGyElH1Ex7PESYJQ9UwwvE/FS0Vw5olhI3A4MMEWaC1I2CUUAsAAB0dS1N
+   eJxjYBgFo2Bogwlc9LfTDMnOA3S2fxEvcWLUAsVA/5WQ6McyKobJYqBZS4DYhQgzRYFqxIB42QCkieEEbvEwMHAA0xQ3L4KPLo/M5ubFLsfFi6mXGPCKh3g+KWqHGrAmMl8Tq24oAHxpDRsfJoYrDXKTmAbJSU/DNQ2Skq5wqR1KaRNfWiOUjrDpxZUmcQFK0tFwTYMwQE46omba4yHCLHmgGl4g5qeivXJAs5S4GRhkiDATpG4UjAJiAQD7USxr
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0jEKgDAUg+G3dOwlO3gMdVM39cQGeoG0KAX5P8gWMiUCvaZUM0pJNQDwlTlHLMqa3+26Nm3tymFstnRdp7Yu5TY2W7rw8D/+NxL/43/AHz2tByET
+   eJxjYBiaII8Vwc5ixa2OViAVaGcaFKcMgP35QDuToDh/AOwfBaNgFIwMUMfLwFAPxA281FVLLGgHmtUBxJ1EmEmKWmLBBKBZE4F4EhFmkqJ2FBAHRtPfaPobSDCa/kbT3ygYBcMRAAA9SiOw
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -52,6 +52,11 @@
   <object id="3" gid="235" x="720" y="336" width="96" height="144">
    <properties>
     <property name="I" value="[Door WoodenDoor [Some AluminumKey]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="864" y="1296" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal WarpPortal Warp Leftward CastleConnector East false [HeavyArmorosDefeated]]"/>
    </properties>
   </object>
  </objectgroup>

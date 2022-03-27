@@ -255,7 +255,7 @@ and 'w Ecs () as this =
             storeSubscriptions.Add (eventName, subscriptions)
             subscriptionId
 
-    member this.Subscribe<'d, 'w> eventName callback =
+    member this.Subscribe<'d> eventName callback =
         this.SubscribePlus<'d> Gen.id32 eventName callback |> ignore
 
     member this.Unsubscribe eventName subscriptionId =

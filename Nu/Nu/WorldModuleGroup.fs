@@ -148,81 +148,113 @@ module WorldModuleGroup =
                     else Unchecked.defaultof<_>)
                 Property? Model value group world
 
-        static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
-            if World.getGroupExists group world then
-                match GroupGetters.TryGetValue propertyName with
-                | (true, getter) -> property <- getter group world; true
-                | (false, _) -> GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
+        static member internal tryGetGroupXtensionProperty (propertyName, group, world, property : _ outref) =
+            if World.getGroupExists group world
+            then GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
             else false
+
+        static member internal getGroupXtensionProperty propertyName group world =
+            let mutable property = Unchecked.defaultof<_>
+            match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
+            | true -> property
+            | false -> failwithf "Could not find property '%s'." propertyName
+
+        static member internal getGroupXtensionValue<'a> propertyName group world =
+            let groupState = World.getGroupState group world
+            let property = GroupState.getProperty propertyName groupState
+            property.PropertyValue :?> 'a
+
+        static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
+            match GroupGetters.TryGetValue propertyName with
+            | (true, getter) ->
+                if World.getGroupExists group world then
+                    property <- getter group world
+                    true
+                else false
+            | (false, _) ->
+                World.tryGetGroupXtensionProperty (propertyName, group, world, &property)
 
         static member internal getGroupProperty propertyName group world =
             match GroupGetters.TryGetValue propertyName with
             | (true, getter) -> getter group world
-            | (false, _) ->
-                let mutable property = Unchecked.defaultof<_>
-                match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
-                | true -> property
-                | false -> failwithf "Could not find property '%s'." propertyName
+            | (false, _) -> World.getGroupXtensionProperty propertyName group world
 
-        static member internal trySetGroupPropertyFast propertyName property group world =
+        static member internal trySetGroupXtensionPropertyFast propertyName property group world =
             if World.getGroupExists group world then
-                match GroupSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property group world |> snd'
-                | (false, _) ->
-                    let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let struct (_, world) =
-                        World.updateGroupState
-                            (fun groupState ->
-                                let mutable propertyOld = Unchecked.defaultof<_>
-                                match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
-                                | true ->
-                                    if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
-                                        success <- successInner
-                                        gameState
-                                    else Unchecked.defaultof<_>
-                                | false -> Unchecked.defaultof<_>)
-                            propertyName property.PropertyValue group world
-                    world
-            else world
-
-        static member internal trySetGroupProperty propertyName property group world =
-            if World.getGroupExists group world then
-                match GroupSetters.TryGetValue propertyName with
-                | (true, setter) ->
-                    let struct (changed, world) = setter property group world
-                    struct (true, changed, world)
-                | (false, _) ->
-                    let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let struct (changed, world) =
-                        World.updateGroupState
-                            (fun groupState ->
-                                let mutable propertyOld = Unchecked.defaultof<_>
-                                match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
-                                | true ->
-                                    if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
-                                        success <- successInner
-                                        gameState
-                                    else Unchecked.defaultof<_>
-                                | false -> Unchecked.defaultof<_>)
-                            propertyName property.PropertyValue group world
-                    struct (success, changed, world)
-            else (false, false, world)
-
-        static member internal setGroupProperty propertyName property group world =
-            if World.getGroupExists group world then
-                match GroupSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property group world
-                | (false, _) ->
+                let mutable success = false // bit of a hack to get additional state out of the lambda
+                let struct (_, world) =
                     World.updateGroupState
                         (fun groupState ->
-                            let propertyOld = GroupState.getProperty propertyName groupState
-                            if property.PropertyValue =/= propertyOld.PropertyValue
-                            then GroupState.setProperty propertyName property groupState
-                            else Unchecked.defaultof<_>)
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
+                            | true ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
+                                    success <- successInner
+                                    groupState
+                                else Unchecked.defaultof<_>
+                            | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
+                world
+            else world
+
+        static member internal trySetGroupXtensionProperty propertyName property group world =
+            if World.getGroupExists group world then
+                let mutable success = false // bit of a hack to get additional state out of the lambda
+                let struct (changed, world) =
+                    World.updateGroupState
+                        (fun groupState ->
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
+                            | true ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
+                                    success <- successInner
+                                    groupState
+                                else Unchecked.defaultof<_>
+                            | false -> Unchecked.defaultof<_>)
+                        propertyName property.PropertyValue group world
+                struct (success, changed, world)
+            else (false, false, world)
+
+        static member internal setGroupXtensionProperty propertyName property group world =
+            if World.getGroupExists group world then
+                World.updateGroupState
+                    (fun groupState ->
+                        let propertyOld = GroupState.getProperty propertyName groupState
+                        if property.PropertyValue =/= propertyOld.PropertyValue
+                        then GroupState.setProperty propertyName property groupState
+                        else Unchecked.defaultof<_>)
+                    propertyName property.PropertyValue group world
             else struct (false, world)
+
+        static member internal trySetGroupPropertyFast propertyName property group world =
+            match GroupSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getGroupExists group world
+                then setter property group world |> snd'
+                else world
+            | (false, _) ->
+                World.trySetGroupXtensionPropertyFast propertyName property group world
+
+        static member internal trySetGroupProperty propertyName property group world =
+            match GroupSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getGroupExists group world then
+                    let struct (changed, world) = setter property group world
+                    struct (true, changed, world)
+                else (false, false, world)
+            | (false, _) ->
+                World.trySetGroupXtensionProperty propertyName property group world
+
+        static member internal setGroupProperty propertyName property group world =
+            match GroupSetters.TryGetValue propertyName with
+            | (true, setter) ->
+                if World.getGroupExists group world
+                then setter property group world
+                else struct (false, world)
+            | (false, _) ->
+                World.setGroupXtensionProperty propertyName property group world
 
         static member internal attachGroupProperty propertyName property group world =
             if World.getGroupExists group world then

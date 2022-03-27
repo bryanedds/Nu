@@ -58,8 +58,6 @@ module Program =
     allocated references are allocated consecutively. However, it's still much better to use value types instead
     because you are able to end up with unmanaged types that will not need to be scanned by the GC. *)
 
-    (* TODO: investigate Gaia extensibility mechanism. *)
-
     /// Program entry point.
     let [<EntryPoint; STAThread>] main _ =
 
@@ -111,7 +109,8 @@ module Program =
                     File.WriteAllText (newProj, newProjStr)
 
                     // add project to sln file
-                    // NOTE: not currently working due to project in old file format - user is instructed to do this manually
+                    // NOTE: not currently working due to project in old file format - user is instructed to do this
+                    // manually.
                     //Directory.SetCurrentDirectory slnDir
                     //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
                     ignore (slnDir, newProj)

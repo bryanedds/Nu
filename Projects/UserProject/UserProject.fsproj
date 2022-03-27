@@ -112,7 +112,7 @@
     <None Include="Assets\Default\TileMap.tmx" />
     <None Include="Assets\Default\TileMapEmpty.tmx" />
     <None Include="Assets\Gameplay\Jump.wav" />
-    <None Include="Assets\Gameplay\Level.nugroup" />
+    <None Include="Assets\Gameplay\Scene.nugroup" />
     <None Include="Assets\Gui\Title.nugroup" />
     <None Include="Assets\Gui\Credits.nugroup" />
   </ItemGroup>
@@ -168,7 +168,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.7.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.8.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
@@ -176,12 +176,26 @@
     <Reference Include="SDL2-CS">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS.dll\lib\net20\SDL2-CS.dll</HintPath>
     </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>..\..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\..\packages\System.Collections.Immutable.6.0.0\lib\net461\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>..\..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>..\..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="TiledSharp">
       <HintPath>..\..\Nu\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />

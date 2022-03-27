@@ -50,7 +50,7 @@ module Core =
     let getTimeStamp () =
         CoreInternal.getTimeStampInternal ()
 
-    /// Get a unique time stamp, spin until the time stamp advances if need be.
+    /// Get a unique time stamp, spinning until the time stamp advances if need be.
     let getUniqueTimeStamp () =
         let mutable nextStamp = getTimeStamp ()
         while nextStamp = lastStamp do nextStamp <- getTimeStamp ()

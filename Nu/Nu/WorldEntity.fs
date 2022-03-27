@@ -23,7 +23,7 @@ module WorldEntityModule =
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
         member this.GetTransform world = (World.getEntityState this world).Transform
-        member this.SetTransform value world = World.setEntityTransformByRef (&value, this, world) |> snd'
+        member this.SetTransform value world = World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
         member this.GetBounds world = World.getEntityBounds this world
         member this.SetBounds value world = World.setEntityBounds value this world |> snd'
@@ -126,15 +126,15 @@ module WorldEntityModule =
 
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform inref, world) =
-            World.setEntityTransformByRef (&value, this, world)
+            World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&value, this, world)
+            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformWithoutEvent value world =
-            World.setEntityTransformByRefWithoutEvent (&value, this, world)
+            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap value world =
@@ -151,9 +151,16 @@ module WorldEntityModule =
         member this.GetProperty propertyName world =
             World.getEntityProperty propertyName this world
 
-        /// Get a property value.
+        /// Get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetEntityXtensionProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
-            (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
+            World.getEntityXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =
@@ -163,6 +170,21 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world =
             World.setEntityProperty propertyName property this world |> snd'
 
+        /// To try set an xtension property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetEntityXtensionProperty propertyName property this world
+
+        /// Set an xtension property value.
+        member this.Set<'a> propertyName (value : 'a) world =
+            World.setEntityXtensionValue<'a> propertyName value this world
+
+        /// Set an xtension property value without publishing an event.
+        member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
+            world
+
         /// Attach a property.
         member this.AttachProperty propertyName property world =
             World.attachEntityProperty propertyName property this world
@@ -170,17 +192,6 @@ module WorldEntityModule =
         /// Detach a property.
         member this.DetachProperty propertyName world =
             World.detachEntityProperty propertyName this world
-
-        /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setEntityProperty propertyName property this world |> snd'
-
-        /// Set an xtension property value without publishing an event.
-        member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
-            world
 
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world
@@ -268,10 +279,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Update (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+            let world = Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
                 World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
@@ -282,10 +290,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.PostUpdate (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+            let world = Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
                 World.publishPlus () entity.PostUpdateEvent eventTrace Simulants.Game false false world
@@ -296,11 +301,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Actualize (entity, world)
             let facets = entity.GetFacets world
-            let world =
-                // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if facets.Length = 0 then world
-                else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
-            world
+            Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
 
         /// Get all the entities contained by a group.
         [<FunctionBinding>]

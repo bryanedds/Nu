@@ -377,7 +377,7 @@ module TmxMap =
                                   Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
                                   Rotation = 0.0f
                                   Elevation = elevation
-                                  Flags = 0 }
+                                  Flags = 0u }
 
                             // check if in view bounds
                             if Math.isBoundsIntersectingBounds (v4Bounds transform.Position transform.Size) viewBounds then

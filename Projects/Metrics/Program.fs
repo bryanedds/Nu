@@ -73,7 +73,7 @@ type MetricsEntityDispatcher () =
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.03f) world
+        entity.SetRotation (entity.GetRotation world + 0.01f) world
 
     override this.View (staticImage, entity, world) =
         let transform = entity.GetTransform world
@@ -96,12 +96,13 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
-        world
+        let id = UInt64.Parse entity.Name
+        ecs.RegisterCorrelated<StaticSpriteComponent> false { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } id world
 
     override this.Unregister (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
+        let id = UInt64.Parse entity.Name
+        let struct (_, world) = ecs.UnregisterCorrelated<StaticSpriteComponent> id world
         world
   #endif
 #endif
@@ -119,7 +120,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create static sprite store
-        ecs.RegisterStore (StoreCorrelated<StaticSpriteComponent, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<StaticSpriteComponent, World> ecs)
 #endif
 #if ECS
         // get ecs
@@ -199,15 +200,15 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS
-        let positions = // 19,663 entity positions (goal: 60FPS, current: 60FPS)
+        let positions = // 19,663 entity positions (goal: 60FPS, current: 50FPS)
             seq {
                 for i in 0 .. 52 do
                     for j in 0 .. 52 do
                         for k in 0 .. 6 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
-            Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None NoOverlay Simulants.DefaultGroup world
+            Seq.foldi (fun i world position ->
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string Gen.id64)) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
@@ -217,27 +218,29 @@ type MyGameDispatcher () =
         let world = World.selectScreen IdlingState Simulants.DefaultScreen world
 #if ECS_HYBRID
         // define update for static sprites
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ world ->
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
                     let comp = &components.[i]
                     if comp.Active then
                         let state = comp.Entity.State world
                         state.Rotation <- state.Rotation + 0.03f
+            world
 
         // define actualize for static sprites
-        ecs.SubscribePlus Gen.id EcsEvents.Actualize $ fun _ _ _ world ->
-            let messages = List ()
-            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                for i in 0 .. components.Length - 1 do
-                    let comp = &components.[i]
-                    if comp.Active then
-                        let state = comp.Entity.State world
-                        if state.Visible then
-                            let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-                            let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                            messages.Add layeredMessage
-            World.enqueueRenderLayeredMessages messages world
+        let _ =
+            ecs.SubscribePlus Gen.id32 EcsEvents.Actualize $ fun _ _ _ world ->
+                let messages = List ()
+                for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                    for i in 0 .. components.Length - 1 do
+                        let comp = &components.[i]
+                        if comp.Active then
+                            let state = comp.Entity.State world
+                            if state.Visible then
+                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                                let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                                messages.Add layeredMessage
+                World.enqueueRenderLayeredMessages messages world
 #else
         ignore screen
 #endif
@@ -299,11 +302,10 @@ type [<ReferenceEquality>] Intss =
     static member init n =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
-        //{ Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
+        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key % 2 = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 ints (goal: 60FPS, current: 44FPS [55FPS w/o rendering])
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 141) // 19,881 ints (goal: 60FPS, current: 30FPS, w/o rendering: 44FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -314,14 +316,14 @@ type ElmishGameDispatcher () =
         | _ -> just intss
 
     override this.Content (intss, _) =
-        [Content.screen Gen.name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) constant $ fun i intss _ ->
+        [Content.screen Simulants.DefaultScreen.Name Vanilla []
+            [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) constant $ fun j int _ ->
+                    [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 10.0f - 480.0f) (single j * 6.0f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))]]
+                             Entity.Position == v2 (single i * 6.85f - 480.0f) (single j * 3.85f - 272.0f)
+                             Entity.Size <== int --> fun int -> v2 (single (int % 8)) (single (int % 8))]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif

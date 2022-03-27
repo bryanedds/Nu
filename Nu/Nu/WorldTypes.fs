@@ -147,25 +147,51 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           NuConfig = NuConfig.defaultConfig }
 
 /// Efficiently emulates root type casting of a Map.
-/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
-type [<NoEquality; NoComparison>] MapGeneralized =
-    { Keys : IComparable List
+type [<CustomEquality; NoComparison>] MapGeneralized =
+    { MapObj : obj
+      Keys : IComparable List
+      Equality : MapGeneralized -> obj -> bool
       ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj }
+      GetValue : IComparable -> obj
+      TryGetValue : IComparable -> struct (bool * obj) }
+
+    override this.GetHashCode () =
+        this.MapObj.GetHashCode ()
+
+    override this.Equals (that : obj) =
+        this.Equality this that
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { Keys =
+        { MapObj =
+            map
+          Keys =
             let list = List ()
             for key in Map.keys map do list.Add (key :> IComparable)
             list
+          Equality = fun this (that : obj) ->
+            match that with
+            | :? MapGeneralized as that ->
+                if this.MapObj = that.MapObj then
+#if ELMISH_MAP_GENERALIZED_DEEP_EQUALITY
+                    match that.MapObj with
+                    | :? Map<'k, 'v> as map2 -> System.Linq.Enumerable.SequenceEqual (map, map2)
+                    | _ -> false
+#else
+                    true
+#endif
+                else false
+            | _ -> false
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
           GetValue = fun (key : IComparable) ->
             match map.TryGetValue (key :?> 'k) with
             | (true, value) -> value :> obj
-            | (false, _) -> failwithumf () }
+            | (false, _) -> failwithumf ()
+          TryGetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> struct (true, value :> obj)
+            | (false, _) -> struct (false, null) }
 
 /// Extensions for EventTrace.
 module EventTrace =
@@ -659,8 +685,8 @@ module WorldTypes =
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1 (assuming 16 byte header)
-          Dispatcher : EntityDispatcher
           mutable Transform : Transform
+          Dispatcher : EntityDispatcher
           // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
@@ -700,14 +726,14 @@ module WorldTypes =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         /// Copy an entity state, invalidating the incoming reference.
-        /// OPTIMIZATION: inlined invalidation masking for speed.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
+            /// OPTIMIZATION: inlined invalidation masking for speed.
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
 
         /// Check that there exists an xtenstion proprty that is a runtime property.
-        static member containsRuntimeProperties entityState =
+        static member inline containsRuntimeProperties entityState =
             Xtension.containsRuntimeProperties entityState.Xtension
 
         /// Try to get an xtension property and its type information.
@@ -780,6 +806,9 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.Bounds with get () = this.Transform.Bounds
+        member this.Center with get () = this.Transform.Center
+        member this.Bottom with get () = this.Transform.Bottom
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1111,7 +1140,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          mutable PBPrevious : obj ValueOption }
+          mutable PBPrevious : obj ValueOption } // ELMISH_CACHE
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1123,13 +1152,22 @@ module WorldTypes =
           CBSimulantKey : Guid
           CBContentKey : Guid }
 
-    /// Describes an binding for Nu's optimized Elmish implementation.
+    /// Describes a group of property bindings.
+    and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
+        { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
+          PBSParent : World Lens
+          PBSPropertyBindings : OMap<Guid, PropertyBinding> }
+
+    /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
         | PropertyBinding of PropertyBinding
+        | PropertyBindingGroup of PropertyBindingGroup
         | ContentBinding of ContentBinding
 
-    /// Describes bindings for Nu's optimized Elmish implementation.
-    and internal ElmishBindings = OMap<Guid, ElmishBinding>
+    /// Describe an map of elmish bindings.
+    and [<NoEquality; NoComparison>] internal ElmishBindings =
+        { EBSParents : UMap<Guid, World Lens>
+          EBSBindings : OMap<Either<Guid, World Lens>, ElmishBinding> }
 
     /// The world's dispatchers (including facets).
     /// 
