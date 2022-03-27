@@ -380,8 +380,8 @@ module WorldEntityModule =
         static member readEntities groupDescriptor group world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
-                    let entityNameOpt = EntityDescriptor.getNameOpt entityDescriptor
-                    let (entity, world) = World.readEntity entityDescriptor entityNameOpt group world
+                    let entityNamesOpt = EntityDescriptor.getNamesOpt entityDescriptor
+                    let (entity, world) = World.readEntity entityDescriptor entityNamesOpt group world
                     (entity :: entities, world))
                     groupDescriptor.EntitieDescriptors
                     ([], world)
@@ -441,7 +441,12 @@ module WorldEntityModule =
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
-                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) group world
+                    let originSimulant = ContentOrigin.getSimulant origin
+                    let entityNames =
+                        match originSimulant with
+                        | :? Entity as originEntity -> Array.add entityName originEntity.Names
+                        | _ -> [|entityName|]
+                    let (entity, world) = World.readEntityFromFile filePath (Some entityNames) group world
                     let world =
                         match origin with
                         | SimulantOrigin simulant

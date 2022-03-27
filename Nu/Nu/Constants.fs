@@ -15,6 +15,7 @@ module Engine =
     let [<Literal>] SuccessExitCode = 0
     let [<Literal>] FailureExitCode = 1
     let [<Literal>] NamePropertyName = "Name"
+    let [<Literal>] NamesPropertyName = "Names"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "refinement"
     let [<Literal>] GameSortPriority = Single.MaxValue

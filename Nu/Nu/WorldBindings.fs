@@ -18,23 +18,23 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
-        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
-        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
-        "destroyBody destroyBodies createJoint createJoints " +
-        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
-        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
-        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
-        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
-        "destroy getExists isSelected " +
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
+        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
+        "transitionScreen setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
+        "createSplashScreen6 createSplashScreen reloadExistingAssets tryReloadAssets " +
+        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
+        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
+        "playSong playSong6 playSound playSound3 " +
+        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
+        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
+        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
+        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
+        "createBodies destroyBody destroyBodies createJoint " +
+        "createJoints destroyJoint destroyJoints setBodyEnabled " +
+        "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
+        "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce localizeBodyShape " +
+        "isMouseButtonDown getMousePosition isKeyboardKeyDown expandContent " +
+        "destroyImmediate destroy getExists isSelected " +
         "ignorePropertyBindings getEntities0 getGroups0 writeGameToFile " +
         "readGameFromFile getScreens setScreenDissolve destroyScreen " +
         "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
@@ -1765,17 +1765,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createEntity dispatcherName nameOpt overlayDescriptor group world =
+    let createEntity dispatcherName names overlayDescriptor group world =
         let oldWorld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
-            let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
-                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let names =
+                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> names world with
+                | Some value -> value :?> FSharpOption<String[]>
+                | None -> failwith "Invalid argument type for 'names'; expecting a value convertable to FSharpOption`1."
             let overlayDescriptor =
                 match ScriptingSystem.tryExport typeof<OverlayNameDescriptor> overlayDescriptor world with
                 | Some value -> value :?> OverlayNameDescriptor
@@ -1790,7 +1790,7 @@ module WorldBindings =
                     struct (Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createEntity5 dispatcherName nameOpt overlayDescriptor group world
+            let result = World.createEntity5 dispatcherName names overlayDescriptor group world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -1806,8 +1806,8 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
             let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
+                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String[]>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -1841,8 +1841,8 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
+                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String[]>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -3430,7 +3430,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; nameOpt; overlayDescriptor; group|] -> createEntity dispatcherName nameOpt overlayDescriptor group world
+            | [|dispatcherName; names; overlayDescriptor; group|] -> createEntity dispatcherName names overlayDescriptor group world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4019,7 +4019,7 @@ module WorldBindings =
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
              ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
-             ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "nameOpt"; "overlayDescriptor"; "group"|]; DocOpt = None })
+             ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
              ("reassignEntity", { Fn = evalReassignEntityBinding; Pars = [|"entity"; "nameOpt"; "group"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })

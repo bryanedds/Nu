@@ -410,8 +410,8 @@ module WorldModuleEntity =
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
-        static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
+        static member internal getEntityNames entity world = (World.getEntityState entity world).Names
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
@@ -728,7 +728,7 @@ module WorldModuleEntity =
                             else world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'.")
+                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Names + "'.")
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
@@ -1018,7 +1018,7 @@ module WorldModuleEntity =
                         (fun entityState -> EntityState.attachProperty propertyName property entityState)
                         propertyName property.PropertyValue entity world
                 world
-            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
+            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + scstring entity.Names + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
             if World.getEntityExists entity world then
@@ -1027,7 +1027,7 @@ module WorldModuleEntity =
                         (fun entityState -> EntityState.detachProperty propertyName entityState)
                         entity world
                 world
-            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
+            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + scstring entity.Names + "' is not found.")
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
             match World.tryFindRoutedOverlayNameOpt dispatcherName world with
@@ -1218,7 +1218,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
-        static member createEntity5 dispatcherName nameOpt overlayDescriptor (group : Group) world =
+        static member createEntity5 dispatcherName names overlayDescriptor (group : Group) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -1237,7 +1237,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make (World.getImperative world) nameOpt overlayNameOpt dispatcher
+            let entityState = EntityState.make (World.getImperative world) names overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -1272,7 +1272,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // make entity address
-            let entityAddress = group.GroupAddress <-- ntoa<Entity> entityState.Name
+            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Names
 
             // apply publish bindings state
             match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
@@ -1298,7 +1298,7 @@ module WorldModuleEntity =
         /// Create an entity from an simulant descriptor.
         static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
-                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor group world
+                World.createEntity5 descriptor.SimulantDispatcherName (Some descriptor.SimulantNames) overlayDescriptor group world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName property entity world |> snd')
@@ -1314,7 +1314,7 @@ module WorldModuleEntity =
             World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor group world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor nameOpt (group : Group) world =
+        static member readEntity entityDescriptor namesOpt (group : Group) world =
 
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
@@ -1375,14 +1375,14 @@ module WorldModuleEntity =
             // read the entity state's values
             let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
 
-            // apply the name if one is provided
+            // apply the names if some are provided
             let entityState =
-                match nameOpt with
-                | Some name -> { entityState with Name = name }
+                match namesOpt with
                 | None -> entityState
+                | Some names -> { entityState with Names = names }
 
             // try to add entity state to the world
-            let entity = Entity (group.GroupAddress <-- ntoa<Entity> entityState.Name)
+            let entity = Entity (group.GroupAddress <-- rtoa<Entity> entityState.Names)
             let world =
                 if World.getEntityExists entity world then
                     if World.getEntityDestroying entity world
@@ -1423,12 +1423,12 @@ module WorldModuleEntity =
 
         /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity nameOpt (group : Group) world =
+        static member reassignEntityImmediate entity namesOpt (group : Group) world =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
-            let (id, name) = Gen.idAndNameIf nameOpt
-            let entityState = { entityState with Id = id; Name = name } // no need to diverge here
-            let transmutedEntity = Entity (group.GroupAddress <-- ntoa<Entity> name)
+            let (id, names) = Gen.idAndNamesIf namesOpt
+            let entityState = { entityState with Id = id; Names = names }
+            let transmutedEntity = Entity (group.GroupAddress <-- rtoa<Entity> names)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
@@ -1568,7 +1568,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Name = Address.getName destination.EntityAddress }
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
                 World.addEntity false entityState destination world
 
         /// Rename an entity.
@@ -1577,7 +1577,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Name = Address.getName destination.EntityAddress }
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
                 let world = World.destroyEntityImmediate source world
                 World.addEntity false entityState destination world
 
@@ -1597,8 +1597,8 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
-                let name = Gen.name
-                let entityState = { entityState with Id = id; Name = name }
+                let names = [|Gen.name|]
+                let entityState = { entityState with Id = id; Names = names }
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world
@@ -1606,7 +1606,7 @@ module WorldModuleEntity =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
-                let entity = Entity (group.GroupAddress <-- ntoa<Entity> name)
+                let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
@@ -1643,8 +1643,8 @@ module WorldModuleEntity =
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         EntityGetters.Assign ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
         EntityGetters.Assign ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
-        EntityGetters.Assign ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
         EntityGetters.Assign ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
+        EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityNames entity world })
 
     /// Initialize property setters.
     let private initSetters () =

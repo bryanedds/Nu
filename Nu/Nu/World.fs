@@ -479,7 +479,7 @@ module WorldModule3 =
             let world = World.makeEmpty worldConfig
             let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
             let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity (Some Simulants.DefaultEntity.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.Names) DefaultOverlay Simulants.DefaultGroup world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string

@@ -100,6 +100,12 @@ type [<StructuralEquality; NoComparison>] ContentOrigin =
     | SimulantOrigin of Simulant
     | FacetOrigin of Simulant * string
 
+    /// Get the originating simulant.
+    static member getSimulant origin =
+        match origin with
+        | SimulantOrigin simulant
+        | FacetOrigin (simulant, _) -> simulant
+
 /// Describes the content of a simulant.
 type SimulantContent =
     interface end
@@ -698,16 +704,16 @@ module WorldTypes =
           // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
-          Name : string }
+          Names : string array }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
-        static member make imperative nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make imperative namesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform = Transform.makeDefault ()
             transform.Imperative <- imperative
-            let (id, name) = Gen.idAndNameIf nameOpt
+            let (id, names) = Gen.idAndNamesIf namesOpt
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
@@ -719,7 +725,7 @@ module WorldTypes =
               ScriptFrameOpt = Unchecked.defaultof<_>
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
-              Name = name }
+              Names = names }
 
         /// Copy an entity state.
         static member inline copy (entityState : EntityState) =
@@ -881,9 +887,6 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// Get the names of a screen.
-        member inline this.AddressNames = Address.getNames this.ScreenAddress
-
         /// Get the name of a screen.
         member inline this.Name = Address.getName this.ScreenAddress
 
@@ -956,9 +959,6 @@ module WorldTypes =
 
         /// The containing screen of the group.
         member this.Screen = let names = this.GroupAddress.Names in Screen names.[0]
-
-        /// Get the names of a group.
-        member inline this.AddressNames = Address.getNames this.GroupAddress
 
         /// Get the name of a group.
         member inline this.Name = Address.getName this.GroupAddress
@@ -1070,20 +1070,20 @@ module WorldTypes =
             rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] entityNames)
 #endif
 
-        /// Get the names of an entity's address.
-        member inline this.AddressNames = Address.getNames this.EntityAddress
-
         /// Get the names of an entity, not including group or screen.
         member inline this.Names = Address.getNames this.EntityAddress |> Array.skip 2
 
-        /// Get the name of an entity.
-        member inline this.Name = Address.getName this.EntityAddress
+        /// Get the last name of an entity.
+        member inline this.Name = Address.getNames this.EntityAddress |> Array.last
 
 #if DEBUG
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 #endif
+
+        /// Derive an entity from its parent entity.
+        static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
         /// Helper for accessing entity lenses.
         static member Lens = Unchecked.defaultof<Entity>

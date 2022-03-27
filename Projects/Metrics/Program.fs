@@ -197,7 +197,7 @@ type MyGameDispatcher () =
 
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity<FpsDispatcher> (Some Fps.Names) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS
         let positions = // 19,663 entity positions (goal: 60FPS, current: 50FPS)
@@ -208,7 +208,7 @@ type MyGameDispatcher () =
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.foldi (fun i world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some (string Gen.id64)) NoOverlay Simulants.DefaultGroup world
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world

@@ -9,7 +9,7 @@ open Nu
 /// Describes a generalized simulant value independent of the engine.
 /// Not used for serialization.
 type [<StructuralEquality; NoComparison>] SimulantDescriptor =
-    { SimulantNameOpt : string option
+    { SimulantNames : string array
       SimulantDispatcherName : string
       SimulantProperties : (string * Property) list
       SimulantChildren : SimulantDescriptor list }
@@ -23,11 +23,11 @@ type [<StructuralEquality; NoComparison>] EntityDescriptor =
 [<RequireQualifiedAccess>]
 module EntityDescriptor =
 
-    /// Derive a name from the dispatcher.
-    let getNameOpt dispatcher =
+    /// Derive names from the dispatcher.
+    let getNamesOpt dispatcher =
         dispatcher.EntityProperties |>
-        Map.tryFind (Property? Name) |>
-        Option.map symbolToValue<string>
+        Map.tryFind (Property? Names) |>
+        Option.map symbolToValue<string array>
 
     /// The empty entity descriptor.
     let empty =
@@ -147,11 +147,11 @@ module Describe =
         List.definitize
 
     /// Describe a simulant with the given initializers and contained children.
-    let simulant5 dispatcherName nameOpt (initializers : PropertyInitializer list) children simulant world =
+    let simulant5 dispatcherName names (initializers : PropertyInitializer list) children simulant world =
         let properties = initializersToProperties initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
         let binds = initializersToBinds initializers simulant
-        let descriptor = { SimulantNameOpt = nameOpt; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
+        let descriptor = { SimulantNames = names; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
         (descriptor, eventHandlers, binds)
 
     /// Describe a simulant with the given initializers and contained children.
@@ -160,7 +160,7 @@ module Describe =
 
     /// Describe a game with the given initializers and contained screens.
     let game5 dispatcherName (initializers : PropertyInitializer list) (screens : SimulantDescriptor list) (game : Game) world =
-        simulant5 dispatcherName None initializers screens game world
+        simulant5 dispatcherName [||] initializers screens game world
 
     /// Describe a game with the given initializers and contained screens.
     let game<'d when 'd :> GameDispatcher> initializers screens game world =
