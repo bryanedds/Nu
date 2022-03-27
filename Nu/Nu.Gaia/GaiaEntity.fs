@@ -88,7 +88,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let (entity, world) = World.reassignEntityImmediate entity (Some name) entity.Parent world
+                    let (entity, world) = World.reassignEntityImmediate entity (Some name) entity.Group world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity entity Globals.Form world
                     world

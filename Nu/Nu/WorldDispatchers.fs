@@ -103,7 +103,7 @@ module FacetModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity entity.Parent world |> snd)
+                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity entity.Group world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -1586,7 +1586,7 @@ module EntityDispatcherModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (SimulantOrigin entity) entity entity.Parent world |> snd)
+                    World.expandEntityContent content (SimulantOrigin entity) entity entity.Group world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -2307,8 +2307,8 @@ module FeelerDispatcherModule =
         override this.Register (entity, world) =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
-            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Parent.Parent) entity world
-            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Parent.Parent) entity world
+            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Screen) entity world
+            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Screen) entity world
             world
 
         override this.Update (entity, world) =

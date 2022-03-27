@@ -38,7 +38,7 @@ module Gaia =
         let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
-                    (entities, fun entity -> entity.GetVisible world && entity.Parent = selectedGroup))
+                    (entities, fun entity -> entity.GetVisible world && entity.Group = selectedGroup))
         (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
@@ -166,7 +166,7 @@ module Gaia =
     let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
         let entityNodeKey = scstring entity
         let entityNode = TreeNode entity.Name
-        let groupNodeKey = scstring entity.Parent
+        let groupNodeKey = scstring entity.Group
         let groupNode = form.hierarchyTreeView.Nodes.[groupNodeKey]
         entityNode.Name <- entityNodeKey
         if entity.Has<NodeFacet> world then
@@ -497,34 +497,55 @@ module Gaia =
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
         let selectedGroup = (getEditorState world).SelectedGroup
-        let entityNames =
+        let entityNamesStrs =
             World.getEntities selectedGroup world |>
             Seq.filter (fun entity -> entity.Has<NodeFacet> world) |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
-            Seq.map (fun entity -> entity.Name) |>
+            Seq.map (fun entity -> entity.Names |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
-        entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
+        entityPicker.entityListBox.Items.AddRange (Array.map box entityNamesStrs)
         entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
         entityPicker.searchTextBox.TextChanged.Add(fun _ ->
             entityPicker.entityListBox.Items.Clear ()
-            for name in entityNames do
-                if name.Contains entityPicker.searchTextBox.Text || name = Constants.Editor.NonePick then
-                    entityPicker.entityListBox.Items.Add name |> ignore)
+            for namesStr in entityNamesStrs do
+                if namesStr.Contains entityPicker.searchTextBox.Text || namesStr = Constants.Editor.NonePick then
+                    entityPicker.entityListBox.Items.Add namesStr |> ignore)
         match entityPicker.ShowDialog () with
         | DialogResult.OK ->
             match entityPicker.entityListBox.SelectedItem with
-            | :? string as parentEntityName ->
-                match parentEntityName with
-                | Constants.Editor.NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
-                | _ ->
-                    let parentRelation = Relation.makeFromString (Constants.Relation.ParentStr + Constants.Address.SeparatorStr + parentEntityName)
-                    form.propertyValueTextBoxText <- scstring parentRelation
-                    if propertyDescriptor.Name = "ParentNodeOpt"
-                    then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
-                    else (form.applyPropertyButton.PerformClick (); world)
+            | :? string as parentEntityNamesStr ->
+                if entityPicker.changeAddressCheckBox.Checked then
+                    match parentEntityNamesStr with
+                    | Constants.Editor.NonePick ->
+                        let entity = entityTds.DescribedEntity
+                        let entity2 = Entity (Array.add entity.Name entity.Group.AddressNames)
+                        let world = World.renameEntity entity entity2 world
+                        entity2.SetParentNodeOptWithAdjustment None world
+                    | _ ->
+                        let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
+                        let entity = entityTds.DescribedEntity
+                        let entity2 = Entity (Array.append parent.AddressNames [|entity.Name|])
+                        let world = World.renameEntity entity entity2 world
+                        let parentRelation = Relation.makeParent ()
+                        form.propertyValueTextBoxText <- scstring parentRelation
+                        if propertyDescriptor.Name = "ParentNodeOpt"
+                        then entity2.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                        else (form.applyPropertyButton.PerformClick (); world)
+                else
+                    match parentEntityNamesStr with
+                    | Constants.Editor.NonePick ->
+                        entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                    | _ ->
+                        let entity = entityTds.DescribedEntity
+                        let parent = Entity parentEntityNamesStr
+                        let parentRelation = Relation.relate parent.EntityAddress entity.EntityAddress
+                        form.propertyValueTextBoxText <- scstring parentRelation
+                        if propertyDescriptor.Name = "ParentNodeOpt"
+                        then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                        else (form.applyPropertyButton.PerformClick (); world)
             | _ -> world
         | _ -> world
 
@@ -852,7 +873,7 @@ module Gaia =
                     let entity = Entity (atoa address)
 
                     // select the group of the selected entity
-                    let group = entity.Parent
+                    let group = entity.Group
                     let groupTabIndex = form.groupTabControl.TabPages.IndexOfKey group.Name
                     form.groupTabControl.SelectTab groupTabIndex
 

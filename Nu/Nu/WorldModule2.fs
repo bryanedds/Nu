@@ -821,7 +821,7 @@ module WorldModule2 =
 #if DEBUG
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    let group = entity.Parent
+                    let group = entity.Group
                     if group.GetVisible world // group visibility only has an effect on entities in debug mode
                     then World.actualizeEntity entity world
                     else world)
