@@ -20,8 +20,8 @@ module RingMenuDispatcher =
         | ItemSelect of string
 
     type Entity with
-        member this.GetRadius world = this.Get<single> Property? Radius world
-        member this.SetRadius value world = this.Set<single> Property? Radius value world
+        member this.GetRadius world : single = this.Get Property? Radius world
+        member this.SetRadius (value : single) world = this.Set Property? Radius value world
         member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
@@ -42,11 +42,10 @@ module RingMenuDispatcher =
 
         override this.Content (ringMenu, menu) =
             [Content.entities ringMenu
-                (fun ringMenu _ -> ringMenu.Items)
-                (fun items _ ->
+                (fun ringMenu _ ->
                     let items =
                         let mutable i = -1
-                        items |>
+                        ringMenu.Items |>
                         Map.toSeq |>
                         Map.ofSeqBy (fun (k, (v, v2)) -> (v, (k, v2))) |>
                         Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>

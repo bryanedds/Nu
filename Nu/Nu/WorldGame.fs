@@ -74,24 +74,41 @@ module WorldGameModule =
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
-            if World.tryGetGameProperty (propertyName, world, &property)
-            then Some property
-            else None
+            let found = World.tryGetGameProperty (propertyName, world, &property)
+            if found then Some property else None
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getGameProperty propertyName world
+        member this.GetProperty propertyName world =
+            World.getGameProperty propertyName world
 
-        /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getGameProperty propertyName world).PropertyValue :?> 'a
+        /// Get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetGameXtensionProperty (propertyName, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
+        member this.Get<'a> propertyName world : 'a =
+            World.getGameXtensionValue<'a> propertyName world
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName property world = World.trySetGameProperty propertyName property world
+        member this.TrySetProperty propertyName property world =
+            World.trySetGameProperty propertyName property world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world |> snd'
+        member this.SetProperty propertyName property world =
+            World.setGameProperty propertyName property world |> snd'
 
-        /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGameProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } world |> snd'
+        /// To try set an xtension property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGameXtensionProperty propertyName property world
+
+        /// Set an xtension property value.
+        member this.Set<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setGameXtensionProperty propertyName property world
 
         /// Get the view of the eye in absolute terms (world space).
         member this.GetViewAbsolute (_ : World) = World.getViewAbsolute

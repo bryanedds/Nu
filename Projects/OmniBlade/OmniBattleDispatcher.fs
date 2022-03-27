@@ -112,7 +112,7 @@ module BattleDispatcher =
                             if target.IsHealthy then
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter targetIndex battle
+                                        Battle.shouldCounter sourceIndex targetIndex battle
                                     then Battle.counterAttack sourceIndex targetIndex battle
                                     else battle
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -370,8 +370,8 @@ module BattleDispatcher =
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
                     let actionTimeDelta =
-                        if Map.containsKey (Time false) character.Statuses then actionTimeDelta * 0.667f
-                        elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * 1.5f
+                        if Map.containsKey (Time false) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeSlowScalar
+                        elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
                         else actionTimeDelta
                     let actionTimeDelta =
                         match battle.BattleSpeed with
@@ -897,7 +897,8 @@ module BattleDispatcher =
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
-                        let added = added |> Set.toSeq |> Seq.filter (StatusType.randomize) |> Set.ofSeq
+                        let randomizer = if sourceIndex.IsAlly then StatusType.randomizeStrong else StatusType.randomizeWeak
+                        let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
                         let battle = Battle.applyCharacterStatuses added removed characterIndex battle
                         let wounded = Battle.isCharacterWounded characterIndex battle
                         let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
@@ -916,7 +917,7 @@ module BattleDispatcher =
                 let battle = Battle.updateCharacterTechPoints -techCost sourceIndex battle
                 let battle = Battle.advanceChargeTech sourceIndex battle
                 let battle =
-                    if Battle.shouldCounter targetIndex battle
+                    if Battle.shouldCounter sourceIndex targetIndex battle
                     then Battle.counterAttack sourceIndex targetIndex battle
                     else battle
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -1132,8 +1133,8 @@ module BattleDispatcher =
 
         override this.Content (battle, _) =
 
-            // scene group
-            [Content.group Simulants.Battle.Scene.Group.Name []
+            [// scene group
+             Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
                  Content.tileMap Gen.name
@@ -1156,18 +1157,13 @@ module BattleDispatcher =
                      Entity.Text == "Next"
                      Entity.ClickEvent ==> msg InteractDialog]
 
-                 // allies
+                 // characters
                  Content.entities battle
-                    (fun battle _ -> Battle.getAllies battle) constant
-                    (fun index ally _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== ally])
-
-                 // enemies
-                 Content.entities battle
-                    (fun battle _ -> Battle.getEnemies battle) constant
-                    (fun index enemy _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== enemy])]
+                    (fun battle _ -> Battle.getCharacters battle)
+                    (fun index character _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== character])]
 
              // input groups
-             Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) constant $ fun index ally _ ->
+             Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally _ ->
 
                 // input group
                 let inputName = "Input" + "+" + CharacterIndex.toEntityName index

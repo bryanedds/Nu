@@ -10,8 +10,8 @@ open BlazeVector
 module Bullet =
 
     type Entity with
-        member this.GetAge world = this.Get<int64> Property? Age world
-        member this.SetAge value world = this.Set<int64> Property? Age value world
+        member this.GetAge world : int64 = this.Get Property? Age world
+        member this.SetAge (value : int64) world = this.Set Property? Age value world
         member this.Age = lens<int64> Property? Age this.GetAge this.SetAge this
 
     type BulletDispatcher () =
@@ -62,8 +62,8 @@ module Bullet =
 module Enemy =
 
     type Entity with
-        member this.GetHealth world = this.Get Property? Health world
-        member this.SetHealth value world = this.Set Property? Health value world
+        member this.GetHealth world : int = this.Get Property? Health world
+        member this.SetHealth (value : int) world = this.Set Property? Health value world
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative world
@@ -127,11 +127,11 @@ module Enemy =
 module Player =
 
     type Entity with
-        member this.GetLastTimeOnGroundNp world = this.Get<int64> Property? LastTimeOnGroundNp world
-        member this.SetLastTimeOnGroundNp value world = this.Set<int64> Property? LastTimeOnGroundNp value world
+        member this.GetLastTimeOnGroundNp world : int64 = this.Get Property? LastTimeOnGroundNp world
+        member this.SetLastTimeOnGroundNp (value : int64) world = this.Set Property? LastTimeOnGroundNp value world
         member this.LastTimeOnGroundNp = lens Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this
-        member this.GetLastTimeJumpNp world = this.Get<int64> Property? LastTimeJumpNp world
-        member this.SetLastTimeJumpNp value world = this.Set<int64> Property? LastTimeJumpNp value world
+        member this.GetLastTimeJumpNp world : int64 = this.Get Property? LastTimeJumpNp world
+        member this.SetLastTimeJumpNp (value : int64) world = this.Set Property? LastTimeJumpNp value world
         member this.LastTimeJumpNp = lens Property? LastTimeJumpNp this.GetLastTimeJumpNp this.SetLastTimeJumpNp this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 

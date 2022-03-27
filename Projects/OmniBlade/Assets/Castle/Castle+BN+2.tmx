@@ -21,12 +21,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9V0tOwzAQtRJVgjQ5AHRXiY/UC1BuAOyQ4ARQKlChXKSX6JKuECvUDRwCwQ0oLMoCFrBiRonxZBi7idtmpJE8zvO8secligehUoMSflpT6hJ8mKg/w/E5zJ3UyuXydaxhRPhxXBU3rUFb1dwXwHdF+HF8VlENyH0N/hgY/jGM+xXV0Mu4vwj/NEhr6FbEj9zboeFvhmkNy+DXvdaOZ4/cncjwf0RpDX2GnbcfutcPgXE8+xvy7mnDuXGQx86jCaqzT+J49ncCP85NGdZXl5Qb+bZC47Tv3JphHjv1qIFzu/hmWbNkDRL3KpxrBP4cK7WSmPglNjz8GY2L1mDbdyPr9STO743GOG4k8rMi5yBx/2Q5WlneH5aTxjhuEf5vAeuqoWfp9w7kbIPvJiZ+ikxMTcLSmJ9Dl/Fr7tv6/9yLMswtfSt7tfy+XXri2vNZgzVwfmqvBIu6cmmPztk0KOVw8VNtoa5c2qNzVIOzcnB+3vcy2qNr0Gxr2mSta//LNtyrjd9Hez5rKb/+p0ZzaU3SkQ2rY0mT0r+6rsGlNUlHNqyOuSZd9wRdQ5Fvmc0odrOe12CROwrtBdoG5JiAv4G/F/g2IvY+wx4TfJn7Ea3hCHKsxWnOhuPstSF2Pc5jfe5mtIY9yHUI/AdZzqHQBz2HuP3YYOe5F/JeaBsJ/NLcIu6kWEPH06u+F/r4LwObjUc=
+   eJy9V0tOwzAQjRJVgjQ5AHRXiY/UC1BuAOyQ4AAISgUqlIv0El3CCrFC3cAhENyAwqIsYEFXzCg2ngxjN3FLRhrJ4zzPG3teongQBcGghJ/UguACfJgGv4bjM5g7rpXL5eu6Bm1VctMaOsqr5j4HvkvwI+U4Pq2oBuS+An8MzfmPYNyvqIae4v4i/JMwq6FbET9yb0aGvxllNfwHv+61djx75O7Ehv8jzmroM+y8/dC9fgiN49lfk3dfG86Nwjx2Hk1QnX0Sx7O/E/hxbsKwvrqk3Mi3ERmnfefWjPLYiUcNnNvFN8uaJWuQuJfhXGPw5yQIllITvySGhz+jcdEabPtuqF6Pk/zeaIzjRio/K3IOEvdU5WipvFOWk8Y4bhH+bwHrqqFn6fcW5GyDb6cmfopNTE3C0pifQ5fxa+7b+t/cizLMLX0re7X8vl164trzWYM1cH5qrwSLunJpj87ZNCjlcPFTbaGuXNqjc1SDs3Jwft73Mtqja9Bsa9pkrWv//224Vxu/j/Z81lJ++j/r0pqkIxtWx5Impf9lXYNLa5KObFgdc026/tV1DUW+ZTaj2PV6XoNF7gn8brEGOcbgb+DvBb6NiL1X2EOCL3NHoTUcQI6VJMvZcJy9NsSuJnmsz/2I1rADufaBf0/lHAp90HOI200Mdp67Ge+FthuBX5pbxL2Q3vPKetX3Qh//AT64jls=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBiaII8Vwc5ixa1uFAx/MIGL/naaIdl5gM72L+IlToxaoBjovxIS/VhGxTBZDDRrCRC7EGGmKFCNGBAvG4A0MZzALR4GBg5gmuLmRfDR5ZHZ3LzY5bh4MfUSA17xEM8nRe1QA9ZE5mti1Q0FgC+tYePDxHClQW4S0yA56Wm4pkFS0hUutUMpbeJLa4TSETa9uNIkLkBJOhquaRAGyElH1Ex7PESYJQ9UwwvE/FS0Vw5olhI3A4MMEWaC1I2CUUAsAAB0dS1N
+   eJxjYBgFo2Bogwlc9LfTDMnOA3S2fxEvcWLUAsVA/5WQ6McyKobJYqBZS4DYhQgzRYFqxIB42QCkieEEbvEwMHAA0xQ3L4KPLo/M5ubFLsfFi6mXGPCKh3g+KWqHGrAmMl8Tq24oAHxpDRsfJoYrDXKTmAbJSU/DNQ2Skq5wqR1KaRNfWiOUjrDpxZUmcQFK0tFwTYMwQE46omba4yHCLHmgGl4g5qeivXJAs5S4GRhkiDATpG4UjAJiAQD7USxr
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
@@ -42,7 +42,7 @@
   </object>
   <object id="4" gid="235" x="606" y="1320" width="324" height="276">
    <properties>
-    <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
+    <property name="I">[Npc AraneaImplicitumNpc [Some Upward]
   [Sequence
    [[Dialog &quot;What a delightful addition...&quot;]
     [Dialog &quot;...to my web of souls!&quot;]
@@ -51,7 +51,7 @@
   </object>
   <object id="5" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+    <property name="I" value="[Portal WarpPortal Warp Upward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="8" gid="1" x="552" y="1128" width="432" height="720">
@@ -97,13 +97,13 @@
      [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 557]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384] Mosey]
-      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world.&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it.&quot; True]]]]]
+      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world.&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
     [Wait 240]
     [FadeOutSong 5000]
     [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
-    [PlaySound 0.5 [Field Unlatch]]]]
+    [PlaySound 0.5 [Field StepWarp]]]]
   [[KylaAdvent 6] AraneaImplicitumDefeated]]</property>
    </properties>
   </object>

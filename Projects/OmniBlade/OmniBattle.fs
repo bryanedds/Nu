@@ -321,9 +321,11 @@ module Battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
 
-    let shouldCounter characterIndex battle =
-        getCharacterBy Character.shouldCounter characterIndex battle
-    
+    let shouldCounter sourceIndex targetIndex battle =
+        if CharacterIndex.isUnfriendly sourceIndex targetIndex
+        then getCharacterBy Character.shouldCounter targetIndex battle
+        else false
+
     let evalAttack effectType sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
@@ -439,14 +441,14 @@ module Battle =
 
     let private randomizeEnemyLayout w h (enemies : EnemyType list) =
         let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
-        layout.[0].[0] <- Left () // don't put enemies in the corners
+        layout.[0].[0] <- Left () // no one puts enemy in a corner
         layout.[w-1].[0] <- Left ()
         layout.[0].[h-1] <- Left ()
         layout.[w-1].[h-1] <- Left ()
         List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
         layout
 
-    let private randomizeEnemies offsetCharacters waitSpeed enemies =
+    let private randomizeEnemies allyCount offsetCharacters waitSpeed enemies =
         let (w, h) = (10, 8)
         let origin = v2 -288.0f -240.0f
         let tile = v2 48.0f 48.0f
@@ -460,7 +462,7 @@ module Battle =
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
                         let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
-                        Character.tryMakeEnemy enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy allyCount enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>
@@ -468,7 +470,7 @@ module Battle =
         enemies
 
     let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData time =
-        let enemies = randomizeEnemies offsetCharacters (battleSpeed = WaitSpeed) battleData.BattleEnemies
+        let enemies = randomizeEnemies party.Length offsetCharacters (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
@@ -543,9 +545,9 @@ module Battle =
         | Some battle ->
             let level = 50
             let team =
-                Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
-                Map.add 1 (Teammate.makeAtLevel level 1 Peric) |>
-                Map.add 2 (Teammate.makeAtLevel level 2 Mael)
+                Map.singleton 0 (Teammate.make level 0 Jinn) |>
+                Map.add 1 (Teammate.make level 1 Peric) |>
+                Map.add 2 (Teammate.make level 2 Mael)
             makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle 0L
         | None -> empty
 

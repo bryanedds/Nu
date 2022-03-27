@@ -37,7 +37,7 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 3
             then World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
             else
@@ -48,7 +48,7 @@ module WorldSimulantModule =
                 | _ -> failwithumf ()
 
         static member internal getProperty name (simulant : Simulant) world =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 3
             then World.getEntityProperty name (simulant :?> Entity) world
             else
@@ -59,7 +59,7 @@ module WorldSimulantModule =
                 | _ -> failwithumf ()
 
         static member internal trySetPropertyFast name property (simulant : Simulant) world =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 3
             then World.trySetEntityPropertyFast name property (simulant :?> Entity) world
             else
@@ -70,7 +70,7 @@ module WorldSimulantModule =
                 | _ -> failwithumf ()
 
         static member internal trySetProperty name property (simulant : Simulant) world =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 3
             then World.trySetEntityProperty name property (simulant :?> Entity) world
             else
@@ -81,7 +81,7 @@ module WorldSimulantModule =
                 | _ -> failwithumf ()
 
         static member internal setProperty name property (simulant : Simulant) world =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 3
             then World.setEntityProperty name property (simulant :?> Entity) world
             else

@@ -371,7 +371,7 @@ module FieldDispatcher =
                 match field.DialogOpt with
                 | None -> (Cue.Nil, definitions, just field)
                 | Some _ -> (cue, definitions, just field)
-                
+
             | If (p, c, a) ->
                 match p with
                 | Gold gold -> if field.Inventory.Gold >= gold then (c, definitions, just field) else (a, definitions, just field)
@@ -442,20 +442,48 @@ module FieldDispatcher =
     [<RequireQualifiedAccess>]
     module Content =
 
-        let private pageItems pageSize pageIndex filter sort (items : Map<ItemType, int>) =
-            items |>
-            Map.toSeq |>
-            (fun items -> if filter then ItemType.filterSellableItems items else items) |>
-            (fun items -> if sort then ItemType.sortItems items else items) |>
-            Seq.index |>
-            Seq.chunkBySize pageSize |>
-            Seq.trySkip pageIndex |>
-            Seq.map List.ofArray |>
-            Seq.tryHead |>
-            Option.defaultValue [] |>
-            Seq.indexed |>
-            Map.ofSeq |>
-            Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+        let private pageItems5 pageSize pageIndex filter sort (items : Map<ItemType, int>) =
+            let items =
+                items |>
+                Map.toSeq |>
+                (fun items -> if filter then ItemType.filterSellableItems items else items) |>
+                (fun items -> if sort then ItemType.sortItems items else items)
+            let itemsPaged =
+                items |>
+                Seq.index |>
+                Seq.chunkBySize pageSize |>
+                Seq.trySkip pageIndex |>
+                Seq.map List.ofArray |>
+                Seq.tryHead |>
+                Option.defaultValue [] |>
+                Seq.indexed |>
+                Map.ofSeq |>
+                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+            let pageUp =
+                if itemsPaged.Count <> 0 then
+                    let firstItemPaged = Seq.head itemsPaged
+                    fst (snd firstItemPaged.Value) <> fst (Seq.head items)
+                else false
+            let pageDown =
+                if itemsPaged.Count <> 0 then
+                    let lastItemPaged = Seq.last itemsPaged
+                    fst (snd lastItemPaged.Value) <> fst (Seq.last items)
+                else false
+            (pageUp, pageDown, itemsPaged)
+
+        let pageItems rows (field : Field) =
+            match field.Menu.MenuState with
+            | MenuItem menu -> pageItems5 rows menu.ItemPage false true field.Inventory.Items
+            | _ ->
+                match field.ShopOpt with
+                | Some shop ->
+                    match shop.ShopState with
+                    | ShopBuying ->
+                        match Map.tryFind shop.ShopType Data.Value.Shops with
+                        | Some shopData -> pageItems5 rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
+                        | None -> (false, false, Map.empty)
+                    | ShopSelling -> pageItems5 rows shop.ShopPage true true field.Inventory.Items
+                | None -> (false, false, Map.empty)
 
         let sidebar position elevation (field : Lens<Field, World>) =
             Content.association Gen.name []
@@ -495,8 +523,7 @@ module FieldDispatcher =
 
         let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
-                (fun field _ -> (field.Team, field.Menu))
-                (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
+                (fun field _ -> Map.map (fun _ teammate -> (teammate, field.Menu)) field.Team)
                 (fun index teammateAndMenu _ ->
                     let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
                     let y = position.Y - single (index % rows) * 81.0f
@@ -510,21 +537,7 @@ module FieldDispatcher =
 
         let items (position : Vector2) elevation rows columns field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ ->
-                    (field.Menu, field.ShopOpt, field.Inventory))
-                (fun (menu, shopOpt, inventory : Inventory) _ ->
-                    match menu.MenuState with
-                    | MenuItem menu -> pageItems rows menu.ItemPage false true inventory.Items
-                    | _ ->
-                        match shopOpt with
-                        | Some shop ->
-                            match shop.ShopState with
-                            | ShopBuying ->
-                                match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> pageItems rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
-                                | None -> Map.empty
-                            | ShopSelling -> pageItems rows shop.ShopPage true true inventory.Items
-                        | None -> Map.empty)
+                (fun (field : Field) _ -> pageItems rows field |> __c)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 375.0f
                     let y = position.Y - single (i % columns) * 81.0f
@@ -546,11 +559,10 @@ module FieldDispatcher =
 
         let techs (position : Vector2) elevation field fieldMsg =
             Content.entities field
-                (fun (field : Field) _ -> (field.Menu, field.Team))
-                (fun (menu, team) _ ->
-                    match menu.MenuState with
+                (fun (field : Field) _ ->
+                    match field.Menu.MenuState with
                     | MenuTech menuTech ->
-                        match Map.tryFind menuTech.TeammateIndex team with
+                        match Map.tryFind menuTech.TeammateIndex field.Team with
                         | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
                         | None -> Map.empty
                     | _ -> Map.empty)
@@ -641,7 +653,7 @@ module FieldDispatcher =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
-                | Portal (_, _, _, fieldType, portalIndex, _, requirements) ->
+                | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
                     if advents.IsSupersetOf requirements then
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
@@ -655,7 +667,8 @@ module FieldDispatcher =
                                         | Rightward -> portal.PropBounds.Right + v2 32.0f 0.0f + if extended then v2 48.0f 0.0f else v2Zero
                                         | Downward -> portal.PropBounds.Bottom + v2 0.0f -54.0f - if extended then v2 0.0f 48.0f else v2Zero
                                         | Leftward -> portal.PropBounds.Left + v2 -32.0f 0.0f - if extended then v2 48.0f 0.0f else v2Zero
-                                    Some (fieldType, destination, direction)
+                                    let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
+                                    Some (fieldType, destination, direction, isWarp)
                                 | _ -> None
                             | None -> None
                         | None -> None
@@ -760,7 +773,7 @@ module FieldDispatcher =
 
         static let interactSeal cue (field : Field) =
             let field = Field.updateCue (constant cue) field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
@@ -801,7 +814,7 @@ module FieldDispatcher =
                     match field.FieldTransitionOpt with
                     | None ->
                         match tryGetTouchingPortal field.OmniSeedState field.Advents field.Avatar world with
-                        | Some (fieldType, destination, direction) ->
+                        | Some (fieldType, destination, direction, isWarp) ->
                             if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
                                 let transition =
                                     { FieldType = fieldType
@@ -809,7 +822,11 @@ module FieldDispatcher =
                                       FieldDirection = direction
                                       FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                                (cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)) :: signals, field)
+                                let playSound =
+                                    if isWarp
+                                    then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                                    else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                                (cmd playSound :: signals, field)
                             else (signals, field)
                         | None -> (signals, field)
                     | Some _ -> (signals, field)
@@ -1256,14 +1273,15 @@ module FieldDispatcher =
                      Entity.Avatar <== field --> fun field -> field.Avatar]
 
                  // props
-                 Content.entities field (fun field _ -> field.Props) (fun props _ -> props) $ fun _ prop _ ->
-                    Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop]
+                 Content.entities field
+                    (fun field _ -> field.Props)
+                    (fun _ prop _ -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
-                 Content.entityIf field Field.hasEncounters $ fun field _ ->
+                 Content.entityIf field (fun field -> Field.hasEncounters field && Cue.isNil field.Cue) $ fun field _ ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getPortals field }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
                  Content.staticSprite Gen.name
@@ -1398,7 +1416,7 @@ module FieldDispatcher =
                                    | None -> Assets.Default.ImageEmpty
                                | _ -> Assets.Default.ImageEmpty]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 666.0f 372.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 650.0f 372.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
@@ -1407,12 +1425,12 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 666.0f 336.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 650.0f 336.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "Level " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                   | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1465,7 +1483,7 @@ module FieldDispatcher =
                                    | None -> ""
                                | _ -> ""]]
 
-                 // items
+                 // inventory
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -255.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 900.0f 510.0f
@@ -1474,18 +1492,20 @@ module FieldDispatcher =
                        [Content.sidebar (v2 24.0f 417.0f) 1.0f field
                         Content.items (v2 138.0f 417.0f) 1.0f 10 5 field MenuItemSelect
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v2 399.0f 24.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]
                         Content.button Gen.name
                           [Entity.PositionLocal == v2 138.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                            Entity.Text == "<"
+                           Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> a__
                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                            Entity.ClickEvent ==> msg MenuItemsPageUp]
                         Content.button Gen.name
-                          [Entity.PositionLocal == v2 804.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
+                          [Entity.PositionLocal == v2 777.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                            Entity.Text == ">"
+                           Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> _b_
                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                            Entity.ClickEvent ==> msg MenuInventoryPageDown]]
@@ -1504,7 +1524,7 @@ module FieldDispatcher =
                     Content.panel Gen.name
                        [Entity.Position == v2 -450.0f -216.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 900.0f 432.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
-                       [Content.team (v2 160.0f 182.0f) 1.0f 3 field
+                       [Content.team (v2 160.0f 183.0f) 1.0f 3 field
                            (fun teammate menu ->
                                match menu.MenuUseOpt with
                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
@@ -1516,19 +1536,19 @@ module FieldDispatcher =
                             Entity.DownImage == asset "Field" "CloseButtonDown"
                             Entity.ClickEvent ==> msg MenuItemCancel]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 30.0f 344.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 36.0f 354.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                match field.Menu.MenuUseOpt with
                                | Some menu -> menu.MenuUseLine1
                                | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 302.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 66.0f 312.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine2
                                 | None -> ""]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v2 60.0f 260.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v2 66.0f 270.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text <== field --> fun field ->
                                 match field.Menu.MenuUseOpt with
                                 | Some menu -> menu.MenuUseLine3
@@ -1543,24 +1563,24 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 384.0f 432.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text == "Battle Speed"]
-                        Content.toggle Gen.name
+                        Content.radioButton Gen.name
                            [Entity.PositionLocal == v2 180.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
+                            Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Wait"
-                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
-                        Content.toggle Gen.name
+                            Entity.Dialed <== field --> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                            Entity.DialedEvent ==> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
+                        Content.radioButton Gen.name
                            [Entity.PositionLocal == v2 408.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
+                            Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Paced"
-                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
-                        Content.toggle Gen.name
+                            Entity.Dialed <== field --> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                            Entity.DialedEvent ==> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                        Content.radioButton Gen.name
                            [Entity.PositionLocal == v2 636.0f 372.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 144.0f 48.0f
-                            Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage; Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
+                            Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                             Entity.Text == "Swift"
-                            Entity.Toggled <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                            Entity.ToggledEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+                            Entity.Dialed <== field --> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                            Entity.DialedEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 
                  // shop
                  Content.entityIf field (fun field -> Option.isSome field.ShopOpt) $ fun field _ ->
@@ -1596,12 +1616,14 @@ module FieldDispatcher =
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == "<"
+                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 8 field |> a__
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageUp]
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 804.0f 15.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                             Entity.Text == ">"
+                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 8 field |> _b_
                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageDown]

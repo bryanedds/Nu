@@ -133,12 +133,12 @@ module Field =
             | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Bounds (field.Advents.Contains (Opened id)))
             | _ -> None)
 
-    let getPortals field =
+    let getNonWarpPortals field =
         field.Props_ |>
         Map.toValueArray |>
         Array.choose (fun prop ->
             match prop.PropData with
-            | Portal (_, _, _, _, _, _, requirements) -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
+            | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
             | _ -> None)
 
     let updateFieldType updater field world =
@@ -226,8 +226,10 @@ module Field =
         { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
     let recruit allyType (field : Field) =
+        let lowestLevelTeammate = field.Team |> Map.toValueList |> Seq.sortBy (fun teammate -> teammate.Level) |> Seq.head
+        let level = max 1 (dec lowestLevelTeammate.Level)
         let index = Map.count field.Team
-        let teammate = Teammate.make index allyType
+        let teammate = Teammate.make level index allyType
         updateTeam (Map.add index teammate) field
 
     let restoreTeam field =
@@ -390,10 +392,10 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let debug world =
-        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
+        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let initial saveSlot randSeedState world =
-        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 0 Jinn)) Advents.initial Inventory.initial world
+        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let save field =
         let saveFilePath =

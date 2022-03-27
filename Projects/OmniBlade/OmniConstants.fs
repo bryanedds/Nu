@@ -73,10 +73,14 @@ module Constants =
         let SpiritOrbSize = v2Dup 192.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v2Dup 21.0f
+#if DEV
+        let SpiritActivityMinimum = 1440L
+#else
         let SpiritActivityMinimum = 360L
+#endif
         let SpiritActivityThreshold = 120L
         let SpiritRadius = 90.0f / SpiritOrbRatio
-        let WalkLengthScalarClosed = 1.0f / 13.0f // NOTE: higher is shorter distance to stronger spirits.
+        let WalkLengthScalarClosed = 1.0f / 12.0f // NOTE: higher is shorter distance to stronger spirits.
         let WalkLengthScalarOpened = 1.0f / 20.0f // NOTE: higher is shorter distance to stronger spirits.
         let TreasureProbability = 0.667f
         let RecruitmentFees = [|200; 1000; 5000; 20000|]
@@ -96,21 +100,22 @@ module Constants =
 
         let AllyMax = 3.0f
         let ActionTime = 1000.0f
+        let ActionTimeSlowScalar = 2.0f / 3.0f
+        let ActionTimeHasteScalar = 1.5f
         let BurndownTime = 3000.0f
         let AffinityResistanceScalar = 0.75f
         let AffinityVulnerabilityScalar = 1.333f
         let AutoBattleReadyTime = 50.0f
         let AllyActionTimeDelta = 4.0f
-        let AllyActionTimeSpacing = 300.0f
+        let AllyActionTimeSpacing = 1000.0f / 3.0f
         let EnemyActionTimeDelta = 3.0f
-        let EnemyActionTimeSpacing = 75.0f
         let PacedSpeedScalar = 0.75f
         let DefendingScalar = 0.5f
         let PoisonDrainRate = 0.05f
         let ItemDropRate = 0.02f
         let EnemySplitScalar = 0.5f
         let ChargeMax = 12
-        let CancelPosition = v2 -438.0f -228.0f
+        let CancelPosition = v2 -444.0f -237.0f
         let StrikingDistance = 48.0f
         let AfflictionSize = v2 96.0f 96.0f
         let AfflictionCelSize = v2 32.0f 32.0f

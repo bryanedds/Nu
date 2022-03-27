@@ -442,8 +442,8 @@ module Character =
             else techData.Scalar
         let splitScalar =
             if source.IsAlly then
-                if techData.Split
-                then 1.0f / single targetCount
+                if techData.Split && targetCount > 1
+                then 1.5f / min 3.0f (single targetCount)
                 else 1.0f
             else
                 if techData.Split
@@ -563,10 +563,17 @@ module Character =
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.IsHealthy then
-            updateStatuses (fun statuses ->
-                let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
-                let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
-                statuses)
+            let character =
+                updateStatuses (fun statuses ->
+                    let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
+                    let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+                    statuses)
+                    character
+            updateActionTime (fun actionTime ->
+                if  statusesAdded.Contains (Time false) &&
+                    actionTime < Constants.Battle.ActionTime then
+                    actionTime * Constants.Battle.ActionTimeSlowScalar
+                else actionTime)
                 character
         else character
 
@@ -665,7 +672,7 @@ module Character =
           CelSize_ = celSize
           InputState_ = NoInput }
 
-    let tryMakeEnemy index offsetCharacters waitSpeed enemyData =
+    let tryMakeEnemy allyCount index offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -686,8 +693,8 @@ module Character =
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
                     if waitSpeed
-                    then Constants.Battle.EnemyActionTimeSpacing * single index + 300.0f
-                    else Constants.Battle.EnemyActionTimeSpacing * single index + 150.0f
+                    then 1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
+                    else 1000.0f - (if allyCount = 1 then 525.0f else 450.0f) - Gen.randomf1 8.0f * 75.0f
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
                 Some enemy
             | None -> None
