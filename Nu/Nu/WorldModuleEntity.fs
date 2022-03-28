@@ -426,8 +426,6 @@ module WorldModuleEntity =
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
         static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeBindings value entity world
-        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Enabled <- value; entityState) else Unchecked.defaultof<_>) Property? Enabled value entity world
-        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Visible <- value; entityState) else Unchecked.defaultof<_>) Property? Visible value entity world
         static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) Property? AlwaysUpdate value entity world
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
@@ -584,7 +582,7 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Position <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    let world = if World.getEntityIsParent entity world then World.propagateEntityPosition entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -621,12 +619,7 @@ module WorldModuleEntity =
                         | None -> Vector2.Zero
 
                     // update Position property
-                    let mutable transform = entityState.Transform
-                    transform.Position <- parentPosition + value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-
-                    // propagate Position
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    let world = World.setEntityPosition (parentPosition + value) entity world |> snd'
                     struct (true, world)
 
             // nothing changed
@@ -710,12 +703,7 @@ module WorldModuleEntity =
                         | None -> 0.0f
 
                     // update Elevation property
-                    let mutable transform = entityState.Transform
-                    transform.Elevation <- parentElevation + value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-
-                    // propagate Elevation
-                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    let world = World.setEntityElevation (parentElevation + value) entity world |> snd'
                     struct (true, world)
 
             // nothing changed
@@ -732,9 +720,85 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Elevation <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    let world = if World.getEntityIsParent entity world then World.propagateEntityElevation entity world else world
                     struct (true, world)
             else struct (false, world)
+
+        static member internal propagateEntityEnabled entity world =
+            World.traverseEntityDescendants (fun parent child world ->
+                let enabledParent = World.getEntityEnabled parent world
+                let enabledLocal = World.getEntityEnabledLocal child world
+                let enabled = enabledParent && enabledLocal
+                World.setEntityEnabled enabled child world |> snd')
+                entity world
+
+        static member internal setEntityEnabledLocal value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.EnabledLocal then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.EnabledLocal <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? EnabledLocal value entity world
+            let world =
+                if changed then
+                    let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
+                    let enabledParent = match parentOpt with Some parent -> World.getEntityEnabled parent world | None -> true
+                    let enabled = enabledParent && value
+                    World.setEntityEnabled enabled entity world |> snd'
+                else world
+            struct (changed, world)
+            
+        static member internal setEntityEnabled value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.Enabled then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.Enabled <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? Enabled value entity world
+            let world = if changed && World.getEntityIsParent entity world then World.propagateEntityEnabled entity world else world
+            struct (true, world)
+
+        static member internal propagateEntityVisible entity world =
+            World.traverseEntityDescendants (fun parent child world ->
+                let visibleParent = World.getEntityVisible parent world
+                let visibleLocal = World.getEntityVisibleLocal child world
+                let visible = visibleParent && visibleLocal
+                World.setEntityVisible visible child world |> snd')
+                entity world
+
+        static member internal setEntityVisibleLocal value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.VisibleLocal then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.VisibleLocal <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? VisibleLocal value entity world
+            let world =
+                if changed then
+                    let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
+                    let visibleParent = match parentOpt with Some parent -> World.getEntityVisible parent world | None -> true
+                    let visible = visibleParent && value
+                    World.setEntityVisible visible entity world |> snd'
+                else world
+            struct (changed, world)
+            
+        static member internal setEntityVisible value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.Visible then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.Visible <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? Visible value entity world
+            let world = if changed && World.getEntityIsParent entity world then World.propagateEntityVisible entity world else world
+            struct (true, world)
 
         static member internal getEntityBounds entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -1806,12 +1870,14 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
         EntityGetters.Assign ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
         EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
+        EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPositionLocal entity world })
         EntityGetters.Assign ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
         EntityGetters.Assign ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
         EntityGetters.Assign ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
         EntityGetters.Assign ("Angle", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityAngle entity world })
         EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
         EntityGetters.Assign ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
+        EntityGetters.Assign ("ElevationLocal", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevationLocal entity world })
         EntityGetters.Assign ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
@@ -1821,7 +1887,9 @@ module WorldModuleEntity =
         EntityGetters.Assign ("PublishChangeBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world })
         EntityGetters.Assign ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
         EntityGetters.Assign ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
+        EntityGetters.Assign ("EnabledLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world })
         EntityGetters.Assign ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
+        EntityGetters.Assign ("VisibleLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisibleLocal entity world })
         EntityGetters.Assign ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
         EntityGetters.Assign ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         EntityGetters.Assign ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
@@ -1841,12 +1909,14 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
         EntitySetters.Assign ("Bounds", fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world)
         EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Bottom", fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Angle", fun property entity world -> World.setEntityAngle (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
+        EntitySetters.Assign ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
@@ -1854,7 +1924,9 @@ module WorldModuleEntity =
         EntitySetters.Assign ("ParentOpt", fun property entity world -> World.setEntityParentOpt (property.PropertyValue :?> Entity Relation option) entity world)
         EntitySetters.Assign ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("IgnorePropertyBindings", fun property entity world -> World.setEntityIgnorePropertyBindings (property.PropertyValue :?> bool) entity world)
