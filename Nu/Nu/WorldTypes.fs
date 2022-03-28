@@ -395,7 +395,7 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? ParentOpt None
+             Define? ParentOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
              Define? Visible true
