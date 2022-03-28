@@ -395,6 +395,7 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
+             Define? ParentOpt None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
              Define? Visible true
@@ -698,10 +699,11 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
-          mutable OverlayNameOpt : string option
-          mutable FacetNames : string Set
+          mutable ParentOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
+          mutable OverlayNameOpt : string option
           // cache line 3
+          mutable FacetNames : string Set // TODO: P1: move to cache line 3.
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Names : string array }
@@ -720,9 +722,10 @@ module WorldTypes =
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
+              ParentOpt = None
+              ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              ScriptFrameOpt = Unchecked.defaultof<_>
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Names = names }
@@ -1224,13 +1227,15 @@ module WorldTypes =
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
               // cache line 2
+              EntityHierarchy : UMap<Entity, USet<Entity>>
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, USet<Entity>>>>>
-              Dispatchers : Dispatchers
+              Dispatchers : Dispatchers // TODO: P1: put in WorldExtension to get rid of cache line 3.
+              // cache line 3
               WorldExtension : WorldExtension }
 
         interface World EventSystem with

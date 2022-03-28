@@ -57,6 +57,10 @@ module WorldModuleEntity =
     let mutable changeEventNamesFree = true
     let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
+    // OPTIMIZATION: cache empty children
+    let emptyChildrenImperative = USet.makeEmpty HashIdentity.Structural Imperative
+    let emptyChildrenFunctional = USet.makeEmpty HashIdentity.Structural Functional
+
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
@@ -407,8 +411,9 @@ module WorldModuleEntity =
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
-        static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
+        static member internal getEntityParentOpt entity world = (World.getEntityState entity world).ParentOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
+        static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityNames entity world = (World.getEntityState entity world).Names
@@ -424,6 +429,67 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
+
+        static member internal getEntityChildren entity world =
+            match world.EntityHierarchy.TryGetValue entity with
+            | (true, children) -> children
+            | (false, _) ->
+                match World.getCollectionConfig world with
+                | Imperative -> emptyChildrenImperative
+                | Functional -> emptyChildrenFunctional
+
+        static member internal getEntityDescendants entity world =
+            seq {
+                let children = World.getEntityChildren entity world
+                yield! children
+                for child in children do
+                    yield! World.getEntityChildren child world }
+
+        static member internal traverseEntityChildren effect entity (world : World) =
+            let children = World.getEntityChildren entity world
+            USet.fold (fun world child -> effect entity child world) world children
+
+        static member internal traverseEntityDescendants effect entity (world : World) =
+            let children = World.getEntityChildren entity world
+            let world = USet.fold (fun world child -> effect entity child world) world children
+            USet.fold (fun world child -> World.traverseEntityDescendants effect child world) world children
+
+        static member internal setEntityParentOpt value entity world =
+            let parentOpt = value
+            let oldParentOpt = World.getEntityParentOpt entity world
+            let struct (changed, world) =
+                World.updateEntityStatePlus (fun entityState ->
+                    if parentOpt <> entityState.ParentOpt then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.ParentOpt <- parentOpt
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? ParentOpt parentOpt entity world
+            let world =
+                if changed then
+                    let world =
+                        match Option.map (resolve entity) oldParentOpt with
+                        | Some oldParent ->
+                            match world.EntityHierarchy.TryGetValue oldParent with
+                            | (true, children) ->
+                                let children = USet.remove entity children
+                                if USet.isEmpty children
+                                then World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
+                                else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
+                            | (false, _) -> world
+                        | None -> world
+                    let world =
+                        match Option.map (resolve entity) parentOpt with
+                        | Some parent ->
+                            match world.EntityHierarchy.TryGetValue parent with
+                            | (true, children) ->
+                                let children = USet.add entity children
+                                { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
+                            | (false, _) -> world
+                        | None -> world
+                    world
+                else world
+            struct (changed, world)
 
         static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity, world) =
             let oldWorld = world
@@ -1628,6 +1694,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
+        EntityGetters.Assign ("ParentOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityParentOpt entity world })
         EntityGetters.Assign ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         EntityGetters.Assign ("PublishChangeBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world })
         EntityGetters.Assign ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
@@ -1661,6 +1728,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
         EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Assign ("ParentOpt", fun property entity world -> World.setEntityParentOpt (property.PropertyValue :?> Entity Relation option) entity world)
         EntitySetters.Assign ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)

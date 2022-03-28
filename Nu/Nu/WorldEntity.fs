@@ -60,6 +60,9 @@ module WorldEntityModule =
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
+        member this.GetParentOpt world = World.getEntityParentOpt this world
+        member this.SetParentOpt value world = World.setEntityParentOpt value this world |> snd'
+        member this.ParentOpt = lens Property? ParentOpt this.GetParentOpt this.SetParentOpt this
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world |> snd'
         member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
@@ -82,12 +85,12 @@ module WorldEntityModule =
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
         member this.GetDestroying world = World.getEntityDestroying this world
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
+        member this.GetScriptFrame world = World.getEntityScriptFrame this world
+        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
         member this.OverlayNameOpt = lensReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.FacetNames = lensReadOnly Property? FacetNames this.GetFacetNames this
-        member this.GetScriptFrame world = World.getEntityScriptFrame this world
-        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getEntityId this world
@@ -223,6 +226,18 @@ module WorldEntityModule =
 
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
+
+        /// Get an entity's immediate children.
+        member this.GetChildren world = World.getEntityChildren this world
+
+        /// Get an entity's children recursively.
+        member this.GetDescendants world = World.getEntityDescendants this world
+
+        /// Traverse an entity's immediate children.
+        member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
+
+        /// Traverse an entity's children recursively.
+        member this.TraverseDescendants effect world = World.traverseEntityDescendants effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
