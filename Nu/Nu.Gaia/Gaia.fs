@@ -530,7 +530,7 @@ module Gaia =
                         form.propertyValueTextBoxText <- scstring parentRelation
                         if propertyDescriptor.Name = "ParentOpt"
                         then entity2.SetParentOptWithAdjustment (Some parentRelation) world
-                        else (form.applyPropertyButton.PerformClick (); world)
+                        else form.applyPropertyButton.PerformClick (); world
                 else
                     match parentEntityNamesStr with
                     | Constants.Editor.NonePick ->
@@ -539,10 +539,12 @@ module Gaia =
                         let entity = entityTds.DescribedEntity
                         let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
-                        form.propertyValueTextBoxText <- scstring parentRelation
-                        if propertyDescriptor.Name = "ParentOpt"
-                        then entity.SetParentOptWithAdjustment (Some parentRelation) world
-                        else (form.applyPropertyButton.PerformClick (); world)
+                        if parentRelation <> Relation.makeCurrent () then
+                            form.propertyValueTextBoxText <- scstring parentRelation
+                            if propertyDescriptor.Name = "ParentOpt"
+                            then entity.SetParentOptWithAdjustment (Some parentRelation) world
+                            else form.applyPropertyButton.PerformClick (); world
+                        else form.applyPropertyButton.PerformClick (); world
             | _ -> world
         | _ -> world
 
