@@ -172,9 +172,6 @@ module Content =
     /// Describe an animated sprite with the given initializers.
     let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
 
-    /// Describe a node with the given initializers.
-    let node entityName initializers = entity<NodeDispatcher> entityName initializers
-
     /// Describe a button with the given initializers.
     let button entityName initializers = entity<ButtonDispatcher> entityName initializers
 

@@ -390,23 +390,28 @@ module WorldModuleEntity =
         // NOTE: wouldn't macros be nice?
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
-        static member internal getEntityPosition entity world = (World.getEntityState entity world).Transform.Position
-        static member internal getEntitySize entity world = (World.getEntityState entity world).Transform.Size
-        static member internal getEntityAngle entity world = Math.radiansToDegrees (World.getEntityState entity world).Transform.Rotation
-        static member internal getEntityRotation entity world = (World.getEntityState entity world).Transform.Rotation
-        static member internal getEntityElevation entity world = (World.getEntityState entity world).Transform.Elevation
+        static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
+        static member internal getEntityPositionLocal entity world = (World.getEntityState entity world).PositionLocal
+        static member internal getEntitySize entity world = (World.getEntityState entity world).Size
+        static member internal getEntityAngle entity world = Math.radiansToDegrees (World.getEntityState entity world).Rotation
+        static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
+        static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
+        static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
         static member internal getEntityFlags entity world = (World.getEntityState entity world).Transform.Flags
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChangeBindings entity world = (World.getEntityState entity world).PublishChangeBindings
         static member internal getEntityPublishChangeEvents entity world = (World.getEntityState entity world).PublishChangeEvents
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
+        static member internal getEntityEnabledLocal entity world = (World.getEntityState entity world).EnabledLocal
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
+        static member internal getEntityVisibleLocal entity world = (World.getEntityState entity world).VisibleLocal
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
+        static member internal getEntityIsParent entity world = (World.getEntityState entity world).IsParent
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
@@ -428,6 +433,7 @@ module WorldModuleEntity =
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
+        static member internal setEntityIsParent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IsParent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IsParent <- value; entityState) else Unchecked.defaultof<_>) Property? IsParent value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
 
         static member internal getEntityChildren entity world =
@@ -473,8 +479,10 @@ module WorldModuleEntity =
                             match world.EntityHierarchy.TryGetValue oldParent with
                             | (true, children) ->
                                 let children = USet.remove entity children
-                                if USet.isEmpty children
-                                then World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
+                                if USet.isEmpty children then
+                                    let world = World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
+                                    let world = World.setEntityIsParent false oldParent world |> snd'
+                                    world
                                 else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
                             | (false, _) -> world
                         | None -> world
@@ -485,7 +493,11 @@ module WorldModuleEntity =
                             | (true, children) ->
                                 let children = USet.add entity children
                                 { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                            | (false, _) -> world
+                            | (false, _) ->
+                                let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                                let world = World.choose { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
+                                let world = World.setEntityIsParent true parent world |> snd'
+                                world
                         | None -> world
                     world
                 else world
@@ -564,7 +576,7 @@ module WorldModuleEntity =
                     transform.Position <- value
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
-        
+
         static member internal setEntitySize value entity world =
             let entityState = World.getEntityState entity world
             if v2Neq value entityState.Transform.Size then
@@ -1705,6 +1717,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
+        EntityGetters.Assign ("IsParent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsParent entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
