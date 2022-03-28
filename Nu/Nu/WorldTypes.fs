@@ -387,10 +387,12 @@ module WorldTypes =
 
         static member Properties =
             [Define? Position Vector2.Zero
+             Define? PositionLocal Vector2.Zero
              Define? Size Constants.Engine.EntitySizeDefault
              Define? Angle 0.0f
              Define? Rotation 0.0f
              Define? Elevation 0.0f
+             Define? ElevationLocal 0.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
@@ -398,8 +400,10 @@ module WorldTypes =
              Define? ParentOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
-             Define? Visible true
              Define? Enabled true
+             Define? EnabledLocal true
+             Define? Visible true
+             Define? VisibleLocal true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
