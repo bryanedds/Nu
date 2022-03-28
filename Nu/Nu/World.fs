@@ -150,9 +150,9 @@ module Nu =
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 else world
-                            if  eventSecondName <> "ParentNodeOpt" &&
+                            if  eventSecondName <> "ParentOpt" &&
                                 Array.contains (Address.head Events.Wildcard) eventNames then
-                                Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentNodeOpt)."
+                                Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentOpt)."
                             world
                         | _ -> world
                     else world
@@ -382,7 +382,6 @@ module WorldModule3 =
                 [EntityDispatcher ()
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
-                 NodeDispatcher () :> EntityDispatcher
                  BasicEmitterDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -403,8 +402,7 @@ module WorldModule3 =
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [NodeFacet () :> Facet
-                 BasicEmitterFacet () :> Facet
+                [BasicEmitterFacet () :> Facet
                  EffectFacet () :> Facet
                  ScriptFacet () :> Facet
                  TextFacet () :> Facet

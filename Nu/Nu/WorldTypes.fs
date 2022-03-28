@@ -699,10 +699,12 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
+          mutable PositionLocal : Vector2
+          mutable ElevationLocal : single
+          // cache line 3
           mutable ParentOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
-          // cache line 3
           mutable FacetNames : string Set // TODO: P1: move to cache line 3.
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
@@ -722,6 +724,8 @@ module WorldTypes =
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
+              PositionLocal = Vector2.Zero
+              ElevationLocal = 0.0f
               ParentOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
@@ -808,12 +812,15 @@ module WorldTypes =
         member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
         member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
+        member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
+        member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
+        member this.IsParent with get () = this.Transform.IsParent and set value = this.Transform.IsParent <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.Bounds with get () = this.Transform.Bounds
         member this.Center with get () = this.Transform.Center

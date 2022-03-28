@@ -1208,212 +1208,6 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize (entity.GetTmxMap world)
 
 [<AutoOpen>]
-module NodeFacetModule =
-
-    type Entity with
-
-        member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
-        member this.SetParentNodeOpt (value : Entity Relation option) world = this.Set Property? ParentNodeOpt value world
-        member this.ParentNodeOpt = lens Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt this
-        member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
-        member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
-        member this.PositionLocal = lens Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
-        member this.GetCenterLocal world : Vector2 = this.Get Property? CenterLocal world
-        member this.SetCenterLocal (value : Vector2) world = this.Set Property? CenterLocal value world
-        member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
-        member this.GetBottomLocal world : Vector2 = this.Get Property? BottomLocal world
-        member this.SetBottomLocal (value : Vector2) world = this.Set Property? BottomLocal value world
-        member this.BottomLocal = lens Property? BottomLocal this.GetBottomLocal this.SetBottomLocal this
-        member this.GetElevationLocal world : single = this.Get Property? ElevationLocal world
-        member this.SetElevationLocal (value : single) world = this.Set Property? ElevationLocal value world
-        member this.ElevationLocal = lens Property? ElevationLocal this.GetElevationLocal this.SetElevationLocal this
-        member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
-        member this.SetVisibleLocal (value : bool) world = this.Set Property? VisibleLocal value world
-        member this.VisibleLocal = lens Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal this
-        member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
-        member this.SetEnabledLocal (value : bool) world = this.Set Property? EnabledLocal value world
-        member this.EnabledLocal = lens Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal this
-        member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
-        member private this.SetNodeUnsubscribe (value : World -> World) world = this.Set Property? NodeUnsubscribe value world
-        member private this.NodeUnsubscribe = lens Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
-
-        member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
-            let world =
-                match (this.GetParentNodeOpt world, value) with
-                | (Some relationOld, Some relationNew) ->
-                    let parentOld = this.Resolve relationOld
-                    let parentNew = this.Resolve relationNew
-                    if parentOld.Exists world && parentNew.Exists world then
-                        let position = this.GetPositionLocal world + parentNew.GetPosition world
-                        let elevation = this.GetElevationLocal world + parentNew.GetElevation world
-                        let world = this.SetPosition position world
-                        let world = this.SetElevation elevation world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
-                        world
-                    else world
-                | (Some relationOld, None) ->
-                    let parentOld = this.Resolve relationOld
-                    if parentOld.Exists world then
-                        let position = this.GetPositionLocal world + parentOld.GetPosition world
-                        let elevation = this.GetElevationLocal world + parentOld.GetElevation world
-                        let world = this.SetPosition position world
-                        let world = this.SetElevation elevation world
-                        let world = this.SetVisible (this.GetVisibleLocal world) world
-                        let world = this.SetEnabled (this.GetEnabledLocal world) world
-                        world
-                    else world
-                | (None, Some relationNew) ->
-                    let parentNew = this.Resolve relationNew
-                    if parentNew.Exists world then
-                        let position = this.GetPosition world - parentNew.GetPosition world
-                        let elevation = this.GetElevation world - parentNew.GetElevation world
-                        let world = this.SetPositionLocal position world
-                        let world = this.SetElevationLocal elevation world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
-                        world
-                    else world
-                | (None, None) -> world
-            this.SetParentNodeOpt value world
-
-        member this.GetChildNodes world =
-            this.GetChildNodes2 [] world
-
-        member this.ParentNodeExists world =
-            match this.GetParentNodeOpt world with
-            | Some relation -> (this.Resolve relation).Exists world
-            | None -> false
-
-        member private this.GetChildNodes2 nodes world =
-            let nodeOpt =
-                if this.Has<NodeFacet> world
-                then Option.map this.Resolve (this.GetParentNodeOpt world)
-                else None
-            match nodeOpt with
-            | Some node -> node.GetChildNodes2 (node :: nodes) world
-            | None -> nodes
-
-    and NodeFacet () =
-        inherit Facet ()
-
-        static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
-            match propertyName with
-            | "Position" -> entity.SetPosition (entity.GetPositionLocal world) world
-            | "Elevation" -> entity.SetElevation (entity.GetElevationLocal world) world
-            | "Visible" -> entity.SetVisible (entity.GetVisibleLocal world) world
-            | "Enabled" -> entity.SetEnabled (entity.GetEnabledLocal world) world
-            | _ -> world
-
-        static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
-            if node.Exists world then
-                match propertyName with
-                | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-                | "ElevationLocal" -> entity.SetElevation (node.GetElevation world + entity.GetElevationLocal world) world
-                | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-                | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-                | _ -> world
-            else world
-
-        static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
-            if node.Exists world then
-                match propertyName with
-                | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-                | "Elevation" -> entity.SetElevation (node.GetElevation world + entity.GetElevationLocal world) world
-                | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-                | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-                | _ -> world
-            else world
-
-        static let updateFromNode (node : Entity) (entity : Entity) world =
-            let world = updatePropertyFromNode "Position" node entity world
-            let world = updatePropertyFromNode "Elevation" node entity world
-            let world = updatePropertyFromNode "Visible" node entity world
-            let world = updatePropertyFromNode "Enabled" node entity world
-            world
-
-        static let tryUpdateFromNode (entity : Entity) world =
-            match entity.GetParentNodeOpt world with
-            | Some nodeRelation ->
-                let node = entity.Resolve nodeRelation
-                let world = updateFromNode node entity world
-                world
-            | None -> world
-
-        static let handleLocalPropertyChange evt world =
-            let entity = evt.Subscriber : Entity
-            let data = evt.Data : ChangeData
-            match entity.GetParentNodeOpt world with
-            | Some relation ->
-                let node = entity.Resolve relation
-                if World.getEntityExists node world
-                then (Cascade, updatePropertyFromLocal data.Name node entity world)
-                else (Cascade, updatePropertyFromLocal3 data.Name entity world)
-            | None -> (Cascade, updatePropertyFromLocal3 data.Name entity world)
-
-        static let handleNodePropertyChange evt world =
-            let entity = evt.Subscriber : Entity
-            let node = evt.Publisher :?> Entity
-            let data = evt.Data : ChangeData
-            (Cascade, updatePropertyFromNode data.Name node entity world)
-
-        static let trySubscribeToNodePropertyChanges (entity : Entity) world =
-            let oldWorld = world
-            let world = (entity.GetNodeUnsubscribe world) world
-            match entity.GetParentNodeOpt world with
-            | Some nodeRelation ->
-                let node = entity.Resolve nodeRelation
-                if node = entity then
-                    Log.trace "Cannot mount entity to itself."
-                    World.choose oldWorld
-                elif
-                    entity.Has<RigidBodyFastFacet> world ||
-                    entity.Has<RigidBodyFacet> world then
-                    Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
-                    World.choose oldWorld
-                else
-                    let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.ChangeEvent entity world
-                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Elevation.ChangeEvent entity world
-                    let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.ChangeEvent entity world
-                    let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.ChangeEvent entity world
-                    entity.SetNodeUnsubscribe (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
-            | None -> world
-
-        static let handleNodeChange evt world =
-            let entity = evt.Subscriber
-            let world = tryUpdateFromNode entity world
-            let world = trySubscribeToNodePropertyChanges entity world
-            (Cascade, world)
-
-        static member Properties =
-            [define Entity.ParentNodeOpt None
-             define Entity.PositionLocal Vector2.Zero
-             define Entity.ElevationLocal 0.0f
-             define Entity.VisibleLocal true
-             define Entity.EnabledLocal true
-             define Entity.NodeUnsubscribe (id : World -> World)
-             computed Entity.CenterLocal
-                (fun (entity : Entity) world -> entity.GetPositionLocal world + entity.GetSize world * 0.5f)
-                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - entity.GetSize world * 0.5f) world))
-             computed Entity.BottomLocal
-                (fun (entity : Entity) world -> entity.GetPositionLocal world + (entity.GetSize world).WithY 0.0f * 0.5f)
-                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - (entity.GetSize world).WithY 0.0f * 0.5f) world))]
-
-        override this.Register (entity, world) =
-            let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
-            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.ElevationLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
-            let world = tryUpdateFromNode entity world
-            let world = trySubscribeToNodePropertyChanges entity world
-            world
-
-        override this.Unregister (entity, world) =
-            (entity.GetNodeUnsubscribe world) world // NOTE: not sure if this is necessary.
-
-[<AutoOpen>]
 module StaticSpriteFacetModule =
 
     type Entity with
@@ -1707,21 +1501,6 @@ module AnimatedSpriteDispatcherModule =
              define Entity.Flip FlipNone]
 
 [<AutoOpen>]
-module NodeDispatcherModule =
-
-    type NodeDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member Facets =
-            [typeof<NodeFacet>]
-
-    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (model)
-
-        static member Facets =
-            [typeof<NodeFacet>]
-
-[<AutoOpen>]
 module GuiDispatcherModule =
 
     type Entity with
@@ -1732,9 +1511,6 @@ module GuiDispatcherModule =
     type GuiDispatcher () =
         inherit EntityDispatcher ()
 
-        static member Facets =
-            [typeof<NodeFacet>]
-
         static member Properties =
             [define Entity.Omnipresent true
              define Entity.Absolute true
@@ -1744,11 +1520,9 @@ module GuiDispatcherModule =
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
-        static member Facets =
-            [typeof<NodeFacet>]
-
         static member Properties =
-            [define Entity.Absolute true
+            [define Entity.Omnipresent true
+             define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
 
