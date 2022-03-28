@@ -4,7 +4,7 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Name Back]
+   [[Names [Back]]
     [Position [-96 -240]]
     [Text Back]]]
   [TextDispatcher

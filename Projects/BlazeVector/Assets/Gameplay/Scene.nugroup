@@ -4,6 +4,6 @@
   [Name Scene]
   [Persistent True]]
  [[PlayerDispatcher
-  [[Name Player]
+  [[Names [Player]]
    [Position [-300 -175.6805]]
    [Elevation 1]]]]]
