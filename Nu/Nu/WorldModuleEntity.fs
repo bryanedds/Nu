@@ -595,7 +595,10 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do position updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
-                    let parentPosition = match Option.map (resolve entity) entityState.ParentOpt with Some parent -> World.getEntityPosition parent world | None -> Vector2.Zero
+                    let parentPosition =
+                        match Option.map (resolve entity) entityState.ParentOpt with
+                        | Some parent when World.getEntityExists parent world -> World.getEntityPosition parent world
+                        | _ -> Vector2.Zero
                     entityState.Transform.Position <- parentPosition + value
                     let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
                     struct (true, world)
@@ -615,8 +618,8 @@ module WorldModuleEntity =
                     // compute parent position
                     let parentPosition =
                         match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
-                        | Some parent -> World.getEntityPosition parent world
-                        | None -> Vector2.Zero
+                        | Some parent when World.getEntityExists parent world -> World.getEntityPosition parent world
+                        | _ -> Vector2.Zero
 
                     // update Position property
                     let world = World.setEntityPosition (parentPosition + value) entity world |> snd'
@@ -679,7 +682,10 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do elevation updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.ElevationLocal <- value
-                    let parentElevation = match Option.map (resolve entity) entityState.ParentOpt with Some parent -> World.getEntityElevation parent world | None -> 0.0f
+                    let parentElevation =
+                        match Option.map (resolve entity) entityState.ParentOpt with
+                        | Some parent when World.getEntityExists parent world -> World.getEntityElevation parent world
+                        | _ -> 0.0f
                     entityState.Transform.Elevation <- parentElevation + value
                     let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
                     struct (true, world)
@@ -699,8 +705,8 @@ module WorldModuleEntity =
                     // compute parent elevation
                     let parentElevation =
                         match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
-                        | Some parent -> World.getEntityElevation parent world
-                        | None -> 0.0f
+                        | Some parent when World.getEntityExists parent world -> World.getEntityElevation parent world
+                        | _ -> 0.0f
 
                     // update Elevation property
                     let world = World.setEntityElevation (parentElevation + value) entity world |> snd'
@@ -744,7 +750,10 @@ module WorldModuleEntity =
             let world =
                 if changed then
                     let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
-                    let enabledParent = match parentOpt with Some parent -> World.getEntityEnabled parent world | None -> true
+                    let enabledParent =
+                        match parentOpt with
+                        | Some parent when World.getEntityExists parent world -> World.getEntityEnabled parent world
+                        | _ -> true
                     let enabled = enabledParent && value
                     World.setEntityEnabled enabled entity world |> snd'
                 else world
@@ -782,7 +791,10 @@ module WorldModuleEntity =
             let world =
                 if changed then
                     let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
-                    let visibleParent = match parentOpt with Some parent -> World.getEntityVisible parent world | None -> true
+                    let visibleParent =
+                        match parentOpt with
+                        | Some parent when World.getEntityExists parent world -> World.getEntityVisible parent world
+                        | _ -> true
                     let visible = visibleParent && value
                     World.setEntityVisible visible entity world |> snd'
                 else world
