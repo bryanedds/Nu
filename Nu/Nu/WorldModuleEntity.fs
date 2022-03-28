@@ -168,7 +168,7 @@ module WorldModuleEntity =
                             rtoa<ChangeData> changeEventNamesCached
                         else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
                     let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
-                    let sorted = propertyName = "ParentNodeOpt"
+                    let sorted = propertyName = "ParentOpt"
                     let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted false world
                     if changeEventNamesUtilized then changeEventNamesFree <- true
                     world
