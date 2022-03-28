@@ -479,7 +479,7 @@ module WorldModuleEntity =
                                 let children = USet.remove entity children
                                 if USet.isEmpty children then
                                     let world = World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
-                                    let world = World.setEntityIsParent false oldParent world |> snd'
+                                    let world = if World.getEntityExists oldParent world then World.setEntityIsParent false oldParent world |> snd' else world
                                     world
                                 else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
                             | (false, _) -> world
@@ -494,7 +494,7 @@ module WorldModuleEntity =
                             | (false, _) ->
                                 let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
                                 let world = World.choose { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                                let world = World.setEntityIsParent true parent world |> snd'
+                                let world = if World.getEntityExists parent world then World.setEntityIsParent true parent world |> snd' else world
                                 world
                         | None -> world
                     world
@@ -1525,6 +1525,9 @@ module WorldModuleEntity =
             // make entity address
             let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Names
 
+            // make entity reference
+            let entity = Entity entityAddress
+
             // apply publish bindings state
             match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
             | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
@@ -1535,8 +1538,10 @@ module WorldModuleEntity =
             | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
             | (false, _) -> ()
 
+            // apply is parent state
+            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+
             // add entity's state to world
-            let entity = Entity entityAddress
             let world =
                 if World.getEntityExists entity world then
                     if World.getEntityDestroying entity world
