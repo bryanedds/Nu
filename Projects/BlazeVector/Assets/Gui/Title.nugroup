@@ -5,15 +5,15 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Name Credits]
+   [[Names [Credits]]
     [Position [-96 -112]]
     [Text Credits]]]
   [ButtonDispatcher
-   [[Name Exit]
+   [[Names [Exit]]
     [Position [-96 -184]]
     [Text Exit]]]
   [ButtonDispatcher
-   [[Name Play]
+   [[Names [Play]]
     [Position [-96 -40]]
     [Text Play]]]
   [TextDispatcher

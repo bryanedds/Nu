@@ -6,6 +6,6 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Elevation 10]
-    [Name Quit]
+    [Names [Quit]]
     [Position [272 -256]]
     [Text Quit]]]]]

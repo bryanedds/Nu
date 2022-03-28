@@ -4,14 +4,14 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Name Back]
+   [[Names [Back]]
     [Position [-96 -192]]
     [Text Back]]]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name LoadGame3]
+    [Names [LoadGame3]]
     [Position [-168 -108]]
     [Size [336 72]]
     [Text "Load Game 3"]
@@ -20,7 +20,7 @@
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name LoadGame2]
+    [Names [LoadGame2]]
     [Position [-168 0]]
     [Size [336 72]]
     [Text "Load Game 2"]
@@ -29,7 +29,7 @@
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name NewGame2]
+    [Names [NewGame2]]
     [Position [-168 0]]
     [Size [336 72]]
     [Text "New Game  2"]
@@ -38,7 +38,7 @@
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name LoadGame1]
+    [Names [LoadGame1]]
     [Position [-168 108]]
     [Size [336 72]]
     [Text "Load Game 1"]
@@ -47,7 +47,7 @@
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name NewGame3]
+    [Names [NewGame3]]
     [Position [-168 -108]]
     [Size [336 72]]
     [Text "New Game  3"]
@@ -56,7 +56,7 @@
    [[ClickSoundOpt
      [Some [Gui Slot]]]
     [DownImage [Gui ButtonLongDown]]
-    [Name NewGame1]
+    [Names [NewGame1]]
     [Position [-168 108]]
     [Size [336 72]]
     [Text "New Game  1"]
