@@ -537,11 +537,11 @@ module Gaia =
                         entityTds.DescribedEntity.SetParentOptWithAdjustment None world
                     | _ ->
                         let entity = entityTds.DescribedEntity
-                        let parent = Entity parentEntityNamesStr
-                        let parentRelation = Relation.relate parent.EntityAddress entity.EntityAddress
+                        let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentEntityNamesStr)
+                        let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
                         form.propertyValueTextBoxText <- scstring parentRelation
                         if propertyDescriptor.Name = "ParentOpt"
-                        then entityTds.DescribedEntity.SetParentOptWithAdjustment (Some parentRelation) world
+                        then entity.SetParentOptWithAdjustment (Some parentRelation) world
                         else (form.applyPropertyButton.PerformClick (); world)
             | _ -> world
         | _ -> world
