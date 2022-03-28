@@ -459,16 +459,16 @@ module WorldModuleEntity =
             USet.fold (fun world child -> World.traverseEntityDescendants effect child world) world children
 
         static member internal setEntityParentOpt value entity world =
-            let parentOpt = value
+            let newParentOpt = value
             let oldParentOpt = World.getEntityParentOpt entity world
             let struct (changed, world) =
                 World.updateEntityStatePlus (fun entityState ->
-                    if parentOpt <> entityState.ParentOpt then
+                    if newParentOpt <> entityState.ParentOpt then
                         let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                        entityState.ParentOpt <- parentOpt
+                        entityState.ParentOpt <- newParentOpt
                         entityState
                     else Unchecked.defaultof<_>)
-                    Property? ParentOpt parentOpt entity world
+                    Property? ParentOpt newParentOpt entity world
             let world =
                 if changed then
                     let world =
@@ -485,7 +485,7 @@ module WorldModuleEntity =
                             | (false, _) -> world
                         | None -> world
                     let world =
-                        match Option.map (resolve entity) parentOpt with
+                        match Option.map (resolve entity) newParentOpt with
                         | Some parent ->
                             match world.EntityHierarchy.TryGetValue parent with
                             | (true, children) ->
