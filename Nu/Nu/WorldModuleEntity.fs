@@ -1462,8 +1462,7 @@ module WorldModuleEntity =
                 entityState.Invalidated <- true
 
                 // remove the entity from the world
-                let world = World.removeEntityState entity world
-                world
+                World.removeEntityState entity world
 
             // pass
             else world

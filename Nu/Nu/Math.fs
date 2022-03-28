@@ -82,28 +82,28 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     static member inline assign (source : Transform, target : Transform byref) =
         Transform.assignByRef (&source, &target)
 
-    member this.Active with get () = this.Flags &&& ActiveMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
-    member this.Dirty with get () = this.Flags &&& DirtyMask <> 0u and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
-    member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0u and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
-    member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
-    member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
-    member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
-    member this.PublishChangeBindings with get () = this.Flags &&& PublishChangeBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeBindingsMask else this.Flags &&& ~~~PublishChangeBindingsMask
-    member this.PublishChangeEvents with get () = this.Flags &&& PublishChangeEventsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeEventsMask else this.Flags &&& ~~~PublishChangeEventsMask
-    member this.Enabled with get () = this.Flags &&& EnabledMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
-    member this.Visible with get () = this.Flags &&& VisibleMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
-    member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
-    member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
-    member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
-    member this.Persistent with get () = this.Flags &&& PersistentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-    member this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
-    member this.IsParent with get () = this.Flags &&& IsParentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IsParentMask else this.Flags &&& ~~~IsParentMask
-    member this.EnabledLocal with get () = this.Flags &&& EnabledLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledLocalMask else this.Flags &&& ~~~EnabledLocalMask
-    member this.VisibleLocal with get () = this.Flags &&& VisibleLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleLocalMask else this.Flags &&& ~~~VisibleLocalMask
-    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| this.Flags &&& PublishChangeBindingsMask ||| this.Flags &&& PublishChangeEventsMask = 0u
-    member this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
-    member this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)
-    member this.Bottom with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y)
+    member inline this.Active with get () = this.Flags &&& ActiveMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
+    member inline this.Dirty with get () = this.Flags &&& DirtyMask <> 0u and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
+    member inline this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0u and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
+    member inline this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
+    member inline this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
+    member inline this.Imperative with get () = this.Flags &&& ImperativeMask <> 0u and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
+    member inline this.PublishChangeBindings with get () = this.Flags &&& PublishChangeBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeBindingsMask else this.Flags &&& ~~~PublishChangeBindingsMask
+    member inline this.PublishChangeEvents with get () = this.Flags &&& PublishChangeEventsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishChangeEventsMask else this.Flags &&& ~~~PublishChangeEventsMask
+    member inline this.Enabled with get () = this.Flags &&& EnabledMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
+    member inline this.Visible with get () = this.Flags &&& VisibleMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
+    member inline this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0u and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
+    member inline this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
+    member inline this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
+    member inline this.Persistent with get () = this.Flags &&& PersistentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+    member inline this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
+    member inline this.IsParent with get () = this.Flags &&& IsParentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IsParentMask else this.Flags &&& ~~~IsParentMask
+    member inline this.EnabledLocal with get () = this.Flags &&& EnabledLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledLocalMask else this.Flags &&& ~~~EnabledLocalMask
+    member inline this.VisibleLocal with get () = this.Flags &&& VisibleLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleLocalMask else this.Flags &&& ~~~VisibleLocalMask
+    member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditional from here.
+    member inline this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
+    member inline this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)
+    member inline this.Bottom with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y)
 
     /// Make an empty transform.
     static member makeEmpty () =
