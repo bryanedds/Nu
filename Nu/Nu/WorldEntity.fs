@@ -241,45 +241,44 @@ module WorldEntityModule =
 
         /// Set an entity's parent while adjusting its parent properties such that they do not change.
         member this.SetParentOptWithAdjustment (value : Entity Relation option) world =
-            let parentOptNew = value
-            let parentOptOld = this.GetParentOpt world
-            let world = this.SetParentOpt parentOptNew world
-            match (parentOptOld, parentOptNew) with
-            | (Some relationOld, Some relationNew) ->
-                let parentOld = this.Resolve relationOld : Entity
-                let parentNew = this.Resolve relationNew : Entity
-                if parentOld.Exists world && parentNew.Exists world then
-                    let position = this.GetPositionLocal world + parentNew.GetPosition world
-                    let elevation = this.GetElevationLocal world + parentNew.GetElevation world
-                    let world = this.SetPosition position world
-                    let world = this.SetElevation elevation world
-                    let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                    let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
-                    world
-                else world
-            | (Some relationOld, None) ->
-                let parentOld = this.Resolve relationOld
-                if parentOld.Exists world then
-                    let position = this.GetPositionLocal world + parentOld.GetPosition world
-                    let elevation = this.GetElevationLocal world + parentOld.GetElevation world
-                    let world = this.SetPosition position world
-                    let world = this.SetElevation elevation world
-                    let world = this.SetVisible (this.GetVisibleLocal world) world
-                    let world = this.SetEnabled (this.GetEnabledLocal world) world
-                    world
-                else world
-            | (None, Some relationNew) ->
-                let parentNew = this.Resolve relationNew
-                if parentNew.Exists world then
-                    let position = this.GetPosition world - parentNew.GetPosition world
-                    let elevation = this.GetElevation world - parentNew.GetElevation world
-                    let world = this.SetPositionLocal position world
-                    let world = this.SetElevationLocal elevation world
-                    let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                    let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
-                    world
-                else world
-            | (None, None) -> world
+            let world =
+                match (this.GetParentOpt world, value) with
+                | (Some relationOld, Some relationNew) ->
+                    let parentOld = this.Resolve relationOld : Entity
+                    let parentNew = this.Resolve relationNew : Entity
+                    if parentOld.Exists world && parentNew.Exists world then
+                        let position = this.GetPositionLocal world + parentNew.GetPosition world
+                        let elevation = this.GetElevationLocal world + parentNew.GetElevation world
+                        let world = this.SetPosition position world
+                        let world = this.SetElevation elevation world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        world
+                    else world
+                | (Some relationOld, None) ->
+                    let parentOld = this.Resolve relationOld
+                    if parentOld.Exists world then
+                        let position = this.GetPositionLocal world + parentOld.GetPosition world
+                        let elevation = this.GetElevationLocal world + parentOld.GetElevation world
+                        let world = this.SetPosition position world
+                        let world = this.SetElevation elevation world
+                        let world = this.SetVisible (this.GetVisibleLocal world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world) world
+                        world
+                    else world
+                | (None, Some relationNew) ->
+                    let parentNew = this.Resolve relationNew
+                    if parentNew.Exists world then
+                        let position = this.GetPosition world - parentNew.GetPosition world
+                        let elevation = this.GetElevation world - parentNew.GetElevation world
+                        let world = this.SetPositionLocal position world
+                        let world = this.SetElevationLocal elevation world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        world
+                    else world
+                | (None, None) -> world
+            this.SetParentOpt value world
 
         /// Check whether the entity's parent exists.
         member this.ParentExists world =

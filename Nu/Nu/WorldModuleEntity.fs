@@ -461,14 +461,7 @@ module WorldModuleEntity =
         static member internal setEntityParentOpt value entity world =
             let newParentOpt = value
             let oldParentOpt = World.getEntityParentOpt entity world
-            let struct (changed, world) =
-                World.updateEntityStatePlus (fun entityState ->
-                    if newParentOpt <> entityState.ParentOpt then
-                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                        entityState.ParentOpt <- newParentOpt
-                        entityState
-                    else Unchecked.defaultof<_>)
-                    Property? ParentOpt newParentOpt entity world
+            let changed = newParentOpt <> oldParentOpt
             let world =
                 if changed then
                     let world =
@@ -487,16 +480,35 @@ module WorldModuleEntity =
                     let world =
                         match Option.map (resolve entity) newParentOpt with
                         | Some parent ->
-                            match world.EntityHierarchy.TryGetValue parent with
-                            | (true, children) ->
-                                let children = USet.add entity children
-                                { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                            | (false, _) ->
-                                let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
-                                let world = World.choose { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                                let world = if World.getEntityExists parent world then World.setEntityIsParent true parent world |> snd' else world
-                                world
+                            let world =
+                                match world.EntityHierarchy.TryGetValue parent with
+                                | (true, children) ->
+                                    let children = USet.add entity children
+                                    let world = { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
+                                    world
+                                | (false, _) ->
+                                    let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                                    let world = World.choose { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
+                                    let world = if World.getEntityExists parent world then World.setEntityIsParent true parent world |> snd' else world
+                                    world
+                            let world =
+                                if World.getEntityExists parent world then
+                                    let world = World.propagateEntityPosition3 entity parent world
+                                    let world = World.propagateEntityElevation3 entity parent world
+                                    let world = World.propagateEntityEnabled3 entity parent world
+                                    let world = World.propagateEntityVisible3 entity parent world
+                                    world
+                                else world
+                            world
                         | None -> world
+                    let struct (_, world) =
+                        World.updateEntityStatePlus (fun entityState ->
+                            if newParentOpt <> entityState.ParentOpt then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ParentOpt <- newParentOpt
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? ParentOpt newParentOpt entity world
                     world
                 else world
             struct (changed, world)
@@ -563,13 +575,14 @@ module WorldModuleEntity =
                 struct (changed, world)
             else struct (changed, world)
 
+        static member internal propagateEntityPosition3 parent child world =
+            let positionParent = World.getEntityPosition parent world
+            let positionLocal = World.getEntityPositionLocal child world
+            let position = positionParent + positionLocal
+            World.setEntityPosition position child world |> snd'
+
         static member internal propagateEntityPosition entity world =
-            World.traverseEntityDescendants (fun parent child world ->
-                let positionParent = World.getEntityPosition parent world
-                let positionLocal = World.getEntityPositionLocal child world
-                let position = positionParent + positionLocal
-                World.setEntityPosition position child world |> snd')
-                entity world
+            World.traverseEntityChildren World.propagateEntityPosition3 entity world
 
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
@@ -665,13 +678,14 @@ module WorldModuleEntity =
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
 
+        static member internal propagateEntityElevation3 parent child world =
+            let elevationParent = World.getEntityElevation parent world
+            let elevationLocal = World.getEntityElevationLocal child world
+            let elevation = elevationParent + elevationLocal
+            World.setEntityElevation elevation child world |> snd'
+
         static member internal propagateEntityElevation entity world =
-            World.traverseEntityDescendants (fun parent child world ->
-                let elevationParent = World.getEntityElevation parent world
-                let elevationLocal = World.getEntityElevationLocal child world
-                let elevation = elevationParent + elevationLocal
-                World.setEntityElevation elevation child world |> snd')
-                entity world
+            World.traverseEntityChildren World.propagateEntityElevation3 entity world
 
         static member internal setEntityElevationLocal value entity world =
 
@@ -730,13 +744,14 @@ module WorldModuleEntity =
                     struct (true, world)
             else struct (false, world)
 
+        static member internal propagateEntityEnabled3 parent child world =
+            let enabledParent = World.getEntityEnabled parent world
+            let enabledLocal = World.getEntityEnabledLocal child world
+            let enabled = enabledParent && enabledLocal
+            World.setEntityEnabled enabled child world |> snd'
+
         static member internal propagateEntityEnabled entity world =
-            World.traverseEntityDescendants (fun parent child world ->
-                let enabledParent = World.getEntityEnabled parent world
-                let enabledLocal = World.getEntityEnabledLocal child world
-                let enabled = enabledParent && enabledLocal
-                World.setEntityEnabled enabled child world |> snd')
-                entity world
+            World.traverseEntityChildren World.propagateEntityEnabled3 entity world
 
         static member internal setEntityEnabledLocal value entity world =
             let struct (changed, world) =
@@ -771,13 +786,14 @@ module WorldModuleEntity =
             let world = if changed && World.getEntityIsParent entity world then World.propagateEntityEnabled entity world else world
             struct (true, world)
 
+        static member internal propagateEntityVisible3 parent child world =
+            let visibleParent = World.getEntityVisible parent world
+            let visibleLocal = World.getEntityVisibleLocal child world
+            let visible = visibleParent && visibleLocal
+            World.setEntityVisible visible child world |> snd'
+
         static member internal propagateEntityVisible entity world =
-            World.traverseEntityDescendants (fun parent child world ->
-                let visibleParent = World.getEntityVisible parent world
-                let visibleLocal = World.getEntityVisibleLocal child world
-                let visible = visibleParent && visibleLocal
-                World.setEntityVisible visible child world |> snd')
-                entity world
+            World.traverseEntityChildren World.propagateEntityVisible3 entity world
 
         static member internal setEntityVisibleLocal value entity world =
             let struct (changed, world) =
@@ -1561,6 +1577,18 @@ module WorldModuleEntity =
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
             let world = World.addEntity false entityState entity world
+            
+            // propagate properties
+            let world =
+                if World.getEntityIsParent entity world then
+                    let world = World.propagateEntityPosition entity world
+                    let world = World.propagateEntityElevation entity world
+                    let world = World.propagateEntityEnabled entity world
+                    let world = World.propagateEntityVisible entity world
+                    world
+                else world
+
+            // fin
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
