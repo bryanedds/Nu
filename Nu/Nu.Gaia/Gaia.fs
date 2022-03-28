@@ -169,16 +169,14 @@ module Gaia =
         let groupNodeKey = scstring entity.Group
         let groupNode = form.hierarchyTreeView.Nodes.[groupNodeKey]
         entityNode.Name <- entityNodeKey
-        if entity.Has<NodeFacet> world then
-            match entity.GetParentNodeOpt world with
-            | Some relation ->
-                let entityParent = resolve entity relation
-                let entityParentNodeKey = scstring entityParent
-                match tryFindHierarchyTreeNode entityParentNodeKey form world with
-                | Some node -> node.Nodes.Add entityNode |> ignore
-                | None -> failwithumf ()
-            | None -> groupNode.Nodes.Add entityNode |> ignore
-        else groupNode.Nodes.Add entityNode |> ignore
+        match entity.GetParentOpt world with
+        | Some relation ->
+            let entityParent = resolve entity relation
+            let entityParentNodeKey = scstring entityParent
+            match tryFindHierarchyTreeNode entityParentNodeKey form world with
+            | Some node -> node.Nodes.Add entityNode |> ignore
+            | None -> failwithumf ()
+        | None -> groupNode.Nodes.Add entityNode |> ignore
 
     let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
         let entityNodeKey = scstring entity
@@ -200,7 +198,7 @@ module Gaia =
             let entities = World.getEntities group world
             for entity in entities do
                 let mutable parentNode = groupNode
-                for entity in entity.GetChildNodes world @ [entity] do
+                for entity in USet.add entity (entity.GetChildren world) do
                     let entityNodeKey = scstring entity
                     if not (parentNode.Nodes.ContainsKey entityNodeKey) then
                         let entityNode = TreeNode entity.Name
@@ -305,7 +303,7 @@ module Gaia =
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
 
-    let private handleNuChangeParentNodeOpt form evt world =
+    let private handleNuChangeParentOpt form evt world =
         let entity = Entity (atoa evt.Publisher.SimulantAddress)
         removeHierarchyTreeEntityNode entity form world
         addHierarchyTreeEntityNode entity form world
@@ -359,7 +357,7 @@ module Gaia =
                     updateEditorState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                         let entityPosition =
-                            if entity.Has<NodeFacet> world && entity.ParentNodeExists world
+                            if entity.ParentExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -400,7 +398,7 @@ module Gaia =
         world
 
     let private monitorEntityEvents (group : Group) form world =
-        let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> group --> Events.Wildcard) group world
+        let world = World.monitor (handleNuChangeParentOpt form) (Events.Change Property? ParentOpt --> group --> Events.Wildcard) group world
         let world = World.monitor (handleNuEntityRegister form) (Events.Register --> group --> Events.Wildcard) group world
         let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> group --> Events.Wildcard) group world
         world
@@ -499,7 +497,6 @@ module Gaia =
         let selectedGroup = (getEditorState world).SelectedGroup
         let entityNamesStrs =
             World.getEntities selectedGroup world |>
-            Seq.filter (fun entity -> entity.Has<NodeFacet> world) |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
             Seq.map (fun entity -> entity.Names |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
@@ -523,7 +520,7 @@ module Gaia =
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
                         let world = World.renameEntity entity entity2 world
-                        entity2.SetParentNodeOptWithAdjustment None world
+                        entity2.SetParentOptWithAdjustment None world
                     | _ ->
                         let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let entity = entityTds.DescribedEntity
@@ -531,20 +528,20 @@ module Gaia =
                         let world = World.renameEntity entity entity2 world
                         let parentRelation = Relation.makeParent ()
                         form.propertyValueTextBoxText <- scstring parentRelation
-                        if propertyDescriptor.Name = "ParentNodeOpt"
-                        then entity2.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                        if propertyDescriptor.Name = "ParentOpt"
+                        then entity2.SetParentOptWithAdjustment (Some parentRelation) world
                         else (form.applyPropertyButton.PerformClick (); world)
                 else
                     match parentEntityNamesStr with
                     | Constants.Editor.NonePick ->
-                        entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                        entityTds.DescribedEntity.SetParentOptWithAdjustment None world
                     | _ ->
                         let entity = entityTds.DescribedEntity
                         let parent = Entity parentEntityNamesStr
                         let parentRelation = Relation.relate parent.EntityAddress entity.EntityAddress
                         form.propertyValueTextBoxText <- scstring parentRelation
-                        if propertyDescriptor.Name = "ParentNodeOpt"
-                        then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                        if propertyDescriptor.Name = "ParentOpt"
+                        then entityTds.DescribedEntity.SetParentOptWithAdjustment (Some parentRelation) world
                         else (form.applyPropertyButton.PerformClick (); world)
             | _ -> world
         | _ -> world
@@ -1409,7 +1406,7 @@ module Gaia =
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                     let world =
-                        if entity.Has<NodeFacet> world && entity.ParentNodeExists world
+                        if entity.ParentExists world
                         then entity.SetPositionLocal entityPositionSnapped world
                         else entity.SetPosition entityPositionSnapped world
                     let world =
