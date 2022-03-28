@@ -565,16 +565,71 @@ module WorldModuleEntity =
                 struct (changed, world)
             else struct (changed, world)
 
+        static member internal propagateEntityPosition entity world =
+            World.traverseEntityDescendants (fun parent child world ->
+                let positionParent = World.getEntityPosition parent world
+                let positionLocal = World.getEntityPositionLocal child world
+                let position = positionParent + positionLocal
+                World.setEntityPosition position child world |> snd')
+                entity world
+
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
             if v2Neq value entityState.Transform.Position then
                 if entityState.Optimized then
                     entityState.Transform.Position <- value
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Position <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityPositionLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if v2Neq value entityState.PositionLocal then
+
+                // OPTIMIZATION: do position updates and propagation in-place as much as possible.
+                if entityState.Optimized then
+                    entityState.PositionLocal <- value
+                    let parentPosition = match Option.map (resolve entity) entityState.ParentOpt with Some parent -> World.getEntityPosition parent world | None -> Vector2.Zero
+                    entityState.Transform.Position <- parentPosition + value
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    struct (true, world)
+
+                else // do position updates and propagation out-of-place.
+
+                    // update PositionLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if value <> entityState.PositionLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.PositionLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? PositionLocal value entity world
+
+                    // compute parent position
+                    let parentPosition =
+                        match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
+                        | Some parent -> World.getEntityPosition parent world
+                        | None -> Vector2.Zero
+
+                    // update Position property
+                    let mutable transform = entityState.Transform
+                    transform.Position <- parentPosition + value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+
+                    // propagate Position
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    struct (true, world)
+
+            // nothing changed
             else struct (false, world)
 
         static member internal setEntitySize value entity world =
@@ -613,17 +668,72 @@ module WorldModuleEntity =
                     transform.Rotation <- value
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
+
+        static member internal propagateEntityElevation entity world =
+            World.traverseEntityDescendants (fun parent child world ->
+                let elevationParent = World.getEntityElevation parent world
+                let elevationLocal = World.getEntityElevationLocal child world
+                let elevation = elevationParent + elevationLocal
+                World.setEntityElevation elevation child world |> snd')
+                entity world
+
+        static member internal setEntityElevationLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if value <> entityState.ElevationLocal then
+
+                // OPTIMIZATION: do elevation updates and propagation in-place as much as possible.
+                if entityState.Optimized then
+                    entityState.ElevationLocal <- value
+                    let parentElevation = match Option.map (resolve entity) entityState.ParentOpt with Some parent -> World.getEntityElevation parent world | None -> 0.0f
+                    entityState.Transform.Elevation <- parentElevation + value
+                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    struct (true, world)
+
+                else // do elevation updates and propagation out-of-place.
+
+                    // update ElevationLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if value <> entityState.ElevationLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ElevationLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? ElevationLocal value entity world
+
+                    // compute parent elevation
+                    let parentElevation =
+                        match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
+                        | Some parent -> World.getEntityElevation parent world
+                        | None -> 0.0f
+
+                    // update Elevation property
+                    let mutable transform = entityState.Transform
+                    transform.Elevation <- parentElevation + value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+
+                    // propagate Elevation
+                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
         
         static member internal setEntityElevation value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Elevation then
                 if entityState.Optimized then
                     entityState.Transform.Elevation <- value
+                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Elevation <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityBounds entity world =
