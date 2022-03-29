@@ -464,9 +464,21 @@ module WorldModuleEntity =
             let changed = newParentOpt <> oldParentOpt
             let world =
                 if changed then
+
+                    // update property
+                    let struct (_, world) =
+                        World.updateEntityStatePlus (fun entityState ->
+                            if newParentOpt <> entityState.ParentOpt then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ParentOpt <- newParentOpt
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? ParentOpt newParentOpt entity world
+
+                    // remove from entity hierarchy
                     let world =
                         match Option.map (resolve entity) oldParentOpt with
-                        | Some oldParent ->
+                        | Some oldParent when World.getEntityExists oldParent world ->
                             match world.EntityHierarchy.TryGetValue oldParent with
                             | (true, children) ->
                                 let children = USet.remove entity children
@@ -476,39 +488,34 @@ module WorldModuleEntity =
                                     world
                                 else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
                             | (false, _) -> world
-                        | None -> world
+                        | _ -> world
+
+                    // add to entity hierarchy
                     let world =
                         match Option.map (resolve entity) newParentOpt with
-                        | Some parent ->
-                            let world =
-                                match world.EntityHierarchy.TryGetValue parent with
-                                | (true, children) ->
-                                    let children = USet.add entity children
-                                    let world = { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                                    world
-                                | (false, _) ->
-                                    let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
-                                    let world = World.choose { world with EntityHierarchy = UMap.add parent children world.EntityHierarchy }
-                                    let world = if World.getEntityExists parent world then World.setEntityIsParent true parent world |> snd' else world
-                                    world
-                            let world =
-                                if World.getEntityExists parent world then
-                                    let world = World.propagateEntityPosition3 entity parent world
-                                    let world = World.propagateEntityElevation3 entity parent world
-                                    let world = World.propagateEntityEnabled3 entity parent world
-                                    let world = World.propagateEntityVisible3 entity parent world
-                                    world
-                                else world
+                        | Some newParent when World.getEntityExists newParent world ->
+                            match world.EntityHierarchy.TryGetValue newParent with
+                            | (true, children) ->
+                                let children = USet.add entity children
+                                let world = { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
+                                world
+                            | (false, _) ->
+                                let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                                let world = World.choose { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
+                                let world = if World.getEntityExists newParent world then World.setEntityIsParent true newParent world |> snd' else world
+                                world
+                        | _ -> world
+
+                    // propagate properties from parent
+                    let world =
+                        match Option.map (resolve entity) newParentOpt with
+                        | Some newParent when World.getEntityExists newParent world ->
+                            let world = World.propagateEntityPosition3 newParent entity world
+                            let world = World.propagateEntityElevation3 newParent entity world
+                            let world = World.propagateEntityEnabled3 newParent entity world
+                            let world = World.propagateEntityVisible3 newParent entity world
                             world
-                        | None -> world
-                    let struct (_, world) =
-                        World.updateEntityStatePlus (fun entityState ->
-                            if newParentOpt <> entityState.ParentOpt then
-                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                                entityState.ParentOpt <- newParentOpt
-                                entityState
-                            else Unchecked.defaultof<_>)
-                            Property? ParentOpt newParentOpt entity world
+                        | _ -> world
                     world
                 else world
             struct (changed, world)

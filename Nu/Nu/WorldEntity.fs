@@ -480,9 +480,8 @@ module WorldEntityModule =
                         | :? Entity as parent ->
                             // only set parent if one was not specified by the descriptor properties
                             if not (List.exists (fun (name, _) -> name = Property? ParentOpt) descriptor.SimulantProperties) then
-                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                let struct (_, _, world) = entity.TrySetProperty Property? ParentOpt property world
-                                world
+                                let parentOpt = Some (relate entity parent)
+                                World.setEntityParentOpt parentOpt entity world |> snd'
                             else world
                         | _ -> world
                     let world =
