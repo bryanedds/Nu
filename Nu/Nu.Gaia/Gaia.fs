@@ -198,7 +198,7 @@ module Gaia =
             let entities = World.getEntities group world
             for entity in entities do
                 let mutable parentNode = groupNode
-                for entity in USet.add entity (entity.GetChildren world) do
+                for entity in Seq.append (Seq.singleton entity) (entity.GetChildren world) do
                     let entityNodeKey = scstring entity
                     if not (parentNode.Nodes.ContainsKey entityNodeKey) then
                         let entityNode = TreeNode entity.Name
@@ -519,13 +519,13 @@ module Gaia =
                     | Constants.Editor.NonePick ->
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
-                        let world = World.renameEntity entity entity2 world
+                        let world = World.renameEntityImmediate entity entity2 world
                         entity2.SetParentOptWithAdjustment None world
                     | _ ->
                         let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.append parent.EntityAddress.Names [|entity.Name|])
-                        let world = World.renameEntity entity entity2 world
+                        let world = World.renameEntityImmediate entity entity2 world
                         let parentRelation = Relation.makeParent ()
                         form.propertyValueTextBoxText <- scstring parentRelation
                         if propertyDescriptor.Name = "ParentOpt"

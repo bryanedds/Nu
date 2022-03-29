@@ -1708,8 +1708,34 @@ module WorldModuleEntity =
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
 
+        /// Duplicate an entity.
+        static member duplicateEntity source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                World.addEntity false entityState destination world
+                
+        /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
+        /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
+        static member renameEntityImmediate source (destination : Entity) world =
+            let entityStateOpt = World.getEntityStateOpt source world
+            match entityStateOpt :> obj with
+            | null -> world
+            | _ ->
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                let world = World.destroyEntityImmediate source world
+                World.addEntity false entityState destination world
+
+        /// Rename an entity.
+        [<FunctionBinding>]
+        static member renameEntity source destination world =
+            World.frame (World.renameEntityImmediate source destination) world
+
         /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
+        /// TODO: see if we can just use renameEntityImmediate instead.
         static member reassignEntityImmediate entity namesOpt (group : Group) world =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
@@ -1720,6 +1746,7 @@ module WorldModuleEntity =
             (transmutedEntity, world)
 
         /// Reassign an entity's identity and / or group.
+        /// TODO: see if we can just use renameEntity instead.
         [<FunctionBinding>]
         static member reassignEntity entity nameOpt group world =
             World.frame (World.reassignEntityImmediate entity nameOpt group >> snd) world
@@ -1848,25 +1875,6 @@ module WorldModuleEntity =
                     else world
                 else world
             else world
-
-        /// Duplicate an entity.
-        static member duplicateEntity source (destination : Entity) world =
-            let entityStateOpt = World.getEntityStateOpt source world
-            match entityStateOpt :> obj with
-            | null -> world
-            | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
-                World.addEntity false entityState destination world
-
-        /// Rename an entity.
-        static member renameEntity source (destination : Entity) world =
-            let entityStateOpt = World.getEntityStateOpt source world
-            match entityStateOpt :> obj with
-            | null -> world
-            | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
-                let world = World.destroyEntityImmediate source world
-                World.addEntity false entityState destination world
 
         /// Copy an entity to the clipboard.
         static member copyEntityToClipboard entity world =
