@@ -253,7 +253,7 @@ module Nu =
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                         (fun entityTree ->
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
@@ -270,7 +270,7 @@ module Nu =
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                         (fun entityTree ->
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
