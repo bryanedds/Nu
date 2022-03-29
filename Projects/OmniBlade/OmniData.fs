@@ -233,8 +233,29 @@ type TechType =
     | Purify
     static member frenchName tt = 
         match tt with 
-            |Critical -> "Coup Critique"
+            |Critical -> "Attaque Critique"
+            |DarkCritical -> "Malefice Critique" 
             |Slash -> "Entaille"
+            |PoisonCut -> "Coup Poison"
+            |PowerCut -> "Tranchage"
+            |DoubleCut -> "Coup Double"
+            |DispelCut -> "Coup Dissipateur"
+            |Fire -> "Feu"
+            |Flame -> "Flamme"
+            |Ice ->"Glace"
+            |Snowball -> "Boule de Neige"
+            |Bolt -> "Tonnerre"
+            |BoltBeam -> "Rayon de Tonnerre"
+            |Stone -> "Pierre"
+            |Quake -> "Tremblement"
+            |Cure -> "Soin"
+            |Empower -> "Renforcement"
+            |Enlighten -> "Lumiere"
+            |Protect -> "Protection"
+            |Muddle -> "Confusion"
+            |ConjureIfrit -> "Appel a l'Ifrit"
+            |Slow -> "Ralentissement"
+            |Purify -> "Purification"
             |_ -> string tt 
 
 type ActionType =

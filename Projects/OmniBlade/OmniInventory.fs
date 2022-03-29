@@ -213,7 +213,7 @@ type ConsumableType =
         |Ether -> "Ether"
         |HighEther -> "Ether Fort"
         |TurboEther -> "Ether Turbo"
-        |Revive -> "Remontant"
+        |Revive -> "Plume de Phenix"
 
     static member frenchGender ct = match ct with 
                                     |GreenHerb -> Feminin
