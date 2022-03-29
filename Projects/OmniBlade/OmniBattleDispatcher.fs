@@ -1166,7 +1166,7 @@ module BattleDispatcher =
              Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally _ ->
 
                 // input group
-                let inputName = "Input" + "+" + CharacterIndex.toEntityName index
+                let inputName = CharacterIndex.toEntityName index
                 Content.group inputName [Group.Visible <== ally --> fun ally -> ally.IsHealthy]
 
                     [// health bar
