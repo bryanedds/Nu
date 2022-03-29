@@ -1437,7 +1437,7 @@ module WorldModuleEntity =
                     if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
-                                (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity oldWorld
                                     let entityBoundsMax = World.getEntityStateBoundsMax entityState
@@ -1476,7 +1476,7 @@ module WorldModuleEntity =
                     if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
-                                (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity oldWorld
                                     let entityBoundsMax = World.getEntityStateBoundsMax entityState
@@ -1833,7 +1833,7 @@ module WorldModuleEntity =
                     let newBoundsMax = World.getEntityStateBoundsMax entityState
                     let entityTree =
                         MutantCache.mutateMutant
-                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                            (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                             (fun entityTree ->
                                 SpatialTree.removeElement oldOmnipresent oldBoundsMax entity entityTree
                                 SpatialTree.addElement newOmnipresent newBoundsMax entity entityTree
@@ -1851,7 +1851,7 @@ module WorldModuleEntity =
                         // update entity in entity tree
                         let entityTree =
                             MutantCache.mutateMutant
-                                (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                                 (fun entityTree -> SpatialTree.updateElement oldBoundsMax newBoundsMax entity entityTree; entityTree)
                                 (World.getEntityTree world)
                         let world = World.setEntityTree entityTree world

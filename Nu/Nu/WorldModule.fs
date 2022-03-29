@@ -197,7 +197,7 @@ module WorldModule =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let worldExtension = { DestructionListRev = []; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
                 { EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -212,7 +212,6 @@ module WorldModule =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
-                  Dispatchers = dispatchers
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -231,23 +230,23 @@ module WorldModule =
 
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
-            world.Dispatchers.GameDispatchers
+            world.WorldExtension.Dispatchers.GameDispatchers
 
         /// Get the screen dispatchers of the world.
         static member getScreenDispatchers world =
-            world.Dispatchers.ScreenDispatchers
+            world.WorldExtension.Dispatchers.ScreenDispatchers
 
         /// Get the group dispatchers of the world.
         static member getGroupDispatchers world =
-            world.Dispatchers.GroupDispatchers
+            world.WorldExtension.Dispatchers.GroupDispatchers
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
-            world.Dispatchers.EntityDispatchers
+            world.WorldExtension.Dispatchers.EntityDispatchers
 
         /// Get the facets of the world.
         static member getFacets world =
-            world.Dispatchers.Facets
+            world.WorldExtension.Dispatchers.Facets
 
     type World with // AmbientState
 

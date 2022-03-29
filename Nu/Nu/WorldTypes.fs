@@ -1216,8 +1216,9 @@ module WorldTypes =
           AudioPlayer : AudioPlayer }
 
     /// Keeps the World from occupying more than two cache lines.
-    and [<ReferenceEquality; NoComparison>] WorldExtension =
+    and [<ReferenceEquality; NoComparison>] internal WorldExtension =
         { DestructionListRev : Simulant list
+          Dispatchers : Dispatchers
           Plugin : NuPlugin
           ScriptingEnv : Scripting.Env
           ScriptingContext : Simulant }
@@ -1245,7 +1246,6 @@ module WorldTypes =
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, USet<Entity>>>>>
-              Dispatchers : Dispatchers // TODO: P1: put in WorldExtension to get rid of cache line 3.
               // cache line 3
               WorldExtension : WorldExtension }
 
@@ -1316,7 +1316,7 @@ module WorldTypes =
                 this.WorldExtension.ScriptingEnv
 
             member this.TryGetExtrinsic fnName =
-                this.Dispatchers.TryGetExtrinsic fnName
+                this.WorldExtension.Dispatchers.TryGetExtrinsic fnName
 
             member this.TryImport ty value =
                 match (ty.Name, value) with
