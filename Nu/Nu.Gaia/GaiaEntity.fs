@@ -34,7 +34,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             Reflection.getPropertyDefinitions typeof<RigidBodyFastFacet> @
             Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
-        elif propertyName = "Names" || propertyName = "ParentOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
+        elif propertyName = "Names" || propertyName = "Name" || propertyName = "ParentOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
@@ -82,7 +82,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             // change property
             match propertyName with
             
-            // change the name property
+            // change the names property
             | "Names" ->
                 let names = value :?> string array
                 if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) names then
@@ -94,6 +94,23 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     MessageBox.Show
                         ("Invalid entity names '" + scstring names + "'.",
                          "Invalid Names",
+                         MessageBoxButtons.OK) |>
+                        ignore
+                    world
+            
+            // change the name property
+            | "Name" ->
+                let name = value :?> string
+                if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
+                    let names = entity.Names |> Array.allButLast |> Array.add name
+                    let (entity, world) = World.reassignEntityImmediate entity (Some names) entity.Group world
+                    Globals.World <- world // must be set for property grid
+                    Globals.SelectEntity entity Globals.Form world
+                    world
+                else
+                    MessageBox.Show
+                        ("Invalid entity name '" + name + "'.",
+                         "Invalid Name",
                          MessageBoxButtons.OK) |>
                         ignore
                     world
@@ -133,7 +150,9 @@ and EntityTypeDescriptor (sourceOpt : obj) =
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity :> Simulant, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
+        let nameDescriptor = makePropertyDescriptor ({ PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }, [||])
         let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor contextOpt
+        let propertyDescriptors = nameDescriptor :: propertyDescriptors
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =

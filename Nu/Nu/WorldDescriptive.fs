@@ -23,6 +23,12 @@ type [<StructuralEquality; NoComparison>] EntityDescriptor =
 [<RequireQualifiedAccess>]
 module EntityDescriptor =
 
+    /// Derive a name from the dispatcher.
+    let getNameOpt dispatcher =
+        dispatcher.EntityProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
     /// Derive names from the dispatcher.
     let getNamesOpt dispatcher =
         dispatcher.EntityProperties |>
