@@ -194,6 +194,7 @@ module Gen =
         static member idAndNamesIf namesOpt =
             match namesOpt with
             | Some names ->
+                if Array.length names = 0 then failwith "Entity must have at least one name."
                 (Gen.id, names)
             | None ->
                 let id = Gen.id

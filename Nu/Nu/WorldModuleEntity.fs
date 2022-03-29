@@ -418,6 +418,7 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityNames entity world = (World.getEntityState entity world).Names
+        static member internal getEntityName entity world = (World.getEntityState entity world).Names |> Array.last
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
@@ -1946,6 +1947,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         EntityGetters.Assign ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntityNames entity world })
+        EntityGetters.Assign ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
 
     /// Initialize property setters.
     let private initSetters () =
