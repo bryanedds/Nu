@@ -456,6 +456,45 @@ module WorldModuleEntity =
             let world = Seq.fold (fun world child -> effect entity child world) world children
             Seq.fold (fun world child -> World.traverseEntityDescendants effect child world) world children
 
+        static member internal addEntityToHierarchy parentOpt entity world =
+            match Option.map (resolve entity) parentOpt with
+            | Some newParent when World.getEntityExists newParent world ->
+                match world.EntityHierarchy.TryGetValue newParent with
+                | (true, children) ->
+                    let children = USet.add entity children
+                    let world = { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
+                    world
+                | (false, _) ->
+                    let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                    let world = World.choose { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
+                    let world = if World.getEntityExists newParent world then World.setEntityIsParent true newParent world |> snd' else world
+                    world
+            | _ -> world
+
+        static member internal removeEntityFromHierarchy parentOpt entity world =
+            match Option.map (resolve entity) parentOpt with
+            | Some oldParent when World.getEntityExists oldParent world ->
+                match world.EntityHierarchy.TryGetValue oldParent with
+                | (true, children) ->
+                    let children = USet.remove entity children
+                    if USet.isEmpty children then
+                        let world = World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
+                        let world = if World.getEntityExists oldParent world then World.setEntityIsParent false oldParent world |> snd' else world
+                        world
+                    else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
+                | (false, _) -> world
+            | _ -> world
+
+        static member internal propagateEntityProperties3 parentOpt entity world =
+            match Option.map (resolve entity) parentOpt with
+            | Some newParent when World.getEntityExists newParent world ->
+                let world = World.propagateEntityPosition3 newParent entity world
+                let world = World.propagateEntityElevation3 newParent entity world
+                let world = World.propagateEntityEnabled3 newParent entity world
+                let world = World.propagateEntityVisible3 newParent entity world
+                world
+            | _ -> world
+
         static member internal setEntityParentOpt value entity world =
             let newParentOpt = value
             let oldParentOpt = World.getEntityParentOpt entity world
@@ -473,48 +512,14 @@ module WorldModuleEntity =
                             else Unchecked.defaultof<_>)
                             Property? ParentOpt newParentOpt entity world
 
-                    // remove from entity hierarchy
-                    let world =
-                        match Option.map (resolve entity) oldParentOpt with
-                        | Some oldParent when World.getEntityExists oldParent world ->
-                            match world.EntityHierarchy.TryGetValue oldParent with
-                            | (true, children) ->
-                                let children = USet.remove entity children
-                                if USet.isEmpty children then
-                                    let world = World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
-                                    let world = if World.getEntityExists oldParent world then World.setEntityIsParent false oldParent world |> snd' else world
-                                    world
-                                else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
-                            | (false, _) -> world
-                        | _ -> world
-
-                    // add to entity hierarchy
-                    let world =
-                        match Option.map (resolve entity) newParentOpt with
-                        | Some newParent when World.getEntityExists newParent world ->
-                            match world.EntityHierarchy.TryGetValue newParent with
-                            | (true, children) ->
-                                let children = USet.add entity children
-                                let world = { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
-                                world
-                            | (false, _) ->
-                                let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
-                                let world = World.choose { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
-                                let world = if World.getEntityExists newParent world then World.setEntityIsParent true newParent world |> snd' else world
-                                world
-                        | _ -> world
+                    // update entity hierarchy
+                    let world = World.removeEntityFromHierarchy oldParentOpt entity world
+                    let world = World.addEntityToHierarchy newParentOpt entity world
 
                     // propagate properties from parent
-                    let world =
-                        match Option.map (resolve entity) newParentOpt with
-                        | Some newParent when World.getEntityExists newParent world ->
-                            let world = World.propagateEntityPosition3 newParent entity world
-                            let world = World.propagateEntityElevation3 newParent entity world
-                            let world = World.propagateEntityEnabled3 newParent entity world
-                            let world = World.propagateEntityVisible3 newParent entity world
-                            world
-                        | _ -> world
+                    let world = World.propagateEntityProperties3 newParentOpt entity world
                     world
+
                 else world
             struct (changed, world)
 
@@ -1458,6 +1463,10 @@ module WorldModuleEntity =
 
                 // get old world for entity tree rebuild
                 let oldWorld = world
+
+                // remove entity from hierarchy
+                let parentOpt = World.getEntityParentOpt entity world
+                let world = World.removeEntityFromHierarchy parentOpt entity world
                 
                 // mutate entity tree if entity is selected
                 let world =
@@ -1569,7 +1578,11 @@ module WorldModuleEntity =
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
             let world = World.addEntity false entityState entity world
-            
+
+            // update entity hierarchy
+            let parentOpt = World.getEntityParentOpt entity world
+            let world = World.addEntityToHierarchy parentOpt entity world
+
             // propagate properties
             let world =
                 if World.getEntityIsParent entity world then
@@ -1669,8 +1682,26 @@ module WorldModuleEntity =
                 | None -> entityState
                 | Some names -> { entityState with Names = names }
 
-            // try to add entity state to the world
-            let entity = Entity (group.GroupAddress <-- rtoa<Entity> entityState.Names)
+            // make entity address
+            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Names
+
+            // make entity reference
+            let entity = Entity entityAddress
+
+            // apply publish bindings state
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
+            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
+            | (false, _) -> ()
+
+            // apply publish changes state
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
+            | (false, _) -> ()
+
+            // apply is parent state
+            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+
+            // add entity's state to world
             let world =
                 if World.getEntityExists entity world then
                     if World.getEntityDestroying entity world
@@ -1678,6 +1709,12 @@ module WorldModuleEntity =
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
             let world = World.addEntity true entityState entity world
+
+            // update entity hierarchy
+            let parentOpt = World.getEntityParentOpt entity world
+            let world = World.addEntityToHierarchy parentOpt entity world
+
+            // fin
             (entity, world)
 
         /// Read an entity from a file.
