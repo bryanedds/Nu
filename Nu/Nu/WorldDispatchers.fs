@@ -1300,11 +1300,11 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
+            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.Default.Image7
+             define Entity.AnimationSheet Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
@@ -1491,11 +1491,11 @@ module AnimatedSpriteDispatcherModule =
             [typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
+            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.Default.Image7
+             define Entity.AnimationSheet Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
