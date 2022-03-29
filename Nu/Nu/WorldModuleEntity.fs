@@ -1439,7 +1439,7 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
                                 (fun entityTree ->
-                                    let entityState = World.getEntityState entity oldWorld
+                                    let entityState = World.getEntityState entity world
                                     let entityBoundsMax = World.getEntityStateBoundsMax entityState
                                     SpatialTree.addElement (entityState.Omnipresent || entityState.Absolute) entityBoundsMax entity entityTree
                                     entityTree)
@@ -1476,7 +1476,7 @@ module WorldModuleEntity =
                     if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree world)
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity oldWorld
                                     let entityBoundsMax = World.getEntityStateBoundsMax entityState
