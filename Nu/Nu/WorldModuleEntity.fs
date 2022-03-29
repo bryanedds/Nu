@@ -844,12 +844,15 @@ module WorldModuleEntity =
                 if entityState.Optimized then
                     entityState.Transform.Position <- position
                     entityState.Transform.Size <- size
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Position <- position
                     transform.Size <- size
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityCenter entity world =
@@ -859,15 +862,7 @@ module WorldModuleEntity =
         static member internal setEntityCenter value entity world =
             let entityState = World.getEntityState entity world
             let position = value - entityState.Transform.Size * 0.5f
-            if v2Neq entityState.Transform.Position position then
-                if entityState.Optimized then
-                    entityState.Transform.Position <- value
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Position <- position
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
-            else struct (false, world)
+            World.setEntityPosition position entity world
 
         static member internal getEntityBottom entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -876,15 +871,7 @@ module WorldModuleEntity =
         static member internal setEntityBottom value entity world =
             let entityState = World.getEntityState entity world
             let position = value - entityState.Transform.Size.WithY 0.0f * 0.5f
-            if v2Neq entityState.Transform.Position position then
-                if entityState.Optimized then
-                    entityState.Transform.Position <- value
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Position <- position
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
-            else struct (false, world)
+            World.setEntityPosition position entity world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
