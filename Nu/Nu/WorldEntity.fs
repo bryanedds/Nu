@@ -472,18 +472,25 @@ module WorldEntityModule =
                 | Choice1Of3 (lens, sieve, unfold, mapper) ->
                     let world = World.expandEntities lens sieve unfold mapper origin owner group world
                     (None, world)
-                | Choice2Of3 (_, descriptor, handlers, binds, content) ->
-                    let (entity, world) =
-                        World.createEntity4 DefaultOverlay descriptor group world
-                    let world =
+                | Choice2Of3 (entityName, descriptor, handlers, binds, content) ->
+                    let entityNames =
                         match owner with
-                        | :? Entity as parent ->
-                            // only set parent if one was not specified by the descriptor properties
-                            if not (List.exists (fun (name, _) -> name = Property? ParentOpt) descriptor.SimulantProperties) then
-                                let parentOpt = Some (relate entity parent)
-                                World.setEntityParentOpt parentOpt entity world |> snd'
-                            else world
-                        | _ -> world
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Names
+                        | _ -> [|entityName|]
+                    let descriptor = { descriptor with SimulantNamesOpt = Some entityNames }
+                    let (entity, world) = World.createEntity4 DefaultOverlay descriptor group world
+                    let handlers =
+                        List.map (fun (handler, eventAddress, _) ->
+                            let eventNameIndex = Address.findIndex (fun name -> name = "Event") eventAddress
+                            let partialAddress = Address.take (inc eventNameIndex) eventAddress
+                            (handler, partialAddress --> entity, entity :> Simulant)) handlers
+                    let binds = List.map (fun (_, left, right, twoWay) -> (entity :> Simulant, left, right, twoWay)) binds
+                    let world =
+                        // only set parent if one was not specified by the descriptor properties
+                        if not (List.exists (fun (name, _) -> name = Property? ParentOpt) descriptor.SimulantProperties) then
+                            let parentOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
+                            World.setEntityParentOpt parentOpt entity world |> snd'
+                        else world
                     let world =
                         World.monitor
                             (fun _ world -> (Cascade, World.destroyEntity entity world))
@@ -514,12 +521,13 @@ module WorldEntityModule =
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
-                    let originSimulant = ContentOrigin.getSimulant origin
                     let entityNames =
-                        match originSimulant with
-                        | :? Entity as originEntity -> Array.add entityName originEntity.Names
+                        match owner with
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Names
                         | _ -> [|entityName|]
                     let (entity, world) = World.readEntityFromFile filePath (Some entityNames) group world
+                    let parentOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
+                    let world = World.setEntityParentOpt parentOpt entity world |> snd'
                     let world =
                         match origin with
                         | SimulantOrigin simulant

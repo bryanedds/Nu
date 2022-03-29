@@ -106,7 +106,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                 | None -> Unjustified true
              Entity.Margins == v2 30.0f 30.0f]
-            [Content.button (name + "+Left")
+            [Content.button "Left"
                 [Entity.PositionLocal == v2 186.0f 18.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
@@ -117,7 +117,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | Some dialog -> match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
                     | None -> ""
                  Entity.ClickEvent ==> msg promptLeft]
-             Content.button (name + "+Right")
+             Content.button "Right"
                 [Entity.PositionLocal == v2 486.0f 18.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
