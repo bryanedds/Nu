@@ -57,10 +57,6 @@ module WorldModuleEntity =
     let mutable changeEventNamesFree = true
     let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
-    // OPTIMIZATION: cache empty children
-    let emptyChildrenImperative = USet.makeEmpty HashIdentity.Structural Imperative
-    let emptyChildrenFunctional = USet.makeEmpty HashIdentity.Structural Functional
-
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
@@ -436,11 +432,12 @@ module WorldModuleEntity =
 
         static member internal getEntityChildren entity world =
             match world.EntityHierarchy.TryGetValue entity with
-            | (true, children) -> children
-            | (false, _) ->
-                match World.getCollectionConfig world with
-                | Imperative -> emptyChildrenImperative
-                | Functional -> emptyChildrenFunctional
+            | (true, children) ->
+                children |>
+                Array.ofSeq |>
+                Array.filter (flip World.getEntityExists world) |>
+                seq
+            | (false, _) -> Seq.empty
 
         static member internal getEntityDescendants entity world =
             seq {
@@ -451,12 +448,12 @@ module WorldModuleEntity =
 
         static member internal traverseEntityChildren effect entity (world : World) =
             let children = World.getEntityChildren entity world
-            USet.fold (fun world child -> effect entity child world) world children
+            Seq.fold (fun world child -> effect entity child world) world children
 
         static member internal traverseEntityDescendants effect entity (world : World) =
             let children = World.getEntityChildren entity world
-            let world = USet.fold (fun world child -> effect entity child world) world children
-            USet.fold (fun world child -> World.traverseEntityDescendants effect child world) world children
+            let world = Seq.fold (fun world child -> effect entity child world) world children
+            Seq.fold (fun world child -> World.traverseEntityDescendants effect child world) world children
 
         static member internal setEntityParentOpt value entity world =
             let newParentOpt = value
