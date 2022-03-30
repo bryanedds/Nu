@@ -49,27 +49,6 @@ module Gaia =
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
-    let private getExpansionState (treeView : TreeView) =
-        let nodeStates =
-            Seq.fold (fun state (node : TreeNode) ->
-                if node.Nodes.Count = 0 then state
-                else (node.Name, node.IsExpanded) :: state)
-                []
-                (enumerable treeView.Nodes)
-        Map.ofSeq nodeStates
-        
-    let private restoreExpansionState (treeView : TreeView) treeState =
-        Map.iter
-            (fun nodeName nodeExpansion ->
-                match treeView.Nodes.Find (nodeName, true) with
-                | [||] -> ()
-                | nodes ->
-                    let node = nodes.[0]
-                    if nodeExpansion
-                    then node.Expand ()
-                    else node.Collapse ())
-            treeState
-
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
@@ -114,7 +93,7 @@ module Gaia =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
         // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
-        let treeState = getExpansionState form.hierarchyTreeView
+        let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
         let selectedGroup = (getEditorState world).SelectedGroup
         let groupNode = TreeNode selectedGroup.Name
@@ -133,7 +112,7 @@ module Gaia =
                     parentNode.Nodes.Add childNode |> ignore
                     parentNode <- childNode
                 else parentNode <- parentNode.Nodes.[childNodeKey]
-        restoreExpansionState form.hierarchyTreeView treeState
+        form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
         groupNode.ExpandAll () // HACK: just expand all until node state restoration is working.
 
     let private refreshGroupTabs (form : GaiaForm) world =
