@@ -118,7 +118,7 @@ module Gaia =
         form.hierarchyTreeView.Nodes.Clear ()
         let selectedGroup = (getEditorState world).SelectedGroup
         let groupNode = TreeNode selectedGroup.Name
-        groupNode.Name <- scstring selectedGroup
+        groupNode.Name <- Constants.Editor.GroupNodeKey
         form.hierarchyTreeView.Nodes.Add groupNode |> ignore
         let entities = World.getEntities selectedGroup world
         for entity in entities do
@@ -240,7 +240,9 @@ module Gaia =
             (Cascade, world)
         | UnregisteringData simulant ->
             let nodeKey = scstring (rtoa (simulant :?> Entity).Names)
-            form.hierarchyTreeView.Nodes.RemoveByKey nodeKey
+            for node in collectHierarchyTreeNodes form world do
+                if node.Name = nodeKey then
+                    node.Remove ()
             match form.entityPropertyGrid.SelectedObject with
             | null -> (Cascade, world)
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -748,10 +750,13 @@ module Gaia =
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
-                let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
-                let entity = Entity ((getEditorState world).SelectedGroup.GroupAddress <-- atoa address)
-                selectEntity entity form world
-                world
+                let nodeKey = form.hierarchyTreeView.SelectedNode.Name
+                if nodeKey <> Constants.Editor.GroupNodeKey then
+                    let address = Address.makeFromString nodeKey
+                    let entity = Entity ((getEditorState world).SelectedGroup.GroupAddress <-- atoa address)
+                    selectEntity entity form world
+                    world
+                else world
             else world
 
     let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
