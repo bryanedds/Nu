@@ -131,6 +131,7 @@ module WorldModuleEntity =
             World.choose { world with EntityStates = entityStates }
 
         static member private addEntityState entityState (entity : Entity) world =
+            World.synchronizeEntityState entityState entity world
             World.entityStateAdder entityState entity world
 
         static member private removeEntityState (entity : Entity) world =
@@ -1586,9 +1587,6 @@ module WorldModuleEntity =
             // make entity reference
             let entity = Entity entityAddress
 
-            // synchronize entity state
-            World.synchronizeEntityState entityState entity world
-
             // add entity's state to world
             let world =
                 if World.getEntityExists entity world then
@@ -1707,9 +1705,6 @@ module WorldModuleEntity =
             // make entity reference
             let entity = Entity entityAddress
 
-            // synchronize entity state
-            World.synchronizeEntityState entityState entity world
-
             // add entity's state to world
             let world =
                 if World.getEntityExists entity world then
@@ -1762,7 +1757,6 @@ module WorldModuleEntity =
             | null -> world
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
-                World.synchronizeEntityState entityState destination world
                 World.addEntity false entityState destination world
                 
         /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
@@ -1789,10 +1783,9 @@ module WorldModuleEntity =
             let world = World.destroyEntityImmediate entity world
             let (id, names) = Gen.idAndNamesIf namesOpt
             let entityState = { entityState with Id = id; Names = names }
-            let transmutedEntity = Entity (group.GroupAddress <-- rtoa<Entity> names)
-            World.synchronizeEntityState entityState transmutedEntity world
-            let world = World.addEntity false entityState transmutedEntity world
-            (transmutedEntity, world)
+            let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
+            let world = World.addEntity false entityState entity world
+            (entity, world)
 
         /// Reassign an entity's identity and / or group.
         /// TODO: see if we can just use renameEntity instead.
@@ -1951,7 +1944,6 @@ module WorldModuleEntity =
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
-                World.synchronizeEntityState entityState entity world
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
