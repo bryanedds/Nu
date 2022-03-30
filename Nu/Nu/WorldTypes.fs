@@ -709,8 +709,9 @@ module WorldTypes =
           mutable ParentOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
-          mutable FacetNames : string Set // TODO: P1: move to cache line 3.
-          mutable Order : int64 // used for ordering in multiple places.
+          mutable FacetNames : string Set
+          mutable Order : int64
+          // cache line 4 (half-way through Id)
           Id : Guid
           Names : string array }
 
