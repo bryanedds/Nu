@@ -390,6 +390,13 @@ module WorldEntityModule =
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
 
+        // Get all the entities not parented by another entity.
+        static member getEntitiesRooted group world =
+            World.getEntities group world |>
+            Seq.filter (fun entity -> Option.isNone (entity.GetParentOpt world)) |>
+            Seq.toArray |>
+            seq
+
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntity (entity : Entity) world =
