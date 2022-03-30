@@ -1000,6 +1000,7 @@ module Gaia =
                 Globals.Screen / groupTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = selectedGroup}) world
             refreshEntityPropertyGrid form world
+            refreshHierarchyTreeView form world
             selectGroup selectedGroup form world
             world
 
