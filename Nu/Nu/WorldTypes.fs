@@ -710,7 +710,7 @@ module WorldTypes =
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set // TODO: P1: move to cache line 3.
-          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          mutable CreationTimeStamp : int64 // used for ordering in multiple places.
           Id : Guid
           Names : string array }
 

@@ -430,6 +430,41 @@ module WorldEntityModule =
                     picked)
                 entitiesSorted
 
+        /// Try to find the entity in the given entity's group with the closest previous time stamp.
+        static member tryFindPreviousEntity (entity : Entity) world =
+            let timeStamp = World.getEntityCreationTimeStamp entity world
+            let mutable previousTimeStampDeltaOpt = ValueNone
+            let mutable previousOpt = ValueNone
+            let entities = World.getEntities entity.Group world |> Seq.toArray
+            for entity2 in entities do
+                let timeStamp2 = World.getEntityCreationTimeStamp entity2 world
+                let timeStampDelta = timeStamp - timeStamp2
+                if timeStampDelta > 0L then
+                    match previousTimeStampDeltaOpt with
+                    | ValueSome timeStampDelta2 ->
+                        if timeStampDelta < timeStampDelta2 then
+                            previousTimeStampDeltaOpt <- ValueSome timeStampDelta
+                            previousOpt <- ValueSome entity2
+                    | ValueNone ->
+                        previousTimeStampDeltaOpt <- ValueSome timeStampDelta
+                        previousOpt <- ValueSome entity2
+            match previousOpt with
+            | ValueSome previous -> Some previous
+            | ValueNone -> None
+
+        /// Reorder an entity's creation time stamp between before and after's.
+        static member reorderEntity entityBefore entityAfter entity world =
+            let timeStampBefore = World.getEntityCreationTimeStamp entityBefore world;
+            let timeStampAfter = World.getEntityCreationTimeStamp entityAfter world;
+            let timeStamp = (timeStampBefore + timeStampAfter) / 2L;
+            World.setEntityCreationTimeStamp timeStamp entity world |> snd'
+
+        /// Reorder an entity's creation time stamp between target and its previous sibling's.
+        static member insertEntity target entity world =
+            match World.tryFindPreviousEntity target world with
+            | Some previous -> World.reorderEntity previous target entity world
+            | None -> world
+
         /// Write multiple entities to a group descriptor.
         static member writeEntities entities groupDescriptor world =
             entities |>

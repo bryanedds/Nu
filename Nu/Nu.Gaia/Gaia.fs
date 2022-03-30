@@ -217,12 +217,14 @@ module Gaia =
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
 
-    let private handleNuGroupLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Screen>) world =
+    let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
+        Globals.World <- world // handle re-entry
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
 
     let private handleNuEntityLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Screen>) world =
+        Globals.World <- world // handle re-entry
         match evt.Data with
         | RegisterData _ ->
             refreshHierarchyTreeView form world
@@ -1463,11 +1465,13 @@ module Gaia =
         let treeViewSorter =
             { new IComparer with
                 member this.Compare (left, right) =
-                    let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let rightName = ((right :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let leftNameBiased = if Gen.isName leftName then "~" + leftName else leftName
-                    let rightNameBiased = if Gen.isName rightName then "~" + rightName else rightName
-                    String.CompareOrdinal (leftNameBiased, rightNameBiased) }
+                    let world = Globals.World
+                    let selectedGroup = (getEditorState world).SelectedGroup
+                    let leftEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((left :?> TreeNode).Name.Split Constants.Address.Separator))
+                    let rightEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((right :?> TreeNode).Name.Split Constants.Address.Separator))
+                    if leftEntity.Exists world && rightEntity.Exists world
+                    then (leftEntity.GetCreationTimeStamp world).CompareTo (rightEntity.GetCreationTimeStamp world)
+                    else 0 }
 
         // same for hierarchy tree view...
         form.hierarchyTreeView.Sorted <- true
