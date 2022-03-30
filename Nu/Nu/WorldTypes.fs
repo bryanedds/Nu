@@ -711,7 +711,7 @@ module WorldTypes =
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          // cache line 4 (half-way through Id)
+          // cache line 4 (3/4-way through Id)
           Id : Guid
           Names : string array }
 
