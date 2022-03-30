@@ -84,8 +84,6 @@
 			this.groupTabPage = new System.Windows.Forms.TabPage();
 			this.groupPropertyGrid = new System.Windows.Forms.PropertyGrid();
 			this.tabControl1 = new System.Windows.Forms.TabControl();
-			this.tabPage4 = new System.Windows.Forms.TabPage();
-			this.entityTreeView = new System.Windows.Forms.TreeView();
 			this.tabPage3 = new System.Windows.Forms.TabPage();
 			this.hierarchyTreeView = new System.Windows.Forms.TreeView();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
@@ -217,7 +215,6 @@
 			this.panel1.SuspendLayout();
 			this.groupTabPage.SuspendLayout();
 			this.tabControl1.SuspendLayout();
-			this.tabPage4.SuspendLayout();
 			this.tabPage3.SuspendLayout();
 			this.groupTabControl.SuspendLayout();
 			this.toolStrip.SuspendLayout();
@@ -845,33 +842,12 @@
 			// tabControl1
 			// 
 			this.tabControl1.Controls.Add(this.tabPage3);
-			this.tabControl1.Controls.Add(this.tabPage4);
 			this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tabControl1.Location = new System.Drawing.Point(0, 0);
 			this.tabControl1.Name = "tabControl1";
 			this.tabControl1.SelectedIndex = 0;
 			this.tabControl1.Size = new System.Drawing.Size(265, 454);
 			this.tabControl1.TabIndex = 2;
-			// 
-			// tabPage4
-			// 
-			this.tabPage4.Controls.Add(this.entityTreeView);
-			this.tabPage4.Location = new System.Drawing.Point(4, 22);
-			this.tabPage4.Name = "tabPage4";
-			this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage4.Size = new System.Drawing.Size(257, 428);
-			this.tabPage4.TabIndex = 0;
-			this.tabPage4.Text = "Entities";
-			this.tabPage4.UseVisualStyleBackColor = true;
-			// 
-			// entityTreeView
-			// 
-			this.entityTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.entityTreeView.HideSelection = false;
-			this.entityTreeView.Location = new System.Drawing.Point(3, 3);
-			this.entityTreeView.Name = "entityTreeView";
-			this.entityTreeView.Size = new System.Drawing.Size(251, 422);
-			this.entityTreeView.TabIndex = 1;
 			// 
 			// tabPage3
 			// 
@@ -1681,7 +1657,6 @@
 			this.panel1.ResumeLayout(false);
 			this.groupTabPage.ResumeLayout(false);
 			this.tabControl1.ResumeLayout(false);
-			this.tabPage4.ResumeLayout(false);
 			this.tabPage3.ResumeLayout(false);
 			this.groupTabControl.ResumeLayout(false);
 			this.toolStrip.ResumeLayout(false);
@@ -1722,7 +1697,6 @@
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         public System.Windows.Forms.SplitContainer splitContainer1;
         public System.Windows.Forms.PropertyGrid entityPropertyGrid;
-        public System.Windows.Forms.TreeView entityTreeView;
         private System.Windows.Forms.TabPage tabPage;
         public System.Windows.Forms.TabControl groupTabControl;
         private System.Windows.Forms.SplitContainer splitContainer4;
@@ -1765,7 +1739,6 @@
         public System.Windows.Forms.TabControl propertyTabControl;
         public System.Windows.Forms.PropertyGrid groupPropertyGrid;
         private System.Windows.Forms.TabControl tabControl1;
-        private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.TabPage tabPage3;
         public System.Windows.Forms.TreeView hierarchyTreeView;
         private System.Windows.Forms.SplitContainer splitContainer7;
