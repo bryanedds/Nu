@@ -15,7 +15,7 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let mutable private IdForNames = 0UL
+    let mutable private IdForName = 0UL
     let mutable private Id64 = 0UL
     let mutable private Id32 = 0u
 
@@ -118,7 +118,7 @@ module Gen =
 
         /// Generate a unique name.
         static member name =
-            Gen.namePrefix + string Gen.idForNames + Gen.nameSeparator + string Gen.id
+            Gen.namePrefix + string Gen.id
 
         /// Check that a name is generated.
         static member isName (name : string) =
@@ -182,8 +182,8 @@ module Gen =
             Guid arr
 
         /// Generate a 32-bit unique counter.
-        static member private idForNames =
-            lock Lock (fun () -> IdForNames <- inc IdForNames; IdForNames)
+        static member idForName =
+            lock Lock (fun () -> IdForName <- inc IdForName; IdForName)
 
         /// Derive a unique id and name if given none.
         static member idAndNameIf nameOpt =
@@ -191,7 +191,7 @@ module Gen =
             let name =
                 match nameOpt with
                 | Some name -> name
-                | None -> Gen.namePrefix + string Gen.idForNames + Gen.nameSeparator + string id
+                | None -> Gen.namePrefix + string id
             (id, name)
 
         /// Derive a unique id and names if given none.
@@ -202,7 +202,7 @@ module Gen =
                 (Gen.id, names)
             | None ->
                 let id = Gen.id
-                let name = Gen.namePrefix + string Gen.idForNames + Gen.nameSeparator + string id
+                let name = Gen.namePrefix + string id
                 (id, [|name|])
 
         /// Generate a unique non-zero 64-bit id.
