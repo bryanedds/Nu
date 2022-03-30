@@ -191,6 +191,24 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
 
+        static member private synchronizeEntityState (entityState : EntityState) (entity : Entity) world =
+
+            // grab address
+            let entityAddress = entity.EntityAddress
+
+            // apply publish bindings state
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
+            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
+            | (false, _) -> ()
+            
+            // apply publish changes state
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
+            | (false, _) -> ()
+            
+            // apply is parent state
+            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+
         static member inline private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
@@ -458,7 +476,7 @@ module WorldModuleEntity =
 
         static member internal addEntityToHierarchy parentOpt entity world =
             match Option.map (resolve entity) parentOpt with
-            | Some newParent when World.getEntityExists newParent world ->
+            | Some newParent ->
                 match world.EntityHierarchy.TryGetValue newParent with
                 | (true, children) ->
                     let children = USet.add entity children
@@ -469,11 +487,11 @@ module WorldModuleEntity =
                     let world = World.choose { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
                     let world = if World.getEntityExists newParent world then World.setEntityIsParent true newParent world |> snd' else world
                     world
-            | _ -> world
+            | None -> world
 
         static member internal removeEntityFromHierarchy parentOpt entity world =
             match Option.map (resolve entity) parentOpt with
-            | Some oldParent when World.getEntityExists oldParent world ->
+            | Some oldParent ->
                 match world.EntityHierarchy.TryGetValue oldParent with
                 | (true, children) ->
                     let children = USet.remove entity children
@@ -483,7 +501,7 @@ module WorldModuleEntity =
                         world
                     else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
                 | (false, _) -> world
-            | _ -> world
+            | None -> world
 
         static member internal propagateEntityProperties3 parentOpt entity world =
             match Option.map (resolve entity) parentOpt with
@@ -1568,18 +1586,8 @@ module WorldModuleEntity =
             // make entity reference
             let entity = Entity entityAddress
 
-            // apply publish bindings state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
-            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
-            | (false, _) -> ()
-
-            // apply publish changes state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
-            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
-            | (false, _) -> ()
-
-            // apply is parent state
-            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+            // synchronize entity state
+            World.synchronizeEntityState entityState entity world
 
             // add entity's state to world
             let world =
@@ -1699,18 +1707,8 @@ module WorldModuleEntity =
             // make entity reference
             let entity = Entity entityAddress
 
-            // apply publish bindings state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
-            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
-            | (false, _) -> ()
-
-            // apply publish changes state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
-            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
-            | (false, _) -> ()
-
-            // apply is parent state
-            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+            // synchronize entity state
+            World.synchronizeEntityState entityState entity world
 
             // add entity's state to world
             let world =
@@ -1764,6 +1762,7 @@ module WorldModuleEntity =
             | null -> world
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                World.synchronizeEntityState entityState destination world
                 World.addEntity false entityState destination world
                 
         /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
@@ -1791,6 +1790,7 @@ module WorldModuleEntity =
             let (id, names) = Gen.idAndNamesIf namesOpt
             let entityState = { entityState with Id = id; Names = names }
             let transmutedEntity = Entity (group.GroupAddress <-- rtoa<Entity> names)
+            World.synchronizeEntityState entityState transmutedEntity world
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
@@ -1951,6 +1951,7 @@ module WorldModuleEntity =
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
+                World.synchronizeEntityState entityState entity world
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
