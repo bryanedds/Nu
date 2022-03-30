@@ -507,7 +507,7 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
-          Weight : int64
+          Order : int64
           Id : Guid }
 
         interface SimulantState with
@@ -530,7 +530,7 @@ module WorldTypes =
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Weight = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
 
         /// Try to get an xtension property and its type information.
@@ -577,7 +577,7 @@ module WorldTypes =
           SplashOpt : Splash option
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
-          Weight : int64
+          Order : int64
           Id : Guid
           Name : string }
 
@@ -598,7 +598,7 @@ module WorldTypes =
               SplashOpt = None
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Weight = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
 
@@ -641,7 +641,7 @@ module WorldTypes =
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
-          Weight : int64
+          Order : int64
           Id : Guid
           Name : string }
 
@@ -657,7 +657,7 @@ module WorldTypes =
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Weight = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
 
@@ -710,7 +710,7 @@ module WorldTypes =
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set // TODO: P1: move to cache line 3.
-          mutable Weight : int64 // used for ordering in multiple places.
+          mutable Order : int64 // used for ordering in multiple places.
           Id : Guid
           Names : string array }
 
@@ -734,7 +734,7 @@ module WorldTypes =
               ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              Weight = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
               Names = names }
 

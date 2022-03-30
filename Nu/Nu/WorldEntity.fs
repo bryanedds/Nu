@@ -103,8 +103,8 @@ module WorldEntityModule =
         member this.OverlayNameOpt = lensReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.FacetNames = lensReadOnly Property? FacetNames this.GetFacetNames this
-        member this.GetWeight world = World.getEntityWeight this world
-        member this.Weight = lensReadOnly Property? Weight this.GetWeight this
+        member this.GetOrder world = World.getEntityOrder this world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
@@ -432,34 +432,34 @@ module WorldEntityModule =
 
         /// Try to find the entity in the given entity's group with the closest previous time stamp.
         static member tryFindPreviousEntity (entity : Entity) world =
-            let weight = World.getEntityWeight entity world
-            let mutable previousWeightDeltaOpt = ValueNone
+            let order = World.getEntityOrder entity world
+            let mutable previousOrderDeltaOpt = ValueNone
             let mutable previousOpt = ValueNone
             let entities = World.getEntities entity.Group world |> Seq.toArray
             for entity2 in entities do
-                let weight2 = World.getEntityWeight entity2 world
-                let weightDelta = weight - weight2
-                if weightDelta > 0L then
-                    match previousWeightDeltaOpt with
-                    | ValueSome weightDelta2 ->
-                        if weightDelta < weightDelta2 then
-                            previousWeightDeltaOpt <- ValueSome weightDelta
+                let order2 = World.getEntityOrder entity2 world
+                let orderDelta = order - order2
+                if orderDelta > 0L then
+                    match previousOrderDeltaOpt with
+                    | ValueSome orderDelta2 ->
+                        if orderDelta < orderDelta2 then
+                            previousOrderDeltaOpt <- ValueSome orderDelta
                             previousOpt <- ValueSome entity2
                     | ValueNone ->
-                        previousWeightDeltaOpt <- ValueSome weightDelta
+                        previousOrderDeltaOpt <- ValueSome orderDelta
                         previousOpt <- ValueSome entity2
             match previousOpt with
             | ValueSome previous -> Some previous
             | ValueNone -> None
 
-        /// Reorder an entity's weight between before and after's.
+        /// Change an entity's order between that of before and after's.
         static member reorderEntity entityBefore entityAfter entity world =
-            let weightBefore = World.getEntityWeight entityBefore world;
-            let weightAfter = World.getEntityWeight entityAfter world;
-            let weight = (weightBefore + weightAfter) / 2L;
-            World.setEntityWeight weight entity world |> snd'
+            let orderBefore = World.getEntityOrder entityBefore world;
+            let orderAfter = World.getEntityOrder entityAfter world;
+            let order = (orderBefore + orderAfter) / 2L;
+            World.setEntityOrder order entity world |> snd'
 
-        /// Reorder an entity's weight between target and its previous sibling's.
+        /// Change an entity's order between that of target and its previous sibling's.
         static member insertEntity target entity world =
             match World.tryFindPreviousEntity target world with
             | Some previous -> World.reorderEntity previous target entity world
@@ -468,7 +468,7 @@ module WorldEntityModule =
         /// Write multiple entities to a group descriptor.
         static member writeEntities entities groupDescriptor world =
             entities |>
-            Seq.sortBy (fun (entity : Entity) -> entity.GetWeight world) |>
+            Seq.sortBy (fun (entity : Entity) -> entity.GetOrder world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.EntitieDescriptors |>
             fun entityDescriptors -> { groupDescriptor with EntitieDescriptors = entityDescriptors }

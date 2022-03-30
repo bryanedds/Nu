@@ -33,8 +33,8 @@ module WorldGameModule =
         member this.EyeSize = lens Property? EyeSize this.GetEyeSize this.SetEyeSize this
         member this.GetScriptFrame world = World.getGameScriptFrame world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member this.GetWeight world = World.getGameWeight world
-        member this.Weight = lensReadOnly Property? Weight this.GetWeight this
+        member this.GetOrder world = World.getGameOrder world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getGameId world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
