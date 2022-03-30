@@ -1470,7 +1470,7 @@ module Gaia =
                     let leftEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((left :?> TreeNode).Name.Split Constants.Address.Separator))
                     let rightEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((right :?> TreeNode).Name.Split Constants.Address.Separator))
                     if leftEntity.Exists world && rightEntity.Exists world
-                    then (leftEntity.GetCreationTimeStamp world).CompareTo (rightEntity.GetCreationTimeStamp world)
+                    then (leftEntity.GetWeight world).CompareTo (rightEntity.GetWeight world)
                     else 0 }
 
         // same for hierarchy tree view...

@@ -57,7 +57,7 @@ module WorldModuleGame =
             struct (changed, world)
 
         static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
+        static member internal getGameWeight world = (World.getGameState world).Weight
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
@@ -518,7 +518,7 @@ module WorldModuleGame =
         GameGetters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
         GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
-        GameGetters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
+        GameGetters.Add ("Weight", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameWeight world })
         GameGetters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
     /// Initialize property setters.

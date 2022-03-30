@@ -125,7 +125,7 @@ module WorldModuleGroup =
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value group world
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) world.WorldExtension.DestructionListRev
-        static member internal getGroupCreationTimeStamp group world = (World.getGroupState group world).CreationTimeStamp
+        static member internal getGroupWeight group world = (World.getGroupState group world).Weight
         static member internal getGroupScriptFrame group world = (World.getGroupState group world).ScriptFrame
         static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value group world
         static member internal getGroupName group world = (World.getGroupState group world).Name
@@ -358,7 +358,7 @@ module WorldModuleGroup =
         GroupGetters.Add ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
         GroupGetters.Add ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
         GroupGetters.Add ("ScriptFrame", fun group world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGroupScriptFrame group world })
-        GroupGetters.Add ("CreationTimeStamp", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupCreationTimeStamp group world })
+        GroupGetters.Add ("Weight", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupWeight group world })
         GroupGetters.Add ("Name", fun group world -> { PropertyType = typeof<string>; PropertyValue = World.getGroupName group world })
         GroupGetters.Add ("Id", fun group world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGroupId group world })
         

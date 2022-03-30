@@ -103,8 +103,8 @@ module WorldEntityModule =
         member this.OverlayNameOpt = lensReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.FacetNames = lensReadOnly Property? FacetNames this.GetFacetNames this
-        member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
-        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetWeight world = World.getEntityWeight this world
+        member this.Weight = lensReadOnly Property? Weight this.GetWeight this
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
@@ -432,34 +432,34 @@ module WorldEntityModule =
 
         /// Try to find the entity in the given entity's group with the closest previous time stamp.
         static member tryFindPreviousEntity (entity : Entity) world =
-            let timeStamp = World.getEntityCreationTimeStamp entity world
-            let mutable previousTimeStampDeltaOpt = ValueNone
+            let weight = World.getEntityWeight entity world
+            let mutable previousWeightDeltaOpt = ValueNone
             let mutable previousOpt = ValueNone
             let entities = World.getEntities entity.Group world |> Seq.toArray
             for entity2 in entities do
-                let timeStamp2 = World.getEntityCreationTimeStamp entity2 world
-                let timeStampDelta = timeStamp - timeStamp2
-                if timeStampDelta > 0L then
-                    match previousTimeStampDeltaOpt with
-                    | ValueSome timeStampDelta2 ->
-                        if timeStampDelta < timeStampDelta2 then
-                            previousTimeStampDeltaOpt <- ValueSome timeStampDelta
+                let weight2 = World.getEntityWeight entity2 world
+                let weightDelta = weight - weight2
+                if weightDelta > 0L then
+                    match previousWeightDeltaOpt with
+                    | ValueSome weightDelta2 ->
+                        if weightDelta < weightDelta2 then
+                            previousWeightDeltaOpt <- ValueSome weightDelta
                             previousOpt <- ValueSome entity2
                     | ValueNone ->
-                        previousTimeStampDeltaOpt <- ValueSome timeStampDelta
+                        previousWeightDeltaOpt <- ValueSome weightDelta
                         previousOpt <- ValueSome entity2
             match previousOpt with
             | ValueSome previous -> Some previous
             | ValueNone -> None
 
-        /// Reorder an entity's creation time stamp between before and after's.
+        /// Reorder an entity's weight between before and after's.
         static member reorderEntity entityBefore entityAfter entity world =
-            let timeStampBefore = World.getEntityCreationTimeStamp entityBefore world;
-            let timeStampAfter = World.getEntityCreationTimeStamp entityAfter world;
-            let timeStamp = (timeStampBefore + timeStampAfter) / 2L;
-            World.setEntityCreationTimeStamp timeStamp entity world |> snd'
+            let weightBefore = World.getEntityWeight entityBefore world;
+            let weightAfter = World.getEntityWeight entityAfter world;
+            let weight = (weightBefore + weightAfter) / 2L;
+            World.setEntityWeight weight entity world |> snd'
 
-        /// Reorder an entity's creation time stamp between target and its previous sibling's.
+        /// Reorder an entity's weight between target and its previous sibling's.
         static member insertEntity target entity world =
             match World.tryFindPreviousEntity target world with
             | Some previous -> World.reorderEntity previous target entity world
@@ -468,7 +468,7 @@ module WorldEntityModule =
         /// Write multiple entities to a group descriptor.
         static member writeEntities entities groupDescriptor world =
             entities |>
-            Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStamp world) |>
+            Seq.sortBy (fun (entity : Entity) -> entity.GetWeight world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.EntitieDescriptors |>
             fun entityDescriptors -> { groupDescriptor with EntitieDescriptors = entityDescriptors }
