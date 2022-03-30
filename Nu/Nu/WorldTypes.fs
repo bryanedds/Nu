@@ -520,8 +520,7 @@ module WorldTypes =
                 v2
                     (single Constants.Render.VirtualResolutionX)
                     (single Constants.Render.VirtualResolutionY)
-            { Id = Gen.id
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
@@ -531,7 +530,8 @@ module WorldTypes =
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              CreationTimeStamp = Core.getUniqueTimeStamp () }
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Id = Gen.id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
