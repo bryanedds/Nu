@@ -49,6 +49,15 @@ module Gaia =
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
+    let private generateEntityName dispatcherName world =
+        let selectedGroup = (getEditorState world).SelectedGroup
+        let name = Gen.nameForEditor dispatcherName
+        let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
+        while entity.Exists world do
+            let name = Gen.nameForEditor dispatcherName
+            entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
+        entity.Name
+
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
@@ -751,7 +760,8 @@ module Gaia =
                     | "(Routed Overlay)" -> RoutedOverlay
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
-                let (entity, world) = World.createEntity5 dispatcherName (Some [|Gen.nameForEditor dispatcherName|]) overlayNameDescriptor selectedGroup world
+                let name = generateEntityName dispatcherName world
+                let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePosition world
                 let entityPosition =
