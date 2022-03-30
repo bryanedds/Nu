@@ -432,7 +432,7 @@ module WorldEntityModule =
                     picked)
                 entitiesSorted
 
-        /// Try to find the entity in the given entity's group with the closest previous time stamp.
+        /// Try to find the entity in the given entity's group with the closest previous order.
         static member tryFindPreviousEntity (entity : Entity) world =
             let order = World.getEntityOrder entity world
             let mutable previousOrderDeltaOpt = ValueNone
