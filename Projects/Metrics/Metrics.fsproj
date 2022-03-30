@@ -131,7 +131,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.8.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.9.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
