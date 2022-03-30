@@ -18,30 +18,30 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
-        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
-        "transitionScreen setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
-        "createSplashScreen6 createSplashScreen reloadExistingAssets tryReloadAssets " +
-        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
-        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
-        "playSong playSong6 playSound playSound3 " +
-        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
-        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies createJoint " +
-        "createJoints destroyJoint destroyJoints setBodyEnabled " +
-        "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
-        "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce localizeBodyShape " +
-        "isMouseButtonDown getMousePosition isKeyboardKeyDown expandContent " +
-        "destroyImmediate destroy getExists isSelected " +
-        "ignorePropertyBindings getEntities0 getGroups0 writeGameToFile " +
-        "readGameFromFile getScreens setScreenDissolve destroyScreen " +
-        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
-        "getGroups createGroup destroyGroup destroyGroups " +
-        "writeGroupToFile readGroupFromFile getEntities destroyEntity " +
-        "destroyEntities tryPickEntity writeEntityToFile createEntity " +
-        "readEntityFromFile reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
+        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
+        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
+        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
+        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
+        "playSong6 playSound playSound3 fadeOutSong " +
+        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
+        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies createJoint createJoints " +
+        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
+        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
+        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
+        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
+        "destroy getExists isSelected ignorePropertyBindings " +
+        "getEntities0 getGroups0 writeGameToFile readGameFromFile " +
+        "getScreens setScreenDissolve destroyScreen createScreen " +
+        "createDissolveScreen writeScreenToFile readScreenFromFile getGroups " +
+        "createGroup destroyGroup destroyGroups writeGroupToFile " +
+        "readGroupFromFile getEntities destroyEntity destroyEntities " +
+        "tryPickEntity writeEntityToFile createEntity readEntityFromFile " +
+        "renameEntity reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
         "getEyeCenter setEyeCenter getEyeSize getEyeMargin " +
         "setEyeSize getEyeBounds getOmniScreenOpt setOmniScreenOpt " +
         "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds " +
@@ -1827,6 +1827,35 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let renameEntity source destination world =
+        let oldWorld = world
+        try
+            let struct (source, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal source world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let struct (destination, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal destination world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.renameEntity source destination world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'renameEntity' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let reassignEntity entity nameOpt group world =
         let oldWorld = world
         try
@@ -3447,6 +3476,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalRenameEntityBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|source; destination|] -> renameEntity source destination world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalReassignEntityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4021,6 +4061,7 @@ module WorldBindings =
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
+             ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("reassignEntity", { Fn = evalReassignEntityBinding; Pars = [|"entity"; "nameOpt"; "group"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
