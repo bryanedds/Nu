@@ -134,6 +134,7 @@ module Gaia =
                     parentNode <- childNode
                 else parentNode <- parentNode.Nodes.[childNodeKey]
         restoreExpansionState form.hierarchyTreeView treeState
+        groupNode.ExpandAll () // HACK: just expand all until node state restoration is working.
 
     let private refreshGroupTabs (form : GaiaForm) world =
 
@@ -754,7 +755,7 @@ module Gaia =
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
                     let entity = Entity ((getEditorState world).SelectedGroup.GroupAddress <-- atoa address)
-                    selectEntity entity form world
+                    if entity.Exists world then selectEntity entity form world
                     world
                 else world
             else world
