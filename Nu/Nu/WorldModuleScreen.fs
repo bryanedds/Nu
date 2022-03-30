@@ -273,12 +273,16 @@ module WorldModuleScreen =
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Register (screen, world)
             let eventTrace = EventTrace.debug "World" "registerScreen" "" EventTrace.empty
-            World.publishPlus () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen true false world
+            let world = World.publishPlus () (Events.Register --> screen) eventTrace screen true false world
+            let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
+            World.publishPlus (RegisterData screen) (Events.LifeCycle (nameof Screen)) eventTrace screen true false world
 
         static member internal unregisterScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
+            let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
+            let world = World.publishPlus (UnregisteringData screen) (Events.LifeCycle (nameof Screen)) eventTrace screen true false world
             let eventTrace = EventTrace.debug "World" "unregisteringScreen" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen true false world
+            let world = World.publishPlus () (Events.Unregistering --> screen) eventTrace screen true false world
             dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =

@@ -36,9 +36,9 @@ module WorldGroupModule =
         member this.GetId world = World.getGroupId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
 

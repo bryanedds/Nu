@@ -163,49 +163,29 @@ module Gaia =
     let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
         Option.isSome (tryFindHierarchyTreeNode name form world)
 
-    let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let entityNodeKey = scstring entity
-        let entityNode = TreeNode entity.Name
-        let groupNodeKey = scstring entity.Group
-        let groupNode = form.hierarchyTreeView.Nodes.[groupNodeKey]
-        entityNode.Name <- entityNodeKey
-        match entity.GetParentOpt world with
-        | Some relation ->
-            let entityParent = resolve entity relation
-            let entityParentNodeKey = scstring entityParent
-            match tryFindHierarchyTreeNode entityParentNodeKey form world with
-            | Some node -> node.Nodes.Add entityNode |> ignore
-            | None -> failwithumf ()
-        | None -> groupNode.Nodes.Add entityNode |> ignore
-
-    let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let entityNodeKey = scstring entity
-        match tryFindHierarchyTreeNode entityNodeKey form world with
-        | Some node -> node.Remove ()
-        | None -> ()
-
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
         // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
-        let groups = World.getGroups Globals.Screen world
-        for group in groups do
-            let groupNode = TreeNode group.Name
-            groupNode.Name <- scstring group
-            form.hierarchyTreeView.Nodes.Add groupNode |> ignore
-            let entities = World.getEntities group world
-            for entity in entities do
-                let mutable parentNode = groupNode
-                for entity in Seq.append (Seq.singleton entity) (entity.GetChildren world) do
-                    let entityNodeKey = scstring entity
-                    if not (parentNode.Nodes.ContainsKey entityNodeKey) then
-                        let entityNode = TreeNode entity.Name
-                        entityNode.Name <- entityNodeKey
-                        parentNode.Nodes.Add entityNode |> ignore
-                        parentNode <- entityNode
-                    else parentNode <- parentNode.Nodes.[entityNodeKey]
+        let selectedGroup = (getEditorState world).SelectedGroup
+        let groupNode = TreeNode selectedGroup.Name
+        groupNode.Name <- scstring selectedGroup
+        form.hierarchyTreeView.Nodes.Add groupNode |> ignore
+        let entities = World.getEntities selectedGroup world
+        for entity in entities do
+            let mutable namesUsed = [||]
+            let mutable parentNode = groupNode
+            for name in entity.Names do
+                namesUsed <- Array.add name namesUsed
+                let childNodeKey = namesUsed |> rtoa |> string
+                if not (parentNode.Nodes.ContainsKey childNodeKey) then
+                    let childNode = TreeNode name
+                    childNode.Name <- childNodeKey
+                    parentNode.Nodes.Add childNode |> ignore
+                    parentNode <- childNode
+                else parentNode <- parentNode.Nodes.[childNodeKey]
         restoreExpansionState form.hierarchyTreeView treeState
         setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
@@ -303,32 +283,22 @@ module Gaia =
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
 
-    let private handleNuChangeParentOpt form evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        removeHierarchyTreeEntityNode entity form world
-        addHierarchyTreeEntityNode entity form world
-        (Cascade, world)
-
-    let private handleNuGroupRegister (form : GaiaForm) (_ : Event<unit, Screen>) world =
+    let private handleNuGroupRegister (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
 
-    let private handleNuGroupUnregistering (form : GaiaForm) (_ : Event<unit, Screen>) world =
+    let private handleNuGroupUnregistering (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
 
-    let private handleNuEntityRegister (form : GaiaForm) evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        addEntityTreeViewNode entity form world
-        addHierarchyTreeEntityNode entity form world
+    let private handleNuEntityRegister (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
+        refreshHierarchyTreeView form world
         (Cascade, world)
 
-    let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        removeEntityTreeViewNode evt.Publisher form world
-        removeHierarchyTreeEntityNode entity form world
+    let private handleNuEntityUnregistering (form : GaiaForm) (evt : Event<LifeCycleData, Screen>) world =
+        refreshHierarchyTreeView form world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
@@ -338,6 +308,10 @@ module Gaia =
                 (Cascade, world)
             else (Cascade, world)
         | _ -> failwithumf ()
+
+    let private handleNuEntityChangeParentOpt form (_ : Event<LifeCycleData, _>) world =
+        refreshHierarchyTreeView form world
+        (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isAdvancing world then Cascade else Resolve
@@ -392,15 +366,12 @@ module Gaia =
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
-    let private monitorGroupEvents form world =
-        let world = World.monitor (handleNuGroupRegister form) (Events.Register --> Globals.Screen --> Events.Wildcard) Globals.Screen world
-        let world = World.monitor (handleNuGroupUnregistering form) (Events.Unregistering --> Globals.Screen --> Events.Wildcard) Globals.Screen world
-        world
-
-    let private monitorEntityEvents (group : Group) form world =
-        let world = World.monitor (handleNuChangeParentOpt form) (Events.Change Property? ParentOpt --> group --> Events.Wildcard) group world
-        let world = World.monitor (handleNuEntityRegister form) (Events.Register --> group --> Events.Wildcard) group world
-        let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> group --> Events.Wildcard) group world
+    let private monitorLifeCycleEvents form world =
+        let world = World.monitor (handleNuEntityRegister form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
+        let world = World.monitor (handleNuEntityUnregistering form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
+        let world = World.monitor (handleNuEntityChangeParentOpt form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
+        let world = World.monitor (handleNuGroupRegister form) (Events.LifeCycle (nameof Group)) Globals.Screen world
+        let world = World.monitor (handleNuGroupUnregistering form) (Events.LifeCycle (nameof Group)) Globals.Screen world
         world
 
     let private trySaveSelectedGroup filePath world =
@@ -430,7 +401,6 @@ module Gaia =
                 form.groupTabControl.SelectedTab.Text <- group.Name
                 form.groupTabControl.SelectedTab.Name <- group.Name
                 let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = group }) world
-                let world = monitorEntityEvents group form world
 
                 // refresh tree views
                 refreshEntityTreeView form world
@@ -1496,8 +1466,7 @@ module Gaia =
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
-            let world = List.fold (fun world group -> monitorEntityEvents group form world) world groups
-            let world = monitorGroupEvents form world
+            let world = monitorLifeCycleEvents form world
             (defaultGroup, world)
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Globals.Screen + "'.")
 

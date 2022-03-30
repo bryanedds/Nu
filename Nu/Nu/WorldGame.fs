@@ -38,9 +38,9 @@ module WorldGameModule =
         member this.GetId world = World.getGameId world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.MouseMoveEvent = Events.MouseMove --> this
@@ -170,15 +170,19 @@ module WorldGameModule =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
-            let eventTrace = EventTrace.debug "World" "registerGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true false world
+            let eventTrace = EventTrace.debug "World" "registerGame" "Register" EventTrace.empty
+            let world = World.publishPlus () Events.Register eventTrace game true false world
+            let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
+            let world = World.publishPlus (RegisterData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
+            let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
+            let world = World.publishPlus () Events.Unregistering eventTrace game true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
-            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true false world
+            let world = World.publishPlus (UnregisteringData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
             let world = dispatcher.Unregister (game, world)
             World.choose world
 
