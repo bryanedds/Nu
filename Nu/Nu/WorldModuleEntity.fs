@@ -434,7 +434,7 @@ module WorldModuleEntity =
         static member internal getEntityParentOpt entity world = (World.getEntityState entity world).ParentOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
-        static member internal getEntityWeight entity world = (World.getEntityState entity world).Weight
+        static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityNames entity world = (World.getEntityState entity world).Names
         static member internal getEntityName entity world = (World.getEntityState entity world).Names |> Array.last
@@ -449,7 +449,7 @@ module WorldModuleEntity =
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityIsParent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IsParent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IsParent <- value; entityState) else Unchecked.defaultof<_>) Property? IsParent value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
-        static member internal setEntityWeight value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Weight then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Weight <- value; entityState) else Unchecked.defaultof<_>) Property? Weight value entity world
+        static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
         static member internal getEntityChildren entity world =
             match world.EntityHierarchy.TryGetValue entity with
@@ -1757,7 +1757,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Weight = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
                 World.addEntity false entityState destination world
                 
         /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
@@ -1767,7 +1767,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Weight = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
                 let world = World.destroyEntityImmediate source world
                 World.addEntity false entityState destination world
 
@@ -1783,7 +1783,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
             let (id, names) = Gen.idAndNamesIf namesOpt
-            let entityState = { entityState with Weight = Core.getUniqueTimeStamp (); Id = id; Names = names }
+            let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Names = names }
             let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
             let world = World.addEntity false entityState entity world
             (entity, world)
@@ -1936,7 +1936,7 @@ module WorldModuleEntity =
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
                 let names = [|Gen.name|]
-                let entityState = { entityState with Weight = Core.getUniqueTimeStamp (); Id = id; Names = names }
+                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Names = names }
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world
@@ -1986,7 +1986,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         EntityGetters.Assign ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
-        EntityGetters.Assign ("Weight", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityWeight entity world })
+        EntityGetters.Assign ("Order", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityOrder entity world })
         EntityGetters.Assign ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntityNames entity world })
         EntityGetters.Assign ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })

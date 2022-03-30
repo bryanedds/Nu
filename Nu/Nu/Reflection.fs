@@ -32,7 +32,7 @@ module Reflection =
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
-             ("Weight", true)
+             ("Order", true)
              ("Optimized", true)
              ("ScriptFrame", true)
              ("ScriptFrameOpt", true)

@@ -43,8 +43,8 @@ module WorldScreenModule =
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member this.GetWeight world = World.getScreenWeight this world
-        member this.Weight = lensReadOnly Property? Weight this.GetWeight this
+        member this.GetOrder world = World.getScreenOrder this world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getScreenId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
@@ -284,7 +284,7 @@ module WorldScreenModule =
         /// Write multiple screens to a game descriptor.
         static member writeScreens screens gameDescriptor world =
             screens |>
-            Seq.sortBy (fun (screen : Screen) -> screen.GetWeight world) |>
+            Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
             Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.ScreenDescriptors |>
             fun screenDescriptors -> { gameDescriptor with ScreenDescriptors = screenDescriptors }

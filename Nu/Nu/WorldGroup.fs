@@ -31,8 +31,8 @@ module WorldGroupModule =
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getGroupScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member this.GetWeight world = World.getGroupWeight this world
-        member this.Weight = lensReadOnly Property? Weight this.GetWeight this
+        member this.GetOrder world = World.getGroupOrder this world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getGroupId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
@@ -229,7 +229,7 @@ module WorldGroupModule =
         /// Write multiple groups to a screen descriptor.
         static member writeGroups groups screenDescriptor world =
             groups |>
-            Seq.sortBy (fun (group : Group) -> group.GetWeight world) |>
+            Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
             Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
             Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) screenDescriptor.GroupDescriptors |>
             fun groupDescriptors -> { screenDescriptor with GroupDescriptors = groupDescriptors }
