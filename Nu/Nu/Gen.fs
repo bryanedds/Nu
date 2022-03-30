@@ -206,9 +206,10 @@ module Gen =
             lock Lock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
 
         /// Generate a unique name for use in an editor.
-        static member nameForEditor dispatcherName =
+        static member nameForEditor (dispatcherName : string) =
             let id = Gen.idForEditor
-            Gen.namePrefix + dispatcherName + Gen.nameSeparator + id.ToString "D4"
+            let truncatedName = dispatcherName.Replace ("Dispatcher", "")
+            truncatedName + Gen.nameSeparator + id.ToString "D4"
 
         /// Generate a unique non-zero 64-bit id.
         static member id64 =
