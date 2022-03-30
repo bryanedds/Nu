@@ -390,8 +390,8 @@ module WorldEntityModule =
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
 
-        // Get all the entities not parented by another entity.
-        static member getEntitiesRooted group world =
+        // Get all the entities not parented by another entity in a group.
+        static member getEntityParents group world =
             World.getEntities group world |>
             Seq.filter (fun entity -> Option.isNone (entity.GetParentOpt world)) |>
             Seq.toArray |>
