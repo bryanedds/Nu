@@ -504,13 +504,13 @@ module WorldModuleEntity =
 
                     // update property
                     let struct (_, world) =
-                        World.updateEntityStatePlus (fun entityState ->
+                        World.updateEntityStateWithoutEvent (fun entityState ->
                             if newParentOpt <> entityState.ParentOpt then
                                 let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                                 entityState.ParentOpt <- newParentOpt
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? ParentOpt newParentOpt entity world
+                            entity world
 
                     // update entity hierarchy
                     let world = World.removeEntityFromHierarchy oldParentOpt entity world
@@ -518,6 +518,13 @@ module WorldModuleEntity =
 
                     // propagate properties from parent
                     let world = World.propagateEntityProperties3 newParentOpt entity world
+
+                    // publish change event unconditionally
+                    let world = World.publishEntityChange Property? ParentOpt newParentOpt true true entity world
+
+                    // publish life cycle event unconditionally
+                    let eventTrace = EventTrace.debug "World" "lifeCycle" "" EventTrace.empty
+                    let world = World.publish (EntityParentOptChangeData (oldParentOpt, newParentOpt, entity)) (Events.LifeCycle (nameof Entity)) eventTrace entity world
                     world
 
                 else world
@@ -1381,14 +1388,18 @@ module WorldModuleEntity =
                     else world)
                     world facets
             let struct (_, world) = World.updateEntityPublishFlags entity world
-            let eventTrace = EventTrace.debug "World" "registerEntity" "" EventTrace.empty
-            let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
+            let eventTrace = EventTrace.debug "World" "registerEntity" "Change" EventTrace.empty
+            let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Register --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
+            let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
+            let world = World.publish (RegisterData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
             world
 
         static member internal unregisterEntity (entity : Entity) world =
-            let eventTrace = EventTrace.debug "World" "unregisteringEntity" "" EventTrace.empty
-            let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
+            let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
+            let world = World.publish (UnregisteringData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
+            let eventTrace = EventTrace.debug "World" "unregisteringEntity" "unregisterEntity" EventTrace.empty
+            let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Unregistering --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world

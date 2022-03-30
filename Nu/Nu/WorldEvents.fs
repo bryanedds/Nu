@@ -50,6 +50,11 @@ type [<StructuralEquality; NoComparison>] SeparationData =
     { Separator : BodyShapeSource
       Separatee : BodyShapeSource }
 
+type [<StructuralEquality; NoComparison>] LifeCycleData =
+    | RegisterData of Simulant
+    | UnregisteringData of Simulant
+    | EntityParentOptChangeData of Entity Relation option * Entity Relation option * Entity
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -57,6 +62,7 @@ module Events =
     let Register = stoa<unit> "Register/Event"
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")
+    let LifeCycle simulantTypeName = stoa<LifeCycleData> ("LifeCycle/" + simulantTypeName + "/Event")
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Select = stoa<unit> "Select/Event"
