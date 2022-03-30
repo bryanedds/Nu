@@ -451,7 +451,8 @@ module WorldModuleEntity =
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
-        static member internal getEntityChildren entity world =
+        /// Get all the children of an entity, ordered.
+        static member getEntityChildren entity world =
             match world.EntityHierarchy.TryGetValue entity with
             | (true, children) ->
                 children |>
@@ -461,18 +462,21 @@ module WorldModuleEntity =
                 seq
             | (false, _) -> Seq.empty
 
-        static member internal getEntityDescendants entity world =
+        /// Get all the descendents of an entity, ordered.
+        static member getEntityDescendants entity world =
             seq {
                 let children = World.getEntityChildren entity world
                 yield! children
                 for child in children do
                     yield! World.getEntityChildren child world }
 
-        static member internal traverseEntityChildren effect entity (world : World) =
+        /// Traverse all the children of an entity, ordered.
+        static member traverseEntityChildren effect entity (world : World) =
             let children = World.getEntityChildren entity world
             Seq.fold (fun world child -> effect entity child world) world children
 
-        static member internal traverseEntityDescendants effect entity (world : World) =
+        /// Traverse all the descendants of an entity, ordered.
+        static member traverseEntityDescendants effect entity (world : World) =
             let children = World.getEntityChildren entity world
             let world = Seq.fold (fun world child -> effect entity child world) world children
             Seq.fold (fun world child -> World.traverseEntityDescendants effect child world) world children

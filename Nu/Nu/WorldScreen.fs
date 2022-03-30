@@ -191,7 +191,7 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)
 
-        /// Get all the world's screens.
+        /// Get all the screens in the world, unordered.
         [<FunctionBinding>]
         static member getScreens world =
             World.getScreenDirectory world |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)

@@ -377,7 +377,7 @@ module WorldEntityModule =
             let facets = entity.GetFacets world
             Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
 
-        /// Get all the entities contained by a group.
+        /// Get all the entities contained by a group, unordered.
         [<FunctionBinding>]
         static member getEntities (group : Group) world =
             match Address.getNames group.GroupAddress with
@@ -390,11 +390,12 @@ module WorldEntityModule =
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
 
-        // Get all the entities not parented by another entity in a group.
+        // Get all the entities not parented by another entity in a group, ordered.
         static member getEntityParents group world =
             World.getEntities group world |>
-            Seq.filter (fun entity -> Option.isNone (entity.GetParentOpt world)) |>
-            Seq.toArray |>
+            Array.ofSeq |>
+            Array.filter (fun entity -> Option.isNone (entity.GetParentOpt world)) |>
+            Array.sortBy (fun child -> World.getEntityOrder child world) |>
             seq
 
         /// Destroy an entity in the world at the end of the current update.
