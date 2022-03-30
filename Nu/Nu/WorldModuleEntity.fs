@@ -1388,7 +1388,7 @@ module WorldModuleEntity =
                     else world)
                     world facets
             let struct (_, world) = World.updateEntityPublishFlags entity world
-            let eventTrace = EventTrace.debug "World" "registerEntity" "Change" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Register --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
@@ -1398,7 +1398,7 @@ module WorldModuleEntity =
         static member internal unregisterEntity (entity : Entity) world =
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
             let world = World.publish (UnregisteringData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
-            let eventTrace = EventTrace.debug "World" "unregisteringEntity" "unregisterEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Unregistering --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
