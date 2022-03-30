@@ -457,6 +457,7 @@ module WorldModuleEntity =
                 children |>
                 Array.ofSeq |>
                 Array.filter (flip World.getEntityExists world) |>
+                Array.sortBy (fun child -> World.getEntityOrder child world) |>
                 seq
             | (false, _) -> Seq.empty
 
