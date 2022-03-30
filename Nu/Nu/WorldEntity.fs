@@ -286,17 +286,11 @@ module WorldEntityModule =
             | Some relation -> (this.Resolve relation : Entity).Exists world
             | None -> false
 
-        /// Get an entity's immediate children.
+        /// Get an entity's children.
         member this.GetChildren world = World.getEntityChildren this world
 
-        /// Get an entity's children recursively.
-        member this.GetDescendants world = World.getEntityDescendants this world
-
-        /// Traverse an entity's immediate children.
+        /// Traverse an entity's children.
         member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
-
-        /// Traverse an entity's children recursively.
-        member this.TraverseDescendants effect world = World.traverseEntityDescendants effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
