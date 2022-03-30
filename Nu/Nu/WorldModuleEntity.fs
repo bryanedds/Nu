@@ -1756,7 +1756,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names; CreationTimeStamp = Core.getUniqueTimeStamp () }
                 World.addEntity false entityState destination world
                 
         /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
@@ -1766,7 +1766,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names; CreationTimeStamp = Core.getUniqueTimeStamp () }
                 let world = World.destroyEntityImmediate source world
                 World.addEntity false entityState destination world
 
@@ -1782,7 +1782,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
             let (id, names) = Gen.idAndNamesIf namesOpt
-            let entityState = { entityState with Id = id; Names = names }
+            let entityState = { entityState with Id = id; Names = names; CreationTimeStamp = Core.getUniqueTimeStamp () }
             let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
             let world = World.addEntity false entityState entity world
             (entity, world)
@@ -1935,7 +1935,7 @@ module WorldModuleEntity =
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
                 let names = [|Gen.name|]
-                let entityState = { entityState with Id = id; Names = names }
+                let entityState = { entityState with Id = id; Names = names; CreationTimeStamp = Core.getUniqueTimeStamp () }
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world
