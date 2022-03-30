@@ -123,8 +123,8 @@ module WorldModuleScreen =
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then { screenState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value screen world
-        static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
+        static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
         static member internal setScreenModelProperty (value : DesignerProperty) screen world =
             World.updateScreenState
@@ -361,8 +361,8 @@ module WorldModuleScreen =
         ScreenGetters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
         ScreenGetters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
         ScreenGetters.Add ("Order", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenOrder screen world })
-        ScreenGetters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
         ScreenGetters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
+        ScreenGetters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
 
     /// Initialize property setters.
     let private initSetters () =
