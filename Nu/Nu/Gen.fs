@@ -15,7 +15,7 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let mutable private IdForName = 0UL
+    let mutable private IdForEditor = 0UL
     let mutable private Id64 = 0UL
     let mutable private Id32 = 0u
 
@@ -181,10 +181,6 @@ module Gen =
             arr.[15] <- arr.[15] + byte offset                    
             Guid arr
 
-        /// Generate a 32-bit unique counter.
-        static member idForName =
-            lock Lock (fun () -> IdForName <- inc IdForName; IdForName)
-
         /// Derive a unique id and name if given none.
         static member idAndNameIf nameOpt =
             let id = Gen.id
@@ -205,11 +201,20 @@ module Gen =
                 let name = Gen.namePrefix + string id
                 (id, [|name|])
 
+        /// Generate a unique non-zero 64-bit id for use in editor naming.
+        static member idForEditor =
+            lock Lock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
+
+        /// Generate a unique name for use in an editor.
+        static member nameForEditor dispatcherName =
+            let id = Gen.idForEditor
+            Gen.namePrefix + dispatcherName + Gen.nameSeparator + id.ToString "D4"
+
         /// Generate a unique non-zero 64-bit id.
         static member id64 =
             lock Lock (fun () -> Id64 <- inc Id64; Id64)
 
-        /// Generate a 32-bit unique counter.
+        /// Generate a unique non-zero 64-bit id.
         static member id32 =
             lock Lock (fun () ->
                 if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."

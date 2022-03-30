@@ -751,8 +751,7 @@ module Gaia =
                     | "(Routed Overlay)" -> RoutedOverlay
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
-                let name = Gen.namePrefix + dispatcherName + Gen.nameSeparator + Gen.idForName.ToString("D4")
-                let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
+                let (entity, world) = World.createEntity5 dispatcherName (Some [|Gen.nameForEditor dispatcherName|]) overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePosition world
                 let entityPosition =
