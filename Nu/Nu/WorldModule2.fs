@@ -818,17 +818,18 @@ module WorldModule2 =
 
             // actualize entities
             ActualizeEntitiesTimer.Start ()
-#if DEBUG
             let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    let group = entity.Group
-                    if group.GetVisible world // group visibility only has an effect on entities in debug mode
-                    then World.actualizeEntity entity world
-                    else world)
-                    world entities
-#else
-            let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
-#endif
+                if World.getStandAlone world then
+                    Seq.fold (fun world (entity : Entity) ->
+                        World.actualizeEntity entity world)
+                        world entities
+                else 
+                    Seq.fold (fun world (entity : Entity) ->
+                        let group = entity.Group
+                        if group.GetVisible world
+                        then World.actualizeEntity entity world
+                        else world)
+                        world entities
             ActualizeEntitiesTimer.Stop ()
 
             // fin
