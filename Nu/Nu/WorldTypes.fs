@@ -397,7 +397,7 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? ParentOpt Option<Entity Relation>.None
+             Define? MountOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
              Define? Enabled true
@@ -706,7 +706,7 @@ module WorldTypes =
           mutable PositionLocal : Vector2
           mutable ElevationLocal : single
           // cache line 3
-          mutable ParentOpt : Entity Relation option
+          mutable MountOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
@@ -731,7 +731,7 @@ module WorldTypes =
               Overflow = Vector2.Zero
               PositionLocal = Vector2.Zero
               ElevationLocal = 0.0f
-              ParentOpt = None
+              MountOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
@@ -825,7 +825,7 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
-        member this.IsParent with get () = this.Transform.IsParent and set value = this.Transform.IsParent <- value
+        member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.Bounds with get () = this.Transform.Bounds
         member this.Center with get () = this.Transform.Center
@@ -1240,7 +1240,7 @@ module WorldTypes =
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
               // cache line 2
-              EntityHierarchy : UMap<Entity, USet<Entity>>
+              EntityMounts : UMap<Entity, USet<Entity>>
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.

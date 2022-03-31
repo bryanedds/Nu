@@ -115,9 +115,7 @@ module Nu =
                     else world
                 let world =
                     if eventNamesLength >= 3 then
-                        let eventFirstName = eventNames.[0]
-                        let eventSecondName = eventNames.[1]
-                        match eventFirstName with
+                        match eventNames.[0] with
                         | "Change" ->
                             let world =
                                 if eventNamesLength >= 6 then
@@ -150,9 +148,8 @@ module Nu =
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 else world
-                            if  eventSecondName <> "ParentOpt" &&
-                                Array.contains (Address.head Events.Wildcard) eventNames then
-                                Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentOpt)."
+                            if Array.contains (Address.head Events.Wildcard) eventNames then
+                                Log.debug "Subscribing to change events with a wildcard is not supported."
                             world
                         | _ -> world
                     else world
