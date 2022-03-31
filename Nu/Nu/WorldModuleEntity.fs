@@ -165,8 +165,7 @@ module WorldModuleEntity =
                             rtoa<ChangeData> changeEventNamesCached
                         else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
                     let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
-                    let sorted = propertyName = "ParentOpt"
-                    let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted false world
+                    let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
                     if changeEventNamesUtilized then changeEventNamesFree <- true
                     world
                 else world
@@ -207,8 +206,8 @@ module WorldModuleEntity =
             | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
             | (false, _) -> ()
             
-            // apply is parent state
-            entityState.IsParent <- UMap.containsKey entity world.EntityHierarchy
+            // apply mounted state
+            entityState.Mounted <- UMap.containsKey entity world.EntityMounts
 
         static member inline private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
@@ -426,12 +425,12 @@ module WorldModuleEntity =
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
-        static member internal getEntityIsParent entity world = (World.getEntityState entity world).IsParent
+        static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
-        static member internal getEntityParentOpt entity world = (World.getEntityState entity world).ParentOpt
+        static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
@@ -447,92 +446,92 @@ module WorldModuleEntity =
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
-        static member internal setEntityIsParent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IsParent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IsParent <- value; entityState) else Unchecked.defaultof<_>) Property? IsParent value entity world
+        static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
-        static member internal getEntityChildren entity world =
-            match world.EntityHierarchy.TryGetValue entity with
-            | (true, children) ->
-                children |>
+        static member internal getMounters entity world =
+            match world.EntityMounts.TryGetValue entity with
+            | (true, mounters) ->
+                mounters |>
                 Array.ofSeq |>
                 Array.filter (flip World.getEntityExists world) |>
                 seq
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityChildren effect entity (world : World) =
-            let children = World.getEntityChildren entity world
-            Seq.fold (fun world child -> effect entity child world) world children
+        static member internal traverseMounters effect entity (world : World) =
+            let mounters = World.getMounters entity world
+            Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
-        static member internal addEntityToHierarchy parentOpt entity world =
-            match Option.map (resolve entity) parentOpt with
-            | Some newParent ->
-                match world.EntityHierarchy.TryGetValue newParent with
-                | (true, children) ->
-                    let children = USet.add entity children
-                    let world = { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
+        static member internal addEntityToMounts mountOpt entity world =
+            match Option.map (resolve entity) mountOpt with
+            | Some newMount ->
+                match world.EntityMounts.TryGetValue newMount with
+                | (true, mounters) ->
+                    let mounters = USet.add entity mounters
+                    let world = { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
                     world
                 | (false, _) ->
-                    let children = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
-                    let world = World.choose { world with EntityHierarchy = UMap.add newParent children world.EntityHierarchy }
-                    let world = if World.getEntityExists newParent world then World.setEntityIsParent true newParent world |> snd' else world
+                    let mounters = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                    let world = World.choose { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
+                    let world = if World.getEntityExists newMount world then World.setEntityMounted true newMount world |> snd' else world
                     world
             | None -> world
 
-        static member internal removeEntityFromHierarchy parentOpt entity world =
-            match Option.map (resolve entity) parentOpt with
-            | Some oldParent ->
-                match world.EntityHierarchy.TryGetValue oldParent with
-                | (true, children) ->
-                    let children = USet.remove entity children
-                    if USet.isEmpty children then
-                        let world = World.choose { world with EntityHierarchy = UMap.remove oldParent world.EntityHierarchy }
-                        let world = if World.getEntityExists oldParent world then World.setEntityIsParent false oldParent world |> snd' else world
+        static member internal removeEntityFromMounts mountOpt entity world =
+            match Option.map (resolve entity) mountOpt with
+            | Some oldMount ->
+                match world.EntityMounts.TryGetValue oldMount with
+                | (true, mounters) ->
+                    let mounters = USet.remove entity mounters
+                    if USet.isEmpty mounters then
+                        let world = World.choose { world with EntityMounts = UMap.remove oldMount world.EntityMounts }
+                        let world = if World.getEntityExists oldMount world then World.setEntityMounted false oldMount world |> snd' else world
                         world
-                    else World.choose { world with EntityHierarchy = UMap.add oldParent children world.EntityHierarchy }
+                    else World.choose { world with EntityMounts = UMap.add oldMount mounters world.EntityMounts }
                 | (false, _) -> world
             | None -> world
 
-        static member internal propagateEntityProperties3 parentOpt entity world =
-            match Option.map (resolve entity) parentOpt with
-            | Some newParent when World.getEntityExists newParent world ->
-                let world = World.propagateEntityPosition3 newParent entity world
-                let world = World.propagateEntityElevation3 newParent entity world
-                let world = World.propagateEntityEnabled3 newParent entity world
-                let world = World.propagateEntityVisible3 newParent entity world
+        static member internal propagateEntityProperties3 mountOpt entity world =
+            match Option.map (resolve entity) mountOpt with
+            | Some newMount when World.getEntityExists newMount world ->
+                let world = World.propagateEntityPosition3 newMount entity world
+                let world = World.propagateEntityElevation3 newMount entity world
+                let world = World.propagateEntityEnabled3 newMount entity world
+                let world = World.propagateEntityVisible3 newMount entity world
                 world
             | _ -> world
 
-        static member internal setEntityParentOpt value entity world =
-            let newParentOpt = value
-            let oldParentOpt = World.getEntityParentOpt entity world
-            let changed = newParentOpt <> oldParentOpt
+        static member internal setEntityMountOpt value entity world =
+            let newMountOpt = value
+            let oldMountOpt = World.getEntityMountOpt entity world
+            let changed = newMountOpt <> oldMountOpt
             let world =
                 if changed then
 
                     // update property
                     let struct (_, world) =
                         World.updateEntityStateWithoutEvent (fun entityState ->
-                            if newParentOpt <> entityState.ParentOpt then
+                            if newMountOpt <> entityState.MountOpt then
                                 let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                                entityState.ParentOpt <- newParentOpt
+                                entityState.MountOpt <- newMountOpt
                                 entityState
                             else Unchecked.defaultof<_>)
                             entity world
 
-                    // update entity hierarchy
-                    let world = World.removeEntityFromHierarchy oldParentOpt entity world
-                    let world = World.addEntityToHierarchy newParentOpt entity world
+                    // update mount hierarchy
+                    let world = World.removeEntityFromMounts oldMountOpt entity world
+                    let world = World.addEntityToMounts newMountOpt entity world
 
-                    // propagate properties from parent
-                    let world = World.propagateEntityProperties3 newParentOpt entity world
+                    // propagate properties from mount
+                    let world = World.propagateEntityProperties3 newMountOpt entity world
 
                     // publish change event unconditionally
-                    let world = World.publishEntityChange Property? ParentOpt newParentOpt true true entity world
+                    let world = World.publishEntityChange Property? MountOpt newMountOpt true true entity world
 
                     // publish life cycle event unconditionally
                     let eventTrace = EventTrace.debug "World" "lifeCycle" "" EventTrace.empty
-                    let world = World.publish (EntityParentOptChangeData (oldParentOpt, newParentOpt, entity)) (Events.LifeCycle (nameof Entity)) eventTrace entity world
+                    let world = World.publish (MountOptChangeData (oldMountOpt, newMountOpt, entity)) (Events.LifeCycle (nameof Entity)) eventTrace entity world
                     world
 
                 else world
@@ -600,27 +599,27 @@ module WorldModuleEntity =
                 struct (changed, world)
             else struct (changed, world)
 
-        static member internal propagateEntityPosition3 parent child world =
-            let positionParent = World.getEntityPosition parent world
-            let positionLocal = World.getEntityPositionLocal child world
-            let position = positionParent + positionLocal
-            World.setEntityPosition position child world |> snd'
+        static member internal propagateEntityPosition3 mount mounter world =
+            let positionMount = World.getEntityPosition mount world
+            let positionLocal = World.getEntityPositionLocal mounter world
+            let position = positionMount + positionLocal
+            World.setEntityPosition position mounter world |> snd'
 
         static member internal propagateEntityPosition entity world =
-            World.traverseEntityChildren World.propagateEntityPosition3 entity world
+            World.traverseMounters World.propagateEntityPosition3 entity world
 
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
             if v2Neq value entityState.Transform.Position then
                 if entityState.Optimized then
                     entityState.Transform.Position <- value
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Position <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityIsParent entity world then World.propagateEntityPosition entity world else world
+                    let world = if World.getEntityMounted entity world then World.propagateEntityPosition entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -633,12 +632,12 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do position updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
-                    let parentPosition =
-                        match Option.map (resolve entity) entityState.ParentOpt with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityPosition parent world
+                    let positionMount =
+                        match Option.map (resolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
                         | _ -> Vector2.Zero
-                    entityState.Transform.Position <- parentPosition + value
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    entityState.Transform.Position <- positionMount + value
+                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
                     struct (true, world)
 
                 else // do position updates and propagation out-of-place.
@@ -653,14 +652,14 @@ module WorldModuleEntity =
                             else Unchecked.defaultof<_>)
                             Property? PositionLocal value entity world
 
-                    // compute parent position
-                    let parentPosition =
-                        match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityPosition parent world
+                    // compute mount position
+                    let positionMount =
+                        match Option.map (resolve entity) (World.getEntityMountOpt entity world) with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
                         | _ -> Vector2.Zero
 
                     // update Position property
-                    let world = World.setEntityPosition (parentPosition + value) entity world |> snd'
+                    let world = World.setEntityPosition (positionMount + value) entity world |> snd'
                     struct (true, world)
 
             // nothing changed
@@ -703,14 +702,14 @@ module WorldModuleEntity =
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
 
-        static member internal propagateEntityElevation3 parent child world =
-            let elevationParent = World.getEntityElevation parent world
-            let elevationLocal = World.getEntityElevationLocal child world
+        static member internal propagateEntityElevation3 mount mounter world =
+            let elevationParent = World.getEntityElevation mount world
+            let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationParent + elevationLocal
-            World.setEntityElevation elevation child world |> snd'
+            World.setEntityElevation elevation mounter world |> snd'
 
         static member internal propagateEntityElevation entity world =
-            World.traverseEntityChildren World.propagateEntityElevation3 entity world
+            World.traverseMounters World.propagateEntityElevation3 entity world
 
         static member internal setEntityElevationLocal value entity world =
 
@@ -721,12 +720,12 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do elevation updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.ElevationLocal <- value
-                    let parentElevation =
-                        match Option.map (resolve entity) entityState.ParentOpt with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityElevation parent world
+                    let elevationMount =
+                        match Option.map (resolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
-                    entityState.Transform.Elevation <- parentElevation + value
-                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    entityState.Transform.Elevation <- elevationMount + value
+                    let world = if entityState.Mounted then World.propagateEntityElevation entity world else world
                     struct (true, world)
 
                 else // do elevation updates and propagation out-of-place.
@@ -741,14 +740,14 @@ module WorldModuleEntity =
                             else Unchecked.defaultof<_>)
                             Property? ElevationLocal value entity world
 
-                    // compute parent elevation
-                    let parentElevation =
-                        match Option.map (resolve entity) (World.getEntityParentOpt entity world) with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityElevation parent world
+                    // compute mount elevation
+                    let elevationMount =
+                        match Option.map (resolve entity) (World.getEntityMountOpt entity world) with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
 
                     // update Elevation property
-                    let world = World.setEntityElevation (parentElevation + value) entity world |> snd'
+                    let world = World.setEntityElevation (elevationMount + value) entity world |> snd'
                     struct (true, world)
 
             // nothing changed
@@ -759,24 +758,24 @@ module WorldModuleEntity =
             if value <> entityState.Transform.Elevation then
                 if entityState.Optimized then
                     entityState.Transform.Elevation <- value
-                    let world = if entityState.IsParent then World.propagateEntityElevation entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityElevation entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Elevation <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityIsParent entity world then World.propagateEntityElevation entity world else world
+                    let world = if World.getEntityMounted entity world then World.propagateEntityElevation entity world else world
                     struct (true, world)
             else struct (false, world)
 
-        static member internal propagateEntityEnabled3 parent child world =
-            let enabledParent = World.getEntityEnabled parent world
-            let enabledLocal = World.getEntityEnabledLocal child world
+        static member internal propagateEntityEnabled3 mount mounter world =
+            let enabledParent = World.getEntityEnabled mount world
+            let enabledLocal = World.getEntityEnabledLocal mounter world
             let enabled = enabledParent && enabledLocal
-            World.setEntityEnabled enabled child world |> snd'
+            World.setEntityEnabled enabled mounter world |> snd'
 
         static member internal propagateEntityEnabled entity world =
-            World.traverseEntityChildren World.propagateEntityEnabled3 entity world
+            World.traverseMounters World.propagateEntityEnabled3 entity world
 
         static member internal setEntityEnabledLocal value entity world =
             let struct (changed, world) =
@@ -789,12 +788,12 @@ module WorldModuleEntity =
                     Property? EnabledLocal value entity world
             let world =
                 if changed then
-                    let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
-                    let enabledParent =
-                        match parentOpt with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityEnabled parent world
+                    let mountOpt = Option.map (resolve entity) (World.getEntityMountOpt entity world)
+                    let enabledMount =
+                        match mountOpt with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityEnabled mount world
                         | _ -> true
-                    let enabled = enabledParent && value
+                    let enabled = enabledMount && value
                     World.setEntityEnabled enabled entity world |> snd'
                 else world
             struct (changed, world)
@@ -808,17 +807,17 @@ module WorldModuleEntity =
                         entityState
                     else Unchecked.defaultof<_>)
                     Property? Enabled value entity world
-            let world = if changed && World.getEntityIsParent entity world then World.propagateEntityEnabled entity world else world
+            let world = if changed && World.getEntityMounted entity world then World.propagateEntityEnabled entity world else world
             struct (true, world)
 
-        static member internal propagateEntityVisible3 parent child world =
-            let visibleParent = World.getEntityVisible parent world
-            let visibleLocal = World.getEntityVisibleLocal child world
-            let visible = visibleParent && visibleLocal
-            World.setEntityVisible visible child world |> snd'
+        static member internal propagateEntityVisible3 mount mounter world =
+            let visibleMount = World.getEntityVisible mount world
+            let visibleLocal = World.getEntityVisibleLocal mounter world
+            let visible = visibleMount && visibleLocal
+            World.setEntityVisible visible mounter world |> snd'
 
         static member internal propagateEntityVisible entity world =
-            World.traverseEntityChildren World.propagateEntityVisible3 entity world
+            World.traverseMounters World.propagateEntityVisible3 entity world
 
         static member internal setEntityVisibleLocal value entity world =
             let struct (changed, world) =
@@ -831,12 +830,12 @@ module WorldModuleEntity =
                     Property? VisibleLocal value entity world
             let world =
                 if changed then
-                    let parentOpt = Option.map (resolve entity) (World.getEntityParentOpt entity world)
-                    let visibleParent =
-                        match parentOpt with
-                        | Some parent when World.getEntityExists parent world -> World.getEntityVisible parent world
+                    let mountOpt = Option.map (resolve entity) (World.getEntityMountOpt entity world)
+                    let visibleMount =
+                        match mountOpt with
+                        | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
                         | _ -> true
-                    let visible = visibleParent && value
+                    let visible = visibleMount && value
                     World.setEntityVisible visible entity world |> snd'
                 else world
             struct (changed, world)
@@ -850,7 +849,7 @@ module WorldModuleEntity =
                         entityState
                     else Unchecked.defaultof<_>)
                     Property? Visible value entity world
-            let world = if changed && World.getEntityIsParent entity world then World.propagateEntityVisible entity world else world
+            let world = if changed && World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
             struct (true, world)
 
         static member internal getEntityBounds entity world =
@@ -865,14 +864,14 @@ module WorldModuleEntity =
                 if entityState.Optimized then
                     entityState.Transform.Position <- position
                     entityState.Transform.Size <- size
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Position <- position
                     transform.Size <- size
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if entityState.IsParent then World.propagateEntityPosition entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -1483,9 +1482,9 @@ module WorldModuleEntity =
                 // get old world for entity tree rebuild
                 let oldWorld = world
 
-                // remove entity from hierarchy
-                let parentOpt = World.getEntityParentOpt entity world
-                let world = World.removeEntityFromHierarchy parentOpt entity world
+                // remove mount from hierarchy
+                let mountOpt = World.getEntityMountOpt entity world
+                let world = World.removeEntityFromMounts mountOpt entity world
                 
                 // mutate entity tree if entity is selected
                 let world =
@@ -1585,13 +1584,13 @@ module WorldModuleEntity =
                 else world
             let world = World.addEntity false entityState entity world
 
-            // update entity hierarchy
-            let parentOpt = World.getEntityParentOpt entity world
-            let world = World.addEntityToHierarchy parentOpt entity world
+            // update mount hierarchy
+            let mountOpt = World.getEntityMountOpt entity world
+            let world = World.addEntityToMounts mountOpt entity world
 
             // propagate properties
             let world =
-                if World.getEntityIsParent entity world then
+                if World.getEntityMounted entity world then
                     let world = World.propagateEntityPosition entity world
                     let world = World.propagateEntityElevation entity world
                     let world = World.propagateEntityEnabled entity world
@@ -1703,9 +1702,9 @@ module WorldModuleEntity =
                 else world
             let world = World.addEntity true entityState entity world
 
-            // update entity hierarchy
-            let parentOpt = World.getEntityParentOpt entity world
-            let world = World.addEntityToHierarchy parentOpt entity world
+            // update mount hierarchy
+            let mountOpt = World.getEntityMountOpt entity world
+            let world = World.addEntityToMounts mountOpt entity world
 
             // fin
             (entity, world)
@@ -1956,7 +1955,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
-        EntityGetters.Assign ("ParentOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityParentOpt entity world })
+        EntityGetters.Assign ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
         EntityGetters.Assign ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         EntityGetters.Assign ("PublishChangeBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world })
         EntityGetters.Assign ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
@@ -1969,7 +1968,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
-        EntityGetters.Assign ("IsParent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsParent entity world })
+        EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
@@ -1996,7 +1995,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
         EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("ParentOpt", fun property entity world -> World.setEntityParentOpt (property.PropertyValue :?> Entity Relation option) entity world)
+        EntitySetters.Assign ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world)
         EntitySetters.Assign ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)

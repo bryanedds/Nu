@@ -66,9 +66,9 @@ module WorldEntityModule =
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
-        member this.GetParentOpt world = World.getEntityParentOpt this world
-        member this.SetParentOpt value world = World.setEntityParentOpt value this world |> snd'
-        member this.ParentOpt = lens Property? ParentOpt this.GetParentOpt this.SetParentOpt this
+        member this.GetMountOpt world = World.getEntityMountOpt this world
+        member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
+        member this.MountOpt = lens Property? MountOpt this.GetMountOpt this.SetMountOpt this
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world |> snd'
         member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
@@ -239,27 +239,27 @@ module WorldEntityModule =
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
-        /// Set an entity's parent while adjusting its parent properties such that they do not change.
-        member this.SetParentOptWithAdjustment (value : Entity Relation option) world =
+        /// Set an entity's mount while adjusting its mount properties such that they do not change.
+        member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             let world =
-                match (this.GetParentOpt world, value) with
+                match (this.GetMountOpt world, value) with
                 | (Some relationOld, Some relationNew) ->
-                    let parentOld = this.Resolve relationOld : Entity
-                    let parentNew = this.Resolve relationNew : Entity
-                    if parentOld.Exists world && parentNew.Exists world then
-                        let position = this.GetPositionLocal world + parentNew.GetPosition world
-                        let elevation = this.GetElevationLocal world + parentNew.GetElevation world
+                    let mountOld = this.Resolve relationOld : Entity
+                    let mountNew = this.Resolve relationNew : Entity
+                    if mountOld.Exists world && mountNew.Exists world then
+                        let position = this.GetPositionLocal world + mountNew.GetPosition world
+                        let elevation = this.GetElevationLocal world + mountNew.GetElevation world
                         let world = this.SetPosition position world
                         let world = this.SetElevation elevation world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
                         world
                     else world
                 | (Some relationOld, None) ->
-                    let parentOld = this.Resolve relationOld
-                    if parentOld.Exists world then
-                        let position = this.GetPositionLocal world + parentOld.GetPosition world
-                        let elevation = this.GetElevationLocal world + parentOld.GetElevation world
+                    let mountOld = this.Resolve relationOld
+                    if mountOld.Exists world then
+                        let position = this.GetPositionLocal world + mountOld.GetPosition world
+                        let elevation = this.GetElevationLocal world + mountOld.GetElevation world
                         let world = this.SetPosition position world
                         let world = this.SetElevation elevation world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
@@ -267,30 +267,30 @@ module WorldEntityModule =
                         world
                     else world
                 | (None, Some relationNew) ->
-                    let parentNew = this.Resolve relationNew
-                    if parentNew.Exists world then
-                        let position = this.GetPosition world - parentNew.GetPosition world
-                        let elevation = this.GetElevation world - parentNew.GetElevation world
+                    let mountNew = this.Resolve relationNew
+                    if mountNew.Exists world then
+                        let position = this.GetPosition world - mountNew.GetPosition world
+                        let elevation = this.GetElevation world - mountNew.GetElevation world
                         let world = this.SetPositionLocal position world
                         let world = this.SetElevationLocal elevation world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
-                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
                         world
                     else world
                 | (None, None) -> world
-            this.SetParentOpt value world
+            this.SetMountOpt value world
 
-        /// Check whether the entity's parent exists.
-        member this.ParentExists world =
-            match this.GetParentOpt world with
-            | Some relation -> (this.Resolve relation : Entity).Exists world
+        /// Check whether the entity's mount exists.
+        member this.MountExists world =
+            match this.GetMountOpt world with
+            | Some mount -> (this.Resolve mount : Entity).Exists world
             | None -> false
 
-        /// Get an entity's children.
-        member this.GetChildren world = World.getEntityChildren this world
+        /// Get an entity's mounters.
+        member this.GetMounters world = World.getMounters this world
 
-        /// Traverse an entity's children.
-        member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
+        /// Traverse an entity's mounters.
+        member this.TraverseMounters effect world = World.traverseMounters effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
@@ -384,12 +384,11 @@ module WorldEntityModule =
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
 
-        // Get all the entities not parented by another entity in a group, ordered.
-        static member getEntityParents group world =
+        // Get all the entities not mounting another entity in a group.
+        static member getEntityMounts group world =
             World.getEntities group world |>
             Array.ofSeq |>
-            Array.filter (fun entity -> Option.isNone (entity.GetParentOpt world)) |>
-            Array.sortBy (fun child -> World.getEntityOrder child world) |>
+            Array.filter (fun entity -> Option.isNone (entity.GetMountOpt world)) |>
             seq
 
         /// Destroy an entity in the world at the end of the current update.
@@ -523,10 +522,10 @@ module WorldEntityModule =
                             (handler, partialAddress --> entity, entity :> Simulant)) handlers
                     let binds = List.map (fun (_, left, right, twoWay) -> (entity :> Simulant, left, right, twoWay)) binds
                     let world =
-                        // only set parent if one was not specified by the descriptor properties
-                        if not (List.exists (fun (name, _) -> name = Property? ParentOpt) descriptor.SimulantProperties) then
-                            let parentOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
-                            World.setEntityParentOpt parentOpt entity world |> snd'
+                        // only set mount if one was not specified by the descriptor properties
+                        if not (List.exists (fun (name, _) -> name = Property? MountOpt) descriptor.SimulantProperties) then
+                            let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
+                            World.setEntityMountOpt mountOpt entity world |> snd'
                         else world
                     let world =
                         World.monitor
@@ -563,8 +562,8 @@ module WorldEntityModule =
                         | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Names
                         | _ -> [|entityName|]
                     let (entity, world) = World.readEntityFromFile filePath (Some entityNames) group world
-                    let parentOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
-                    let world = World.setEntityParentOpt parentOpt entity world |> snd'
+                    let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
+                    let world = World.setEntityMountOpt mountOpt entity world |> snd'
                     let world =
                         match origin with
                         | SimulantOrigin simulant

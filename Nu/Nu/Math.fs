@@ -39,7 +39,7 @@ module TransformMasks =
     let [<Literal>] PublishPostUpdatesMask =        0b000001000000000000u
     let [<Literal>] PersistentMask =                0b000010000000000000u
     let [<Literal>] IgnorePropertyBindingsMask =    0b000100000000000000u
-    let [<Literal>] IsParentMask =                  0b001000000000000000u
+    let [<Literal>] MountedMask =                   0b001000000000000000u
     let [<Literal>] EnabledLocalMask =              0b010000000000000000u
     let [<Literal>] VisibleLocalMask =              0b100000000000000000u
 
@@ -97,7 +97,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member inline this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member inline this.Persistent with get () = this.Flags &&& PersistentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
     member inline this.IgnorePropertyBindings with get () = this.Flags &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IgnorePropertyBindingsMask else this.Flags &&& ~~~IgnorePropertyBindingsMask
-    member inline this.IsParent with get () = this.Flags &&& IsParentMask <> 0u and set value = this.Flags <- if value then this.Flags ||| IsParentMask else this.Flags &&& ~~~IsParentMask
+    member inline this.Mounted with get () = this.Flags &&& MountedMask <> 0u and set value = this.Flags <- if value then this.Flags ||| MountedMask else this.Flags &&& ~~~MountedMask
     member inline this.EnabledLocal with get () = this.Flags &&& EnabledLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledLocalMask else this.Flags &&& ~~~EnabledLocalMask
     member inline this.VisibleLocal with get () = this.Flags &&& VisibleLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleLocalMask else this.Flags &&& ~~~VisibleLocalMask
     member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditional from here.

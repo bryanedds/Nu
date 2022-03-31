@@ -243,7 +243,7 @@ module Gaia =
                     (Cascade, world)
                 else (Cascade, world)
             | _ -> failwithumf ()
-        | EntityParentOptChangeData _ ->
+        | MountOptChangeData _ ->
             refreshHierarchyTreeView form world
             (Cascade, world)
 
@@ -265,7 +265,7 @@ module Gaia =
                     updateEditorState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                         let entityPosition =
-                            if entity.ParentExists world
+                            if entity.MountExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -420,7 +420,7 @@ module Gaia =
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
                         let world = World.renameEntityImmediate entity entity2 world
-                        entity2.SetParentOptWithAdjustment None world
+                        entity2.SetMountOptWithAdjustment None world
                     | _ ->
                         let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let entity = entityTds.DescribedEntity
@@ -428,21 +428,21 @@ module Gaia =
                         let world = World.renameEntityImmediate entity entity2 world
                         let parentRelation = Relation.makeParent ()
                         form.propertyValueTextBoxText <- scstring parentRelation
-                        if propertyDescriptor.Name = "ParentOpt"
-                        then entity2.SetParentOptWithAdjustment (Some parentRelation) world
+                        if propertyDescriptor.Name = "MountOpt"
+                        then entity2.SetMountOptWithAdjustment (Some parentRelation) world
                         else form.applyPropertyButton.PerformClick (); world
                 else
                     match parentEntityNamesStr with
                     | Constants.Editor.NonePick ->
-                        entityTds.DescribedEntity.SetParentOptWithAdjustment None world
+                        entityTds.DescribedEntity.SetMountOptWithAdjustment None world
                     | _ ->
                         let entity = entityTds.DescribedEntity
                         let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
                         if parentRelation <> Relation.makeCurrent () then
                             form.propertyValueTextBoxText <- scstring parentRelation
-                            if propertyDescriptor.Name = "ParentOpt"
-                            then entity.SetParentOptWithAdjustment (Some parentRelation) world
+                            if propertyDescriptor.Name = "MountOpt"
+                            then entity.SetMountOptWithAdjustment (Some parentRelation) world
                             else form.applyPropertyButton.PerformClick (); world
                         else form.applyPropertyButton.PerformClick (); world
             | _ -> world
@@ -1275,7 +1275,7 @@ module Gaia =
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                     let world =
-                        if entity.ParentExists world
+                        if entity.MountExists world
                         then entity.SetPositionLocal entityPositionSnapped world
                         else entity.SetPosition entityPositionSnapped world
                     let world =

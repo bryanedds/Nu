@@ -69,7 +69,7 @@ module RingMenuDispatcher =
              Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button itemCancelValue
-                    [Entity.ParentOpt == None
+                    [Entity.MountOpt == None
                      Entity.Visible <== menu.Visible
                      Entity.Size == v2 48.0f 48.0f
                      Entity.Position == Constants.Battle.CancelPosition

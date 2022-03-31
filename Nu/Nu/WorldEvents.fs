@@ -50,10 +50,11 @@ type [<StructuralEquality; NoComparison>] SeparationData =
     { Separator : BodyShapeSource
       Separatee : BodyShapeSource }
 
+/// The data for a life cycle event.
 type [<StructuralEquality; NoComparison>] LifeCycleData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
-    | EntityParentOptChangeData of Entity Relation option * Entity Relation option * Entity
+    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
 
 [<RequireQualifiedAccess>]
 module Events =
