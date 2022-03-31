@@ -371,18 +371,33 @@ module WorldEntityModule =
             let facets = entity.GetFacets world
             Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
 
-        /// Get all the entities contained by a group, unordered.
+        /// Get all the entities in a group.
         [<FunctionBinding>]
         static member getEntities (group : Group) world =
-            match Address.getNames group.GroupAddress with
-            | [|screenName; groupName|] ->
-                match UMap.tryFind screenName (World.getScreenDirectory world) with
-                | Some groupDirectory ->
-                    match UMap.tryFind groupName groupDirectory.Value with
-                    | Some entityDirectory -> entityDirectory.Value |> USet.toSeq
-                    | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
-                | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
-            | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
+            let rec getEntitiesRec parent world =
+                let simulants = World.getSimulants world
+                match simulants.TryGetValue parent with
+                | (true, entitiesOpt) ->
+                    match entitiesOpt with
+                    | Some entities ->
+                        seq {
+                            yield! entities |> Seq.map cast<Entity>
+                            for entity in entities do
+                                yield! getEntitiesRec entity world }
+                    | None -> Seq.empty
+                | (false, _) -> Seq.empty
+            getEntitiesRec (group :> Simulant) world |> Seq.toArray |> seq
+
+        /// Get all the entities not parented by other entities in a group.
+        [<FunctionBinding>]
+        static member getEntityParents (group : Group) world =
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (group :> Simulant) with
+            | (true, entitiesOpt) ->
+                match entitiesOpt with
+                | Some entities -> entities |> Seq.toArray |> seq
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         // Get all the entities not mounting another entity in a group.
         static member getEntityMounts group world =

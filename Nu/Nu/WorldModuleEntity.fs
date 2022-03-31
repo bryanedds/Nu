@@ -85,42 +85,47 @@ module WorldModuleEntity =
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
-            let screenDirectory =
-                let names = Address.getNames entity.EntityAddress
-                if names.Length >= 3 then
-                    let screenName = names.[0]
-                    let groupName = names.[1]
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some groupDirectory ->
-                        match UMap.tryFind groupName groupDirectory.Value with
-                        | Some entityDirectory ->
-                            let entityDirectory' = USet.add entity entityDirectory.Value
-                            let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
-                            UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
-                    | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent screen.")
-                else failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
+            let parent =
+                if entity.EntityAddress.Names.Length <= 3
+                then entity.Group :> Simulant
+                else Entity (Array.allButLast entity.EntityAddress.Names) :> Simulant
+            let simulants =
+                match world.Simulants.TryGetValue parent with
+                | (true, entitiesOpt) ->
+                    match entitiesOpt with
+                    | Some entities ->
+                        let entities = USet.add (entity :> Simulant) entities
+                        UMap.add parent (Some entities) world.Simulants
+                    | None ->
+                        let entities = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (entity :> Simulant)
+                        UMap.add parent (Some entities) world.Simulants
+                | (false, _) -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
+            let simulants =
+                if not (UMap.containsKey (entity :> Simulant) world.Simulants)
+                then UMap.add (entity :> Simulant) None world.Simulants
+                else simulants
             let entityStates = UMap.add entity entityState world.EntityStates
-            World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+            World.choose { world with Simulants = simulants; EntityStates = entityStates }
 
         static member private entityStateRemover (entity : Entity) world =
-            let screenDirectory =
-                let names = Address.getNames entity.EntityAddress
-                if names.Length >= 3 then
-                    let screenName = names.[0]
-                    let groupName = names.[1]
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some groupDirectory ->
-                        match UMap.tryFind groupName groupDirectory.Value with
-                        | Some entityDirectory ->
-                            let entityDirectory' = USet.remove entity entityDirectory.Value
-                            let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
-                            UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent group.")
-                    | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent screen.")
-                else failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
+            let parent =
+                if entity.EntityAddress.Names.Length <= 3
+                then entity.Group :> Simulant
+                else Entity (Array.allButLast entity.EntityAddress.Names) :> Simulant
+            let simulants =
+                match world.Simulants.TryGetValue parent with
+                | (true, entitiesOpt) ->
+                    match entitiesOpt with
+                    | Some entities ->
+                        let entities = USet.remove (entity :> Simulant) entities
+                        if USet.isEmpty entities
+                        then UMap.add parent None world.Simulants
+                        else UMap.add parent (Some entities) world.Simulants
+                    | None -> world.Simulants
+                | (false, _) -> world.Simulants
+            let simulants = UMap.remove (entity :> Simulant) simulants
             let entityStates = UMap.remove entity world.EntityStates
-            World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+            World.choose { world with Simulants = simulants; EntityStates = entityStates }
 
         static member private entityStateSetter entityState (entity : Entity) world =
 #if DEBUG

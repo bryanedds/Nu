@@ -211,7 +211,7 @@ module WorldModule =
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
                   Subsystems = subsystems
-                  ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
+                  Simulants = UMap.makeEmpty HashIdentity.Structural config
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -222,9 +222,9 @@ module WorldModule =
         static member internal getEntityCachedOpt world =
             world.EntityCachedOpt
 
-        /// Get the screen directory.
-        static member internal getScreenDirectory world =
-            world.ScreenDirectory
+        /// Get the simulants.
+        static member internal getSimulants world =
+            world.Simulants
 
     type World with // Dispatchers
 

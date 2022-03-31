@@ -141,12 +141,13 @@ module WorldGroupModule =
         /// Get all the groups in a screen.
         [<FunctionBinding>]
         static member getGroups (screen : Screen) world =
-            match Address.getNames screen.ScreenAddress with
-            | [|screenName|] ->
-                match UMap.tryFind screenName (World.getScreenDirectory world) with
-                | Some groupDirectory -> groupDirectory.Value |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
-                | None -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
-            | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (screen :> Simulant) with
+            | (true, groupsOpt) ->
+                match groupsOpt with
+                | Some groups -> groups |> Seq.map cast<Group>
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Create a group and add it to the world.
         [<FunctionBinding "createGroup">]

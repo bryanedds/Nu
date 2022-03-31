@@ -20,29 +20,17 @@ module WorldModuleScreen =
             UMap.tryFind screen world.ScreenStates
 
         static member private screenStateAdder screenState (screen : Screen) world =
-            let screenDirectory =
-                match Address.getNames screen.ScreenAddress with
-                | [|screenName|] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some groupDirectory ->
-                        // NOTE: this is logically a redundant operation...
-                        let groupDirectory = KeyValuePair (screen, groupDirectory.Value)
-                        UMap.add screenName groupDirectory world.ScreenDirectory
-                    | None ->
-                        let config = World.getCollectionConfig world
-                        let groupDirectory = KeyValuePair (screen, UMap.makeEmpty StringComparer.Ordinal config)
-                        UMap.add screenName groupDirectory world.ScreenDirectory
-                | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
+            let simulants =
+                if not (UMap.containsKey (screen :> Simulant) world.Simulants)
+                then UMap.add (screen :> Simulant) None world.Simulants
+                else world.Simulants
             let screenStates = UMap.add screen screenState world.ScreenStates
-            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+            World.choose { world with Simulants = simulants; ScreenStates = screenStates }
 
         static member private screenStateRemover (screen : Screen) world =
-            let screenDirectory =
-                match Address.getNames screen.ScreenAddress with
-                | [|screenName|] -> UMap.remove screenName world.ScreenDirectory
-                | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
+            let screenDirectory = UMap.remove (screen :> Simulant) world.Simulants
             let screenStates = UMap.remove screen world.ScreenStates
-            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+            World.choose { world with Simulants = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState (screen : Screen) world =
 #if DEBUG
