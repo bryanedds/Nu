@@ -361,13 +361,13 @@ module WorldModuleGroup =
         GroupGetters.Add ("Order", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupOrder group world })
         GroupGetters.Add ("Id", fun group world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGroupId group world })
         GroupGetters.Add ("Name", fun group world -> { PropertyType = typeof<string>; PropertyValue = World.getGroupName group world })
-        
+
     /// Initialize property setters.
     let private initSetters () =
         GroupSetters.Add ("Model", fun property group world -> World.setGroupModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
         GroupSetters.Add ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
         GroupSetters.Add ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)
-        
+
     /// Initialize getters and setters
     let internal init () =
         initGetters ()

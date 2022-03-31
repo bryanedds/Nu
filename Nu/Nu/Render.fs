@@ -156,6 +156,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Particles : Particle array }
 
 /// Describes how to render something to the rendering system.
+/// TODO: see if we can make RenderCallback receive args by reference or something.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
@@ -727,10 +728,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                  &descriptor.Transform, descriptor.Absolute, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  renderer)
         | TextDescriptor descriptor ->
-            SdlRenderer.renderText
-                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
-                 &descriptor.Transform, descriptor.Absolute, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
-                 renderer)
+            ()
+            //SdlRenderer.renderText
+            //    (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+            //     &descriptor.Transform, descriptor.Absolute, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
+            //     renderer)
         | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
