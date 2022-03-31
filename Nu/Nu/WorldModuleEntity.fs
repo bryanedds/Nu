@@ -101,8 +101,8 @@ module WorldModuleEntity =
                         UMap.add parent (Some entities) world.Simulants
                 | (false, _) -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
             let simulants =
-                if not (UMap.containsKey (entity :> Simulant) world.Simulants)
-                then UMap.add (entity :> Simulant) None world.Simulants
+                if not (UMap.containsKey (entity :> Simulant) simulants)
+                then UMap.add (entity :> Simulant) None simulants
                 else simulants
             let entityStates = UMap.add entity entityState world.EntityStates
             World.choose { world with Simulants = simulants; EntityStates = entityStates }
