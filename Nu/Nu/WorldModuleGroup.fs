@@ -33,8 +33,8 @@ module WorldModuleGroup =
                         UMap.add (screen :> Simulant) (Some groups) world.Simulants
                 | (false, _) -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
             let simulants =
-                if not (UMap.containsKey (group :> Simulant) world.Simulants)
-                then UMap.add (group :> Simulant) None world.Simulants
+                if not (UMap.containsKey (group :> Simulant) simulants)
+                then UMap.add (group :> Simulant) None simulants
                 else simulants
             let groupStates = UMap.add group groupState world.GroupStates
             World.choose { world with Simulants = simulants; GroupStates = groupStates }
