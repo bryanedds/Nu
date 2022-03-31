@@ -99,7 +99,7 @@ module WorldModuleEntity =
                     | None ->
                         let entities = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (entity :> Simulant)
                         UMap.add parent (Some entities) world.Simulants
-                | (false, _) -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
+                | (false, _) -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent parent '" + scstring parent + "'.")
             let simulants =
                 if not (UMap.containsKey (entity :> Simulant) simulants)
                 then UMap.add (entity :> Simulant) None simulants

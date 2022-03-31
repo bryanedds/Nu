@@ -197,6 +197,7 @@ module WorldModule =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
+            let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
                 { EventSystemDelegate = eventDelegate
@@ -211,7 +212,7 @@ module WorldModule =
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
                   Subsystems = subsystems
-                  Simulants = UMap.makeEmpty HashIdentity.Structural config
+                  Simulants = simulants
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world

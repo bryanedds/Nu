@@ -195,7 +195,12 @@ module WorldScreenModule =
         [<FunctionBinding>]
         static member getScreens world =
             let simulants = World.getSimulants world
-            Seq.map (snd >> cast<Screen>) simulants
+            match simulants.TryGetValue (Simulants.Game :> Simulant) with
+            | (true, screensOpt) ->
+                match screensOpt with
+                | Some screens -> screens |> Seq.map cast<Screen>
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
