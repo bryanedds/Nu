@@ -1246,7 +1246,7 @@ module WorldTypes =
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty UMap to descrease number of UMap instances.
+              Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
