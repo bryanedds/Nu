@@ -20,38 +20,41 @@ module WorldModuleGroup =
             UMap.tryFind group world.GroupStates
 
         static member private groupStateAdder groupState (group : Group) world =
-            let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [|screenName; groupName|] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some groupDirectory ->
-                        match UMap.tryFind groupName groupDirectory.Value with
-                        | Some entityDirectory ->
-                            let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory.Value)) groupDirectory.Value
-                            let entityDirectory' = KeyValuePair (groupDirectory.Key, groupDirectory')
-                            UMap.add screenName entityDirectory' world.ScreenDirectory
-                        | None ->
-                            let config = World.getCollectionConfig world
-                            let entityDirectory' = (KeyValuePair (group, USet.makeEmpty HashIdentity.Structural config))
-                            let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
-                            UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                    | None -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
-                | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
+            let screen = group.Screen
+            let simulants =
+                match world.Simulants.TryGetValue (screen :> Simulant) with
+                | (true, groupsOpt) ->
+                    match groupsOpt with
+                    | Some groups ->
+                        let groups = USet.add (group :> Simulant) groups
+                        UMap.add (screen :> Simulant) (Some groups) world.Simulants
+                    | None ->
+                        let groups = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (group :> Simulant)
+                        UMap.add (screen :> Simulant) (Some groups) world.Simulants
+                | (false, _) -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
+            let simulants =
+                if not (UMap.containsKey (group :> Simulant) world.Simulants)
+                then UMap.add (group :> Simulant) None world.Simulants
+                else simulants
             let groupStates = UMap.add group groupState world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
-
+            World.choose { world with Simulants = simulants; GroupStates = groupStates }
+        
         static member private groupStateRemover (group : Group) world =
-            let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [|screenName; groupName|] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some groupDirectory ->
-                        let groupDirectory' = UMap.remove groupName groupDirectory.Value
-                        UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                    | None -> failwith ("Cannot remove group '" + scstring group + "' from non-existent screen.")
-                | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
+            let screen = group.Screen
+            let simulants =
+                match world.Simulants.TryGetValue (screen :> Simulant) with
+                | (true, groupsOpt) ->
+                    match groupsOpt with
+                    | Some groups ->
+                        let groups = USet.remove (group :> Simulant) groups
+                        if USet.isEmpty groups
+                        then UMap.add (screen :> Simulant) None world.Simulants
+                        else UMap.add (screen :> Simulant) (Some groups) world.Simulants
+                    | None -> world.Simulants
+                | (false, _) -> world.Simulants
+            let simulants = UMap.remove (group :> Simulant) simulants
             let groupStates = UMap.remove group world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+            World.choose { world with Simulants = simulants; GroupStates = groupStates }
 
         static member private groupStateSetter groupState (group : Group) world =
 #if DEBUG

@@ -216,7 +216,7 @@ module WorldGameModule =
             let world = dispatcher.Actualize (game, world)
             World.choose world
 
-        // Get all the entities in the world, unordered.
+        // Get all the entities in the world.
         [<FunctionBinding "getEntities0">]
         static member getEntities1 world =
             World.getGroups1 world |>
@@ -225,7 +225,7 @@ module WorldGameModule =
             Seq.toArray |>
             seq
 
-        // Get all the groups in the world, unordered.
+        // Get all the groups in the world.
         [<FunctionBinding "getGroups0">]
         static member getGroups1 world =
             World.getScreens world |>

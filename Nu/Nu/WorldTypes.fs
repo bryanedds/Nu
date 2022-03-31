@@ -1240,14 +1240,13 @@ module WorldTypes =
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
               // cache line 2
-              EntityMounts : UMap<Entity, USet<Entity>>
+              EntityMounts : UMap<Entity, Entity USet>
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, USet<Entity>>>>>
-              // cache line 3
+              Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty UMap to descrease number of UMap instances.
               WorldExtension : WorldExtension }
 
         interface World EventSystem with

@@ -191,10 +191,11 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)
 
-        /// Get all the screens in the world, unordered.
+        /// Get all the screens in the world.
         [<FunctionBinding>]
         static member getScreens world =
-            World.getScreenDirectory world |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
+            let simulants = World.getSimulants world
+            Seq.map (snd >> cast<Screen>) simulants
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
