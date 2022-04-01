@@ -257,10 +257,8 @@ module WorldEntityModule =
                     else world
                 | (Some mountOld, None) ->
                     if mountOld.Exists world then
-                        let position = this.GetPositionLocal world + mountOld.GetPosition world
-                        let elevation = this.GetElevationLocal world + mountOld.GetElevation world
-                        let world = this.SetPosition position world
-                        let world = this.SetElevation elevation world
+                        let world = this.SetPositionLocal v2Zero world
+                        let world = this.SetElevationLocal 0.0f world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
                         world
