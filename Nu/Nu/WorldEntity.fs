@@ -247,10 +247,10 @@ module WorldEntityModule =
                      Option.bind (tryResolve this) value) with
                 | (Some mountOld, Some mountNew) ->
                     if mountOld.Exists world && mountNew.Exists world then
-                        let position = this.GetPositionLocal world + mountNew.GetPosition world
-                        let elevation = this.GetElevationLocal world + mountNew.GetElevation world
-                        let world = this.SetPosition position world
-                        let world = this.SetElevation elevation world
+                        let positionLocal = this.GetPosition world - mountNew.GetPosition world
+                        let elevationLocal = this.GetElevation world - mountNew.GetElevation world
+                        let world = this.SetPositionLocal positionLocal world
+                        let world = this.SetElevationLocal elevationLocal world
                         let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
                         world
@@ -267,10 +267,10 @@ module WorldEntityModule =
                     else world
                 | (None, Some mountNew) ->
                     if mountNew.Exists world then
-                        let position = this.GetPosition world - mountNew.GetPosition world
-                        let elevation = this.GetElevation world - mountNew.GetElevation world
-                        let world = this.SetPositionLocal position world
-                        let world = this.SetElevationLocal elevation world
+                        let positionLocal = this.GetPosition world - mountNew.GetPosition world
+                        let elevationLocal = this.GetElevation world - mountNew.GetElevation world
+                        let world = this.SetPositionLocal positionLocal world
+                        let world = this.SetElevationLocal elevationLocal world
                         let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
                         world
