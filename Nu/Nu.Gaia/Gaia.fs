@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Collections
 open System.ComponentModel
+open System.Drawing
 open System.Linq
 open System.Numerics
 open System.Reflection
@@ -737,6 +738,39 @@ module Gaia =
 
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
+
+    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (e : ItemDragEventArgs) =
+        if e.Button = MouseButtons.Left then
+            form.DoDragDrop (e.Item, DragDropEffects.Move) |> ignore
+
+    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (e : DragEventArgs) =
+        e.Effect <- e.AllowedEffect
+
+    let private handleFormHierarchyTreeViewDragOver (form : GaiaForm) (e : DragEventArgs) =
+        let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+        form.hierarchyTreeView.SelectedNode <- form.hierarchyTreeView.GetNodeAt targetPoint
+
+    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (e : DragEventArgs) =
+
+        // TODO: lift this out.
+        let rec containsNode (source : TreeNode) (target : TreeNode) =
+            if isNull target.Parent then false
+            elif target.Parent = source then true
+            else containsNode source target.Parent
+
+        addWorldChanger $ fun world ->
+            let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+            let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
+            let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
+            if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
+                let selectedGroup = (getEditorState world).SelectedGroup
+                let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
+                let target =
+                    if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
+                    then Group selectedGroup.GroupAddress / source.Name
+                    else Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
+                World.renameEntityImmediate source target world
+            else world
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1474,6 +1508,7 @@ module Gaia =
                     else 0 }
 
         // same for hierarchy tree view...
+        form.hierarchyTreeView.AllowDrop <- true // TODO: configure this in designer instead.
         form.hierarchyTreeView.Sorted <- true
         form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
 
@@ -1498,6 +1533,10 @@ module Gaia =
         form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
+        form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
+        form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
+        form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
+        form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
         form.createEntityButton.Click.Add (handleFormCreateEntity false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
         form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
