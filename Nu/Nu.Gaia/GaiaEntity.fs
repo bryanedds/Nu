@@ -86,10 +86,10 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Names" ->
                 let names = value :?> string array
                 if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) names then
-                    let entity' = Entity (entity.Group.GroupAddress <-- rtoa names)
-                    let world = World.renameEntityImmediate entity entity' world
+                    let target = Entity (entity.Group.GroupAddress <-- rtoa names)
+                    let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
-                    Globals.SelectEntity entity' Globals.Form world
+                    Globals.SelectEntity target Globals.Form world
                     world
                 else
                     MessageBox.Show
@@ -103,10 +103,10 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let entity' = Entity (Array.allButLast entity.Names) / name
-                    let world = World.renameEntityImmediate entity entity' world
+                    let target = Entity (Array.allButLast entity.Names) / name
+                    let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
-                    Globals.SelectEntity entity' Globals.Form world
+                    Globals.SelectEntity target Globals.Form world
                     world
                 else
                     MessageBox.Show
