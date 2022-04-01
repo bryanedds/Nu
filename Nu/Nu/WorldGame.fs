@@ -151,12 +151,6 @@ module WorldGameModule =
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
-        
-        /// Attempt to resolve a relation in the context of an entity.
-        member this.TryResolve relation = tryResolve<Game> this relation
-
-        /// Relate a game to a simulant.
-        member this.Relate simulant = relate<Game> this simulant
 
         /// Get a game's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GameAddress
