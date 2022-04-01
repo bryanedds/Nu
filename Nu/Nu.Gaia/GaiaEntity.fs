@@ -103,7 +103,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let target = Entity (Array.allButLast entity.EntityNames) / name
+                    let target = Entity (Array.add name entity.EntityNames)
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity target Globals.Form world

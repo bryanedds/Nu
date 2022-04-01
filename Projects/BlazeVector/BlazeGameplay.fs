@@ -25,7 +25,7 @@ module Bullet =
             let world = bullet.SetAge (inc (bullet.GetAge world)) world
             let world =
                 if bullet.GetAge world > BulletLifeTime
-                then World.destroyEntity bullet world
+                then World.destroyEntity true bullet world
                 else world
             (Cascade, world)
 
@@ -33,7 +33,7 @@ module Bullet =
             let bullet = evt.Subscriber : Entity
             let world =
                 if World.isAdvancing world
-                then World.destroyEntity bullet world
+                then World.destroyEntity true bullet world
                 else world
             (Cascade, world)
 
@@ -77,7 +77,7 @@ module Enemy =
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
-            let world = World.destroyEntity enemy world
+            let world = World.destroyEntity true enemy world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
 
         static let handleUpdate evt world =
