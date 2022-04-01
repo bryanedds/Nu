@@ -34,7 +34,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             Reflection.getPropertyDefinitions typeof<RigidBodyFastFacet> @
             Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
-        elif propertyName = propertyName = "Name" || "Surnames" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
+        elif propertyName = "Name" || propertyName = "Surnames" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
