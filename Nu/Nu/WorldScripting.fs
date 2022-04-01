@@ -77,9 +77,7 @@ module WorldScripting =
                 let context = World.getScriptContext world
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
-                match World.tryDerive address with
-                | Some simulant -> struct (Bool (World.getExists simulant world), world)
-                | None -> struct (Bool false, world)
+                struct (Bool (World.getExists (World.derive address) world), world)
             | _ -> struct (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
         static member internal tryResolveRelation fnName expr originOpt (context : Simulant) world =
@@ -89,9 +87,8 @@ module WorldScripting =
             | struct (Keyword str, world) ->
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
-                match World.tryDerive address with
-                | Some simulant -> Right struct (simulant, world)
-                | None -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must have 0 to 3 names.", originOpt), world)
+                let simulant = World.derive address
+                Right struct (simulant, world)
             | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must be either a String or Keyword.", originOpt), world)
 
         static member internal tryResolveRelationOpt fnName relationOpt originOpt context world =

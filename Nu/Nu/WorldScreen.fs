@@ -244,7 +244,7 @@ module WorldScreenModule =
         static member createScreen2 descriptor world =
             let (screen, world) =
                 let screenNameOpt =
-                    match descriptor.SimulantNamesOpt with
+                    match descriptor.SimulantSurnamesOpt with
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Screen cannot have multiple names."

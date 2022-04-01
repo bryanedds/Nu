@@ -9,7 +9,7 @@ open Nu
 /// Describes a generalized simulant value independent of the engine.
 /// Not used for serialization.
 type [<StructuralEquality; NoComparison>] SimulantDescriptor =
-    { SimulantNamesOpt : string array option
+    { SimulantSurnamesOpt : string array option
       SimulantDispatcherName : string
       SimulantProperties : (string * Property) list
       SimulantChildren : SimulantDescriptor list }
@@ -26,13 +26,13 @@ module EntityDescriptor =
     /// Derive a name from the dispatcher.
     let getNameOpt dispatcher =
         dispatcher.EntityProperties |>
-        Map.tryFind (Property? Name) |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
         Option.map symbolToValue<string>
 
-    /// Derive names from the dispatcher.
-    let getNamesOpt dispatcher =
+    /// Derive surnames from the dispatcher.
+    let getSurnamesOpt dispatcher =
         dispatcher.EntityProperties |>
-        Map.tryFind (Property? Names) |>
+        Map.tryFind Constants.Engine.SurnamesPropertyName |>
         Option.map symbolToValue<string array>
 
     /// The empty entity descriptor.
@@ -153,16 +153,16 @@ module Describe =
         List.definitize
 
     /// Describe a simulant with the given initializers and contained children.
-    let simulant5 dispatcherName namesOpt (initializers : PropertyInitializer list) children simulant world =
+    let simulant5 dispatcherName surnamesOpt (initializers : PropertyInitializer list) children simulant world =
         let properties = initializersToProperties initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
         let binds = initializersToBinds initializers simulant
-        let descriptor = { SimulantNamesOpt = namesOpt; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
+        let descriptor = { SimulantSurnamesOpt = surnamesOpt; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
         (descriptor, eventHandlers, binds)
 
     /// Describe a simulant with the given initializers and contained children.
-    let simulant<'d when 'd :> GameDispatcher> nameOpt initializers children simulant world =
-        simulant5 typeof<'d>.Name nameOpt initializers children simulant world
+    let simulant<'d when 'd :> GameDispatcher> surnamesOpt initializers children simulant world =
+        simulant5 typeof<'d>.Name surnamesOpt initializers children simulant world
 
     /// Describe a game with the given initializers and contained screens.
     let game5 dispatcherName (initializers : PropertyInitializer list) (screens : SimulantDescriptor list) (game : Game) world =
@@ -173,25 +173,25 @@ module Describe =
         game5 typeof<'d>.Name initializers screens game world
 
     /// Describe a screen with the given initializers and contained groups.
-    let screen5 dispatcherName nameOpt (initializers : PropertyInitializer list) (groups : SimulantDescriptor list) (screen : Screen) world =
-        simulant5 dispatcherName nameOpt initializers groups screen world
+    let screen5 dispatcherName surnamesOpt (initializers : PropertyInitializer list) (groups : SimulantDescriptor list) (screen : Screen) world =
+        simulant5 dispatcherName surnamesOpt initializers groups screen world
 
     /// Describe a screen with the given initializers and contained groups.
-    let screen<'d when 'd :> ScreenDispatcher> nameOpt initializers groups screen world =
-        screen5 typeof<'d>.Name nameOpt initializers groups screen world
+    let screen<'d when 'd :> ScreenDispatcher> surnamesOpt initializers groups screen world =
+        screen5 typeof<'d>.Name surnamesOpt initializers groups screen world
 
     /// Describe a group with the given initializers and contained entities.
-    let group5 dispatcherName nameOpt (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (group : Group) world =
-        simulant5 dispatcherName nameOpt initializers entities group world
+    let group5 dispatcherName surnamesOpt (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (group : Group) world =
+        simulant5 dispatcherName surnamesOpt initializers entities group world
 
     /// Describe a group with the given initializers and contained entities.
     let group<'d when 'd :> GroupDispatcher> initializers entities world =
         group5 typeof<'d>.Name initializers entities world
 
     /// Describe an entity with the given initializers.
-    let entity4 dispatcherName nameOpt (initializers : PropertyInitializer list) (entity : Entity) world =
-        simulant5 dispatcherName nameOpt initializers [] entity world
+    let entity4 dispatcherName surnamesOpt (initializers : PropertyInitializer list) (entity : Entity) world =
+        simulant5 dispatcherName surnamesOpt initializers [] entity world
 
     /// Describe an entity with the given initializers.
-    let entity<'d when 'd :> EntityDispatcher> nameOpt initializers world =
-        entity4 typeof<'d>.Name nameOpt initializers world
+    let entity<'d when 'd :> EntityDispatcher> surnamesOpt initializers world =
+        entity4 typeof<'d>.Name surnamesOpt initializers world
