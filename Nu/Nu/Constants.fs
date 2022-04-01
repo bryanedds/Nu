@@ -59,8 +59,8 @@ module Render =
 module Audio =
 
     let [<Literal>] Frequency = 44100
-    let [<Literal>] SongVolumeDefault = 0.25f
-    let [<Literal>] SoundVolumeDefault = 0.5f
+    let [<Literal>] SongVolumeDefault = 0.5f
+    let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] BufferSizeDefault = 1024
     let [<Literal>] FadeInMinimum = 100 // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
     let [<Literal>] FadeOutMsDefault = 500
