@@ -455,7 +455,7 @@ module WorldModuleEntity =
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
-        static member internal getMounters entity world =
+        static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
             | (true, mounters) ->
                 mounters |>
@@ -464,8 +464,21 @@ module WorldModuleEntity =
                 seq
             | (false, _) -> Seq.empty
 
-        static member internal traverseMounters effect entity (world : World) =
-            let mounters = World.getMounters entity world
+        static member internal traverseEntityMounters effect entity (world : World) =
+            let mounters = World.getEntityMounters entity world
+            Seq.fold (fun world mounter -> effect entity mounter world) world mounters
+        
+        static member internal getEntityChildren (entity : Entity) world =
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (entity :> Simulant) with
+            | (true, entitiesOpt) ->
+                match entitiesOpt with
+                | Some entities -> entities |> Seq.map cast<Entity> |> seq
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
+
+        static member internal traverseEntityChildren effect entity (world : World) =
+            let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         static member internal addEntityToMounts mountOpt entity world =
@@ -611,7 +624,7 @@ module WorldModuleEntity =
             World.setEntityPosition position mounter world |> snd'
 
         static member internal propagateEntityPosition entity world =
-            World.traverseMounters World.propagateEntityPosition3 entity world
+            World.traverseEntityMounters World.propagateEntityPosition3 entity world
 
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
@@ -714,7 +727,7 @@ module WorldModuleEntity =
             World.setEntityElevation elevation mounter world |> snd'
 
         static member internal propagateEntityElevation entity world =
-            World.traverseMounters World.propagateEntityElevation3 entity world
+            World.traverseEntityMounters World.propagateEntityElevation3 entity world
 
         static member internal setEntityElevationLocal value entity world =
 
@@ -780,7 +793,7 @@ module WorldModuleEntity =
             World.setEntityEnabled enabled mounter world |> snd'
 
         static member internal propagateEntityEnabled entity world =
-            World.traverseMounters World.propagateEntityEnabled3 entity world
+            World.traverseEntityMounters World.propagateEntityEnabled3 entity world
 
         static member internal setEntityEnabledLocal value entity world =
             let struct (changed, world) =
@@ -822,7 +835,7 @@ module WorldModuleEntity =
             World.setEntityVisible visible mounter world |> snd'
 
         static member internal propagateEntityVisible entity world =
-            World.traverseMounters World.propagateEntityVisible3 entity world
+            World.traverseEntityMounters World.propagateEntityVisible3 entity world
 
         static member internal setEntityVisibleLocal value entity world =
             let struct (changed, world) =
@@ -1760,31 +1773,18 @@ module WorldModuleEntity =
             | null -> world
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                let children = World.getEntityChildren source world
                 let world = World.destroyEntityImmediate source world
-                World.addEntity false entityState destination world
+                let world = World.addEntity false entityState destination world
+                Seq.fold (fun world (child : Entity) ->
+                    let destination = destination / child.Name
+                    World.renameEntityImmediate child destination world)
+                    world children
 
         /// Rename an entity.
         [<FunctionBinding>]
         static member renameEntity source destination world =
             World.frame (World.renameEntityImmediate source destination) world
-
-        /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
-        /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        /// TODO: see if we can just use renameEntityImmediate instead.
-        static member reassignEntityImmediate entity namesOpt (group : Group) world =
-            let entityState = World.getEntityState entity world
-            let world = World.destroyEntityImmediate entity world
-            let (id, names) = Gen.idAndNamesIf namesOpt
-            let entityState = { entityState with Id = id; Names = names }
-            let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
-            let world = World.addEntity false entityState entity world
-            (entity, world)
-
-        /// Reassign an entity's identity and / or group.
-        /// TODO: see if we can just use renameEntity instead.
-        [<FunctionBinding>]
-        static member reassignEntity entity nameOpt group world =
-            World.frame (World.reassignEntityImmediate entity nameOpt group >> snd) world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =

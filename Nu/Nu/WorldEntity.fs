@@ -287,10 +287,16 @@ module WorldEntityModule =
             | None -> false
 
         /// Get an entity's mounters.
-        member this.GetMounters world = World.getMounters this world
+        member this.GetMounters world = World.getEntityMounters this world
 
         /// Traverse an entity's mounters.
-        member this.TraverseMounters effect world = World.traverseMounters effect this world
+        member this.TraverseMounters effect world = World.traverseEntityMounters effect this world
+
+        /// Get an entity's children.
+        member this.GetChildren world = World.getEntityChildren this world
+
+        /// Traverse an entity's children.
+        member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
@@ -390,17 +396,18 @@ module WorldEntityModule =
 
         /// Get all the entities not parented by other entities in a group.
         [<FunctionBinding>]
-        static member getEntityParents (group : Group) world =
+        static member getEntityRoots (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
             | (true, entitiesOpt) ->
                 match entitiesOpt with
-                | Some entities -> entities |> Seq.toArray |> seq
+                | Some entities -> entities |> Seq.map cast<Entity> |> seq
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
         // Get all the entities not mounting another entity in a group.
-        static member getEntityMounts group world =
+        [<FunctionBinding>]
+        static member getEntitySovereigns group world =
             World.getEntities group world |>
             Array.ofSeq |>
             Array.filter (fun entity -> Option.isNone (entity.GetMountOpt world)) |>
