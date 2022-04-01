@@ -759,6 +759,7 @@ module Gaia =
             else containsNode source target.Parent
 
         addWorldChanger $ fun world ->
+            Globals.pushPastWorld world
             let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
             let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
