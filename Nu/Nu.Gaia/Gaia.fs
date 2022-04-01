@@ -420,13 +420,13 @@ module Gaia =
                     | Constants.Editor.NonePick ->
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
-                        let world = World.renameEntityImmediate entity entity2 world
+                        let world = World.renameEntityImmediate entity entity2 None world
                         entity2.SetMountOptWithAdjustment None world
                     | _ ->
                         let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.append parent.EntityAddress.Names [|entity.Name|])
-                        let world = World.renameEntityImmediate entity entity2 world
+                        let world = World.renameEntityImmediate entity entity2 (Some (Relation.makeParent ())) world
                         let parentRelation = Relation.makeParent ()
                         form.propertyValueTextBoxText <- scstring parentRelation
                         if propertyDescriptor.Name = "MountOpt"
@@ -766,11 +766,12 @@ module Gaia =
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                 let selectedGroup = (getEditorState world).SelectedGroup
                 let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
-                let target =
+                let (mountToParent, target) =
                     if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
-                    then Group selectedGroup.GroupAddress / source.Name
-                    else Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
-                World.renameEntityImmediate source target world
+                    then (false, Group selectedGroup.GroupAddress / source.Name)
+                    else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
+                let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
+                World.renameEntityImmediate source target mountOpt world
             else world
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =

@@ -1869,35 +1869,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let renameEntity source destination world =
-        let oldWorld = world
-        try
-            let struct (source, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal source world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.renameEntity source destination world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'renameEntity' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let trySetEntityOverlayNameOpt overlayNameOpt entity world =
         let oldWorld = world
         try
@@ -3507,17 +3478,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalRenameEntityBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|source; destination|] -> renameEntity source destination world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalTrySetEntityOverlayNameOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4083,7 +4043,6 @@ module WorldBindings =
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
-             ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
              ("getEyeCenter", { Fn = evalGetEyeCenterBinding; Pars = [||]; DocOpt = None })
