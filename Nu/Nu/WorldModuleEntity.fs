@@ -1764,9 +1764,10 @@ module WorldModuleEntity =
             | _ ->
                 let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
                 World.addEntity false entityState destination world
-                
-        /// Rename an entity's identity and / or group. Note that since this destroys the renamed entity
-        /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
+
+        /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
+        /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
+        /// descendents accordingly.
         static member renameEntityImmediate source (destination : Entity) world =
             let entityStateOpt = World.getEntityStateOpt source world
             match entityStateOpt :> obj with
