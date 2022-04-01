@@ -976,7 +976,7 @@ module BattleDispatcher =
             
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Names) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.EntityNames) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world
@@ -984,7 +984,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Names) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.EntityNames) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world

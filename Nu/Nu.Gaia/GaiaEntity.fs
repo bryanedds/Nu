@@ -34,7 +34,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             Reflection.getPropertyDefinitions typeof<RigidBodyFastFacet> @
             Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
-        elif propertyName = "Names" || propertyName = "Name" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
+        elif propertyName = "EntityNames" || propertyName = "Name" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
@@ -83,18 +83,18 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             match propertyName with
             
             // change the names property
-            | "Names" ->
-                let names = value :?> string array
-                if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) names then
-                    let target = Entity (entity.Group.GroupAddress <-- rtoa names)
+            | "EntityNames" ->
+                let entityNames = value :?> string array
+                if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) entityNames then
+                    let target = Entity (entity.Group.GroupAddress <-- rtoa entityNames)
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity target Globals.Form world
                     world
                 else
                     MessageBox.Show
-                        ("Invalid entity names '" + scstring names + "'.",
-                         "Invalid Names",
+                        ("Invalid entity names '" + scstring entityNames + "'.",
+                         "Invalid Entity Names",
                          MessageBoxButtons.OK) |>
                         ignore
                     world
@@ -103,7 +103,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let target = Entity (Array.allButLast entity.Names) / name
+                    let target = Entity (Array.allButLast entity.EntityNames) / name
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity target Globals.Form world

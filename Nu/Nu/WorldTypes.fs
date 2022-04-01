@@ -713,7 +713,7 @@ module WorldTypes =
           mutable Order : int64
           // cache line 4 (3/4-way through Id)
           Id : Guid
-          Names : string array }
+          EntityNames : string array }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
@@ -737,7 +737,7 @@ module WorldTypes =
               FacetNames = Set.empty
               Order = Core.getUniqueTimeStamp ()
               Id = id
-              Names = names }
+              EntityNames = names }
 
         /// Copy an entity state.
         static member inline copy (entityState : EntityState) =
@@ -902,6 +902,9 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
+        /// Get the names of a screen.
+        member inline this.Names = Address.getNames this.ScreenAddress
+
         /// Get the name of a screen.
         member inline this.Name = Address.getName this.ScreenAddress
 
@@ -974,6 +977,9 @@ module WorldTypes =
 
         /// The containing screen of the group.
         member this.Screen = let names = this.GroupAddress.Names in Screen names.[0]
+
+        /// Get the names of a group.
+        member inline this.Names = Address.getNames this.GroupAddress
 
         /// Get the name of a group.
         member inline this.Name = Address.getName this.GroupAddress
@@ -1085,8 +1091,11 @@ module WorldTypes =
             rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] entityNames)
 #endif
 
+        /// Get the names of an entity, including group and screen names.
+        member inline this.Names = Address.getNames this.EntityAddress
+
         /// Get the names of an entity, not including group or screen.
-        member inline this.Names = Address.getNames this.EntityAddress |> Array.skip 2
+        member inline this.EntityNames = Address.getNames this.EntityAddress |> Array.skip 2
 
         /// Get the last name of an entity.
         member inline this.Name = Address.getNames this.EntityAddress |> Array.last

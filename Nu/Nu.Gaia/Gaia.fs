@@ -113,7 +113,7 @@ module Gaia =
         for entity in entities do
             let mutable namesUsed = [||]
             let mutable parentNode = groupNode
-            for name in entity.Names do
+            for name in entity.EntityNames do
                 namesUsed <- Array.add name namesUsed
                 let childNodeKey = namesUsed |> rtoa |> string
                 if not (parentNode.Nodes.ContainsKey childNodeKey) then
@@ -231,7 +231,7 @@ module Gaia =
             refreshHierarchyTreeView form world
             (Cascade, world)
         | UnregisteringData simulant ->
-            let nodeKey = scstring (rtoa (simulant :?> Entity).Names)
+            let nodeKey = scstring (rtoa (simulant :?> Entity).EntityNames)
             for node in collectHierarchyTreeNodes form world do
                 if node.Name = nodeKey then
                     node.Remove ()
@@ -399,7 +399,7 @@ module Gaia =
         let entityNamesStrs =
             World.getEntities selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
-            Seq.map (fun entity -> entity.Names |> Address.makeFromArray |> string) |>
+            Seq.map (fun entity -> entity.EntityNames |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
         entityPicker.entityListBox.Items.AddRange (Array.map box entityNamesStrs)

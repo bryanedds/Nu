@@ -82,7 +82,7 @@ module Reflection =
     let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
         isPropertyNonPersistentByName property.Name ||
         (property.Name = Constants.Engine.NamePropertyName &&
-         property.Name = Constants.Engine.NamesPropertyName &&
+         property.Name = Constants.Engine.EntityNamesPropertyName &&
          property.PropertyType = typeof<string> &&
          Gen.isName (property.GetValue target :?> string))
 
