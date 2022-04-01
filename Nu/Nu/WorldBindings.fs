@@ -1705,6 +1705,51 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitySovereigns' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let destroyEntity entity world =
+        let oldWorld = world
+        try
+            let struct (entity, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal entity world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.destroyEntity entity world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntity' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let destroyEntities entities world =
+        let oldWorld = world
+        try
+            let struct (entities, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal entities world with
+                | struct (Scripting.List simulants, world) ->
+                    List.fold (fun struct (simulants, world) simulant ->
+                        match simulant with
+                        | Scripting.String str
+                        | Scripting.Keyword str ->
+                            let relation = Relation.makeFromString str
+                            let address = Relation.resolve context.SimulantAddress relation
+                            struct (Entity address :: simulants, world)
+                        | Scripting.Violation (_, error, _) -> failwith error
+                        | _ -> failwith "Relation must be either a String or Keyword.")
+                        struct ([], world)
+                        simulants
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Expecting a list of relations."
+            let result = World.destroyEntities entities world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntities' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let tryPickEntity position entities world =
         let oldWorld = world
         try
@@ -1822,6 +1867,35 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let renameEntity source destination world =
+        let oldWorld = world
+        try
+            let struct (source, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal source world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let struct (destination, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal destination world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.renameEntity source destination world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'renameEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let trySetEntityOverlayNameOpt overlayNameOpt entity world =
@@ -3367,6 +3441,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalDestroyEntityBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entity|] -> destroyEntity entity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDestroyEntitiesBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entities|] -> destroyEntities entities world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalTryPickEntityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3406,6 +3502,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|filePath; nameOpt; group|] -> readEntityFromFile filePath nameOpt group world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalRenameEntityBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|source; destination|] -> renameEntity source destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3970,10 +4077,13 @@ module WorldBindings =
              ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"group"|]; DocOpt = None })
              ("getEntityRoots", { Fn = evalGetEntityRootsBinding; Pars = [|"group"|]; DocOpt = None })
              ("getEntitySovereigns", { Fn = evalGetEntitySovereignsBinding; Pars = [|"group"|]; DocOpt = None })
+             ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
+             ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
              ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
+             ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
              ("getEyeCenter", { Fn = evalGetEyeCenterBinding; Pars = [||]; DocOpt = None })
