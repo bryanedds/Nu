@@ -5,16 +5,19 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Names [Play]]
+   [[Name Play]
     [Position [-96 -40]]
+    [Surnames [Play]]
     [Text Play]]]
   [ButtonDispatcher
-   [[Names [Credits]]
+   [[Name Credits]
     [Position [-96 -112]]
+    [Surnames [Credits]]
     [Text Credits]]]
   [ButtonDispatcher
-   [[Names [Exit]]
+   [[Name Exit]
     [Position [-96 -184]]
+    [Surnames [Exit]]
     [Text Exit]]]
   [TextDispatcher
    [[BackgroundImageOpt
