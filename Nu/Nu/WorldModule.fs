@@ -36,10 +36,10 @@ module WorldModuleOperators =
     /// Attempt to resolve a relationship from a simulant.
     let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
         let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
-        if typeof<'t> = typeof<Entity> && simulant2.Names.Length >= 3 then Some (Entity (atoa simulant2) :> Simulant :?> 't)
-        elif typeof<'t> = typeof<Group> && simulant2.Names.Length = 2 then Some (Group (atoa simulant2) :> Simulant :?> 't)
-        elif typeof<'t> = typeof<Screen> && simulant2.Names.Length = 1 then Some (Screen (atoa simulant2) :> Simulant :?> 't)
-        elif typeof<'t> = typeof<Game> && simulant2.Names.Length = 0 then Some (Simulants.Game :> Simulant :?> 't)
+        if simulant2.Names.Length >= 3 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names.[0]) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 0 && typeof<'t> = typeof<Game> then Some (Simulants.Game :> Simulant :?> 't)
         else None
 
     /// Relate the second simulant to the first.
