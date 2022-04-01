@@ -771,7 +771,8 @@ module Gaia =
                     then (false, Group selectedGroup.GroupAddress / source.Name)
                     else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
                 let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
-                World.renameEntityImmediate source target world
+                let world = World.renameEntityImmediate source target world
+                target.SetMountOptWithAdjustment mountOpt world
             else world
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =

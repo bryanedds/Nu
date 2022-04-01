@@ -242,10 +242,10 @@ module WorldEntityModule =
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             let world =
-                match (this.GetMountOpt world, value) with
-                | (Some relationOld, Some relationNew) ->
-                    let mountOld = this.Resolve relationOld : Entity
-                    let mountNew = this.Resolve relationNew : Entity
+                match
+                    (Option.bind (tryResolve this) (this.GetMountOpt world),
+                     Option.bind (tryResolve this) value) with
+                | (Some mountOld, Some mountNew) ->
                     if mountOld.Exists world && mountNew.Exists world then
                         let position = this.GetPositionLocal world + mountNew.GetPosition world
                         let elevation = this.GetElevationLocal world + mountNew.GetElevation world
@@ -255,8 +255,7 @@ module WorldEntityModule =
                         let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
                         world
                     else world
-                | (Some relationOld, None) ->
-                    let mountOld = this.Resolve relationOld
+                | (Some mountOld, None) ->
                     if mountOld.Exists world then
                         let position = this.GetPositionLocal world + mountOld.GetPosition world
                         let elevation = this.GetElevationLocal world + mountOld.GetElevation world
@@ -266,8 +265,7 @@ module WorldEntityModule =
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
                         world
                     else world
-                | (None, Some relationNew) ->
-                    let mountNew = this.Resolve relationNew
+                | (None, Some mountNew) ->
                     if mountNew.Exists world then
                         let position = this.GetPosition world - mountNew.GetPosition world
                         let elevation = this.GetElevation world - mountNew.GetElevation world
@@ -282,8 +280,8 @@ module WorldEntityModule =
 
         /// Check whether the entity's mount exists.
         member this.MountExists world =
-            match this.GetMountOpt world with
-            | Some mount -> (this.Resolve mount : Entity).Exists world
+            match Option.bind (tryResolve this) (this.GetMountOpt world) with
+            | Some mount -> mount.Exists world
             | None -> false
 
         /// Get an entity's mounters.
@@ -331,12 +329,6 @@ module WorldEntityModule =
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
-
-        /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = resolve<Entity> this relation
-
-        /// Relate an entity to a simulant.
-        member this.Relate simulant = relate<Entity> this simulant
 
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress

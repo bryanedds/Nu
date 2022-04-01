@@ -51,7 +51,6 @@ module WorldModule2 =
     let private ScreenTransitionMouseX1Id = Gen.id
     let private ScreenTransitionMouseX2Id = Gen.id
     let private ScreenTransitionKeyboardKeyId = Gen.id
-    let private SplashScreenUpdateId = Gen.id
 
     type World with
 
