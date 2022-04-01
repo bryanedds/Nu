@@ -1488,9 +1488,7 @@ module WorldModuleEntity =
             // handle failure
             else failwith ("Adding an entity that the world already contains '" + scstring entity + "'.")
 
-        /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
-        /// the entity's existence. Consider using World.destroyEntity instead.
-        static member destroyEntityImmediate entity world =
+        static member internal destroyEntityImmediateInternal recur entity world =
 
             // attempt to remove from destruction list
             let world = World.tryRemoveSimulantFromDestruction entity world
@@ -1504,10 +1502,13 @@ module WorldModuleEntity =
                 // get old world for entity tree rebuild
                 let oldWorld = world
 
+                // cache entity children for later possible destruction
+                let children = World.getEntityChildren entity world
+
                 // remove mount from hierarchy
                 let mountOpt = World.getEntityMountOpt entity world
                 let world = World.removeEntityFromMounts mountOpt entity world
-                
+
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
@@ -1531,10 +1532,22 @@ module WorldModuleEntity =
                 entityState.Invalidated <- true
 
                 // remove the entity from the world
-                World.removeEntityState entity world
+                let world = World.removeEntityState entity world
+
+                // destroy children when recurring
+                if recur then
+                    Seq.fold (fun world child ->
+                        World.destroyEntityImmediateInternal recur child world)
+                        world children
+                else world
 
             // pass
             else world
+
+        /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
+        /// the entity's existence. Consider using World.destroyEntity instead.
+        static member destroyEntityImmediate entity world =
+            World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
@@ -1779,7 +1792,7 @@ module WorldModuleEntity =
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id; EntityNames = destination.EntityNames }
                 let children = World.getEntityChildren source world
-                let world = World.destroyEntityImmediate source world
+                let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
                 Seq.fold (fun world (child : Entity) ->
                     let destination = destination / child.Name

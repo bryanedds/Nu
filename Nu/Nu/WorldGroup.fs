@@ -191,7 +191,7 @@ module WorldGroupModule =
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
             let destroyEntitiesImmediate group world =
-                let entities = World.getEntities group world
+                let entities = World.getEntityRoots group world
                 World.destroyEntitiesImmediate entities world
             EventSystemDelegate.cleanEventAddressCache group.GroupAddress
             World.removeGroup3 destroyEntitiesImmediate group world
