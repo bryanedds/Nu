@@ -440,8 +440,8 @@ module WorldModuleEntity =
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal getEntityNames entity world = (World.getEntityState entity world).Names
-        static member internal getEntityName entity world = (World.getEntityState entity world).Names |> Array.last
+        static member internal getEntityEntityNames entity world = (World.getEntityState entity world).EntityNames
+        static member internal getEntityName entity world = (World.getEntityState entity world).EntityNames |> Array.last
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
@@ -1037,7 +1037,7 @@ module WorldModuleEntity =
                             else world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Names + "'.")
+                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.EntityNames + "'.")
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
@@ -1461,6 +1461,10 @@ module WorldModuleEntity =
                 // add entity to world
                 let world = World.addEntityState entityState entity world
 
+                // update mount hierarchy
+                let mountOpt = World.getEntityMountOpt entity world
+                let world = World.addEntityToMounts mountOpt entity world
+
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
@@ -1588,7 +1592,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // make entity address
-            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Names
+            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.EntityNames
 
             // make entity reference
             let entity = Entity entityAddress
@@ -1634,11 +1638,11 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor group world =
-            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor group world
+        static member createEntity<'d when 'd :> EntityDispatcher> entityNamesOpt overlayNameDescriptor group world =
+            World.createEntity5 typeof<'d>.Name entityNamesOpt overlayNameDescriptor group world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor namesOpt (group : Group) world =
+        static member readEntity entityDescriptor entityNamesOpt (group : Group) world =
 
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
@@ -1701,12 +1705,12 @@ module WorldModuleEntity =
 
             // apply the names if some are provided
             let entityState =
-                match namesOpt with
+                match entityNamesOpt with
                 | None -> entityState
-                | Some names -> { entityState with Names = names }
+                | Some entityNames -> { entityState with EntityNames = entityNames }
 
             // make entity address
-            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Names
+            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.EntityNames
 
             // make entity reference
             let entity = Entity entityAddress
@@ -1762,7 +1766,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; EntityNames = destination.EntityNames }
                 World.addEntity false entityState destination world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
@@ -1773,7 +1777,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Id = Gen.id; EntityNames = destination.EntityNames }
                 let children = World.getEntityChildren source world
                 let world = World.destroyEntityImmediate source world
                 let world = World.addEntity false entityState destination world
@@ -1928,8 +1932,8 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
-                let names = [|Gen.name|]
-                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Names = names }
+                let entityNames = [|Gen.name|]
+                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; EntityNames = entityNames }
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world
@@ -1937,7 +1941,7 @@ module WorldModuleEntity =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
-                let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
+                let entity = Entity (group.GroupAddress <-- rtoa<Entity> entityNames)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
@@ -1981,7 +1985,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
         EntityGetters.Assign ("Order", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityOrder entity world })
         EntityGetters.Assign ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
-        EntityGetters.Assign ("Names", fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntityNames entity world })
+        EntityGetters.Assign ("EntityNames", fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntityEntityNames entity world })
         EntityGetters.Assign ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
 
     /// Initialize property setters.

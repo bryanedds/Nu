@@ -525,7 +525,7 @@ module WorldEntityModule =
                 | Choice2Of3 (entityName, descriptor, handlers, binds, content) ->
                     let entityNames =
                         match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Names
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.EntityNames
                         | _ -> [|entityName|]
                     let descriptor = { descriptor with SimulantNamesOpt = Some entityNames }
                     let (entity, world) = World.createEntity4 DefaultOverlay descriptor group world
@@ -573,7 +573,7 @@ module WorldEntityModule =
                 | Choice3Of3 (entityName, filePath) ->
                     let entityNames =
                         match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Names
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.EntityNames
                         | _ -> [|entityName|]
                     let (entity, world) = World.readEntityFromFile filePath (Some entityNames) group world
                     let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
