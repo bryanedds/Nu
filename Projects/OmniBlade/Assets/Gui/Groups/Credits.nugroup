@@ -4,8 +4,9 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Names [Back]]
+   [[Name Back]
     [Position [-96 -240]]
+    [Surnames [Back]]
     [Text Back]]]
   [TextDispatcher
    [[BackgroundImageOpt
