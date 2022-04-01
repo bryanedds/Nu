@@ -1759,7 +1759,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Names = destination.Names }
+                let entityState = { entityStateOpt with Id = Gen.id; Names = destination.Names }
                 let world = World.destroyEntityImmediate source world
                 World.addEntity false entityState destination world
 
@@ -1775,7 +1775,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
             let (id, names) = Gen.idAndNamesIf namesOpt
-            let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Names = names }
+            let entityState = { entityState with Id = id; Names = names }
             let entity = Entity (group.GroupAddress <-- rtoa<Entity> names)
             let world = World.addEntity false entityState entity world
             (entity, world)
