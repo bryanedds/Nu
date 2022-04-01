@@ -121,12 +121,6 @@ module WorldScreenModule =
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Resolve a relation in the context of a screen.
-        member this.Resolve relation = resolve<Screen> this relation
-
-        /// Relate a screen to a simulant.
-        member this.Relate simulant = relate<Screen> this simulant
-
         /// Get a screen's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
 

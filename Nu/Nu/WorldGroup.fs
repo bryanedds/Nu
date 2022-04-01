@@ -100,12 +100,6 @@ module WorldGroupModule =
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Resolve a relation in the context of a group.
-        member this.Resolve relation = resolve<Group> this relation
-
-        /// Relate a group to a simulant.
-        member this.Relate simulant = relate<Group> this simulant
-
         /// Get a group's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GroupAddress
 

@@ -482,7 +482,7 @@ module WorldModuleEntity =
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         static member internal addEntityToMounts mountOpt entity world =
-            match Option.map (resolve entity) mountOpt with
+            match Option.bind (tryResolve entity) mountOpt with
             | Some newMount ->
                 match world.EntityMounts.TryGetValue newMount with
                 | (true, mounters) ->
@@ -497,7 +497,7 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal removeEntityFromMounts mountOpt entity world =
-            match Option.map (resolve entity) mountOpt with
+            match Option.bind (tryResolve entity) mountOpt with
             | Some oldMount ->
                 match world.EntityMounts.TryGetValue oldMount with
                 | (true, mounters) ->
@@ -511,7 +511,7 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
-            match Option.map (resolve entity) mountOpt with
+            match Option.bind (tryResolve entity) mountOpt with
             | Some newMount when World.getEntityExists newMount world ->
                 let world = World.propagateEntityPosition3 newMount entity world
                 let world = World.propagateEntityElevation3 newMount entity world
@@ -651,7 +651,7 @@ module WorldModuleEntity =
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
                     let positionMount =
-                        match Option.map (resolve entity) entityState.MountOpt with
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
                         | _ -> Vector2.Zero
                     entityState.Transform.Position <- positionMount + value
@@ -672,7 +672,7 @@ module WorldModuleEntity =
 
                     // compute mount position
                     let positionMount =
-                        match Option.map (resolve entity) (World.getEntityMountOpt entity world) with
+                        match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
                         | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
                         | _ -> Vector2.Zero
 
@@ -739,7 +739,7 @@ module WorldModuleEntity =
                 if entityState.Optimized then
                     entityState.ElevationLocal <- value
                     let elevationMount =
-                        match Option.map (resolve entity) entityState.MountOpt with
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
                     entityState.Transform.Elevation <- elevationMount + value
@@ -760,7 +760,7 @@ module WorldModuleEntity =
 
                     // compute mount elevation
                     let elevationMount =
-                        match Option.map (resolve entity) (World.getEntityMountOpt entity world) with
+                        match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
                         | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
 
@@ -806,7 +806,7 @@ module WorldModuleEntity =
                     Property? EnabledLocal value entity world
             let world =
                 if changed then
-                    let mountOpt = Option.map (resolve entity) (World.getEntityMountOpt entity world)
+                    let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
                     let enabledMount =
                         match mountOpt with
                         | Some mount when World.getEntityExists mount world -> World.getEntityEnabled mount world
@@ -848,7 +848,7 @@ module WorldModuleEntity =
                     Property? VisibleLocal value entity world
             let world =
                 if changed then
-                    let mountOpt = Option.map (resolve entity) (World.getEntityMountOpt entity world)
+                    let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
                     let visibleMount =
                         match mountOpt with
                         | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
