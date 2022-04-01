@@ -198,23 +198,17 @@ module WorldSimulantModule =
             | :? Game -> false
             | _ -> failwithumf ()
 
-        /// Attempt to convert an address to a concrete simulant reference.
-        static member tryDerive address =
-            let namesLength = address |> Address.getNames |> Array.length
-            if namesLength >= 3
-            then Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
-            else
-                match namesLength with
-                | 0 -> Some (Simulants.Game :> Simulant)
-                | 1 -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-                | 2 -> Some (Group (Address.changeType<obj, Group> address) :> Simulant)
-                | _ -> failwithumf ()
-
         /// Convert an address to a concrete simulant reference.
         static member derive address =
-            match World.tryDerive address with
-            | Some simulant -> simulant
-            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
+            let namesLength = address |> Address.getNames |> Array.length
+            if namesLength >= 3
+            then Entity (Address.changeType<obj, Entity> address) :> Simulant
+            else
+                match namesLength with
+                | 0 -> Simulants.Game :> Simulant
+                | 1 -> Screen (Address.changeType<obj, Screen> address) :> Simulant
+                | 2 -> Group (Address.changeType<obj, Group> address) :> Simulant
+                | _ -> failwithumf ()
 
         /// Convert an event address to the concrete simulant that it targets.
         static member deriveFromEvent event =

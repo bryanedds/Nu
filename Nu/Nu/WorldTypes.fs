@@ -713,16 +713,16 @@ module WorldTypes =
           mutable Order : int64
           // cache line 4 (3/4-way through Id)
           Id : Guid
-          EntityNames : string array }
+          Surnames : string array }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
-        static member make imperative namesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform = Transform.makeDefault ()
             transform.Imperative <- imperative
-            let (id, names) = Gen.idAndNamesIf namesOpt
+            let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
@@ -737,7 +737,7 @@ module WorldTypes =
               FacetNames = Set.empty
               Order = Core.getUniqueTimeStamp ()
               Id = id
-              EntityNames = names }
+              Surnames = surnames }
 
         /// Copy an entity state.
         static member inline copy (entityState : EntityState) =
@@ -1050,10 +1050,10 @@ module WorldTypes =
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
 
         /// Create an entity reference from an array of names.
-        new (entityNames : string array) = Entity (rtoa entityNames)
+        new (surnames : string array) = Entity (rtoa surnames)
 
         /// Create an entity reference from a list of names.
-        new (entityNames : string list) = Entity (ltoa entityNames)
+        new (surnames : string list) = Entity (ltoa surnames)
 
         /// Create an entity reference from a the required names.
         new (screenName : string, groupName : string, entityName : string) = Entity [screenName; groupName; entityName]
@@ -1081,21 +1081,21 @@ module WorldTypes =
 
         /// The entity's update event.
         member this.UpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"Update"; "Event"|] entityNames)
+            let surnames = Address.getNames entityAddress
+            rtoa<unit> (Array.append [|"Update"; "Event"|] surnames)
 
 #if !DISABLE_ENTITY_POST_UPDATE
         /// The entity's post update event.
         member this.PostUpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] entityNames)
+            let surnames = Address.getNames entityAddress
+            rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] surnames)
 #endif
 
-        /// Get the names of an entity, including group and screen names.
+        /// Get the names of an entity.
         member inline this.Names = Address.getNames this.EntityAddress
 
-        /// Get the names of an entity, not including group or screen.
-        member inline this.EntityNames = Address.getNames this.EntityAddress |> Array.skip 2
+        /// Get the surnames of an entity (the names of an entity not including group or screen).
+        member inline this.Surnames = Address.getNames this.EntityAddress |> Array.skip 2
 
         /// Get the last name of an entity.
         member inline this.Name = Address.getNames this.EntityAddress |> Array.last

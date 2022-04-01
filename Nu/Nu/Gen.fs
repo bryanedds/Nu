@@ -190,12 +190,12 @@ module Gen =
                 | None -> Gen.namePrefix + string id
             (id, name)
 
-        /// Derive a unique id and names if given none.
-        static member idAndNamesIf namesOpt =
-            match namesOpt with
-            | Some names ->
-                if Array.length names = 0 then failwith "Entity must have at least one name."
-                (Gen.id, names)
+        /// Derive a unique id and surnames if given none.
+        static member idAndSurnamesIf surnamesOpt =
+            match surnamesOpt with
+            | Some surnames ->
+                if Array.length surnames = 0 then failwith "Entity must have at least one surname."
+                (Gen.id, surnames)
             | None ->
                 let id = Gen.id
                 let name = Gen.namePrefix + string id

@@ -167,7 +167,7 @@ module WorldGroupModule =
         static member createGroup3 descriptor screen world =
             let (group, world) =
                 let groupNameOpt =
-                    match descriptor.SimulantNamesOpt with
+                    match descriptor.SimulantSurnamesOpt with
                     | None -> None
                     | Some [|name|] -> Some name
                     | Some _ -> failwith "Group cannot have multiple names."

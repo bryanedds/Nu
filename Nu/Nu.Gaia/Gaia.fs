@@ -113,7 +113,7 @@ module Gaia =
         for entity in entities do
             let mutable namesUsed = [||]
             let mutable parentNode = groupNode
-            for name in entity.EntityNames do
+            for name in entity.Surnames do
                 namesUsed <- Array.add name namesUsed
                 let childNodeKey = namesUsed |> rtoa |> string
                 if not (parentNode.Nodes.ContainsKey childNodeKey) then
@@ -123,7 +123,6 @@ module Gaia =
                     parentNode <- childNode
                 else parentNode <- parentNode.Nodes.[childNodeKey]
         form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
-        groupNode.ExpandAll () // HACK: just expand all until node state restoration is working.
 
     let private refreshGroupTabs (form : GaiaForm) world =
 
@@ -231,7 +230,7 @@ module Gaia =
             refreshHierarchyTreeView form world
             (Cascade, world)
         | UnregisteringData simulant ->
-            let nodeKey = scstring (rtoa (simulant :?> Entity).EntityNames)
+            let nodeKey = scstring (rtoa (simulant :?> Entity).Surnames)
             for node in collectHierarchyTreeNodes form world do
                 if node.Name = nodeKey then
                     node.Remove ()
@@ -396,34 +395,34 @@ module Gaia =
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
         let selectedGroup = (getEditorState world).SelectedGroup
-        let entityNamesStrs =
+        let surnamesStrs =
             World.getEntities selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
-            Seq.map (fun entity -> entity.EntityNames |> Address.makeFromArray |> string) |>
+            Seq.map (fun entity -> entity.Surnames |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
-        entityPicker.entityListBox.Items.AddRange (Array.map box entityNamesStrs)
+        entityPicker.entityListBox.Items.AddRange (Array.map box surnamesStrs)
         entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
         entityPicker.searchTextBox.TextChanged.Add(fun _ ->
             entityPicker.entityListBox.Items.Clear ()
-            for namesStr in entityNamesStrs do
+            for namesStr in surnamesStrs do
                 if namesStr.Contains entityPicker.searchTextBox.Text || namesStr = Constants.Editor.NonePick then
                     entityPicker.entityListBox.Items.Add namesStr |> ignore)
         match entityPicker.ShowDialog () with
         | DialogResult.OK ->
             match entityPicker.entityListBox.SelectedItem with
-            | :? string as parentEntityNamesStr ->
+            | :? string as parentSurnamesStr ->
                 if entityPicker.changeAddressCheckBox.Checked then
-                    match parentEntityNamesStr with
+                    match parentSurnamesStr with
                     | Constants.Editor.NonePick ->
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
                         let world = World.renameEntityImmediate entity entity2 world
                         entity2.SetMountOptWithAdjustment None world
                     | _ ->
-                        let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentEntityNamesStr)
+                        let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentSurnamesStr)
                         let entity = entityTds.DescribedEntity
                         let entity2 = Entity (Array.append parent.EntityAddress.Names [|entity.Name|])
                         let world = World.renameEntityImmediate entity entity2 world
@@ -433,12 +432,12 @@ module Gaia =
                         then entity2.SetMountOptWithAdjustment (Some parentRelation) world
                         else form.applyPropertyButton.PerformClick (); world
                 else
-                    match parentEntityNamesStr with
+                    match parentSurnamesStr with
                     | Constants.Editor.NonePick ->
                         entityTds.DescribedEntity.SetMountOptWithAdjustment None world
                     | _ ->
                         let entity = entityTds.DescribedEntity
-                        let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentEntityNamesStr)
+                        let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
                         let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
                         if parentRelation <> Relation.makeCurrent () then
                             form.propertyValueTextBoxText <- scstring parentRelation

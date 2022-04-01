@@ -502,8 +502,8 @@ module WorldEntityModule =
         static member readEntities groupDescriptor group world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
-                    let entityNamesOpt = EntityDescriptor.getNamesOpt entityDescriptor
-                    let (entity, world) = World.readEntity entityDescriptor entityNamesOpt group world
+                    let surnamesOpt = EntityDescriptor.getSurnamesOpt entityDescriptor
+                    let (entity, world) = World.readEntity entityDescriptor surnamesOpt group world
                     (entity :: entities, world))
                     groupDescriptor.EntitieDescriptors
                     ([], world)
@@ -521,11 +521,11 @@ module WorldEntityModule =
                     let world = World.expandEntities lens sieve unfold mapper origin owner group world
                     (None, world)
                 | Choice2Of3 (entityName, descriptor, handlers, binds, content) ->
-                    let entityNames =
+                    let surnames =
                         match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.EntityNames
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Surnames
                         | _ -> [|entityName|]
-                    let descriptor = { descriptor with SimulantNamesOpt = Some entityNames }
+                    let descriptor = { descriptor with SimulantSurnamesOpt = Some surnames }
                     let (entity, world) = World.createEntity4 DefaultOverlay descriptor group world
                     let handlers =
                         List.map (fun (handler, eventAddress, _) ->
@@ -569,11 +569,11 @@ module WorldEntityModule =
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
-                    let entityNames =
+                    let surnames =
                         match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.EntityNames
+                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Surnames
                         | _ -> [|entityName|]
-                    let (entity, world) = World.readEntityFromFile filePath (Some entityNames) group world
+                    let (entity, world) = World.readEntityFromFile filePath (Some surnames) group world
                     let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
                     let world = World.setEntityMountOpt mountOpt entity world |> snd'
                     let world =
