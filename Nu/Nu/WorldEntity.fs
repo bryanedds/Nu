@@ -664,12 +664,6 @@ module WorldEntityModule =
                             World.setEntityMountOpt mountOpt entity world |> snd'
                         else world
                     let world =
-                        World.monitor
-                            (fun _ world -> (Cascade, World.destroyEntity entity world))
-                            (Events.Unregistering --> owner.SimulantAddress)
-                            entity
-                            world
-                    let world =
                         List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
                             if twoWay then
                                 let world = WorldModule.bind5 simulant left right world
@@ -700,15 +694,6 @@ module WorldEntityModule =
                     let (entity, world) = World.readEntityFromFile filePath (Some surnames) group world
                     let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
                     let world = World.setEntityMountOpt mountOpt entity world |> snd'
-                    let world =
-                        match origin with
-                        | SimulantOrigin simulant
-                        | FacetOrigin (simulant, _) ->
-                            World.monitor
-                                (fun _ world -> (Cascade, World.destroyEntity entity world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
-                                entity
-                                world
                     (Some entity, world)
             else (None, world)
 
