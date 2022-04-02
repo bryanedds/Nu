@@ -1810,6 +1810,12 @@ module WorldModuleEntity =
                 else world
             else world
 
+        /// Attempt to get the dispatcher name for an entity currently on the clipboard.
+        static member tryGetEntityDispatcherNameOnClipboard (_ : World) =
+            match Clipboard with
+            | Some (:? EntityState as entityState) -> Some (getTypeName entityState.Dispatcher)
+            | _ -> None
+
         /// Copy an entity to the clipboard.
         static member copyEntityToClipboard entity world =
             let entityState = World.getEntityState entity world
@@ -1821,12 +1827,11 @@ module WorldModuleEntity =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap (group : Group) world =
+        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap surnamesOpt (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
-                let id = Gen.id
-                let surnames = [|Gen.name|]
+                let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
                 let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
                 let position =
                     if atMouse
