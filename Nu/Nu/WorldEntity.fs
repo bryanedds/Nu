@@ -497,8 +497,9 @@ module WorldEntityModule =
                     match overlaySymbolsOpt with
                     | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
                     | None -> true
-            let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
-            let entityDescriptor = { entityDescriptor with EntityProperties = getEntityProperties }
+            let entityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
+            let entityDescriptor = EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
             let entities = World.getEntityChildren entity world
             { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
 
@@ -524,7 +525,7 @@ module WorldEntityModule =
             File.Move (filePathTmp, filePath)
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor surnamesOpt (group : Group) world =
+        static member readEntity entityDescriptor (nameOpt : string option) (parent : Simulant) world =
 
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
@@ -582,17 +583,27 @@ module WorldEntityModule =
                     else entityState
                 | None -> entityState
 
+            // try to read entity name
+            let entityNameOpt = EntityDescriptor.getNameOpt entityDescriptor
+
             // read the entity state's values
             let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
 
-            // apply the surnames if some are provided
-            let entityState =
-                match surnamesOpt with
-                | None -> entityState
-                | Some surnames -> { entityState with Surnames = surnames }
+            // configure the name and surnames
+            let (name, surnames) =
+                match nameOpt with
+                | Some name -> (name, Array.add name parent.SimulantAddress.Names)
+                | None ->
+                    match entityNameOpt with
+                    | Some entityName -> (entityName, Array.add entityName parent.SimulantAddress.Names)
+                    | None ->
+                        let name = Gen.name
+                        let surnames = Array.add name parent.SimulantAddress.Names
+                        (name, surnames)
+            let entityState = { entityState with Surnames = surnames }
 
             // make entity address
-            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Surnames
+            let entityAddress = parent.SimulantAddress.Names |> Array.add name |> rtoa
 
             // make entity reference
             let entity = Entity entityAddress
@@ -611,23 +622,23 @@ module WorldEntityModule =
             let world = World.addEntityToMounts mountOpt entity world
             
             // read the entity's children
-            let world = World.readEntities entityDescriptor.EntityDescriptors group world |> snd
+            let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
             (entity, world)
 
         /// Read an entity from a file.
         [<FunctionBinding>]
-        static member readEntityFromFile (filePath : string) surnamesOpt group world =
+        static member readEntityFromFile (filePath : string) nameOpt group world =
             let entityDescriptorStr = File.ReadAllText filePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            World.readEntity entityDescriptor surnamesOpt group world
+            World.readEntity entityDescriptor nameOpt group world
 
         /// Read multiple entities.
         [<FunctionBinding>]
-        static member internal readEntities (entityDescriptors : EntityDescriptor list) group world =
+        static member internal readEntities (entityDescriptors : EntityDescriptor list) (parent : Simulant) world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
-                    let surnamesOpt = EntityDescriptor.getSurnamesOpt entityDescriptor
-                    let (entity, world) = World.readEntity entityDescriptor surnamesOpt group world
+                    let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
+                    let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
                     (entity :: entities, world))
                     entityDescriptors
                     ([], world)
@@ -687,11 +698,7 @@ module WorldEntityModule =
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
-                    let surnames =
-                        match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Surnames
-                        | _ -> [|entityName|]
-                    let (entity, world) = World.readEntityFromFile filePath (Some surnames) group world
+                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) group world
                     let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
                     let world = World.setEntityMountOpt mountOpt entity world |> snd'
                     (Some entity, world)

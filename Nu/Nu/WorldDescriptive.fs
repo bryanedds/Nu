@@ -24,17 +24,17 @@ type [<StructuralEquality; NoComparison>] EntityDescriptor =
 [<RequireQualifiedAccess>]
 module EntityDescriptor =
 
-    /// Derive a name from the dispatcher.
-    let getNameOpt dispatcher =
-        dispatcher.EntityProperties |>
+    /// Derive a name from the descriptor.
+    let getNameOpt descriptor =
+        descriptor.EntityProperties |>
         Map.tryFind Constants.Engine.NamePropertyName |>
         Option.map symbolToValue<string>
 
-    /// Derive surnames from the dispatcher.
-    let getSurnamesOpt dispatcher =
-        dispatcher.EntityProperties |>
-        Map.tryFind Constants.Engine.SurnamesPropertyName |>
-        Option.map symbolToValue<string array>
+    /// Set a name for the descriptor.
+    let setNameOpt nameOpt descriptor =
+        match nameOpt with
+        | Some name -> { descriptor with EntityProperties = Map.add Constants.Engine.NamePropertyName (valueToSymbol name) descriptor.EntityProperties }
+        | None -> { descriptor with EntityProperties = Map.remove Constants.Engine.NamePropertyName descriptor.EntityProperties }
 
     /// The empty entity descriptor.
     let empty =

@@ -385,7 +385,7 @@ module WorldScreenModule =
                         world groupFilePaths
                 let world =
                     List.fold (fun world (_ : string, groupName, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some [|entityName|]) (screen / groupName) world |> snd)
+                        World.readEntityFromFile filePath (Some entityName) (screen / groupName) world |> snd)
                         world entityFilePaths
                 let world =
                     List.fold (fun world (simulant, left : World Lens, right, twoWay) ->

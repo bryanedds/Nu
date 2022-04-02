@@ -313,7 +313,7 @@ module WorldGroupModule =
                         World.createGroup3 descriptor screen world
                     let world =
                         List.fold (fun world (_, entityName, filePath) ->
-                            World.readEntityFromFile filePath (Some [|entityName|]) group world |> snd)
+                            World.readEntityFromFile filePath (Some entityName) group world |> snd)
                             world entityFilePaths
                     let world =
                         List.fold (fun world (simulant, left : World Lens, right, twoWay) ->

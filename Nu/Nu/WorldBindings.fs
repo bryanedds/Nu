@@ -1840,35 +1840,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let readEntityFromFile filePath surnamesOpt group world =
-        let oldWorld = world
-        try
-            let filePath =
-                match ScriptingSystem.tryExport typeof<String> filePath world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
-            let surnamesOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> surnamesOpt world with
-                | Some value -> value :?> FSharpOption<String[]>
-                | None -> failwith "Invalid argument type for 'surnamesOpt'; expecting a value convertable to FSharpOption`1."
-            let struct (group, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal group world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.readEntityFromFile filePath surnamesOpt group world
-            let (value, world) = result
-            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let renameEntity source destination world =
         let oldWorld = world
         try
@@ -3496,17 +3467,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalReadEntityFromFileBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|filePath; surnamesOpt; group|] -> readEntityFromFile filePath surnamesOpt group world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalRenameEntityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4082,7 +4042,6 @@ module WorldBindings =
              ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
-             ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "surnamesOpt"; "group"|]; DocOpt = None })
              ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
