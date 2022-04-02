@@ -414,37 +414,19 @@ module Gaia =
         | DialogResult.OK ->
             match entityPicker.entityListBox.SelectedItem with
             | :? string as parentSurnamesStr ->
-                if entityPicker.changeAddressCheckBox.Checked then
-                    match parentSurnamesStr with
-                    | Constants.Editor.NonePick ->
-                        let entity = entityTds.DescribedEntity
-                        let entity2 = Entity (Array.add entity.Name entity.Group.GroupAddress.Names)
-                        let world = World.renameEntityImmediate entity entity2 world
-                        entity2.SetMountOptWithAdjustment None world
-                    | _ ->
-                        let parent = Entity (string selectedGroup + Constants.Address.SeparatorStr + parentSurnamesStr)
-                        let entity = entityTds.DescribedEntity
-                        let entity2 = Entity (Array.append parent.EntityAddress.Names [|entity.Name|])
-                        let world = World.renameEntityImmediate entity entity2 world
-                        let parentRelation = Relation.makeParent ()
+                match parentSurnamesStr with
+                | Constants.Editor.NonePick ->
+                    entityTds.DescribedEntity.SetMountOptWithAdjustment None world
+                | _ ->
+                    let entity = entityTds.DescribedEntity
+                    let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
+                    let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
+                    if parentRelation <> Relation.makeCurrent () then
                         form.propertyValueTextBoxText <- scstring parentRelation
                         if propertyDescriptor.Name = "MountOpt"
-                        then entity2.SetMountOptWithAdjustment (Some parentRelation) world
+                        then entity.SetMountOptWithAdjustment (Some parentRelation) world
                         else form.applyPropertyButton.PerformClick (); world
-                else
-                    match parentSurnamesStr with
-                    | Constants.Editor.NonePick ->
-                        entityTds.DescribedEntity.SetMountOptWithAdjustment None world
-                    | _ ->
-                        let entity = entityTds.DescribedEntity
-                        let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
-                        let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
-                        if parentRelation <> Relation.makeCurrent () then
-                            form.propertyValueTextBoxText <- scstring parentRelation
-                            if propertyDescriptor.Name = "MountOpt"
-                            then entity.SetMountOptWithAdjustment (Some parentRelation) world
-                            else form.applyPropertyButton.PerformClick (); world
-                        else form.applyPropertyButton.PerformClick (); world
+                    else form.applyPropertyButton.PerformClick (); world
             | _ -> world
         | _ -> world
 
