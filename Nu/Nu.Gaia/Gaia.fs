@@ -99,7 +99,11 @@ module Gaia =
     let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
         Option.isSome (tryFindHierarchyTreeNode name form world)
 
-    let private refreshHierarchyTreeView (form : GaiaForm) world =
+    let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
+        addWorldChanger $ fun world ->
+            updateEditorState (fun state -> { state with RefreshHierarchyViewRequested = true }) world
+
+    let private refreshHierarchyTreeViewImpl (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
         // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
@@ -123,6 +127,7 @@ module Gaia =
                     parentNode <- childNode
                 else parentNode <- parentNode.Nodes.[childNodeKey]
         form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
+        updateEditorState (fun state -> { state with RefreshHierarchyViewRequested = false }) world
 
     let private refreshGroupTabs (form : GaiaForm) world =
 
@@ -849,9 +854,9 @@ module Gaia =
                 | DialogResult.OK ->
                     let filePath = form.saveFileDialog.FileName
                     trySaveSelectedGroup filePath world
-                    updateEditorState (fun value ->
-                        let filePaths = Map.add group.GroupAddress filePath value.FilePaths
-                        { value with FilePaths = filePaths })
+                    updateEditorState (fun state ->
+                        let filePaths = Map.add group.GroupAddress filePath state.FilePaths
+                        { state with FilePaths = filePaths })
                         world
                 | _ -> world
             else trySaveSelectedGroup form.saveFileDialog.FileName world; world
@@ -866,9 +871,9 @@ module Gaia =
                 match tryLoadSelectedGroup form filePath world with
                 | (Some group, world) ->
                     let world =
-                        updateEditorState (fun value ->
-                            let filePaths = Map.add group.GroupAddress filePath value.FilePaths
-                            { value with FilePaths = filePaths })
+                        updateEditorState (fun state ->
+                            let filePaths = Map.add group.GroupAddress filePath state.FilePaths
+                            { state with FilePaths = filePaths })
                             world
                     deselectEntity form world // currently selected entity may be gone if loading into an existing group
                     world
@@ -1344,6 +1349,10 @@ module Gaia =
         let worldChangersCopy = List.ofSeq Globals.WorldChangers
         Globals.WorldChangers.Clear ()
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
+        let world =
+            if (getEditorState world).RefreshHierarchyViewRequested
+            then refreshHierarchyTreeViewImpl form world
+            else world
         let world = updateEntityDrag form world
         let world = updateCameraDrag form world
         updateUndoButton form world
@@ -1372,7 +1381,8 @@ module Gaia =
                               DragEntityState = DragEntityNone
                               DragCameraState = DragCameraNone
                               SelectedGroup = defaultGroup
-                              FilePaths = Map.empty }
+                              FilePaths = Map.empty
+                              RefreshHierarchyViewRequested = false }
                         let world = World.addKeyedValue Globals.EditorGuid editorState world
                         let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
                         let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
