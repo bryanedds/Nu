@@ -1636,7 +1636,7 @@ module WorldModuleEntity =
             // fin
             (entity, world)
 
-        /// Create an entity from an simulant descriptor.
+        /// Create an entity from a simulant descriptor.
         static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
                 World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantSurnamesOpt overlayDescriptor group world
@@ -1810,23 +1810,23 @@ module WorldModuleEntity =
                 else world
             else world
 
-        /// Attempt to get the dispatcher name for an entity currently on the clipboard.
+        /// Attempt to get the dispatcher name for an entity currently on the world's clipboard.
         static member tryGetEntityDispatcherNameOnClipboard (_ : World) =
             match Clipboard with
             | Some (:? EntityState as entityState) -> Some (getTypeName entityState.Dispatcher)
             | _ -> None
 
-        /// Copy an entity to the clipboard.
+        /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
             let entityState = World.getEntityState entity world
             Clipboard <- Some (entityState :> obj)
 
-        /// Cut an entity to the clipboard.
+        /// Cut an entity to the world's clipboard.
         static member cutEntityToClipboard entity world =
             World.copyEntityToClipboard entity world
             World.destroyEntityImmediate entity world
 
-        /// Paste an entity from the clipboard.
+        /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap surnamesOpt (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
