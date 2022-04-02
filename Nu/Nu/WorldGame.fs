@@ -283,7 +283,7 @@ module WorldGameModule =
         static member readGameFromFile (filePath : string) world =
             let gameDescriptorStr = File.ReadAllText filePath
             let gameDescriptor = scvalue<GameDescriptor> gameDescriptorStr
-            World.readGame gameDescriptor world            
+            World.readGame gameDescriptor world
 
 namespace Debug
 open Nu

@@ -181,6 +181,7 @@ module WorldModule =
 #endif
             world
 
+        /// Assert that the current world is the chosen world (used for debugging).
         static member assertChosen (world : World) =
 #if DEBUG
             if world :> obj <> Debug.World.Chosen then
@@ -386,6 +387,7 @@ module WorldModule =
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
+        /// Attempt to look up a value from the world's key value store without allocating.
         static member tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
             let ambientState = World.getAmbientState world
             let kvs = AmbientState.getKeyValueStore ambientState
@@ -395,20 +397,25 @@ module WorldModule =
                 true
             else false
 
+        /// Attempt to look up a value from the world's key value store.
         static member tryGetKeyedValue<'a> key world =
             match World.getKeyValueStoreBy (UMap.tryFind key) world with
             | Some value -> Some (value :?> 'a)
             | None -> None
 
+        /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
             World.getKeyValueStoreBy (UMap.find key) world :?> 'a
 
+        /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
             World.updateKeyValueStore (UMap.add key (value :> obj)) world
 
+        /// Remove a value from the world's key value store.
         static member removeKeyedValue key world =
             World.updateKeyValueStore (UMap.remove key) world
 
+        /// Transform a value in the world's key value store if it exists.
         static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =
             World.addKeyedValue key (updater (World.getKeyedValue<'a> key world)) world
 
