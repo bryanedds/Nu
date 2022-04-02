@@ -273,14 +273,14 @@ type ItemType =
                                  | Consumable ty -> ConsumableType.frenchName ty
                                  | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchName ty | ArmorType ty -> ArmorType.frenchName ty | AccessoryType ty -> AccessoryType.frenchName ty
                                  | KeyItem ty -> KeyItemType.frenchName ty
-                                 | Stash gold -> string gold + " Ors"
+                                 | Stash gold -> string gold + " ors"
 
     static member frenchWithQuantity item =
                   match item with
                          | Consumable ty -> ConsumableType.frenchWithUndefinedArticle ty
                          | Equipment ty -> match ty with WeaponType ty -> WeaponType.frenchWithUndefinedArticle ty | ArmorType ty -> ArmorType.frenchWithUndefinedArticle ty | AccessoryType ty -> AccessoryType.frenchName ty
                          | KeyItem ty -> KeyItemType.frenchWithUndefinedArticle ty
-                         | Stash gold -> string gold + " Ors"
+                         | Stash gold -> string gold + " ors"
 
 
 type [<ReferenceEquality; NoComparison>] PrizePool =

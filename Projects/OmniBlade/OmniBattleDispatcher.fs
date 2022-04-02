@@ -443,7 +443,7 @@ module BattleDispatcher =
                     function
                     | _ :: _ as texts -> String.join "\n" texts + "^"
                     | [] -> ""
-                let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience! \nTu gagnes " + string battle.PrizePool.Gold + " Ors!"
+                let textC = "Tu gagnes " + string battle.PrizePool.Exp + " pts d'Experience! \nTu gagnes " + string battle.PrizePool.Gold + " ors!"
                 let textD =
                     match battle.PrizePool.Items with
                     | _ :: _ as items -> "^Tu trouves " + (items |> List.map (fun i -> ItemType.frenchWithQuantity i) |> String.join ", ") + "!"

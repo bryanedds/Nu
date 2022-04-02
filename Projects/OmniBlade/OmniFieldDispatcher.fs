@@ -1491,7 +1491,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 399.0f 24.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " Ors")]
+                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " ors")]
                         Content.button Gen.name
                           [Entity.PositionLocal == v2 138.0f 12.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 72.0f 72.0f
                            Entity.Text == "<"
@@ -1627,7 +1627,7 @@ module FieldDispatcher =
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 352.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " Ors")]]
+                            Entity.Text <== field --> (fun field -> string field.Inventory.Gold + " ors")]]
 
                  // confirm
                  Content.entityOpt (field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm _ ->

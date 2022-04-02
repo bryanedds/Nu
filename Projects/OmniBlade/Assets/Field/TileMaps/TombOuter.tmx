@@ -46,18 +46,18 @@
   </object>
   <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc MaelNpc None [Prompt &quot;Si ma magie noire t'interesse, nous pouvons faire connaissance pour $FEE Ors.&quot; [&quot;Oui&quot; [Recruit Mael]] [&quot;Non&quot; Nil]]]"/>
+    <property name="I" value="[Npc MaelNpc None [Prompt &quot;Si ma magie noire t'interesse, nous pouvons faire connaissance pour $FEE ors.&quot; [&quot;Oui&quot; [Recruit Mael]] [&quot;Non&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je suis la pour aider, mais je ne te protegerai pas gratuitement... Peut-etre si tu me donnes $FEE Ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je suis la pour aider, mais je ne te protegerai pas gratuitement... Peut-etre si tu me donnes $FEE ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
    <properties>
     <property name="I">[Npc RiainNpc None [Prompt &quot;Un autre monde... Je peux toucher...
-Voyageons ensemble... $FEE Ors...?&quot; [&quot;Oui&quot; [Recruit Riain]] [&quot;Non&quot; Nil]]]</property>
+Voyageons ensemble... $FEE ors...?&quot; [&quot;Oui&quot; [Recruit Riain]] [&quot;Non&quot; Nil]]]</property>
    </properties>
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
