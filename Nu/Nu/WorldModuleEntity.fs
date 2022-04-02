@@ -467,8 +467,8 @@ module WorldModuleEntity =
         static member internal traverseEntityMounters effect entity (world : World) =
             let mounters = World.getEntityMounters entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
-        
-        static member internal getEntityChildren (entity : Entity) world =
+
+        static member internal getEntityEntities (entity : Entity) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (entity :> Simulant) with
             | (true, entitiesOpt) ->
@@ -477,8 +477,8 @@ module WorldModuleEntity =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityChildren effect entity (world : World) =
-            let mounters = World.getEntityChildren entity world
+        static member internal traverseEntityEntities effect entity (world : World) =
+            let mounters = World.getEntityEntities entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         static member internal addEntityToMounts mountOpt entity world =
@@ -1500,7 +1500,7 @@ module WorldModuleEntity =
                 let oldWorld = world
 
                 // cache entity children for later possible destruction
-                let children = World.getEntityChildren entity world
+                let children = World.getEntityEntities entity world
 
                 // unregister entity
                 let world = World.unregisterEntity entity world
@@ -1672,7 +1672,7 @@ module WorldModuleEntity =
             | null -> world
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id; Surnames = destination.Surnames }
-                let children = World.getEntityChildren source world
+                let children = World.getEntityEntities source world
                 let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
                 Seq.fold (fun world (child : Entity) ->

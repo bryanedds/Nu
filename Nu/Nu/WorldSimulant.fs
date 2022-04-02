@@ -168,6 +168,38 @@ module WorldSimulantModule =
             | :? Game -> Some (World.getGameScriptFrame world)
             | _ -> failwithumf ()
 
+        /// Attempt to get the parent of the given simulant.
+        [<FunctionBinding>]
+        static member tryGetParent (simulant : Simulant) world =
+            ignore (world : World)
+            match simulant with
+            | :? Entity as entity -> Some entity.Parent
+            | :? Group as group -> Some (group.Screen :> Simulant)
+            | :? Screen -> Some (Simulants.Game :> Simulant)
+            | :? Game -> None
+            | _ -> failwithumf ()
+
+        /// Get the parent of the given simulant.
+        [<FunctionBinding>]
+        static member getParent (simulant : Simulant) world =
+            ignore (world : World)
+            match simulant with
+            | :? Entity as entity -> entity.Parent
+            | :? Group as group -> group.Screen :> Simulant
+            | :? Screen -> Simulants.Game :> Simulant
+            | :? Game -> failwithumf ()
+            | _ -> failwithumf ()
+
+        /// Get the existing children of the given simulant.
+        [<FunctionBinding>]
+        static member getChildren (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> enumerable<Simulant> (World.getEntityEntities entity world)
+            | :? Group as group -> enumerable<Simulant> (World.getEntities group world)
+            | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
+            | :? Game -> enumerable<Simulant> (World.getScreens world)
+            | _ -> failwithumf ()
+
         /// Check that a simulant exists in the world.
         [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
