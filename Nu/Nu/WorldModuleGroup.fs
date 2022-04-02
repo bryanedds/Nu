@@ -67,7 +67,7 @@ module WorldModuleGroup =
         static member private addGroupState groupState group world =
             World.groupStateAdder groupState group world
 
-        static member private removeGroupState group world =
+        static member internal removeGroupState group world =
             World.groupStateRemover group world
 
         static member private publishGroupChange propertyName (propertyValue : obj) (group : Group) world =
@@ -306,46 +306,6 @@ module WorldModuleGroup =
                 let world = removeEntities group world
                 World.removeGroupState group world
             else world
-
-        static member internal writeGroup4 writeEntities group groupDescriptor world =
-            let groupState = World.getGroupState group world
-            let groupDispatcherName = getTypeName groupState.Dispatcher
-            let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
-            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
-            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            writeEntities group groupDescriptor world
-
-        static member internal readGroup5 readEntities groupDescriptor nameOpt (screen : Screen) world =
-
-            // make the dispatcher
-            let dispatcherName = groupDescriptor.GroupDispatcherName
-            let dispatchers = World.getGroupDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<GroupDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the group state and populate its properties
-            let groupState = GroupState.make None dispatcher
-            let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
-            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
-
-            // apply the name if one is provided
-            let groupState =
-                match nameOpt with
-                | Some name -> { groupState with Name = name }
-                | None -> groupState
-
-            // add the group's state to the world
-            let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
-            let world = World.addGroup true groupState group world
-
-            // read the group's entities
-            let world = readEntities groupDescriptor group world |> snd
-            (group, world)
 
         /// View all of the properties of a group.
         static member internal viewGroupProperties group world =

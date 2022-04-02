@@ -208,11 +208,13 @@ module WorldScreenModule =
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
-            let destroyGroupsImmediate screen world =
-                let groups = World.getGroups screen world
-                World.destroyGroupsImmediate groups world
             EventSystemDelegate.cleanEventAddressCache screen.ScreenAddress
-            World.removeScreen3 destroyGroupsImmediate screen world
+            if World.getScreenExists screen world then
+                let groups = World.getGroups screen world
+                let world = World.unregisterScreen screen world
+                let world = World.destroyGroupsImmediate groups world
+                World.removeScreenState screen world
+            else world
 
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
@@ -276,18 +278,22 @@ module WorldScreenModule =
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
-            let writeGroups screen screenDescriptor world =
-                let groups = World.getGroups screen world
-                World.writeGroups groups screenDescriptor world
-            World.writeScreen4 writeGroups screen screenDescriptor world
+            let screenState = World.getScreenState screen world
+            let screenDispatcherName = getTypeName screenState.Dispatcher
+            let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
+            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
+            let groups = World.getGroups screen world
+            { screenDescriptor with GroupDescriptors = World.writeGroups groups world }
 
         /// Write multiple screens to a game descriptor.
-        static member writeScreens screens gameDescriptor world =
+        static member writeScreens screens world =
             screens |>
             Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.ScreenDescriptors |>
-            fun screenDescriptors -> { gameDescriptor with ScreenDescriptors = screenDescriptors }
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) [] |>
+            Seq.rev |>
+            Seq.toList
 
         /// Write a screen to a file.
         [<FunctionBinding>]
@@ -303,16 +309,48 @@ module WorldScreenModule =
 
         /// Read a screen from a screen descriptor.
         static member readScreen screenDescriptor nameOpt world =
-            World.readScreen4 World.readGroups screenDescriptor nameOpt world
+
+            // make the dispatcher
+            let dispatcherName = screenDescriptor.ScreenDispatcherName
+            let dispatchers = World.getScreenDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ("Could not find ScreenDispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the ecs
+            let ecs = world.WorldExtension.Plugin.MakeEcs ()
+
+            // make the screen state and populate its properties
+            let screenState = ScreenState.make None dispatcher ecs
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
+            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
+
+            // apply the name if one is provided
+            let screenState =
+                match nameOpt with
+                | Some name -> { screenState with Name = name }
+                | None -> screenState
+
+            // add the screen's state to the world
+            let screen = Screen (ntoa screenState.Name)
+            let world = World.addScreen true screenState screen world
+            
+            // read the screen's groups
+            let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
+            (screen, world)
 
         /// Read multiple screens from a game descriptor.
-        static member readScreens gameDescriptor world =
+        static member readScreens screenDescriptors world =
             List.foldBack
                 (fun screenDescriptor (screens, world) ->
                     let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
                     let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
                     (screen :: screens, world))
-                gameDescriptor.ScreenDescriptors
+                screenDescriptors
                 ([], world)
 
         /// Read a screen from a file.

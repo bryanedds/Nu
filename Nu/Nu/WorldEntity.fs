@@ -478,13 +478,38 @@ module WorldEntityModule =
             | Some previous -> World.reorderEntity previous target entity world
             | None -> world
 
+        /// Write an entity to an entity descriptor.
+        static member writeEntity (entity : Entity) entityDescriptor world =
+            let overlayer = World.getOverlayer world
+            let entityState = World.getEntityState entity world
+            let entityDispatcherName = getTypeName entityState.Dispatcher
+            let entityDescriptor = { entityDescriptor with EntityDispatcherName = entityDispatcherName }
+            let entityFacetNames = World.getEntityFacetNamesReflectively entityState
+            let overlaySymbolsOpt =
+                match entityState.OverlayNameOpt with
+                | Some overlayName -> Some (Overlayer.getOverlaySymbols overlayName entityFacetNames overlayer)
+                | None -> None
+            let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
+                if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
+                    let defaultOverlayNameOpt = World.getEntityDefaultOverlayName entityDispatcherName world
+                    defaultOverlayNameOpt <> (propertyValue :?> string option)
+                else
+                    match overlaySymbolsOpt with
+                    | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
+                    | None -> true
+            let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            let entityDescriptor = { entityDescriptor with EntityProperties = getEntityProperties }
+            let entities = World.getEntityChildren entity world
+            { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
+
         /// Write multiple entities to a group descriptor.
-        static member writeEntities entities groupDescriptor world =
+        static member writeEntities entities world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> entity.GetOrder world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.EntitieDescriptors |>
-            fun entityDescriptors -> { groupDescriptor with EntitieDescriptors = entityDescriptors }
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) [] |>
+            Seq.rev |>
+            Seq.toList
 
         /// Write an entity to a file.
         [<FunctionBinding>]
@@ -498,14 +523,113 @@ module WorldEntityModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read multiple entities from a group descriptor.
-        static member readEntities groupDescriptor group world =
+        /// Read an entity from an entity descriptor.
+        static member readEntity entityDescriptor surnamesOpt (group : Group) world =
+
+            // make the dispatcher
+            let dispatcherName = entityDescriptor.EntityDispatcherName
+            let dispatchers = World.getEntityDispatchers world
+            let (dispatcherName, dispatcher) =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> (dispatcherName, dispatcher)
+                | None ->
+                    Log.info ("Could not locate dispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<EntityDispatcher>.Name
+                    let dispatcher =
+                        match Map.tryFind dispatcherName dispatchers with
+                        | Some dispatcher -> dispatcher
+                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
+                    (dispatcherName, dispatcher)
+
+            // get the default overlay name option
+            let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
+
+            // make the bare entity state with name as id
+            let entityState = EntityState.make (World.getImperative world) None defaultOverlayNameOpt dispatcher
+
+            // attach the entity state's intrinsic facets and their properties
+            let entityState = World.attachIntrinsicFacetsViaNames entityState world
+
+            // read the entity state's overlay and apply it to its facet names if applicable
+            let overlayer = World.getOverlayer world
+            let entityState = Reflection.tryReadOverlayNameOptToTarget id entityDescriptor.EntityProperties entityState
+            let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
+            let entityState =
+                match (defaultOverlayNameOpt, entityState.OverlayNameOpt) with
+                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames id defaultOverlayName overlayName entityState overlayer overlayer
+                | (_, _) -> entityState
+
+            // read the entity state's facet names
+            let entityState = Reflection.readFacetNamesToTarget id entityDescriptor.EntityProperties entityState
+
+            // attach the entity state's dispatcher properties
+            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
+            
+            // synchronize the entity state's facets (and attach their properties)
+            let entityState =
+                match World.trySynchronizeFacetsToNames Set.empty entityState None world with
+                | Right (entityState, _) -> entityState
+                | Left error -> Log.debug error; entityState
+
+            // attempt to apply the entity state's overlay
+            let entityState =
+                match entityState.OverlayNameOpt with
+                | Some overlayName ->
+                    // OPTIMIZATION: applying overlay only when it will change something
+                    if dispatcherName <> overlayName then
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
+                        Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
+                    else entityState
+                | None -> entityState
+
+            // read the entity state's values
+            let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
+
+            // apply the surnames if some are provided
+            let entityState =
+                match surnamesOpt with
+                | None -> entityState
+                | Some surnames -> { entityState with Surnames = surnames }
+
+            // make entity address
+            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Surnames
+
+            // make entity reference
+            let entity = Entity entityAddress
+
+            // add entity's state to world
+            let world =
+                if World.getEntityExists entity world then
+                    if World.getEntityDestroying entity world
+                    then World.destroyEntityImmediate entity world
+                    else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
+                else world
+            let world = World.addEntity true entityState entity world
+
+            // update mount hierarchy
+            let mountOpt = World.getEntityMountOpt entity world
+            let world = World.addEntityToMounts mountOpt entity world
+            
+            // read the entity's children
+            let world = World.readEntities entityDescriptor.EntityDescriptors group world |> snd
+            (entity, world)
+
+        /// Read an entity from a file.
+        [<FunctionBinding>]
+        static member readEntityFromFile (filePath : string) surnamesOpt group world =
+            let entityDescriptorStr = File.ReadAllText filePath
+            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+            World.readEntity entityDescriptor surnamesOpt group world
+
+        /// Read multiple entities.
+        [<FunctionBinding>]
+        static member internal readEntities (entityDescriptors : EntityDescriptor list) group world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
                     let surnamesOpt = EntityDescriptor.getSurnamesOpt entityDescriptor
                     let (entity, world) = World.readEntity entityDescriptor surnamesOpt group world
                     (entity :: entities, world))
-                    groupDescriptor.EntitieDescriptors
+                    entityDescriptors
                     ([], world)
 
         /// Turn an entity lens into a series of live entities.

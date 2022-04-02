@@ -18,7 +18,8 @@ type [<StructuralEquality; NoComparison>] SimulantDescriptor =
 /// Used to directly serialize an entity.
 type [<StructuralEquality; NoComparison>] EntityDescriptor =
     { EntityDispatcherName : string
-      EntityProperties : Map<string, Symbol> }
+      EntityProperties : Map<string, Symbol>
+      EntityDescriptors : EntityDescriptor list }
 
 [<RequireQualifiedAccess>]
 module EntityDescriptor =
@@ -38,14 +39,15 @@ module EntityDescriptor =
     /// The empty entity descriptor.
     let empty =
         { EntityDispatcherName = String.Empty
-          EntityProperties = Map.empty }
+          EntityProperties = Map.empty
+          EntityDescriptors  = [] }
 
 /// Describes a group value independent of the engine.
 /// Used to directly serialize a group.
 type [<StructuralEquality; NoComparison>] GroupDescriptor =
     { GroupDispatcherName : string
       GroupProperties : Map<string, Symbol>
-      EntitieDescriptors : EntityDescriptor list }
+      EntityDescriptors : EntityDescriptor list }
 
 [<RequireQualifiedAccess>]
 module GroupDescriptor =
@@ -60,7 +62,7 @@ module GroupDescriptor =
     let empty =
         { GroupDispatcherName = String.Empty
           GroupProperties = Map.empty
-          EntitieDescriptors = [] }
+          EntityDescriptors = [] }
 
 /// Describes a screen value independent of the engine.
 /// Used to directly serialize a screen.
