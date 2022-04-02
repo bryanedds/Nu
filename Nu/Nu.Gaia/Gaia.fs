@@ -1000,7 +1000,8 @@ module Gaia =
             let selectedGroup = (getEditorState world).SelectedGroup
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = getEditorState world
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
+            let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap surnamesOpt selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world

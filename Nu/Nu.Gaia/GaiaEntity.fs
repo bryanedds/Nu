@@ -94,7 +94,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                 else
                     MessageBox.Show
                         ("Invalid entity surnames '" + scstring surnames + "'.",
-                         "Invalid Entity Surnames",
+                         "Invalid Surnames",
                          MessageBoxButtons.OK) |>
                         ignore
                     world
@@ -103,7 +103,11 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let target = Entity (Array.add name entity.Surnames)
+                    let targetNames =
+                        entity.Group.GroupAddress.Names |>
+                        Array.append (Array.allButLast entity.Surnames) |>
+                        Array.add name
+                    let target = Entity targetNames
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity target Globals.Form world
