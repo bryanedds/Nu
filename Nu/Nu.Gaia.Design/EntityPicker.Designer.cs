@@ -33,7 +33,6 @@
 			this.okButton = new System.Windows.Forms.Button();
 			this.cancelButton = new System.Windows.Forms.Button();
 			this.entityListBox = new System.Windows.Forms.ListBox();
-			this.changeAddressCheckBox = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// searchTextBox
@@ -79,18 +78,6 @@
 			this.entityListBox.Size = new System.Drawing.Size(310, 186);
 			this.entityListBox.TabIndex = 2;
 			// 
-			// changeAddressCheckBox
-			// 
-			this.changeAddressCheckBox.AutoSize = true;
-			this.changeAddressCheckBox.Checked = true;
-			this.changeAddressCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.changeAddressCheckBox.Location = new System.Drawing.Point(12, 249);
-			this.changeAddressCheckBox.Name = "changeAddressCheckBox";
-			this.changeAddressCheckBox.Size = new System.Drawing.Size(104, 17);
-			this.changeAddressCheckBox.TabIndex = 5;
-			this.changeAddressCheckBox.Text = "Change Address";
-			this.changeAddressCheckBox.UseVisualStyleBackColor = true;
-			// 
 			// EntityPicker
 			// 
 			this.AcceptButton = this.okButton;
@@ -98,7 +85,6 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.CancelButton = this.cancelButton;
 			this.ClientSize = new System.Drawing.Size(333, 278);
-			this.Controls.Add(this.changeAddressCheckBox);
 			this.Controls.Add(this.entityListBox);
 			this.Controls.Add(this.cancelButton);
 			this.Controls.Add(this.okButton);
@@ -118,6 +104,5 @@
         public System.Windows.Forms.Button okButton;
         public System.Windows.Forms.Button cancelButton;
         public System.Windows.Forms.ListBox entityListBox;
-		public System.Windows.Forms.CheckBox changeAddressCheckBox;
 	}
 }
