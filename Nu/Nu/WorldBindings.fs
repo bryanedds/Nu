@@ -19,29 +19,30 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
-        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
-        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
-        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
-        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
-        "playSound playSound3 fadeOutSong stopSong " +
-        "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
-        "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
-        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
-        "isBodyOnGround createBody createBodies destroyBody " +
-        "destroyBodies createJoint createJoints destroyJoint " +
-        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
-        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
-        "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
-        "isKeyboardKeyDown expandContent destroyImmediate destroy " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
+        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
+        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
+        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
+        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
+        "playSong6 playSound playSound3 fadeOutSong " +
+        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
+        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies createJoint createJoints " +
+        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
+        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
+        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
+        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
+        "destroy tryGetParent getParent getChildren " +
         "getExists isSelected ignorePropertyBindings getEntities0 " +
         "getGroups0 writeGameToFile readGameFromFile getScreens " +
         "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getGroups createGroup " +
         "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
-        "getEntities getEntityRoots getEntitySovereigns destroyEntity " +
-        "destroyEntities tryPickEntity writeEntityToFile createEntity " +
-        "readEntityFromFile renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
+        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
+        "destroyEntities tryPickEntity writeEntityToFile readEntityFromFile " +
+        "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
         "getEyeCenter setEyeCenter getEyeSize getEyeMargin " +
         "setEyeSize getEyeBounds getOmniScreenOpt setOmniScreenOpt " +
         "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds " +
@@ -1233,6 +1234,69 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroy' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let tryGetParent simulant world =
+        let oldWorld = world
+        try
+            let struct (simulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal simulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.tryGetParent simulant world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Simulant>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetParent' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getParent simulant world =
+        let oldWorld = world
+        try
+            let struct (simulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal simulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getParent simulant world
+            let value = result
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getParent' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getChildren simulant world =
+        let oldWorld = world
+        try
+            let struct (simulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal simulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getChildren simulant world
+            let value = result
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getChildren' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getExists simulant world =
         let oldWorld = world
         try
@@ -1642,7 +1706,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readGroupFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntities group world =
+    let getEntitiesFlattened group world =
         let oldWorld = world
         try
             let struct (group, world) =
@@ -1660,10 +1724,10 @@ module WorldBindings =
             let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesFlattened' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntityRoots group world =
+    let getEntities group world =
         let oldWorld = world
         try
             let struct (group, world) =
@@ -1681,10 +1745,10 @@ module WorldBindings =
             let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntityRoots' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntitySovereigns group world =
+    let getEntitiesSovereign group world =
         let oldWorld = world
         try
             let struct (group, world) =
@@ -1702,7 +1766,7 @@ module WorldBindings =
             let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitySovereigns' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesSovereign' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let destroyEntity entity world =
@@ -1805,6 +1869,35 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let readEntityFromFile filePath nameOpt group world =
+        let oldWorld = world
+        try
+            let filePath =
+                match ScriptingSystem.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let struct (group, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal group world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.readEntityFromFile filePath nameOpt group world
+            let (value, world) = result
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let createEntity dispatcherName names overlayDescriptor group world =
@@ -3159,6 +3252,39 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalTryGetParentBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> tryGetParent simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetParentBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getParent simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetChildrenBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getChildren simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetExistsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3379,6 +3505,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetEntitiesFlattenedBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|group|] -> getEntitiesFlattened group world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetEntitiesBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3390,23 +3527,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEntityRootsBinding fnName exprs originOpt world =
+    let evalGetEntitiesSovereignBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|group|] -> getEntityRoots group world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetEntitySovereignsBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|group|] -> getEntitySovereigns group world
+            | [|group|] -> getEntitiesSovereign group world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3451,6 +3577,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|filePath; enity|] -> writeEntityToFile filePath enity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalReadEntityFromFileBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; nameOpt; group|] -> readEntityFromFile filePath nameOpt group world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4014,6 +4151,9 @@ module WorldBindings =
              ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "content"; "origin"; "owner"; "parent"|]; DocOpt = None })
              ("destroyImmediate", { Fn = evalDestroyImmediateBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("destroy", { Fn = evalDestroyBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getParent", { Fn = evalGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("isSelected", { Fn = evalIsSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("ignorePropertyBindings", { Fn = evalIgnorePropertyBindingsBinding; Pars = [|"simulant"|]; DocOpt = None })
@@ -4034,13 +4174,14 @@ module WorldBindings =
              ("destroyGroups", { Fn = evalDestroyGroupsBinding; Pars = [|"groups"|]; DocOpt = None })
              ("writeGroupToFile", { Fn = evalWriteGroupToFileBinding; Pars = [|"filePath"; "group"|]; DocOpt = None })
              ("readGroupFromFile", { Fn = evalReadGroupFromFileBinding; Pars = [|"filePath"; "nameOpt"; "screen"|]; DocOpt = None })
+             ("getEntitiesFlattened", { Fn = evalGetEntitiesFlattenedBinding; Pars = [|"group"|]; DocOpt = None })
              ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"group"|]; DocOpt = None })
-             ("getEntityRoots", { Fn = evalGetEntityRootsBinding; Pars = [|"group"|]; DocOpt = None })
-             ("getEntitySovereigns", { Fn = evalGetEntitySovereignsBinding; Pars = [|"group"|]; DocOpt = None })
+             ("getEntitiesSovereign", { Fn = evalGetEntitiesSovereignBinding; Pars = [|"group"|]; DocOpt = None })
              ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
              ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
+             ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
