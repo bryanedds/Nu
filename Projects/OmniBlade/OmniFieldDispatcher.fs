@@ -621,9 +621,9 @@ module FieldDispatcher =
             | Character (_, _, _, isRising, _, _) ->
                 if isRising then
                     if prop.Bottom.Y - avatarPositionY > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
-                    then Some "Talk"
+                    then Some "Parler"
                     else None
-                else Some "Talk"
+                else Some "Parler"
             | Npc _ | NpcBranching _ -> Some "Parler"
             | Shopkeep _ -> Some "Vendeur"
             | Seal _ -> Some "Toucher"

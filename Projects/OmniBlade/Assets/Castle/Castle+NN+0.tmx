@@ -57,7 +57,7 @@
     [Dialog &quot;Pourquoi tout s'empire chaque jour...?&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;A chaque occasion on me crache dessus. Pourquoi?&quot;]
-    [Dialog &quot;Les autres servents trouvent leur salut, tandis que je reste plus bas que terre ...&quot;]
+    [Dialog &quot;Les autres servantes trouvent leur salut, tandis que je reste plus bas que terre ...&quot;]
     [Dialog &quot;Rien de ce que je fais n'echappe aux critiques...&quot;]
     [Dialog &quot;Elle pourrait se comporter en maitre, mais elle prefere servir la Reine.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Rightward]
