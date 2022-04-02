@@ -214,7 +214,7 @@ module WorldGameModule =
         [<FunctionBinding "getEntities0">]
         static member getEntities1 world =
             World.getGroups1 world |>
-            Seq.map (fun group -> World.getEntities group world) |>
+            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
             Seq.concat |>
             Seq.toArray |>
             seq

@@ -1067,6 +1067,14 @@ module WorldTypes =
         /// The containing group of the entity.
         member this.Group = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
 
+        /// The containing parent of the entity.
+        member this.Parent =
+            let names = this.EntityAddress.Names
+            let namesLength = Array.length names
+            if namesLength < 4
+            then Group (Array.take 2 names) :> Simulant
+            else Entity (Array.take (dec namesLength) names) :> Simulant
+
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt
             with get () = entityStateOpt

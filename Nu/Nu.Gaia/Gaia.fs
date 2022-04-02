@@ -113,7 +113,7 @@ module Gaia =
         let groupNode = TreeNode selectedGroup.Name
         groupNode.Name <- Constants.Editor.GroupNodeKey
         form.hierarchyTreeView.Nodes.Add groupNode |> ignore
-        let entities = World.getEntities selectedGroup world
+        let entities = World.getEntitiesFlattened selectedGroup world
         for entity in entities do
             let mutable namesUsed = [||]
             let mutable parentNode = groupNode
@@ -401,7 +401,7 @@ module Gaia =
         use entityPicker = new EntityPicker ()
         let selectedGroup = (getEditorState world).SelectedGroup
         let surnamesStrs =
-            World.getEntities selectedGroup world |>
+            World.getEntitiesFlattened selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
             Seq.map (fun entity -> entity.Surnames |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>

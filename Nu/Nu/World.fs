@@ -246,7 +246,7 @@ module Nu =
 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
@@ -263,7 +263,7 @@ module Nu =
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
@@ -282,7 +282,7 @@ module Nu =
             WorldModule.registerScreenPhysics <- fun screen world ->
                 let entities =
                     World.getGroups screen world |>
-                    Seq.map (flip World.getEntities world) |>
+                    Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
                     Seq.toArray
                 Array.fold (fun world (entity : Entity) ->
@@ -293,7 +293,7 @@ module Nu =
             WorldModule.unregisterScreenPhysics <- fun screen world ->
                 let entities =
                     World.getGroups screen world |>
-                    Seq.map (flip World.getEntities world) |>
+                    Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
                     Seq.toArray
                 Array.fold (fun world (entity : Entity) ->

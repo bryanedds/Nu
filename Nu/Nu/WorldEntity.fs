@@ -289,10 +289,10 @@ module WorldEntityModule =
         member this.TraverseMounters effect world = World.traverseEntityMounters effect this world
 
         /// Get an entity's children.
-        member this.GetChildren world = World.getEntityChildren this world
+        member this.GetChildren world = World.getEntityEntities this world
 
         /// Traverse an entity's children.
-        member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
+        member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
@@ -369,7 +369,7 @@ module WorldEntityModule =
 
         /// Get all the entities in a group.
         [<FunctionBinding>]
-        static member getEntities (group : Group) world =
+        static member getEntitiesFlattened (group : Group) world =
             let rec getEntitiesRec parent world =
                 let simulants = World.getSimulants world
                 match simulants.TryGetValue parent with
@@ -384,9 +384,9 @@ module WorldEntityModule =
                 | (false, _) -> Seq.empty
             getEntitiesRec (group :> Simulant) world |> Seq.toArray |> seq
 
-        /// Get all the entities not parented by other entities in a group.
+        /// Get all the entities directly parented by the group.
         [<FunctionBinding>]
-        static member getEntityRoots (group : Group) world =
+        static member getEntities (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
             | (true, entitiesOpt) ->
@@ -397,8 +397,8 @@ module WorldEntityModule =
 
         // Get all the entities not mounting another entity in a group.
         [<FunctionBinding>]
-        static member getEntitySovereigns group world =
-            World.getEntities group world |>
+        static member getEntitiesSovereign group world =
+            World.getEntitiesFlattened group world |>
             Array.ofSeq |>
             Array.filter (fun entity -> Option.isNone (entity.GetMountOpt world)) |>
             seq
@@ -448,7 +448,7 @@ module WorldEntityModule =
             let order = World.getEntityOrder entity world
             let mutable previousOrderDeltaOpt = ValueNone
             let mutable previousOpt = ValueNone
-            let entities = World.getEntities entity.Group world |> Seq.toArray
+            let entities = World.getEntitiesFlattened entity.Group world |> Seq.toArray
             for entity2 in entities do
                 let order2 = World.getEntityOrder entity2 world
                 let orderDelta = order - order2
@@ -500,7 +500,7 @@ module WorldEntityModule =
             let entityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
             let entityDescriptor = EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
-            let entities = World.getEntityChildren entity world
+            let entities = World.getEntityEntities entity world
             { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple entities to a group descriptor.
