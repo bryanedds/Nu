@@ -7,17 +7,14 @@
  [[ButtonDispatcher
    [[Name Credits]
     [Position [-96 -112]]
-    [Surnames [Credits]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
     [Position [-96 -184]]
-    [Surnames [Exit]]
     [Text Exit]]]
   [ButtonDispatcher
    [[Name Play]
     [Position [-96 -40]]
-    [Surnames [Play]]
     [Text Play]]]
   [TextDispatcher
    [[BackgroundImageOpt

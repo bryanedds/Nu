@@ -7,7 +7,6 @@
  [[ButtonDispatcher
    [[Name Back]
     [Position [-96 -184]]
-    [Surnames [Back]]
     [Text Back]]]
   [TextDispatcher
    [[BackgroundImageOpt

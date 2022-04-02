@@ -33,6 +33,7 @@ module Reflection =
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
              ("Order", true)
+             ("Surnames", true)
              ("Optimized", true)
              ("ScriptFrame", true)
              ("ScriptFrameOpt", true)
@@ -82,7 +83,6 @@ module Reflection =
     let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
         isPropertyNonPersistentByName property.Name ||
         (property.Name = Constants.Engine.NamePropertyName &&
-         property.Name = Constants.Engine.SurnamesPropertyName &&
          property.PropertyType = typeof<string> &&
          Gen.isName (property.GetValue target :?> string))
 
