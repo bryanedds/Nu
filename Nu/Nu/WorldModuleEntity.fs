@@ -1496,14 +1496,14 @@ module WorldModuleEntity =
             // ensure entity exists in the world
             if World.getEntityExists entity world then
 
-                // unregister entity
-                let world = World.unregisterEntity entity world
-
                 // get old world for entity tree rebuild
                 let oldWorld = world
 
                 // cache entity children for later possible destruction
                 let children = World.getEntityChildren entity world
+
+                // unregister entity
+                let world = World.unregisterEntity entity world
 
                 // remove mount from hierarchy
                 let mountOpt = World.getEntityMountOpt entity world
@@ -1514,7 +1514,7 @@ module WorldModuleEntity =
                     if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree world)
+                                (fun () -> world.WorldExtension.Dispatchers.RebuildEntityTree world)
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity oldWorld
                                     let entityBoundsMax = World.getEntityStateBoundsMax entityState
@@ -1653,125 +1653,6 @@ module WorldModuleEntity =
         /// Create an entity and add it to the world.
         static member createEntity<'d when 'd :> EntityDispatcher> surnamesOpt overlayNameDescriptor group world =
             World.createEntity5 typeof<'d>.Name surnamesOpt overlayNameDescriptor group world
-
-        /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor surnamesOpt (group : Group) world =
-
-            // make the dispatcher
-            let dispatcherName = entityDescriptor.EntityDispatcherName
-            let dispatchers = World.getEntityDispatchers world
-            let (dispatcherName, dispatcher) =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> (dispatcherName, dispatcher)
-                | None ->
-                    Log.info ("Could not locate dispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<EntityDispatcher>.Name
-                    let dispatcher =
-                        match Map.tryFind dispatcherName dispatchers with
-                        | Some dispatcher -> dispatcher
-                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
-                    (dispatcherName, dispatcher)
-
-            // get the default overlay name option
-            let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
-
-            // make the bare entity state with name as id
-            let entityState = EntityState.make (World.getImperative world) None defaultOverlayNameOpt dispatcher
-
-            // attach the entity state's intrinsic facets and their properties
-            let entityState = World.attachIntrinsicFacetsViaNames entityState world
-
-            // read the entity state's overlay and apply it to its facet names if applicable
-            let overlayer = World.getOverlayer world
-            let entityState = Reflection.tryReadOverlayNameOptToTarget id entityDescriptor.EntityProperties entityState
-            let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
-            let entityState =
-                match (defaultOverlayNameOpt, entityState.OverlayNameOpt) with
-                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames id defaultOverlayName overlayName entityState overlayer overlayer
-                | (_, _) -> entityState
-
-            // read the entity state's facet names
-            let entityState = Reflection.readFacetNamesToTarget id entityDescriptor.EntityProperties entityState
-
-            // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
-            
-            // synchronize the entity state's facets (and attach their properties)
-            let entityState =
-                match World.trySynchronizeFacetsToNames Set.empty entityState None world with
-                | Right (entityState, _) -> entityState
-                | Left error -> Log.debug error; entityState
-
-            // attempt to apply the entity state's overlay
-            let entityState =
-                match entityState.OverlayNameOpt with
-                | Some overlayName ->
-                    // OPTIMIZATION: applying overlay only when it will change something
-                    if dispatcherName <> overlayName then
-                        let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
-                    else entityState
-                | None -> entityState
-
-            // read the entity state's values
-            let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
-
-            // apply the surnames if some are provided
-            let entityState =
-                match surnamesOpt with
-                | None -> entityState
-                | Some surnames -> { entityState with Surnames = surnames }
-
-            // make entity address
-            let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Surnames
-
-            // make entity reference
-            let entity = Entity entityAddress
-
-            // add entity's state to world
-            let world =
-                if World.getEntityExists entity world then
-                    if World.getEntityDestroying entity world
-                    then World.destroyEntityImmediate entity world
-                    else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
-                else world
-            let world = World.addEntity true entityState entity world
-
-            // update mount hierarchy
-            let mountOpt = World.getEntityMountOpt entity world
-            let world = World.addEntityToMounts mountOpt entity world
-
-            // fin
-            (entity, world)
-
-        /// Read an entity from a file.
-        [<FunctionBinding>]
-        static member readEntityFromFile (filePath : string) surnamesOpt group world =
-            let entityDescriptorStr = File.ReadAllText filePath
-            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            World.readEntity entityDescriptor surnamesOpt group world
-
-        /// Write an entity to an entity descriptor.
-        static member writeEntity (entity : Entity) entityDescriptor world =
-            let overlayer = World.getOverlayer world
-            let entityState = World.getEntityState entity world
-            let entityDispatcherName = getTypeName entityState.Dispatcher
-            let entityDescriptor = { entityDescriptor with EntityDispatcherName = entityDispatcherName }
-            let entityFacetNames = World.getEntityFacetNamesReflectively entityState
-            let overlaySymbolsOpt =
-                match entityState.OverlayNameOpt with
-                | Some overlayName -> Some (Overlayer.getOverlaySymbols overlayName entityFacetNames overlayer)
-                | None -> None
-            let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
-                if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
-                    let defaultOverlayNameOpt = World.getEntityDefaultOverlayName entityDispatcherName world
-                    defaultOverlayNameOpt <> (propertyValue :?> string option)
-                else
-                    match overlaySymbolsOpt with
-                    | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
-                    | None -> true
-            let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
-            { entityDescriptor with EntityProperties = getEntityProperties }
 
         /// Duplicate an entity.
         static member duplicateEntity source (destination : Entity) world =

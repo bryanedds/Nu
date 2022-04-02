@@ -230,10 +230,13 @@ module WorldGameModule =
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
-            let writeScreens gameDescriptor world =
-                let screens = World.getScreens world
-                World.writeScreens screens gameDescriptor world
-            World.writeGame3 writeScreens gameDescriptor world
+            let gameState = World.getGameState world
+            let gameDispatcherName = getTypeName gameState.Dispatcher
+            let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
+            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
+            let screens = World.getScreens world
+            { gameDescriptor with ScreenDescriptors = World.writeScreens screens world }
 
         /// Write a game to a file.
         [<FunctionBinding>]
@@ -249,7 +252,31 @@ module WorldGameModule =
 
         /// Read a game from a game descriptor.
         static member readGame gameDescriptor world =
-            World.readGame3 World.readScreens gameDescriptor world
+
+            // make the dispatcher
+            let dispatcherName = gameDescriptor.GameDispatcherName
+            let dispatchers = World.getGameDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the game state and populate its properties
+            let gameState = GameState.make dispatcher
+            let gameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world
+            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
+
+            // set the game's state in the world
+            let world = World.setGameState gameState world
+
+            // read the game's screens
+            let world = World.readScreens gameDescriptor.ScreenDescriptors world |> snd
+
+            // choose the world
+            World.choose world
 
         /// Read a game from a file.
         [<FunctionBinding>]

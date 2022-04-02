@@ -67,7 +67,7 @@ module WorldModuleScreen =
         static member private addScreenState screenState screen world =
             World.screenStateAdder screenState screen world
 
-        static member private removeScreenState screen world =
+        static member internal removeScreenState screen world =
             World.screenStateRemover screen world
 
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
@@ -310,49 +310,6 @@ module WorldModuleScreen =
                 let world = removeGroups screen world
                 World.removeScreenState screen world
             else world
-
-        static member internal writeScreen4 writeGroups screen screenDescriptor world =
-            let screenState = World.getScreenState screen world
-            let screenDispatcherName = getTypeName screenState.Dispatcher
-            let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
-            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
-            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
-            writeGroups screen screenDescriptor world
-
-        static member internal readScreen4 readGroups screenDescriptor nameOpt world =
-
-            // make the dispatcher
-            let dispatcherName = screenDescriptor.ScreenDispatcherName
-            let dispatchers = World.getScreenDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ("Could not find ScreenDispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<ScreenDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the ecs
-            let ecs = world.WorldExtension.Plugin.MakeEcs ()
-
-            // make the screen state and populate its properties
-            let screenState = ScreenState.make None dispatcher ecs
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
-            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
-
-            // apply the name if one is provided
-            let screenState =
-                match nameOpt with
-                | Some name -> { screenState with Name = name }
-                | None -> screenState
-
-            // add the screen's state to the world
-            let screen = Screen (ntoa screenState.Name)
-            let world = World.addScreen true screenState screen world
-            
-            // read the screen's groups
-            let world = readGroups screenDescriptor screen world |> snd
-            (screen, world)
 
         /// View all of the properties of a screen.
         static member internal viewScreenProperties screen world =

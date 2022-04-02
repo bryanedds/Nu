@@ -190,11 +190,13 @@ module WorldGroupModule =
         /// group's existence. Consider using World.destroyGroup instead.
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
-            let destroyEntitiesImmediate group world =
-                let entities = World.getEntityRoots group world
-                World.destroyEntitiesImmediate entities world
             EventSystemDelegate.cleanEventAddressCache group.GroupAddress
-            World.removeGroup3 destroyEntitiesImmediate group world
+            if World.getGroupExists group world then
+                let entities = World.getEntityRoots group world
+                let world = World.unregisterGroup group world
+                let world = World.destroyEntitiesImmediate entities world
+                World.removeGroupState group world
+            else world
 
         /// Destroy a group in the world at the end of the current update.
         [<FunctionBinding>]
@@ -216,18 +218,22 @@ module WorldGroupModule =
 
         /// Write a group to a group descriptor.
         static member writeGroup group groupDescriptor world =
-            let writeEntities group groupDescriptor world =
-                let entities = World.getEntities group world
-                World.writeEntities entities groupDescriptor world
-            World.writeGroup4 writeEntities group groupDescriptor world
+            let groupState = World.getGroupState group world
+            let groupDispatcherName = getTypeName groupState.Dispatcher
+            let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
+            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
+            let entities = World.getEntityRoots group world
+            { groupDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple groups to a screen descriptor.
-        static member writeGroups groups screenDescriptor world =
+        static member writeGroups groups world =
             groups |>
             Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
             Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) screenDescriptor.GroupDescriptors |>
-            fun groupDescriptors -> { screenDescriptor with GroupDescriptors = groupDescriptors }
+            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) [] |>
+            Seq.rev |>
+            Seq.toList
 
         /// Write a group to a file.
         [<FunctionBinding>]
@@ -242,17 +248,46 @@ module WorldGroupModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a group from a group descriptor.
-        static member readGroup groupDescriptor nameOpt screen world =
-            World.readGroup5 World.readEntities groupDescriptor nameOpt screen world
+        static member readGroup groupDescriptor nameOpt (screen : Screen) world =
+
+            // make the dispatcher
+            let dispatcherName = groupDescriptor.GroupDispatcherName
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the group state and populate its properties
+            let groupState = GroupState.make None dispatcher
+            let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
+            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+
+            // apply the name if one is provided
+            let groupState =
+                match nameOpt with
+                | Some name -> { groupState with Name = name }
+                | None -> groupState
+
+            // add the group's state to the world
+            let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
+            let world = World.addGroup true groupState group world
+
+            // read the group's entities
+            let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
+            (group, world)
 
         /// Read multiple groups from a screen descriptor.
-        static member readGroups screenDescriptor screen world =
+        static member readGroups groupDescriptors screen world =
             List.foldBack
                 (fun groupDescriptor (groups, world) ->
                     let groupNameOpt = GroupDescriptor.getNameOpt groupDescriptor
                     let (group, world) = World.readGroup groupDescriptor groupNameOpt screen world
                     (group :: groups, world))
-                screenDescriptor.GroupDescriptors
+                groupDescriptors
                 ([], world)
 
         /// Read a group from a file.
