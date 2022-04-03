@@ -271,7 +271,7 @@ module WorldSimulantModule =
         static member dnib left right world =
             World.bind right left world
 
-        /// Link the left property with the right and the right property (two-way bind).
+        /// Link the left property with the right and the right property with the left (two-way bind).
         static member link left right world =
             let world = World.bind left right world
             let world = World.bind right left world

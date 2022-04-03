@@ -434,7 +434,7 @@ module WorldEntityModule =
         /// Try to pick an entity at the given position.
         [<FunctionBinding>]
         static member tryPickEntity position entities world =
-            /// OPTIMIZATION: using arrays for speed
+            // OPTIMIZATION: using arrays for speed
             let entitiesSorted = World.sortEntities entities world
             Array.tryFind
                 (fun (entity : Entity) ->

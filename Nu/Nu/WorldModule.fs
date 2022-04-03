@@ -556,9 +556,11 @@ module WorldModule =
 
     type World with // SelectedEcsOpt
 
+        /// Attempt to get the currently selected ECS.
         static member getSelectedEcsOpt world =
             world.SelectedEcsOpt
 
+        /// Get the currently selected ECS or throw an exception.
         static member getSelectedEcs world =
             match  world.SelectedEcsOpt with
             | Some selectedEcsOpt -> selectedEcsOpt
@@ -942,6 +944,7 @@ module WorldModule =
 
     type World with // Plugin
 
+        /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
