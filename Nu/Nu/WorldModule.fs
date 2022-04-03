@@ -293,30 +293,15 @@ module WorldModule =
         static member setUpdateRate updateRate world =
             World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) world
 
-        /// Reset the update time to 0 at the end of the current frame.
+        /// Check that the world is advancing.
         [<FunctionBinding>]
-        static member resetUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.resetUpdateTimeImmediate) world
-
-        /// Increment the update time at the end of the current frame.
-        [<FunctionBinding>]
-        static member incUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.incUpdateTimeImmediate) world
-
-        /// Decrement the update time at the end of the current frame.
-        [<FunctionBinding>]
-        static member decUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.decUpdateTimeImmediate) world
+        static member isAdvancing world =
+            World.getAmbientStateBy AmbientState.isAdvancing world
 
         /// Get the world's update time.
         [<FunctionBinding>]
         static member getUpdateTime world =
             World.getAmbientStateBy AmbientState.getUpdateTime world
-
-        /// Check that the world is advancing.
-        [<FunctionBinding>]
-        static member isAdvancing world =
-            World.getAmbientStateBy AmbientState.isAdvancing world
 
         /// Get the world's clock time.
         /// No script function binding due to lack of a DateTimeOffset script conversion.
