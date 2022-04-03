@@ -19,39 +19,38 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
-        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
-        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
-        "destroyBody destroyBodies createJoint createJoints " +
-        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
-        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
-        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
-        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
-        "destroy tryGetParent getParent getChildren " +
-        "getExists isSelected ignorePropertyBindings getEntities0 " +
-        "getGroups0 writeGameToFile readGameFromFile getScreens " +
-        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
-        "writeScreenToFile readScreenFromFile getGroups createGroup " +
-        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
-        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
-        "destroyEntities tryPickEntity writeEntityToFile readEntityFromFile " +
-        "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
-        "getEyeCenter setEyeCenter getEyeSize getEyeMargin " +
-        "setEyeSize getEyeBounds getOmniScreenOpt setOmniScreenOpt " +
-        "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds " +
-        "getSelectedScreen setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute " +
-        "getViewBounds isBoundsInView mouseToScreen mouseToWorld " +
-        "mouseToEntity initPropertyAttributes getImperative getStandAlone " +
-        "getCollectionConfig getLiveness getUpdateRate setUpdateRate " +
-        "resetUpdateTime incUpdateTime decUpdateTime getUpdateTime " +
-        "isAdvancing getClockDelta exit tryGetTextureSize " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
+        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
+        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
+        "playSound playSound3 fadeOutSong stopSong " +
+        "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
+        "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
+        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
+        "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
+        "isKeyboardKeyDown expandContent destroyImmediate destroy " +
+        "tryGetParent getParent getChildren getExists " +
+        "isSelected ignorePropertyBindings getEntities0 getGroups0 " +
+        "writeGameToFile readGameFromFile getScreens setScreenDissolve " +
+        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
+        "readScreenFromFile getGroups createGroup destroyGroup " +
+        "destroyGroups writeGroupToFile readGroupFromFile getEntitiesFlattened " +
+        "getEntities getEntitiesSovereign destroyEntity destroyEntities " +
+        "tryPickEntity writeEntityToFile readEntityFromFile createEntity " +
+        "renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter " +
+        "setEyeCenter getEyeSize getEyeMargin setEyeSize " +
+        "getEyeBounds getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
+        "setOmniScreen getSelectedScreenOpt constrainEyeBounds getSelectedScreen " +
+        "setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
+        "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
+        "initPropertyAttributes getImperative getStandAlone getCollectionConfig " +
+        "getLiveness getUpdateRate setUpdateRate isAdvancing " +
+        "getUpdateTime getClockDelta exit tryGetTextureSize " +
         "getTextureSize tryGetTextureSizeF getTextureSizeF reloadSymbols"
 
     let resolve relation world =
@@ -2386,31 +2385,15 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setUpdateRate' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let resetUpdateTime world =
+    let isAdvancing world =
         let oldWorld = world
         try
-            let result = World.resetUpdateTime world
-            struct (Scripting.Unit, result)
+            let result = World.isAdvancing world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
+            struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resetUpdateTime' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let incUpdateTime world =
-        let oldWorld = world
-        try
-            let result = World.incUpdateTime world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'incUpdateTime' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let decUpdateTime world =
-        let oldWorld = world
-        try
-            let result = World.decUpdateTime world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'decUpdateTime' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isAdvancing' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getUpdateTime world =
@@ -2422,17 +2405,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateTime' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let isAdvancing world =
-        let oldWorld = world
-        try
-            let result = World.isAdvancing world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isAdvancing' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getClockDelta world =
@@ -3945,34 +3917,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalResetUpdateTimeBinding fnName exprs originOpt world =
+    let evalIsAdvancingBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> resetUpdateTime world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalIncUpdateTimeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> incUpdateTime world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalDecUpdateTimeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> decUpdateTime world
+            | [||] -> isAdvancing world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3984,17 +3934,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> getUpdateTime world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalIsAdvancingBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> isAdvancing world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4214,11 +4153,8 @@ module WorldBindings =
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
              ("getUpdateRate", { Fn = evalGetUpdateRateBinding; Pars = [||]; DocOpt = None })
              ("setUpdateRate", { Fn = evalSetUpdateRateBinding; Pars = [|"updateRate"|]; DocOpt = None })
-             ("resetUpdateTime", { Fn = evalResetUpdateTimeBinding; Pars = [||]; DocOpt = None })
-             ("incUpdateTime", { Fn = evalIncUpdateTimeBinding; Pars = [||]; DocOpt = None })
-             ("decUpdateTime", { Fn = evalDecUpdateTimeBinding; Pars = [||]; DocOpt = None })
-             ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
              ("isAdvancing", { Fn = evalIsAdvancingBinding; Pars = [||]; DocOpt = None })
+             ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
              ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })

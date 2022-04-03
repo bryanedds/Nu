@@ -939,24 +939,6 @@ module Gaia =
                 Globals.pushPastWorld pastWorld
             world
 
-    let private handleFormResetUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.resetUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
-    let private handleFormIncUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.incUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
-    let private handleFormDecUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.decUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if form.songPlaybackButton.Checked
@@ -1243,9 +1225,6 @@ module Gaia =
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetUpdateTime form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncUpdateTime form ( EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecUpdateTime form (EventArgs ())
             if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
                 match form.rolloutTabControl.SelectedTab.Name with
                 | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
@@ -1550,9 +1529,6 @@ module Gaia =
         form.redoButton.Click.Add (handleFormRedo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
         form.advancingButton.CheckedChanged.Add (handleFormAdvancingChanged form)
-        form.resetUpdateTime.Click.Add (handleFormResetUpdateTime form)
-        form.incUpdateTime.Click.Add (handleFormIncUpdateTime form)
-        form.decUpdateTime.Click.Add (handleFormDecUpdateTime form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
