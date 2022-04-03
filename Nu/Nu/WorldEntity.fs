@@ -395,7 +395,7 @@ module WorldEntityModule =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        // Get all the entities not mounting another entity in a group.
+        /// Get all the entities not mounting another entity in a group.
         [<FunctionBinding>]
         static member getEntitiesSovereign group world =
             World.getEntitiesFlattened group world |>
