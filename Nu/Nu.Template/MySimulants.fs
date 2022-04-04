@@ -51,7 +51,7 @@ module Simulants =
         module Player =
 
             let Group = Screen / "Player"
-            let Player = Group / "Player"
+            let Character = Group / "Character"
 
         [<RequireQualifiedAccess>]
         module Scene =
