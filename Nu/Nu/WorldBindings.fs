@@ -19,36 +19,36 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
-        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
-        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
-        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
-        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
-        "playSound playSound3 fadeOutSong stopSong " +
-        "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
-        "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
-        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
-        "isBodyOnGround createBody createBodies destroyBody " +
-        "destroyBodies createJoint createJoints destroyJoint " +
-        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
-        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
-        "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
-        "isKeyboardKeyDown expandContent destroyImmediate destroy " +
-        "tryGetParent getParent getChildren getExists " +
-        "isSelected ignorePropertyBindings getEntities0 getGroups0 " +
-        "writeGameToFile readGameFromFile getScreens setScreenDissolve " +
-        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
-        "readScreenFromFile getGroups createGroup destroyGroup " +
-        "destroyGroups writeGroupToFile readGroupFromFile getEntitiesFlattened " +
-        "getEntities getEntitiesSovereign destroyEntity destroyEntities " +
-        "tryPickEntity writeEntityToFile readEntityFromFile createEntity " +
-        "renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter " +
-        "setEyeCenter getEyeSize getEyeMargin setEyeSize " +
-        "getEyeBounds getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
-        "setOmniScreen getSelectedScreenOpt constrainEyeBounds getSelectedScreen " +
-        "setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
-        "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
-        "initPropertyAttributes getImperative getStandAlone getCollectionConfig " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
+        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
+        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
+        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
+        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
+        "playSong6 playSound playSound3 fadeOutSong " +
+        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
+        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies createJoint createJoints " +
+        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
+        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
+        "applyBodyAngularImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
+        "getMousePosition isKeyboardKeyDown expandContent destroyImmediate " +
+        "destroy tryGetParent getParent getChildren " +
+        "getExists isSelected ignorePropertyBindings getEntities0 " +
+        "getGroups0 writeGameToFile readGameFromFile getScreens " +
+        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
+        "writeScreenToFile readScreenFromFile getGroups createGroup " +
+        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
+        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
+        "destroyEntities tryPickEntity writeEntityToFile readEntityFromFile " +
+        "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
+        "getEyeCenter setEyeCenter getEyeSize getEyeMargin " +
+        "setEyeSize getEyeBounds getOmniScreenOpt setOmniScreenOpt " +
+        "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds " +
+        "getSelectedScreen setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute " +
+        "getViewBounds isBoundsInView mouseToScreen mouseToWorld " +
+        "mouseToEntity getImperative getStandAlone getCollectionConfig " +
         "getLiveness getUpdateRate setUpdateRate isAdvancing " +
         "getUpdateTime getClockDelta exit tryGetTextureSize " +
         "getTextureSize tryGetTextureSizeF getTextureSizeF reloadSymbols"
@@ -2298,25 +2298,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let initPropertyAttributes nonPersistent propertyName world =
-        let oldWorld = world
-        try
-            let nonPersistent =
-                match ScriptingSystem.tryExport typeof<Boolean> nonPersistent world with
-                | Some value -> value :?> Boolean
-                | None -> failwith "Invalid argument type for 'nonPersistent'; expecting a value convertable to Boolean."
-            let propertyName =
-                match ScriptingSystem.tryExport typeof<String> propertyName world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'propertyName'; expecting a value convertable to String."
-            let result = World.initPropertyAttributesWorld nonPersistent propertyName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'initPropertyAttributes' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let getImperative world =
         let oldWorld = world
         try
@@ -3840,17 +3821,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalInitPropertyAttributesBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|nonPersistent; propertyName|] -> initPropertyAttributes nonPersistent propertyName world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalGetImperativeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4146,7 +4116,6 @@ module WorldBindings =
              ("mouseToScreen", { Fn = evalMouseToScreenBinding; Pars = [|"mousePosition"|]; DocOpt = None })
              ("mouseToWorld", { Fn = evalMouseToWorldBinding; Pars = [|"absolute"; "mousePosition"|]; DocOpt = None })
              ("mouseToEntity", { Fn = evalMouseToEntityBinding; Pars = [|"absolute"; "entityPosition"; "mousePosition"|]; DocOpt = None })
-             ("initPropertyAttributes", { Fn = evalInitPropertyAttributesBinding; Pars = [|"nonPersistent"; "propertyName"|]; DocOpt = None })
              ("getImperative", { Fn = evalGetImperativeBinding; Pars = [||]; DocOpt = None })
              ("getStandAlone", { Fn = evalGetStandAloneBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })

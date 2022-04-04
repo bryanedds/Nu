@@ -157,20 +157,6 @@ module WorldModule =
     let private emptyRemovedSimulants =
         HashSet ()
 
-    type World with // Reflection
-
-        /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the NP property name suffix.
-        static member initPropertyAttributes nonPersistent propertyName =
-            Reflection.initPropertyAttributes nonPersistent propertyName
-
-        /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the NP property name suffix.
-        [<FunctionBinding "initPropertyAttributes">]
-        static member initPropertyAttributesWorld nonPersistent propertyName (world : World) =
-            ignore world // for world parameter for scripting
-            Reflection.initPropertyAttributes nonPersistent propertyName
-
     type World with // Construction
 
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed
