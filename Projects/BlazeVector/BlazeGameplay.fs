@@ -120,7 +120,7 @@ module Player =
         member this.LastTimeJump = lens Property? LastTimeJump this.GetLastTimeJump this.SetLastTimeJump this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
-    // make properties as non-persistent.
+    // make properties non-persistent.
     Reflection.initPropertyAttributes true (nameof Entity.LastTimeOnGround)
     Reflection.initPropertyAttributes true (nameof Entity.LastTimeJump)
 
