@@ -9,25 +9,11 @@ open BlazeVector
 [<AutoOpen>]
 module Bullet =
 
-    type Entity with
-        member this.GetAge world : int64 = this.Get Property? Age world
-        member this.SetAge (value : int64) world = this.Set Property? Age value world
-        member this.Age = lens<int64> Property? Age this.GetAge this.SetAge this
-
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
         static let [<Literal>] BulletLifeTime =
             27L
-
-        static let handleUpdate evt world =
-            let bullet = evt.Subscriber : Entity
-            let world = bullet.SetAge (inc (bullet.GetAge world)) world
-            let world =
-                if bullet.GetAge world > BulletLifeTime
-                then World.destroyEntity bullet world
-                else world
-            (Cascade, world)
 
         static let handleCollision evt world =
             let bullet = evt.Subscriber : Entity
@@ -50,12 +36,11 @@ module Bullet =
              define Entity.GravityScale 0.0f
              define Entity.IsBullet true
              define Entity.BodyShape (BodyCircle { Radius = 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
-             define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
-             define Entity.Age 0L]
+             define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
         override this.Register (bullet, world) =
-            let world = World.monitor handleUpdate bullet.UpdateEvent bullet world
             let world = World.monitor handleCollision bullet.CollisionEvent bullet world
+            let world = World.delay (World.destroyEntity bullet) BulletLifeTime world
             world
 
 [<AutoOpen>]
