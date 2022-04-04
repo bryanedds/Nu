@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="15">
+ <tileset firstgid="1" source="TombOuter.tsx"/>
+ <tileset firstgid="513" source="Tent.tsx"/>
+ <tileset firstgid="927" source="TombInner.tsx"/>
+ <layer id="8" name="Basement" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJzt2tFNwzAQANB8BWbgrz/AJA0rMAojsUlXYQtckUioapySS2ubvo+nSlXknK9X30XKruu6HQAAAHfrOXlJXiuIpUX7ZEjeKogFAABYz7NRjGcjALgOM0qMGeV21GqMWoX29clD8lhBLC3a6hzs/QYhx36ul8vfFtb8F4/ngFnoh1qSP/lrl7MM/gfPFTF6ifzJX7vkL8YsCG0y+8XoHfInf+0yu1A7PTrGGZm3VF/yl7eUHz0mlj/yWq6vp+S9cAxfG61T4n3hGvK3lRLvC3+MSuw3MtfVMBN+jobx89b3j/SNls/Mv+Zo7kzaou8eZr6f3hmelK7VtXJn0jVraLrvkLn/Pdmit9ZYk6cx5eLqL7hmqZ4idZSryXP7iOZ5bs3f653GlNvj/oJrSjm3j2isc2vWtncAmHwDIG9EaQ==
+  </data>
+ </layer>
+ <layer id="7" name="Flooring" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJztnFlu1EAQhjsBLgAB7gEIEMcgEqAcIwnLAYADkI0jAI9k4Rl4hgcS4JkkiEXAGajSTCmlSvVS3fa4Z+xf+mVGcQbnm9/dZU+1N5xzG4OLPChPA78yDfx0nQdfBC+w7WVlvyb5fQMfgo8aer8udQV8TfiGsl+T/ObmnJsHn5lr6A2N0jIT2mp5It0GL7oTdnfAd5X9Yvz+FLL4Ab//E/yrIabIyMfjgjudmZAvOT/LZfAKeBV8H/wA/FA5nmkZ/4iblZGFJWf4DLwGXncjPpvgLeW4OL+ms7I8D58heHXe/rsyZ21x841vr8Hb4B3wLngP/EY5zjbz9xi4PQE/FfwO4fM5Ah8rn1PbObNkcB98AP4M/uL5G9vktwnctsDPE/OH7LrgFpsjQirlF8rSC+D2EvwqgV/X7Oj81ca4kLqcP/gYN2l2mLVVN5pbF8evtTmW10Rt188WdZk3YrXjRnPDyvg1zhEyf7yOTqmfj8HfrTAM6nJ+4OyQ1bob/e3b49dYo8g5FutoymlK/XwWxrFzLVw/dM1NskNWlL8156/vsI4mzl3UzzVw4+cfscPtgRvVJpQ/rUbBOpo4x+rnEsnrvJq48ewRO85q3/nrO6yjiXNK/Rybb1JUQy3CudH16547YVdybcQl+cXmm5hqYce50fUXZo9y5rs2skryi803IdXEjnPTrv+t10Y+SX6x+can2thxbsSRj3GWa6OQJL/YfKOpRnacW+j6v1SSX2y+kaqVXdvcSCX1Sy3s0LK207i9Bb8Dv8/8ezXl8quJHfq6O82upEZJvZecw682djx/PHdN1SghWfnVyI7yJ89ZS42Sm1UrP+170Rqs1fqWGiU3q1Z+V133rHz5K1FuPa3x+x3Yf5ryZ1FuPW3JX61jHxq/O4v1FLQhC79as5fCsa376qn8as5eCse27qun8qt13uj6vE7lNw3n7iQ4yh69Wc+fxnHB5bOUPXp9yV8bLFF9y1+IZQ7DPuevCYZD/soYDvk7bcu14JC/sgwSv9jagz7lz8KQ+MXWHvQpf+SU83gY/8oymMpPrifpi2MZTOWH36v3MYNN8cO+jmEMzOfXx/ylrGdI5Yd9Hdhn3acxMGU9g+X+PWawTwyRX6wHLcRP9qLiGIi9wn0YB6kfqSR/sheV1iTO+jjIe7liPWghfrIXFfusMX+zfA5zdin9oyF+Wi/qLDOUPYQp/aMhfr5eVBoHZ4mh1n+Z0nsZ4ufrRaVxkBjSGryuGeQww2NfzWQX4+cTncPEEDM6LVmUzHbHx5/DDmXhtzzurcEeOc5wffzvmudlWq8qmW2Mj19jl7KWqKT/mRjisSDHGjPIuWnMOEuZu5S1RKXr3+gZAduurvFQ46Yx+zw+fu2cTVlLVMqPhBzleEjjzCRZhrilMONKWUuUy0/rF+bPTOHP/phUJqkG8XFLYcaVshYml5/WLyzHQ/rstEyWbH0/oxqklJtFufx8/cJ8PKT8aZm0bm+y/+OWZz+qQXK58foiVSF+oTUksX5h/uwZLZPc655/89f32HsvefajGiQ3bzlrGJqaP0LSMmndPmLvt+TZz1r7SmljUqiXHjUJfiSeSev2K3ufT579LOy0cytlDYN8ToHGr6m17aX6AP5Y8HOrctYwaPwmsW4sRX/B/wp+Pglp/Jpa294HafyaWtveB01y/pgFyXsyTfNr+/lZXUvek7HwCz3rj9TWOp9aJO/J9O38DT0DIWXNvrwnw/m18XwFy7FNg+R3an3LX6nkPS15LT/Y7v8x1Gs5
+  </data>
+ </layer>
+ <layer id="6" name="Ceiling" width="80" height="80">
+  <data encoding="base64" compression="zlib">
+   eJzt3FdOw0AUhWFnKbRF8EgTIGARtNAXQe+LoPdNUEQR7IljEYkkSgi+kzKe+T/pKC92ZI+upVxHc5MErTBRSJJJZapg/45RnTumjDt8R16t6J5XlTXjvRd13oKyqCwpy4GvYXWtHOrzSDk23veOzttV9pR95UDpUrqVHqVX6QtkTWvVyp1yrzwY7/FS510p18qNcqsMKIPKkDKsjASyfrVqJfWpz68699ioltL1e1XelHflQ5lWZpRZZU6ZD2T9atVKI5ZaWtcxG8qmsqVsB7J+qepaacRSSyc65lQ5U86Vi4DWLytrLT3quCflWXmJeP2oJXfUEjqtGX1ezFz7vNi59nmxc+3z8HefBwDIj5j/d3AV2/8OzVbvXTL+x/IuGZWyvksGAAAAAAAAAAAAAAAAAAAAgDxjD4kde0jchL6HxPJsZZlTEPIeEuuzlXVOgW97SPpLcWV9tphT8MP6bDGn4Jf12WJOQWeEOjeyXUKdG9kurnMj099bo6XfW772M63st1zmRhYLldfm4/q1ut9ymfWXh16wHf2WddZfHnpBn/stn6+tnG/9Vjmfrw1AvL4BjY2UDg==
+  </data>
+ </layer>
+ <objectgroup id="4" name="Props">
+  <object id="4" gid="443" x="2016" y="3168" width="96" height="48">
+   <properties>
+    <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
+   </properties>
+  </object>
+  <object id="6" gid="443" x="192" y="3552" width="144" height="144">
+   <properties>
+    <property name="I" value="[Shopkeep SchaalShopkeep None Chemist]"/>
+   </properties>
+  </object>
+  <object id="7" gid="443" x="624" y="3264" width="144" height="144">
+   <properties>
+    <property name="I" value="[Shopkeep RobehnShopkeep None Armory]"/>
+   </properties>
+  </object>
+  <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc MaelNpc None [Prompt &quot;If it is my dark power you desire, I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;I am here to provide aid, but I cannot protect you for free... Perhaps a donation of $FEE gold?&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
+   <properties>
+    <property name="I">[Npc RiainNpc None [Prompt &quot;Another world... I can touch...
+Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]</property>
+   </properties>
+  </object>
+  <object id="12" gid="443" x="1056" y="624" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored. If you wish to delve into its depths, I can offer some guidance to help you make it out alive.^From what has been gathered, the first area beyond the vestibule is a large maze. Since you arrived so ill-prepared, do not expect to clear it your first time in. Have an exit strategy for when your resources get low...^Oh, but I see you have a Spirit Orb! With this, you can see enemies as they approach you. The further you go into an area, the tougher they become. Tougher enemies will appear redder in the Spirit Orb than the others...^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it.^When an enemy is glowing, it's about to use a Tech of its own. This can be devastating! Use your Critical Tech to cancel the enemy's technique and keep yourself out of harm's way.^As a Fighter, the Tech that you learn after Critical will be called Slash. This is a potentially very powerful Tech as it hits all enemies on a line.^One last bit of advice... Don't consider anyone here your friend. However, for the right price, some may be willing to join your party, while others will sell you goods that can save your life...^Good luck...&quot;] [RemoveAdvent TombSealed]]]]"/>
+   </properties>
+  </object>
+  <object id="14" gid="1161" x="2016" y="3264" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [255 255 255 191] [Dialog &quot;Sealed...&quot;] [TombSealed]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

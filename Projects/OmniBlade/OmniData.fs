@@ -340,7 +340,7 @@ type ArchetypeType =
     | Dinoman
     | Arachnos
     static member frenchName at = match at with 
-                                   |Fighter -> "Combattant"
+                                   |Fighter -> "Bretteur"
                                    |Wizard -> "Sorcier"
                                    |Conjuror -> "Conjureur"
                                    |Cleric -> "Clerc"

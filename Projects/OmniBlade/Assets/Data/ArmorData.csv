@@ -1,14 +1,14 @@
 Type,Subtype,EnduranceBase (increase by 33.3%),MindBase (increase constant amount),Cost,Description
 MicroFur,Pelt,4,4,5,
-TinMail,Mail,14,12,10,Pietre cote de mailles; pour les Combattants.
+TinMail,Mail,14,12,10,Pietre cote de mailles; pour les Bretteurs.
 CottonVest,Vest,13,13,10,Epaisse veste de coton pour les Ninjas et les Clercs.
 CottonRobe,Robe,12,14,10,Robe de cotton pour les Sorciers et Conjureurs.
 ThinFur,Pelt,16,13,10,
-BronzeMail,Mail,19,16,50,Cotte de mailles pour les Combattants.
+BronzeMail,Mail,19,16,50,Cotte de mailles pour les Bretteurs.
 LeatherVest,Vest,17,17,50,Veste de cuir pour les Ninjas et les Clercs.
 LeatherRobe,Robe,16,18,50,Robe de cuir fine pour les Sorciers et Conjureurs.
 ThickFur,Pelt,32,17,50,
-IronMail,Mail,25,20,100,Cotte de mailles pour les Combattants.
+IronMail,Mail,25,20,100,Cotte de mailles pour les Bretteurs.
 RubberVest,Vest,23,21,100,Veste de caoutchouc rigide pour les Ninjas et les Clercs.
 SilkRobe,Robe,21,22,100,Robe de soie pour les Sorciers et Conjureurs.
 ToughHide,Pelt,48,21,100,
