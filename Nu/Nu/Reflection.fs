@@ -62,9 +62,8 @@ module Reflection =
     let internal AssembliesLoaded =
         Dictionary<string, Assembly> StringComparer.Ordinal
 
-    /// Initialize a property's dynamic attributes.
-    /// Available as an alternative to using the NP property name suffix.
-    let initPropertyAttributes nonPersistent propertyName =
+    /// Configure a property to be non-persistent.
+    let internal initPropertyNonPersistent nonPersistent propertyName =
         NonPersistentPropertyNames.Add (propertyName, nonPersistent)
 
     /// Is a property with the given name not persistent?
@@ -73,7 +72,6 @@ module Reflection =
         | (true, result) -> result
         | (false, _) ->
             let result =
-                propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ids", StringComparison.Ordinal)
             NonPersistentPropertyNames.Add (propertyName, result)
@@ -520,10 +518,10 @@ type [<NoEquality; NoComparison>] ValueDescription =
     { NonPersistentDescription : unit }
         
     /// Some magic syntax for composing value properties.
-    static member (?) (_, propertyName) =
-        fun (value : 'v) ->
-            Reflection.initPropertyAttributes true propertyName
-            PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)    
+    static member (?) (_ : 'a, propertyName) =
+        fun (value : 'a) ->
+            Reflection.initPropertyNonPersistent true propertyName
+            Define? propertyName value
 
 [<AutoOpen>]
 module ReflectionSyntax =
@@ -536,5 +534,5 @@ module LensOperators =
 
     /// Define a property along with its initial value, also initializing its global attributes as non-persistent.
     let nonPersistent (lens : Lens<'a, 'w>) (value : 'a) =
-        Reflection.initPropertyAttributes true lens.Name
+        Reflection.initPropertyNonPersistent true lens.Name
         define lens value
