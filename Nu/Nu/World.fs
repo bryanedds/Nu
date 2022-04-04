@@ -422,9 +422,9 @@ module WorldModule3 =
 
             // make the world's event delegate
             let eventDelegate =
-                let eventTracing = Core.getEventTracing ()
+                let eventTracing = Constants.Engine.EventTracing
                 let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
-                let eventFilter = Core.getEventFilter ()
+                let eventFilter = Constants.Engine.EventFilter
                 let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
@@ -490,9 +490,9 @@ module WorldModule3 =
 
                 // make the world's event system
                 let eventSystem =
-                    let eventTracing = Core.getEventTracing ()
+                    let eventTracing = Constants.Engine.EventTracing
                     let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
-                    let eventFilter = Core.getEventFilter ()
+                    let eventFilter = Constants.Engine.EventFilter
                     let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                     let eventConfig = if config.Imperative then Imperative else Functional
