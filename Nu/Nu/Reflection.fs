@@ -510,3 +510,15 @@ module Reflection =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+
+namespace Prime
+open Nu
+open Prime
+
+[<AutoOpen>]
+module LensOperators =
+
+    /// Define a property along with its initial value, also initializing its global attributes as non-persistent.
+    let nonPersistent (lens : Lens<'a, 'w>) (value : 'a) =
+        Reflection.initPropertyAttributes true lens.Name
+        define lens value
