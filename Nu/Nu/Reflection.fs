@@ -514,6 +514,22 @@ module Reflection =
 namespace Prime
 open Nu
 open Prime
+    
+/// In tandem with the define literal, grants a nice syntax to define value properties.
+type [<NoEquality; NoComparison>] ValueDescription =
+    { NonPersistentDescription : unit }
+        
+    /// Some magic syntax for composing value properties.
+    static member (?) (_, propertyName) =
+        fun (value : 'v) ->
+            Reflection.initPropertyAttributes true propertyName
+            PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)    
+
+[<AutoOpen>]
+module ReflectionSyntax =
+
+    /// In tandem with the ValueDescription type, grants a nice syntax to define value properties.
+    let NonPersistent = { NonPersistentDescription = () }
 
 [<AutoOpen>]
 module LensOperators =
