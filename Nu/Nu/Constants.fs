@@ -4,6 +4,7 @@
 namespace Nu.Constants
 open System
 open System.Numerics
+open System.Configuration
 open SDL2
 open Nu
 open Prime
@@ -30,6 +31,14 @@ module Engine =
     let (*Literal*) ParticleSizeDefault = Vector2 12.0f
     let (*Literal*) InvalidId = Guid.Empty
     let (*Literal*) GravityDefault = Vector2 (0.0f, -9.80665f)
+    let (*Literal*) EventTracing =
+        match ConfigurationManager.AppSettings.["EventTracing"] with
+        | null -> false
+        | eventTracing -> scvalue<bool> eventTracing
+    let (*Literal*) EventFilter =
+        match ConfigurationManager.AppSettings.["EventFilter"] with
+        | null -> EventFilter.Empty
+        | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 
 [<RequireQualifiedAccess>]
 module Associations =
@@ -45,7 +54,10 @@ module Render =
     let [<Literal>] VirtualResolutionY = 540
     let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
     let (*Literal*) VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
-    let (*Literal*) VirtualScalar = Core.getVirtualScalarOrDefault 2
+    let (*Literal*) VirtualScalar =
+        match ConfigurationManager.AppSettings.["VirtualScalar"] with
+        | null -> 2
+        | resolution -> scvalue<int> resolution
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)

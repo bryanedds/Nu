@@ -57,24 +57,6 @@ module Core =
         lastStamp <- nextStamp
         nextStamp
 
-    /// Get a resolution along either an X or Y dimension.
-    let getVirtualScalarOrDefault defaultScalar =
-        match ConfigurationManager.AppSettings.["VirtualScalar"] with
-        | null -> defaultScalar
-        | resolution -> scvalue<int> resolution
-
-    /// Check that events should be trace as specified in the App.config file.
-    let getEventTracing () =
-        match ConfigurationManager.AppSettings.["EventTracing"] with
-        | null -> false
-        | eventTracing -> scvalue<bool> eventTracing
-
-    /// Get the event filter as specified in the App.config file.
-    let getEventFilter () =
-        match ConfigurationManager.AppSettings.["EventFilter"] with
-        | null -> EventFilter.Empty
-        | eventFilter -> scvalue<EventFilter.Filter> eventFilter
-
 [<AutoOpen>]
 module CoreOperators =
 
