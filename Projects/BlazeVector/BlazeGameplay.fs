@@ -120,10 +120,6 @@ module Player =
         member this.LastTimeJump = lens Property? LastTimeJump this.GetLastTimeJump this.SetLastTimeJump this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
-    // make properties non-persistent.
-    Reflection.initPropertyAttributes true (nameof Entity.LastTimeOnGround)
-    Reflection.initPropertyAttributes true (nameof Entity.LastTimeJump)
-
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
@@ -202,19 +198,10 @@ module Player =
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
-             define Entity.FixedRotation true
-             define Entity.Friction 0.0f
-             define Entity.LinearDamping 3.0f
-             define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
-             define Entity.CelCount 16
-             define Entity.CelRun 4
-             define Entity.CelSize (Vector2 (48.0f, 96.0f))
-             define Entity.AnimationDelay 3L
+            [define Entity.AnimationDelay 3L
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage
-             define Entity.LastTimeOnGround Int64.MinValue
-             define Entity.LastTimeJump Int64.MinValue]
+             nonPersistent Entity.LastTimeOnGround Int64.MinValue
+             nonPersistent Entity.LastTimeJump Int64.MinValue]
 
         override this.Register (player, world) =
             let world = World.monitor handleSpawnBullet player.UpdateEvent player world
