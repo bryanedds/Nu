@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Collections
 open System.ComponentModel
+open System.Drawing
 open System.Linq
 open System.Numerics
 open System.Reflection
@@ -38,7 +39,7 @@ module Gaia =
         let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
-                    (entities, fun entity -> entity.GetVisible world && entity.Parent = selectedGroup))
+                    (entities, fun entity -> entity.GetVisible world && entity.Group = selectedGroup))
         (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
@@ -49,66 +50,14 @@ module Gaia =
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
-    let private getExpansionState (treeView : TreeView) =
-        let nodeStates =
-            Seq.fold (fun state (node : TreeNode) ->
-                if node.Nodes.Count = 0 then state
-                else (node.Name, node.IsExpanded) :: state)
-                []
-                (enumerable treeView.Nodes)
-        Map.ofSeq nodeStates
-        
-    let private restoreExpansionState (treeView : TreeView) treeState =
-        Map.iter
-            (fun nodeName nodeExpansion ->
-                match treeView.Nodes.Find (nodeName, true) with
-                | [||] -> ()
-                | nodes ->
-                    let node = nodes.[0]
-                    if nodeExpansion
-                    then node.Expand ()
-                    else node.Collapse ())
-            treeState
-
-    let private addEntityTreeViewNode (entity : Entity) (form : GaiaForm) world =
-        let entityGroupName = getTypeName (entity.GetDispatcher world)
-        let treeGroup = form.entityTreeView.Nodes.[entityGroupName]
-        let treeGroupNodeName = scstring entity.EntityAddress
-        if treeGroup.Nodes.ContainsKey treeGroupNodeName
-        then () // when changing an entity name, entity will be added twice - once from win forms, once from world
-        else
-            let treeGroupNode = TreeNode entity.Name
-            treeGroupNode.Name <- treeGroupNodeName
-            treeGroup.Nodes.Add treeGroupNode |> ignore
-
-    let private removeEntityTreeViewNode (entity : Simulant) (form : GaiaForm) (_ : World) =
-        match form.entityTreeView.Nodes.Find (scstring entity.SimulantAddress, true) with
-        | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
-        | treeNodes -> form.entityTreeView.Nodes.Remove treeNodes.[0]
-
-    let private setEntityTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            match form.entityTreeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
-            | [||] -> form.entityTreeView.SelectedNode <- null
-            | nodes ->
-                let node = nodes.[0]
-                if node.Parent.IsExpanded then
-                    form.entityTreeView.SelectedNode <- node
-                    node.EnsureVisible ()
-                else form.entityTreeView.SelectedNode <- null
-        | _ -> form.entityTreeView.SelectedNode <- null
-
-    let private setHierarchyTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            match form.hierarchyTreeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
-            | [||] -> form.entityTreeView.SelectedNode <- null
-            | entityNodes ->
-                let entityNode = entityNodes.[0]
-                form.hierarchyTreeView.SelectedNode <- entityNode
-                entityNode.EnsureVisible ()
-        | _ -> form.hierarchyTreeView.SelectedNode <- null
+    let private generateEntityName dispatcherName world =
+        let selectedGroup = (getEditorState world).SelectedGroup
+        let name = Gen.nameForEditor dispatcherName
+        let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
+        while entity.Exists world do
+            let name = Gen.nameForEditor dispatcherName
+            entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
+        entity.Name
 
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
@@ -125,19 +74,6 @@ module Gaia =
         for dispatcherKvp in World.getEntityDispatchers world do
             form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
         form.createEntityComboBox.SelectedIndex <- 0
-
-    let private refreshEntityTreeView (form : GaiaForm) world =
-        let treeState = getExpansionState form.entityTreeView
-        form.entityTreeView.Nodes.Clear ()
-        for dispatcherKvp in World.getEntityDispatchers world do
-            let treeNode = TreeNode dispatcherKvp.Key
-            treeNode.Name <- treeNode.Text
-            form.entityTreeView.Nodes.Add treeNode |> ignore
-        let selectedGroup = (getEditorState world).SelectedGroup
-        for entity in World.getEntities selectedGroup world do
-            addEntityTreeViewNode entity form world
-        restoreExpansionState form.entityTreeView treeState
-        setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
     let private collectHierarchyTreeNodes (form : GaiaForm) (_ : World) =
         let rec collect (node : TreeNode) =
@@ -163,53 +99,35 @@ module Gaia =
     let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
         Option.isSome (tryFindHierarchyTreeNode name form world)
 
-    let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let entityNodeKey = scstring entity
-        let entityNode = TreeNode entity.Name
-        let groupNodeKey = scstring entity.Parent
-        let groupNode = form.hierarchyTreeView.Nodes.[groupNodeKey]
-        entityNode.Name <- entityNodeKey
-        if entity.Has<NodeFacet> world then
-            match entity.GetParentNodeOpt world with
-            | Some relation ->
-                let entityParent = resolve entity relation
-                let entityParentNodeKey = scstring entityParent
-                match tryFindHierarchyTreeNode entityParentNodeKey form world with
-                | Some node -> node.Nodes.Add entityNode |> ignore
-                | None -> failwithumf ()
-            | None -> groupNode.Nodes.Add entityNode |> ignore
-        else groupNode.Nodes.Add entityNode |> ignore
+    let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
+        addWorldChanger $ fun world ->
+            updateEditorState (fun state -> { state with RefreshHierarchyViewRequested = true }) world
 
-    let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let entityNodeKey = scstring entity
-        match tryFindHierarchyTreeNode entityNodeKey form world with
-        | Some node -> node.Remove ()
-        | None -> ()
-
-    let private refreshHierarchyTreeView (form : GaiaForm) world =
+    let private refreshHierarchyTreeViewImpl (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
         // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
-        let treeState = getExpansionState form.hierarchyTreeView
+        let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
-        let groups = World.getGroups Globals.Screen world
-        for group in groups do
-            let groupNode = TreeNode group.Name
-            groupNode.Name <- scstring group
-            form.hierarchyTreeView.Nodes.Add groupNode |> ignore
-            let entities = World.getEntities group world
-            for entity in entities do
-                let mutable parentNode = groupNode
-                for entity in entity.GetChildNodes world @ [entity] do
-                    let entityNodeKey = scstring entity
-                    if not (parentNode.Nodes.ContainsKey entityNodeKey) then
-                        let entityNode = TreeNode entity.Name
-                        entityNode.Name <- entityNodeKey
-                        parentNode.Nodes.Add entityNode |> ignore
-                        parentNode <- entityNode
-                    else parentNode <- parentNode.Nodes.[entityNodeKey]
-        restoreExpansionState form.hierarchyTreeView treeState
-        setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
+        let selectedGroup = (getEditorState world).SelectedGroup
+        let groupNode = TreeNode selectedGroup.Name
+        groupNode.Name <- Constants.Editor.GroupNodeKey
+        form.hierarchyTreeView.Nodes.Add groupNode |> ignore
+        let entities = World.getEntitiesFlattened selectedGroup world
+        for entity in entities do
+            let mutable namesUsed = [||]
+            let mutable parentNode = groupNode
+            for name in entity.Surnames do
+                namesUsed <- Array.add name namesUsed
+                let childNodeKey = namesUsed |> rtoa |> string
+                if not (parentNode.Nodes.ContainsKey childNodeKey) then
+                    let childNode = TreeNode name
+                    childNode.Name <- childNodeKey
+                    parentNode.Nodes.Add childNode |> ignore
+                    parentNode <- childNode
+                else parentNode <- parentNode.Nodes.[childNodeKey]
+        form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
+        updateEditorState (fun state -> { state with RefreshHierarchyViewRequested = false }) world
 
     let private refreshGroupTabs (form : GaiaForm) world =
 
@@ -279,7 +197,6 @@ module Gaia =
         refreshEntityPropertyGrid form world
         refreshGroupPropertyGrid form world
         refreshGroupTabs form world
-        refreshEntityTreeView form world
         refreshHierarchyTreeView form world
 
     let private canEditWithMouse (form : GaiaForm) world =
@@ -305,41 +222,35 @@ module Gaia =
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
 
-    let private handleNuChangeParentNodeOpt form evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        removeHierarchyTreeEntityNode entity form world
-        addHierarchyTreeEntityNode entity form world
-        (Cascade, world)
-
-    let private handleNuGroupRegister (form : GaiaForm) (_ : Event<unit, Screen>) world =
+    let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
+        Globals.World <- world // handle re-entry
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
 
-    let private handleNuGroupUnregistering (form : GaiaForm) (_ : Event<unit, Screen>) world =
-        refreshGroupTabs form world
-        refreshHierarchyTreeView form world
-        (Cascade, world)
-
-    let private handleNuEntityRegister (form : GaiaForm) evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        addEntityTreeViewNode entity form world
-        addHierarchyTreeEntityNode entity form world
-        (Cascade, world)
-
-    let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        let entity = Entity (atoa evt.Publisher.SimulantAddress)
-        removeEntityTreeViewNode evt.Publisher form world
-        removeHierarchyTreeEntityNode entity form world
-        match form.entityPropertyGrid.SelectedObject with
-        | null -> (Cascade, world)
-        | :? EntityTypeDescriptorSource as entityTds ->
-            if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
-                let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
-                deselectEntity form world
-                (Cascade, world)
-            else (Cascade, world)
-        | _ -> failwithumf ()
+    let private handleNuEntityLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Screen>) world =
+        Globals.World <- world // handle re-entry
+        match evt.Data with
+        | RegisterData _ ->
+            refreshHierarchyTreeView form world
+            (Cascade, world)
+        | UnregisteringData simulant ->
+            let nodeKey = scstring (rtoa (simulant :?> Entity).Surnames)
+            for node in collectHierarchyTreeNodes form world do
+                if node.Name = nodeKey then
+                    node.Remove ()
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> (Cascade, world)
+            | :? EntityTypeDescriptorSource as entityTds ->
+                if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
+                    let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
+                    deselectEntity form world
+                    (Cascade, world)
+                else (Cascade, world)
+            | _ -> failwithumf ()
+        | MountOptChangeData _ ->
+            refreshHierarchyTreeView form world
+            (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isAdvancing world then Cascade else Resolve
@@ -359,7 +270,7 @@ module Gaia =
                     updateEditorState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                         let entityPosition =
-                            if entity.Has<NodeFacet> world && entity.ParentNodeExists world
+                            if entity.MountExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -394,15 +305,9 @@ module Gaia =
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
-    let private monitorGroupEvents form world =
-        let world = World.monitor (handleNuGroupRegister form) (Events.Register --> Globals.Screen --> Events.Wildcard) Globals.Screen world
-        let world = World.monitor (handleNuGroupUnregistering form) (Events.Unregistering --> Globals.Screen --> Events.Wildcard) Globals.Screen world
-        world
-
-    let private monitorEntityEvents (group : Group) form world =
-        let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> group --> Events.Wildcard) group world
-        let world = World.monitor (handleNuEntityRegister form) (Events.Register --> group --> Events.Wildcard) group world
-        let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> group --> Events.Wildcard) group world
+    let private monitorLifeCycleEvents form world =
+        let world = World.monitor (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
+        let world = World.monitor (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Globals.Screen world
         world
 
     let private trySaveSelectedGroup filePath world =
@@ -432,10 +337,8 @@ module Gaia =
                 form.groupTabControl.SelectedTab.Text <- group.Name
                 form.groupTabControl.SelectedTab.Name <- group.Name
                 let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = group }) world
-                let world = monitorEntityEvents group form world
 
-                // refresh tree views
-                refreshEntityTreeView form world
+                // refresh hierarchy view
                 refreshHierarchyTreeView form world
                 (Some group, world)
             
@@ -497,34 +400,38 @@ module Gaia =
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
         let selectedGroup = (getEditorState world).SelectedGroup
-        let entityNames =
-            World.getEntities selectedGroup world |>
-            Seq.filter (fun entity -> entity.Has<NodeFacet> world) |>
+        let surnamesStrs =
+            World.getEntitiesFlattened selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
-            Seq.map (fun entity -> entity.Name) |>
+            Seq.map (fun entity -> entity.Surnames |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
-        entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
+        entityPicker.entityListBox.Items.AddRange (Array.map box surnamesStrs)
         entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
         entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
         entityPicker.searchTextBox.TextChanged.Add(fun _ ->
             entityPicker.entityListBox.Items.Clear ()
-            for name in entityNames do
-                if name.Contains entityPicker.searchTextBox.Text || name = Constants.Editor.NonePick then
-                    entityPicker.entityListBox.Items.Add name |> ignore)
+            for namesStr in surnamesStrs do
+                if namesStr.Contains entityPicker.searchTextBox.Text || namesStr = Constants.Editor.NonePick then
+                    entityPicker.entityListBox.Items.Add namesStr |> ignore)
         match entityPicker.ShowDialog () with
         | DialogResult.OK ->
             match entityPicker.entityListBox.SelectedItem with
-            | :? string as parentEntityName ->
-                match parentEntityName with
-                | Constants.Editor.NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+            | :? string as parentSurnamesStr ->
+                match parentSurnamesStr with
+                | Constants.Editor.NonePick ->
+                    entityTds.DescribedEntity.SetMountOptWithAdjustment None world
                 | _ ->
-                    let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
-                    form.propertyValueTextBoxText <- scstring parentRelation
-                    if propertyDescriptor.Name = "ParentNodeOpt"
-                    then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
-                    else (form.applyPropertyButton.PerformClick (); world)
+                    let entity = entityTds.DescribedEntity
+                    let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
+                    let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
+                    if parentRelation <> Relation.makeCurrent () then
+                        form.propertyValueTextBoxText <- scstring parentRelation
+                        if propertyDescriptor.Name = "MountOpt"
+                        then entity.SetMountOptWithAdjustment (Some parentRelation) world
+                        else form.applyPropertyButton.PerformClick (); world
+                    else form.applyPropertyButton.PerformClick (); world
             | _ -> world
         | _ -> world
 
@@ -797,8 +704,6 @@ module Gaia =
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
         refreshEntityPropertyDesigner form
-        setEntityTreeViewSelectionToEntityPropertyGridSelection form
-        setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
     let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -820,47 +725,52 @@ module Gaia =
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
 
-    let private handleFormEntityTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (e : ItemDragEventArgs) =
+        if e.Button = MouseButtons.Left then
+            form.DoDragDrop (e.Item, DragDropEffects.Move) |> ignore
+
+    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (e : DragEventArgs) =
+        e.Effect <- e.AllowedEffect
+
+    let private handleFormHierarchyTreeViewDragOver (form : GaiaForm) (e : DragEventArgs) =
+        let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+        form.hierarchyTreeView.SelectedNode <- form.hierarchyTreeView.GetNodeAt targetPoint
+
+    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (e : DragEventArgs) =
+
+        // TODO: lift this out.
+        let rec containsNode (source : TreeNode) (target : TreeNode) =
+            if isNull target.Parent then false
+            elif target.Parent = source then true
+            else containsNode source target.Parent
+
         addWorldChanger $ fun world ->
-            if  notNull form.entityTreeView.SelectedNode &&
-                form.entityTreeView.SelectedNode.Level = 1 then
-                let address = Address.makeFromString form.entityTreeView.SelectedNode.Name
-                match Address.getNames address with
-                | [|_; _; _|] ->
-                    let entity = Entity address
-                    selectEntity entity form world
-                    world
-                | _ -> world // don't have an entity address
+            Globals.pushPastWorld world
+            let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+            let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
+            let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
+            if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
+                let selectedGroup = (getEditorState world).SelectedGroup
+                let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
+                let (mountToParent, target) =
+                    if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
+                    then (false, Group selectedGroup.GroupAddress / source.Name)
+                    else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
+                let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
+                let world = World.renameEntityImmediate source target world
+                target.SetMountOptWithAdjustment mountOpt world
             else world
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
-                let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
-                match Address.getNames address with
-                | [|_; _|] ->
-
-                    // select the group of the selected entity
-                    let group = Group (atoa address)
-                    let groupTabIndex = form.groupTabControl.TabPages.IndexOfKey group.Name
-                    form.groupTabControl.SelectTab groupTabIndex
+                let nodeKey = form.hierarchyTreeView.SelectedNode.Name
+                if nodeKey <> Constants.Editor.GroupNodeKey then
+                    let address = Address.makeFromString nodeKey
+                    let entity = Entity ((getEditorState world).SelectedGroup.GroupAddress <-- atoa address)
+                    if entity.Exists world then selectEntity entity form world
                     world
-
-                | [|_; _; _|] ->
-
-                    // get a handle to the selected entity
-                    let entity = Entity (atoa address)
-
-                    // select the group of the selected entity
-                    let group = entity.Parent
-                    let groupTabIndex = form.groupTabControl.TabPages.IndexOfKey group.Name
-                    form.groupTabControl.SelectTab groupTabIndex
-
-                    // select the entity in the property grid
-                    selectEntity entity form world
-                    world
-
-                | _ -> world // don't have an entity address
+                else world
             else world
 
     let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
@@ -875,7 +785,8 @@ module Gaia =
                     | "(Routed Overlay)" -> RoutedOverlay
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
-                let (entity, world) = World.createEntity5 dispatcherName None overlayNameDescriptor selectedGroup world
+                let name = generateEntityName dispatcherName world
+                let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePosition world
                 let entityPosition =
@@ -943,9 +854,9 @@ module Gaia =
                 | DialogResult.OK ->
                     let filePath = form.saveFileDialog.FileName
                     trySaveSelectedGroup filePath world
-                    updateEditorState (fun value ->
-                        let filePaths = Map.add group.GroupAddress filePath value.FilePaths
-                        { value with FilePaths = filePaths })
+                    updateEditorState (fun state ->
+                        let filePaths = Map.add group.GroupAddress filePath state.FilePaths
+                        { state with FilePaths = filePaths })
                         world
                 | _ -> world
             else trySaveSelectedGroup form.saveFileDialog.FileName world; world
@@ -960,9 +871,9 @@ module Gaia =
                 match tryLoadSelectedGroup form filePath world with
                 | (Some group, world) ->
                     let world =
-                        updateEditorState (fun value ->
-                            let filePaths = Map.add group.GroupAddress filePath value.FilePaths
-                            { value with FilePaths = filePaths })
+                        updateEditorState (fun state ->
+                            let filePaths = Map.add group.GroupAddress filePath state.FilePaths
+                            { state with FilePaths = filePaths })
                             world
                     deselectEntity form world // currently selected entity may be gone if loading into an existing group
                     world
@@ -1028,24 +939,6 @@ module Gaia =
                 Globals.pushPastWorld pastWorld
             world
 
-    let private handleFormResetUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.resetUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
-    let private handleFormIncUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.incUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
-    let private handleFormDecUpdateTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger $ fun world ->
-            let (pastWorld, world) = (world, World.decUpdateTime world)
-            Globals.pushPastWorld pastWorld
-            world
-
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if form.songPlaybackButton.Checked
@@ -1076,7 +969,8 @@ module Gaia =
             let selectedGroup = (getEditorState world).SelectedGroup
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = getEditorState world
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
+            let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap surnamesOpt selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world
@@ -1112,7 +1006,6 @@ module Gaia =
     let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             deselectEntity form world
-            refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
             refreshGroupPropertyGrid form world
             world
@@ -1124,8 +1017,8 @@ module Gaia =
                 let groupTab = groupTabControl.SelectedTab
                 Globals.Screen / groupTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = selectedGroup}) world
-            refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
+            refreshHierarchyTreeView form world
             selectGroup selectedGroup form world
             world
 
@@ -1332,9 +1225,6 @@ module Gaia =
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetUpdateTime form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncUpdateTime form ( EventArgs ())
-            if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecUpdateTime form (EventArgs ())
             if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
                 match form.rolloutTabControl.SelectedTab.Name with
                 | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
@@ -1388,7 +1278,7 @@ module Gaia =
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                     let world =
-                        if entity.Has<NodeFacet> world && entity.ParentNodeExists world
+                        if entity.MountExists world
                         then entity.SetPositionLocal entityPositionSnapped world
                         else entity.SetPosition entityPositionSnapped world
                     let world =
@@ -1438,6 +1328,10 @@ module Gaia =
         let worldChangersCopy = List.ofSeq Globals.WorldChangers
         Globals.WorldChangers.Clear ()
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
+        let world =
+            if (getEditorState world).RefreshHierarchyViewRequested
+            then refreshHierarchyTreeViewImpl form world
+            else world
         let world = updateEntityDrag form world
         let world = updateCameraDrag form world
         updateUndoButton form world
@@ -1466,7 +1360,8 @@ module Gaia =
                               DragEntityState = DragEntityNone
                               DragCameraState = DragCameraNone
                               SelectedGroup = defaultGroup
-                              FilePaths = Map.empty }
+                              FilePaths = Map.empty
+                              RefreshHierarchyViewRequested = false }
                         let world = World.addKeyedValue Globals.EditorGuid editorState world
                         let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
                         let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
@@ -1476,8 +1371,7 @@ module Gaia =
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
-            let world = List.fold (fun world group -> monitorEntityEvents group form world) world groups
-            let world = monitorGroupEvents form world
+            let world = monitorLifeCycleEvents form world
             (defaultGroup, world)
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Globals.Screen + "'.")
 
@@ -1506,7 +1400,6 @@ module Gaia =
         Globals.World <- world
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
-        refreshEntityTreeView form Globals.World
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup defaultGroup form Globals.World
@@ -1580,17 +1473,16 @@ module Gaia =
         let treeViewSorter =
             { new IComparer with
                 member this.Compare (left, right) =
-                    let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let rightName = ((right :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let leftNameBiased = if Gen.isName leftName then "~" + leftName else leftName
-                    let rightNameBiased = if Gen.isName rightName then "~" + rightName else rightName
-                    String.CompareOrdinal (leftNameBiased, rightNameBiased) }
-
-        // sort entity tree view nodes with a bias against guids
-        form.entityTreeView.Sorted <- true
-        form.entityTreeView.TreeViewNodeSorter <- treeViewSorter
+                    let world = Globals.World
+                    let selectedGroup = (getEditorState world).SelectedGroup
+                    let leftEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((left :?> TreeNode).Name.Split Constants.Address.Separator))
+                    let rightEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((right :?> TreeNode).Name.Split Constants.Address.Separator))
+                    if leftEntity.Exists world && rightEntity.Exists world
+                    then (leftEntity.GetOrder world).CompareTo (rightEntity.GetOrder world)
+                    else 0 }
 
         // same for hierarchy tree view...
+        form.hierarchyTreeView.AllowDrop <- true // TODO: configure this in designer instead.
         form.hierarchyTreeView.Sorted <- true
         form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
 
@@ -1614,8 +1506,11 @@ module Gaia =
         form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
-        form.entityTreeView.AfterSelect.Add (handleFormEntityTreeViewNodeSelect form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
+        form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
+        form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
+        form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
+        form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
         form.createEntityButton.Click.Add (handleFormCreateEntity false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
         form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
@@ -1634,9 +1529,6 @@ module Gaia =
         form.redoButton.Click.Add (handleFormRedo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
         form.advancingButton.CheckedChanged.Add (handleFormAdvancingChanged form)
-        form.resetUpdateTime.Click.Add (handleFormResetUpdateTime form)
-        form.incUpdateTime.Click.Add (handleFormIncUpdateTime form)
-        form.decUpdateTime.Click.Add (handleFormDecUpdateTime form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)

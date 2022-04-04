@@ -33,15 +33,14 @@ module WorldModuleOperators =
     let ntos (screenName : string) =
         Screen screenName
 
-    /// Resolve a relationship from a simulant.
-    let resolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't =
+    /// Attempt to resolve a relationship from a simulant.
+    let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
         let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
-        if  typeof<'t> = typeof<Entity> ||
-            typeof<'t> = typeof<Group> ||
-            typeof<'t> = typeof<Screen> ||
-            typeof<'t> = typeof<Game> then
-            Activator.CreateInstance (typeof<'t>, simulant2) :?> 't
-        else failwithumf ()
+        if simulant2.Names.Length >= 3 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names.[0]) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 0 && typeof<'t> = typeof<Game> then Some (Simulants.Game :> Simulant :?> 't)
+        else None
 
     /// Relate the second simulant to the first.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
@@ -182,6 +181,7 @@ module WorldModule =
 #endif
             world
 
+        /// Assert that the current world is the chosen world (used for debugging).
         static member assertChosen (world : World) =
 #if DEBUG
             if world :> obj <> Debug.World.Chosen then
@@ -197,7 +197,8 @@ module WorldModule =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let worldExtension = { DestructionListRev = []; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
+            let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
                 { EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -205,13 +206,13 @@ module WorldModule =
                   GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
+                  EntityMounts = UMap.makeEmpty HashIdentity.Structural config
                   EntityTree = MutantCache.make id entityTree
                   SelectedEcsOpt = None
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
                   Subsystems = subsystems
-                  ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
-                  Dispatchers = dispatchers
+                  Simulants = simulants
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -222,31 +223,31 @@ module WorldModule =
         static member internal getEntityCachedOpt world =
             world.EntityCachedOpt
 
-        /// Get the screen directory.
-        static member internal getScreenDirectory world =
-            world.ScreenDirectory
+        /// Get the simulants.
+        static member internal getSimulants world =
+            world.Simulants
 
     type World with // Dispatchers
 
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
-            world.Dispatchers.GameDispatchers
+            world.WorldExtension.Dispatchers.GameDispatchers
 
         /// Get the screen dispatchers of the world.
         static member getScreenDispatchers world =
-            world.Dispatchers.ScreenDispatchers
+            world.WorldExtension.Dispatchers.ScreenDispatchers
 
         /// Get the group dispatchers of the world.
         static member getGroupDispatchers world =
-            world.Dispatchers.GroupDispatchers
+            world.WorldExtension.Dispatchers.GroupDispatchers
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
-            world.Dispatchers.EntityDispatchers
+            world.WorldExtension.Dispatchers.EntityDispatchers
 
         /// Get the facets of the world.
         static member getFacets world =
-            world.Dispatchers.Facets
+            world.WorldExtension.Dispatchers.Facets
 
     type World with // AmbientState
 
@@ -292,30 +293,15 @@ module WorldModule =
         static member setUpdateRate updateRate world =
             World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) world
 
-        /// Reset the update time to 0 at the end of the current frame.
+        /// Check that the world is advancing.
         [<FunctionBinding>]
-        static member resetUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.resetUpdateTimeImmediate) world
-
-        /// Increment the update time at the end of the current frame.
-        [<FunctionBinding>]
-        static member incUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.incUpdateTimeImmediate) world
-
-        /// Decrement the update time at the end of the current frame.
-        [<FunctionBinding>]
-        static member decUpdateTime world =
-            World.frame (World.updateAmbientState AmbientState.decUpdateTimeImmediate) world
+        static member isAdvancing world =
+            World.getAmbientStateBy AmbientState.isAdvancing world
 
         /// Get the world's update time.
         [<FunctionBinding>]
         static member getUpdateTime world =
             World.getAmbientStateBy AmbientState.getUpdateTime world
-
-        /// Check that the world is advancing.
-        [<FunctionBinding>]
-        static member isAdvancing world =
-            World.getAmbientStateBy AmbientState.isAdvancing world
 
         /// Get the world's clock time.
         /// No script function binding due to lack of a DateTimeOffset script conversion.
@@ -386,6 +372,7 @@ module WorldModule =
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
+        /// Attempt to look up a value from the world's key value store without allocating.
         static member tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
             let ambientState = World.getAmbientState world
             let kvs = AmbientState.getKeyValueStore ambientState
@@ -395,20 +382,25 @@ module WorldModule =
                 true
             else false
 
+        /// Attempt to look up a value from the world's key value store.
         static member tryGetKeyedValue<'a> key world =
             match World.getKeyValueStoreBy (UMap.tryFind key) world with
             | Some value -> Some (value :?> 'a)
             | None -> None
 
+        /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
             World.getKeyValueStoreBy (UMap.find key) world :?> 'a
 
+        /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
             World.updateKeyValueStore (UMap.add key (value :> obj)) world
 
+        /// Remove a value from the world's key value store.
         static member removeKeyedValue key world =
             World.updateKeyValueStore (UMap.remove key) world
 
+        /// Transform a value in the world's key value store if it exists.
         static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =
             World.addKeyedValue key (updater (World.getKeyedValue<'a> key world)) world
 
@@ -549,9 +541,11 @@ module WorldModule =
 
     type World with // SelectedEcsOpt
 
+        /// Attempt to get the currently selected ECS.
         static member getSelectedEcsOpt world =
             world.SelectedEcsOpt
 
+        /// Get the currently selected ECS or throw an exception.
         static member getSelectedEcs world =
             match  world.SelectedEcsOpt with
             | Some selectedEcsOpt -> selectedEcsOpt
@@ -647,16 +641,19 @@ module WorldModule =
                         let subscriber = subscriptionEntry.Subscriber
                         if not selectedOnly || isSelected subscriber world then
                             let result =
-                                match Array.length subscriber.SimulantAddress.Names with
-                                | 0 ->
-                                    match subscriber with
-                                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                let namesLength = subscriber.SimulantAddress.Names.Length
+                                if namesLength >= 3
+                                then EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                else
+                                    match namesLength with
+                                    | 0 ->
+                                        match subscriber with
+                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | _ -> failwithumf ()
+                                    | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                     | _ -> failwithumf ()
-                                | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | 3 -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result
                             world |> World.choose |> ignore
@@ -709,15 +706,15 @@ module WorldModule =
                     | Some validate -> Some (fun world ->
                         if validate world then
                             let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
-                            if mapGeneralized.ContainsKey key
-                            then itemCached <- mapGeneralized.GetValue key; true
-                            else false
+                            let struct (found, itemOpt) = mapGeneralized.TryGetValue key
+                            if found then itemCached <- itemOpt
+                            found
                         else false)
                     | None -> Some (fun world ->
                         let mapGeneralized = Lens.getWithoutValidation lensGeneralized world
-                        if mapGeneralized.ContainsKey key
-                        then itemCached <- mapGeneralized.GetValue key; true
-                        else false)
+                        let struct (found, itemOpt) = mapGeneralized.TryGetValue key
+                        if found then itemCached <- itemOpt
+                        found)
                 let getWithoutValidation =
                     fun _ ->
                         let result = itemCached
@@ -725,6 +722,7 @@ module WorldModule =
                         result
                 let lensItem =
                     { Name = lensGeneralized.Name
+                      ParentOpt = Some (lensGeneralized :> World Lens)
                       ValidateOpt = validateOpt
                       GetWithoutValidation = getWithoutValidation
                       SetOpt = None
@@ -733,10 +731,7 @@ module WorldModule =
                 current <- USet.add item current
             current
 
-        static member internal removeSynchronizedSimulants
-            (contentKey : Guid)
-            (removed : _ HashSet)
-            world =
+        static member internal removeSynchronizedSimulants contentKey (removed : _ HashSet) world =
             Seq.fold (fun world lensComparable ->
                 let key = lensComparable.LensKey
                 match World.tryGetKeyedValueFast (contentKey, world) with
@@ -801,56 +796,82 @@ module WorldModule =
                 world
             else world
 
+        static member private publishPropertyBinding binding world =
+            if binding.PBRight.Validate world then
+                let value = binding.PBRight.GetWithoutValidation world
+                let changed =
+                    match binding.PBPrevious with
+                    | ValueSome previous ->
+                        if value =/= previous
+                        then binding.PBPrevious <- ValueSome value; true
+                        else false
+                    | ValueNone -> binding.PBPrevious <- ValueSome value; true
+                let allowPropertyBinding =
+#if DEBUG
+                    // OPTIMIZATION: only compute in DEBUG mode.
+                    not (ignorePropertyBindings binding.PBLeft.This world)
+#else
+                    true
+#endif
+                if changed && allowPropertyBinding
+                then binding.PBLeft.TrySet value world
+                else world
+            else world
+
+        static member private publishPropertyBindingGroup bindings world =
+            let parentChanged =
+                match bindings.PBSParentPrevious with
+                | ValueSome parentPrevious ->
+                    let parent = bindings.PBSParent
+                    if parent.Validate world then
+                        let parentValue = parent.GetWithoutValidation world
+                        if parentValue =/= parentPrevious
+                        then bindings.PBSParentPrevious <- ValueSome parentValue; true
+                        else false
+                    else true
+                | ValueNone ->
+                    let parent = bindings.PBSParent
+                    if parent.Validate world then
+                        let parentValue = parent.GetWithoutValidation world
+                        bindings.PBSParentPrevious <- ValueSome parentValue
+                        true
+                    else true
+            if parentChanged
+            then OMap.foldv (flip World.publishPropertyBinding) world bindings.PBSPropertyBindings
+            else world
+
+        static member private publishContentBinding binding world =
+            // HACK: we need to use content key for an additional purpose, so we add 1.
+            // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
+            let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey // ELMISH_CACHE
+            if Lens.validate binding.CBSource world then
+                let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
+                let currentKeys = mapGeneralized.Keys
+                let previousKeys =
+                    match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with
+                    | (false, _) -> List () // TODO: use cached module binding of empty List.
+                    | (true, previous) -> previous
+                if not (currentKeys.SequenceEqual previousKeys) then
+                    let world = World.addKeyedValue contentKeyPlus1 currentKeys world
+                    let current = World.makeLensesCurrent currentKeys binding.CBSource world
+                    World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
+                else world
+            else
+                let config = World.getCollectionConfig world
+                let lensesCurrent = USet.makeEmpty (LensComparer ()) config
+                let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
+                World.removeKeyedValue contentKeyPlus1 world
+
         static member internal publishChangeBinding propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
                 OMap.foldv (fun world elmishBinding ->
                     match elmishBinding with
-                    | PropertyBinding binding ->
-                        if binding.PBRight.Validate world then
-                            let value = binding.PBRight.GetWithoutValidation world
-                            let changed =
-                                true
-                                (*match binding.PBPrevious with
-                                | ValueSome previous ->
-                                    if value =/= previous // ELMISH_CACHE
-                                    then binding.PBPrevious <- ValueSome value; true
-                                    else false
-                                | ValueNone -> binding.PBPrevious <- ValueSome value; true*)
-                            let allowPropertyBinding =
-#if DEBUG
-                                // OPTIMIZATION: only compute in DEBUG mode.
-                                not (ignorePropertyBindings binding.PBLeft.This world)
-#else
-                                true
-#endif
-                            if changed && allowPropertyBinding
-                            then binding.PBLeft.TrySet value world
-                            else world
-                        else world
-                    | ContentBinding binding ->
-                        // HACK: we need to use content key for an additional purpose, so we add 1.
-                        // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
-                        let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey
-                        if Lens.validate binding.CBSource world then
-                            let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let currentKeys = mapGeneralized.Keys
-                            let previousKeys =
-                                match World.tryGetKeyedValueFast<IComparable List> (contentKeyPlus1, world) with // ELMISH_CACHE
-                                | (false, _) -> List () // TODO: use cached module binding of empty List.
-                                | (true, previous) -> previous
-                            if not (currentKeys.SequenceEqual previousKeys) then
-                                let world = World.addKeyedValue contentKeyPlus1 currentKeys world
-                                let current = World.makeLensesCurrent currentKeys binding.CBSource world
-                                World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
-                            else world
-                        else
-                            let config = World.getCollectionConfig world
-                            let lensesCurrent = USet.makeEmpty (LensComparer ()) config
-                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world
-                            World.removeKeyedValue contentKeyPlus1 world)
-                    world elmishBindings
+                    | PropertyBinding binding -> World.publishPropertyBinding binding world
+                    | PropertyBindingGroup bindings -> World.publishPropertyBindingGroup bindings world
+                    | ContentBinding binding -> World.publishContentBinding binding world)
+                    world elmishBindings.EBSBindings
             | (false, _) -> world
 
     type World with // Scripting
@@ -908,6 +929,7 @@ module WorldModule =
 
     type World with // Plugin
 
+        /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 

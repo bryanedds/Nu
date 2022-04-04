@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.IO
 open FSharpx.Collections
 open Prime
@@ -19,7 +18,7 @@ module WorldGroupModule =
         member this.GetModelGeneric<'a> world = World.getGroupModel<'a> this world
         member this.SetModelGeneric<'a> value world = World.setGroupModel<'a> value this world |> snd'
         member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
-        member this.GetEcs world = World.getScreenEcs this.Parent world
+        member this.GetEcs world = World.getScreenEcs this.Screen world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetVisible world = World.getGroupVisible this world
         member this.SetVisible value world = World.setGroupVisible value this world |> snd'
@@ -31,38 +30,55 @@ module WorldGroupModule =
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getGroupScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member this.GetCreationTimeStamp world = World.getGroupCreationTimeStamp this world
-        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetOrder world = World.getGroupOrder this world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getGroupId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
-            if World.tryGetGroupProperty (propertyName, this, world, &property)
-            then Some property
-            else None
+            let found = World.tryGetGroupProperty (propertyName, this, world, &property)
+            if found then Some property else None
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getGroupProperty propertyName this world
+        member this.GetProperty propertyName world =
+            World.getGroupProperty propertyName this world
 
-        /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getGroupProperty propertyName this world).PropertyValue :?> 'a
+        /// Get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetGroupXtensionProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
+        member this.Get<'a> propertyName world : 'a =
+            World.getGroupXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName property world = World.trySetGroupProperty propertyName property this world
+        member this.TrySetProperty propertyName property world =
+            World.trySetGroupProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world |> snd'
+        member this.SetProperty propertyName property world =
+            World.setGroupProperty propertyName property this world |> snd'
 
-        /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd'
+        /// To try set an xtension property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetGroupXtensionProperty propertyName property this world
+
+        /// Set an xtension property value.
+        member this.Set<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setGroupXtensionProperty propertyName property this world
 
         /// Check that a group is selected.
         member this.IsSelected world =
@@ -82,12 +98,6 @@ module WorldGroupModule =
 
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
-
-        /// Resolve a relation in the context of a group.
-        member this.Resolve relation = resolve<Group> this relation
-
-        /// Relate a group to a simulant.
-        member this.Relate simulant = relate<Group> this simulant
 
         /// Get a group's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GroupAddress
@@ -124,12 +134,13 @@ module WorldGroupModule =
         /// Get all the groups in a screen.
         [<FunctionBinding>]
         static member getGroups (screen : Screen) world =
-            match Address.getNames screen.ScreenAddress with
-            | [|screenName|] ->
-                match UMap.tryFind screenName (World.getScreenDirectory world) with
-                | Some groupDirectory -> groupDirectory.Value |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
-                | None -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
-            | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (screen :> Simulant) with
+            | (true, groupsOpt) ->
+                match groupsOpt with
+                | Some groups -> groups |> Seq.map cast<Group>
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Create a group and add it to the world.
         [<FunctionBinding "createGroup">]
@@ -154,7 +165,12 @@ module WorldGroupModule =
         /// Create a group from a simulant descriptor.
         static member createGroup3 descriptor screen world =
             let (group, world) =
-                World.createGroup4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
+                let groupNameOpt =
+                    match descriptor.SimulantSurnamesOpt with
+                    | None -> None
+                    | Some [|name|] -> Some name
+                    | Some _ -> failwith "Group cannot have multiple names."
+                World.createGroup4 descriptor.SimulantDispatcherName groupNameOpt screen world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setGroupProperty propertyName property group world |> snd')
@@ -173,11 +189,13 @@ module WorldGroupModule =
         /// group's existence. Consider using World.destroyGroup instead.
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
-            let destroyEntitiesImmediate group world =
-                let entities = World.getEntities group world
-                World.destroyEntitiesImmediate entities world
             EventSystemDelegate.cleanEventAddressCache group.GroupAddress
-            World.removeGroup3 destroyEntitiesImmediate group world
+            if World.getGroupExists group world then
+                let entities = World.getEntities group world
+                let world = World.unregisterGroup group world
+                let world = World.destroyEntitiesImmediate entities world
+                World.removeGroupState group world
+            else world
 
         /// Destroy a group in the world at the end of the current update.
         [<FunctionBinding>]
@@ -199,18 +217,22 @@ module WorldGroupModule =
 
         /// Write a group to a group descriptor.
         static member writeGroup group groupDescriptor world =
-            let writeEntities group groupDescriptor world =
-                let entities = World.getEntities group world
-                World.writeEntities entities groupDescriptor world
-            World.writeGroup4 writeEntities group groupDescriptor world
+            let groupState = World.getGroupState group world
+            let groupDispatcherName = getTypeName groupState.Dispatcher
+            let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
+            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
+            let entities = World.getEntities group world
+            { groupDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple groups to a screen descriptor.
-        static member writeGroups groups screenDescriptor world =
+        static member writeGroups groups world =
             groups |>
-            Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStamp world) |>
+            Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
             Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) screenDescriptor.GroupDescriptors |>
-            fun groupDescriptors -> { screenDescriptor with GroupDescriptors = groupDescriptors }
+            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) [] |>
+            Seq.rev |>
+            Seq.toList
 
         /// Write a group to a file.
         [<FunctionBinding>]
@@ -225,17 +247,46 @@ module WorldGroupModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a group from a group descriptor.
-        static member readGroup groupDescriptor nameOpt screen world =
-            World.readGroup5 World.readEntities groupDescriptor nameOpt screen world
+        static member readGroup groupDescriptor nameOpt (screen : Screen) world =
+
+            // make the dispatcher
+            let dispatcherName = groupDescriptor.GroupDispatcherName
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the group state and populate its properties
+            let groupState = GroupState.make None dispatcher
+            let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
+            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+
+            // apply the name if one is provided
+            let groupState =
+                match nameOpt with
+                | Some name -> { groupState with Name = name }
+                | None -> groupState
+
+            // add the group's state to the world
+            let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
+            let world = World.addGroup true groupState group world
+
+            // read the group's entities
+            let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
+            (group, world)
 
         /// Read multiple groups from a screen descriptor.
-        static member readGroups screenDescriptor screen world =
+        static member readGroups groupDescriptors screen world =
             List.foldBack
                 (fun groupDescriptor (groups, world) ->
                     let groupNameOpt = GroupDescriptor.getNameOpt groupDescriptor
                     let (group, world) = World.readGroup groupDescriptor groupNameOpt screen world
                     (group :: groups, world))
-                screenDescriptor.GroupDescriptors
+                groupDescriptors
                 ([], world)
 
         /// Read a group from a file.

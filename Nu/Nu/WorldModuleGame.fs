@@ -39,7 +39,7 @@ module WorldModuleGame =
         static member internal getGameState world =
             world.GameState
 
-        static member private setGameState gameState world =
+        static member internal setGameState gameState world =
             World.choose { world with GameState = gameState }
 
         static member private updateGameStateWithoutEvent updater world =
@@ -57,7 +57,7 @@ module WorldModuleGame =
             struct (changed, world)
 
         static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
+        static member internal getGameOrder world = (World.getGameState world).Order
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
@@ -365,39 +365,80 @@ module WorldModuleGame =
         static member assetTagsToValueOpts<'a> assetTags metadata world =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
+        static member internal tryGetGameXtensionProperty (propertyName, world, property : _ outref) =
+            GameState.tryGetProperty (propertyName, World.getGameState world, &property)
+
+        static member internal getGameXtensionProperty propertyName world =
+            let mutable property = Unchecked.defaultof<_>
+            match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
+            | true -> property
+            | false -> failwithf "Could not find property '%s'." propertyName
+
+        static member internal getGameXtensionValue<'a> propertyName world =
+            let gameState = World.getGameState world
+            let property = GameState.getProperty propertyName gameState
+            property.PropertyValue :?> 'a
+
         static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with
-            | (true, getter) -> property <- getter world; true
-            | (false, _) -> GameState.tryGetProperty (propertyName, World.getGameState world, &property)
+            | (true, getter) ->
+                property <- getter world
+                true
+            | (false, _) ->
+                World.tryGetGameXtensionProperty (propertyName, world, &property)
 
         static member internal getGameProperty propertyName world =
             match GameGetters.TryGetValue propertyName with
             | (true, getter) -> getter world
-            | (false, _) ->
-                let mutable property = Unchecked.defaultof<_>
-                match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
-                | true -> property
-                | false -> failwithf "Could not find property '%s'." propertyName
+            | (false, _) -> World.getGameXtensionProperty propertyName world
+
+        static member internal trySetGameXtensionPropertyFast propertyName property world =
+            let mutable success = false // bit of a hack to get additional state out of the lambda
+            let struct (_, world) =
+                World.updateGameState
+                    (fun gameState ->
+                        let mutable propertyOld = Unchecked.defaultof<_>
+                        match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
+                        | true ->
+                            if property.PropertyValue =/= propertyOld.PropertyValue then
+                                let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                success <- successInner
+                                gameState
+                            else Unchecked.defaultof<_>
+                        | false -> Unchecked.defaultof<_>)
+                    propertyName property.PropertyValue world
+            world
+
+        static member internal trySetGameXtensionProperty propertyName property world =
+            let mutable success = false // bit of a hack to get additional state out of the lambda
+            let struct (changed, world) =
+                World.updateGameState
+                    (fun gameState ->
+                        let mutable propertyOld = Unchecked.defaultof<_>
+                        match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
+                        | true ->
+                            if property.PropertyValue =/= propertyOld.PropertyValue then
+                                let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                success <- successInner
+                                gameState
+                            else Unchecked.defaultof<_>
+                        | false -> Unchecked.defaultof<_>)
+                    propertyName property.PropertyValue world
+            struct (success, changed, world)
+
+        static member internal setGameXtensionProperty propertyName property world =
+            World.updateGameState
+                (fun gameState ->
+                    let propertyOld = GameState.getProperty propertyName gameState
+                    if property.PropertyValue =/= propertyOld.PropertyValue
+                    then GameState.setProperty propertyName property gameState
+                    else Unchecked.defaultof<_>)
+                propertyName property.PropertyValue world
 
         static member internal trySetGamePropertyFast propertyName property world =
             match GameSetters.TryGetValue propertyName with
             | (true, setter) -> setter property world |> snd'
-            | (false, _) ->
-                let mutable success = false // bit of a hack to get additional state out of the lambda
-                let struct (_, world) =
-                    World.updateGameState
-                        (fun gameState ->
-                            let mutable propertyOld = Unchecked.defaultof<_>
-                            match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
-                            | true ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                                    success <- successInner
-                                    gameState
-                                else Unchecked.defaultof<_>
-                            | false -> Unchecked.defaultof<_>)
-                        propertyName property.PropertyValue world
-                world
+            | (false, _) -> World.trySetGameXtensionPropertyFast propertyName property world
 
         static member internal trySetGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
@@ -405,33 +446,12 @@ module WorldModuleGame =
                 let struct (changed, world) = setter property world
                 struct (true, changed, world)
             | (false, _) ->
-                let mutable success = false // bit of a hack to get additional state out of the lambda
-                let struct (changed, world) =
-                    World.updateGameState
-                        (fun gameState ->
-                            let mutable propertyOld = Unchecked.defaultof<_>
-                            match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
-                            | true ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                                    success <- successInner
-                                    gameState
-                                else Unchecked.defaultof<_>
-                            | false -> Unchecked.defaultof<_>)
-                        propertyName property.PropertyValue world
-                struct (success, changed, world)
+                World.trySetGameXtensionProperty propertyName property world
 
         static member internal setGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
             | (true, setter) -> setter property world
-            | (false, _) ->
-                World.updateGameState
-                    (fun gameState ->
-                        let propertyOld = GameState.getProperty propertyName gameState
-                        if property.PropertyValue =/= propertyOld.PropertyValue
-                        then (GameState.setProperty propertyName property gameState)
-                        else Unchecked.defaultof<_>)
-                    propertyName property.PropertyValue world
+            | (false, _) -> World.setGameXtensionProperty propertyName property world
 
         static member internal attachGameProperty propertyName property world =
             let struct (_, world) =
@@ -446,41 +466,6 @@ module WorldModuleGame =
                     (fun gameState -> GameState.detachProperty propertyName gameState)
                     world
             world
-
-        static member internal writeGame3 writeScreens gameDescriptor world =
-            let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName gameState.Dispatcher
-            let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
-            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
-            writeScreens gameDescriptor world
-
-        static member internal readGame3 readScreens gameDescriptor world =
-
-            // make the dispatcher
-            let dispatcherName = gameDescriptor.GameDispatcherName
-            let dispatchers = World.getGameDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<GameDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the game state and populate its properties
-            let gameState = GameState.make dispatcher
-            let gameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world
-            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
-
-            // set the game's state in the world
-            let world = World.setGameState gameState world
-            
-            // read the game's screens
-            let world = readScreens gameDescriptor world |> snd
-            
-            // choose the world
-            World.choose world
 
         /// View all of the properties of a game.
         static member internal viewGameProperties world =
@@ -498,7 +483,7 @@ module WorldModuleGame =
         GameGetters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
         GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
-        GameGetters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
+        GameGetters.Add ("Order", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder world })
         GameGetters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
     /// Initialize property setters.

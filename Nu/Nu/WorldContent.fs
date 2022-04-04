@@ -172,9 +172,6 @@ module Content =
     /// Describe an animated sprite with the given initializers.
     let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
 
-    /// Describe a node with the given initializers.
-    let node entityName initializers = entity<NodeDispatcher> entityName initializers
-
     /// Describe a button with the given initializers.
     let button entityName initializers = entity<ButtonDispatcher> entityName initializers
 
@@ -190,8 +187,11 @@ module Content =
     /// Describe a text with the given initializers.
     let text entityName initializers = entity<TextDispatcher> entityName initializers
 
-    /// Describe a toggle with the given initializers.
-    let toggle entityName initializers = entity<ToggleDispatcher> entityName initializers
+    /// Describe a toggle button with the given initializers.
+    let toggleButton entityName initializers = entity<ToggleButtonDispatcher> entityName initializers
+
+    /// Describe a radio button with the given initializers.
+    let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
 
     /// Describe an fps gui with the given initializers.
     let fps entityName initializers = entity<FpsDispatcher> entityName initializers

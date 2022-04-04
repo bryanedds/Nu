@@ -28,8 +28,8 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = World.createEntity (Some Bob.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
@@ -37,8 +37,8 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = World.createEntity (Some Bob.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = !-- Bob.Visible -/> Jim.Visible $ world
         let world = !-- Jim.Visible -|> Bob.Visible $ world
         let world = Bob.SetVisible false world

@@ -100,6 +100,12 @@ type [<StructuralEquality; NoComparison>] ContentOrigin =
     | SimulantOrigin of Simulant
     | FacetOrigin of Simulant * string
 
+    /// Get the originating simulant.
+    static member getSimulant origin =
+        match origin with
+        | SimulantOrigin simulant
+        | FacetOrigin (simulant, _) -> simulant
+
 /// Describes the content of a simulant.
 type SimulantContent =
     interface end
@@ -147,25 +153,51 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           NuConfig = NuConfig.defaultConfig }
 
 /// Efficiently emulates root type casting of a Map.
-/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
-type [<NoEquality; NoComparison>] MapGeneralized =
-    { Keys : IComparable List
+type [<CustomEquality; NoComparison>] MapGeneralized =
+    { MapObj : obj
+      Keys : IComparable List
+      Equality : MapGeneralized -> obj -> bool
       ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj }
+      GetValue : IComparable -> obj
+      TryGetValue : IComparable -> struct (bool * obj) }
+
+    override this.GetHashCode () =
+        this.MapObj.GetHashCode ()
+
+    override this.Equals (that : obj) =
+        this.Equality this that
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { Keys =
+        { MapObj =
+            map
+          Keys =
             let list = List ()
             for key in Map.keys map do list.Add (key :> IComparable)
             list
+          Equality = fun this (that : obj) ->
+            match that with
+            | :? MapGeneralized as that ->
+                if this.MapObj = that.MapObj then
+#if ELMISH_MAP_GENERALIZED_DEEP_EQUALITY
+                    match that.MapObj with
+                    | :? Map<'k, 'v> as map2 -> System.Linq.Enumerable.SequenceEqual (map, map2)
+                    | _ -> false
+#else
+                    true
+#endif
+                else false
+            | _ -> false
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
           GetValue = fun (key : IComparable) ->
             match map.TryGetValue (key :?> 'k) with
             | (true, value) -> value :> obj
-            | (false, _) -> failwithumf () }
+            | (false, _) -> failwithumf ()
+          TryGetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> struct (true, value :> obj)
+            | (false, _) -> struct (false, null) }
 
 /// Extensions for EventTrace.
 module EventTrace =
@@ -355,18 +387,23 @@ module WorldTypes =
 
         static member Properties =
             [Define? Position Vector2.Zero
+             Define? PositionLocal Vector2.Zero
              Define? Size Constants.Engine.EntitySizeDefault
              Define? Angle 0.0f
              Define? Rotation 0.0f
              Define? Elevation 0.0f
+             Define? ElevationLocal 0.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
+             Define? MountOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
-             Define? Visible true
              Define? Enabled true
+             Define? EnabledLocal true
+             Define? Visible true
+             Define? VisibleLocal true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
@@ -470,7 +507,7 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
-          CreationTimeStamp : int64
+          Order : int64
           Id : Guid }
 
         interface SimulantState with
@@ -483,8 +520,7 @@ module WorldTypes =
                 v2
                     (single Constants.Render.VirtualResolutionX)
                     (single Constants.Render.VirtualResolutionY)
-            { Id = Gen.id
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
@@ -494,7 +530,8 @@ module WorldTypes =
               EyeCenter = eyeCenter
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              CreationTimeStamp = Core.getUniqueTimeStamp () }
+              Order = Core.getUniqueTimeStamp ()
+              Id = Gen.id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
@@ -540,7 +577,7 @@ module WorldTypes =
           SplashOpt : Splash option
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
-          CreationTimeStamp : int64
+          Order : int64
           Id : Guid
           Name : string }
 
@@ -561,7 +598,7 @@ module WorldTypes =
               SplashOpt = None
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
 
@@ -604,7 +641,7 @@ module WorldTypes =
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
-          CreationTimeStamp : int64
+          Order : int64
           Id : Guid
           Name : string }
 
@@ -620,7 +657,7 @@ module WorldTypes =
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
 
@@ -666,34 +703,41 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
+          mutable PositionLocal : Vector2
+          mutable ElevationLocal : single
+          // cache line 3
+          mutable MountOpt : Entity Relation option
+          mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
-          mutable ScriptFrameOpt : Scripting.DeclarationFrame
-          // cache line 3
-          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          mutable Order : int64
+          // cache line 4 (3/4-way through Id)
           Id : Guid
-          Name : string }
+          Surnames : string array }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
-        static member make imperative nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform = Transform.makeDefault ()
             transform.Imperative <- imperative
-            let (id, name) = Gen.idAndNameIf nameOpt
+            let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
+              PositionLocal = Vector2.Zero
+              ElevationLocal = 0.0f
+              MountOpt = None
+              ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              ScriptFrameOpt = Unchecked.defaultof<_>
-              CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Order = Core.getUniqueTimeStamp ()
               Id = id
-              Name = name }
+              Surnames = surnames }
 
         /// Copy an entity state.
         static member inline copy (entityState : EntityState) =
@@ -707,7 +751,7 @@ module WorldTypes =
             entityState'
 
         /// Check that there exists an xtenstion proprty that is a runtime property.
-        static member containsRuntimeProperties entityState =
+        static member inline containsRuntimeProperties entityState =
             Xtension.containsRuntimeProperties entityState.Xtension
 
         /// Try to get an xtension property and its type information.
@@ -773,12 +817,15 @@ module WorldTypes =
         member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
         member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
+        member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
+        member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
+        member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.Bounds with get () = this.Transform.Bounds
         member this.Center with get () = this.Transform.Center
@@ -855,11 +902,11 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// The parent game of the screen.
-        member this.Parent = Game ()
+        /// Get the names of a screen.
+        member inline this.Names = Address.getNames this.ScreenAddress
 
         /// Get the name of a screen.
-        member inline this.Name = this.ScreenAddress.Names.[0]
+        member inline this.Name = Address.getName this.ScreenAddress
 
 #if DEBUG
         /// Get the latest value of a screen's properties.
@@ -928,11 +975,14 @@ module WorldTypes =
         /// The address of the group.
         member this.GroupAddress = groupAddress
 
-        /// The parent screen of the group.
-        member this.Parent = let names = this.GroupAddress.Names in Screen names.[0]
+        /// The containing screen of the group.
+        member this.Screen = let names = this.GroupAddress.Names in Screen names.[0]
+
+        /// Get the names of a group.
+        member inline this.Names = Address.getNames this.GroupAddress
 
         /// Get the name of a group.
-        member this.Name = Address.getName this.GroupAddress
+        member inline this.Name = Address.getName this.GroupAddress
 
 #if DEBUG
         /// Get the latest value of a group's properties.
@@ -982,7 +1032,7 @@ module WorldTypes =
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
+        do if Address.length entityAddress < 3 then failwith "Entity address must be length >= 3."
 
         /// The entity's cached state.
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
@@ -1000,10 +1050,10 @@ module WorldTypes =
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
 
         /// Create an entity reference from an array of names.
-        new (entityNames : string array) = Entity (rtoa entityNames)
+        new (surnames : string array) = Entity (rtoa surnames)
 
         /// Create an entity reference from a list of names.
-        new (entityNames : string list) = Entity (ltoa entityNames)
+        new (surnames : string list) = Entity (ltoa surnames)
 
         /// Create an entity reference from a the required names.
         new (screenName : string, groupName : string, entityName : string) = Entity [screenName; groupName; entityName]
@@ -1011,8 +1061,19 @@ module WorldTypes =
         /// The address of the entity.
         member this.EntityAddress = entityAddress
 
-        /// The parent group of the entity.
-        member this.Parent = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
+        /// The containing screen of the entity.
+        member this.Screen = let names = this.EntityAddress.Names in Screen names.[0]
+
+        /// The containing group of the entity.
+        member this.Group = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
+
+        /// The containing parent of the entity.
+        member this.Parent =
+            let names = this.EntityAddress.Names
+            let namesLength = Array.length names
+            if namesLength < 4
+            then Group (Array.take 2 names) :> Simulant
+            else Entity (Array.take (dec namesLength) names) :> Simulant
 
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt
@@ -1028,24 +1089,33 @@ module WorldTypes =
 
         /// The entity's update event.
         member this.UpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            let surnames = Address.getNames entityAddress
+            rtoa<unit> (Array.append [|"Update"; "Event"|] surnames)
 
 #if !DISABLE_ENTITY_POST_UPDATE
         /// The entity's post update event.
         member this.PostUpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            let surnames = Address.getNames entityAddress
+            rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] surnames)
 #endif
 
-        /// Get the name of an entity.
-        member this.Name = Address.getName this.EntityAddress
+        /// Get the names of an entity.
+        member inline this.Names = Address.getNames this.EntityAddress
+
+        /// Get the surnames of an entity (the names of an entity not including group or screen).
+        member inline this.Surnames = Address.getNames this.EntityAddress |> Array.skip 2
+
+        /// Get the last name of an entity.
+        member inline this.Name = Address.getNames this.EntityAddress |> Array.last
 
 #if DEBUG
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 #endif
+
+        /// Derive an entity from its parent entity.
+        static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
         /// Helper for accessing entity lenses.
         static member Lens = Unchecked.defaultof<Entity>
@@ -1114,7 +1184,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          (*mutable PBPrevious : obj ValueOption*) }
+          mutable PBPrevious : obj ValueOption } // ELMISH_CACHE
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1126,13 +1196,22 @@ module WorldTypes =
           CBSimulantKey : Guid
           CBContentKey : Guid }
 
-    /// Describes an binding for Nu's optimized Elmish implementation.
+    /// Describes a group of property bindings.
+    and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
+        { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
+          PBSParent : World Lens
+          PBSPropertyBindings : OMap<Guid, PropertyBinding> }
+
+    /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
         | PropertyBinding of PropertyBinding
+        | PropertyBindingGroup of PropertyBindingGroup
         | ContentBinding of ContentBinding
 
-    /// Describes bindings for Nu's optimized Elmish implementation.
-    and internal ElmishBindings = OMap<Guid, ElmishBinding>
+    /// Describe an map of elmish bindings.
+    and [<NoEquality; NoComparison>] internal ElmishBindings =
+        { EBSParents : UMap<Guid, World Lens>
+          EBSBindings : OMap<Either<Guid, World Lens>, ElmishBinding> }
 
     /// The world's dispatchers (including facets).
     /// 
@@ -1155,8 +1234,9 @@ module WorldTypes =
           AudioPlayer : AudioPlayer }
 
     /// Keeps the World from occupying more than two cache lines.
-    and [<ReferenceEquality; NoComparison>] WorldExtension =
+    and [<ReferenceEquality; NoComparison>] internal WorldExtension =
         { DestructionListRev : Simulant list
+          Dispatchers : Dispatchers
           Plugin : NuPlugin
           ScriptingEnv : Scripting.Env
           ScriptingContext : Simulant }
@@ -1177,13 +1257,13 @@ module WorldTypes =
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
               // cache line 2
+              EntityMounts : UMap<Entity, Entity USet>
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
-              Dispatchers : Dispatchers
+              Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
@@ -1195,16 +1275,17 @@ module WorldTypes =
                 AmbientState.getLiveness this.AmbientState
 
             member this.GetSimulantExists simulant =
-                // OPTIMIZATION: constant-time look-up here improve non-entity existence queries.
-                match simulant.SimulantAddress.Names.Length with
-                | 3 ->
+                let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+                if namesLength >= 3 then
                     let entity = simulant :?> Entity
                     notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
                     UMap.containsKey (simulant :?> Entity) this.EntityStates
-                | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
-                | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
-                | 0 -> true
-                | _  -> false
+                else
+                    match namesLength with
+                    | 0 -> true
+                    | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
+                    | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
+                    | _  -> failwithumf ()
 
             member this.GetGlobalSimulantSpecialized () =
                 EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate
@@ -1252,7 +1333,7 @@ module WorldTypes =
                 this.WorldExtension.ScriptingEnv
 
             member this.TryGetExtrinsic fnName =
-                this.Dispatchers.TryGetExtrinsic fnName
+                this.WorldExtension.Dispatchers.TryGetExtrinsic fnName
 
             member this.TryImport ty value =
                 match (ty.Name, value) with

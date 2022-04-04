@@ -156,6 +156,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Particles : Particle array }
 
 /// Describes how to render something to the rendering system.
+/// TODO: see if we can make RenderCallback receive args by reference or something.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor

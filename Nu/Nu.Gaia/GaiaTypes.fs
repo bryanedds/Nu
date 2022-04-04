@@ -27,7 +27,8 @@ type EditorState =
       DragEntityState : DragEntityState
       DragCameraState : DragCameraState
       SelectedGroup : Group
-      FilePaths : Map<Group Address, string> }
+      FilePaths : Map<Group Address, string>
+      RefreshHierarchyViewRequested : bool } // HACK: make sure hierarchy view isn't updated more than once per frame.
 
 type SavedState =
     { BinaryFilePath : string

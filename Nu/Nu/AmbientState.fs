@@ -68,25 +68,13 @@ module AmbientState =
     let setUpdateRateImmediate updateRate state =
         { state with UpdateRate = updateRate }
 
-    /// Reset the update time to 0.
-    let resetUpdateTimeImmediate state =
-        { state with UpdateTime = 0L }
-
-    /// Increment the update time.
-    let incUpdateTimeImmediate state =
-        { state with UpdateTime = inc state.UpdateTime }
-
-    /// Increment the update time.
-    let decUpdateTimeImmediate state =
-        { state with UpdateTime = dec state.UpdateTime }
+    /// Check that updating is enabled.
+    let isAdvancing state =
+        getUpdateRate state <> 0L
 
     /// Get the update time.
     let getUpdateTime state =
         state.UpdateTime
-
-    /// Check that updating is enabled.
-    let isAdvancing state =
-        getUpdateRate state <> 0L
 
     /// Get the clock delta as a floating point number.
     let getClockDelta state =

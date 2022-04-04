@@ -50,6 +50,12 @@ type [<StructuralEquality; NoComparison>] SeparationData =
     { Separator : BodyShapeSource
       Separatee : BodyShapeSource }
 
+/// The data for a life cycle event.
+type [<StructuralEquality; NoComparison>] LifeCycleData =
+    | RegisterData of Simulant
+    | UnregisteringData of Simulant
+    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -57,6 +63,7 @@ module Events =
     let Register = stoa<unit> "Register/Event"
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")
+    let LifeCycle simulantTypeName = stoa<LifeCycleData> ("LifeCycle/" + simulantTypeName + "/Event")
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Select = stoa<unit> "Select/Event"
@@ -71,6 +78,9 @@ module Events =
     let Toggle = stoa<bool> "Toggle/Event"
     let Toggled = stoa<unit> "Toggled/Event"
     let Untoggled = stoa<unit> "Untoggled/Event"
+    let Dial = stoa<bool> "Dial/Event"
+    let Dialed = stoa<unit> "Dialed/Event"
+    let Undialed = stoa<unit> "Undialed/Event"
     let Touch = stoa<Vector2> "Touch/Event"
     let Touching = stoa<Vector2> "Touching/Event"
     let Untouch = stoa<Vector2> "Untouch/Event"

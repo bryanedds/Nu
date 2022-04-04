@@ -26,7 +26,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, sieve, unfold, mapper) ->
             Choice1Of3 (lens, sieve, unfold, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
-            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (group / name) world
+            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some [|name|]) initializers (group / name) world
             Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (group / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -52,7 +52,7 @@ type [<NoEquality; NoComparison>] GroupContent =
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, handlersGroup, bindsGroup) = Describe.group5 dispatcherName (Some name) initializers descriptors group world
+            let (descriptor, handlersGroup, bindsGroup) = Describe.group5 dispatcherName (Some [|name|]) initializers descriptors group world
             Choice2Of3 (name, descriptor, handlers @ handlersGroup, binds @ bindsGroup, streams, filePaths, entityContents)
         | GroupFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -78,7 +78,7 @@ type [<NoEquality; NoComparison>] ScreenContent =
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (groupName, entityName, filePath) -> (name, groupName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
             let groupFilePaths = List.map (function Choice3Of3 (groupName, filePath) -> Some (name, groupName, filePath) | _ -> None) expansions |> List.definitize
-            let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName (Some name) initializers descriptors screen world
+            let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName (Some [|name|]) initializers descriptors screen world
             Left (name, descriptor, handlers @ handlersScreen, binds @ bindsScreen, behavior, streams, entityStreams, groupFilePaths, entityFilePaths, entityContents)
         | ScreenFromGroupFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
@@ -218,28 +218,75 @@ module WorldDeclarative =
                 | (false, _) -> failwithumf ()
             | _ -> world
 
-        static member internal addPropertyBinding propertyBindingKey propertyAddress left right world =
-            match world.ElmishBindingsMap.TryGetValue propertyAddress with
-            | (true, elmishBindings) ->
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right(*; PBPrevious = ValueNone*) }) elmishBindings
-                let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-            | (false, _) ->
-                let config = World.getCollectionConfig world
-                let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right(*; PBPrevious = ValueNone*) }) elmishBindings
-                let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+        static member internal addPropertyBinding propertyBindingKey propertyAddress left (right : World Lens) world =
+            match right.ParentOpt with
+            | Some parent ->
+                match world.ElmishBindingsMap.TryGetValue propertyAddress with
+                | (true, elmishBindings) ->
+                    let elmishBindings =
+                        { elmishBindings with
+                            EBSParents = UMap.add propertyBindingKey parent elmishBindings.EBSParents
+                            EBSBindings =
+                                let config = World.getCollectionConfig world
+                                match elmishBindings.EBSBindings.TryGetValue (Right parent) with
+                                | (true, PropertyBindingGroup propertyBindingGroup) ->
+                                    let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
+                                    let propertyBindingGroup = { propertyBindingGroup with PBSParentPrevious = ValueNone; PBSPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindingGroup.PBSPropertyBindings }
+                                    OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
+                                | (_, _) ->
+                                    let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
+                                    let propertyBindingGroup = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
+                                    OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+                | (false, _) ->
+                    let config = World.getCollectionConfig world
+                    let elmishBindings =
+                        { EBSParents = UMap.singleton HashIdentity.Structural config propertyBindingKey parent
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Right parent) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+            | None ->
+                match world.ElmishBindingsMap.TryGetValue propertyAddress with
+                | (true, elmishBindings) ->
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) elmishBindings.EBSBindings }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+                | (false, _) ->
+                    let config = World.getCollectionConfig world
+                    let elmishBindings =
+                        { EBSParents = UMap.makeEmpty HashIdentity.Structural config
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone }) }
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
         static member internal removePropertyBinding propertyBindingKey propertyAddress world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
-            | (true, propertyBindings) ->
-                let propertyBindings = OMap.remove propertyBindingKey propertyBindings
-                if OMap.notEmpty propertyBindings then
-                    let elmishBindingsMap = UMap.add propertyAddress propertyBindings world.ElmishBindingsMap
+            | (true, elmishBindings) ->
+                match elmishBindings.EBSParents.TryGetValue propertyBindingKey with
+                | (true, parent) ->
+                    let elmishBindings =
+                        { elmishBindings with
+                            EBSParents = UMap.remove propertyBindingKey elmishBindings.EBSParents
+                            EBSBindings =
+                                match elmishBindings.EBSBindings.TryGetValue (Right parent) with
+                                | (true, PropertyBindingGroup propertyBindingGroup) ->
+                                    let propertyBindingGroup = { propertyBindingGroup with PBSPropertyBindings = OMap.remove propertyBindingKey propertyBindingGroup.PBSPropertyBindings }
+                                    if OMap.isEmpty propertyBindingGroup.PBSPropertyBindings
+                                    then OMap.remove (Right parent) elmishBindings.EBSBindings
+                                    else OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
+                                | (_, _) -> elmishBindings.EBSBindings }
+                    let elmishBindingsMap =
+                        if OMap.isEmpty elmishBindings.EBSBindings
+                        then UMap.remove propertyAddress world.ElmishBindingsMap
+                        else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-                else
-                    let elmishBindingsMap = UMap.remove propertyAddress world.ElmishBindingsMap
+                | (false, _) ->
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.remove (Left propertyBindingKey) elmishBindings.EBSBindings }
+                    let elmishBindingsMap =
+                        if OMap.isEmpty elmishBindings.EBSBindings
+                        then UMap.remove propertyAddress world.ElmishBindingsMap
+                        else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) -> world
 
@@ -248,12 +295,13 @@ module WorldDeclarative =
             let bindingsMap =
                 match world.ElmishBindingsMap.TryGetValue propertyAddress  with
                 | (true, elmishBindings) ->
-                    let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left contentBinding.CBSimulantKey) (ContentBinding contentBinding) elmishBindings.EBSBindings }
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) ->
                     let config = World.getCollectionConfig world
-                    let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
-                    let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
+                    let elmishBindings =
+                        { EBSParents = UMap.makeEmpty HashIdentity.Structural config
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left contentBinding.CBSimulantKey) (ContentBinding contentBinding) }
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
             World.choose { world with ElmishBindingsMap = bindingsMap }
 
@@ -262,8 +310,8 @@ module WorldDeclarative =
             let bindingsMap =
                 match world.ElmishBindingsMap.TryGetValue propertyAddress with
                 | (true, elmishBindings) -> 
-                    let elmishBindings = OMap.remove contentBinding.CBSimulantKey elmishBindings
-                    if OMap.isEmpty elmishBindings
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.remove (Left contentBinding.CBSimulantKey) elmishBindings.EBSBindings }
+                    if OMap.isEmpty elmishBindings.EBSBindings
                     then UMap.remove propertyAddress world.ElmishBindingsMap
                     else UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) -> world.ElmishBindingsMap
@@ -282,12 +330,12 @@ module WorldDeclarative =
 
             // construct the generalized lens with internal caching
             let lensGeneralized =
-                let mutable lensResult = Unchecked.defaultof<obj>
-                let mutable sieveResultOpt = ValueNone
-                let mutable unfoldResultOpt = ValueNone
+                let mutable lensResult = Unchecked.defaultof<obj> // ELMISH_CACHE
+                let mutable sieveResultOpt = ValueNone // ELMISH_CACHE
+                let mutable unfoldResultOpt = ValueNone // ELMISH_CACHE
                 Lens.mapWorld (fun a world ->
                     let struct (b, c) =
-                        if a === lensResult then // ELMISH_CACHE
+                        if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (ValueSome sieveResult, ValueSome unfoldResult) -> struct (sieveResult, unfoldResult)
                             | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult world)

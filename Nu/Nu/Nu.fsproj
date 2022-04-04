@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -39,7 +39,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -233,7 +233,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.7.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.9.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>

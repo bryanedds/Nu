@@ -54,24 +54,24 @@ module MyGameplay =
             let world =
                 match command with
                 | Jump ->
-                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world then
                         let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                         World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     else world
                 | MoveLeft ->
-                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
                     then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
                     else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
                 | MoveRight ->
-                    let physicsId = Simulants.Gameplay.Player.Player.GetPhysicsId world
+                    let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
                     then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
                     else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
                 | UpdateEye ->
                     if World.getUpdateRate world <> 0L
-                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Player.Player.GetCenter world) world
+                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Player.Character.GetCenter world) world
                     else world
                 | Nop -> world
             just world
@@ -90,7 +90,7 @@ module MyGameplay =
              // the player group
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.group Simulants.Gameplay.Player.Group.Name []
-                    [Content.character Simulants.Gameplay.Player.Player.Name
+                    [Content.character Simulants.Gameplay.Player.Character.Name
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 108.0f 108.0f]]
 

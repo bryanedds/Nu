@@ -37,44 +37,59 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
-            match simulant.SimulantAddress.Names.Length with
-            | 0 -> World.tryGetGameProperty (name, world, &property)
-            | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
-            | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
-            | 3 -> World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
-            | _ -> false
+            let namesLength = simulant.SimulantAddress.Names.Length
+            if namesLength >= 3
+            then World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
+            else
+                match namesLength with
+                | 0 -> World.tryGetGameProperty (name, world, &property)
+                | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
+                | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
+                | _ -> failwithumf ()
 
         static member internal getProperty name (simulant : Simulant) world =
-            match simulant.SimulantAddress.Names.Length with
-            | 0 -> World.getGameProperty name world
-            | 1 -> World.getScreenProperty name (simulant :?> Screen) world
-            | 2 -> World.getGroupProperty name (simulant :?> Group) world
-            | 3 -> World.getEntityProperty name (simulant :?> Entity) world
-            | _ -> failwithumf ()
+            let namesLength = simulant.SimulantAddress.Names.Length
+            if namesLength >= 3
+            then World.getEntityProperty name (simulant :?> Entity) world
+            else
+                match namesLength with
+                | 0 -> World.getGameProperty name world
+                | 1 -> World.getScreenProperty name (simulant :?> Screen) world
+                | 2 -> World.getGroupProperty name (simulant :?> Group) world
+                | _ -> failwithumf ()
 
         static member internal trySetPropertyFast name property (simulant : Simulant) world =
-            match simulant.SimulantAddress.Names.Length with
-            | 0 -> World.trySetGamePropertyFast name property world
-            | 1 -> World.trySetScreenPropertyFast name property (simulant :?> Screen) world
-            | 2 -> World.trySetGroupPropertyFast name property (simulant :?> Group) world
-            | 3 -> World.trySetEntityPropertyFast name property (simulant :?> Entity) world
-            | _ -> world
+            let namesLength = simulant.SimulantAddress.Names.Length
+            if namesLength >= 3
+            then World.trySetEntityPropertyFast name property (simulant :?> Entity) world
+            else
+                match namesLength with
+                | 0 -> World.trySetGamePropertyFast name property world
+                | 1 -> World.trySetScreenPropertyFast name property (simulant :?> Screen) world
+                | 2 -> World.trySetGroupPropertyFast name property (simulant :?> Group) world
+                | _ -> failwithumf ()
 
         static member internal trySetProperty name property (simulant : Simulant) world =
-            match simulant.SimulantAddress.Names.Length with
-            | 0 -> World.trySetGameProperty name property world
-            | 1 -> World.trySetScreenProperty name property (simulant :?> Screen) world
-            | 2 -> World.trySetGroupProperty name property (simulant :?> Group) world
-            | 3 -> World.trySetEntityProperty name property (simulant :?> Entity) world
-            | _ -> (false, false, world)
+            let namesLength = simulant.SimulantAddress.Names.Length
+            if namesLength >= 3
+            then World.trySetEntityProperty name property (simulant :?> Entity) world
+            else
+                match namesLength with
+                | 0 -> World.trySetGameProperty name property world
+                | 1 -> World.trySetScreenProperty name property (simulant :?> Screen) world
+                | 2 -> World.trySetGroupProperty name property (simulant :?> Group) world
+                | _ -> failwithumf ()
 
         static member internal setProperty name property (simulant : Simulant) world =
-            match simulant.SimulantAddress.Names.Length with
-            | 0 -> World.setGameProperty name property world
-            | 1 -> World.setScreenProperty name property (simulant :?> Screen) world
-            | 2 -> World.setGroupProperty name property (simulant :?> Group) world
-            | 3 -> World.setEntityProperty name property (simulant :?> Entity) world
-            | _ -> (false, world)
+            let namesLength = simulant.SimulantAddress.Names.Length
+            if namesLength >= 3
+            then World.setEntityProperty name property (simulant :?> Entity) world
+            else
+                match namesLength with
+                | 0 -> World.setGameProperty name property world
+                | 1 -> World.setScreenProperty name property (simulant :?> Screen) world
+                | 2 -> World.setGroupProperty name property (simulant :?> Group) world
+                | _ -> failwithumf ()
 
         static member internal attachProperty name property (simulant : Simulant) world =
             match simulant with
@@ -158,8 +173,8 @@ module WorldSimulantModule =
         static member tryGetParent (simulant : Simulant) world =
             ignore (world : World)
             match simulant with
-            | :? Entity as entity -> Some (entity.Parent :> Simulant)
-            | :? Group as group -> Some (group.Parent :> Simulant)
+            | :? Entity as entity -> Some entity.Parent
+            | :? Group as group -> Some (group.Screen :> Simulant)
             | :? Screen -> Some (Simulants.Game :> Simulant)
             | :? Game -> None
             | _ -> failwithumf ()
@@ -169,30 +184,17 @@ module WorldSimulantModule =
         static member getParent (simulant : Simulant) world =
             ignore (world : World)
             match simulant with
-            | :? Entity as entity -> entity.Parent :> Simulant
-            | :? Group as group -> group.Parent :> Simulant
+            | :? Entity as entity -> entity.Parent
+            | :? Group as group -> group.Screen :> Simulant
             | :? Screen -> Simulants.Game :> Simulant
             | :? Game -> failwithumf ()
             | _ -> failwithumf ()
-        
-        /// Attempt to get the parent of the parent of the given simulant.
-        [<FunctionBinding>]
-        static member tryGetGrandparent (simulant : Simulant) world =
-            match World.tryGetParent simulant world with
-            | Some parent -> World.tryGetParent parent world
-            | None -> None
 
-        /// Get the parent of the parent of the given simulant.
-        [<FunctionBinding>]
-        static member getGrandparent (simulant : Simulant) world =
-            let parent = World.getParent simulant world
-            World.getParent parent world
-
-        /// Get the existing child simulants of the given simulant.
+        /// Get the existing children of the given simulant.
         [<FunctionBinding>]
         static member getChildren (simulant : Simulant) world =
             match simulant with
-            | :? Entity -> Seq.empty
+            | :? Entity as entity -> enumerable<Simulant> (World.getEntityEntities entity world)
             | :? Group as group -> enumerable<Simulant> (World.getEntities group world)
             | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
             | :? Game -> enumerable<Simulant> (World.getScreens world)
@@ -228,20 +230,17 @@ module WorldSimulantModule =
             | :? Game -> false
             | _ -> failwithumf ()
 
-        /// Attempt to convert an address to a concrete simulant reference.
-        static member tryDerive address =
-            match address |> Address.getNames |> Array.length with
-            | 0 -> Some (Simulants.Game :> Simulant)
-            | 1 -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-            | 2 -> Some (Group (Address.changeType<obj, Group> address) :> Simulant)
-            | 3 -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
-            | _ -> None
-
         /// Convert an address to a concrete simulant reference.
         static member derive address =
-            match World.tryDerive address with
-            | Some simulant -> simulant
-            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
+            let namesLength = address |> Address.getNames |> Array.length
+            if namesLength >= 3
+            then Entity (Address.changeType<obj, Entity> address) :> Simulant
+            else
+                match namesLength with
+                | 0 -> Simulants.Game :> Simulant
+                | 1 -> Screen (Address.changeType<obj, Screen> address) :> Simulant
+                | 2 -> Group (Address.changeType<obj, Group> address) :> Simulant
+                | _ -> failwithumf ()
 
         /// Convert an event address to the concrete simulant that it targets.
         static member deriveFromEvent event =
@@ -272,7 +271,7 @@ module WorldSimulantModule =
         static member dnib left right world =
             World.bind right left world
 
-        /// Link the left property with the right and the right property (two-way bind).
+        /// Link the left property with the right and the right property with the left (two-way bind).
         static member link left right world =
             let world = World.bind left right world
             let world = World.bind right left world

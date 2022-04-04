@@ -15,8 +15,9 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let mutable private Id32 = 0u
+    let mutable private IdForEditor = 0UL
     let mutable private Id64 = 0UL
+    let mutable private Id32 = 0u
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -110,18 +111,14 @@ module Gen =
             Array.toSeq
 
         /// The prefix of a generated name
-        static member namePrefix =
-            "@"
+        static member namePrefix = "@"
+
+        /// The separator of a generated name
+        static member nameSeparator = "-"
 
         /// Generate a unique name.
         static member name =
             Gen.namePrefix + string Gen.id
-
-        /// Generate a unique name if given none.
-        static member nameIf nameOpt =
-            match nameOpt with
-            | Some name -> name
-            | None -> Gen.name
 
         /// Check that a name is generated.
         static member isName (name : string) =
@@ -187,18 +184,42 @@ module Gen =
         /// Derive a unique id and name if given none.
         static member idAndNameIf nameOpt =
             let id = Gen.id
-            let name = Gen.nameIf nameOpt
+            let name =
+                match nameOpt with
+                | Some name -> name
+                | None -> Gen.namePrefix + string id
             (id, name)
 
-        /// Generate a 32-bit unique counter.
-        static member id32 =
-            lock Lock (fun () ->
-                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
-                Id32 <- inc Id32; Id32)
+        /// Derive a unique id and surnames if given none.
+        static member idAndSurnamesIf surnamesOpt =
+            match surnamesOpt with
+            | Some surnames ->
+                if Array.length surnames = 0 then failwith "Entity must have at least one surname."
+                (Gen.id, surnames)
+            | None ->
+                let id = Gen.id
+                let name = Gen.namePrefix + string id
+                (id, [|name|])
+
+        /// Generate a unique non-zero 64-bit id for use in editor naming.
+        static member idForEditor =
+            lock Lock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
+
+        /// Generate a unique name for use in an editor.
+        static member nameForEditor (dispatcherName : string) =
+            let id = Gen.idForEditor
+            let truncatedName = dispatcherName.Replace ("Dispatcher", "")
+            truncatedName + Gen.nameSeparator + id.ToString "D4"
 
         /// Generate a unique non-zero 64-bit id.
         static member id64 =
             lock Lock (fun () -> Id64 <- inc Id64; Id64)
+
+        /// Generate a unique non-zero 64-bit id.
+        static member id32 =
+            lock Lock (fun () ->
+                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
+                Id32 <- inc Id32; Id32)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen

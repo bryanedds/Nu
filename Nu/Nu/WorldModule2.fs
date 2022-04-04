@@ -51,7 +51,6 @@ module WorldModule2 =
     let private ScreenTransitionMouseX1Id = Gen.id
     let private ScreenTransitionMouseX2Id = Gen.id
     let private ScreenTransitionKeyboardKeyId = Gen.id
-    let private SplashScreenUpdateId = Gen.id
 
     type World with
 
@@ -61,11 +60,11 @@ module WorldModule2 =
         static member internal rebuildEntityTree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
                 | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
                 | None -> Seq.empty
             let entities = Seq.append omniEntities selectedEntities
             let tree = World.makeEntityTree ()
@@ -344,7 +343,7 @@ module WorldModule2 =
             let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
-            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
+            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
             let world = splashSprite.SetPersistent false world
             let world = splashSprite.SetSize cameraEyeSize world
             let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
@@ -731,7 +730,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (entities, world) = World.getEntitiesInView2 world
+            let (entities, world) = World.getEntitiesInView world
 #endif
             PostUpdateGatherTimer.Stop ()
 
@@ -818,17 +817,18 @@ module WorldModule2 =
 
             // actualize entities
             ActualizeEntitiesTimer.Start ()
-#if DEBUG
             let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    let group = entity.Parent
-                    if group.GetVisible world // group visibility only has an effect on entities in debug mode
-                    then World.actualizeEntity entity world
-                    else world)
-                    world entities
-#else
-            let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
-#endif
+                if World.getStandAlone world then
+                    Seq.fold (fun world (entity : Entity) ->
+                        World.actualizeEntity entity world)
+                        world entities
+                else 
+                    Seq.fold (fun world (entity : Entity) ->
+                        let group = entity.Group
+                        if group.GetVisible world
+                        then World.actualizeEntity entity world
+                        else world)
+                        world entities
             ActualizeEntitiesTimer.Stop ()
 
             // fin

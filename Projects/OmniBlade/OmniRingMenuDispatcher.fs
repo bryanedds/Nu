@@ -20,8 +20,8 @@ module RingMenuDispatcher =
         | ItemSelect of string
 
     type Entity with
-        member this.GetRadius world = this.Get<single> Property? Radius world
-        member this.SetRadius value world = this.Set<single> Property? Radius value world
+        member this.GetRadius world : single = this.Get Property? Radius world
+        member this.SetRadius (value : single) world = this.Set Property? Radius value world
         member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
@@ -53,7 +53,7 @@ module RingMenuDispatcher =
                     Map.map (constant (Triple.insert (Map.count items))) items)
                 (fun itemName itemIndexAndCountAndEnabled world ->
                     let buttonSize = v2 48.0f 48.0f
-                    Content.button (menu.Name + "+" + scstring itemName)
+                    Content.button (scstring itemName)
                         [Entity.EnabledLocal <== itemIndexAndCountAndEnabled --> Triple.thd
                          Entity.PositionLocal <== itemIndexAndCountAndEnabled --> fun (itemIndex, itemCount, _) ->
                             let radius = menu.GetRadius world
@@ -68,8 +68,8 @@ module RingMenuDispatcher =
                          Entity.ClickEvent ==> cmd (ItemSelect itemName)])
              Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
-                Content.button (menu.Name + "+" + itemCancelValue)
-                    [Entity.ParentNodeOpt == None
+                Content.button itemCancelValue
+                    [Entity.MountOpt == None
                      Entity.Visible <== menu.Visible
                      Entity.Size == v2 48.0f 48.0f
                      Entity.Position == Constants.Battle.CancelPosition

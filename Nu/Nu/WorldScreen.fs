@@ -43,14 +43,14 @@ module WorldScreenModule =
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
-        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetOrder world = World.getScreenOrder this world
+        member this.Order = lensReadOnly Property? Order this.GetOrder this
         member this.GetId world = World.getScreenId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.SelectEvent = Events.Select --> this
@@ -63,24 +63,41 @@ module WorldScreenModule =
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
-            if World.tryGetScreenProperty (propertyName, this, world, &property)
-            then Some property
-            else None
+            let found = World.tryGetScreenProperty (propertyName, this, world, &property)
+            if found then Some property else None
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getScreenProperty propertyName this world
+        member this.GetProperty propertyName world =
+            World.getScreenProperty propertyName this world
 
-        /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getScreenProperty propertyName this world).PropertyValue :?> 'a
+        /// Get an xtension property value.
+        member this.TryGet<'a> propertyName world : 'a =
+            let mutable property = Unchecked.defaultof<Property>
+            if World.tryGetScreenXtensionProperty (propertyName, this, world, &property)
+            then property.PropertyValue :?> 'a
+            else Unchecked.defaultof<'a>
+
+        /// Get an xtension property value.
+        member this.Get<'a> propertyName world : 'a =
+            World.getScreenXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName property world = World.trySetScreenProperty propertyName property this world
+        member this.TrySetProperty propertyName property world =
+            World.trySetScreenProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world |> snd'
+        member this.SetProperty propertyName property world =
+            World.setScreenProperty propertyName property this world |> snd'
 
-        /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd'
+        /// To try set an xtension property value.
+        member this.TrySet<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.trySetScreenXtensionProperty propertyName property this world
+
+        /// Set an xtension property value.
+        member this.Set<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false
@@ -103,12 +120,6 @@ module WorldScreenModule =
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
-
-        /// Resolve a relation in the context of a screen.
-        member this.Resolve relation = resolve<Screen> this relation
-
-        /// Relate a screen to a simulant.
-        member this.Relate simulant = relate<Screen> this simulant
 
         /// Get a screen's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
@@ -174,10 +185,16 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)
 
-        /// Get all the world's screens.
+        /// Get all the screens in the world.
         [<FunctionBinding>]
         static member getScreens world =
-            World.getScreenDirectory world |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (Simulants.Game :> Simulant) with
+            | (true, screensOpt) ->
+                match screensOpt with
+                | Some screens -> screens |> Seq.map cast<Screen>
+                | None -> Seq.empty
+            | (false, _) -> Seq.empty
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
@@ -191,11 +208,13 @@ module WorldScreenModule =
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
-            let destroyGroupsImmediate screen world =
-                let groups = World.getGroups screen world
-                World.destroyGroupsImmediate groups world
             EventSystemDelegate.cleanEventAddressCache screen.ScreenAddress
-            World.removeScreen3 destroyGroupsImmediate screen world
+            if World.getScreenExists screen world then
+                let groups = World.getGroups screen world
+                let world = World.unregisterScreen screen world
+                let world = World.destroyGroupsImmediate groups world
+                World.removeScreenState screen world
+            else world
 
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
@@ -226,7 +245,12 @@ module WorldScreenModule =
         /// Create a screen from a simulant descriptor.
         static member createScreen2 descriptor world =
             let (screen, world) =
-                World.createScreen3 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt world
+                let screenNameOpt =
+                    match descriptor.SimulantSurnamesOpt with
+                    | None -> None
+                    | Some [|name|] -> Some name
+                    | Some _ -> failwith "Screen cannot have multiple names."
+                World.createScreen3 descriptor.SimulantDispatcherName screenNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setScreenProperty propertyName property screen world |> snd')
@@ -254,18 +278,22 @@ module WorldScreenModule =
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
-            let writeGroups screen screenDescriptor world =
-                let groups = World.getGroups screen world
-                World.writeGroups groups screenDescriptor world
-            World.writeScreen4 writeGroups screen screenDescriptor world
+            let screenState = World.getScreenState screen world
+            let screenDispatcherName = getTypeName screenState.Dispatcher
+            let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
+            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
+            let groups = World.getGroups screen world
+            { screenDescriptor with GroupDescriptors = World.writeGroups groups world }
 
         /// Write multiple screens to a game descriptor.
-        static member writeScreens screens gameDescriptor world =
+        static member writeScreens screens world =
             screens |>
-            Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStamp world) |>
+            Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.ScreenDescriptors |>
-            fun screenDescriptors -> { gameDescriptor with ScreenDescriptors = screenDescriptors }
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) [] |>
+            Seq.rev |>
+            Seq.toList
 
         /// Write a screen to a file.
         [<FunctionBinding>]
@@ -281,16 +309,48 @@ module WorldScreenModule =
 
         /// Read a screen from a screen descriptor.
         static member readScreen screenDescriptor nameOpt world =
-            World.readScreen4 World.readGroups screenDescriptor nameOpt world
+
+            // make the dispatcher
+            let dispatcherName = screenDescriptor.ScreenDispatcherName
+            let dispatchers = World.getScreenDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ("Could not find ScreenDispatcher '" + dispatcherName + "'.")
+                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the ecs
+            let ecs = world.WorldExtension.Plugin.MakeEcs ()
+
+            // make the screen state and populate its properties
+            let screenState = ScreenState.make None dispatcher ecs
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
+            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
+
+            // apply the name if one is provided
+            let screenState =
+                match nameOpt with
+                | Some name -> { screenState with Name = name }
+                | None -> screenState
+
+            // add the screen's state to the world
+            let screen = Screen (ntoa screenState.Name)
+            let world = World.addScreen true screenState screen world
+            
+            // read the screen's groups
+            let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
+            (screen, world)
 
         /// Read multiple screens from a game descriptor.
-        static member readScreens gameDescriptor world =
+        static member readScreens screenDescriptors world =
             List.foldBack
                 (fun screenDescriptor (screens, world) ->
                     let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
                     let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
                     (screen :: screens, world))
-                gameDescriptor.ScreenDescriptors
+                screenDescriptors
                 ([], world)
 
         /// Read a screen from a file.
@@ -353,7 +413,7 @@ module WorldScreenModule =
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
-                        let group = owner.Parent
+                        let group = owner.Group
                         List.fold (fun world entityContent ->
                             World.expandEntityContent entityContent origin owner group world |> snd)
                             world entityContents)

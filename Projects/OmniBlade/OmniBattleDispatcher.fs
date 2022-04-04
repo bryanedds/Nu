@@ -976,7 +976,7 @@ module BattleDispatcher =
             
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Surnames) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world
@@ -984,7 +984,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Surnames) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
@@ -1157,21 +1157,16 @@ module BattleDispatcher =
                      Entity.Text == "Next"
                      Entity.ClickEvent ==> msg InteractDialog]
 
-                 // allies
+                 // characters
                  Content.entities battle
-                    (fun battle _ -> Battle.getAllies battle)
-                    (fun index ally _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== ally])
-
-                 // enemies
-                 Content.entities battle
-                    (fun battle _ -> Battle.getEnemies battle)
-                    (fun index enemy _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== enemy])]
+                    (fun battle _ -> Battle.getCharacters battle)
+                    (fun index character _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== character])]
 
              // input groups
              Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally _ ->
 
                 // input group
-                let inputName = "Input" + "+" + CharacterIndex.toEntityName index
+                let inputName = CharacterIndex.toEntityName index
                 Content.group inputName [Group.Visible <== ally --> fun ally -> ally.IsHealthy]
 
                     [// health bar
