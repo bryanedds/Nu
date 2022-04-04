@@ -198,7 +198,16 @@ module Player =
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.AnimationDelay 3L
+            [define Entity.Size (Vector2 (48.0f, 96.0f))
+             define Entity.FixedRotation true
+             define Entity.Friction 0.0f
+             define Entity.LinearDamping 3.0f
+             define Entity.GravityScale 0.0f
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.CelCount 16
+             define Entity.CelRun 4
+             define Entity.CelSize (Vector2 (48.0f, 96.0f))
+             define Entity.AnimationDelay 3L
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage
              nonPersistent Entity.LastTimeOnGround Int64.MinValue
              nonPersistent Entity.LastTimeJump Int64.MinValue]
