@@ -67,26 +67,20 @@ Voyageons ensemble... $FEE ors...?&quot; [&quot;Oui&quot; [Recruit Riain]] [&quo
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;
-Hehe... Bienvenue au Tombeau des Neuf Demons... 
-^enfin on l'appelle comme ca.
+    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;Hehe... Bienvenue au Tombeau des Neuf Demons... enfin on l'appelle comme ca.
 ^Si tu veux l'explorer en profondeur, j'ai des conseils pour t'aider a en sortir vivant.
-^D'apres ce qu'on raconte, la premiere section apres l'entree est un grand labyrtinthe
-^Vu que tu m'as pas l'air  assez prepare, n'essaie pas de la parcourir en une seule fois
-^Tache de ressortir au bon moment quand tes ressources diminuent trop  
+^D'apres ce qu'on raconte, la premiere section apres l'entree est un grand labyrtinthe.
+^Vu que tu m'as pas l'air assez prepare, n'essaie pas de la parcourir en une seule fois.
+^Tache de ressortir au bon moment quand tes ressources diminuent trop.
 ^Je vois que tu as une Sphere Spirituelle. Elle te montrera les ennemis qui s'approchent. 
-^Plus tu t'enfonceras dans la section, plus ils seront forts. Plus ils seront forts,
-plus dans ta Sphere ils seront rouges!
-^Chaque guerrier apprend des Techs, c'est a dire des techniques de combat.
-Pour utiliser une Tech, le guerrier doit avoir assez de Points de Tech, ou PT, en reserve.
-^Quand un ennemi est flamboyant, c'est qu'il s'apprete a utiliser une Tech a lui.
-Ca peut etre devastateur!
+^Plus tu t'enfonceras dans la section, plus ils seront forts. Plus ils seront forts, plus dans ta Sphere ils seront rouges!
+^Chaque guerrier apprend des Techs, c'est a dire des techniques de combat. Pour utiliser une Tech, le guerrier doit avoir assez de Points de Tech, ou PT, en reserve.
+^Quand un ennemi est flamboyant, c'est qu'il s'apprete a utiliser une Tech a lui. Ca peut etre devastateur!
 ^A ce moment la, tu as ta Tech 'Attaque Critique' pour annuler la technique ennemie et te preserver du danger.
-^La deuxieme Tech que tu vas apprendre est l'Entaille.
-Elle peut etre tres puissante car elle blesse tous les ennemis d'une meme ligne.
+^La deuxieme Tech que tu vas apprendre est l'Entaille. Elle peut etre tres puissante car elle blesse tous les ennemis d'une meme ligne.
 ^Ah, et un dernier conseil... Personne ici n'est ton ami.
-^Cependant, moyennant finance certains te suivront,
-et d'autres te proposeront des objets qui peuvent te sauver la vie.&quot;] [RemoveAdvent TombSealed]]]]"/>
+^Cependant, moyennant finance certains te suivront, et d'autres te proposeront des objets qui peuvent te sauver la vie.
+^Bon chance...&quot;] [RemoveAdvent TombSealed]]]]"/>
    </properties>
   </object>
   <object id="14" gid="1161" x="2016" y="3264" width="96" height="96">
