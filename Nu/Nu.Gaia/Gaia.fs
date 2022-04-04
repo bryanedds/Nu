@@ -127,6 +127,7 @@ module Gaia =
                     parentNode <- childNode
                 else parentNode <- parentNode.Nodes.[childNodeKey]
         form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
+        groupNode.Expand () // root node is always expanded
         updateEditorState (fun state -> { state with RefreshHierarchyViewRequested = false }) world
 
     let private refreshGroupTabs (form : GaiaForm) world =

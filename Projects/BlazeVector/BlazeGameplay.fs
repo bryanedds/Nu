@@ -112,13 +112,17 @@ module Enemy =
 module Player =
 
     type Entity with
-        member this.GetLastTimeOnGroundNp world : int64 = this.Get Property? LastTimeOnGroundNp world
-        member this.SetLastTimeOnGroundNp (value : int64) world = this.Set Property? LastTimeOnGroundNp value world
-        member this.LastTimeOnGroundNp = lens Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this
-        member this.GetLastTimeJumpNp world : int64 = this.Get Property? LastTimeJumpNp world
-        member this.SetLastTimeJumpNp (value : int64) world = this.Set Property? LastTimeJumpNp value world
-        member this.LastTimeJumpNp = lens Property? LastTimeJumpNp this.GetLastTimeJumpNp this.SetLastTimeJumpNp this
+        member this.GetLastTimeOnGround world : int64 = this.Get Property? LastTimeOnGround world
+        member this.SetLastTimeOnGround (value : int64) world = this.Set Property? LastTimeOnGround value world
+        member this.LastTimeOnGround = lens Property? LastTimeOnGround this.GetLastTimeOnGround this.SetLastTimeOnGround this
+        member this.GetLastTimeJump world : int64 = this.Get Property? LastTimeJump world
+        member this.SetLastTimeJump (value : int64) world = this.Set Property? LastTimeJump value world
+        member this.LastTimeJump = lens Property? LastTimeJump this.GetLastTimeJump this.SetLastTimeJump this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
+
+    // make properties as non-persistent.
+    Reflection.initPropertyAttributes true (nameof Entity.LastTimeOnGround)
+    Reflection.initPropertyAttributes true (nameof Entity.LastTimeJump)
 
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
@@ -157,13 +161,13 @@ module Player =
 
         static let getLastTimeOnGround (player : Entity) world =
             if not (World.isBodyOnGround (player.GetPhysicsId world) world)
-            then player.GetLastTimeOnGroundNp world
+            then player.GetLastTimeOnGround world
             else World.getUpdateTime world
 
         static let handleMovement evt world =
             let player = evt.Subscriber : Entity
             let lastTimeOnGround = getLastTimeOnGround player world
-            let world = player.SetLastTimeOnGroundNp lastTimeOnGround world
+            let world = player.SetLastTimeOnGround lastTimeOnGround world
             let physicsId = player.GetPhysicsId world
             let groundTangentOpt = World.getBodyToGroundContactTangentOpt physicsId world
             let force =
@@ -178,9 +182,9 @@ module Player =
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
             let time = World.getUpdateTime world
-            if  time >= player.GetLastTimeJumpNp world + 12L &&
-                time <= player.GetLastTimeOnGroundNp world + 10L then
-                let world = player.SetLastTimeJumpNp time world
+            if  time >= player.GetLastTimeJump world + 12L &&
+                time <= player.GetLastTimeOnGround world + 10L then
+                let world = player.SetLastTimeJump time world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 (Cascade, world)
@@ -209,8 +213,8 @@ module Player =
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
              define Entity.AnimationDelay 3L
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage
-             define Entity.LastTimeOnGroundNp Int64.MinValue
-             define Entity.LastTimeJumpNp Int64.MinValue]
+             define Entity.LastTimeOnGround Int64.MinValue
+             define Entity.LastTimeJump Int64.MinValue]
 
         override this.Register (player, world) =
             let world = World.monitor handleSpawnBullet player.UpdateEvent player world
