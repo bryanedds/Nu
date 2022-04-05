@@ -314,8 +314,7 @@ module WorldModuleScreen =
         /// View all of the properties of a screen.
         static member internal viewScreenProperties screen world =
             let state = World.getScreenState screen world
-            let properties = World.getProperties state
-            properties |> Array.ofList |> Array.map a_c
+            World.viewProperties state
 
     /// Initialize property getters.
     let private initGetters () =

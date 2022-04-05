@@ -470,8 +470,7 @@ module WorldModuleGame =
         /// View all of the properties of a game.
         static member internal viewGameProperties world =
             let state = World.getGameState world
-            let properties = World.getProperties state
-            properties |> Array.ofList |> Array.map a_c
+            World.viewProperties state
 
     /// Initialize property getters.
     let private initGetters () =

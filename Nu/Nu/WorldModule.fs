@@ -952,6 +952,11 @@ module WorldModule =
                 (World.getMemberProperties state)
                 (World.getXtensionProperties state)
 
+        /// Present properties for viewing.
+        static member internal viewProperties state =
+            let properties = World.getProperties state
+            properties |> Array.ofList |> Array.map a_c |> Array.sortBy fst
+
     type World with // Handlers
 
         /// Ignore all handled events.
