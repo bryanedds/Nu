@@ -310,8 +310,7 @@ module WorldModuleGroup =
         /// View all of the properties of a group.
         static member internal viewGroupProperties group world =
             let state = World.getGroupState group world
-            let properties = World.getProperties state
-            properties |> Array.ofList |> Array.map a_c
+            World.viewProperties state
 
     /// Initialize property getters.
     let private initGetters () =

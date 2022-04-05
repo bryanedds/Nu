@@ -1752,8 +1752,7 @@ module WorldModuleEntity =
         /// View all of the properties of an entity.
         static member internal viewEntityProperties entity world =
             let state = World.getEntityState entity world
-            let properties = World.getProperties state
-            properties |> Array.ofList |> Array.map a_c
+            World.viewProperties state
 
         /// Construct a screen reference in an optimized way.
         /// OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease
