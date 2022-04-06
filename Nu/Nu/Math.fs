@@ -549,6 +549,50 @@ module Vector3i =
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
 
+/// The Vector3 value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector3iPluggable =
+    { Vector3i : Vector3i }
+
+    static member equals left right =
+        v3iEq left.Vector3i right.Vector3i
+
+    static member compare left right =
+        compare
+            struct (left.Vector3i.X, left.Vector3i.Y, left.Vector3i.Z)
+            struct (right.Vector3i.X, right.Vector3i.Y, right.Vector3i.Z)
+
+    override this.GetHashCode () =
+        hash this.Vector3i
+
+    override this.Equals that =
+        match that with
+        | :? Vector3iPluggable as that -> Vector3iPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector3iPluggable IComparable with
+        member this.CompareTo that =
+            Vector3iPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector3iPluggable as that -> (this :> Vector3iPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Vector3i"
+
+        member this.FSharpType =
+            getType this.Vector3i
+
+        member this.ToSymbol () =
+            let v3i = Symbol.Atom ("v3i", None)
+            let x = Symbol.Number (scstring this.Vector3i.X, None)
+            let y = Symbol.Number (scstring this.Vector3i.Y, None)
+            let z = Symbol.Number (scstring this.Vector3i.Z, None)
+            Symbol.Symbols ([v3i; x; y; z], None)
+
 /// Converts Vector3i types.
 type Vector3iConverter () =
     inherit TypeConverter ()
