@@ -82,7 +82,9 @@
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
     <Compile Include="Physics.fs" />
-    <Compile Include="Render.fs" />
+    <Compile Include="Integration.fs" />
+    <Compile Include="Rendering.fs" />
+    <Compile Include="Drawing.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Particles.fs" />
