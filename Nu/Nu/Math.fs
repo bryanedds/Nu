@@ -913,24 +913,24 @@ module Math =
         bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y &&
         bounds.Position.Z + bounds.Size.Z > bounds2.Position.Z
 
-    /// Get the view of the eye in absolute terms (world space).
-    let getViewAbsolute (_ : Vector2) (_ : Vector2) =
+    /// Get the 2D view of the eye in absolute terms (world space).
+    let getView2Absolute (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
         
-    /// Get the view of the eye in absolute terms (world space) with translation sliced on
+    /// Get the 2D view of the eye in absolute terms (world space) with translation sliced on
     /// integers.
-    let getViewAbsoluteI (_ : Vector2) (_ : Vector2) =
+    let getView2AbsoluteI (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
 
-    /// The relative view of the eye with original single values. Due to the problems with
+    /// The relative 2D view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
-    let getViewRelative (eyeCenter : Vector2) (_ : Vector2) =
+    let getView2Relative (eyeCenter : Vector2) (_ : Vector2) =
         let translation = eyeCenter
         Matrix3x3.CreateTranslation translation
 
-    /// The relative view of the eye with translation sliced on integers. Good for rendering.
-    let getViewRelativeI (eyeCenter : Vector2) (_ : Vector2) =
+    /// The relative 2D view of the eye with translation sliced on integers. Good for rendering.
+    let getView2RelativeI (eyeCenter : Vector2) (_ : Vector2) =
         let translation = eyeCenter
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3x3.CreateTranslation translationI
