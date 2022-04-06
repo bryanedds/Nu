@@ -67,34 +67,46 @@ namespace Nu
         public float Depth => Size.Z;
 
         /// <summary>
-        /// Gets or sets the left location of the box.
-        /// </summary>
-        public float Left => Position.X;
-
-        /// <summary>
         /// Gets or sets the top location of the box.
         /// </summary>
-        public float Top => Position.Y + Size.Y;
-
-        /// <summary>
-        /// Gets or sets the right location of the box.
-        /// </summary>
-        public float Right => Position.X + Size.X;
+        public Vector3 Top => new Vector3(Position.X + (Size.X * 0.5f), Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
 
         /// <summary>
         /// Gets or sets the bottom location of the box.
         /// </summary>
-        public float Bottom => Position.Y;
+        public Vector3 Bottom => new Vector3(Position.X + (Size.X * 0.5f), Position.Y, Position.Z + (Size.Z * 0.5f));
 
         /// <summary>
-        /// Gets or sets the front location of the box.
+        /// Gets or sets the right location of the box.
         /// </summary>
-        public float Front => Position.Z;
+        public Vector3 Right => new Vector3(Position.X + Size.X, Position.Y + (Size.Y * 0.5f), Position.Z + (Size.Z * 0.5f));
 
         /// <summary>
-        /// Gets or sets the back location of the box.
+        /// Gets or sets the left location of the box.
         /// </summary>
-        public float Back => Position.Z + Size.Z;
+        public Vector3 Left => new Vector3(Position.X, Position.Y + (Size.Y * 0.5f), Position.Z + (Size.Z * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the top-left location of the box.
+        /// </summary>
+        public Vector3 TopLeft => new Vector3(Position.X, Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the top-right location of the box.
+        /// </summary>
+        public Vector3 TopRight => new Vector3(Position.X + Size.X, Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the bottom-left location of the box.
+        /// </summary>
+        public Vector3 BottomLeft => new Vector3(Position.X, Position.Y, Position.Z + (Size.Z * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the bottom-right location of the box.
+        /// </summary>
+        public Vector3 BottomRight => new Vector3(Position.X + Size.X, Position.Y, Position.Z + (Size.Z * 0.5f));
+
+        // TODO: implement front, back, and their variants.
 
         /// <summary>
         /// Gets a box with a location 0,0,0 with the a size of 1,1,1.

@@ -4,4 +4,4 @@
 namespace Nu
 open Nu
 
-// 3D rendering implemented in here with the 'Draw' nomenclature.
+// 3D rendering implemented in here with the 'Drawing' nomenclature.

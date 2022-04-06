@@ -132,6 +132,7 @@ module TransformOperators =
 module Vector2 =
 
     type Vector2 with
+        member this.XYZ = Vector3 (this.X, this.Y, 0.0f)
         member this.MapX mapper = Vector2 (mapper this.X, this.Y)
         member this.MapY mapper = Vector2 (this.X, mapper this.Y)
         member this.WithX x = Vector2 (x, this.Y)
@@ -198,6 +199,7 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
 module Vector3 =
 
     type Vector3 with
+        member this.XY = Vector2 (this.X, this.Y)
         member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
         member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
@@ -435,6 +437,7 @@ type Vector4Converter () =
 module Vector2i =
 
     type Vector2i with
+        member this.XYZ = Vector3i (this.X, this.Y, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
@@ -528,6 +531,7 @@ type Vector2iConverter () =
 module Vector3i =
 
     type Vector3i with
+        member this.XY = Vector2i (this.X, this.Y)
         member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
         member this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
@@ -893,6 +897,14 @@ module Math =
         point.Y <= bounds.Position.Y + bounds.Size.Y &&
         point.Z <= bounds.Position.Z + bounds.Size.Z
 
+    /// Check that a point is within the given bounds.
+    /// TODO: move this into Box2 definition.
+    let isPointInBounds2 (point : Vector2) (bounds : Box2) =
+        point.X >= bounds.Position.X &&
+        point.Y >= bounds.Position.Y &&
+        point.X <= bounds.Position.X + bounds.Size.X &&
+        point.Y <= bounds.Position.Y + bounds.Size.Y
+
     /// Check that a bounds is within the given bounds.
     /// TODO: move this into Box3 definition.
     let isBoundsInBounds (bounds : Box3) (bounds2 : Box3) =
@@ -903,6 +915,14 @@ module Math =
         bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y &&
         bounds.Position.Z + bounds.Size.Z <= bounds2.Position.Z + bounds2.Size.Z
 
+    /// Check that a bounds is within the given bounds.
+    /// TODO: move this into Box2 definition.
+    let isBoundsInBounds2 (bounds : Box2) (bounds2 : Box2) =
+        bounds.Position.X >= bounds2.Position.X &&
+        bounds.Position.Y >= bounds2.Position.Y &&
+        bounds.Position.X + bounds.Size.X <= bounds2.Position.X + bounds2.Size.X &&
+        bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y
+
     /// Check that a bounds is intersecting the given bounds.
     /// TODO: move this into Box3 definition.
     let isBoundsIntersectingBounds (bounds : Box3) (bounds2 : Box3) =
@@ -912,6 +932,14 @@ module Math =
         bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
         bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y &&
         bounds.Position.Z + bounds.Size.Z > bounds2.Position.Z
+
+    /// Check that a bounds is intersecting the given bounds.
+    /// TODO: move this into Box2 definition.
+    let isBoundsIntersectingBounds2 (bounds : Box2) (bounds2 : Box2) =
+        bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
+        bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
+        bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
+        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
 
     /// Get the 2D view of the eye in absolute terms (world space).
     let getView2Absolute (_ : Vector2) (_ : Vector2) =
