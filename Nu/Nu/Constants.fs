@@ -23,14 +23,14 @@ module Engine =
     let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
-    let (*Literal*) EntitySizeDefault = Vector2 48.0f
+    let (*Literal*) EntitySizeDefault = Vector3 48.0f
     let (*Literal*) EntityTreeGranularity = 4
     let (*Literal*) EntityTreeDepth = 3
-    let (*Literal*) EntityTreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
+    let (*Literal*) EntityTreeSize = Vector3 (single (Math.Pow (2.0, 16.0)))
     let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X, EntityTreeSize.Y)
-    let (*Literal*) ParticleSizeDefault = Vector2 12.0f
+    let (*Literal*) ParticleSizeDefault = Vector3 12.0f
     let (*Literal*) InvalidId = Guid.Empty
-    let (*Literal*) GravityDefault = Vector2 (0.0f, -9.80665f)
+    let (*Literal*) GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let (*Literal*) EventTracing =
         match ConfigurationManager.AppSettings.["EventTracing"] with
         | null -> false
