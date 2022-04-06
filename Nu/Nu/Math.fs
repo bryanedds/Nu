@@ -908,8 +908,10 @@ module Math =
     let isBoundsIntersectingBounds (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
+        bounds.Position.Z < bounds2.Position.Z + bounds2.Size.Z &&
         bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
-        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
+        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y &&
+        bounds.Position.Z + bounds.Size.Z > bounds2.Position.Z
 
     /// Get the view of the eye in absolute terms (world space).
     let getViewAbsolute (_ : Vector2) (_ : Vector2) =
