@@ -91,8 +91,8 @@ type [<StructuralEquality; NoComparison>] Justification =
 type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
       mutable Absolute : bool
-      mutable Offset : Vector2
-      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
+      mutable Offset : Vector3
+      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
@@ -104,7 +104,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
       mutable Absolute : bool
       mutable Offset : Vector3
-      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
+      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Color : Color
       mutable Glow : Color
       mutable Flip : Flip }
@@ -113,8 +113,8 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { Transform : Transform
       Absolute : bool
-      Offset : Vector2
-      InsetOpt : Vector4 option
+      Offset : Vector3
+      InsetOpt : Box2 option
       Image : Image AssetTag
       Color : Color
       Blend : Blend
@@ -395,8 +395,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          eyeMargin : Vector2,
          transform : Transform inref,
          absolute : bool,
-         offset : Vector2,
-         inset : Vector4 inref,
+         offset : Vector3,
+         inset : Box2 inref,
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
@@ -405,7 +405,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let position = transform.Position.XY - Vector2.Multiply (offset, transform.Size.XY)
+        let position = transform.Position.XY - Vector2.Multiply (offset.XY, transform.Size.XY)
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
         let size = transform.Size.XY
@@ -420,16 +420,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                 let mutable sourceRect = SDL.SDL_Rect ()
-                if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
+                if inset.Position.X = 0.0f && inset.Position.Y = 0.0f && inset.Size.X = 0.0f && inset.Size.Y = 0.0f then
                     sourceRect.x <- 0
                     sourceRect.y <- 0
                     sourceRect.w <- textureSizeX
                     sourceRect.h <- textureSizeY
                 else
-                    sourceRect.x <- int inset.X
-                    sourceRect.y <- int inset.Y
-                    sourceRect.w <- int inset.Z
-                    sourceRect.h <- int inset.W
+                    sourceRect.x <- int inset.Position.X
+                    sourceRect.y <- int inset.Position.Y
+                    sourceRect.w <- int inset.Size.X
+                    sourceRect.h <- int inset.Size.Y
                 let mutable destRect = SDL.SDL_Rect ()
                 destRect.x <- int (+positionOffset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
                 destRect.y <- int (-positionOffset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
@@ -671,16 +671,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let glow = &particle.Glow
                     let flip = Flip.toSdlFlip particle.Flip
                     let inset = particle.Inset
-                    if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
+                    if inset.IsEmpty then
                         sourceRect.x <- 0
                         sourceRect.y <- 0
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
                     else
-                        sourceRect.x <- int inset.X
-                        sourceRect.y <- int inset.Y
-                        sourceRect.w <- int inset.Z
-                        sourceRect.h <- int inset.W
+                        sourceRect.x <- int inset.Position.X
+                        sourceRect.y <- int inset.Position.Y
+                        sourceRect.w <- int inset.Size.X
+                        sourceRect.h <- int inset.Size.Y
                     destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
                     destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                     destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
@@ -715,7 +715,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         match descriptor with
         | SpriteDescriptor descriptor ->
-            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> v4Zero
+            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> Box2.Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Absolute, descriptor.Offset, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
@@ -765,7 +765,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let sprites =
             if eyeMargin <> v2Zero then
                 let transform = { Position = v3Zero; Size = v3Zero; Rotation = v3Zero; Elevation = Single.MaxValue; Flags = 0u }
-                let sprite = { Transform = transform; Absolute = true; Offset = v2Zero; Inset = v4Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let sprite = { Transform = transform; Absolute = true; Offset = v3Zero; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let bottomMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}
                 let leftMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f }}
                 let topMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.TopLeft.XYZ - v3 0.0f eyeMargin.Y 0.0f; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}

@@ -37,12 +37,12 @@ module Effects =
         | Set
 
     type [<StructuralEquality; NoComparison>] Slice =
-        { Position : Vector2
-          Size : Vector2
-          Rotation : single
+        { Position : Vector3
+          Size : Vector3
+          Rotation : Vector3
           Elevation : single
-          Offset : Vector2
-          InsetOpt : Vector4 option
+          Offset : Vector3
+          InsetOpt : Box2 option
           Color : Color
           Blend : Blend
           Glow : Color
@@ -79,6 +79,12 @@ module Effects =
 
     type [<StructuralEquality; NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type [<StructuralEquality; NoComparison>] TweenBox2KeyFrame =
+        { TweenValue : Box2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
@@ -122,29 +128,29 @@ module Effects =
 
     and [<NoEquality; NoComparison>] Aspect =
         | Enabled of bool
-        | PositionAbsolute of Vector2
-        | PositionRelative of Vector2
-        | Translation of Vector2
-        | Offset of Vector2
-        | Size of Vector2
-        | Angle of single
-        | Rotation of single
+        | PositionAbsolute of Vector3
+        | PositionRelative of Vector3
+        | Translation of Vector3
+        | Offset of Vector3
+        | Size of Vector3
+        | Angle of Vector3
+        | Rotation of Vector3
         | Elevation of single
-        | Inset of Vector4
+        | Inset of Box2
         | Color of Color
         | Blend of Blend
         | Glow of Color
         | Flip of Flip
         | Volume of single
         | Enableds of LogicApplicator * Playback * LogicKeyFrame array
-        | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
-        | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
-        | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
-        | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
-        | Angles of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-        | Rotations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+        | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Angles of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Rotations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
         | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-        | Insets of TweenApplicator * TweenAlgorithm * Playback * Tween4KeyFrame array
+        | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
         | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
         | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
         | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
@@ -339,7 +345,7 @@ module EffectSystem =
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
         let celSize = Vector2 (single celSize.X, single celSize.Y)
-        v4Bounds celPosition celSize
+        Box2 (celPosition, celSize)
 
     let evalArgument (argument : Argument) : Definition =
         match argument with
@@ -385,11 +391,11 @@ module EffectSystem =
         | PositionAbsolute position -> { slice with Position = position }
         | PositionRelative position -> { slice with Position = slice.Position + position }
         | Translation translation ->
-            let oriented = Vector2.Transform (translation, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
+            let oriented = Vector3.Transform (translation, Quaternion.CreateFromYawPitchRoll (slice.Rotation.Y, slice.Rotation.X, slice.Rotation.Z))
             let translated = slice.Position + oriented
             { slice with Position = translated }
         | Size size -> { slice with Size = size }
-        | Angle degree -> { slice with Rotation = Math.degreesToRadians degree }
+        | Angle degrees -> { slice with Rotation = Math.degreesToRadians3 degrees }
         | Rotation rotation -> { slice with Rotation = rotation }
         | Elevation elevation -> { slice with Elevation = elevation }
         | Offset offset -> { slice with Offset = offset }
@@ -409,41 +415,41 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
                 { slice with Position = applied }
             else slice
         | Translations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let oriented = Vector2.Transform (tweened, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let oriented = Vector3.Transform (tweened, Quaternion.CreateFromYawPitchRoll (slice.Rotation.Y, slice.Rotation.X, slice.Rotation.Z))
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position oriented applicator
                 { slice with Position = applied }
             else slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
                 { slice with Size = applied }
             else slice
         | Angles (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (Math.radiansToDegrees slice.Rotation) tweened applicator
-                { slice with Rotation = Math.degreesToRadians applied }
+                let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3 slice.Rotation) tweened applicator
+                { slice with Rotation = Math.degreesToRadians3 applied }
             else slice
         | Rotations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
+                let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Rotation tweened applicator
                 { slice with Rotation = applied }
             else slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
@@ -458,17 +464,15 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
                 { slice with Offset = applied }
             else slice
-        | Insets (applicator, algorithm, playback, keyFrames) ->
+        | Insets (_, _, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let inset = match slice.InsetOpt with Some inset -> inset | None -> Vector4 (0.0f, 0.0f, 1.0f, 1.0f)
-                let applied = applyTween Vector4.Multiply Vector4.Divide inset tweened applicator
+                let applied = if progress < 0.5f then keyFrame.TweenValue else keyFrame2.TweenValue
                 { slice with InsetOpt = Some applied }
             else slice
         | Colors (applicator, algorithm, playback, keyFrames) ->
