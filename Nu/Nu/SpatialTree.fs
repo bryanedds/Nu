@@ -14,7 +14,7 @@ module internal SpatialNode =
     type [<NoEquality; NoComparison>] SpatialNode<'e when 'e : equality> =
         private
             { Depth : int
-              Bounds : Vector4
+              Bounds : Box3
               Children : ValueEither<'e SpatialNode array, 'e HashSet> }
 
     let internal atPoint point node =
@@ -65,19 +65,22 @@ module internal SpatialNode =
             | ValueRight elements -> ValueRight (HashSet (elements, HashIdentity.Structural))
             | ValueLeft nodes -> ValueLeft (Array.map clone nodes) }
 
-    let rec internal make<'e when 'e : equality> granularity depth (bounds : Vector4) =
+    let rec internal make<'e when 'e : equality> granularity depth (bounds : Box3) : 'e SpatialNode =
         if granularity < 2 then failwith "Invalid granularity for SpatialNode. Expected value of at least 2."
         if depth < 1 then failwith "Invalid depth for SpatialNode. Expected value of at least 1."
+        let childDepth = depth - 1
+        let childSize = bounds.Size / single granularity
         let children =
             if depth > 1 then
-                let (nodes : 'e SpatialNode array) =
-                    [|for i in 0 .. granularity * granularity - 1 do
-                        let childDepth = depth - 1
-                        let childSize = v2 bounds.Z bounds.W / single granularity
-                        let childPosition = v2 bounds.X bounds.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
-                        let childBounds = v4Bounds childPosition childSize
-                        yield make granularity childDepth childBounds|]
-                ValueLeft nodes
+                let nodes =
+                    [|for i in 0 .. granularity - 1 do
+                        [|for j in 0 .. granularity - 1 do
+                            [|for k in 0 .. granularity - 1 do
+                                let childOffset = v3 (childSize.X * single i) (childSize.Y * single j) (childSize.Z * single k)
+                                let childPosition = bounds.Position + childOffset
+                                let childBounds = Box3 (childPosition, childSize)
+                                yield make granularity childDepth childBounds|]|]|]
+                ValueLeft (nodes |> Array.concat |> Array.concat)
             else ValueRight (HashSet<'e> HashIdentity.Structural)
         { Depth = depth
           Bounds = bounds
@@ -141,14 +144,14 @@ module SpatialTree =
             member this.GetEnumerator () = enr :> 'e IEnumerator
             member this.GetEnumerator () = enr :> IEnumerator
 
-    /// A spatial structure that organizes elements on a 2D plane. TODO: document this.
+    /// A spatial structure that organizes elements in a 3D grid.
     type [<NoEquality; NoComparison>] SpatialTree<'e when 'e : equality> =
         private
             { Node : 'e SpatialNode
               OmnipresentElements : 'e HashSet
               Depth : int
               Granularity : int
-              Bounds : Vector4 }
+              Bounds : Box3 }
 
     let addElement omnipresent bounds element tree =
         if omnipresent then
@@ -186,10 +189,11 @@ module SpatialTree =
             let rootDepth = pown tree.Granularity tree.Depth
             let leafSize = rootBounds.Size / single rootDepth
             let leafPosition =
-                v2
-                    (oldBounds.Position.X - (rootBounds.X + oldBounds.Position.X) % leafSize.X)
-                    (oldBounds.Position.Y - (rootBounds.Y + oldBounds.Position.Y) % leafSize.Y)
-            let leafBounds = v4Bounds leafPosition leafSize
+                v3
+                    (oldBounds.Position.X - (rootBounds.Position.X + oldBounds.Position.X) % leafSize.X)
+                    (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
+                    (oldBounds.Position.Z - (rootBounds.Position.Z + oldBounds.Position.Z) % leafSize.Z)
+            let leafBounds = Box3 (leafPosition, leafSize)
             if  not (Math.isBoundsInBounds oldBounds leafBounds) ||
                 not (Math.isBoundsInBounds newBounds leafBounds) then
                 SpatialNode.updateElement oldBounds newBounds element tree.Node
@@ -228,5 +232,5 @@ module SpatialTree =
           Granularity = granularity
           Bounds = bounds }
           
-/// A spatial structure that organizes elements on a 2D plane. TODO: document this.
+/// A spatial structure that organizes elements in a 3D grid.
 type SpatialTree<'e when 'e : equality> = SpatialTree.SpatialTree<'e>
