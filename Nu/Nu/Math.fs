@@ -849,9 +849,23 @@ module Math =
     let radiansToDegrees (radians : single) =
         MathHelper.RadiansToDegrees -radians
 
+    /// Convert radians to degrees in 3D.
+    let radiansToDegrees3 (radians : Vector3) =
+        v3
+            (radiansToDegrees radians.X)
+            (radiansToDegrees radians.Y)
+            (radiansToDegrees radians.Z)
+
     /// Convert degrees to radians.
     let degreesToRadians (degrees : single) =
         MathHelper.DegreesToRadians -degrees
+
+    /// Convert degrees to radians in 3D.
+    let degreesToRadians3 (degrees : Vector3) =
+        v3
+            (degreesToRadians degrees.X)
+            (degreesToRadians degrees.Y)
+            (degreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
     let snap offset value =
