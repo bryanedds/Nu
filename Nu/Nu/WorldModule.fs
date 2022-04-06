@@ -277,7 +277,7 @@ module WorldModule =
         /// Set the update rate, starting at the end of the current frame.
         [<FunctionBinding>]
         static member setUpdateRate updateRate world =
-            World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) world
+            World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) Simulants.Game world
 
         /// Check that the world is advancing.
         [<FunctionBinding>]
@@ -393,6 +393,9 @@ module WorldModule =
         static member internal getTasklets world =
             World.getAmbientStateBy AmbientState.getTasklets world
 
+        static member internal removeTasklets simulant world =
+            World.updateAmbientState (AmbientState.removeTasklets simulant) world
+
         static member internal clearTasklets world =
             World.updateAmbientState AmbientState.clearTasklets world
 
@@ -403,27 +406,23 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getTaskletsProcessing world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
-        static member addTasklet tasklet world =
-            World.updateAmbientState (AmbientState.addTasklet tasklet) world
-
-        /// Add multiple tasklets to be executed by the engine at the scheduled times.
-        static member addTasklets tasklets world =
-            World.updateAmbientState (AmbientState.addTasklets tasklets) world
+        static member addTasklet simulant tasklet world =
+            World.updateAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine at the given time.
-        static member schedule fn time world =
+        static member schedule fn time (simulant : Simulant) world =
             let tasklet = { ScheduledTime = time; ScheduledOp = fn }
-            World.addTasklet tasklet world
+            World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
-        static member frame fn world =
+        static member frame fn (simulant : Simulant) world =
             let taskletsProcessing = World.getTaskletsProcessing world
-            World.schedule fn (World.getUpdateTime world + if taskletsProcessing then 1L else 0L) world
+            World.schedule fn (World.getUpdateTime world + if taskletsProcessing then 1L else 0L) simulant world
 
         /// Schedule an operation to be executed by the engine with the given delay.
-        static member delay fn delay world =
+        static member delay fn delay simulant world =
             let tasklet = { ScheduledTime = World.getUpdateTime world + delay; ScheduledOp = fn }
-            World.addTasklet tasklet world
+            World.addTasklet simulant tasklet world
 
         /// Attempt to get the window flags.
         static member tryGetWindowFlags world =

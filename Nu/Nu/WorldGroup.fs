@@ -193,6 +193,7 @@ module WorldGroupModule =
             if World.getGroupExists group world then
                 let entities = World.getEntities group world
                 let world = World.unregisterGroup group world
+                let world = World.removeTasklets group world
                 let world = World.destroyEntitiesImmediate entities world
                 World.removeGroupState group world
             else world
@@ -213,7 +214,7 @@ module WorldGroupModule =
         /// Destroy multiple groups from the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyGroups groups world =
-            World.frame (World.destroyGroupsImmediate groups) world
+            World.frame (World.destroyGroupsImmediate groups) Simulants.Game world
 
         /// Write a group to a group descriptor.
         static member writeGroup group groupDescriptor world =

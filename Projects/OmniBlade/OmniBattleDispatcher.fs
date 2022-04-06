@@ -482,7 +482,7 @@ module BattleDispatcher =
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)
 
-        static let displayEffect delay size positioning effect world =
+        static let displayEffect delay size positioning effect screen world =
             World.delay (fun world ->
                 let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
@@ -494,8 +494,7 @@ module BattleDispatcher =
                     | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
                 entity.SetSelfDestruct true world)
-                delay
-                world
+                delay screen world
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Update
@@ -967,7 +966,7 @@ module BattleDispatcher =
 
             | Nop -> just battle
 
-        override this.Command (battle, command, _, world) =
+        override this.Command (battle, command, screen, world) =
 
             match command with
             | UpdateEye ->
@@ -1017,22 +1016,22 @@ module BattleDispatcher =
 
             | DisplayBolt (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 192.0f 758.0f) (Bottom target.Bottom) (Effects.makeBoltEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 192.0f 758.0f) (Bottom target.Bottom) (Effects.makeBoltEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayCycloneBlur (delay, targetIndex, radius) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 234.0f 234.0f) (Center target.Center) (Effects.makeCycloneBlurEffect radius) world |> just
+                | Some target -> displayEffect delay (v2 234.0f 234.0f) (Center target.Center) (Effects.makeCycloneBlurEffect radius) screen world |> just
                 | None -> just world
 
             | DisplayImpactSplash (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 192.0f 96.0f) (Bottom target.Bottom) (Effects.makeImpactSplashEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 192.0f 96.0f) (Bottom target.Bottom) (Effects.makeImpactSplashEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayCut (delay, light, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 144.0f) (Bottom target.Bottom) (Effects.makeCutEffect light) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 144.0f) (Bottom target.Bottom) (Effects.makeCutEffect light) screen world |> just
                 | None -> just world
             
             | DisplaySlashSpike (delay, bottom, targetIndex) ->
@@ -1040,13 +1039,13 @@ module BattleDispatcher =
                 | Some target ->
                     let projection = Vector2.Normalize (target.Bottom - bottom) * single Constants.Render.VirtualResolutionX + target.Bottom
                     let effect = (Effects.makeSlashSpikeEffect bottom projection)
-                    let world = displayEffect delay (v2 96.0f 96.0f) (Bottom bottom) effect world
+                    let world = displayEffect delay (v2 96.0f 96.0f) (Bottom bottom) effect screen world
                     just world
                 | None -> just world
 
             | DisplayArcaneCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 120.0f)) (Effects.makeArcaneCastEffect ()) world |> just
+                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 120.0f)) (Effects.makeArcaneCastEffect ()) screen world |> just
                 | None -> just world
             
             | DisplayFire (delay, sourceIndex, targetIndex) ->
@@ -1055,7 +1054,7 @@ module BattleDispatcher =
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
                         let effect = Effects.makeFireEffect (source.Bottom + (v2 80.0f 80.0f)) (target.Bottom + (v2 0.0f 20.0f))
-                        let world = displayEffect delay (v2 100.0f 100.0f) (Bottom (source.Bottom - v2 0.0f 50.0f)) effect world
+                        let world = displayEffect delay (v2 100.0f 100.0f) (Bottom (source.Bottom - v2 0.0f 50.0f)) effect screen world
                         just world
                     | None -> just world
                 | None -> just world
@@ -1066,61 +1065,61 @@ module BattleDispatcher =
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
                         let effect = Effects.makeFlameEffect source.CenterOffset target.CenterOffset
-                        let world = displayEffect delay (v2 144.0f 144.0f) (Bottom source.Bottom) effect world
+                        let world = displayEffect delay (v2 144.0f 144.0f) (Bottom source.Bottom) effect screen world
                         just world
                     | None -> just world
                 | None -> just world
             
             | DisplayIce (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeIceEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeIceEffect ()) screen world |> just
                 | None -> just world
             
             | DisplaySnowball (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 432.0f 432.0f) (Bottom target.Bottom) (Effects.makeSnowballEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 432.0f 432.0f) (Bottom target.Bottom) (Effects.makeSnowballEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayHolyCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 100.0f)) (Effects.makeHolyCastEffect ()) world |> just
+                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 100.0f)) (Effects.makeHolyCastEffect ()) screen world |> just
                 | None -> just world
             
             | DisplayPurify (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom (target.Bottom - v2 0.0f 100.0f)) (Effects.makePurifyEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 192.0f 192.0f) (Bottom (target.Bottom - v2 0.0f 100.0f)) (Effects.makePurifyEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayCure (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeCureEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeCureEffect ()) screen world |> just
                 | None -> just world
             
             | DisplayProtect (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeProtectEffect ()) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeProtectEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayDimensionalCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v2 48.0f 48.0f) (Bottom source.Bottom) (Effects.makeDimensionalCastEffect ()) world |> just
+                | Some source -> displayEffect delay (v2 48.0f 48.0f) (Bottom source.Bottom) (Effects.makeDimensionalCastEffect ()) screen world |> just
                 | None -> just world
 
             | DisplayBuff (delay, statusType, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeBuffEffect statusType) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeBuffEffect statusType) screen world |> just
                 | None -> just world
 
             | DisplayDebuff (delay, statusType, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect statusType) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect statusType) screen world |> just
                 | None -> just world
 
             | DisplayConjureIfrit delay ->
-                displayEffect delay (v2 48.0f 48.0f) (Position (v2 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) world |> just
+                displayEffect delay (v2 48.0f 48.0f) (Position (v2 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) world
+                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->

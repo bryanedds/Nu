@@ -37,7 +37,7 @@ module AmbientState =
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
-              Tasklets : 'w Tasklet UList
+              Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               SymbolStore : SymbolStore
               Overlayer : Overlayer
@@ -129,14 +129,18 @@ module AmbientState =
     let getTasklets state =
         state.Tasklets
 
+    /// Remove all tasklets associated with a simulant.
+    let removeTasklets simulant state =
+        { state with Tasklets = OMap.remove simulant state.Tasklets }
+
     /// Clear the tasklets from future processing.
     let clearTasklets state =
         TaskletsProcessing <- true
-        { state with Tasklets = UList.makeEmpty (UList.getConfig state.Tasklets) }
+        { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets) }
 
     /// Restore the given tasklets from future processing.
     let restoreTasklets tasklets state =
-        let state = { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq)) }
+        let state = { state with Tasklets = tasklets }
         TaskletsProcessing <- false
         state
 
@@ -145,12 +149,12 @@ module AmbientState =
         TaskletsProcessing
 
     /// Add a tasklet to be executed at the scheduled time.
-    let addTasklet tasklet state =
-        { state with Tasklets = UList.add tasklet state.Tasklets }
-
-    /// Add multiple tasklets to be executed at the scheduled times.
-    let addTasklets tasklets state =
-        { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq)) }
+    let addTasklet simulant tasklet state =
+        { state with
+            Tasklets =
+                match state.Tasklets.TryGetValue simulant with
+                | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
+                | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets }
 
     /// Attempt to get the window flags.
     let tryGetWindowFlags state =
@@ -250,7 +254,7 @@ module AmbientState =
           Metadata = assetMetadataMap
           KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
           ClockTime = DateTimeOffset.Now
-          Tasklets = UList.makeEmpty config
+          Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           SymbolStore = symbolStore
           Overlayer = overlayer
