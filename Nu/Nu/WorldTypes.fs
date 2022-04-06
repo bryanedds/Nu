@@ -433,7 +433,7 @@ module WorldTypes =
         default this.Actualize (_, world) = world
 
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        abstract GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Apply physics changes to an entity.
@@ -482,7 +482,7 @@ module WorldTypes =
         default this.Actualize (_, world) = world
 
         /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Try to send a signal to a facet.
@@ -504,7 +504,7 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          EyeCenter : Vector2
+          EyeCenter : Vector3
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
@@ -515,7 +515,7 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyeCenter = Vector2.Zero
+            let eyeCenter = Vector3.Zero
             let eyeSize =
                 v2
                     (single Constants.Render.VirtualResolutionX)
@@ -805,7 +805,7 @@ module WorldTypes =
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
-        member this.Angle with get () = Math.radiansToDegrees this.Transform.Rotation and set value = this.Transform.Rotation <- Math.degreesToRadians value
+        member this.Angle with get () = Math.radiansToDegrees3 this.Transform.Rotation and set value = this.Transform.Rotation <- Math.degreesToRadians3 value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
@@ -1338,8 +1338,10 @@ module WorldTypes =
             member this.TryImport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector3", (:? Vector3 as v3)) -> let v3p = { Vector3 = v3 } in v3p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector3i", (:? Vector3i as v3i)) -> let v3ip = { Vector3i = v3i } in v3ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4i", (:? Vector4i as v4i)) -> let v4ip = { Vector4i = v4i } in v4ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Color", (:? Color as color)) -> let colorp = { Color = color } in colorp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Game", (:? Game as game)) -> game.GameAddress |> atos |> Scripting.Keyword |> Some
@@ -1352,8 +1354,10 @@ module WorldTypes =
             member this.TryExport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
+                | ("Vector3", Scripting.Pluggable pluggable) -> let v3 = pluggable :?> Vector3Pluggable in v3.Vector3 :> obj |> Some
                 | ("Vector4", Scripting.Pluggable pluggable) -> let v4 = pluggable :?> Vector4Pluggable in v4.Vector4 :> obj |> Some
                 | ("Vector2i", Scripting.Pluggable pluggable) -> let v2i = pluggable :?> Vector2iPluggable in v2i.Vector2i :> obj |> Some
+                | ("Vector3i", Scripting.Pluggable pluggable) -> let v3i = pluggable :?> Vector3iPluggable in v3i.Vector3i :> obj |> Some
                 | ("Vector4i", Scripting.Pluggable pluggable) -> let v4i = pluggable :?> Vector4iPluggable in v4i.Vector4i :> obj |> Some
                 | ("Color", Scripting.Pluggable pluggable) -> let color = pluggable :?> ColorPluggable in color.Color :> obj |> Some
                 | ("Game", Scripting.String str) | ("Game", Scripting.Keyword str) -> str |> stoa |> Game :> obj |> Some
