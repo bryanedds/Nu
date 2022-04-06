@@ -62,24 +62,44 @@ namespace Nu
         public float Height => Size.Y;
 
         /// <summary>
-        /// Gets or sets the left location of the box.
-        /// </summary>
-        public float Left => Position.X;
-
-        /// <summary>
         /// Gets or sets the top location of the box.
         /// </summary>
-        public float Top => Position.Y + Size.Y;
-
-        /// <summary>
-        /// Gets or sets the right location of the box.
-        /// </summary>
-        public float Right => Position.X + Size.X;
+        public Vector2 Top => new Vector2(Position.X + (Size.X * 0.5f), Position.Y + Size.Y);
 
         /// <summary>
         /// Gets or sets the bottom location of the box.
         /// </summary>
-        public float Bottom => Position.Y;
+        public Vector2 Bottom => new Vector2(Position.X + (Size.X * 0.5f), Position.Y);
+
+        /// <summary>
+        /// Gets or sets the right location of the box.
+        /// </summary>
+        public Vector2 Right => new Vector2(Position.X + Size.X, Position.Y + (Size.Y * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the left location of the box.
+        /// </summary>
+        public Vector2 Left => new Vector2(Position.X, Position.Y + (Size.Y * 0.5f));
+
+        /// <summary>
+        /// Gets or sets the top-left location of the box.
+        /// </summary>
+        public Vector2 TopLeft => new Vector2(Position.X, Position.Y + Size.Y);
+
+        /// <summary>
+        /// Gets or sets the top-right location of the box.
+        /// </summary>
+        public Vector2 TopRight => new Vector2(Position.X + Size.X, Position.Y + Size.Y);
+
+        /// <summary>
+        /// Gets or sets the bottom-left location of the box.
+        /// </summary>
+        public Vector2 BottomLeft => new Vector2(Position.X, Position.Y);
+
+        /// <summary>
+        /// Gets or sets the bottom-right location of the box.
+        /// </summary>
+        public Vector2 BottomRight => new Vector2(Position.X + Size.X, Position.Y);
 
         /// <summary>
         /// Gets a box with a location 0,0,0 with the a size of 1,1,1.

@@ -44,8 +44,8 @@ module Particles =
 
     /// A spatial constraint.
     type [<StructuralEquality; NoComparison>] Constraint =
-        | Rectangle of Vector4
-        | Circle of single * Vector2
+        | Box of Box3
+        | Sphere of single * Vector3
         | Constraints of Constraint array
 
         /// Combine two constraints.
@@ -103,24 +103,24 @@ module Particles =
 
     /// The forces that may operate on a target.
     type [<StructuralEquality; NoComparison>] Force =
-        | Gravity of Vector2
-        | Attractor of Vector2 * single * single
+        | Gravity of Vector3
+        | Attractor of Vector3 * single * single
         | Drag of single * single
         | Velocity of Constraint
 
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
-        { mutable Position : Vector2
+        { mutable Position : Vector3
           mutable Rotation : single
-          mutable LinearVelocity : Vector2
+          mutable LinearVelocity : Vector3
           mutable AngularVelocity : single
           mutable Restitution : single }
 
         /// The default body.
         static member defaultBody =
-            { Position = v2Zero
+            { Position = v3Zero
               Rotation = 0.0f
-              LinearVelocity = v2Zero
+              LinearVelocity = v3Zero
               AngularVelocity = 0.0f
               Restitution = Constants.Particles.RestitutionDefault }
 
@@ -178,37 +178,30 @@ module Particles =
         /// Constrain bodies.
         let rec constrain c bodies =
             match c with
-            | Circle (radius, center) ->
+            | Sphere (radius, center) ->
                 Array.map (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - center
                     let distanceSquared = delta.LengthSquared ()
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
-                        let normal = Vector2.Normalize (center - positionNext)
-                        let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, normal)
+                        let normal = Vector3.Normalize (center - positionNext)
+                        let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
                         let linearVelocity = reflectedVelocity * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
-            | Rectangle bounds ->
+            | Box bounds ->
+                // TODO: implement property bouncing angles.
                 Array.map (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - bounds.Center
                     if Math.isPointInBounds positionNext bounds then
                         let speed = body.LinearVelocity.Length ()
-                        let distanceNormalized = Vector2.Normalize delta
+                        let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
-                    // TODO: retore this code when the AABB.RayCast bug is fixed or Math.rayCastRectangle is implemented from scratch.
-                    //let rayCastInput = { RayBegin = positionNext; RayEnd = positionNext + body.LinearVelocity }
-                    //let mutable rayCastOutput = RayCastOutput.defaultOutput
-                    //if Math.rayCastRectangle bounds &rayCastInput &rayCastOutput then
-                    //    let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, rayCastOutput.Normal)
-                    //    let linearVelocity = reflectedVelocity * body.Restitution
-                    //    { body with LinearVelocity = linearVelocity }
-                    //else body)
                     bodies
             | Constraints constraints ->
                 Array.fold (flip constrain) bodies constraints
@@ -664,8 +657,8 @@ module Particles =
     type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
           mutable Body : Body
-          mutable Size : Vector2
-          mutable Offset : Vector2
+          mutable Size : Vector3
+          mutable Offset : Vector3
           mutable Inset : Vector4
           mutable Color : Color
           mutable Glow : Color
@@ -744,7 +737,7 @@ module Particles =
                 if Life.getLiveness time particle.Life then
                     let particle' = &particles'.[index]
                     particle'.Transform.Position <- particle.Body.Position
-                    particle'.Transform.Rotation <- particle.Body.Rotation
+                    particle'.Transform.Rotation <- particle.Body.Rotation.X
                     particle'.Transform.Size <- particle.Size
                     particle'.Color <- particle.Color
                     particle'.Glow <- particle.Glow
