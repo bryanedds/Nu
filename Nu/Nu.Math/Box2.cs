@@ -1,5 +1,5 @@
 ﻿//
-// Box3.cs
+// Box2.cs
 //
 // Copyright (C) 2019 OpenTK
 //
@@ -14,28 +14,28 @@ using System.Numerics;
 namespace Nu
 {
     /// <summary>
-    /// Defines an axis-aligned 3D box (cube).
-    /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Geometry/Box3.cs
+    /// Defines an axis-aligned 2D box (rectangle).
+    /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Geometry/Box2.cs
     /// Heavily modified by BGE to more closely conform to System.Numerics and use a size-preserving representation
     /// ([pos, siz] instead of [min, max]).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct Box3 : IEquatable<Box3>
+    public struct Box2 : IEquatable<Box2>
     {
         /// <summary>
         /// The position of the box.
         /// </summary>
-        public Vector3 Position;
+        public Vector2 Position;
 
         /// <summary>
         /// The size of the box.
         /// </summary>
-        public Vector3 Size;
+        public Vector2 Size;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Box3"/> struct.
+        /// Initializes a new instance of the <see cref="Box2"/> struct.
         /// </summary>
-        public Box3(Vector3 position, Vector3 size)
+        public Box2(Vector2 position, Vector2 size)
         {
             Position = position;
             Size = size;
@@ -44,12 +44,12 @@ namespace Nu
         /// <summary>
         /// Gets or sets a vector describing half the size of the box.
         /// </summary>
-        public Vector3 Extent => Size * 0.5f;
+        public Vector2 Extent => Size * 0.5f;
 
         /// <summary>
         /// Gets or sets a vector describing the center of the box.
         /// </summary>
-        public Vector3 Center => Position + Extent;
+        public Vector2 Center => Position + Extent;
 
         /// <summary>
         /// Gets or sets the width of the box.
@@ -87,35 +87,25 @@ namespace Nu
         public float Bottom => Position.Y;
 
         /// <summary>
-        /// Gets or sets the front location of the box.
-        /// </summary>
-        public float Front => Position.Z;
-
-        /// <summary>
-        /// Gets or sets the back location of the box.
-        /// </summary>
-        public float Back => Position.Z + Size.Z;
-
-        /// <summary>
         /// Gets a box with a location 0,0,0 with the a size of 1,1,1.
         /// </summary>
-        public static readonly Box3 Unit = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+        public static readonly Box2 Unit = new Box2(new Vector2(0, 0), new Vector2(1, 1));
 
-        public Box3 Translate(Vector3 distance)
+        public Box2 Translate(Vector2 distance)
         {
-            return new Box3(Position + distance, Size);
+            return new Box2(Position + distance, Size);
         }
 
         /// <summary>
-        /// Returns a Box3 scaled by a given amount.
+        /// Returns a Box2 scaled by a given amount.
         /// </summary>
         /// <param name="scale">The scale to scale the box.</param>
         /// <returns>The scaled box.</returns>
-        public Box3 Scale(Vector3 scale)
+        public Box2 Scale(Vector2 scale)
         {
             var center = Center;
             var extent = Extent * scale;
-            return new Box3(center - extent, Size * scale);
+            return new Box2(center - extent, Size * scale);
         }
 
         /// <summary>
@@ -123,7 +113,7 @@ namespace Nu
         /// </summary>
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
-        public static bool operator ==(Box3 left, Box3 right)
+        public static bool operator ==(Box2 left, Box2 right)
         {
             return left.Equals(right);
         }
@@ -133,7 +123,7 @@ namespace Nu
         /// </summary>
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
-        public static bool operator !=(Box3 left, Box3 right)
+        public static bool operator !=(Box2 left, Box2 right)
         {
             return !(left == right);
         }
@@ -141,11 +131,11 @@ namespace Nu
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
-            return obj is Box3 box && Equals(box);
+            return obj is Box2 box && Equals(box);
         }
 
         /// <inheritdoc/>
-        public bool Equals(Box3 other)
+        public bool Equals(Box2 other)
         {
             return
                 Position.Equals(other.Position) &&

@@ -8,18 +8,6 @@ open System.Numerics
 open Prime
 open Nu
 
-/// The input for a ray cast operation.
-type [<StructuralEquality; NoComparison; Struct>] RayCastInput =
-    { RayBegin : Vector2
-      RayEnd : Vector2 }
-      
-/// The output of a ray cast operation.
-type [<StructuralEquality; NoComparison; Struct>] RayCastOutput =
-    { mutable Normal : Vector2
-      mutable Fraction : single }
-    static member inline defaultOutput =
-        Unchecked.defaultof<RayCastOutput>
-
 /// Masks for Transform flags.
 module TransformMasks =
 
@@ -49,10 +37,10 @@ open TransformMasks
 /// Carries transformation data specific to an Entity.
 type [<NoEquality; NoComparison; Struct>] Transform =
     { // cache line 1
-      mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
-      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
-      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
-      mutable Elevation : single // NOTE: will *NOT* become part of Position if Nu gets 3D capabilities
+      mutable Position : Vector3
+      mutable Size : Vector3
+      mutable Rotation : Vector3
+      mutable Elevation : single
       mutable Flags : uint }
       // 4 bytes free
 
@@ -60,9 +48,13 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     static member inline equalsByRef (left : Transform inref, right : Transform inref) =
         left.Position.X = right.Position.X &&
         left.Position.Y = right.Position.Y &&
+        left.Position.Z = right.Position.Z &&
         left.Size.X = right.Size.X &&
         left.Size.Y = right.Size.Y &&
-        left.Rotation = right.Rotation &&
+        left.Size.Z = right.Size.Z &&
+        left.Rotation.X = right.Rotation.X &&
+        left.Rotation.Y = right.Rotation.Z &&
+        left.Rotation.Z = right.Rotation.X &&
         left.Elevation = right.Elevation &&
         left.Flags = right.Flags
         
@@ -107,17 +99,17 @@ type [<NoEquality; NoComparison; Struct>] Transform =
 
     /// Make an empty transform.
     static member makeEmpty () =
-        { Position = Vector2.Zero
-          Size = Vector2.One
-          Rotation = 0.0f
+        { Position = Vector3.Zero
+          Size = Vector3.One
+          Rotation = Vector3.Zero
           Elevation = 0.0f
           Flags = 0u }
 
     /// Make the default transform.
     static member makeDefault () =
-        { Position = Vector2.Zero
+        { Position = Vector3.Zero
           Size = Constants.Engine.EntitySizeDefault
-          Rotation = 0.0f
+          Rotation = Vector3.Zero
           Elevation = 0.0f
           Flags = 0b110010001100100001u }
 
@@ -167,7 +159,9 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
         v2Eq left.Vector2 right.Vector2
 
     static member compare left right =
-        compare (left.Vector2.X, left.Vector2.Y) (right.Vector2.X, right.Vector2.Y)
+        compare
+            struct (left.Vector2.X, left.Vector2.Y)
+            struct (right.Vector2.X, right.Vector2.Y)
 
     override this.GetHashCode () =
         hash this.Vector2
@@ -220,6 +214,12 @@ module Vector3 =
     let v3UnitX = Vector3.UnitX
     let v3UnitY = Vector3.UnitY
     let v3UnitZ = Vector3.UnitZ
+    let v3Up = v3 0.0f 1.0f 0.0f
+    let v3Right = v3 1.0f 0.0f 0.0f
+    let v3Down = v3 0.0f -1.0f 0.0f
+    let v3Left = v3 -1.0f 0.0f 0.0f
+    let v3Front = v3 -1.0f 0.0f 0.0f
+    let v3Back = v3 1.0f 0.0f 0.0f
 
 /// Converts Vector2 types.
 type Vector2Converter () =
@@ -250,6 +250,50 @@ type Vector2Converter () =
             | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
         | :? Vector2 -> source
         | _ -> failconv "Invalid Vector2Converter conversion from source." None
+
+/// The Vector3 value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector3Pluggable =
+    { Vector3 : Vector3 }
+
+    static member equals left right =
+        v3Eq left.Vector3 right.Vector3
+
+    static member compare left right =
+        compare
+            struct (left.Vector3.X, left.Vector3.Y, left.Vector3.Z)
+            struct (right.Vector3.X, right.Vector3.Y, right.Vector3.Z)
+
+    override this.GetHashCode () =
+        hash this.Vector3
+
+    override this.Equals that =
+        match that with
+        | :? Vector3Pluggable as that -> Vector3Pluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector3Pluggable IComparable with
+        member this.CompareTo that =
+            Vector3Pluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector3Pluggable as that -> (this :> Vector3Pluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Vector3"
+
+        member this.FSharpType =
+            getType this.Vector3
+
+        member this.ToSymbol () =
+            let v3 = Symbol.Atom ("v3", None)
+            let x = Symbol.Number (scstring this.Vector3.X, None)
+            let y = Symbol.Number (scstring this.Vector3.Y, None)
+            let z = Symbol.Number (scstring this.Vector3.Z, None)
+            Symbol.Symbols ([v3; x; y; z], None)
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -288,19 +332,6 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
-        member this.Position = v2 this.X this.Y
-        member this.Size = v2 this.Z this.W
-        member this.Center = v2 (this.X + (this.Z * 0.5f)) (this.Y + (this.W * 0.5f))
-        member this.Bottom = v2 (this.X + (this.Z * 0.5f)) this.Y
-        member this.BottomLeft = v2 this.X this.Y
-        member this.BottomRight = v2 (this.X + this.Z) this.Y
-        member this.Top = v2 (this.X + (this.Z * 0.5f)) (this.Y + this.W)
-        member this.TopLeft = v2 this.X (this.Y + this.W)
-        member this.TopRight = v2 (this.X + this.Z) (this.Y + this.W)
-        member this.Left = v2 this.X (this.Y + (this.W * 0.5f))
-        member this.Right = v2 (this.X + this.Z) (this.Y + (this.W * 0.5f))
-        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z, this.W)
-        member this.Scale (scale : Vector2) = Vector4 (this.X, this.Y, this.Z * scale.X, this.W * scale.Y)
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
@@ -309,13 +340,6 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
-        member this.WithPosition position = this.Translate (position - this.Position)
-        member this.WithCenter center = this.Translate (center - this.Center)
-        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithTop top = this.Translate (top - this.Top)
-        member this.WithLeft left = this.Translate (left - this.Left)
-        member this.WithRight right = this.Translate (right - this.Right)
-        member this.WithSize (size : Vector2) = Vector4 (this.X, this.Y, size.X, size.Y)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Eq (x : Vector4) (y : Vector4) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
@@ -327,12 +351,6 @@ module Vector4 =
     let v4UnitY = Vector4.UnitY
     let v4UnitZ = Vector4.UnitZ
     let v4UnitW = Vector4.UnitW
-    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y size.X size.Y
-    let v4BoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
-        let overflow2 = size * overflow
-        let position2 = position - overflow2 * 0.5f
-        let size2 = size + overflow2
-        v4Bounds position2 size2
 
 /// The Vector4 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4Pluggable =
@@ -342,7 +360,9 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
         v4Eq left.Vector4 right.Vector4
 
     static member compare left right =
-        compare (left.Vector4.X, left.Vector4.Y) (right.Vector4.X, right.Vector4.Y)
+        compare
+            struct (left.Vector4.X, left.Vector4.Y, left.Vector4.Z, left.Vector4.W)
+            struct (right.Vector4.X, right.Vector4.Y, right.Vector4.Z, right.Vector4.W)
 
     override this.GetHashCode () =
         hash this.Vector4
@@ -441,7 +461,9 @@ type [<CustomEquality; CustomComparison>] Vector2iPluggable =
         v2iEq left.Vector2i right.Vector2i
 
     static member compare left right =
-        compare (left.Vector2i.X, left.Vector2i.Y) (right.Vector2i.X, right.Vector2i.Y)
+        compare
+            struct (left.Vector2i.X, left.Vector2i.Y)
+            struct (right.Vector2i.X, right.Vector2i.Y)
 
     override this.GetHashCode () =
         hash this.Vector2i
@@ -560,8 +582,6 @@ type Vector3iConverter () =
 module Vector4i =
 
     type Vector4i with
-        member this.Translate (translation : Vector2i) = Vector4i (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
-        member this.Scale (scale : Vector2i) = Vector4i (this.X, this.Y, this.Z * scale.X, this.W * scale.Y)
         member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
@@ -570,13 +590,6 @@ module Vector4i =
         member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
-        member this.WithPosition position = this.Translate (position - this.Position)
-        member this.WithCenter center = this.Translate (center - this.Center)
-        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithTop top = this.Translate (top - this.Top)
-        member this.WithLeft left = this.Translate (left - this.Left)
-        member this.WithRight right = this.Translate (right - this.Right)
-        member this.WithSize (size : Vector2i) = Vector4i (this.X, this.Y, size.X, size.Y)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
     let inline v4iEq (x : Vector4i) (y : Vector4i) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
@@ -588,7 +601,6 @@ module Vector4i =
     let v4iUnitY = Vector4i.UnitY
     let v4iUnitZ = Vector4i.UnitZ
     let v4iUnitW = Vector4i.UnitW
-    let v4iBounds (position : Vector2i) (size : Vector2i) = v4i position.X position.Y size.X size.Y
 
 /// The Vector4i value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4iPluggable =
@@ -598,7 +610,9 @@ type [<CustomEquality; CustomComparison>] Vector4iPluggable =
         v4iEq left.Vector4i right.Vector4i
 
     static member compare left right =
-        compare (left.Vector4i.X, left.Vector4i.Y) (right.Vector4i.X, right.Vector4i.Y)
+        compare
+            struct (left.Vector4i.X, left.Vector4i.Y, left.Vector4i.Z, left.Vector4i.W)
+            struct (right.Vector4i.X, right.Vector4i.Y, right.Vector4i.Z, right.Vector4i.W)
 
     override this.GetHashCode () =
         hash this.Vector4i
@@ -701,7 +715,9 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
         colEq left.Color right.Color
 
     static member compare left right =
-        compare (left.Color.R, left.Color.G) (right.Color.B, right.Color.A)
+        compare
+            struct (left.Color.R, left.Color.G, left.Color.B, left.Color.A)
+            struct (right.Color.R, right.Color.G, right.Color.B, right.Color.A)
 
     override this.GetHashCode () =
         hash this.Color
@@ -792,6 +808,18 @@ module Matrix3x3 =
     let m3Identity = Matrix3x3.Identity
     let m3Zero = Matrix3x3.Zero
 
+/// The input for a 2D ray cast operation.
+type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
+    { RayBegin : Vector2
+      RayEnd : Vector2 }
+      
+/// The output of a 2D ray cast operation.
+type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
+    { mutable Normal : Vector2
+      mutable Fraction : single }
+    static member inline defaultOutput =
+        Unchecked.defaultof<RayCast2Output>
+
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -808,6 +836,7 @@ module Math =
             assignTypeConverter<Vector3, Vector3Converter> ()
             assignTypeConverter<Vector4, Vector4Converter> ()
             assignTypeConverter<Vector2i, Vector2iConverter> ()
+            assignTypeConverter<Vector3i, Vector3iConverter> ()
             assignTypeConverter<Vector4i, Vector4iConverter> ()
             assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
@@ -828,7 +857,7 @@ module Math =
             div * offset + rem
         else value
 
-    /// Snap an radian value to an offset.
+    /// Snap a radian value to an offset.
     let snapR offset value =
         radiansToDegrees value |>
         int |>
@@ -836,61 +865,51 @@ module Math =
         single |>
         degreesToRadians
 
+    /// Snap a Vector3 radian value to an offset.
+    let snap3R offset (v3 : Vector3) =
+        Vector3 (snapR offset v3.X, snapR offset v3.Y, snapR offset v3.Z)
+
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =
         single (snap offset (int value))
 
-    /// Snap an Vector2 value to an offset.
-    let snap2F offset (v2 : Vector2) =
-        Vector2 (snapF offset v2.X, snapF offset v2.Y)
+    /// Snap a Vector3 value to an offset.
+    let snap3F offset (v3 : Vector3) =
+        Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
 
     /// Snap an Transform value to an offset.
     let snapTransform positionSnap rotationSnap transform =
         { transform with
-            Position = snap2F positionSnap transform.Position
-            Rotation = snapR rotationSnap transform.Rotation }
+            Position = snap3F positionSnap transform.Position
+            Rotation = snap3R rotationSnap transform.Rotation }
 
     /// Check that a point is within the given bounds.
-    let isPointInBounds (point : Vector2) (bounds : Vector4) =
-        point.X >= bounds.X &&
-        point.Y >= bounds.Y &&
-        point.X <= bounds.X + bounds.Z &&
-        point.Y <= bounds.Y + bounds.W
-
-    /// Check that a point is within the given bounds.
-    let isPointInBoundsI (point : Vector2i) (bounds : Vector4i) =
-        point.X >= bounds.X &&
-        point.Y >= bounds.Y &&
-        point.X <= bounds.X + bounds.Z &&
-        point.Y <= bounds.Y + bounds.W
+    /// TODO: move this into Box3 definition.
+    let isPointInBounds (point : Vector3) (bounds : Box3) =
+        point.X >= bounds.Position.X &&
+        point.Y >= bounds.Position.Y &&
+        point.Z >= bounds.Position.Z &&
+        point.X <= bounds.Position.X + bounds.Size.X &&
+        point.Y <= bounds.Position.Y + bounds.Size.Y &&
+        point.Z <= bounds.Position.Z + bounds.Size.Z
 
     /// Check that a bounds is within the given bounds.
-    let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
-        bounds.X >= bounds2.X &&
-        bounds.Y >= bounds2.Y &&
-        bounds.X + bounds.Z <= bounds2.X + bounds2.Z &&
-        bounds.Y + bounds.W <= bounds2.Y + bounds2.W
-
-    /// Check that a bounds is within the given bounds.
-    let isBoundsInBoundsI (bounds : Vector4i) (bounds2 : Vector4i) =
-        bounds.X >= bounds2.X &&
-        bounds.Y >= bounds2.Y &&
-        bounds.X + bounds.Z <= bounds2.X + bounds2.Z &&
-        bounds.Y + bounds.W <= bounds2.Y + bounds2.W
+    /// TODO: move this into Box3 definition.
+    let isBoundsInBounds (bounds : Box3) (bounds2 : Box3) =
+        bounds.Position.X >= bounds2.Position.X &&
+        bounds.Position.Y >= bounds2.Position.Y &&
+        bounds.Position.Z >= bounds2.Position.Z &&
+        bounds.Position.X + bounds.Size.X <= bounds2.Position.X + bounds2.Size.X &&
+        bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y &&
+        bounds.Position.Z + bounds.Size.Z <= bounds2.Position.Z + bounds2.Size.Z
 
     /// Check that a bounds is intersecting the given bounds.
-    let isBoundsIntersectingBoundsI (bounds : Vector4i) (bounds2 : Vector4i) =
-        bounds.X < bounds2.X + bounds2.Z &&
-        bounds.Y < bounds2.Y + bounds2.W &&
-        bounds.X + bounds.Z > bounds2.X &&
-        bounds.Y + bounds.W > bounds2.Y
-
-    /// Check that a bounds is intersecting the given bounds.
-    let isBoundsIntersectingBounds (bounds : Vector4) (bounds2 : Vector4) =
-        bounds.X < bounds2.X + bounds2.Z &&
-        bounds.Y < bounds2.Y + bounds2.W &&
-        bounds.X + bounds.Z > bounds2.X &&
-        bounds.Y + bounds.W > bounds2.Y
+    /// TODO: move this into Box3 definition.
+    let isBoundsIntersectingBounds (bounds : Box3) (bounds2 : Box3) =
+        bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
+        bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
+        bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
+        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
 
     /// Get the view of the eye in absolute terms (world space).
     let getViewAbsolute (_ : Vector2) (_ : Vector2) =
@@ -916,7 +935,7 @@ module Math =
 
     /// Perform a ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
-    let rayCastCircle (position : Vector2) (radius : single) (input : RayCastInput inref) (output : RayCastOutput outref) =
+    let rayCast2Circle (position : Vector2) (radius : single) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let mutable s = input.RayBegin - position
         let b = Vector2.Dot (s, s) - 2.0f * radius
         let mutable r = input.RayEnd - input.RayBegin
@@ -934,7 +953,7 @@ module Math =
 
     /// Perform a ray cast on a rectangle.
     /// BUG: There's a bug in AABB.RayCast that produces invalid normals.
-    let rayCastRectangle (rectangle : Vector4) (input : RayCastInput inref) (output : RayCastOutput outref) =
+    let rayCast2Rectangle (rectangle : Vector4) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
@@ -949,7 +968,7 @@ module Math =
     /// NOTE: due to unoptimized implementation, this function allocates one object per call!
     /// TODO: adapt the Aether code as was done for circle to improve performance and get rid of said
     /// allocation.
-    let rayCastSegment segmentBegin segmentEnd (input : RayCastInput inref) (output : RayCastOutput outref) =
+    let rayCast2Segment segmentBegin segmentEnd (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable identity = Common.Transform.Identity // NOTE: superfluous copy of identity to satisfy EdgeShap.RayCast's use of byref instead of inref.
