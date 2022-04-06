@@ -727,33 +727,38 @@ module WorldScripting =
 
         static member internal evalSchedule fnName exprs originOpt world =
             match exprs with
-            | [|Scripting.Int64 i; body|] ->
-                let world =
-                    World.schedule
-                        (fun world ->
-                            let context = World.getScriptContext world
-                            match World.tryGetScriptFrame context world with
-                            | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
-                            | None -> world)
-                        i
-                        world
-                struct (Unit, world)
-            | [|_; _|] -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int64 for the first argument.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | [|Scripting.Int64 i; body; relationExpr|] ->
+                let context = World.getScriptContext world
+                match World.tryResolveRelation fnName relationExpr originOpt context world with
+                | Right (simulant, world) ->
+                    let world =
+                        World.schedule
+                            (fun world ->
+                                match World.tryGetScriptFrame context world with
+                                | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                                | None -> world)
+                            i simulant world
+                    struct (Unit, world)
+                | Left error -> error
+            | [|_; _; _|] -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int64 for the first argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
 
-        static member internal evalSchedule1 fnName exprs originOpt world =
+        static member internal evalFrame fnName exprs originOpt world =
             match exprs with
-            | [|body|] ->
-                let world =
-                    World.frame
-                        (fun world ->
-                            let context = World.getScriptContext world
-                            match World.tryGetScriptFrame context world with
-                            | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
-                            | None -> world)
-                        world
-                struct (Unit, world)
-            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 argument required.", originOpt), world)
+            | [|body; relationExpr|] ->
+                let context = World.getScriptContext world
+                match World.tryResolveRelation fnName relationExpr originOpt context world with
+                | Right (simulant, world) ->
+                    let world =
+                        World.frame
+                            (fun world ->
+                                match World.tryGetScriptFrame context world with
+                                | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                                | None -> world)
+                            simulant world
+                    struct (Unit, world)
+                | Left error -> error
+            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalBlank _ _ _ world =
             let context = World.getScriptContext world
@@ -812,8 +817,8 @@ module WorldScripting =
                  ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = [|"handler"; "event"|]; DocOpt = Some "Subscribe to an event for the lifetime of the simulant." })
-                 ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"|]; DocOpt = None })
-                 ("schedule1", { Fn = World.evalSchedule1; Pars = [|"body"|]; DocOpt = None })
+                 ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"; "simulant"|]; DocOpt = None })
+                 ("frame", { Fn = World.evalFrame; Pars = [|"body"; "simulant"|]; DocOpt = None })
                  ("blank", { Fn = World.evalBlank; Pars = [||]; DocOpt = None })
                  ("info_String", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })
                  ("info_Keyword", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })] |>

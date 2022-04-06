@@ -1242,7 +1242,7 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) world
+                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->

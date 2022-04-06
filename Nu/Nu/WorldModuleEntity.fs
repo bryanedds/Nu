@@ -1509,6 +1509,9 @@ module WorldModuleEntity =
                 let mountOpt = World.getEntityMountOpt entity world
                 let world = World.removeEntityFromMounts mountOpt entity world
 
+                // destroy any scheduled tasklets
+                let world = World.removeTasklets entity world
+
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
@@ -1683,7 +1686,7 @@ module WorldModuleEntity =
         /// Rename an entity.
         [<FunctionBinding>]
         static member renameEntity source destination world =
-            World.frame (World.renameEntityImmediate source destination) world
+            World.frame (World.renameEntityImmediate source destination) Simulants.Game world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =

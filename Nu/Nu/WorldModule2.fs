@@ -507,7 +507,7 @@ module WorldModule2 =
             let world = Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
             world
 
-        static member private processTasklet (taskletsNotRun, world) tasklet =
+        static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) world =
             let time = World.getUpdateTime world
             if time = tasklet.ScheduledTime then
                 let world = tasklet.ScheduledOp world
@@ -515,12 +515,27 @@ module WorldModule2 =
             elif time > tasklet.ScheduledTime then
                 Log.debug ("Tasklet leak found for time '" + scstring time + "'.")
                 (taskletsNotRun, world)
-            else (UList.add tasklet taskletsNotRun, world)
+            else
+                let taskletsNotRun =
+                    match taskletsNotRun.TryGetValue simulant with
+                    | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
+                    | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
+                (taskletsNotRun, world)
 
         static member private processTasklets world =
             let tasklets = World.getTasklets world
             let world = World.clearTasklets world
-            let (taskletsNotRun, world) = UList.fold World.processTasklet (UList.makeEmpty (UList.getConfig tasklets), world) tasklets
+            let (taskletsNotRun, world) =
+                OMap.fold (fun (taskletsNotRun, world) simulant taskletList ->
+                    UList.fold (fun (taskletsNotRun, world) tasklet ->
+                        if World.getExists simulant world
+                        then World.processTasklet simulant tasklet taskletsNotRun world
+                        else (taskletsNotRun, world))
+                        (taskletsNotRun, world)
+                        taskletList)
+                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets), world)
+                    tasklets
+            let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
 
         static member private destroySimulants world =
