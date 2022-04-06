@@ -62,11 +62,6 @@ namespace Nu
         public float Height => Size.Y;
 
         /// <summary>
-        /// Gets or sets the depth of the box.
-        /// </summary>
-        public float Depth => Size.Z;
-
-        /// <summary>
         /// Gets or sets the left location of the box.
         /// </summary>
         public float Left => Position.X;
