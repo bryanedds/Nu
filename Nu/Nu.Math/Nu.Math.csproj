@@ -39,6 +39,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Box3.cs" />
     <Compile Include="Matrix4x4.cs" />
     <Compile Include="ReadOnlySet.cs" />
     <Compile Include="ValueSort.cs" />
