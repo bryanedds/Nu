@@ -90,10 +90,10 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Rotation_
         and set value =
             this.Rotation_ <- value
-            let yawPitchRoll = value.YawPitchRoll
-            this.Angles_.Y <- yawPitchRoll.Y
-            this.Angles_.X <- yawPitchRoll.X
-            this.Angles_.Z <- yawPitchRoll.Z
+            let pitchYawRoll = value.PitchYawRoll ()
+            this.Angles_.X <- pitchYawRoll.X
+            this.Angles_.Y <- pitchYawRoll.Y
+            this.Angles_.Z <- pitchYawRoll.Z
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
 
@@ -105,41 +105,39 @@ type [<NoEquality; NoComparison>] Transform =
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
 
-    member this.RotationMatrix
-        with get () =
-            if this.RotationMatrixDirty then this.RotationMatrixCached_ := Matrix4x4.CreateFromQuaternion this.Rotation
-            this.RotationMatrixCached_.Value
+    member this.RotationMatrix =
+        if this.RotationMatrixDirty then this.RotationMatrixCached_ := Matrix4x4.CreateFromQuaternion this.Rotation
+        this.RotationMatrixCached_.Value
 
-    member this.AffineMatrix
-        with get () =
-            if this.AffineMatrixDirty then
-                /// TODO: P1: Optimize this hella!
-                let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-                let rotationMatrix = this.RotationMatrix
-                let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-                this.AffineMatrixCached_ := positionMatrix * rotationMatrix * scaleMatrix
-            this.AffineMatrixCached_.Value
+    member this.AffineMatrix =
+        if this.AffineMatrixDirty then
+            /// TODO: P1: Optimize this hella!
+            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
+            let rotationMatrix = this.RotationMatrix
+            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+            this.AffineMatrixCached_ := positionMatrix * rotationMatrix * scaleMatrix
+        this.AffineMatrixCached_.Value
 
-    member inline this.Extent with get () = this.Size_ * 0.5f
-    member inline this.Right with get () = this.RotationMatrix.Row0
-    member inline this.Up with get () = this.RotationMatrix.Row1
-    member inline this.Forward with get () = -this.RotationMatrix.Row2
-    member inline this.Left with get () = -this.RotationMatrix.Row0
-    member inline this.Down with get () = -this.RotationMatrix.Row1
-    member inline this.Backward with get () = this.RotationMatrix.Row2
+    member inline this.Extent = this.Size_ * 0.5f
+    member inline this.Right = this.RotationMatrix.Row0
+    member inline this.Up = this.RotationMatrix.Row1
+    member inline this.Forward = -this.RotationMatrix.Row2
+    member inline this.Left = -this.RotationMatrix.Row0
+    member inline this.Down = -this.RotationMatrix.Row1
+    member inline this.Backward = this.RotationMatrix.Row2
 
-    member inline this.PositionScaled with get () = this.Position_ * this.Scale_
-    member inline this.SizeScaled with get () = this.Size_ * this.Scale_
-    member inline this.ExtentScaled with get () = this.Extent * this.Scale_
+    member inline this.PositionScaled = this.Position_ * this.Scale_
+    member inline this.SizeScaled = this.Size_ * this.Scale_
+    member inline this.ExtentScaled = this.Extent * this.Scale_
 
-    member inline this.OffsetScaled with get () =
+    member inline this.OffsetScaled =
         if not this.Rotation_.IsIdentity then
             if this.Is2d
             then Vector3.Transform (this.Offset_, Quaternion.CreateFromAxisAngle (-Vector3.UnitZ, this.Angles_.X))
             else Vector3.Transform (this.Offset_, this.Rotation_) * this.Scale_
         else this.Offset_ * this.Scale_
 
-    member this.Bounds with get () =
+    member this.Bounds =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
@@ -147,7 +145,7 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
-    member this.Center with get () =
+    member this.Center =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
@@ -155,7 +153,7 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         positionScaled + offsetScaled + extentScaled
 
-    member this.Bottom with get () =
+    member this.Bottom =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
@@ -203,7 +201,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform
 
     /// Make the default transform.
-    static member make2D () =
+    static member make2d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
         transform.RotationMatrixCached_ <- ref Matrix4x4.Identity
@@ -212,7 +210,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Flags_ <- DefaultFlags ||| Is2dMask
         transform
 
-    static member make3D () =
+    static member make3d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
         transform.RotationMatrixCached_ <- ref Matrix4x4.Identity
@@ -838,6 +836,12 @@ type Vector4iConverter () =
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
 [<AutoOpen>]
+module Quaternion =
+    type Quaternion with
+        member this.PitchYawRoll =
+            MathHelper.PitchYawRoll &this
+
+[<AutoOpen>]
 module Color =
 
     type Color with
@@ -1048,17 +1052,10 @@ module Math =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
 
     /// Snap a Transform value to an offset.
-    let snapTransform positionSnap rotationSnap transform =
-        let angles = snap3R rotationSnap transform.Angles
-        let transform = transform.SetAnglesFunctional angles
-        let rotation = Quaternion.CreateFromYawPitchRoll (angles.Y, angles.X, angles.Z)
-        let mutable transform =
-            { transform with
-                Position = snap3F positionSnap transform.Position
-                Rotation = rotation
-                Angles = angles }
-        transform.RotationMatrixDirty <- true
-        transform.AffineMatrixDirty <- true
+    let snapTransform positionSnap rotationSnap (transform : Transform) =
+        let mutable transform = transform
+        transform.Position <- snap3F positionSnap transform.Position
+        transform.Angles <- snap3R rotationSnap transform.Angles
         transform
 
     /// Check that a point is within the given bounds.

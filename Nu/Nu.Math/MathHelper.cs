@@ -7,13 +7,14 @@
  */
 
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace Nu
 {
     /// <summary>
     /// Contains common mathematical functions and constants.
     /// Copied from - https://github.com/opentk/opentk/blob/3.x/src/OpenTK/Math/MathHelper.cs
+    /// Modified by BGE to add 
     /// </summary>
     public static class MathHelper
     {
@@ -262,7 +263,6 @@ namespace Nu
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
         /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
         {
             const double doubleNormal = (1L << 52) * double.Epsilon;
@@ -295,7 +295,6 @@ namespace Nu
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
         /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEqualEpsilon(float a, float b, float epsilon)
         {
             const float floatNormal = (1 << 23) * float.Epsilon;
@@ -331,7 +330,6 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEquivalent(float a, float b, float tolerance)
         {
             if (a == b)
@@ -354,7 +352,6 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEquivalent(double a, double b, double tolerance)
         {
             if (a == b)
@@ -365,6 +362,52 @@ namespace Nu
 
             double diff = Math.Abs(a - b);
             return diff <= tolerance;
+        }
+
+        /// <summary>
+        /// Determine if a value is negative (includning NaN).
+        /// </summary>
+        static bool IsNegative(double value)
+        {
+            return Math.Sign(value) == -1;
+        }
+
+        /// <summary>
+        /// Impose the sign of a number onto a value.
+        /// </summary>
+        static double CopySign(double value, double sign)
+        {
+            return (IsNegative(value) == IsNegative(sign)) ? value : -value;
+        }
+
+        /// <summary>
+        /// Convert a quaternion to euler angles.
+        /// Taken from https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles.
+        /// NOTE: because this use double-precision calculation, this is slower than it need be.
+        /// TODO: Use MathF instead once we upgrade to .NET 5.
+        /// </summary>
+        public static Vector3 PitchYawRoll(this in Quaternion rotation)
+        {
+            Vector3 angles;
+
+            // yaw (z-axis rotation)
+            double siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y);
+            double cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z);
+            angles.Y = (float)Math.Atan2(siny_cosp, cosy_cosp);
+
+            // pitch (y-axis rotation)
+            double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
+            if (Math.Abs(sinp) >= 1.0f)
+                angles.X = (float)CopySign(Math.PI / 2.0f, sinp); // use 90 degrees if out of range
+            else
+                angles.X = (float)Math.Asin(sinp);
+
+            // roll (x-axis rotation)
+            var sinr_cosp = 2.0f * (rotation.W * rotation.X + rotation.Y * rotation.Z);
+            var cosr_cosp = 1.0f - 2.0f * (rotation.X * rotation.X + rotation.Y * rotation.Y);
+            angles.Z = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+
+            return angles;
         }
     }
 }
