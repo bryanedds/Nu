@@ -48,8 +48,8 @@ type [<NoEquality; NoComparison>] Transform =
         // cache line 2
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixCached_ : Matrix4x4 ref
-        val mutable private AffineMatrixCached_ : Matrix4x4 ref
+        val mutable private RotationMatrixOpt_ : Matrix4x4 ref
+        val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
@@ -106,17 +106,21 @@ type [<NoEquality; NoComparison>] Transform =
             this.AffineMatrixDirty <- true
 
     member this.RotationMatrix =
-        if this.RotationMatrixDirty then this.RotationMatrixCached_ := Matrix4x4.CreateFromQuaternion this.Zotation_
-        this.RotationMatrixCached_.Value
+        if notNull (this.RotationMatrixOpt_ :> obj) then
+            if this.RotationMatrixDirty then this.RotationMatrixOpt_ := Matrix4x4.CreateFromQuaternion this.Zotation_
+            this.RotationMatrixOpt_.Value
+        else Matrix4x4.Identity
 
     member this.AffineMatrix =
-        if this.AffineMatrixDirty then
-            /// TODO: P1: Optimize this hella!
-            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-            let rotationMatrix = this.RotationMatrix
-            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-            this.AffineMatrixCached_ := positionMatrix * rotationMatrix * scaleMatrix
-        this.AffineMatrixCached_.Value
+        if notNull (this.AffineMatrixOpt_ :> obj) then
+            if this.AffineMatrixDirty then
+                /// TODO: P1: Optimize this hella!
+                let positionMatrix = Matrix4x4.CreateTranslation this.Position_
+                let rotationMatrix = this.RotationMatrix
+                let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+                this.AffineMatrixOpt_ := positionMatrix * rotationMatrix * scaleMatrix
+            this.AffineMatrixOpt_.Value
+        else Matrix4x4.Identity
 
     member inline this.Extent = this.Size_ * 0.5f
     member inline this.Right = this.RotationMatrix.Row0
@@ -188,8 +192,8 @@ type [<NoEquality; NoComparison>] Transform =
         target.Zotation_ <- source.Zotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
-        target.RotationMatrixCached_ := source.RotationMatrixCached_.Value
-        target.AffineMatrixCached_ := source.AffineMatrixCached_.Value
+        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ := source.RotationMatrixOpt_.Value
+        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ := source.AffineMatrixOpt_.Value
         target.Elevation_ <- source.Elevation_
         target.Offset_ <- source.Offset_
         target.Size_ <- source.Size_
@@ -199,18 +203,15 @@ type [<NoEquality; NoComparison>] Transform =
         Transform.assignByRef (&source, &target)
 
     /// Make an empty transform.
-    static member makeEmpty () =
-        let mutable transform = Unchecked.defaultof<Transform>
-        transform.RotationMatrixCached_ <- ref Matrix4x4.Zero
-        transform.AffineMatrixCached_ <- ref Matrix4x4.Zero
-        transform
+    static member inline makeEmpty () =
+        Unchecked.defaultof<Transform>
 
     /// Make a transform intended for use with 2D entities.
     static member make2d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
-        transform.RotationMatrixCached_ <- ref Matrix4x4.Identity
-        transform.AffineMatrixCached_ <- ref Matrix4x4.Identity
+        transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
+        transform.AffineMatrixOpt_ <- ref Matrix4x4.Identity
         transform.Size_ <- Vector3.One
         transform.Flags_ <- DefaultFlags ||| Is2dMask
         transform
@@ -219,8 +220,8 @@ type [<NoEquality; NoComparison>] Transform =
     static member make3d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
-        transform.RotationMatrixCached_ <- ref Matrix4x4.Identity
-        transform.AffineMatrixCached_ <- ref Matrix4x4.Identity
+        transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
+        transform.AffineMatrixOpt_ <- ref Matrix4x4.Identity
         transform.Size_ <- Vector3.One
         transform.Flags_ <- DefaultFlags
         transform
