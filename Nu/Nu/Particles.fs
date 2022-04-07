@@ -111,17 +111,19 @@ module Particles =
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
         { mutable Position : Vector3
-          mutable Rotation : single
+          mutable Scale : Vector3
+          mutable Angles : Vector3
           mutable LinearVelocity : Vector3
-          mutable AngularVelocity : single
+          mutable AngularVelocity : Vector3
           mutable Restitution : single }
 
         /// The default body.
         static member defaultBody =
             { Position = v3Zero
-              Rotation = 0.0f
+              Scale = v3Zero
+              Angles = v3Zero
               LinearVelocity = v3Zero
-              AngularVelocity = 0.0f
+              AngularVelocity = v3Zero
               Restitution = Constants.Particles.RestitutionDefault }
 
     /// The base particle type.
@@ -172,7 +174,7 @@ module Particles =
         /// Accelerate bodies both linearly and angularly.
         let accelerate bodies =
             Array.map (fun (body : Body) ->
-                { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
+                { body with Position = body.Position + body.LinearVelocity; Angles = body.Angles + body.AngularVelocity })
                 bodies
 
         /// Constrain bodies.
@@ -657,9 +659,9 @@ module Particles =
     type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
           mutable Body : Body
-          mutable Size : Vector3
           mutable Offset : Vector3
-          mutable Inset : Vector4
+          mutable Size : Vector3
+          mutable Inset : Box2
           mutable Color : Color
           mutable Glow : Color
           mutable Flip : Flip }
@@ -669,9 +671,10 @@ module Particles =
     module BasicParticle =
         let body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
         let position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
-        let rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
-        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
+        let scale = Scope.make (fun p -> struct (p.Life, p.Body.Scale)) (fun struct (_, v) p -> { p with Body = { p.Body with Scale = v }})
+        let angles = Scope.make (fun p -> struct (p.Life, p.Body.Angles)) (fun struct (_, v) p -> { p with Body = { p.Body with Angles = v }})
         let offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
+        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
         let inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
         let color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
         let glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
@@ -737,15 +740,16 @@ module Particles =
                 if Life.getLiveness time particle.Life then
                     let particle' = &particles'.[index]
                     particle'.Transform.Position <- particle.Body.Position
-                    particle'.Transform.Rotation <- particle.Body.Rotation.X
+                    particle'.Transform.Scale <- particle.Body.Scale
+                    particle'.Transform.Angles <- particle.Body.Angles
+                    particle'.Transform.Offset <- particle.Offset
                     particle'.Transform.Size <- particle.Size
                     particle'.Color <- particle.Color
                     particle'.Glow <- particle.Glow
-                    particle'.Offset <- particle.Offset
                     particle'.Inset <- particle.Inset
                     particle'.Flip <- particle.Flip
             { Elevation = emitter.Elevation
-              PositionY = emitter.Body.Position.Y
+              Horizon = emitter.Body.Position.Y
               Absolute = emitter.Absolute
               Blend = emitter.Blend
               Image = emitter.Image
@@ -782,18 +786,18 @@ module Particles =
             let particleSeed =
                 { Life = Life.make 0L 120L
                   Body = Body.defaultBody
+                  Offset = v3Zero
                   Size = Constants.Engine.ParticleSizeDefault
-                  Offset = v2Dup 0.5f
-                  Inset = v4Zero
+                  Inset = Box2.Zero
                   Color = Color.White
                   Glow = Color.Zero
                   Flip = FlipNone }
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
-                particle.Body.Rotation <- emitter.Body.Rotation
-                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 10.0f).Rotate emitter.Body.Rotation
-                particle.Body.AngularVelocity <- Gen.randomf
+                particle.Body.Angles <- emitter.Body.Angles
+                particle.Body.LinearVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf * 10.0f
+                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf
                 particle
             let particleBehavior = fun time emitter ->
                 let watermark = emitter.ParticleWatermark
@@ -810,7 +814,7 @@ module Particles =
                         [Transformer.force (Gravity (Constants.Engine.GravityDefault / single Constants.Engine.DesiredFps))
                          Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
-                emitter.Body.Rotation <- emitter.Body.Rotation + 0.05f
+                emitter.Body.Angles <- emitter.Body.Angles + v3 0.03f 0.2f 0.1f
                 Output.empty
             let emitterBehaviors =
                 Behaviors.empty
