@@ -44,7 +44,7 @@ type [<NoEquality; NoComparison>] Transform =
         // cache line 1
         val mutable private Flags_ : uint
         val mutable private Position_ : Vector3
-        val mutable private Rotation_ : Quaternion
+        val mutable private Zotation_ : Quaternion
         // cache line 2
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
@@ -86,10 +86,10 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true
     member inline this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value; this.AffineMatrixDirty <- true
 
-    member inline this.Rotation
-        with get () = this.Rotation_
+    member inline this.Zotation
+        with get () = this.Zotation_
         and set value =
-            this.Rotation_ <- value
+            this.Zotation_ <- value
             let pitchYawRoll = value.PitchYawRoll ()
             this.Angles_.X <- pitchYawRoll.X
             this.Angles_.Y <- pitchYawRoll.Y
@@ -101,12 +101,12 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Angles_
         and set value =
             this.Angles_ <- value
-            this.Rotation_ <- Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
+            this.Zotation_ <- Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
 
     member this.RotationMatrix =
-        if this.RotationMatrixDirty then this.RotationMatrixCached_ := Matrix4x4.CreateFromQuaternion this.Rotation
+        if this.RotationMatrixDirty then this.RotationMatrixCached_ := Matrix4x4.CreateFromQuaternion this.Zotation_
         this.RotationMatrixCached_.Value
 
     member this.AffineMatrix =
@@ -131,10 +131,10 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.ExtentScaled = this.Extent * this.Scale_
 
     member inline this.OffsetScaled =
-        if not this.Rotation_.IsIdentity then
+        if not this.Zotation_.IsIdentity then
             if this.Is2d
             then Vector3.Transform (this.Offset_, Quaternion.CreateFromAxisAngle (-Vector3.UnitZ, this.Angles_.X))
-            else Vector3.Transform (this.Offset_, this.Rotation_) * this.Scale_
+            else Vector3.Transform (this.Offset_, this.Zotation_) * this.Scale_
         else this.Offset_ * this.Scale_
 
     member this.Bounds =
@@ -165,7 +165,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member equalsByRef (left : Transform inref, right : Transform inref) =
         left.Flags_ = right.Flags_ &&
         left.Position_.Equals right.Position_ &&
-        left.Rotation_.Equals right.Rotation_ &&
+        left.Zotation_.Equals right.Zotation_ &&
         left.Scale_.Equals right.Scale_ &&
         left.Offset_.Equals right.Offset_ &&
         left.Angles_.Equals right.Angles_ &&
@@ -180,7 +180,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member assignByRef (source : Transform inref, target : Transform byref) =
         target.Flags_ <- source.Flags_
         target.Position_ <- source.Position_
-        target.Rotation_ <- source.Rotation_
+        target.Zotation_ <- source.Zotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
         target.RotationMatrixCached_ := source.RotationMatrixCached_.Value
@@ -200,7 +200,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.AffineMatrixCached_ <- ref Matrix4x4.Zero
         transform
 
-    /// Make the default transform.
+    /// Make a transform intended for use with 2D entities.
     static member make2d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
@@ -210,6 +210,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Flags_ <- DefaultFlags ||| Is2dMask
         transform
 
+    /// Make a transform intended for use with 3D entities.
     static member make3d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One

@@ -109,7 +109,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
-    { Transform : Transform
+    { mutable Transform : Transform
       Absolute : bool
       InsetOpt : Box2 option
       Image : Image AssetTag
@@ -124,7 +124,7 @@ type [<NoEquality; NoComparison>] SpritesDescriptor =
 
 /// Describes how to render a tile map layer to the rendering system.
 type [<NoEquality; NoComparison>] TileLayerDescriptor =
-    { Transform : Transform
+    { mutable Transform : Transform
       Absolute : bool
       Color : Color
       Glow : Color
@@ -136,7 +136,7 @@ type [<NoEquality; NoComparison>] TileLayerDescriptor =
 
 /// Describes how to render text to the rendering system.
 type [<NoEquality; NoComparison>] TextDescriptor =
-    { Transform : Transform
+    { mutable Transform : Transform
       Absolute : bool
       Text : string
       Font : Font AssetTag
@@ -358,14 +358,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Render sprite.
     static member renderSprite
-        (viewAbsolute : Matrix3x3 inref,
-         viewRelative : Matrix3x3 inref,
+        (viewAbsolute : Matrix3x3 byref,
+         viewRelative : Matrix3x3 byref,
          _ : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
-         transform : Transform inref,
+         transform : Transform byref,
          absolute : bool,
-         offset : Vector3,
          inset : Box2 inref,
          image : Image AssetTag,
          color : Color inref,
@@ -375,19 +374,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-
-        // OPTIMIZATION: transform's bounds getter algorithm duplicated here to prevent transform from being copied...
-        let scale = transform.Scale
-        let sizeScaled = transform.Size * scale
-        let extentScaled = sizeScaled * 0.5f
-        let positionScaled = transform.Position - extentScaled
-        let offsetScaled = transform.Offset * scale
-        let bounds = Box3 (positionScaled + offsetScaled, sizeScaled)
-
+        let bounds = transform.Bounds
         let position = bounds.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
-        let rotation = transform.Rotation.X
+        let rotation = transform.Angles.X
         let size = bounds.Size.XY
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
@@ -435,12 +426,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Render tile layer.
     static member renderTileLayer
-        (viewAbsolute : Matrix3x3 inref,
-         viewRelative : Matrix3x3 inref,
+        (viewAbsolute : Matrix3x3 byref,
+         viewRelative : Matrix3x3 byref,
          _ : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
-         transform : Transform inref,
+         transform : Transform byref,
          absolute : bool,
          color : Color inref,
          glow : Color inref,
@@ -452,11 +443,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let position = transform.Position.XY
+        let bounds = transform.Bounds
+        let position = bounds.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
-        let size = transform.Size.XY
+        let size = bounds.Size.XY
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        let tileRotation = transform.Rotation.X
+        let rotation = transform.Angles.X
         let (allFound, tileSetTextures) =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
@@ -518,7 +510,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         destRect.y <- int tilePositionOffset.Y * Constants.Render.VirtualScalar
                         destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
                         destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-                        let rotation = double (Math.radiansToDegrees -tileRotation) // negation for right-handedness
+                        let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
                         let mutable rotationCenter = SDL.SDL_Point ()
                         rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
                         rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
@@ -539,12 +531,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Render text.
     static member renderText
-        (viewAbsolute : Matrix3x3 inref,
-         viewRelative : Matrix3x3 inref,
+        (viewAbsolute : Matrix3x3 byref,
+         viewRelative : Matrix3x3 byref,
          _ : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
-         transform : Transform inref,
+         transform : Transform byref,
          absolute : bool,
          text : string,
          font : Font AssetTag,
@@ -553,10 +545,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let position = transform.Position.XY
+        let bounds = transform.Bounds
+        let position = bounds.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
-        let size = transform.Size.XY
+        let size = bounds.Size.XY
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
@@ -616,8 +609,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Render particles.
     static member renderParticles
-        (viewAbsolute : Matrix3x3 inref,
-         viewRelative : Matrix3x3 inref,
+        (viewAbsolute : Matrix3x3 byref,
+         viewRelative : Matrix3x3 byref,
          _ : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
@@ -629,6 +622,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          particles : Particle array,
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
+        let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let positionOffset = -(v2Zero * view) + v2 eyeMargin.X -eyeMargin.Y
         let blend = Blend.toSdlBlendMode blend
         let image = AssetTag.generalize image
@@ -642,10 +636,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
-                    let transform = &particle.Transform
-                    let position = transform.Position.XY - Vector2.Multiply (transform.Offset.XY, transform.Size.XY)
+                    let bounds = particle.Transform.Bounds
+                    let position = bounds.Position.XY
                     let positionView = position + positionOffset
-                    let sizeView = transform.Size.XY * Matrix3x3.CreateScale(Vector3(view.Row0.X, view.Row1.Y, view.Row2.Z))
+                    let size = bounds.Size.XY
+                    let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+                    let rotation = particle.Transform.Angles.X
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = Flip.toSdlFlip particle.Flip
@@ -664,7 +660,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                     destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
                     destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                    let rotation = double (Math.radiansToDegrees -transform.Rotation.X) // negation for right-handedness
+                    let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                     rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
@@ -685,8 +681,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
     static member private renderDescriptor
-        (viewAbsolute : Matrix3x3 inref,
-         viewRelative : Matrix3x3 inref,
+        (viewAbsolute : Matrix3x3 byref,
+         viewRelative : Matrix3x3 byref,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
@@ -697,7 +693,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> Box2.Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
-                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
+                 &descriptor.Transform, descriptor.Absolute, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
@@ -705,7 +701,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
-                     &sprite.Transform, sprite.Absolute, sprite.Offset, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                     &sprite.Transform, sprite.Absolute, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
         | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
@@ -720,7 +716,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
-                 descriptor.Elevation, descriptor.PositionY, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
+                 descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
         | RenderCallback callback ->
             callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, eyeMargin, renderer)
@@ -731,8 +727,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         match targetResult with
         | 0 ->
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let viewAbsolute = (Math.getView2AbsoluteI eyeCenter eyeSize).InvertedView ()
-            let viewRelative = (Math.getView2RelativeI eyeCenter eyeSize).InvertedView ()
+            let mutable viewAbsolute = (Math.getView2AbsoluteI eyeCenter eyeSize).InvertedView ()
+            let mutable viewRelative = (Math.getView2RelativeI eyeCenter eyeSize).InvertedView ()
             for message in renderer.RenderLayeredMessages do
                 SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
         | _ ->
