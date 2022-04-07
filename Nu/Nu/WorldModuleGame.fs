@@ -88,7 +88,7 @@ module WorldModuleGame =
 
         /// Set the current eye center.
         static member internal setEyeCenterPlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeCenter then { gameState with EyeCenter = value } else Unchecked.defaultof<_>) Property? EyeCenter value world
+            World.updateGameState (fun gameState -> if v3Neq value gameState.EyeCenter then { gameState with EyeCenter = value } else Unchecked.defaultof<_>) Property? EyeCenter value world
 
         /// Set the current eye center.
         [<FunctionBinding>]

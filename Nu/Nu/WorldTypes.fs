@@ -702,8 +702,8 @@ module WorldTypes =
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
-          mutable Overflow : Vector2
-          mutable PositionLocal : Vector2
+          mutable Overflow : Vector3
+          mutable PositionLocal : Vector3
           mutable ElevationLocal : single
           // cache line 3
           mutable MountOpt : Entity Relation option
@@ -728,8 +728,8 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Overflow = Vector2.Zero
-              PositionLocal = Vector2.Zero
+              Overflow = Vector3.Zero
+              PositionLocal = Vector3.Zero
               ElevationLocal = 0.0f
               MountOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
