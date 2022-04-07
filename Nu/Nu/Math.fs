@@ -161,6 +161,11 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         positionScaled + offsetScaled + Vector3 (extentScaled.X, 0.0f, extentScaled.Z)
 
+    member this.Copy =
+        let mutable copy = Transform.makeEmpty ()
+        Transform.assignByRef (&this, &copy)
+        copy
+
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
         left.Flags_ = right.Flags_ &&
