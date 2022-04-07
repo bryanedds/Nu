@@ -91,7 +91,6 @@ type [<StructuralEquality; NoComparison>] Justification =
 type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
       mutable Absolute : bool
-      mutable Offset : Vector3
       mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Image : Image AssetTag
       mutable Color : Color
@@ -103,7 +102,6 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
 type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
       mutable Absolute : bool
-      mutable Offset : Vector3
       mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Color : Color
       mutable Glow : Color
@@ -113,7 +111,6 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { Transform : Transform
       Absolute : bool
-      Offset : Vector3
       InsetOpt : Box2 option
       Image : Image AssetTag
       Color : Color
@@ -149,7 +146,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
 /// Describes particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
     { Elevation : single
-      PositionY : single
+      Horizon : single
       Absolute : bool
       Blend : Blend
       Image : Image AssetTag
@@ -168,19 +165,9 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
 /// A layered message to the rendering system.
 and [<NoEquality; NoComparison>] RenderLayeredMessage =
     { Elevation : single
-      PositionY : single
+      Horizon : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
-
-// NOTE: for experimenting with sorting render value types.
-///// A comparable layered message to the rendering system.
-//and [<NoEquality; NoComparison>] RenderLayeredMessageComparable =
-//    struct
-//        val Elevation : single
-//        val PositionY : single
-//        val AssetTag : obj AssetTag
-//        val RenderDescriptor : RenderDescriptor
-//        end
 
 /// A message to the rendering system.
 and [<NoEquality; NoComparison>] RenderMessage =
@@ -216,8 +203,8 @@ type RenderLayeredMessageComparer () =
         member this.Compare (left, right) =
             if left.Elevation < right.Elevation then -1
             elif left.Elevation > right.Elevation then 1
-            elif left.PositionY > right.PositionY then -1
-            elif left.PositionY < right.PositionY then 1
+            elif left.Horizon > right.Horizon then -1
+            elif left.Horizon < right.Horizon then 1
             else
                 let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
                 if assetNameCompare <> 0 then assetNameCompare
@@ -366,23 +353,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         for renderMessage in renderMessages do
             SdlRenderer.handleRenderMessage renderMessage renderer
 
-// NOTE: for experimenting with sorting render value types.
-//    static member private sortRenderLayeredMessages renderer =
-//        let messagesArray =
-//            renderer.RenderLayeredMessages.GetType().GetField("_items", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(messages) :?>
-//            RenderLayeredMessage array
-//        let comparison =
-//            ValueComparison
-//                (fun (left : RenderLayeredMessage byref) (right : RenderLayeredMessage byref) ->
-//                    let elevationCompare = left.Elevation.CompareTo right.Elevation
-//                    if elevationCompare <> 0 then elevationCompare else
-//                    let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
-//                    if positionYCompare <> 0 then positionYCompare else
-//                    let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
-//                    if assetNameCompare <> 0 then assetNameCompare else
-//                    strCmp left.AssetTag.PackageName right.AssetTag.PackageName)
-//        ValueSort.IntroSort (messagesArray, 0, messages.Count, comparison)
-
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessageComparer ())
 
@@ -405,12 +375,21 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let position = transform.Position.XY - Vector2.Multiply (offset.XY, transform.Size.XY)
+
+        // OPTIMIZATION: transform's bounds getter algorithm duplicated here to prevent transform from being copied...
+        let scale = transform.Scale
+        let sizeScaled = transform.Size * scale
+        let extentScaled = sizeScaled * 0.5f
+        let positionScaled = transform.Position - extentScaled
+        let offsetScaled = transform.Offset * scale
+        let bounds = Box3 (positionScaled + offsetScaled, sizeScaled)
+
+        let position = bounds.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
-        let size = transform.Size.XY
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let rotation = transform.Rotation.X
+        let size = bounds.Size.XY
+        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
@@ -664,7 +643,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 while index < particles.Length do
                     let particle = &particles.[index]
                     let transform = &particle.Transform
-                    let position = transform.Position.XY - Vector2.Multiply (particle.Offset.XY, transform.Size.XY)
+                    let position = transform.Position.XY - Vector2.Multiply (transform.Offset.XY, transform.Size.XY)
                     let positionView = position + positionOffset
                     let sizeView = transform.Size.XY * Matrix3x3.CreateScale(Vector3(view.Row0.X, view.Row1.Y, view.Row2.Z))
                     let color = &particle.Color
@@ -764,8 +743,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = { Position = v3Zero; Size = v3Zero; Rotation = v3Zero; Elevation = Single.MaxValue; Flags = 0u }
-                let sprite = { Transform = transform; Absolute = true; Offset = v3Zero; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let transform = { Position = v3Zero; Rotation = v3Zero; Scale = v3Zero; Offset = v3Zero; Size = v3Zero; Elevation = Single.MaxValue; Flags = 0u }
+                let sprite = { Transform = transform; Absolute = true; Offset = v3Dup 0.5f; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let bottomMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}
                 let leftMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f }}
                 let topMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.TopLeft.XYZ - v3 0.0f eyeMargin.Y 0.0f; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}
