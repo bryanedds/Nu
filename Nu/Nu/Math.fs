@@ -36,25 +36,31 @@ open TransformMasks
 
 /// Carries transformation data specific to an Entity.
 type [<NoEquality; NoComparison; Struct>] Transform =
-    { // cache line 1
-      mutable Position : Vector3
-      mutable Size : Vector3
+    { mutable Position : Vector3
       mutable Rotation : Vector3
+      mutable Scale : Vector3
+      mutable Offset : Vector3
+      mutable Size : Vector3
       mutable Elevation : single
       mutable Flags : uint }
-      // 4 bytes free
 
     /// Test transforms for equality.
     static member inline equalsByRef (left : Transform inref, right : Transform inref) =
         left.Position.X = right.Position.X &&
         left.Position.Y = right.Position.Y &&
         left.Position.Z = right.Position.Z &&
-        left.Size.X = right.Size.X &&
-        left.Size.Y = right.Size.Y &&
-        left.Size.Z = right.Size.Z &&
         left.Rotation.X = right.Rotation.X &&
         left.Rotation.Y = right.Rotation.Z &&
         left.Rotation.Z = right.Rotation.X &&
+        left.Scale.X = right.Scale.X &&
+        left.Scale.Y = right.Scale.Y &&
+        left.Scale.Z = right.Scale.Z &&
+        left.Offset.X = right.Offset.X &&
+        left.Offset.Y = right.Offset.Z &&
+        left.Offset.Z = right.Offset.X &&
+        left.Size.X = right.Size.X &&
+        left.Size.Y = right.Size.Y &&
+        left.Size.Z = right.Size.Z &&
         left.Elevation = right.Elevation &&
         left.Flags = right.Flags
         
@@ -65,9 +71,11 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     /// Assign the value of the left transform to the right.
     static member inline assignByRef (source : Transform inref, target : Transform byref) =
         target.Position <- source.Position
-        target.Size <- source.Size
         target.Rotation <- source.Rotation
+        target.Scale <- source.Scale
         target.Elevation <- source.Elevation
+        target.Offset <- source.Offset
+        target.Size <- source.Size
         target.Flags <- source.Flags
 
     /// Assign the value of the left transform to the right.
@@ -93,23 +101,48 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member inline this.EnabledLocal with get () = this.Flags &&& EnabledLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| EnabledLocalMask else this.Flags &&& ~~~EnabledLocalMask
     member inline this.VisibleLocal with get () = this.Flags &&& VisibleLocalMask <> 0u and set value = this.Flags <- if value then this.Flags ||| VisibleLocalMask else this.Flags &&& ~~~VisibleLocalMask
     member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditional from here.
-    member inline this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
-    member inline this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)
-    member inline this.Bottom with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y)
+
+    member this.Bounds with get () =
+        let scale = this.Scale
+        let sizeScaled = this.Size * scale
+        let extentScaled = sizeScaled * 0.5f
+        let positionScaled = this.Position - extentScaled
+        let offsetScaled = this.Offset * scale
+        Box3 (positionScaled + offsetScaled, sizeScaled)
+
+    member this.Center with get () =
+        let scale = this.Scale
+        let sizeScaled = this.Size * scale
+        let extentScaled = sizeScaled * 0.5f
+        let positionScaled = this.Position - extentScaled
+        let offsetScaled = this.Offset * scale
+        positionScaled + offsetScaled + extentScaled
+
+    member this.Bottom with get () =
+        let scale = this.Scale
+        let sizeScaled = this.Size * scale
+        let extentScaled = sizeScaled * 0.5f
+        let positionScaled = this.Position - extentScaled
+        let offsetScaled = this.Offset * scale
+        positionScaled + offsetScaled + Vector3 (extentScaled.X, 0.0f, extentScaled.Z)
 
     /// Make an empty transform.
     static member makeEmpty () =
         { Position = Vector3.Zero
-          Size = Vector3.One
           Rotation = Vector3.Zero
+          Scale = Vector3.Zero
+          Offset = Vector3.Zero
+          Size = Vector3.One
           Elevation = 0.0f
           Flags = 0u }
 
     /// Make the default transform.
     static member makeDefault () =
         { Position = Vector3.Zero
-          Size = Constants.Engine.EntitySizeDefault
           Rotation = Vector3.Zero
+          Scale = Vector3.Zero
+          Offset = Vector3.Zero
+          Size = Constants.Engine.EntitySizeDefault
           Elevation = 0.0f
           Flags = 0b110010001100100001u }
 
