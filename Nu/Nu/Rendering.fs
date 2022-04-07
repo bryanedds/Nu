@@ -176,7 +176,6 @@ and [<NoEquality; NoComparison>] RenderMessage =
     | HintRenderPackageDisuseMessage of string
     | ReloadRenderAssetsMessage
     //| ScreenFlashMessage of ...
-    //| ScreenShakeMessage of ...
 
 /// An asset that is used for rendering.
 and [<NoEquality; NoComparison>] RenderAsset =
@@ -739,15 +738,27 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = { Position = v3Zero; Rotation = v3Zero; Scale = v3Zero; Offset = v3Zero; Size = v3Zero; Elevation = Single.MaxValue; Flags = 0u }
-                let sprite = { Transform = transform; Absolute = true; Offset = v3Dup 0.5f; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
-                let bottomMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}
-                let leftMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomLeft.XYZ; Size = v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f }}
-                let topMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.TopLeft.XYZ - v3 0.0f eyeMargin.Y 0.0f; Size = v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f }}
-                let rightMargin = { sprite with Transform = { transform with Position = eyeMarginBounds.BottomRight.XYZ - v3 eyeMargin.X 0.0f 0.0f; Size = v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f }}
+                let transform = Transform.make2d ()
+                let sprite = { Transform = transform; Absolute = true; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let mutable bottomMarginTransform = transform
+                bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
+                bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
+                let bottomMargin = { sprite with Transform = bottomMarginTransform }
+                let mutable leftMarginTransform = transform
+                leftMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
+                leftMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
+                let leftMargin = { sprite with Transform = leftMarginTransform }
+                let mutable topMarginTransform = transform
+                topMarginTransform.Position <- eyeMarginBounds.TopLeft.XYZ - v3 0.0f eyeMargin.Y 0.0f
+                topMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
+                let topMargin = { sprite with Transform = topMarginTransform }
+                let mutable rightMarginTransform = transform
+                rightMarginTransform.Position <- eyeMarginBounds.BottomRight.XYZ - v3 eyeMargin.X 0.0f 0.0f
+                rightMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
+                let rightMargin = { sprite with Transform = rightMarginTransform }
                 [|bottomMargin; leftMargin; topMargin; rightMargin|]
             else [||]
-        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; PositionY = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
+        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Horizon = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
         renderer.RenderLayeredMessages.Add message
 
     /// Get the render context.
