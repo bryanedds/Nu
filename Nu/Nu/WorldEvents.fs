@@ -39,16 +39,16 @@ type [<StructuralEquality; NoComparison>] TransformData =
       Rotation : single }
 
 /// The data for a collision event.
-type [<StructuralEquality; NoComparison>] CollisionData =
-    { Collider : BodyShapeSource
-      Collidee : BodyShapeSource
+type [<StructuralEquality; NoComparison>] BodyCollisionData =
+    { BodyCollider : BodyShapeSource
+      BodyCollidee : BodyShapeSource
       Normal : Vector2
       Speed : single }
 
 /// The data for a separation event.
-type [<StructuralEquality; NoComparison>] SeparationData =
-    { Separator : BodyShapeSource
-      Separatee : BodyShapeSource }
+type [<StructuralEquality; NoComparison>] BodySeparationData =
+    { BodySeparator : BodyShapeSource
+      BodySeparatee : BodyShapeSource }
 
 /// The data for a life cycle event.
 type [<StructuralEquality; NoComparison>] LifeCycleData =
@@ -70,8 +70,8 @@ module Events =
     let Deselecting = stoa<unit> "Deselecting/Event"
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
-    let Collision = stoa<CollisionData> "Collision/Event"
-    let Separation = stoa<SeparationData> "Separation/Event"
+    let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
+    let BodySeparation = stoa<BodySeparationData> "BodySeparation/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"
