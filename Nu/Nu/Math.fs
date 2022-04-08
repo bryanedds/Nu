@@ -32,7 +32,6 @@ module TransformMasks =
     let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
     let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000u
     let [<Literal>] AffineMatrixDirtyMask =         0b010000000000000000000u
-    let [<Literal>] Is2dMask =                      0b100000000000000000000u
     let [<Literal>] DefaultFlags =                  0b000110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
@@ -77,7 +76,6 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member inline this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member inline this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
-    member inline this.Is2d with get () = this.Flags_ &&& Is2dMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| Is2dMask else this.Flags_ &&& ~~~Is2dMask
     member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditional from here.
 
     member inline this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
@@ -135,10 +133,8 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.ExtentScaled = this.Extent * this.Scale_
 
     member inline this.OffsetScaled =
-        if not this.Zotation_.IsIdentity then
-            if this.Is2d
-            then Vector3.Transform (this.Offset_, Quaternion.CreateFromAxisAngle (-Vector3.UnitZ, this.Angles_.X))
-            else Vector3.Transform (this.Offset_, this.Zotation_) * this.Scale_
+        if not this.Zotation_.IsIdentity
+        then Vector3.Transform (this.Offset_, this.Zotation_) * this.Scale_
         else this.Offset_ * this.Scale_
 
     member this.Bounds =
@@ -206,18 +202,8 @@ type [<NoEquality; NoComparison>] Transform =
     static member inline makeEmpty () =
         Unchecked.defaultof<Transform>
 
-    /// Make a transform intended for use with 2D entities.
-    static member make2d () =
-        let mutable transform = Unchecked.defaultof<Transform>
-        transform.Scale_ <- Vector3.One
-        transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
-        transform.AffineMatrixOpt_ <- ref Matrix4x4.Identity
-        transform.Size_ <- Vector3.One
-        transform.Flags_ <- DefaultFlags ||| Is2dMask
-        transform
-
-    /// Make a transform intended for use with 3D entities.
-    static member make3d () =
+    /// Make a transform with default values.
+    static member makeDefault () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Scale_ <- Vector3.One
         transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
