@@ -161,6 +161,9 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         positionScaled + offsetScaled + Vector3 (extentScaled.X, 0.0f, extentScaled.Z)
 
+    member inline this.InvalidateFast () =
+        this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+
     member this.Copy =
         let mutable copy = Transform.makeEmpty ()
         Transform.assignByRef (&this, &copy)
