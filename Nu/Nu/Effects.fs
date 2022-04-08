@@ -32,16 +32,17 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] TweenApplicator =
         | Sum
         | Delta
-        | Scale
+        | Scalar
         | Ratio
         | Set
 
     type [<StructuralEquality; NoComparison>] Slice =
         { Position : Vector3
-          Size : Vector3
-          Rotation : Vector3
-          Elevation : single
+          Scale : Vector3
           Offset : Vector3
+          Size : Vector3
+          Angles : Vector3
+          Elevation : single
           InsetOpt : Box2 option
           Color : Color
           Blend : Blend
@@ -131,10 +132,11 @@ module Effects =
         | PositionAbsolute of Vector3
         | PositionRelative of Vector3
         | Translation of Vector3
+        | Scale of Vector3
         | Offset of Vector3
+        | Angles of Vector3
+        | Degrees of Vector3
         | Size of Vector3
-        | Angle of Vector3
-        | Rotation of Vector3
         | Elevation of single
         | Inset of Box2
         | Color of Color
@@ -145,10 +147,11 @@ module Effects =
         | Enableds of LogicApplicator * Playback * LogicKeyFrame array
         | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
         | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Scales of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
         | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Angleses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+        | Degreeses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
         | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Angles of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Rotations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
         | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
         | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
@@ -191,8 +194,8 @@ module Effects =
             "Rate " +
             "Shift " +
             "Resource Expand " +
-            "Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Angle Rotation Elevation Color Glow Volume " +
-            "Enableds Positions Translations Offsets Insets Sizes Angles Rotations Elevations Colors Glows Volumes Aspects " +
+            "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angle Degrees Size Elevation Inset Color Glow Volume " +
+            "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Glows Volumes Aspects " +
             "Expand " +
             "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
@@ -322,7 +325,7 @@ module EffectSystem =
         match applicator with
         | Sum -> value + value2
         | Delta -> value - value2
-        | Scale -> mul (value, value2)
+        | Scalar -> mul (value, value2)
         | Ratio -> div (value, value2)
         | Set -> value2
 
@@ -391,14 +394,15 @@ module EffectSystem =
         | PositionAbsolute position -> { slice with Position = position }
         | PositionRelative position -> { slice with Position = slice.Position + position }
         | Translation translation ->
-            let oriented = Vector3.Transform (translation, Quaternion.CreateFromYawPitchRoll (slice.Rotation.Y, slice.Rotation.X, slice.Rotation.Z))
+            let oriented = Vector3.Transform (translation, Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z))
             let translated = slice.Position + oriented
             { slice with Position = translated }
-        | Size size -> { slice with Size = size }
-        | Angle degrees -> { slice with Rotation = Math.degreesToRadians3 degrees }
-        | Rotation rotation -> { slice with Rotation = rotation }
-        | Elevation elevation -> { slice with Elevation = elevation }
+        | Scale scale -> { slice with Scale = scale }
         | Offset offset -> { slice with Offset = offset }
+        | Angles angles -> { slice with Angles = angles }
+        | Degrees degrees -> { slice with Angles = Math.degreesToRadians3 degrees }
+        | Size size -> { slice with Size = size }
+        | Elevation elevation -> { slice with Elevation = elevation }
         | Inset inset -> { slice with InsetOpt = Some inset }
         | Color color -> { slice with Color = color }
         | Blend blend -> { slice with Blend = blend }
