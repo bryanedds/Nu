@@ -508,7 +508,7 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          EyeCenter : Vector3
+          EyePosition : Vector3
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
@@ -519,7 +519,7 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyeCenter = Vector3.Zero
+            let eyePosition = Vector3.Zero
             let eyeSize =
                 v2
                     (single Constants.Render.VirtualResolutionX)
@@ -531,7 +531,7 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreenOpt = None
-              EyeCenter = eyeCenter
+              EyePosition = eyePosition
               EyeSize = eyeSize
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()

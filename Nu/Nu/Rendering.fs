@@ -682,7 +682,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private renderDescriptor
         (viewAbsolute : Matrix3x3 byref,
          viewRelative : Matrix3x3 byref,
-         eyeCenter : Vector2,
+         eyePosition : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
          descriptor,
@@ -691,7 +691,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | SpriteDescriptor descriptor ->
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> Box2.Zero
             SdlRenderer.renderSprite
-                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+                (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Absolute, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
@@ -699,37 +699,37 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
-                    (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+                    (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                      &sprite.Transform, sprite.Absolute, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
         | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
-                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+                (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Absolute, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  renderer)
         | TextDescriptor descriptor ->
             SdlRenderer.renderText
-                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+                (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Absolute, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
                  renderer)
         | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
-                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin,
+                (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
         | RenderCallback callback ->
-            callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, eyeMargin, renderer)
+            callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
-    static member private renderLayeredMessages eyeCenter eyeSize eyeMargin renderer =
+    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
         | 0 ->
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let mutable viewAbsolute = (Math.getView2AbsoluteI eyeCenter eyeSize).InvertedView ()
-            let mutable viewRelative = (Math.getView2RelativeI eyeCenter eyeSize).InvertedView ()
+            let mutable viewAbsolute = (Math.getView2AbsoluteI eyePosition eyeSize).InvertedView ()
+            let mutable viewRelative = (Math.getView2RelativeI eyePosition eyeSize).InvertedView ()
             for message in renderer.RenderLayeredMessages do
-                SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
+                SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
@@ -793,11 +793,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         member renderer.EnqueueLayeredMessage layeredMessage =
             renderer.RenderLayeredMessages.Add layeredMessage
 
-        member renderer.Render eyeCenter eyeSize eyeMargin renderMessages =
+        member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
             SdlRenderer.handleRenderMessages renderMessages renderer
-            SdlRenderer.addEyeMarginMessage eyeCenter eyeSize eyeMargin renderer
+            SdlRenderer.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer
             SdlRenderer.sortRenderLayeredMessages renderer
-            SdlRenderer.renderLayeredMessages eyeCenter eyeSize eyeMargin renderer
+            SdlRenderer.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
             renderer.RenderLayeredMessages.Clear ()
 
         member renderer.CleanUp () =

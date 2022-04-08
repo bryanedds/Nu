@@ -965,7 +965,7 @@ module WorldModule =
         /// Swallow all handled events.
         static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, world)
-            
+
         /// Handle event by exiting app.
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)

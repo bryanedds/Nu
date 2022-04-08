@@ -1066,7 +1066,7 @@ module Math =
 
     /// Check that a point is within the given bounds.
     /// TODO: move this into Box2 definition.
-    let isPointInBounds2 (point : Vector2) (bounds : Box2) =
+    let isPointInBounds2d (point : Vector2) (bounds : Box2) =
         point.X >= bounds.Position.X &&
         point.Y >= bounds.Position.Y &&
         point.X <= bounds.Position.X + bounds.Size.X &&
@@ -1084,7 +1084,7 @@ module Math =
 
     /// Check that a bounds is within the given bounds.
     /// TODO: move this into Box2 definition.
-    let isBoundsInBounds2 (bounds : Box2) (bounds2 : Box2) =
+    let isBoundsInBounds2d (bounds : Box2) (bounds2 : Box2) =
         bounds.Position.X >= bounds2.Position.X &&
         bounds.Position.Y >= bounds2.Position.Y &&
         bounds.Position.X + bounds.Size.X <= bounds2.Position.X + bounds2.Size.X &&
@@ -1102,37 +1102,36 @@ module Math =
 
     /// Check that a bounds is intersecting the given bounds.
     /// TODO: move this into Box2 definition.
-    let isBoundsIntersectingBounds2 (bounds : Box2) (bounds2 : Box2) =
+    let isBoundsIntersectingBounds2d (bounds : Box2) (bounds2 : Box2) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
         bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
         bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
 
     /// Get the 2D view of the eye in absolute terms (world space).
-    let getView2Absolute (_ : Vector2) (_ : Vector2) =
+    let getViewAbsolute2d (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
         
     /// Get the 2D view of the eye in absolute terms (world space) with translation sliced on
     /// integers.
-    let getView2AbsoluteI (_ : Vector2) (_ : Vector2) =
+    let getViewAbsoluteI2d (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
 
     /// The relative 2D view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
-    let getView2Relative (eyeCenter : Vector2) (_ : Vector2) =
-        let translation = eyeCenter
-        Matrix3x3.CreateTranslation translation
+    let getViewRelative2d (eyePosition : Vector2) (_ : Vector2) =
+        Matrix3x3.CreateTranslation eyePosition
 
     /// The relative 2D view of the eye with translation sliced on integers. Good for rendering.
-    let getView2RelativeI (eyeCenter : Vector2) (_ : Vector2) =
-        let translation = eyeCenter
+    let getViewRelativeI2d (eyePosition : Vector2) (_ : Vector2) =
+        let translation = eyePosition
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3x3.CreateTranslation translationI
 
-    /// Perform a ray cast on a circle.
+    /// Perform a 2D ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
-    let rayCast2Circle (position : Vector2) (radius : single) (input : RayCast2Input inref) (output : RayCast2Output outref) =
+    let rayCastCircle2d (position : Vector2) (radius : single) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let mutable s = input.RayBegin - position
         let b = Vector2.Dot (s, s) - 2.0f * radius
         let mutable r = input.RayEnd - input.RayBegin
@@ -1148,9 +1147,9 @@ module Math =
             else false
         else false
 
-    /// Perform a ray cast on a rectangle.
+    /// Perform a 2D ray cast on a rectangle.
     /// BUG: There's a bug in AABB.RayCast that produces invalid normals.
-    let rayCast2Rectangle (rectangle : Vector4) (input : RayCast2Input inref) (output : RayCast2Output outref) =
+    let rayCastRectangle2d (rectangle : Vector4) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
@@ -1161,11 +1160,11 @@ module Math =
         output.Fraction <- outputAether.Fraction
         result
 
-    /// Perform a ray-cast on a line segment (edge).
+    /// Perform a 2D ray-cast on a line segment (edge).
     /// NOTE: due to unoptimized implementation, this function allocates one object per call!
     /// TODO: adapt the Aether code as was done for circle to improve performance and get rid of said
     /// allocation.
-    let rayCast2Segment segmentBegin segmentEnd (input : RayCast2Input inref) (output : RayCast2Output outref) =
+    let rayCastSegment2d segmentBegin segmentEnd (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable identity = Common.Transform.Identity // NOTE: superfluous copy of identity to satisfy EdgeShap.RayCast's use of byref instead of inref.
