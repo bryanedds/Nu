@@ -69,8 +69,8 @@ module WorldModule2 =
             let entities = Seq.append omniEntities selectedEntities
             let tree = World.makeEntityTree ()
             for entity in entities do
-                let boundsMax = entity.GetBoundsMax world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) boundsMax entity tree
+                let aabb = entity.GetAABB world
+                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb entity tree
             tree
 
         /// Resolve a relation to an address in the current script context.

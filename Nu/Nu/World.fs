@@ -254,9 +254,9 @@ module Nu =
                         (fun entityTree ->
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                let entityAABB = World.getEntityStateAABB entityState
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.addElement entityOmnipresent entityMaxBounds entity entityTree
+                                SpatialTree.addElement entityOmnipresent entityAABB entity entityTree
                             entityTree)
                         (World.getEntityTree world)
                 World.setEntityTree entityTree world
@@ -271,9 +271,9 @@ module Nu =
                         (fun entityTree ->
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                let entityAABB = World.getEntityStateAABB entityState
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.removeElement entityOmnipresent entityMaxBounds entity entityTree
+                                SpatialTree.removeElement entityOmnipresent entityAABB entity entityTree
                             entityTree)
                         (World.getEntityTree world)
                 World.setEntityTree entityTree world

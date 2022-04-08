@@ -813,7 +813,7 @@ module WorldTypes =
         member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
         member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
         member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
-        member this.Degrees with get () = Math.radiansToDegrees3 this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3 value
+        member this.Degrees with get () = Math.radiansToDegrees3d this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3d value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
@@ -838,6 +838,7 @@ module WorldTypes =
         member this.Bounds with get () = this.Transform.Bounds
         member this.Center with get () = this.Transform.Center
         member this.Bottom with get () = this.Transform.Bottom
+        member this.AABB with get () = this.Transform.AABB
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

@@ -472,7 +472,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
                     let tileBounds = Box2 (tilePositionView, tileSize)
                     let viewBounds = Box2 (Vector2.Zero, eyeSize)
-                    if Math.isBoundsIntersectingBounds2 tileBounds viewBounds then
+                    if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
                         let tileFlip =
                             match (tile.HorizontalFlip, tile.VerticalFlip) with
                             | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
@@ -726,8 +726,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         match targetResult with
         | 0 ->
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let mutable viewAbsolute = (Math.getView2AbsoluteI eyePosition eyeSize).InvertedView ()
-            let mutable viewRelative = (Math.getView2RelativeI eyePosition eyeSize).InvertedView ()
+            let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
+            let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
             for message in renderer.RenderLayeredMessages do
                 SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
         | _ ->
@@ -738,7 +738,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = Transform.make2d ()
+                let transform = Transform.makeEmpty ()
                 let sprite = { Transform = transform; Absolute = true; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
                 bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
