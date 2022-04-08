@@ -428,9 +428,25 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let oriented = Vector3.Transform (tweened, Quaternion.CreateFromYawPitchRoll (slice.Rotation.Y, slice.Rotation.X, slice.Rotation.Z))
+                let oriented = Vector3.Transform (tweened, Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z))
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position oriented applicator
                 { slice with Position = applied }
+            else slice
+        | Scales (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
+                { slice with Scale = applied }
+            else slice
+        | Offsets (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
+                { slice with Offset = applied }
             else slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -440,21 +456,21 @@ module EffectSystem =
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
                 { slice with Size = applied }
             else slice
-        | Angles (applicator, algorithm, playback, keyFrames) ->
+        | Angleses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3 slice.Rotation) tweened applicator
-                { slice with Rotation = Math.degreesToRadians3 applied }
+                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Angles tweened applicator
+                { slice with Angles = applied }
             else slice
-        | Rotations (applicator, algorithm, playback, keyFrames) ->
+        | Degreeses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Rotation tweened applicator
-                { slice with Rotation = applied }
+                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3 slice.Angles) tweened applicator
+                { slice with Angles = Math.degreesToRadians3 applied }
             else slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -463,14 +479,6 @@ module EffectSystem =
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Elevation tweened applicator
                 { slice with Elevation = applied }
-            else slice
-        | Offsets (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
-                { slice with Offset = applied }
             else slice
         | Insets (_, _, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -511,10 +519,7 @@ module EffectSystem =
                 | _ -> Log.info ("Expected Aspect for definition '" + definitionName + "'."); slice
             | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
         | Aspects aspects ->
-            Array.fold
-                (fun slice aspect -> evalAspect aspect slice effectSystem)
-                slice
-                aspects
+            Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
     
     and private evalAspects aspects slice effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
@@ -533,7 +538,7 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource aspects content slice history effectSystem =
+    and private evalStaticSprite resource aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -544,18 +549,18 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform =
-                    { Position = slice.Position
-                      Size = slice.Size
-                      Rotation = slice.Rotation
-                      Elevation = slice.Elevation
-                      Flags = 0u }
+                let mutable transform = Transform.makeDefault ()
+                transform.Position <- slice.Position
+                transform.Scale <- slice.Scale
+                transform.Offset <- slice.Offset
+                transform.Size <- slice.Size
+                transform.Angles <- slice.Angles
+                transform.Elevation <- slice.Elevation
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
                               Absolute = effectSystem.Absolute
-                              Offset = slice.Offset
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
@@ -589,18 +594,18 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform =
-                        { Position = slice.Position
-                          Size = slice.Size
-                          Rotation = slice.Rotation
-                          Elevation = slice.Elevation
-                          Flags = 0u }
+                    let mutable transform = Transform.makeDefault ()
+                    transform.Position <- slice.Position
+                    transform.Scale <- slice.Scale
+                    transform.Offset <- slice.Offset
+                    transform.Size <- slice.Size
+                    transform.Angles <- slice.Angles
+                    transform.Elevation <- slice.Elevation
                     let animatedSpriteView =
                         Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
                                  Absolute = effectSystem.Absolute
-                                 Offset = slice.Offset
                                  InsetOpt = Some inset
                                  Image = AssetTag.specialize<Image> image
                                  Color = slice.Color
@@ -627,12 +632,13 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform =
-                    { Position = slice.Position - slice.Size * 0.5f
-                      Size = slice.Size
-                      Rotation = slice.Rotation
-                      Elevation = slice.Elevation
-                      Flags = 0u }
+                let mutable transform = Transform.makeDefault ()
+                transform.Position <- slice.Position - slice.Size * 0.5f // assume centering
+                transform.Scale <- slice.Scale
+                transform.Offset <- slice.Offset
+                transform.Size <- slice.Size
+                transform.Angles <- slice.Angles
+                transform.Elevation <- slice.Elevation
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
@@ -671,11 +677,11 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalRepeat shift repetition incrementAspects content (slice : Slice) history effectSystem =
-    
+
         // eval repeat either as iterative or cycling
         let slice = { slice with Elevation = slice.Elevation + shift }
         match repetition with
-    
+
         // eval iterative repeat
         | Iterate count ->
             Array.fold
