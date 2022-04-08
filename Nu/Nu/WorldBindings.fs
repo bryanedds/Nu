@@ -43,7 +43,7 @@ module WorldBindings =
         "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
         "destroyEntities tryPickEntity writeEntityToFile readEntityFromFile " +
         "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
-        "getEyeCenter setEyeCenter getEyeSize getEyeMargin " +
+        "getEyePosition setEyePosition getEyeSize getEyeMargin " +
         "setEyeSize getEyeBounds getOmniScreenOpt setOmniScreenOpt " +
         "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds " +
         "getSelectedScreen setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute " +
@@ -2007,28 +2007,28 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEyeCenter world =
+    let getEyePosition world =
         let oldWorld = world
         try
-            let result = World.getEyeCenter world
+            let result = World.getEyePosition world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeCenter' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyePosition' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setEyeCenter value world =
+    let setEyePosition value world =
         let oldWorld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<Vector2> value world with
                 | Some value -> value :?> Vector2
                 | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to Vector2."
-            let result = World.setEyeCenter value world
+            let result = World.setEyePosition value world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeCenter' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyePosition' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getEyeSize world =
@@ -3590,23 +3590,23 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEyeCenterBinding fnName exprs originOpt world =
+    let evalGetEyePositionBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeCenter world
+            | [||] -> getEyePosition world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetEyeCenterBinding fnName exprs originOpt world =
+    let evalSetEyePositionBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|value|] -> setEyeCenter value world
+            | [|value|] -> setEyePosition value world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4095,8 +4095,8 @@ module WorldBindings =
              ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
-             ("getEyeCenter", { Fn = evalGetEyeCenterBinding; Pars = [||]; DocOpt = None })
-             ("setEyeCenter", { Fn = evalSetEyeCenterBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getEyePosition", { Fn = evalGetEyePositionBinding; Pars = [||]; DocOpt = None })
+             ("setEyePosition", { Fn = evalSetEyePositionBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeSize", { Fn = evalGetEyeSizeBinding; Pars = [||]; DocOpt = None })
              ("getEyeMargin", { Fn = evalGetEyeMarginBinding; Pars = [||]; DocOpt = None })
              ("setEyeSize", { Fn = evalSetEyeSizeBinding; Pars = [|"value"|]; DocOpt = None })

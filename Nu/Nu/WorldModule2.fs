@@ -809,8 +809,8 @@ module WorldModule2 =
 
         static member private actualizeScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition world) (World.getEyeSize world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
         static member private actualizeSimulants world =
@@ -868,13 +868,13 @@ module WorldModule2 =
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
-        static member private render renderMessages renderContext (renderer : Renderer) eyeCenter eyeSize eyeMargin =
+        static member private render renderMessages renderContext (renderer : Renderer) eyePosition eyeSize eyeMargin =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            renderer.Render eyeCenter eyeSize eyeMargin renderMessages
+            renderer.Render eyePosition eyeSize eyeMargin renderMessages
             if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
@@ -964,10 +964,10 @@ module WorldModule2 =
                                                                 let renderer = World.getRenderer world
                                                                 let renderMessages = renderer.PopMessages ()
                                                                 let world = World.setRenderer renderer world
-                                                                let eyeCenter = World.getEyeCenter world
+                                                                let eyePosition = World.getEyePosition world
                                                                 let eyeSize = World.getEyeSize world
                                                                 let eyeMargin = World.getEyeMargin world
-                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin)
+                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyePosition eyeSize eyeMargin)
                                                                 (Some rendererThread, world)
                                                             | None -> (None, world)
     
@@ -989,10 +989,10 @@ module WorldModule2 =
                                                                 let renderer = World.getRenderer world
                                                                 let renderMessages = renderer.PopMessages ()
                                                                 let world = World.setRenderer renderer world
-                                                                let eyeCenter = World.getEyeCenter world
+                                                                let eyePosition = World.getEyePosition world
                                                                 let eyeSize = World.getEyeSize world
                                                                 let eyeMargin = World.getEyeMargin world
-                                                                World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin
+                                                                World.render renderMessages renderContext renderer eyePosition eyeSize eyeMargin
                                                                 world
                                                             | None -> world
                                                         RenderTimer.Stop ()
