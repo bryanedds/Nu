@@ -386,17 +386,21 @@ module WorldTypes =
         inherit SimulantDispatcher ()
 
         static member Properties =
-            [Define? Position Vector2.Zero
-             Define? PositionLocal Vector2.Zero
+            [Define? Position Vector3.Zero
+             Define? PositionLocal Vector3.Zero
+             Define? Rotation Quaternion.Identity
+             Define? RotationLocal Quaternion.Identity
+             Define? Scale Vector3.One
+             Define? ScaleLocal Vector3.One
+             Define? Offset Vector3.Zero
+             Define? Angles Vector3.Zero
+             Define? Degrees Vector3.Zero
              Define? Size Constants.Engine.EntitySizeDefault
-             Define? Angle 0.0f
-             Define? Rotation 0.0f
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-             Define? Overflow Vector2.Zero
              Define? MountOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
@@ -698,21 +702,23 @@ module WorldTypes =
         { // cache line 1 (assuming 16 byte header)
           mutable Transform : Transform
           Dispatcher : EntityDispatcher
-          // cache line 2
+          // cache line 4
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
-          mutable Overflow : Vector3
           mutable PositionLocal : Vector3
+          // cache line 5 (half-way through RotationLocal)
+          mutable RotationLocal : Quaternion
+          mutable ScaleLocal : Vector3
           mutable ElevationLocal : single
-          // cache line 3
           mutable MountOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
+          // cache line 6
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          // cache line 4 (3/4-way through Id)
           Id : Guid
+          // cache line 7
           Surnames : string array }
 
         interface SimulantState with
@@ -728,8 +734,9 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Overflow = Vector3.Zero
               PositionLocal = Vector3.Zero
+              RotationLocal = Quaternion.Identity
+              ScaleLocal = Vector3.One
               ElevationLocal = 0.0f
               MountOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
@@ -746,8 +753,7 @@ module WorldTypes =
         /// Copy an entity state, invalidating the incoming reference.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
-            /// OPTIMIZATION: inlined invalidation masking for speed.
-            entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
+            entityState.Transform.InvalidateFast () /// OPTIMIZATION: invalidate fast.
             entityState'
 
         /// Check that there exists an xtenstion proprty that is a runtime property.
@@ -802,11 +808,13 @@ module WorldTypes =
             Transform.assignByRef (&value, &entityState.Transform)
             entityState
 
-        // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
+        member this.Rotation with get () = this.Transform.Zotation and set value = this.Transform.Zotation <- value
+        member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
+        member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
+        member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
+        member this.Degrees with get () = Math.radiansToDegrees3 this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3 value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
-        member this.Angle with get () = Math.radiansToDegrees3 this.Transform.Rotation and set value = this.Transform.Rotation <- Math.degreesToRadians3 value
-        member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
         member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
