@@ -218,7 +218,7 @@ module WorldEntityModule =
         member this.GetBoundsOverflow world = World.getEntityBoundsOverflow this world
 
         /// Get an entity's bounds maximum.
-        member this.GetBoundsMax world = World.getEntityBoundsMax this world
+        member this.GetAABB world = World.getEntityBoundsMax this world
 
         /// Check that an entity is in the camera's view.
         member this.GetInView world = World.getEntityInView this world

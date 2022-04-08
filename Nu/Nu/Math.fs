@@ -145,6 +145,10 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
+    member this.AABB =
+        let bounds = this.Bounds
+        bounds.Orient this.Zotation_
+
     member this.Center =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
@@ -836,6 +840,8 @@ module Quaternion =
     type Quaternion with
         member this.PitchYawRoll =
             MathHelper.PitchYawRoll &this
+    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
+    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
 
 [<AutoOpen>]
 module Color =
@@ -1002,7 +1008,7 @@ module Math =
         MathHelper.RadiansToDegrees -radians
 
     /// Convert radians to degrees in 3D.
-    let radiansToDegrees3 (radians : Vector3) =
+    let radiansToDegrees3d (radians : Vector3) =
         v3
             (radiansToDegrees radians.X)
             (radiansToDegrees radians.Y)
@@ -1013,7 +1019,7 @@ module Math =
         MathHelper.DegreesToRadians -degrees
 
     /// Convert degrees to radians in 3D.
-    let degreesToRadians3 (degrees : Vector3) =
+    let degreesToRadians3d (degrees : Vector3) =
         v3
             (degreesToRadians degrees.X)
             (degreesToRadians degrees.Y)
@@ -1036,7 +1042,7 @@ module Math =
         degreesToRadians
 
     /// Snap a Vector3 radian value to an offset.
-    let snap3R offset (v3 : Vector3) =
+    let snapR3d offset (v3 : Vector3) =
         Vector3 (snapR offset v3.X, snapR offset v3.Y, snapR offset v3.Z)
 
     /// Snap an single float value to an offset.
@@ -1044,14 +1050,14 @@ module Math =
         single (snap offset (int value))
 
     /// Snap a Vector3 value to an offset.
-    let snap3F offset (v3 : Vector3) =
+    let snapF3d offset (v3 : Vector3) =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
 
     /// Snap a Transform value to an offset.
     let snapTransform positionSnap rotationSnap (transform : Transform) =
         let mutable transform = transform
-        transform.Position <- snap3F positionSnap transform.Position
-        transform.Angles <- snap3R rotationSnap transform.Angles
+        transform.Position <- snapF3d positionSnap transform.Position
+        transform.Angles <- snapR3d rotationSnap transform.Angles
         transform
 
     /// Check that a point is within the given bounds.

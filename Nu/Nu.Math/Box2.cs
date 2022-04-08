@@ -137,6 +137,30 @@ namespace Nu
         }
 
         /// <summary>
+        /// Create an oriented bounding box.
+        /// </summary>
+        public Box2 Orient(Quaternion rotation)
+        {
+            var positionOriented = Vector2.Transform(Position, rotation);
+            var positionOriented2 = Vector2.Transform(Position + Size, rotation);
+            return Enclose(positionOriented, positionOriented2);
+        }
+
+        /// <summary>
+        /// Create a bounding box by enclosing two points.
+        /// </summary>
+        public static Box2 Enclose(Vector2 point, Vector2 point2)
+        {
+            var position = new Vector2(
+                Math.Min(point.X, point2.X),
+                Math.Min(point.Y, point2.Y));
+            var position2 = new Vector2(
+                Math.Max(point.X, point2.X),
+                Math.Max(point.Y, point2.Y));
+            return new Box2(position, position2 - position);
+        }
+
+        /// <summary>
         /// Equality comparator.
         /// </summary>
         /// <param name="left">The left operand.</param>
