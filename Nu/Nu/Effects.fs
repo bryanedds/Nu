@@ -400,7 +400,7 @@ module EffectSystem =
         | Scale scale -> { slice with Scale = scale }
         | Offset offset -> { slice with Offset = offset }
         | Angles angles -> { slice with Angles = angles }
-        | Degrees degrees -> { slice with Angles = Math.degreesToRadians3 degrees }
+        | Degrees degrees -> { slice with Angles = Math.degreesToRadians3d degrees }
         | Size size -> { slice with Size = size }
         | Elevation elevation -> { slice with Elevation = elevation }
         | Inset inset -> { slice with InsetOpt = Some inset }
@@ -469,8 +469,8 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3 slice.Angles) tweened applicator
-                { slice with Angles = Math.degreesToRadians3 applied }
+                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3d slice.Angles) tweened applicator
+                { slice with Angles = Math.degreesToRadians3d applied }
             else slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then

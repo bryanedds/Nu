@@ -112,7 +112,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AffineMatrix =
         if notNull (this.AffineMatrixOpt_ :> obj) then
             if this.AffineMatrixDirty then
-                /// TODO: P1: Optimize this hella!
+                // TODO: P1: optimize this hella!
                 let positionMatrix = Matrix4x4.CreateTranslation this.Position_
                 let rotationMatrix = this.RotationMatrix
                 let scaleMatrix = Matrix4x4.CreateScale this.Scale_
@@ -121,12 +121,12 @@ type [<NoEquality; NoComparison>] Transform =
         else Matrix4x4.Identity
 
     member inline this.Extent = this.Size_ * 0.5f
-    member inline this.Right = this.RotationMatrix.Row0
-    member inline this.Up = this.RotationMatrix.Row1
-    member inline this.Forward = -this.RotationMatrix.Row2
-    member inline this.Left = -this.RotationMatrix.Row0
-    member inline this.Down = -this.RotationMatrix.Row1
-    member inline this.Backward = this.RotationMatrix.Row2
+    member inline this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
+    member inline this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
+    member inline this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
+    member inline this.Left = -this.Right
+    member inline this.Down = -this.Up
+    member inline this.Backward = -this.Forward
 
     member inline this.PositionScaled = this.Position_ * this.Scale_
     member inline this.SizeScaled = this.Size_ * this.Scale_

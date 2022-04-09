@@ -41,7 +41,6 @@
   <ItemGroup>
     <Compile Include="Box2.cs" />
     <Compile Include="Box3.cs" />
-    <Compile Include="Matrix4x4.cs" />
     <Compile Include="ReadOnlySet.cs" />
     <Compile Include="ValueSort.cs" />
     <Compile Include="MathHelper.cs" />
