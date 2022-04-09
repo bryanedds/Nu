@@ -521,14 +521,16 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
-            let mounterState = World.getEntityState mounter world
-            let rotationWorld = World.getEntityZotation mount world
+            let mountState = World.getEntityState mount world
+            let rotationWorld = mountState.Zotation
+            let scaleWorld = mountState.Scale
             let affineMatrixWorld = World.getEntityAffineMatrix mount world
             let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
             let affineMatrix = affineMatrixWorld * affineMatrixLocal
+            let mounterState = World.getEntityState mounter world
             let position = Vector3.Transform (mounterState.PositionLocal, affineMatrix)
-            let rotation = mounterState.ZotationLocal * rotationWorld // mul local before world
-            let scale = Vector3.Transform (mounterState.ScaleLocal, affineMatrix)
+            let rotation = mounterState.ZotationLocal * rotationWorld
+            let scale = mounterState.ScaleLocal * scaleWorld
             let mutable transform = mounterState.Transform
             transform.Position <- position
             transform.Zotation <- rotation
@@ -639,7 +641,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             if v3Neq value entityState.Transform.Position then
                 if entityState.Optimized then
-                    entityState.Transform.Position <- value
+                    entityState.Position <- value
                     let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
@@ -656,7 +658,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             if v3Neq value entityState.PositionLocal then
 
-                // OPTIMIZATION: do position updates and propagation in-place as much as possible.
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
                     let position =
@@ -669,26 +671,147 @@ module WorldModuleEntity =
                     let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
 
-                else // do position updates and propagation out-of-place.
+                else // do updates and propagation out-of-place.
 
                     // update PositionLocal property
                     let struct (_, world) =
                         World.updateEntityState (fun entityState ->
-                            if value <> entityState.PositionLocal then
+                            if v3Neq value entityState.PositionLocal then
                                 let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                                 entityState.PositionLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
                             Property? PositionLocal value entity world
 
-                    // compute mount position
-                    let positionMount =
-                        match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
-                        | _ -> v3Zero
+                    // compute position
+                    let position =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let affineMatrix = World.getEntityAffineMatrix mount world
+                            Vector3.Transform (value, affineMatrix)
+                        | _ -> value
 
                     // update Position property
-                    let world = World.setEntityPosition (positionMount + value) entity world |> snd'
+                    let world = World.setEntityPosition position entity world |> snd'
+                    struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
+
+        static member internal setEntityZotation value entity world =
+            let entityState = World.getEntityState entity world
+            if quatNeq value entityState.Transform.Zotation then
+                if entityState.Optimized then
+                    entityState.Zotation <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Zotation <- value
+                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+            else struct (false, world)
+
+        static member internal setEntityRotationLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if quatNeq value entityState.ZotationLocal then
+
+                // OPTIMIZATION: do rotation updates and propagation in-place as much as possible.
+                if entityState.Optimized then
+                    entityState.ZotationLocal <- value
+                    let rotation =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let rotation = World.getEntityZotation mount world
+                            rotation * value
+                        | _ -> value
+                    entityState.Zotation <- rotation
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+
+                else // do rotation updates and propagation out-of-place.
+
+                    // update RotationLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if quatNeq value entityState.ZotationLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ZotationLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? PositionLocal value entity world
+
+                    // compute rotation
+                    let rotation =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let rotationMatrix = World.getEntityZotation mount world
+                            rotationMatrix * value
+                        | _ -> value
+
+                    // update Rotation property
+                    let world = World.setEntityZotation rotation entity world |> snd'
+                    struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
+
+        static member internal setEntityScale value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.Transform.Scale then
+                if entityState.Optimized then
+                    entityState.Scale <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Scale <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityScaleLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.ScaleLocal then
+
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
+                if entityState.Optimized then
+                    entityState.ScaleLocal <- value
+                    let scale =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let scale = World.getEntityScale mount world
+                            value * scale
+                        | _ -> value
+                    entityState.Scale <- scale
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+
+                else // do updates and propagation out-of-place.
+
+                    // update ScaleLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if v3Neq value entityState.ScaleLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ScaleLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? ScaleLocal value entity world
+
+                    // compute scale
+                    let scale =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let scale = World.getEntityScale mount world
+                            value * scale
+                        | _ -> value
+
+                    // update Scale property
+                    let world = World.setEntityScale scale entity world |> snd'
                     struct (true, world)
 
             // nothing changed
@@ -705,7 +828,7 @@ module WorldModuleEntity =
                     transform.Size <- value
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
-        
+
         static member internal setEntityAngle value entity world =
             let entityState = World.getEntityState entity world
             let radians = Math.degreesToRadians value
@@ -716,18 +839,6 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Rotation <- radians
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
-            else struct (false, world)
-        
-        static member internal setEntityRotation value entity world =
-            let entityState = World.getEntityState entity world
-            if value <> entityState.Transform.Rotation then
-                if entityState.Optimized then
-                    entityState.Transform.Rotation <- value
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Rotation <- value
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
 
