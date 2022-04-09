@@ -946,12 +946,6 @@ module RigidBodyFacetModule =
         member this.GetBodyBounds world : Vector4 = this.Get Property? BodyBounds world
         member private this.SetBodyBounds (value : Vector4) world = this.Set Property? BodyBounds value world
         member this.BodyBounds = lensReadOnly Property? BodyBounds this.GetBodyBounds this
-        member this.GetBodyCenter world : Vector2 = this.Get Property? BodyCenter world
-        member private this.SetBodyCenter (value : Vector2) world = this.Set Property? BodyCenter value world
-        member this.BodyCenter = lensReadOnly Property? BodyCenter this.GetBodyCenter this
-        member this.GetBodyBottom world : Vector2 = this.Get Property? BodyBottom world
-        member private this.SetBodyBottom (value : Vector2) world = this.Set Property? BodyBottom value world
-        member this.BodyBottom = lensReadOnly Property? BodyBottom this.GetBodyBottom this
 
     type RigidBodyFacet () =
         inherit RigidBodyFastFacet ()
@@ -962,8 +956,6 @@ module RigidBodyFacetModule =
             let world = entity.SetBodyAngle (entity.GetAngle world) world
             let world = entity.SetBodyRotation (entity.GetRotation world) world
             let world = entity.SetBodyBounds (entity.GetBounds world) world
-            let world = entity.SetBodyCenter (entity.GetCenter world) world
-            let world = entity.SetBodyBottom (entity.GetBottom world) world
             world
 
         static member Properties =
@@ -971,9 +963,7 @@ module RigidBodyFacetModule =
              define Entity.BodySize Constants.Engine.EntitySizeDefault
              define Entity.BodyAngle 0.0f
              define Entity.BodyRotation 0.0f
-             define Entity.BodyBounds (v4Bounds v2Zero Constants.Engine.EntitySizeDefault)
-             define Entity.BodyCenter (Constants.Engine.EntitySizeDefault * 0.5f)
-             define Entity.BodyBottom ((Constants.Engine.EntitySizeDefault * 0.5f).WithY 0.0f)]
+             define Entity.BodyBounds (v4Bounds v2Zero Constants.Engine.EntitySizeDefault)]
 
         override this.Register (entity, world) =
             let world = base.Register (entity, world)
