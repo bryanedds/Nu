@@ -145,10 +145,6 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
-    member this.AABB =
-        let bounds = this.Bounds
-        bounds.Orient this.Rotation_
-
     member this.Center =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
@@ -164,6 +160,10 @@ type [<NoEquality; NoComparison>] Transform =
         let positionScaled = this.Position_ - extentScaled
         let offsetScaled = this.OffsetScaled
         positionScaled + offsetScaled + Vector3 (extentScaled.X, 0.0f, extentScaled.Z)
+
+    member this.AABB =
+        let bounds = this.Bounds
+        bounds.Orient this.Rotation_
 
     member inline this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
@@ -834,6 +834,18 @@ type Vector4iConverter () =
                 failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4i -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
+
+[<AutoOpen>]
+module Box2 =
+    type Box2 with
+        member this.XYZ =
+            Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+
+[<AutoOpen>]
+module Box3 =
+    type Box3 with
+        member this.XY =
+            Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
 
 [<AutoOpen>]
 module Quaternion =
