@@ -710,10 +710,11 @@ module WorldTypes =
           // cache line 5 (half-way through RotationLocal)
           mutable ZotationLocal : Quaternion
           mutable ScaleLocal : Vector3
+          mutable AnglesLocal : Vector3
+          // cache line 6 (2/3 into AnglesLocal)
           mutable ElevationLocal : single
           mutable MountOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
-          // cache line 6
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
@@ -737,6 +738,7 @@ module WorldTypes =
               PositionLocal = Vector3.Zero
               ZotationLocal = Quaternion.Identity
               ScaleLocal = Vector3.One
+              AnglesLocal = Vector3.Zero
               ElevationLocal = 0.0f
               MountOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
