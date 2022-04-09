@@ -835,6 +835,8 @@ module WorldTypes =
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.RotationMatrix with get () = this.Transform.RotationMatrix
+        member this.AffineMatrix with get () = this.Transform.AffineMatrix
         member this.Bounds with get () = this.Transform.Bounds
         member this.Center with get () = this.Transform.Center
         member this.Bottom with get () = this.Transform.Bottom

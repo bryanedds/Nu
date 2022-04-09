@@ -76,7 +76,7 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member inline this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member inline this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
-    member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditional from here.
+    member inline this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
 
     member inline this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
     member inline this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true
