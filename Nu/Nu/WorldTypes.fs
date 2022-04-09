@@ -708,7 +708,7 @@ module WorldTypes =
           mutable Model : DesignerProperty
           mutable PositionLocal : Vector3
           // cache line 5 (half-way through RotationLocal)
-          mutable ZotationLocal : Quaternion
+          mutable RotationLocal : Quaternion
           mutable ScaleLocal : Vector3
           mutable AnglesLocal : Vector3
           // cache line 6 (2/3 into AnglesLocal)
@@ -736,7 +736,7 @@ module WorldTypes =
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               PositionLocal = Vector3.Zero
-              ZotationLocal = Quaternion.Identity
+              RotationLocal = Quaternion.Identity
               ScaleLocal = Vector3.One
               AnglesLocal = Vector3.Zero
               ElevationLocal = 0.0f
@@ -811,7 +811,7 @@ module WorldTypes =
             entityState
 
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
-        member this.Zotation with get () = this.Transform.Zotation and set value = this.Transform.Zotation <- value
+        member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
         member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
         member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
