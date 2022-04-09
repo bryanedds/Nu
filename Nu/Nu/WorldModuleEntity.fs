@@ -659,11 +659,13 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do position updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
-                    let positionMount =
+                    let position =
                         match Option.bind (tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
-                        | _ -> v3Zero
-                    entityState.Transform.Position <- positionMount + value
+                        | Some mount when World.getEntityExists mount world ->
+                            let affineMatrix = World.getEntityAffineMatrix mount world
+                            Vector3.Transform (value, affineMatrix)
+                        | _ -> value
+                    entityState.Position <- position
                     let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
 
