@@ -23,49 +23,54 @@ module WorldEntityModule =
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
         member this.GetTransform world = (World.getEntityState this world).Transform
-        member this.SetTransform value world = World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
+        member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
-        member this.GetBounds world = World.getEntityBounds this world
-        member this.SetBounds value world = World.setEntityBounds value this world |> snd'
-        member this.Bounds = lens Property? Bounds this.GetBounds this.SetBounds this
+        member this.GetAABB world = World.getEntityAABB this world
+        member this.AABB = lensReadOnly Property? Bounds this.GetAABB this
+        member this.GetDimensions world = World.getEntityDimensions this world
+        member this.Dimensions = lensReadOnly Property? Bounds this.GetDimensions this
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
         member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> snd'
         member this.PositionLocal = lens Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
-        member this.GetCenter world = World.getEntityCenter this world
-        member this.SetCenter value world = World.setEntityCenter value this world |> snd'
-        member this.Center = lens Property? Center this.GetCenter this.SetCenter this
-        member this.GetBottom world = World.getEntityBottom this world
-        member this.SetBottom value world = World.setEntityBottom value this world |> snd'
-        member this.Bottom = lens Property? Bottom this.GetBottom this.SetBottom this
-        member this.GetSize world = World.getEntitySize this world
-        member this.SetSize value world = World.setEntitySize value this world |> snd'
-        member this.Size = lens Property? Size this.GetSize this.SetSize this
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world |> snd'
         member this.Rotation = lens Property? Rotation this.GetRotation this.SetRotation this
-        member this.GetAngle world = World.getEntityAngle this world
-        member this.SetAngle value world = World.setEntityAngle value this world |> snd'
-        member this.Angle = lens Property? Angle this.GetAngle this.SetAngle this
+        member this.GetRotationLocal world = World.getEntityRotationLocal this world
+        member this.SetRotationLocal value world = World.setEntityRotationLocal value this world |> snd'
+        member this.RotationLocal = lens Property? RotationLocal this.GetRotationLocal this.SetRotationLocal this
+        member this.GetScale world = World.getEntityScale this world
+        member this.SetScale value world = World.setEntityScale value this world |> snd'
+        member this.Scale = lens Property? Scale this.GetScale this.SetScale this
+        member this.GetScaleLocal world = World.getEntityScaleLocal this world
+        member this.SetScaleLocal value world = World.setEntityScaleLocal value this world |> snd'
+        member this.ScaleLocal = lens Property? ScaleLocal this.GetScaleLocal this.SetScaleLocal this
+        member this.GetOffset world = World.getEntityOffset this world
+        member this.SetOffset value world = World.setEntityOffset value this world |> snd'
+        member this.Offset = lens Property? Offset this.GetOffset this.SetOffset this
+        member this.GetAngles world = World.getEntityAngles this world
+        member this.SetAngles value world = World.setEntityAngles value this world |> snd'
+        member this.Angles = lens Property? Angles this.GetAngles this.SetAngles this
+        member this.GetAnglesLocal world = World.getEntityAnglesLocal this world
+        member this.SetAnglesLocal value world = World.setEntityAnglesLocal value this world |> snd'
+        member this.AnglesLocal = lens Property? AnglesLocal this.GetAnglesLocal this.SetAnglesLocal this
+        member this.GetSize world = World.getEntitySize this world
+        member this.SetSize value world = World.setEntitySize value this world |> snd'
+        member this.Size = lens Property? Size this.GetSize this.SetSize this
         member this.GetElevation world = World.getEntityElevation this world
         member this.SetElevation value world = World.setEntityElevation value this world |> snd'
         member this.Elevation = lens Property? Elevation this.GetElevation this.SetElevation this
         member this.GetElevationLocal world = World.getEntityElevationLocal this world
         member this.SetElevationLocal value world = World.setEntityElevationLocal value this world |> snd'
         member this.ElevationLocal = lens Property? ElevationLocal this.GetElevationLocal this.SetElevationLocal this
-        member this.GetFlags world = World.getEntityFlags this world
-        member this.Flags = lensReadOnly Property? Flags this.GetFlags this
         member this.GetOmnipresent world = World.getEntityOmnipresent this world
         member this.SetOmnipresent value world = World.setEntityOmnipresent value this world |> snd'
         member this.Omnipresent = lens Property? Omnipresent this.GetOmnipresent this.SetOmnipresent this
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
         member this.Absolute = lens Property? Absolute this.GetAbsolute this.SetAbsolute this
-        member this.GetOverflow world = World.getEntityOverflow this world
-        member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
-        member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
         member this.GetMountOpt world = World.getEntityMountOpt this world
         member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
         member this.MountOpt = lens Property? MountOpt this.GetMountOpt this.SetMountOpt this
@@ -140,7 +145,7 @@ module WorldEntityModule =
             world
 
         /// Set the transform of an entity.
-        member this.SetTransformByRef (value : Transform inref, world) =
+        member this.SetTransformByRef (value : Transform byref, world) =
             World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity without generating any change events.
@@ -208,20 +213,20 @@ module WorldEntityModule =
         member this.DetachProperty propertyName world =
             World.detachEntityProperty propertyName this world
 
-        /// Get an entity's sorting priority.
-        member this.GetSortingPriority world = World.getEntitySortingPriority this world
+        /// Get an entity's sorting priority in 2d.
+        member this.GetSortingPriority2d world = World.getEntitySortingPriority2d this world
 
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
-        /// Get an entity's bounds, taking into account its overflow.
-        member this.GetBoundsOverflow world = World.getEntityBoundsOverflow this world
+        /// Get an entity's dimensions.
+        member this.GetDimensions world = World.getEntityDimensions this world
 
-        /// Get an entity's bounds maximum.
-        member this.GetAABB world = World.getEntityBoundsMax this world
+        /// Get an entity's bounding box.
+        member this.GetAABB world = World.getEntityAABB this world
 
         /// Check that an entity is in the camera's view.
-        member this.GetInView world = World.getEntityInView this world
+        member this.GetInView2d world = World.getEntityInView2d this world
 
         /// Check that an entity is selected.
         member this.IsSelected world =
@@ -294,8 +299,8 @@ module WorldEntityModule =
         /// Traverse an entity's children.
         member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
 
-        /// Apply physics changes to an entity.
-        member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
+        /// Apply physics changes to an entity in 2D.
+        member this.ApplyPhysics2d position rotation linearVelocity angularVelocity world =
             let oldTransform = this.GetTransform world
             let mutable newTransform = oldTransform
             let world =
@@ -377,7 +382,7 @@ module WorldEntityModule =
                     match entitiesOpt with
                     | Some entities ->
                         seq {
-                            yield! entities |> Seq.map cast<Entity>
+                            yield! Seq.map cast<Entity> entities
                             for entity in entities do
                                 yield! getEntitiesRec entity world }
                     | None -> Seq.empty

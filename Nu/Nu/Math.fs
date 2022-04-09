@@ -137,7 +137,7 @@ type [<NoEquality; NoComparison>] Transform =
         then Vector3.Transform (this.Offset_, this.Rotation_) * this.Scale_
         else this.Offset_ * this.Scale_
 
-    member this.Bounds =
+    member this.Dimensions =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
@@ -145,33 +145,17 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.OffsetScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
-    member this.Center =
-        let scale = this.Scale_
-        let sizeScaled = this.Size_ * scale
-        let extentScaled = sizeScaled * 0.5f
-        let positionScaled = this.Position_ - extentScaled
-        let offsetScaled = this.OffsetScaled
-        positionScaled + offsetScaled + extentScaled
-
-    member this.Bottom =
-        let scale = this.Scale_
-        let sizeScaled = this.Size_ * scale
-        let extentScaled = sizeScaled * 0.5f
-        let positionScaled = this.Position_ - extentScaled
-        let offsetScaled = this.OffsetScaled
-        positionScaled + offsetScaled + Vector3 (extentScaled.X, 0.0f, extentScaled.Z)
-
     member this.AABB =
-        let bounds = this.Bounds
-        bounds.Orient this.Rotation_
-
-    member inline this.InvalidateFast () =
-        this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+        let dimensions = this.Dimensions
+        dimensions.Orient this.Rotation_
 
     member this.Copy =
         let mutable copy = Transform.makeEmpty ()
         Transform.assignByRef (&this, &copy)
         copy
+
+    member inline this.InvalidateFast () =
+        this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
@@ -183,7 +167,7 @@ type [<NoEquality; NoComparison>] Transform =
         left.Angles_.Equals right.Angles_ &&
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_
-        
+
     /// Test transforms for equality.
     static member inline equals (left : Transform) (right : Transform) =
         Transform.equalsByRef (&left, &right)
