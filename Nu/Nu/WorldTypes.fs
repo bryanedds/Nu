@@ -259,7 +259,7 @@ module WorldTypes =
     /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortElevation : single
-          SortPositionY : single
+          SortHorizon : single
           SortTarget : Simulant }
 
         static member equals left right =
@@ -799,10 +799,6 @@ module WorldTypes =
             let xtension = Xtension.detachProperty name entityState.Xtension
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
-
-        /// Get an entity state's transform.
-        static member getTransform entityState =
-            entityState.Transform
 
         /// Set an entity state's transform.
         static member setTransformByRef (value : Transform inref, entityState : EntityState) =
