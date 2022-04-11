@@ -836,6 +836,7 @@ module Quaternion =
     type Quaternion with
         member this.PitchYawRoll =
             MathHelper.PitchYawRoll &this
+    let quatId = Quaternion.Identity
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
 
