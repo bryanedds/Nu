@@ -219,12 +219,6 @@ module WorldEntityModule =
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
-        /// Get an entity's dimensions.
-        member this.GetDimensions world = World.getEntityDimensions this world
-
-        /// Get an entity's bounding box.
-        member this.GetAABB world = World.getEntityAABB this world
-
         /// Check that an entity is in the camera's view.
         member this.GetInView2d world = World.getEntityInView2d this world
 
@@ -245,6 +239,7 @@ module WorldEntityModule =
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
+        /// TODO: P1: make this work for more than just position!
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             let world =
                 match
@@ -262,7 +257,7 @@ module WorldEntityModule =
                     else world
                 | (Some mountOld, None) ->
                     if mountOld.Exists world then
-                        let world = this.SetPositionLocal v2Zero world
+                        let world = this.SetPositionLocal v3Zero world
                         let world = this.SetElevationLocal 0.0f world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
@@ -299,13 +294,13 @@ module WorldEntityModule =
         /// Traverse an entity's children.
         member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
 
-        /// Apply physics changes to an entity in 2D.
-        member this.ApplyPhysics2d position rotation linearVelocity angularVelocity world =
-            let oldTransform = this.GetTransform world
+        /// Apply physics changes to an entity.
+        member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
+            let mutable oldTransform = this.GetTransform world
             let mutable newTransform = oldTransform
             let world =
-                if  oldTransform.Position <> position ||
-                    oldTransform.Rotation <> rotation then
+                if  v3Neq oldTransform.Position position ||
+                    quatNeq oldTransform.Rotation rotation then
                     newTransform.Position <- position
                     newTransform.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&newTransform, world)
@@ -432,7 +427,7 @@ module WorldEntityModule =
             entities |>
             Array.ofSeq |>
             Array.rev |>
-            Array.map (fun (entity : Entity) -> entity.GetSortingPriority world) |>
+            Array.map (fun (entity : Entity) -> entity.GetSortingPriority2d world) |>
             Array.sortStableWith SortPriority.compare |>
             Array.map (fun p -> p.SortTarget :?> Entity)
 

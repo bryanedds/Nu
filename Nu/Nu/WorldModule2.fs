@@ -345,8 +345,8 @@ module WorldModule2 =
             let world = splashGroup.SetPersistent false world
             let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
             let world = splashSprite.SetPersistent false world
-            let world = splashSprite.SetSize cameraEyeSize world
-            let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+            let world = splashSprite.SetSize cameraEyeSize.XYZ world
+            let world = splashSprite.SetPosition (-cameraEyeSize.XYZ * 0.5f) world
             let world =
                 match splashDescriptor.SplashImageOpt with
                 | Some splashImage ->
@@ -439,7 +439,7 @@ module WorldModule2 =
         /// Send a message to the subcomponents to reload its assets.
         [<FunctionBinding>]
         static member reloadExistingAssets world =
-            let world = World.reloadRenderAssets world
+            let world = World.reloadRenderAssets2d world
             let world = World.reloadAudioAssets world
             World.reloadSymbols world
             world
@@ -482,8 +482,8 @@ module WorldModule2 =
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
-             let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             let world = World.updateRenderer (fun renderer -> renderer.ClearMessages (); renderer) world
+             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+             let world = World.updateRenderer2d (fun renderer -> renderer.ClearMessages (); renderer) world
              let world = World.updateAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages (); audioPlayer) world
              world
 
@@ -496,11 +496,11 @@ module WorldModule2 =
         /// Unshelve the state of a world.
         static member unshelve world =
 
-            // clear existing physics messages
-            let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            // clear existing 2d physics messages
+            let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
 
-            // rebuild physics state
-            let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
+            // rebuild 2d physics state
+            let world = World.enqueuePhysicsMessage2d RebuildPhysicsHackMessage world
 
             // propagate current physics state
             let entities = World.getEntities1 world
@@ -628,17 +628,17 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member private processIntegrationMessage integrationMessage world =
+        static member private processIntegrationMessage2d integrationMessage world =
             match World.getLiveness world with
             | Live ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let collisionAddress = Events.Collision --> entity.EntityAddress
+                        let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                         let collisionData =
-                            { Collider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
-                              Collidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
+                            { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
+                              BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
@@ -647,10 +647,10 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let separationAddress = Events.Separation --> entity.EntityAddress
+                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
                         let separationData =
-                            { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
-                              Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
+                            { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
+                              BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
                         World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
