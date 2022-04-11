@@ -387,7 +387,7 @@ type [<NoEquality; NoComparison>] IntegrationMessage =
     | BodySeparationMessage of BodySeparationMessage : BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage : BodyTransformMessage
 
-/// A message to the 2d physics system.
+/// A message to the physics system.
 type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | CreateBodyMessage of CreateBodyMessage
     | CreateBodiesMessage of CreateBodiesMessage
