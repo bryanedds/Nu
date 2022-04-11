@@ -83,8 +83,10 @@
     <Compile Include="AssetGraph.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="AetherPhysics.fs" />
-    <Compile Include="Rendering.fs" />
-    <Compile Include="Drawing.fs" />
+    <Compile Include="BepuPhysics.fs" />
+    <Compile Include="Render.fs" />
+    <Compile Include="Render2d.fs" />
+    <Compile Include="Render3d.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Particles.fs" />
