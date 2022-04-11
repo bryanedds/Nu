@@ -50,10 +50,10 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
+        //val mutable private AABBOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Elevation_ : single
-        // 4 cache line bytes remaining
         end
 
     member inline this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
