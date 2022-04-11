@@ -43,7 +43,7 @@ type [<StructuralEquality; NoComparison>] BodyCollisionData =
     { BodyCollider : BodyShapeSource
       BodyCollidee : BodyShapeSource
       Normal : Vector3
-      Speed : Vector3 }
+      Speed : single }
 
 /// The data for a separation event.
 type [<StructuralEquality; NoComparison>] BodySeparationData =

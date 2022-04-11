@@ -269,8 +269,8 @@ module WorldTypes =
         static member compare left right =
             if left.SortElevation < right.SortElevation then 1
             elif left.SortElevation > right.SortElevation then -1
-            elif left.SortPositionY < right.SortPositionY then -1
-            elif left.SortPositionY > right.SortPositionY then 1
+            elif left.SortHorizon < right.SortHorizon then -1
+            elif left.SortHorizon > right.SortHorizon then 1
             else 0
 
         override this.GetHashCode () =
@@ -441,7 +441,7 @@ module WorldTypes =
         default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Apply physics changes to an entity.
-        abstract ApplyPhysics : Vector2 * single * Vector2 * single * Entity * World -> World
+        abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
         default this.ApplyPhysics (_, _, _, _, _, world) = world
 
         /// Try to send a signal to an entity's facet.

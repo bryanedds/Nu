@@ -446,8 +446,8 @@ module WorldModule3 =
 
             // make the world's subsystems
             let subsystems =
-                { PhysicsEngine = MockPhysicsEngine.make ()
-                  Renderer = MockRenderer.make ()
+                { PhysicsEngine2d = MockPhysicsEngine.make ()
+                  Renderer2d = MockRenderer2d.make ()
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -525,20 +525,20 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine =
+                    let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
-                    let renderer =
+                    let renderer2d =
                         match SdlDeps.getRenderContextOpt sdlDeps with
-                        | Some renderContext -> SdlRenderer.make renderContext :> Renderer
-                        | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
+                        | Some renderContext -> SdlRenderer.make renderContext :> Renderer2d
+                        | None -> MockRenderer2d.make () :> Renderer2d
+                    renderer2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
-                    { PhysicsEngine = physicsEngine
-                      Renderer = renderer
+                    { PhysicsEngine2d = physicsEngine2d
+                      Renderer2d = renderer2d
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
