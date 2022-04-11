@@ -11,194 +11,56 @@ open TiledSharp
 open Prime
 open Nu
 
-/// An image. Currently just used as a phantom type.
-type Image = private { __ : unit }
-
-/// A font. Currently just used as a phantom type.
-type Font = private { __ : unit }
-
-/// A tile map. Currently just used as a phantom type.
-type TileMap = private { __ : unit }
-
-/// The flipness of a sprite.
-[<Syntax
-    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
-
-    /// Convert to a flip value recognized by SDL.
-    static member toSdlFlip flip =
-        match flip with
-        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-
-/// The blend mode of a sprite.
-[<Syntax
-    ("Transparent Additive Modulate Overwrite", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Blend =
-    | Transparent
-    | Additive
-    | Modulate
-    | Overwrite
-
-    /// Convert to a blend mode value recognized by SDL.
-    static member toSdlBlendMode flip =
-        match flip with
-        | Transparent -> SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND
-        | Additive -> SDL.SDL_BlendMode.SDL_BLENDMODE_ADD
-        | Modulate -> SDL.SDL_BlendMode.SDL_BLENDMODE_MOD
-        | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
-
-/// Horizontal justification.
-[<Syntax
-    ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] JustificationH =
-    | JustifyLeft
-    | JustifyCenter
-    | JustifyRight
-
-/// Vertical justification.
-[<Syntax
-    ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] JustificationV =
-    | JustifyTop
-    | JustifyMiddle
-    | JustifyBottom
-
-/// Justification (such as for text alignement).
-[<Syntax
-    ("Justified Unjustified", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison>] Justification =
-    | Justified of JustificationH * JustificationV
-    | Unjustified of bool
-
-/// A mutable sprite value.
-type [<NoEquality; NoComparison; Struct>] Sprite =
-    { mutable Transform : Transform
-      mutable Absolute : bool
-      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
-      mutable Image : Image AssetTag
-      mutable Color : Color
-      mutable Blend : Blend
-      mutable Glow : Color
-      mutable Flip : Flip }
-
-/// A mutable particle value.
-type [<NoEquality; NoComparison; Struct>] Particle =
-    { mutable Transform : Transform
-      mutable Absolute : bool
-      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
-      mutable Color : Color
-      mutable Glow : Color
-      mutable Flip : Flip }
-
-/// Describes how to render a sprite to the rendering system.
-type [<NoEquality; NoComparison>] SpriteDescriptor =
-    { mutable Transform : Transform
-      Absolute : bool
-      InsetOpt : Box2 option
-      Image : Image AssetTag
-      Color : Color
-      Blend : Blend
-      Glow : Color
-      Flip : Flip }
-
-/// Describes how to render multiple sprites to the rendering system.
-type [<NoEquality; NoComparison>] SpritesDescriptor =
-    { Sprites : Sprite array }
-
-/// Describes how to render a tile map layer to the rendering system.
-type [<NoEquality; NoComparison>] TileLayerDescriptor =
-    { mutable Transform : Transform
-      Absolute : bool
-      Color : Color
-      Glow : Color
-      MapSize : Vector2i
-      Tiles : TmxLayerTile array
-      TileSourceSize : Vector2i
-      TileSize : Vector2
-      TileAssets : (TmxTileset * Image AssetTag) array }
-
-/// Describes how to render text to the rendering system.
-type [<NoEquality; NoComparison>] TextDescriptor =
-    { mutable Transform : Transform
-      Absolute : bool
-      Text : string
-      Font : Font AssetTag
-      Color : Color
-      Justification : Justification }
-
-/// Describes particles.
-type [<NoEquality; NoComparison>] ParticlesDescriptor =
-    { Elevation : single
-      Horizon : single
-      Absolute : bool
-      Blend : Blend
-      Image : Image AssetTag
-      Particles : Particle array }
-
-/// Describes how to render something to the rendering system.
-/// TODO: see if we can make RenderCallback receive args by reference or something.
-type [<NoEquality; NoComparison>] RenderDescriptor =
-    | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpritesDescriptor
-    | TileLayerDescriptor of TileLayerDescriptor
-    | TextDescriptor of TextDescriptor
-    | ParticlesDescriptor of ParticlesDescriptor
-    | RenderCallback of (Matrix3x3 * Matrix3x3 * Vector2 * Vector2 * Vector2 * Renderer -> unit)
-
-/// A layered message to the rendering system.
-and [<NoEquality; NoComparison>] RenderLayeredMessage =
+/// A layered message to the 2d rendering system.
+type [<NoEquality; NoComparison>] RenderLayeredMessage2d =
     { Elevation : single
       Horizon : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
-/// A message to the rendering system.
-and [<NoEquality; NoComparison>] RenderMessage =
-    | RenderLayeredMessage of RenderLayeredMessage
-    | HintRenderPackageUseMessage of string
-    | HintRenderPackageDisuseMessage of string
-    | ReloadRenderAssetsMessage
-    //| ScreenFlashMessage of ...
-
-/// An asset that is used for rendering.
-and [<NoEquality; NoComparison>] RenderAsset =
-    | TextureAsset of nativeint
-    | FontAsset of nativeint * int
+/// A message to the 2d rendering system.
+and [<NoEquality; NoComparison>] RenderMessage2d =
+    | RenderLayeredMessage2d of RenderLayeredMessage2d
+    | HintRenderPackageUseMessage2d of string
+    | HintRenderPackageDisuseMessage2d of string
+    | ReloadRenderAssetsMessage2d
+    //| ScreenFlashMessage2d of ...
 
 /// The renderer. Represents the rendering system in Nu generally.
-and Renderer =
+and Renderer2d =
+    inherit Renderer
     /// Pop all of the render messages that have been enqueued.
-    abstract PopMessages : unit -> RenderMessage List
+    abstract PopMessages : unit -> RenderMessage2d List
     /// Clear all of the render messages that have been enqueued.
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : RenderMessage -> unit
+    abstract EnqueueMessage : RenderMessage2d -> unit
     /// Enqueue a layered message for rendering, bypassing EnqueueMessage for speed.
-    abstract EnqueueLayeredMessage : RenderLayeredMessage -> unit
+    abstract EnqueueLayeredMessage : RenderLayeredMessage2d -> unit
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage List -> unit
+    abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
     /// Handle render clean up by freeing all loaded render assets.
-    abstract CleanUp : unit -> Renderer
+    abstract CleanUp : unit -> Renderer2d
 
-type RenderLayeredMessageComparer () =
-    interface IComparer<RenderLayeredMessage> with
+/// The mock implementation of Renderer.
+type [<ReferenceEquality; NoComparison>] MockRenderer2d =
+    private
+        { MockRenderer2d : unit }
+
+    interface Renderer2d with
+        member renderer.PopMessages () = List ()
+        member renderer.ClearMessages () = ()
+        member renderer.EnqueueMessage _ = ()
+        member renderer.EnqueueLayeredMessage _ = ()
+        member renderer.Render _ _ _ _ = ()
+        member renderer.CleanUp () = renderer :> Renderer2d
+
+    static member make () =
+        { MockRenderer2d = () }
+
+/// Compares layered 2d render messages.
+type RenderLayeredMessage2dComparer () =
+    interface IComparer<RenderLayeredMessage2d> with
         member this.Compare (left, right) =
             if left.Elevation < right.Elevation then -1
             elif left.Elevation > right.Elevation then 1
@@ -209,22 +71,6 @@ type RenderLayeredMessageComparer () =
                 if assetNameCompare <> 0 then assetNameCompare
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
-/// The mock implementation of Renderer.
-type [<ReferenceEquality; NoComparison>] MockRenderer =
-    private
-        { MockRenderer : unit }
-
-    interface Renderer with
-        member renderer.PopMessages () = List ()
-        member renderer.ClearMessages () = ()
-        member renderer.EnqueueMessage _ = ()
-        member renderer.EnqueueLayeredMessage _ = ()
-        member renderer.Render _ _ _ _ = ()
-        member renderer.CleanUp () = renderer :> Renderer
-
-    static member make () =
-        { MockRenderer = () }
-
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] SdlRenderer =
     private
@@ -232,8 +78,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          mutable RenderMessages : RenderMessage List
-          RenderLayeredMessages : RenderLayeredMessage List }
+          mutable RenderMessages : RenderMessage2d List
+          RenderLayeredMessages : RenderLayeredMessage2d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -343,17 +189,17 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
-        | RenderLayeredMessage message -> renderer.RenderLayeredMessages.Add message
-        | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
-        | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage -> SdlRenderer.handleReloadRenderAssets renderer
+        | RenderLayeredMessage2d message -> renderer.RenderLayeredMessages.Add message
+        | HintRenderPackageUseMessage2d hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage2d -> SdlRenderer.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
             SdlRenderer.handleRenderMessage renderMessage renderer
 
     static member private sortRenderLayeredMessages renderer =
-        renderer.RenderLayeredMessages.Sort (RenderLayeredMessageComparer ())
+        renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
     /// Render sprite.
     static member renderSprite
@@ -717,7 +563,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
-        | RenderCallback callback ->
+        | RenderCallback2d callback ->
             callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
@@ -776,7 +622,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
               RenderLayeredMessages = List () }
         renderer
 
-    interface Renderer with
+    interface Renderer2d with
 
         member renderer.PopMessages () =
             let messages = renderer.RenderMessages
@@ -805,4 +651,4 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
-            renderer :> Renderer
+            renderer :> Renderer2d

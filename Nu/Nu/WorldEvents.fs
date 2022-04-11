@@ -35,15 +35,15 @@ type [<StructuralEquality; NoComparison>] GamepadButtonData =
 /// The data of a body transform event.
 type [<StructuralEquality; NoComparison>] TransformData =
     { BodySource : BodySource
-      Position : Vector2
-      Rotation : single }
+      Position : Vector3
+      Rotation : Quaternion }
 
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] BodyCollisionData =
     { BodyCollider : BodyShapeSource
       BodyCollidee : BodyShapeSource
-      Normal : Vector2
-      Speed : single }
+      Normal : Vector3
+      Speed : Vector3 }
 
 /// The data for a separation event.
 type [<StructuralEquality; NoComparison>] BodySeparationData =
