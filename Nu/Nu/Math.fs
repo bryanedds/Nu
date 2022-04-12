@@ -105,7 +105,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.RotationMatrix =
         if notNull (this.RotationMatrixOpt_ :> obj) then
-            if this.RotationMatrixDirty then this.RotationMatrixOpt_ := Matrix4x4.CreateFromQuaternion this.Rotation_
+            if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
             this.RotationMatrixOpt_.Value
         else Matrix4x4.Identity
 
@@ -116,7 +116,7 @@ type [<NoEquality; NoComparison>] Transform =
                 let positionMatrix = Matrix4x4.CreateTranslation this.Position_
                 let rotationMatrix = this.RotationMatrix
                 let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-                this.AffineMatrixOpt_ := positionMatrix * rotationMatrix * scaleMatrix
+                this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
             this.AffineMatrixOpt_.Value
         else Matrix4x4.Identity
 
@@ -187,8 +187,8 @@ type [<NoEquality; NoComparison>] Transform =
         target.Rotation_ <- source.Rotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
-        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ := source.RotationMatrixOpt_.Value
-        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ := source.AffineMatrixOpt_.Value
+        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value
+        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value
         target.Elevation_ <- source.Elevation_
         target.Offset_ <- source.Offset_
         target.Size_ <- source.Size_
