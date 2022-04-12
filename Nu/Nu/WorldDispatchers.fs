@@ -400,7 +400,7 @@ module TextFacetModule =
             let text = entity.GetText world
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = Transform.makeDefault ()
-                let dimensions = transform.Dimensions // text currently ignores rotation
+                let dimensions = transform.DimensionsScaled // text currently ignores rotation
                 transform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
                 transform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
                 transform.Elevation <- entity.GetElevation world + 0.5f
@@ -1085,7 +1085,8 @@ module TileMapFacetModule =
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
-                    let transform = { entity.GetTransform world with Size = quickSize }
+                    let mutable transform = entity.GetTransform world
+                    transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
                     (entity.ChangeEvent Property? TileMap)
@@ -1096,43 +1097,46 @@ module TileMapFacetModule =
         override this.RegisterPhysics (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap ->
-                let tileMapPosition = entity.GetPosition world
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                let tileMapPosition = dimensions.Position.XY
                 let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
                 let bodyProperties =
                     TmxMap.getBodyProperties
-                        (entity.GetEnabled world)
+                        transform.Enabled
                         (entity.GetFriction world)
                         (entity.GetRestitution world)
                         (entity.GetCollisionCategories world)
                         (entity.GetCollisionMask world)
                         (entity.GetPhysicsId world).CorrelationId
                         tileMapDescriptor
-                World.createBody entity (entity.GetId world) bodyProperties world
+                World.createBody2d entity (entity.GetId world) bodyProperties world
             | None -> world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody2d (entity.GetPhysicsId world) world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
                 | Some tileMap ->
-                    let absolute = entity.GetAbsolute world
-                    let viewBounds = World.getViewBounds absolute world
+                    let mutable transform = entity.GetTransform world
+                    let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                    let viewBounds = World.getViewBounds2d transform.Absolute world
                     let tileMapMessages =
-                        TmxMap.getLayeredMessages
+                        TmxMap.getLayeredMessages2d
                             (World.getUpdateTime world)
-                            absolute
+                            transform.Absolute
                             viewBounds
-                            (entity.GetPosition world)
-                            (entity.GetElevation world)
+                            dimensions.Position.XY
+                            transform.Elevation
                             (entity.GetColor world)
                             (entity.GetGlow world)
                             (entity.GetTileLayerClearance world)
                             (entity.GetTileIndexOffset world)
                             (entity.GetTileIndexOffsetRange world)
                             tileMap
-                    World.enqueueRenderLayeredMessages tileMapMessages world
+                    World.enqueueRenderLayeredMessages2d tileMapMessages world
                 | None -> world
             else world
 
@@ -1175,58 +1179,64 @@ module TmxMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TmxMap) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMap) entity world
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
-                    let transform = { entity.GetTransform world with Size = quickSize }
+                    let mutable transform = entity.GetTransform world
+                    transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
-                    (entity.ChangeEvent Property? TmxMap)
+                    (entity.ChangeEvent Property? TileMap)
                     entity
                     world
             world
 
         override this.RegisterPhysics (entity, world) =
-            let tileMapPosition = entity.GetPosition world
+            let mutable transform = entity.GetTransform world
+            let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
             let tileMap = entity.GetTmxMap world
+            let tileMapPosition = dimensions.Position.XY
             let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
             let bodyProperties =
                 TmxMap.getBodyProperties
-                    (entity.GetEnabled world)
+                    transform.Enabled
                     (entity.GetFriction world)
                     (entity.GetRestitution world)
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
                     (entity.GetPhysicsId world).CorrelationId
                     tileMapDescriptor
-            World.createBody entity (entity.GetId world) bodyProperties world
+            World.createBody2d entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody2d (entity.GetPhysicsId world) world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let absolute = entity.GetAbsolute world
-                let viewBounds = World.getViewBounds absolute world
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                let viewBounds = World.getViewBounds2d transform.Absolute world
+                let tileMap = entity.GetTmxMap world
                 let tileMapMessages =
-                    TmxMap.getLayeredMessages
+                    TmxMap.getLayeredMessages2d
                         (World.getUpdateTime world)
-                        absolute
+                        transform.Absolute
                         viewBounds
-                        (entity.GetPosition world)
-                        (entity.GetElevation world)
+                        dimensions.Position.XY
+                        transform.Elevation
                         (entity.GetColor world)
                         (entity.GetGlow world)
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
-                        (entity.GetTmxMap world)
-                World.enqueueRenderLayeredMessages tileMapMessages world
+                        tileMap
+                World.enqueueRenderLayeredMessages2d tileMapMessages world
             else world
 
         override this.GetQuickSize (entity, world) =
-            TmxMap.getQuickSize (entity.GetTmxMap world)
+            let tileMap = entity.GetTmxMap world
+            TmxMap.getQuickSize tileMap
 
 [<AutoOpen>]
 module EntityDispatcherModule =
@@ -1322,7 +1332,7 @@ module EntityDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
         default this.Initializers (_, _) = []
 
-        abstract member Physics : Vector2 * single * Vector2 * single * 'model * Entity * World -> Signal<'message, 'command> list * 'model
+        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
         abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
