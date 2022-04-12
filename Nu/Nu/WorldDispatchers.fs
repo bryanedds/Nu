@@ -270,7 +270,6 @@ module StaticSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
                               InsetOpt = entity.GetInsetOpt world
                               Image = staticImage
                               Color = entity.GetColor world
@@ -345,7 +344,6 @@ module AnimatedSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
                               InsetOpt = getSpriteInsetOpt entity world
                               Image = animationSheet
                               Color = entity.GetColor world
@@ -399,20 +397,23 @@ module TextFacetModule =
         override this.Actualize (entity, world) =
             let text = entity.GetText world
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
-                let mutable transform = Transform.makeDefault ()
-                let dimensions = transform.DimensionsScaled // text currently ignores rotation
-                transform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
-                transform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
-                transform.Elevation <- entity.GetElevation world + 0.5f
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable textTransform = Transform.makeDefault ()
+                textTransform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
+                textTransform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
+                textTransform.Offset <- transform.Offset
+                textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
+                textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
                 World.enqueueRenderLayeredMessage2d
-                    { Elevation = transform.Elevation
-                      Horizon = transform.Position.Y
+                    { Elevation = textTransform.Elevation
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize font
                       RenderDescriptor =
                         TextDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
                               Text = text
                               Font = font
                               Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
@@ -1157,7 +1158,8 @@ module TmxMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1357,7 +1359,8 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1373,7 +1376,8 @@ module AnimatedSpriteDispatcherModule =
             [typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
@@ -1394,7 +1398,8 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
@@ -1403,7 +1408,8 @@ module GuiDispatcherModule =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
@@ -1415,8 +1421,8 @@ module ButtonDispatcherModule =
         member this.GetDown world : bool = this.Get Property? Down world
         member this.SetDown (value : bool) world = this.Set Property? Down value world
         member this.Down = lens Property? Down this.GetDown this.SetDown this
-        member this.GetDownTextOffset world : Vector2 = this.Get Property? DownTextOffset world
-        member this.SetDownTextOffset (value : Vector2) world = this.Set Property? DownTextOffset value world
+        member this.GetDownTextOffset world : Vector3 = this.Get Property? DownTextOffset world
+        member this.SetDownTextOffset (value : Vector3) world = this.Set Property? DownTextOffset value world
         member this.DownTextOffset = lens Property? DownTextOffset this.GetDownTextOffset this.SetDownTextOffset this
         member this.GetUpImage world : Image AssetTag = this.Get Property? UpImage world
         member this.SetUpImage (value : Image AssetTag) world = this.Set Property? UpImage value world
@@ -1440,16 +1446,18 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world then
-                    let world = entity.SetDown true world
-                    let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
-                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
-                    (Resolve, world)
-                else (Resolve, world)
+            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled then
+                        let world = entity.SetDown true world
+                        let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
+                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
@@ -1457,20 +1465,22 @@ module ButtonDispatcherModule =
             let data = evt.Data : MouseButtonData
             let wasDown = entity.GetDown world
             let world = entity.SetDown false world
-            let world = entity.SetTextOffset v2Zero world
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world && wasDown then
-                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                    let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
-                    let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                    let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
-                    let world =
-                        match entity.GetClickSoundOpt world with
-                        | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
-                        | None -> world
-                    (Resolve, world)
+            let world = entity.SetTextOffset v3Zero world
+            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled && wasDown then
+                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
+                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
+                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetClickSoundOpt world with
+                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -1478,9 +1488,10 @@ module ButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (Vector3 (192.0f, 48.0f, 0.0f))
              define Entity.Down false
-             define Entity.DownTextOffset v2Zero
+             define Entity.DownTextOffset v3Zero
              define Entity.UpImage Assets.Default.Image
              define Entity.DownImage Assets.Default.Image2
              define Entity.ClickSoundOpt (Some Assets.Default.Sound)
@@ -1493,19 +1504,25 @@ module ButtonDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let transform = entity.GetTransform world
-                let image = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize image
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable spriteTransform = Transform.makeDefault ()
+                spriteTransform.Position <- dimensions.Position
+                spriteTransform.Size <- dimensions.Size
+                spriteTransform.Offset <- transform.Offset
+                spriteTransform.Elevation <- transform.Elevation
+                spriteTransform.Absolute <- transform.Absolute
+                let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
+                            { Transform = spriteTransform
                               InsetOpt = None
-                              Image = image
+                              Image = spriteImage
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
@@ -1515,7 +1532,7 @@ module ButtonDispatcherModule =
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUpImage world) world with
-            | Some size -> size
+            | Some size -> size.XYZ
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
@@ -1530,24 +1547,31 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.LabelImage Assets.Default.Image3]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let transform = entity.GetTransform world
-                let labelImage = entity.GetLabelImage world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize labelImage
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable spriteTransform = Transform.makeDefault ()
+                spriteTransform.Position <- dimensions.Position
+                spriteTransform.Size <- dimensions.Size
+                spriteTransform.Offset <- transform.Offset
+                spriteTransform.Elevation <- transform.Elevation
+                spriteTransform.Absolute <- transform.Absolute
+                let spriteImage = entity.GetLabelImage world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
+                            { Transform = spriteTransform
                               InsetOpt = None
-                              Image = labelImage
+                              Image = spriteImage
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
@@ -1557,7 +1581,7 @@ module LabelDispatcherModule =
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
-            | Some size -> size
+            | Some size -> size.XYZ
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
@@ -1575,26 +1599,33 @@ module TextDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 match entity.GetBackgroundImageOpt world with
-                | Some image ->
-                    let transform = entity.GetTransform world
-                    World.enqueueRenderLayeredMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize image
+                | Some spriteImage ->
+                    let mutable transform = entity.GetTransform world
+                    let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                    let horizon = dimensions.Position.Y
+                    let mutable spriteTransform = Transform.makeDefault ()
+                    spriteTransform.Position <- dimensions.Position
+                    spriteTransform.Size <- dimensions.Size
+                    spriteTransform.Offset <- transform.Offset
+                    spriteTransform.Elevation <- transform.Elevation
+                    spriteTransform.Absolute <- transform.Absolute
+                    World.enqueueRenderLayeredMessage2d
+                        { Elevation = spriteTransform.Elevation
+                          Horizon = horizon
+                          AssetTag = AssetTag.generalize spriteImage
                           RenderDescriptor =
                             SpriteDescriptor
-                                { Transform = transform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
+                                { Transform = spriteTransform
                                   InsetOpt = None
-                                  Image = image
+                                  Image = spriteImage
                                   Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                                   Blend = Transparent
                                   Glow = Color.Zero
@@ -1607,7 +1638,7 @@ module TextDispatcherModule =
             match entity.GetBackgroundImageOpt world with
             | Some image ->
                 match World.tryGetTextureSizeF image world with
-                | Some size -> size
+                | Some size -> size.XYZ
                 | None -> Constants.Engine.EntitySizeDefault
             | None -> Constants.Engine.EntitySizeDefault
 
@@ -1649,7 +1680,7 @@ module ToggleButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
             if  entity.GetVisible world &&
                 Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                 if entity.GetEnabled world then
@@ -1686,7 +1717,8 @@ module ToggleButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Toggled false
              define Entity.ToggledTextOffset v2Zero
              define Entity.Pressed false
@@ -1710,22 +1742,28 @@ module ToggleButtonDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let transform = entity.GetTransform world
-                let image =
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable spriteTransform = Transform.makeDefault ()
+                spriteTransform.Position <- dimensions.Position
+                spriteTransform.Size <- dimensions.Size
+                spriteTransform.Offset <- transform.Offset
+                spriteTransform.Elevation <- transform.Elevation
+                spriteTransform.Absolute <- transform.Absolute
+                let spriteImage =
                     if entity.GetToggled world || entity.GetPressed world
                     then entity.GetToggledImage world
                     else entity.GetUntoggledImage world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize image
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
+                            { Transform = spriteTransform
                               InsetOpt = None
-                              Image = image
+                              Image = spriteImage
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
@@ -1808,7 +1846,8 @@ module RadioButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Dialed false
              define Entity.DialedTextOffset v2Zero
              define Entity.Pressed false
@@ -1832,22 +1871,28 @@ module RadioButtonDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let transform = entity.GetTransform world
-                let image =
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable spriteTransform = Transform.makeDefault ()
+                spriteTransform.Position <- dimensions.Position
+                spriteTransform.Size <- dimensions.Size
+                spriteTransform.Offset <- transform.Offset
+                spriteTransform.Elevation <- transform.Elevation
+                spriteTransform.Absolute <- transform.Absolute
+                let spriteImage =
                     if entity.GetDialed world || entity.GetPressed world
                     then entity.GetDialedImage world
                     else entity.GetUndialedImage world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize image
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
+                            { Transform = spriteTransform
                               InsetOpt = None
-                              Image = image
+                              Image = spriteImage
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
@@ -1884,7 +1929,8 @@ module FpsDispatcherModule =
             else world
 
         static member Properties =
-            [define Entity.StartTime 0L
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.StartTime 0L
              define Entity.StartDateTime DateTime.UtcNow]
 
         override this.Update (entity, world) =
@@ -1957,7 +2003,8 @@ module FeelerDispatcherModule =
             (Cascade, entity.SetTouched false world)
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Touched false]
 
         override this.Register (entity, world) =
@@ -2003,17 +2050,10 @@ module FillBarDispatcherModule =
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
-        
-        let getFillBarSpriteDims (entity : Entity) world =
-            let spriteSize = entity.GetSize world
-            let spriteInset = spriteSize * entity.GetFillInset world * 0.5f
-            let spritePosition = entity.GetPosition world + spriteInset
-            let spriteWidth = (spriteSize.X - spriteInset.X * 2.0f) * entity.GetFill world
-            let spriteHeight = spriteSize.Y - spriteInset.Y * 2.0f
-            (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member Properties =
-            [define Entity.Size (Vector2 (192.0f, 48.0f))
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))
@@ -2023,34 +2063,28 @@ module FillBarDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let borderSpriteTransform =
-                    { Position = entity.GetPosition world
-                      Size = entity.GetSize world
-                      Rotation = 0.0f
-                      Elevation = entity.GetElevation world + 0.5f
-                      Flags = entity.GetFlags world }
-                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims entity world
-                let fillBarSpriteTransform =
-                    { Position = fillBarSpritePosition
-                      Size = fillBarSpriteSize
-                      Rotation = 0.0f
-                      Elevation = entity.GetElevation world
-                      Flags = entity.GetFlags world }
+
+                // border sprite
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let horizon = dimensions.Position.Y
+                let mutable borderTransform = Transform.makeDefault ()
+                borderTransform.Position <- dimensions.Position
+                borderTransform.Size <- dimensions.Size
+                borderTransform.Offset <- transform.Offset
+                borderTransform.Elevation <- transform.Elevation + 0.5f
+                borderTransform.Absolute <- transform.Absolute
                 let disabledColor = entity.GetDisabledColor world
                 let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
                 let borderImage = entity.GetBorderImage world
-                let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
-                let fillImage = entity.GetFillImage world
                 let world =
-                    World.enqueueRenderLayeredMessage
-                        { Elevation = borderSpriteTransform.Elevation
-                          PositionY = borderSpriteTransform.Position.Y
+                    World.enqueueRenderLayeredMessage2d
+                        { Elevation = borderTransform.Elevation
+                          Horizon = horizon
                           AssetTag = AssetTag.generalize borderImage
                           RenderDescriptor =
                             SpriteDescriptor
-                                { Transform = borderSpriteTransform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
+                                { Transform = borderTransform
                                   InsetOpt = None
                                   Image = borderImage
                                   Color = borderImageColor
@@ -2058,16 +2092,30 @@ module FillBarDispatcherModule =
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
                         world
+
+                // fill sprite
+                let fillSize = dimensions.Size
+                let fillInset = fillSize * entity.GetFillInset world * 0.5f
+                let fillPosition = dimensions.Position + fillInset
+                let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
+                let fillHeight = fillSize.Y - fillInset.Y * 2.0f
+                let fillSize = v3 fillWidth fillHeight 0.0f
+                let mutable fillTransform = Transform.makeDefault ()
+                fillTransform.Position <- fillPosition
+                fillTransform.Size <- fillSize
+                fillTransform.Offset <- transform.Offset
+                fillTransform.Elevation <- transform.Elevation
+                fillTransform.Absolute <- transform.Absolute
+                let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
+                let fillImage = entity.GetFillImage world
                 let world =
-                    World.enqueueRenderLayeredMessage
-                        { Elevation = fillBarSpriteTransform.Elevation
-                          PositionY = fillBarSpriteTransform.Position.Y
+                    World.enqueueRenderLayeredMessage2d
+                        { Elevation = fillTransform.Elevation
+                          Horizon = horizon
                           AssetTag = AssetTag.generalize fillImage
                           RenderDescriptor =
                               SpriteDescriptor
-                                  { Transform = fillBarSpriteTransform
-                                    Absolute = entity.GetAbsolute world
-                                    Offset = Vector2.Zero
+                                  { Transform = fillTransform
                                     InsetOpt = None
                                     Image = fillImage
                                     Color = fillImageColor
@@ -2075,6 +2123,8 @@ module FillBarDispatcherModule =
                                     Glow = Color.Zero
                                     Flip = FlipNone }}
                         world
+
+                // fin
                 world
             else world
 
@@ -2111,7 +2161,7 @@ module BlockDispatcherModule =
         inherit EntityDispatcher ()
 
         static member Facets =
-            [typeof<RigidBody2dFastFacet>
+            [typeof<RigidBody2dFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =

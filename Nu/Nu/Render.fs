@@ -113,7 +113,6 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { mutable Transform : Transform
-      Absolute : bool
       InsetOpt : Box2 option
       Image : Image AssetTag
       Color : Color
@@ -128,7 +127,6 @@ type [<NoEquality; NoComparison>] SpritesDescriptor =
 /// Describes how to render a tile map layer to the rendering system.
 type [<NoEquality; NoComparison>] TileLayerDescriptor =
     { mutable Transform : Transform
-      Absolute : bool
       Color : Color
       Glow : Color
       MapSize : Vector2i
@@ -140,7 +138,6 @@ type [<NoEquality; NoComparison>] TileLayerDescriptor =
 /// Describes how to render text to the rendering system.
 type [<NoEquality; NoComparison>] TextDescriptor =
     { mutable Transform : Transform
-      Absolute : bool
       Text : string
       Font : Font AssetTag
       Color : Color
