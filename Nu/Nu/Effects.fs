@@ -557,7 +557,7 @@ module EffectSystem =
                 transform.Angles <- slice.Angles
                 transform.Elevation <- slice.Elevation
                 let spriteView =
-                    Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
+                    Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
                               Absolute = effectSystem.Absolute

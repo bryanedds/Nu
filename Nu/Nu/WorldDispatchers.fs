@@ -17,9 +17,9 @@ module DeclarativeOperators2 =
 
         static member internal actualizeView view world =
             match view with
-            | Render (elevation, positionY, assetTag, descriptor) ->
-                let message = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
-                World.enqueueRenderLayeredMessage message world
+            | Render2d (elevation, horizon, assetTag, descriptor) ->
+                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                World.enqueueRenderLayeredMessage2d message world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
@@ -156,21 +156,280 @@ module FacetModule =
         default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
-module BasicEmitterFacetModule =
+module ScriptFacetModule =
+
+    type Entity with
+        member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
+        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.Set Property? ScriptOpt value world
+        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
+        member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
+        member this.SetScript (value : Scripting.Expr array) world = this.Set Property? Script value world
+        member this.Script = lens Property? Script this.GetScript this.SetScript this
+        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
+        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.Set Property? ScriptUnsubscriptions value world
+        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
+        member this.GetRegisterScript world : Scripting.Expr = this.Get Property? RegisterScript world
+        member this.SetRegisterScript (value : Scripting.Expr) world = this.Set Property? RegisterScript value world
+        member this.RegisterScript = lens Property? RegisterScript this.GetRegisterScript this.SetRegisterScript this
+        member this.GetUnregisterScript world : Scripting.Expr = this.Get Property? UnregisterScript world
+        member this.SetUnregisterScript (value : Scripting.Expr) world = this.Set Property? UnregisterScript value world
+        member this.UnregisterScript = lens Property? UnregisterScript this.GetUnregisterScript this.SetUnregisterScript this
+        member this.GetUpdateScript world : Scripting.Expr = this.Get Property? UpdateScript world
+        member this.SetUpdateScript (value : Scripting.Expr) world = this.Set Property? UpdateScript value world
+        member this.UpdateScript = lens Property? UpdateScript this.GetUpdateScript this.SetUpdateScript this
+        member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
+        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set Property? PostUpdateScript value world
+        member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
+
+    type ScriptFacet () =
+        inherit Facet ()
+
+        static let handleScriptChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let script = entity.GetScript world
+            let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
+            let world = World.setEntityScriptFrame scriptFrame entity world |> snd'
+            let world = evalManyWithLogging script scriptFrame entity world |> snd'
+            (Cascade, world)
+
+        static let handleRegisterScriptChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let world = World.unregisterEntity entity world
+            let world = World.registerEntity entity world
+            (Cascade, world)
+
+        static member Properties =
+            [define Entity.ScriptOpt None
+             define Entity.Script [||]
+             define Entity.ScriptUnsubscriptions []
+             define Entity.RegisterScript Scripting.Unit
+             define Entity.UnregisterScript Scripting.Unit
+             define Entity.UpdateScript Scripting.Unit
+             define Entity.PostUpdateScript Scripting.Unit]
+
+        override this.Register (entity, world) =
+            let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
+            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
+            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent Property? RegisterScript) entity world
+            world
+
+        override this.Unregister (entity, world) =
+            World.evalWithLogging (entity.GetUnregisterScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+        override this.Update (entity, world) =
+            World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+#if !DISABLE_ENTITY_POST_UPDATE
+        override this.PostUpdate (entity, world) =
+            World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+#endif
+
+[<AutoOpen>]
+module StaticSpriteFacetModule =
+
+    type Entity with
+        member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
+        member this.SetStaticImage (value : Image AssetTag) world = this.Set Property? StaticImage value world
+        member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
+        member this.GetInsetOpt world : Box2 option = this.Get Property? Inset world
+        member this.SetInsetOpt (value : Box2 option) world = this.Set Property? Inset value world
+        member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
+        member this.GetColor world : Color = this.Get Property? Color world
+        member this.SetColor (value : Color) world = this.Set Property? Color value world
+        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetBlend world : Blend = this.Get Property? Blend world
+        member this.SetBlend (value : Blend) world = this.Set Property? Blend value world
+        member this.Blend = lens Property? Blend this.GetBlend this.SetBlend this
+        member this.GetGlow world : Color = this.Get Property? Glow world
+        member this.SetGlow (value : Color) world = this.Set Property? Glow value world
+        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
+        member this.GetFlip world : Flip = this.Get Property? Flip world
+        member this.SetFlip (value : Flip) world = this.Set Property? Flip value world
+        member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
+
+    type StaticSpriteFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.StaticImage Assets.Default.Image4
+             define Entity.Color Color.White
+             define Entity.Blend Transparent
+             define Entity.Glow Color.Zero
+             define Entity.InsetOpt None
+             define Entity.Flip FlipNone]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                let staticImage = entity.GetStaticImage world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = transform.Elevation
+                      Horizon = transform.Position.Y
+                      AssetTag = AssetTag.generalize staticImage
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Absolute = entity.GetAbsolute world
+                              InsetOpt = entity.GetInsetOpt world
+                              Image = staticImage
+                              Color = entity.GetColor world
+                              Blend = entity.GetBlend world
+                              Glow = entity.GetGlow world
+                              Flip = entity.GetFlip world }}
+                    world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
+            | Some size -> size.XYZ
+            | None -> Constants.Engine.EntitySizeDefault
+
+[<AutoOpen>]
+module AnimatedSpriteFacetModule =
+
+    type Entity with
+        member this.GetCelSize world : Vector2 = this.Get Property? CelSize world
+        member this.SetCelSize (value : Vector2) world = this.Set Property? CelSize value world
+        member this.CelSize = lens Property? CelSize this.GetCelSize this.SetCelSize this
+        member this.GetCelRun world : int = this.Get Property? CelRun world
+        member this.SetCelRun (value : int) world = this.Set Property? CelRun value world
+        member this.CelRun = lens Property? CelRun this.GetCelRun this.SetCelRun this
+        member this.GetCelCount world : int = this.Get Property? CelCount world
+        member this.SetCelCount (value : int) world = this.Set Property? CelCount value world
+        member this.CelCount = lens Property? CelCount this.GetCelCount this.SetCelCount this
+        member this.GetAnimationDelay world : int64 = this.Get Property? AnimationDelay world
+        member this.SetAnimationDelay (value : int64) world = this.Set Property? AnimationDelay value world
+        member this.AnimationDelay = lens Property? AnimationDelay this.GetAnimationDelay this.SetAnimationDelay this
+        member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
+        member this.SetAnimationSheet (value : Image AssetTag) world = this.Set Property? AnimationSheet value world
+        member this.AnimationSheet = lens Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
+
+    type AnimatedSpriteFacet () =
+        inherit Facet ()
+
+        static let getSpriteInsetOpt (entity : Entity) world =
+            let celCount = entity.GetCelCount world
+            let celRun = entity.GetCelRun world
+            if celCount <> 0 && celRun <> 0 then
+                let cel = int (World.getUpdateTime world / entity.GetAnimationDelay world) % celCount
+                let celSize = entity.GetCelSize world
+                let celI = cel % celRun
+                let celJ = cel / celRun
+                let celX = single celI * celSize.X
+                let celY = single celJ * celSize.Y
+                let inset = Box2 (v2 celX celY, celSize)
+                Some inset
+            else None
+
+        static member Properties =
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.CelSize (Vector2 (12.0f, 12.0f))
+             define Entity.CelRun 4
+             define Entity.CelCount 16
+             define Entity.AnimationDelay 4L
+             define Entity.AnimationSheet Assets.Default.Image4
+             define Entity.Color Color.White
+             define Entity.Blend Transparent
+             define Entity.Glow Color.Zero
+             define Entity.Flip FlipNone]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                let animationSheet = entity.GetAnimationSheet world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = transform.Elevation
+                      Horizon = transform.Position.Y
+                      AssetTag = AssetTag.generalize animationSheet
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Absolute = entity.GetAbsolute world
+                              InsetOpt = getSpriteInsetOpt entity world
+                              Image = animationSheet
+                              Color = entity.GetColor world
+                              Blend = entity.GetBlend world
+                              Glow = entity.GetGlow world
+                              Flip = entity.GetFlip world }}
+                    world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            (entity.GetCelSize world).XYZ
+
+[<AutoOpen>]
+module TextFacetModule =
+
+    type Entity with
+        member this.GetText world : string = this.Get Property? Text world
+        member this.SetText (value : string) world = this.Set Property? Text value world
+        member this.Text = lens Property? Text this.GetText this.SetText this
+        member this.GetFont world : Font AssetTag = this.Get Property? Font world
+        member this.SetFont (value : Font AssetTag) world = this.Set Property? Font value world
+        member this.Font = lens Property? Font this.GetFont this.SetFont this
+        member this.GetMargins world : Vector3 = this.Get Property? Margins world
+        member this.SetMargins (value : Vector3) world = this.Set Property? Margins value world
+        member this.Margins = lens Property? Margins this.GetMargins this.SetMargins this
+        member this.GetJustification world : Justification = this.Get Property? Justification world
+        member this.SetJustification (value : Justification) world = this.Set Property? Justification value world
+        member this.Justification = lens Property? Justification this.GetJustification this.SetJustification this
+        member this.GetTextColor world : Color = this.Get Property? TextColor world
+        member this.SetTextColor (value : Color) world = this.Set Property? TextColor value world
+        member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
+        member this.GetTextDisabledColor world : Color = this.Get Property? TextDisabledColor world
+        member this.SetTextDisabledColor (value : Color) world = this.Set Property? TextDisabledColor value world
+        member this.TextDisabledColor = lens Property? TextDisabledColor this.GetTextDisabledColor this.SetTextDisabledColor this
+        member this.GetTextOffset world : Vector3 = this.Get Property? TextOffset world
+        member this.SetTextOffset (value : Vector3) world = this.Set Property? TextOffset value world
+        member this.TextOffset = lens Property? TextOffset this.GetTextOffset this.SetTextOffset this
+
+    type TextFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.Text ""
+             define Entity.Font Assets.Default.Font
+             define Entity.Margins v3Zero
+             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.TextColor Color.Black
+             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))
+             define Entity.TextOffset v3Zero]
+
+        override this.Actualize (entity, world) =
+            let text = entity.GetText world
+            if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
+                let mutable transform = Transform.makeDefault ()
+                let dimensions = transform.Dimensions // text currently ignores rotation
+                transform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
+                transform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
+                transform.Elevation <- entity.GetElevation world + 0.5f
+                let font = entity.GetFont world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = transform.Elevation
+                      Horizon = transform.Position.Y
+                      AssetTag = AssetTag.generalize font
+                      RenderDescriptor =
+                        TextDescriptor
+                            { Transform = transform
+                              Absolute = entity.GetAbsolute world
+                              Text = text
+                              Font = font
+                              Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
+                              Justification = entity.GetJustification world }}
+                    world
+            else world
+
+[<AutoOpen>]
+module BasicEmitter2dFacetModule =
 
     type Entity with
 
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.Set Property? SelfDestruct value world
         member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
-        member this.GetEmitterOffset world : Vector2 = this.Get Property? EmitterOffset world
-        member this.SetEmitterOffset (value : Vector2) world = this.Set Property? EmitterOffset value world
-        member this.EmitterOffset = lens Property? EmitterOffset this.GetEmitterOffset this.SetEmitterOffset this
-        member this.GetEmitterTwist world : single = this.Get Property? EmitterTwist world
-        member this.SetEmitterTwist (value : single) world = this.Set Property? EmitterTwist value world
-        member this.EmitterTwist = lens Property? EmitterTwist this.GetEmitterTwist this.SetEmitterTwist this
-        member this.GetEmitterGravity world : Vector2 = this.Get Property? EmitterGravity world
-        member this.SetEmitterGravity (value : Vector2) world = this.Set Property? EmitterGravity value world
+        member this.GetEmitterGravity world : Vector3 = this.Get Property? EmitterGravity world
+        member this.SetEmitterGravity (value : Vector3) world = this.Set Property? EmitterGravity value world
         member this.EmitterGravity = lens Property? EmitterGravity this.GetEmitterGravity this.SetEmitterGravity this
         member this.GetEmitterImage world : Image AssetTag = this.Get Property? EmitterImage world
         member this.SetEmitterImage (value : Image AssetTag) world = this.Set Property? EmitterImage value world
@@ -203,7 +462,7 @@ module BasicEmitterFacetModule =
         member this.SetParticleSystem (value : ParticleSystem) world = this.Set Property? ParticleSystem value world
         member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
 
-    type BasicEmitterFacet () =
+    type BasicEmitter2dFacet () =
         inherit Facet ()
 
         static let tryMakeEmitter (entity : Entity) world =
@@ -220,15 +479,18 @@ module BasicEmitterFacetModule =
         static let makeEmitter entity world =
             match tryMakeEmitter entity world with
             | Some emitter ->
+                let mutable transform = entity.GetTransform world
+                let aabb = transform.AABB
                 { emitter with
                     Body =
-                        { Position = entity.GetCenter world + entity.GetEmitterOffset world
-                          Rotation = entity.GetRotation world + entity.GetEmitterTwist world
-                          LinearVelocity = v2Zero
-                          AngularVelocity = 0.0f
+                        { Position = aabb.Center
+                          Scale = transform.Scale
+                          Angles = transform.Angles
+                          LinearVelocity = v3Zero
+                          AngularVelocity = v3Zero
                           Restitution = Constants.Particles.RestitutionDefault }
-                    Elevation = entity.GetElevation world
-                    Absolute = entity.GetAbsolute world
+                    Elevation = transform.Elevation
+                    Absolute = transform.Absolute
                     Blend = entity.GetEmitterBlend world
                     Image = entity.GetEmitterImage world
                     ParticleSeed = entity.GetBasicParticleSeed world
@@ -314,10 +576,11 @@ module BasicEmitterFacetModule =
             let particleSystem =
                 match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicEmitter as emitter) ->
+                    let mutable aabb = entity.GetAABB world
+                    let position = aabb.Center
                     let emitter =
-                        let entityPosition = entity.GetCenter world + entity.GetEmitterOffset world
-                        if v2Neq emitter.Body.Position entityPosition
-                        then { emitter with Body = { emitter.Body with Position = entityPosition }}
+                        if v3Neq emitter.Body.Position position
+                        then { emitter with Body = { emitter.Body with Position = position }}
                         else emitter
                     { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
@@ -330,10 +593,10 @@ module BasicEmitterFacetModule =
             let particleSystem =
                 match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicEmitter as emitter) ->
+                    let angles = entity.GetAngles world
                     let emitter =
-                        let entityRotation = entity.GetRotation world + entity.GetEmitterTwist world
-                        if emitter.Body.Rotation <> entityRotation
-                        then { emitter with Body = { emitter.Body with Rotation = entityRotation }}
+                        if v3Neq emitter.Body.Angles angles
+                        then { emitter with Body = { emitter.Body with Angles = angles }}
                         else emitter
                     { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
@@ -342,15 +605,13 @@ module BasicEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
-             define Entity.EmitterOffset v2Zero
-             define Entity.EmitterTwist 0.0f
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 0L
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v2Dup 0.5f; Inset = v4Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3Dup 0.5f; Inset = Box2.Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter"
              define Entity.ParticleSystem ParticleSystem.empty]
@@ -386,7 +647,7 @@ module BasicEmitterFacetModule =
             processOutput output entity world
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView2d world then
                 let time = World.getUpdateTime world
                 let particleSystem = entity.GetParticleSystem world
                 let particlesMessages =
@@ -394,50 +655,14 @@ module BasicEmitterFacetModule =
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
                         { Elevation = descriptor.Elevation
-                          PositionY = descriptor.PositionY
+                          Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
-                World.enqueueRenderLayeredMessages particlesMessages world
+                World.enqueueRenderLayeredMessages2d particlesMessages world
             else world
 
 [<AutoOpen>]
-module BasicEmittersFacetModule =
-
-    type Entity with
-
-        member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
-        member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.Set Property? BasicEmitterSymbols value world
-        member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
-        member this.GetBasicEmitterDescriptors world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitterDescriptors world
-        member this.SetBasicEmitterDescriptors (value : Particles.BasicEmitterDescriptors) world = this.Set Property? BasicEmitterDescriptors value world
-        member this.BasicEmitterDescriptors = lens Property? BasicEmitterDescriptors this.GetBasicEmitterDescriptors this.SetBasicEmitterDescriptors this
-
-    type BasicEmittersFacet () =
-        inherit Facet ()
-
-        static let updateEmitter (descriptor : Particles.BasicEmitterDescriptor) (emitter : Particles.BasicEmitter) position rotation =
-            let emitter =
-                if v2Neq emitter.Body.Position (position + descriptor.Body.Position)
-                then { emitter with Body = { emitter.Body with Position = position + descriptor.Body.Position }}
-                else emitter
-            let emitter =
-                if emitter.Body.Rotation <> rotation + descriptor.Body.Rotation
-                then { emitter with Body = { emitter.Body with Rotation = rotation + descriptor.Body.Rotation }}
-                else emitter
-            let emitter = if assetNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
-            let emitter = if emitter.Blend <> descriptor.Blend then { emitter with Blend = descriptor.Blend } else emitter
-            let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
-            let emitter = if emitter.ParticleLifeTimeMaxOpt <> descriptor.ParticleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = descriptor.ParticleLifeTimeMaxOpt } else emitter
-            let emitter = if emitter.ParticleRate <> descriptor.ParticleRate then { emitter with ParticleRate = descriptor.ParticleRate } else emitter
-            let emitter = if emitter.ParticleRing.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
-            let emitter = if emitter.ParticleSeed <> descriptor.ParticleSeed then { emitter with ParticleSeed = descriptor.ParticleSeed } else emitter
-            let emitter = if emitter.Constraint <> descriptor.Constraint then { emitter with Constraint = descriptor.Constraint } else emitter
-            emitter
-
-        do ignore updateEmitter // silence warning for now
-
-[<AutoOpen>]
-module EffectFacetModule =
+module Effect2dFacetModule =
 
     type EffectTags =
         Map<string, Effects.Slice>
@@ -456,12 +681,9 @@ module EffectFacetModule =
         member this.GetEffect world : Effect = this.Get Property? Effect world
         member this.SetEffect (value : Effect) world = this.Set Property? Effect value world
         member this.Effect = lens Property? Effect this.GetEffect this.SetEffect this
-        member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
-        member this.SetEffectOffset (value : Vector2) world = this.Set Property? EffectOffset value world
+        member this.GetEffectOffset world : Vector3 = this.Get Property? EffectOffset world
+        member this.SetEffectOffset (value : Vector3) world = this.Set Property? EffectOffset value world
         member this.EffectOffset = lens Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
-        member this.GetEffectSliceOffset world : Vector2 = this.Get Property? EffectSliceOffset world
-        member this.SetEffectSliceOffset (value : Vector2) world = this.Set Property? EffectSliceOffset value world
-        member this.EffectSliceOffset = lens Property? EffectSliceOffset this.GetEffectSliceOffset this.SetEffectSliceOffset this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.Set Property? EffectTags value world
         member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
@@ -484,7 +706,7 @@ module EffectFacetModule =
             let time = World.getUpdateTime world
             time - startTime
 
-    type EffectFacet () =
+    type Effect2dFacet () =
         inherit Facet ()
 
         static let updateParticleSystem updater (entity : Entity) world =
@@ -524,8 +746,7 @@ module EffectFacetModule =
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
-             define Entity.EffectOffset (Vector2 0.5f)
-             define Entity.EffectSliceOffset (Vector2 0.5f)
+             define Entity.EffectOffset v3Zero
              define Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              define Entity.ParticleSystem ParticleSystem.empty
@@ -550,20 +771,23 @@ module EffectFacetModule =
         override this.Actualize (entity, world) =
 
             // evaluate effect if visible
-            if entity.GetVisible world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView2d world then
                 
                 // set up effect system to evaluate effect
                 let time = World.getUpdateTime world
                 let world = entity.SetEffectTags Map.empty world
+                let mutable transform = entity.GetTransform world
+                let aabb = transform.AABB
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
                 let effectAbsolute = entity.GetAbsolute world
                 let effectSlice =
-                    { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
-                      Effects.Size = entity.GetSize world
-                      Effects.Rotation = entity.GetRotation world
-                      Effects.Elevation = entity.GetElevation world
-                      Effects.Offset = entity.GetEffectSliceOffset world
+                    { Effects.Position = aabb.Center
+                      Effects.Scale = transform.Scale
+                      Effects.Angles = transform.Angles
+                      Effects.Elevation = transform.Elevation
+                      Effects.Offset = entity.GetEffectOffset world
+                      Effects.Size = v3One // TODO: make sure this is a sensible value!
                       Effects.InsetOpt = None
                       Effects.Color = Color.White
                       Effects.Blend = Transparent
@@ -617,10 +841,10 @@ module EffectFacetModule =
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
                         { Elevation = descriptor.Elevation
-                          PositionY = descriptor.PositionY
+                          Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
-                let world = World.enqueueRenderLayeredMessages particlesMessages world
+                let world = World.enqueueRenderLayeredMessages2d particlesMessages world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
@@ -636,153 +860,8 @@ module EffectFacetModule =
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
-// TODO: implement.
-//[<AutoOpen>]
-//module EffectsFacetModule =
-//
-//    type Entity with
-//
-//        member this.GetEffectSymbols world : Symbol AssetTag list = this.Get Property? EffectSymbols world
-//        member this.SetEffectSymbols (value : Symbol AssetTag list) world = this.Set Property? EffectSymbols value world
-//        member this.EffectSymbols = lens Property? EffectSymbols this.GetEffectSymbols this.SetEffectSymbols this
-//        member this.GetEffectDescriptors world : Effects.EffectDescriptors = this.Get Property? EffectDescriptors world
-//        member this.SetEffectDescriptors (value : Effects.EffectDescriptors) world = this.Set Property? EffectDescriptors value world
-//        member this.EffectDescriptors = lens Property? EffectDescriptors this.GetEffectDescriptors this.SetEffectDescriptors this
-
 [<AutoOpen>]
-module ScriptFacetModule =
-
-    type Entity with
-        member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
-        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.Set Property? ScriptOpt value world
-        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
-        member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
-        member this.SetScript (value : Scripting.Expr array) world = this.Set Property? Script value world
-        member this.Script = lens Property? Script this.GetScript this.SetScript this
-        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
-        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.Set Property? ScriptUnsubscriptions value world
-        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetRegisterScript world : Scripting.Expr = this.Get Property? RegisterScript world
-        member this.SetRegisterScript (value : Scripting.Expr) world = this.Set Property? RegisterScript value world
-        member this.RegisterScript = lens Property? RegisterScript this.GetRegisterScript this.SetRegisterScript this
-        member this.GetUnregisterScript world : Scripting.Expr = this.Get Property? UnregisterScript world
-        member this.SetUnregisterScript (value : Scripting.Expr) world = this.Set Property? UnregisterScript value world
-        member this.UnregisterScript = lens Property? UnregisterScript this.GetUnregisterScript this.SetUnregisterScript this
-        member this.GetUpdateScript world : Scripting.Expr = this.Get Property? UpdateScript world
-        member this.SetUpdateScript (value : Scripting.Expr) world = this.Set Property? UpdateScript value world
-        member this.UpdateScript = lens Property? UpdateScript this.GetUpdateScript this.SetUpdateScript this
-        member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
-        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set Property? PostUpdateScript value world
-        member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
-
-    type ScriptFacet () =
-        inherit Facet ()
-
-        static let handleScriptChanged evt world =
-            let entity = evt.Subscriber : Entity
-            let script = entity.GetScript world
-            let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-            let world = World.setEntityScriptFrame scriptFrame entity world |> snd'
-            let world = evalManyWithLogging script scriptFrame entity world |> snd'
-            (Cascade, world)
-
-        static let handleRegisterScriptChanged evt world =
-            let entity = evt.Subscriber : Entity
-            let world = World.unregisterEntity entity world
-            let world = World.registerEntity entity world
-            (Cascade, world)
-
-        static member Properties =
-            [define Entity.ScriptOpt None
-             define Entity.Script [||]
-             define Entity.ScriptUnsubscriptions []
-             define Entity.RegisterScript Scripting.Unit
-             define Entity.UnregisterScript Scripting.Unit
-             define Entity.UpdateScript Scripting.Unit
-             define Entity.PostUpdateScript Scripting.Unit]
-
-        override this.Register (entity, world) =
-            let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
-            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
-            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent Property? RegisterScript) entity world
-            world
-
-        override this.Unregister (entity, world) =
-            World.evalWithLogging (entity.GetUnregisterScript world) (entity.GetScriptFrame world) entity world |> snd'
-
-        override this.Update (entity, world) =
-            World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        override this.PostUpdate (entity, world) =
-            World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
-#endif
-
-[<AutoOpen>]
-module TextFacetModule =
-
-    type Entity with
-        member this.GetText world : string = this.Get Property? Text world
-        member this.SetText (value : string) world = this.Set Property? Text value world
-        member this.Text = lens Property? Text this.GetText this.SetText this
-        member this.GetFont world : Font AssetTag = this.Get Property? Font world
-        member this.SetFont (value : Font AssetTag) world = this.Set Property? Font value world
-        member this.Font = lens Property? Font this.GetFont this.SetFont this
-        member this.GetMargins world : Vector2 = this.Get Property? Margins world
-        member this.SetMargins (value : Vector2) world = this.Set Property? Margins value world
-        member this.Margins = lens Property? Margins this.GetMargins this.SetMargins this
-        member this.GetJustification world : Justification = this.Get Property? Justification world
-        member this.SetJustification (value : Justification) world = this.Set Property? Justification value world
-        member this.Justification = lens Property? Justification this.GetJustification this.SetJustification this
-        member this.GetTextColor world : Color = this.Get Property? TextColor world
-        member this.SetTextColor (value : Color) world = this.Set Property? TextColor value world
-        member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
-        member this.GetTextDisabledColor world : Color = this.Get Property? TextDisabledColor world
-        member this.SetTextDisabledColor (value : Color) world = this.Set Property? TextDisabledColor value world
-        member this.TextDisabledColor = lens Property? TextDisabledColor this.GetTextDisabledColor this.SetTextDisabledColor this
-        member this.GetTextOffset world : Vector2 = this.Get Property? TextOffset world
-        member this.SetTextOffset (value : Vector2) world = this.Set Property? TextOffset value world
-        member this.TextOffset = lens Property? TextOffset this.GetTextOffset this.SetTextOffset this
-
-    type TextFacet () =
-        inherit Facet ()
-
-        static member Properties =
-            [define Entity.Text ""
-             define Entity.Font Assets.Default.Font
-             define Entity.Margins Vector2.Zero
-             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextColor Color.Black
-             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))
-             define Entity.TextOffset v2Zero]
-
-        override this.Actualize (entity, world) =
-            let text = entity.GetText world
-            if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
-                let transform =
-                    { Position = entity.GetPosition world + entity.GetMargins world + entity.GetTextOffset world
-                      Size = entity.GetSize world - entity.GetMargins world * 2.0f
-                      Rotation = 0.0f
-                      Elevation = entity.GetElevation world + 0.5f
-                      Flags = entity.GetFlags world }
-                let font = entity.GetFont world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize font
-                      RenderDescriptor =
-                        TextDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Text = text
-                              Font = font
-                              Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
-                              Justification = entity.GetJustification world }}
-                    world
-            else world
-
-[<AutoOpen>]
-module RigidBodyFastFacetModule =
+module RigidBody2dFacetModule =
 
     type Entity with
         member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
@@ -803,14 +882,14 @@ module RigidBodyFastFacetModule =
         member this.GetRestitution world : single = this.Get Property? Restitution world
         member this.SetRestitution (value : single) world = this.Set Property? Restitution value world
         member this.Restitution = lens Property? Restitution this.GetRestitution this.SetRestitution this
-        member this.GetLinearVelocity world : Vector2 = this.Get Property? LinearVelocity world
-        member this.SetLinearVelocity (value : Vector2) world = this.Set Property? LinearVelocity value world
+        member this.GetLinearVelocity world : Vector3 = this.Get Property? LinearVelocity world
+        member this.SetLinearVelocity (value : Vector3) world = this.Set Property? LinearVelocity value world
         member this.LinearVelocity = lens Property? LinearVelocity this.GetLinearVelocity this.SetLinearVelocity this
         member this.GetLinearDamping world : single = this.Get Property? LinearDamping world
         member this.SetLinearDamping (value : single) world = this.Set Property? LinearDamping value world
         member this.LinearDamping = lens Property? LinearDamping this.GetLinearDamping this.SetLinearDamping this
-        member this.GetAngularVelocity world : single = this.Get Property? AngularVelocity world
-        member this.SetAngularVelocity (value : single) world = this.Set Property? AngularVelocity value world
+        member this.GetAngularVelocity world : Vector3 = this.Get Property? AngularVelocity world
+        member this.SetAngularVelocity (value : Vector3) world = this.Set Property? AngularVelocity value world
         member this.AngularVelocity = lens Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity this
         member this.GetAngularDamping world : single = this.Get Property? AngularDamping world
         member this.SetAngularDamping (value : single) world = this.Set Property? AngularDamping value world
@@ -844,10 +923,10 @@ module RigidBodyFastFacetModule =
         member this.IsSensor = lens Property? IsSensor this.GetIsSensor this.SetIsSensor this
         member this.GetPhysicsId world : PhysicsId = this.Get Property? PhysicsId world
         member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
-        member this.CollisionEvent = Events.Collision --> this
-        member this.SeparationEvent = Events.Separation --> this
+        member this.BodyCollisionEvent = Events.BodyCollision --> this
+        member this.BodySeparationEvent = Events.BodySeparation --> this
 
-    type RigidBodyFastFacet () =
+    type RigidBody2dFacet () =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
@@ -860,24 +939,24 @@ module RigidBodyFastFacetModule =
              define Entity.Density Constants.Physics.DensityDefault
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
-             define Entity.LinearVelocity Vector2.Zero
+             define Entity.LinearVelocity v3Zero
              define Entity.LinearDamping 0.0f
-             define Entity.AngularVelocity 0.0f
+             define Entity.AngularVelocity v3Zero
              define Entity.AngularDamping 0.0f
              define Entity.FixedRotation false
              define Entity.Inertia 0.0f
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyBox { Extent = v3Dup 0.5f; Center = v3Zero; PropertiesOpt = None })
              define Entity.IgnoreCCD false
              define Entity.IsBullet false
              define Entity.IsSensor false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyType) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Awake) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Density) entity world
@@ -899,10 +978,12 @@ module RigidBodyFastFacetModule =
             world
 
         override this.RegisterPhysics (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let aabb = transform.AABB
             let bodyProperties = 
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
-                  Position = entity.GetPosition world + entity.GetSize world * 0.5f
-                  Rotation = entity.GetRotation world
+                  Position = aabb.Center
+                  Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
@@ -922,65 +1003,20 @@ module RigidBodyFastFacetModule =
                   IgnoreCCD = entity.GetIgnoreCCD world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
-            World.createBody entity (entity.GetId world) bodyProperties world
+            World.createBody2d entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody2d (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module RigidBodyFacetModule =
-
-    type Entity with
-        member this.GetBodyPosition world : Vector2 = this.Get Property? BodyPosition world
-        member private this.SetBodyPosition (value : Vector2) world = this.Set Property? BodyPosition value world
-        member this.BodyPosition = lensReadOnly Property? BodyPosition this.GetBodyPosition this
-        member this.GetBodySize world : Vector2 = this.Get Property? BodySize world
-        member private this.SetBodySize (value : Vector2) world = this.Set Property? BodySize value world
-        member this.BodySize = lensReadOnly Property? BodySize this.GetBodySize this
-        member this.GetBodyAngle world : single = this.Get Property? BodyAngle world
-        member private this.SetBodyAngle (value : single) world = this.Set Property? BodyAngle value world
-        member this.BodyAngle = lensReadOnly Property? BodyAngle this.GetBodyAngle this
-        member this.GetBodyRotation world : single = this.Get Property? BodyRotation world
-        member private this.SetBodyRotation (value : single) world = this.Set Property? BodyRotation value world
-        member this.BodyRotation = lensReadOnly Property? BodyRotation this.GetBodyRotation this
-        member this.GetBodyBounds world : Vector4 = this.Get Property? BodyBounds world
-        member private this.SetBodyBounds (value : Vector4) world = this.Set Property? BodyBounds value world
-        member this.BodyBounds = lensReadOnly Property? BodyBounds this.GetBodyBounds this
-
-    type RigidBodyFacet () =
-        inherit RigidBodyFastFacet ()
-
-        static let synchronizeBodyProperties (entity : Entity) world =
-            let world = entity.SetBodyPosition (entity.GetPosition world) world
-            let world = entity.SetBodySize (entity.GetSize world) world
-            let world = entity.SetBodyAngle (entity.GetAngle world) world
-            let world = entity.SetBodyRotation (entity.GetRotation world) world
-            let world = entity.SetBodyBounds (entity.GetBounds world) world
-            world
-
-        static member Properties =
-            [define Entity.BodyPosition v2Zero
-             define Entity.BodySize Constants.Engine.EntitySizeDefault
-             define Entity.BodyAngle 0.0f
-             define Entity.BodyRotation 0.0f
-             define Entity.BodyBounds (v4Bounds v2Zero Constants.Engine.EntitySizeDefault)]
-
-        override this.Register (entity, world) =
-            let world = base.Register (entity, world)
-            synchronizeBodyProperties entity world
-
-        override this.Update (entity, world) =
-            synchronizeBodyProperties entity world
-
-[<AutoOpen>]
-module JointFacetModule =
+module Joint2dFacetModule =
 
     type Entity with
         member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
         member this.SetJointDevice (value : JointDevice) world = this.Set Property? JointDevice value world
         member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
 
-    type JointFacet () =
+    type Joint2dFacet () =
         inherit Facet ()
 
         static member Properties =
@@ -996,21 +1032,15 @@ module JointFacetModule =
             let jointProperties =
                 { JointId = (entity.GetPhysicsId world).CorrelationId
                   JointDevice = (entity.GetJointDevice world) }
-            World.createJoint entity (entity.GetId world) jointProperties world
+            World.createJoint2d entity (entity.GetId world) jointProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint (entity.GetPhysicsId world) world
+            World.destroyJoint2d (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
 
     type Entity with
-        member this.GetColor world : Color = this.Get Property? Color world
-        member this.SetColor (value : Color) world = this.Set Property? Color value world
-        member this.Color = lens Property? Color this.GetColor this.SetColor this
-        member this.GetGlow world : Color = this.Get Property? Glow world
-        member this.SetGlow (value : Color) world = this.Set Property? Glow value world
-        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
         member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
         member this.SetTileLayerClearance (value : single) world = this.Set Property? TileLayerClearance value world
         member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
@@ -1028,7 +1058,8 @@ module TileMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1198,134 +1229,6 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize (entity.GetTmxMap world)
 
 [<AutoOpen>]
-module StaticSpriteFacetModule =
-
-    type Entity with
-        member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
-        member this.SetStaticImage (value : Image AssetTag) world = this.Set Property? StaticImage value world
-        member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
-        member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
-        member this.SetInsetOpt (value : Vector4 option) world = this.Set Property? Inset value world
-        member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
-        member this.GetBlend world : Blend = this.Get Property? Blend world
-        member this.SetBlend (value : Blend) world = this.Set Property? Blend value world
-        member this.Blend = lens Property? Blend this.GetBlend this.SetBlend this
-        member this.GetFlip world : Flip = this.Get Property? Flip world
-        member this.SetFlip (value : Flip) world = this.Set Property? Flip value world
-        member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
-
-    type StaticSpriteFacet () =
-        inherit Facet ()
-
-        static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4
-             define Entity.Color Color.White
-             define Entity.Blend Transparent
-             define Entity.Glow Color.Zero
-             define Entity.InsetOpt None
-             define Entity.Flip FlipNone]
-
-        override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
-                let transform = entity.GetTransform world
-                let staticImage = entity.GetStaticImage world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize staticImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
-                              InsetOpt = entity.GetInsetOpt world
-                              Image = staticImage
-                              Color = entity.GetColor world
-                              Blend = entity.GetBlend world
-                              Glow = entity.GetGlow world
-                              Flip = entity.GetFlip world }}
-                    world
-            else world
-
-        override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
-            | Some size -> size
-            | None -> Constants.Engine.EntitySizeDefault
-
-[<AutoOpen>]
-module AnimatedSpriteFacetModule =
-
-    type Entity with
-        member this.GetCelSize world : Vector2 = this.Get Property? CelSize world
-        member this.SetCelSize (value : Vector2) world = this.Set Property? CelSize value world
-        member this.CelSize = lens Property? CelSize this.GetCelSize this.SetCelSize this
-        member this.GetCelRun world : int = this.Get Property? CelRun world
-        member this.SetCelRun (value : int) world = this.Set Property? CelRun value world
-        member this.CelRun = lens Property? CelRun this.GetCelRun this.SetCelRun this
-        member this.GetCelCount world : int = this.Get Property? CelCount world
-        member this.SetCelCount (value : int) world = this.Set Property? CelCount value world
-        member this.CelCount = lens Property? CelCount this.GetCelCount this.SetCelCount this
-        member this.GetAnimationDelay world : int64 = this.Get Property? AnimationDelay world
-        member this.SetAnimationDelay (value : int64) world = this.Set Property? AnimationDelay value world
-        member this.AnimationDelay = lens Property? AnimationDelay this.GetAnimationDelay this.SetAnimationDelay this
-        member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
-        member this.SetAnimationSheet (value : Image AssetTag) world = this.Set Property? AnimationSheet value world
-        member this.AnimationSheet = lens Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
-
-    type AnimatedSpriteFacet () =
-        inherit Facet ()
-
-        static let getSpriteInsetOpt (entity : Entity) world =
-            let celCount = entity.GetCelCount world
-            let celRun = entity.GetCelRun world
-            if celCount <> 0 && celRun <> 0 then
-                let cel = int (World.getUpdateTime world / entity.GetAnimationDelay world) % celCount
-                let celSize = entity.GetCelSize world
-                let celI = cel % celRun
-                let celJ = cel / celRun
-                let celX = single celI * celSize.X
-                let celY = single celJ * celSize.Y
-                let inset = v4Bounds (v2 celX celY) celSize
-                Some inset
-            else None
-
-        static member Properties =
-            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
-             define Entity.CelRun 4
-             define Entity.CelCount 16
-             define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.Default.Image4
-             define Entity.Color Color.White
-             define Entity.Blend Transparent
-             define Entity.Glow Color.Zero
-             define Entity.Flip FlipNone]
-
-        override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
-                let transform = entity.GetTransform world
-                let animationSheet = entity.GetAnimationSheet world
-                World.enqueueRenderLayeredMessage
-                    { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
-                      AssetTag = AssetTag.generalize animationSheet
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
-                              InsetOpt = getSpriteInsetOpt entity world
-                              Image = animationSheet
-                              Color = entity.GetColor world
-                              Blend = entity.GetBlend world
-                              Glow = entity.GetGlow world
-                              Flip = entity.GetFlip world }}
-                    world
-            else world
-
-        override this.GetQuickSize (entity, world) =
-            entity.GetCelSize world
-
-[<AutoOpen>]
 module EntityDispatcherModule =
 
     type World with
@@ -1433,27 +1336,6 @@ module EntityDispatcherModule =
 
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
-
-[<AutoOpen>]
-module BasicEmitterDispatcherModule =
-
-    type BasicEmitterDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member Facets =
-            [typeof<BasicEmitterFacet>]
-
-[<AutoOpen>]
-module EffectDispatcherModule =
-
-    type EffectDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member Facets =
-            [typeof<EffectFacet>]
-
-        static member Properties =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -2192,13 +2074,34 @@ module FillBarDispatcherModule =
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
-module BlockDispatcherModule =
+module BasicEmitterDispatcherModule =
 
-    type BlockDispatcher () =
+    type BasicEmitter2dDispatcher () =
         inherit EntityDispatcher ()
 
         static member Facets =
-            [typeof<RigidBodyFastFacet>
+            [typeof<BasicEmitter2dFacet>]
+
+[<AutoOpen>]
+module Effect2dDispatcherModule =
+
+    type Effect2dDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<Effect2dFacet>]
+
+        static member Properties =
+            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+
+[<AutoOpen>]
+module BlockDispatcherModule =
+
+    type Block2dDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<RigidBody2dFastFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
@@ -2208,18 +2111,18 @@ module BlockDispatcherModule =
 [<AutoOpen>]
 module BoxDispatcherModule =
 
-    type BoxDispatcher () =
+    type Box2dDispatcher () =
         inherit EntityDispatcher ()
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBody2dFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
-module CharacterDispatcherModule =
+module SideViewCharacterDispatcherModule =
 
     type Entity with
         member this.GetCharacterIdleImage world : Image AssetTag = this.Get Property? CharacterIdleImage world
@@ -2235,7 +2138,7 @@ module CharacterDispatcherModule =
         member this.SetCharacterFacingLeft (value : bool) world = this.Set Property? CharacterFacingLeft value world
         member this.CharacterFacingLeft = lens Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
 
-    type CharacterDispatcher () =
+    type SideViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
@@ -2247,7 +2150,7 @@ module CharacterDispatcherModule =
             v4Bounds offset celSize
 
         static member Facets =
-            [typeof<RigidBodyFacet>]
+            [typeof<RigidBody2dFacet>]
 
         static member Properties =
             [define Entity.CelSize (v2 28.0f 28.0f)

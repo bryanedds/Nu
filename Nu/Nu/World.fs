@@ -379,8 +379,6 @@ module WorldModule3 =
                 [EntityDispatcher ()
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
-                 BasicEmitterDispatcher () :> EntityDispatcher
-                 EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
                  LabelDispatcher () :> EntityDispatcher
@@ -390,26 +388,28 @@ module WorldModule3 =
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
-                 BlockDispatcher () :> EntityDispatcher
-                 BoxDispatcher () :> EntityDispatcher
-                 CharacterDispatcher () :> EntityDispatcher
+                 BasicEmitter2dDispatcher () :> EntityDispatcher
+                 Effect2dDispatcher () :> EntityDispatcher
+                 Block2dDispatcher () :> EntityDispatcher
+                 Box2dDispatcher () :> EntityDispatcher
+                 SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [BasicEmitterFacet () :> Facet
-                 EffectFacet () :> Facet
-                 ScriptFacet () :> Facet
-                 TextFacet () :> Facet
-                 RigidBodyFastFacet () :> Facet
-                 RigidBodyFacet () :> Facet
-                 JointFacet () :> Facet
-                 TileMapFacet () :> Facet
-                 TmxMapFacet () :> Facet
+                [ScriptFacet () :> Facet
                  StaticSpriteFacet () :> Facet
-                 AnimatedSpriteFacet () :> Facet]
+                 AnimatedSpriteFacet () :> Facet
+                 TextFacet () :> Facet
+                 BasicEmitter2dFacet () :> Facet
+                 Effect2dFacet () :> Facet
+                 RigidBody2dFacet () :> Facet
+                 SyncedBody2dFacet () :> Facet
+                 Joint2dFacet () :> Facet
+                 TileMapFacet () :> Facet
+                 TmxMapFacet () :> Facet]
 
         /// Make an empty world.
         static member makeEmpty (config : WorldConfig) =
