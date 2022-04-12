@@ -61,7 +61,7 @@ module AvatarDispatcher =
             else false
 
         static member Facets =
-            [typeof<RigidBodyFacet>]
+            [typeof<RigidBody2dFacet>]
 
         override this.Initializers (avatar, entity) =
             let bodyCenter = v2 -0.015f -0.36f

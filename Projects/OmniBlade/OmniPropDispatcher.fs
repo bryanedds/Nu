@@ -21,7 +21,7 @@ module PropDispatcher =
         inherit EntityDispatcher<Prop, unit, unit> (Prop.empty)
 
         static member Facets =
-            [typeof<RigidBodyFastFacet>]
+            [typeof<RigidBody2dFastFacet>]
 
         override this.Initializers (prop, entity) =
             [entity.BodyType == Static

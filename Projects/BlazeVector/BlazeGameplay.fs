@@ -24,7 +24,7 @@ module Bullet =
             (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFastFacet>
+            [typeof<RigidBody2dFastFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
@@ -86,7 +86,7 @@ module Enemy =
             (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBody2dFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
@@ -194,7 +194,7 @@ module Player =
             else (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBody2dFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
