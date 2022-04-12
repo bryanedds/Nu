@@ -132,21 +132,29 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.SizeScaled = this.Size_ * this.Scale_
     member inline this.ExtentScaled = this.Extent * this.Scale_
 
-    member inline this.OffsetScaled =
-        if not this.Rotation_.IsIdentity
-        then Vector3.Transform (this.Offset_, this.Rotation_) * this.Scale_
-        else this.Offset_ * this.Scale_
+    member this.DimensionsUnscaled =
+        let size = this.Size_
+        let extent = size * 0.5f
+        let position = this.Position_ - extent
+        let offset =
+            if not this.Rotation_.IsIdentity
+            then Vector3.Transform (this.Offset_, this.Rotation_)
+            else this.Offset_
+        Box3 (position + offset, size)
 
-    member this.Dimensions =
+    member this.DimensionsScaled =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
         let positionScaled = this.Position_ - extentScaled
-        let offsetScaled = this.OffsetScaled
+        let offsetScaled =
+            if not this.Rotation_.IsIdentity
+            then Vector3.Transform (this.Offset_, this.Rotation_) * scale
+            else this.Offset_ * scale
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
     member this.AABB =
-        let dimensions = this.Dimensions
+        let dimensions = this.DimensionsScaled
         dimensions.Orient this.Rotation_
 
     member this.Copy =
