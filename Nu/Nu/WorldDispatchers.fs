@@ -2238,23 +2238,23 @@ module SideViewCharacterDispatcherModule =
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
             let facingLeft = entity.GetCharacterFacingLeft world
-            let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
+            let velocity = World.getBodyLinearVelocity2d (entity.GetPhysicsId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetCharacterFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacterFacingLeft true world
             else world
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView2d world then
                 let time = World.getUpdateTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
-                let velocity = World.getBodyLinearVelocity physicsId world
+                let velocity = World.getBodyLinearVelocity2d physicsId world
                 let celSize = entity.GetCelSize world
                 let celRun = entity.GetCelRun world
                 let animationDelay = entity.GetAnimationDelay world
-                let transform = entity.GetTransform world
+                let mutable transform = entity.GetTransform world
                 let (insetOpt, image) =
-                    if not (World.isBodyOnGround physicsId world) then
+                    if not (World.isBodyOnGround2d physicsId world) then
                         let image = entity.GetCharacterJumpImage world
                         (None, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
@@ -2263,15 +2263,13 @@ module SideViewCharacterDispatcherModule =
                     else
                         let image = entity.GetCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
-                World.enqueueRenderLayeredMessage
+                World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
+                      Horizon = transform.AABB.Position.Y
                       AssetTag = AssetTag.generalize image
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = v2Zero
                               InsetOpt = insetOpt
                               Image = image
                               Color = Color.White
