@@ -36,7 +36,7 @@ module Reflection =
              ("Facets", true)
              ("Surnames", true)
              ("AABB", true)
-             ("DimensionsUnscaled", true)
+             ("Dimensions", true)
              ("DimensionsScaled", true)
              ("Angles", true)
              ("PublishChangeBindings", true)

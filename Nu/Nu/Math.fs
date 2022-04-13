@@ -130,7 +130,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Backward = -this.Forward
 
-    member this.DimensionsUnscaled =
+    member this.Dimensions =
         let size = this.Size_
         let extent = size * 0.5f
         let position = this.Position_ - extent
