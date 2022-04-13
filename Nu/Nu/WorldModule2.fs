@@ -54,8 +54,11 @@ module WorldModule2 =
 
     type World with
 
-        static member internal makeEntityTree () =
-            SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+        static member internal makeQuadtree () =
+            Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
+
+        static member internal makeOctree () =
+            Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
 
         static member internal rebuildEntityTree world =
             let omniEntities =

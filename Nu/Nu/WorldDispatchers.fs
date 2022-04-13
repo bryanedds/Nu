@@ -1261,8 +1261,8 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
-        inherit EntityDispatcher ()
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, initial : 'model) =
+        inherit EntityDispatcher (is2d)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1349,11 +1349,17 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (initial : 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, initial)
+
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (initial : 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, initial)
+
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1370,7 +1376,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1395,7 +1401,7 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
@@ -1405,7 +1411,7 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (model)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (model)
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
@@ -2147,7 +2153,7 @@ module FillBarDispatcherModule =
 module BasicEmitterDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2156,7 +2162,7 @@ module BasicEmitterDispatcherModule =
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2168,7 +2174,7 @@ module Effect2dDispatcherModule =
 module BlockDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2182,7 +2188,7 @@ module BlockDispatcherModule =
 module BoxDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2209,7 +2215,7 @@ module SideViewCharacterDispatcherModule =
         member this.CharacterFacingLeft = lens Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2283,7 +2289,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2306,7 +2312,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d ()
 
         static member Facets =
             [typeof<TmxMapFacet>]
