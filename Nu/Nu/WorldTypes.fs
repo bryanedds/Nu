@@ -1232,7 +1232,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> bool -> Vector4 -> Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> bool -> Box3 -> Entity -> World -> World -> World
           RebuildEntityTree : World -> Entity SpatialTree }
 
     /// The subsystems encapsulated by the engine.

@@ -94,14 +94,14 @@ module Nu =
                         let entity = Entity (Array.skip 2 eventNames)
                         match eventFirstName with
                         | "Update" ->
-    #if DEBUG
+#if DEBUG
                             if Array.contains (Address.head Events.Wildcard) eventNames then
                                 Log.debug
                                     ("Subscribing to entity update events with a wildcard is not supported. " +
                                      "This will cause a bug where some entity update events are not published.")
-    #endif
+#endif
                             World.updateEntityPublishUpdateFlag entity world |> snd'
-    #if !DISABLE_ENTITY_POST_UPDATE
+#if !DISABLE_ENTITY_POST_UPDATE
                         | "PostUpdate" ->
     #if DEBUG
                             if Array.contains (Address.head Events.Wildcard) eventNames then
@@ -110,7 +110,7 @@ module Nu =
                                      "This will cause a bug where some entity post-update events are not published.")
     #endif
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
-    #endif
+#endif
                         | _ -> world
                     else world
                 let world =
@@ -406,7 +406,6 @@ module WorldModule3 =
                  BasicEmitter2dFacet () :> Facet
                  Effect2dFacet () :> Facet
                  RigidBody2dFacet () :> Facet
-                 SyncedBody2dFacet () :> Facet
                  Joint2dFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet]
