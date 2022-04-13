@@ -110,41 +110,41 @@ module WorldGameModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             World.setGameXtensionProperty propertyName property world
 
-        /// Get the view of the eye in absolute terms (world space).
-        member this.GetViewAbsolute (_ : World) = World.getViewAbsolute
+        /// Get the view of the eye in absolute terms (world space) in 2d.
+        member this.GetViewAbsolute2d (_ : World) = World.getViewAbsolute2d
         
-        /// Get the view of the eye in absolute terms (world space) with translation sliced on
+        /// Get the view of the eye in absolute terms (world space) in 2d with translation sliced on
         /// integers.
-        member this.GetViewAbsoluteI (_ : World) = World.getViewAbsoluteI
+        member this.GetViewAbsoluteI2d (_ : World) = World.getViewAbsoluteI2d
 
-        /// The relative view of the eye with original single values. Due to the problems with
+        /// The relative view of the eye with original single values in 2d. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
-        member this.GetViewRelative world = World.getViewRelative world
+        member this.GetViewRelative2d world = World.getViewRelative2d world
 
-        /// The relative view of the eye with translation sliced on integers. Good for rendering.
-        member this.GetViewRelativeI world = World.getViewRelativeI world
+        /// The relative view of the eye in 2d with translation sliced on integers. Good for rendering.
+        member this.GetViewRelativeI2d world = World.getViewRelativeI2d world
 
-        /// Get the bounds of the eye's sight relative to its position.
-        member this.GetViewBoundsRelative world = World.getViewBoundsRelative world
+        /// Get the bounds of the eye's sight relative to its position in 2d.
+        member this.GetViewBoundsRelative2d world = World.getViewBoundsRelative2d world
 
-        /// Get the bounds of the eye's sight not relative to its position.
-        member this.GetViewBoundsAbsolute world = World.getViewAbsolute world
+        /// Get the bounds of the eye's sight not relative to its position in 2d.
+        member this.GetViewBoundsAbsolute2d world = World.getViewAbsolute2d world
 
-        /// Get the bounds of the eye's sight.
-        member this.GetViewBounds absolute world = World.getViewBounds absolute world
+        /// Get the bounds of the eye's sight in 2d.
+        member this.GetViewBounds2d absolute world = World.getViewBounds2d absolute world
 
-        /// Check that the given bounds is within the eye's sight.
-        member this.GetInView absolute bounds world = World.isBoundsInView absolute bounds world
+        /// Check that the given bounds is within the eye's sight in 2d.
+        member this.GetInView2d absolute bounds world = World.isBoundsInView2d absolute bounds world
 
         /// Transform the given mouse position to screen space.
         member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world
 
-        /// Transform the given mouse position to world space.
-        member this.MouseToWorld absolute mousePosition world = World.mouseToWorld absolute mousePosition world
+        /// Transform the given mouse position to world space in 2d.
+        member this.MouseToWorld2d absolute mousePosition world = World.mouseToWorld2d absolute mousePosition world
 
-        /// Transform the given mouse position to entity space.
-        member this.MouseToEntity absolute entityPosition mousePosition world = World.mouseToEntity absolute entityPosition mousePosition world
+        /// Transform the given mouse position to entity space in 2d.
+        member this.MouseToEntity2d absolute entityPosition mousePosition world = World.mouseToEntity2d absolute entityPosition mousePosition world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)

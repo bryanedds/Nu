@@ -407,9 +407,9 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                     BodyTransformMessage
                         { BodySource = body.Tag :?> BodySourceInternal
                           Position = AetherPhysicsEngine.toPixelV3 body.Position
-                          Rotation = body.Rotation
+                          Rotation = Quaternion.CreateFromYawPitchRoll (0.0f, body.Rotation, 0.0f)
                           LinearVelocity = AetherPhysicsEngine.toPixelV3 body.LinearVelocity
-                          AngularVelocity = body.AngularVelocity }
+                          AngularVelocity = v3 body.AngularVelocity 0.0f 0.0f }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member private applyGravity physicsStepAmount physicsEngine =

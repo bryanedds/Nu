@@ -685,7 +685,8 @@ module WorldModule2 =
 
         /// Get all entities in the current view, including all omnipresent entities.
         static member getEntitiesInView world =
-            let viewBounds = World.getViewBoundsRelative world
+            let viewBounds2d = World.getViewBoundsRelative2d world
+            let viewBounds = Box3 (viewBounds2d.Position.XYZ - v3 0.0f 0.0f 1.0f, viewBounds2d.Size.XYZ + v3 0.0f 0.0f 2.0f)
             World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
 
         /// Get all entities in the given bounds, including all omnipresent entities.
@@ -780,24 +781,26 @@ module WorldModule2 =
             // fin
             world
 
-        static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
+        static member private actualizeScreenTransition5 (_ : Vector3) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.White.WithA (byte (alpha * 255.0f))
-                let position = -eyeSize * 0.5f // negation for right-handedness
-                let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0u }
-                World.enqueueRenderLayeredMessage
+                let position = -eyeSize.XYZ * 0.5f
+                let size = eyeSize.XYZ
+                let mutable transform = Transform.makeDefault ()
+                transform.Position <- position
+                transform.Size <- size
+                transform.Elevation <- Single.MaxValue
+                transform.Absolute <- true
+                World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
+                      Horizon = transform.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = true
-                              Offset = Vector2.Zero
                               InsetOpt = None
                               Image = dissolveImage
                               Color = color
@@ -861,20 +864,20 @@ module WorldModule2 =
             else (Dead, world)
 
         static member private processPhysics world =
-            let physicsEngine = World.getPhysicsEngine world
+            let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine physicsEngine world
+            let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate (World.getUpdateRate world) physicsMessages
-            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+            let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
             world
 
-        static member private render renderMessages renderContext (renderer : Renderer) eyePosition eyeSize eyeMargin =
+        static member private render renderMessages renderContext (renderer : Renderer2d) (eyePosition : Vector3) eyeSize eyeMargin =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            renderer.Render eyePosition eyeSize eyeMargin renderMessages
+            renderer.Render eyePosition.XY eyeSize eyeMargin renderMessages
             if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
@@ -986,9 +989,9 @@ module WorldModule2 =
                                                         let world =
                                                             match SdlDeps.getRenderContextOpt sdlDeps with
                                                             | Some renderContext ->
-                                                                let renderer = World.getRenderer world
+                                                                let renderer = World.getRenderer2d world
                                                                 let renderMessages = renderer.PopMessages ()
-                                                                let world = World.setRenderer renderer world
+                                                                let world = World.setRenderer2d renderer world
                                                                 let eyePosition = World.getEyePosition world
                                                                 let eyeSize = World.getEyeSize world
                                                                 let eyeMargin = World.getEyeMargin world
