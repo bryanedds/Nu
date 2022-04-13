@@ -339,7 +339,7 @@ module WorldModule2 =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            let cameraEyeSize = World.getEyeSize world
+            let cameraEyeSize = World.getEyeSize2d world
             let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
@@ -564,7 +564,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mousePosition = World.getMousePosition world
+                    let mousePosition = World.getMousePosition2d world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -574,7 +574,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mousePosition = World.getMousePosition world
+                    let mousePosition = World.getMousePosition2d world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -781,7 +781,7 @@ module WorldModule2 =
             // fin
             world
 
-        static member private actualizeScreenTransition5 (_ : Vector3) (eyeSize : Vector2) (screen : Screen) transition world =
+        static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
@@ -812,8 +812,8 @@ module WorldModule2 =
 
         static member private actualizeScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition world) (World.getEyeSize world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
         static member private actualizeSimulants world =
@@ -871,13 +871,13 @@ module WorldModule2 =
             let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
             world
 
-        static member private render renderMessages renderContext (renderer : Renderer2d) (eyePosition : Vector3) eyeSize eyeMargin =
+        static member private render renderMessages renderContext (renderer : Renderer2d) (eyePosition : Vector2) eyeSize eyeMargin =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            renderer.Render eyePosition.XY eyeSize eyeMargin renderMessages
+            renderer.Render eyePosition eyeSize eyeMargin renderMessages
             if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
@@ -992,10 +992,7 @@ module WorldModule2 =
                                                                 let renderer = World.getRenderer2d world
                                                                 let renderMessages = renderer.PopMessages ()
                                                                 let world = World.setRenderer2d renderer world
-                                                                let eyePosition = World.getEyePosition world
-                                                                let eyeSize = World.getEyeSize world
-                                                                let eyeMargin = World.getEyeMargin world
-                                                                World.render renderMessages renderContext renderer eyePosition eyeSize eyeMargin
+                                                                World.render renderMessages renderContext renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
                                                                 world
                                                             | None -> world
                                                         RenderTimer.Stop ()
