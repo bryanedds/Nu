@@ -282,7 +282,7 @@ module StaticSpriteFacetModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -400,7 +400,7 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable textTransform = Transform.makeDefault ()
+                let mutable textTransform = Transform.make2d ()
                 textTransform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
                 textTransform.Offset <- transform.Offset
@@ -1144,7 +1144,7 @@ module TileMapFacetModule =
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap -> TmxMap.getQuickSize tileMap
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -1507,7 +1507,7 @@ module ButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.makeDefault ()
+                let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Offset <- transform.Offset
@@ -1533,7 +1533,7 @@ module ButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUpImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -1556,7 +1556,7 @@ module LabelDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.makeDefault ()
+                let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Offset <- transform.Offset
@@ -1582,7 +1582,7 @@ module LabelDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module TextDispatcherModule =
@@ -1611,7 +1611,7 @@ module TextDispatcherModule =
                     let mutable transform = entity.GetTransform world
                     let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                     let horizon = dimensions.Position.Y
-                    let mutable spriteTransform = Transform.makeDefault ()
+                    let mutable spriteTransform = Transform.make2d ()
                     spriteTransform.Position <- dimensions.Position
                     spriteTransform.Size <- dimensions.Size
                     spriteTransform.Offset <- transform.Offset
@@ -1639,8 +1639,8 @@ module TextDispatcherModule =
             | Some image ->
                 match World.tryGetTextureSizeF image world with
                 | Some size -> size.XYZ
-                | None -> Constants.Engine.EntitySizeDefault
-            | None -> Constants.Engine.EntitySizeDefault
+                | None -> Constants.Engine.EntitySizeDefault2d
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module ToggleButtonDispatcherModule =
@@ -1749,7 +1749,7 @@ module ToggleButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.makeDefault ()
+                let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Offset <- transform.Offset
@@ -1778,7 +1778,7 @@ module ToggleButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module RadioButtonDispatcherModule =
@@ -1882,7 +1882,7 @@ module RadioButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.makeDefault ()
+                let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Offset <- transform.Offset
@@ -1911,7 +1911,7 @@ module RadioButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUndialedImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module FpsDispatcherModule =
@@ -2078,7 +2078,7 @@ module FillBarDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable borderTransform = Transform.makeDefault ()
+                let mutable borderTransform = Transform.make2d ()
                 borderTransform.Position <- dimensions.Position
                 borderTransform.Size <- dimensions.Size
                 borderTransform.Offset <- transform.Offset
@@ -2110,7 +2110,7 @@ module FillBarDispatcherModule =
                 let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
                 let fillHeight = fillSize.Y - fillInset.Y * 2.0f
                 let fillSize = v3 fillWidth fillHeight 0.0f
-                let mutable fillTransform = Transform.makeDefault ()
+                let mutable fillTransform = Transform.make2d ()
                 fillTransform.Position <- fillPosition
                 fillTransform.Size <- fillSize
                 fillTransform.Offset <- transform.Offset
@@ -2141,7 +2141,7 @@ module FillBarDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
             | Some size -> size.XYZ
-            | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
 module BasicEmitterDispatcherModule =

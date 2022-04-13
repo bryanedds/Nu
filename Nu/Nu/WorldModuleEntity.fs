@@ -429,6 +429,7 @@ module WorldModuleEntity =
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
+        static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
@@ -1651,19 +1652,31 @@ module WorldModuleEntity =
                 let mountOpt = World.getEntityMountOpt entity world
                 let world = World.addEntityToMounts mountOpt entity world
 
-                // mutate entity tree if entity is selected
+                // mutate respective spatial tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                                (fun entityTree ->
-                                    let entityState = World.getEntityState entity world
-                                    let entityAABB = World.getEntityStateAABB entityState
-                                    SpatialTree.addElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity entityTree
-                                    entityTree)
-                                (World.getEntityTree world)
-                        World.setEntityTree entityTree world
+                        if World.getEntityIs2d entity world then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                    (fun entityTree ->
+                                        let entityState = World.getEntityState entity world
+                                        let entityAABB = World.getEntityStateAABB entityState
+                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityAABB.XY entity entityTree
+                                        entityTree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                    (fun entityTree ->
+                                        let entityState = World.getEntityState entity world
+                                        let entityAABB = World.getEntityStateAABB entityState
+                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity entityTree
+                                        entityTree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
                     else world
 
                 // register entity if needed
@@ -1701,16 +1714,28 @@ module WorldModuleEntity =
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> world.WorldExtension.Dispatchers.RebuildEntityTree world)
-                                (fun entityTree ->
-                                    let entityState = World.getEntityState entity oldWorld
-                                    let entityAABB = World.getEntityStateAABB entityState
-                                    SpatialTree.removeElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity entityTree
-                                    entityTree)
-                                (World.getEntityTree world)
-                        World.setEntityTree entityTree world
+                        if World.getEntityIs2d entity world then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
+                                    (fun quadtree ->
+                                        let entityState = World.getEntityState entity oldWorld
+                                        let entityAABB = World.getEntityStateAABB entityState
+                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityAABB.XY entity quadtree
+                                        quadtree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
+                                    (fun octree ->
+                                        let entityState = World.getEntityState entity oldWorld
+                                        let entityAABB = World.getEntityStateAABB entityState
+                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity octree
+                                        octree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
                     else world
 
                 // remove cached entity event addresses
@@ -1965,17 +1990,28 @@ module WorldModuleEntity =
                 let newOmnipresent = entityState.Omnipresent || entityState.Absolute
                 if newOmnipresent <> oldOmnipresent then
 
-                    // remove and add entity in entity tree
+                    // remove and add entity in respective spatial tree
                     let newAABB = World.getEntityStateAABB entityState
-                    let entityTree =
-                        MutantCache.mutateMutant
-                            (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                            (fun entityTree ->
-                                SpatialTree.removeElement oldOmnipresent oldAABB entity entityTree
-                                SpatialTree.addElement newOmnipresent newAABB entity entityTree
-                                entityTree)
-                            (World.getEntityTree world)
-                    World.setEntityTree entityTree world
+                    if entityState.Is2d then
+                        let quadree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                (fun quadree ->
+                                    Quadtree.removeElement oldOmnipresent oldAABB.XY entity quadree
+                                    Quadtree.addElement newOmnipresent newAABB.XY entity quadree
+                                    quadree)
+                                (World.getQuadtree world)
+                        World.setQuadtree quadree world
+                    else
+                        let octree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                (fun octree ->
+                                    Octree.removeElement oldOmnipresent oldAABB entity octree
+                                    Octree.addElement newOmnipresent newAABB entity octree
+                                    octree)
+                                (World.getOctree world)
+                        World.setOctree octree world
 
                 // OPTIMIZATION: only update when entity is not omnipresent.
                 elif not newOmnipresent then
@@ -1985,13 +2021,20 @@ module WorldModuleEntity =
                     if not (oldAABB.Equals newAABB) then
 
                         // update entity in entity tree
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                                (fun entityTree -> SpatialTree.updateElement oldAABB newAABB entity entityTree; entityTree)
-                                (World.getEntityTree world)
-                        let world = World.setEntityTree entityTree world
-                        world
+                        if entityState.Is2d then
+                            let quadree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                    (fun quadree -> Quadtree.updateElement oldAABB.XY newAABB.XY entity quadree; quadree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                    (fun octree -> Octree.updateElement oldAABB newAABB entity octree; octree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
 
                     // just world
                     else world

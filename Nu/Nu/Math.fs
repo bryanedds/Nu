@@ -77,6 +77,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
+    member this.Is2d with get () = this.Flags_ &&& Is2dMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| Is2dMask else this.Flags_ &&& ~~~Is2dMask
     member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
 
     member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
@@ -196,13 +197,23 @@ type [<NoEquality; NoComparison>] Transform =
     static member inline makeEmpty () =
         Unchecked.defaultof<Transform>
 
-    /// Make a transform with default values.
-    static member makeDefault () =
+    /// Make a transform with default 2d values.
+    static member make2d () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
-        transform.Size_ <- Vector3.One
+        transform.Size_ <- Constants.Engine.EntitySizeDefault2d
+        transform.Is2d <- true
+        transform
+
+    /// Make a transform with default 3d values.
+    static member make3d () =
+        let mutable transform = Unchecked.defaultof<Transform>
+        transform.Flags_ <- DefaultFlags
+        transform.Rotation_ <- Quaternion.Identity
+        transform.Scale_ <- Vector3.One
+        transform.Size_ <- Constants.Engine.EntitySizeDefault3d
         transform
 
     interface Transform Component with

@@ -549,7 +549,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeDefault ()
+                let mutable transform = Transform.make2d ()
                 transform.Position <- slice.Position
                 transform.Scale <- slice.Scale
                 transform.Offset <- slice.Offset
@@ -594,7 +594,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeDefault ()
+                    let mutable transform = Transform.make2d ()
                     transform.Position <- slice.Position
                     transform.Scale <- slice.Scale
                     transform.Offset <- slice.Offset
@@ -629,10 +629,10 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build sprite views
+        // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeDefault ()
+                let mutable transform = Transform.make2d ()
                 transform.Position <- slice.Position - slice.Size * 0.5f // assume centering
                 transform.Scale <- slice.Scale
                 transform.Offset <- slice.Offset
@@ -640,7 +640,7 @@ module EffectSystem =
                 transform.Angles <- slice.Angles
                 transform.Elevation <- slice.Elevation
                 transform.Absolute <- effectSystem.Absolute
-                let spriteView =
+                let textView =
                     Render2d (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
                             { Transform = transform
@@ -648,7 +648,7 @@ module EffectSystem =
                               Font = AssetTag.specialize<Font> font
                               Color = slice.Color
                               Justification = Justified (JustifyCenter, JustifyMiddle) })
-                addView spriteView effectSystem
+                addView textView effectSystem
             else effectSystem
 
         // build implicitly mounted content
