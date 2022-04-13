@@ -416,7 +416,7 @@ module TextFacetModule =
                             { Transform = transform
                               Text = text
                               Font = font
-                              Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
+                              Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
                               Justification = entity.GetJustification world }}
                     world
             else world
@@ -1446,9 +1446,9 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
                 if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
                     if transform.Enabled then
                         let world = entity.SetDown true world
@@ -1466,9 +1466,9 @@ module ButtonDispatcherModule =
             let wasDown = entity.GetDown world
             let world = entity.SetDown false world
             let world = entity.SetTextOffset v3Zero world
-            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
                 if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
@@ -1523,7 +1523,7 @@ module ButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1572,7 +1572,7 @@ module LabelDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1626,7 +1626,7 @@ module TextDispatcherModule =
                                 { Transform = spriteTransform
                                   InsetOpt = None
                                   Image = spriteImage
-                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
                                   Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
@@ -1649,14 +1649,14 @@ module ToggleButtonDispatcherModule =
         member this.GetToggled world : bool = this.Get Property? Toggled world
         member this.SetToggled (value : bool) world = this.Set Property? Toggled value world
         member this.Toggled = lens Property? Toggled this.GetToggled this.SetToggled this
-        member this.GetToggledTextOffset world : Vector2 = this.Get Property? ToggledTextOffset world
-        member this.SetToggledTextOffset (value : Vector2) world = this.Set Property? ToggledTextOffset value world
+        member this.GetToggledTextOffset world : Vector3 = this.Get Property? ToggledTextOffset world
+        member this.SetToggledTextOffset (value : Vector3) world = this.Set Property? ToggledTextOffset value world
         member this.ToggledTextOffset = lens Property? ToggledTextOffset this.GetToggledTextOffset this.SetToggledTextOffset this
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = lens Property? Pressed this.GetPressed this.SetPressed this
-        member this.GetPressedTextOffset world : Vector2 = this.Get Property? PressedTextOffset world
-        member this.SetPressedTextOffset (value : Vector2) world = this.Set Property? PressedTextOffset value world
+        member this.GetPressedTextOffset world : Vector3 = this.Get Property? PressedTextOffset world
+        member this.SetPressedTextOffset (value : Vector3) world = this.Set Property? PressedTextOffset value world
         member this.PressedTextOffset = lens Property? PressedTextOffset this.GetPressedTextOffset this.SetPressedTextOffset this
         member this.GetUntoggledImage world : Image AssetTag = this.Get Property? UntoggledImage world
         member this.SetUntoggledImage (value : Image AssetTag) world = this.Set Property? UntoggledImage value world
@@ -1680,13 +1680,15 @@ module ToggleButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world then
-                    let world = entity.SetPressed true world
-                    (Resolve, world)
-                else (Resolve, world)
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled then
+                        let world = entity.SetPressed true world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
@@ -1694,22 +1696,24 @@ module ToggleButtonDispatcherModule =
             let data = evt.Data : MouseButtonData
             let wasPressed = entity.GetPressed world
             let world = if wasPressed then entity.SetPressed false world else world
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world && wasPressed then
-                    let world = entity.SetToggled (not (entity.GetToggled world)) world
-                    let toggled = entity.GetToggled world
-                    let eventAddress = if toggled then Events.Toggled else Events.Untoggled
-                    let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
-                    let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                    let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
-                    let world =
-                        match entity.GetToggleSoundOpt world with
-                        | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
-                        | None -> world
-                    (Resolve, world)
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled && wasPressed then
+                        let world = entity.SetToggled (not (entity.GetToggled world)) world
+                        let toggled = entity.GetToggled world
+                        let eventAddress = if toggled then Events.Toggled else Events.Untoggled
+                        let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
+                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
+                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetToggleSoundOpt world with
+                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -1718,11 +1722,11 @@ module ToggleButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
-             define Entity.Size (Vector2 (192.0f, 48.0f))
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Toggled false
-             define Entity.ToggledTextOffset v2Zero
+             define Entity.ToggledTextOffset v3Zero
              define Entity.Pressed false
-             define Entity.PressedTextOffset v2Zero
+             define Entity.PressedTextOffset v3Zero
              define Entity.UntoggledImage Assets.Default.Image
              define Entity.ToggledImage Assets.Default.Image2
              define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
@@ -1737,7 +1741,7 @@ module ToggleButtonDispatcherModule =
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetToggled world then entity.GetToggledTextOffset world
-                else v2Zero
+                else v3Zero
             entity.SetTextOffset textOffset world
 
         override this.Actualize (entity, world) =
@@ -1764,7 +1768,7 @@ module ToggleButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1773,7 +1777,7 @@ module ToggleButtonDispatcherModule =
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
-            | Some size -> size
+            | Some size -> size.XYZ
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
@@ -1783,8 +1787,8 @@ module RadioButtonDispatcherModule =
         member this.GetDialed world : bool = this.Get Property? Dialed world
         member this.SetDialed (value : bool) world = this.Set Property? Dialed value world
         member this.Dialed = lens Property? Dialed this.GetDialed this.SetDialed this
-        member this.GetDialedTextOffset world : Vector2 = this.Get Property? DialedTextOffset world
-        member this.SetDialedTextOffset (value : Vector2) world = this.Set Property? DialedTextOffset value world
+        member this.GetDialedTextOffset world : Vector3 = this.Get Property? DialedTextOffset world
+        member this.SetDialedTextOffset (value : Vector3) world = this.Set Property? DialedTextOffset value world
         member this.DialedTextOffset = lens Property? DialedTextOffset this.GetDialedTextOffset this.SetDialedTextOffset this
         member this.GetUndialedImage world : Image AssetTag = this.Get Property? UndialedImage world
         member this.SetUndialedImage (value : Image AssetTag) world = this.Set Property? UndialedImage value world
@@ -1808,13 +1812,15 @@ module RadioButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world then
-                    let world = entity.SetPressed true world
-                    (Resolve, world)
-                else (Resolve, world)
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled then
+                        let world = entity.SetPressed true world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
@@ -1823,22 +1829,24 @@ module RadioButtonDispatcherModule =
             let wasPressed = entity.GetPressed world
             let world = if wasPressed then entity.SetPressed false world else world
             let wasDialed = entity.GetDialed world
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world && wasPressed && not wasDialed then
-                    let world = entity.SetDialed true world
-                    let dialed = entity.GetDialed world
-                    let eventAddress = if dialed then Events.Dialed else Events.Undialed
-                    let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                    let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
-                    let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "Dial" EventTrace.empty
-                    let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
-                    let world =
-                        match entity.GetDialSoundOpt world with
-                        | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
-                        | None -> world
-                    (Resolve, world)
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled && wasPressed && not wasDialed then
+                        let world = entity.SetDialed true world
+                        let dialed = entity.GetDialed world
+                        let eventAddress = if dialed then Events.Dialed else Events.Undialed
+                        let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "" EventTrace.empty
+                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "Dial" EventTrace.empty
+                        let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetDialSoundOpt world with
+                            | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -1847,11 +1855,11 @@ module RadioButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
-             define Entity.Size (Vector2 (192.0f, 48.0f))
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Dialed false
-             define Entity.DialedTextOffset v2Zero
+             define Entity.DialedTextOffset v3Zero
              define Entity.Pressed false
-             define Entity.PressedTextOffset v2Zero
+             define Entity.PressedTextOffset v3Zero
              define Entity.UndialedImage Assets.Default.Image
              define Entity.DialedImage Assets.Default.Image2
              define Entity.DialSoundOpt (Some Assets.Default.Sound)
@@ -1866,7 +1874,7 @@ module RadioButtonDispatcherModule =
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetDialed world then entity.GetDialedTextOffset world
-                else v2Zero
+                else v3Zero
             entity.SetTextOffset textOffset world
 
         override this.Actualize (entity, world) =
@@ -1893,7 +1901,7 @@ module RadioButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1902,7 +1910,7 @@ module RadioButtonDispatcherModule =
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUndialedImage world) world with
-            | Some size -> size
+            | Some size -> size.XYZ
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
@@ -1962,15 +1970,17 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
-            if  entity.GetVisible world &&
-                Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
-                if entity.GetEnabled world then
-                    let world = entity.SetTouched true world
-                    let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
-                    (Resolve, world)
-                else (Resolve, world)
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
+                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                    if transform.Enabled then
+                        let world = entity.SetTouched true world
+                        let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
@@ -2004,7 +2014,7 @@ module FeelerDispatcherModule =
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
-             define Entity.Size (Vector2 (192.0f, 48.0f))
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Touched false]
 
         override this.Register (entity, world) =
@@ -2023,7 +2033,7 @@ module FeelerDispatcherModule =
             else world
 
         override this.GetQuickSize (_, _) =
-            Vector2 (192.0f, 48.0f)
+            v3 192.0f 48.0f 0.0f
 
 [<AutoOpen>]
 module FillBarDispatcherModule =
@@ -2053,7 +2063,7 @@ module FillBarDispatcherModule =
 
         static member Properties =
             [define Entity.Offset (v3Dup 0.5f)
-             define Entity.Size (Vector2 (192.0f, 48.0f))
+             define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))
@@ -2130,7 +2140,7 @@ module FillBarDispatcherModule =
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
-            | Some size -> size
+            | Some size -> size.XYZ
             | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
@@ -2207,7 +2217,7 @@ module SideViewCharacterDispatcherModule =
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
-            v4Bounds offset celSize
+            Box2 (offset, celSize)
 
         static member Facets =
             [typeof<RigidBody2dFacet>]
@@ -2218,7 +2228,7 @@ module SideViewCharacterDispatcherModule =
              define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
              define Entity.CharacterIdleImage Assets.Default.CharacterIdleImage
              define Entity.CharacterJumpImage Assets.Default.CharacterJumpImage
              define Entity.CharacterWalkSheet Assets.Default.CharacterWalkImage
