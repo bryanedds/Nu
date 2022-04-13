@@ -224,6 +224,9 @@ module WorldTypes =
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
+    // Entity reach-arounds.
+    let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
+
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
 
@@ -382,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher () =
+    and [<AbstractClass>] EntityDispatcher () =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -395,7 +398,7 @@ module WorldTypes =
              Define? Offset Vector3.Zero
              Define? Angles Vector3.Zero
              Define? Degrees Vector3.Zero
-             Define? Size Constants.Engine.EntitySizeDefault
+             Define? Size Constants.Engine.EntitySizeDefault3d // NOTE: choosing 3D as default mostly arbitrarily...
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Omnipresent false
@@ -436,10 +439,6 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
 
-        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        abstract GetQuickSize : Entity * World -> Vector3
-        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
-
         /// Apply physics changes to an entity.
         abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
         default this.ApplyPhysics (_, _, _, _, _, world) = world
@@ -451,6 +450,13 @@ module WorldTypes =
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Participate in getting the priority with which an entity is picked in the editor.
+        abstract GetQuickSize : Entity * World -> Vector3
+        default this.GetQuickSize (_, _) = if this.Is2d then Constants.Engine.EntitySizeDefault2d else Constants.Engine.EntitySizeDefault3d
+
+        /// Whether the dispatcher has a 2-dimensional transform interpretation.
+        abstract Is2d : bool
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
@@ -485,13 +491,13 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
 
-        /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract GetQuickSize : Entity * World -> Vector3
-        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
-
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Participate in getting the priority with which an entity is picked in the editor.
+        abstract GetQuickSize : Entity * World -> Vector3
+        default this.GetQuickSize (entity, world) = if getEntityIs2d entity world then Constants.Engine.EntitySizeDefault2d else Constants.Engine.EntitySizeDefault3d
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -729,7 +735,7 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let mutable transform = Transform.makeDefault ()
+            let mutable transform = if dispatcher.Is2d then Transform.make2d () else Transform.make3d ()
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
@@ -833,6 +839,7 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
+        member this.Is2d with get () = this.Transform.Is2d and set value = this.Transform.Is2d <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix

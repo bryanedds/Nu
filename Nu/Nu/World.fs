@@ -155,6 +155,10 @@ module Nu =
                     else world
                 world :> obj
 
+            // init getEntityIs2d F# reach-around
+            WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
+                World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
+
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->
