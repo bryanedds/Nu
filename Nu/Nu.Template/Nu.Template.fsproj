@@ -87,9 +87,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="packages.config" />
-    <None Include="Assets\Default\CharacterJump.png" />
-    <None Include="Assets\Default\CharacterIdle.png" />
-    <None Include="Assets\Default\CharacterWalk.png" />
+    <None Include="Assets\Default\SideViewCharacterJump.png" />
+    <None Include="Assets\Default\SideViewCharacterIdle.png" />
+    <None Include="Assets\Default\SideViewCharacterWalk.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />

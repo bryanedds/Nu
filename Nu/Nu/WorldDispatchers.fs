@@ -2201,18 +2201,18 @@ module BoxDispatcherModule =
 module SideViewCharacterDispatcherModule =
 
     type Entity with
-        member this.GetCharacterIdleImage world : Image AssetTag = this.Get Property? CharacterIdleImage world
-        member this.SetCharacterIdleImage (value : Image AssetTag) world = this.Set Property? CharacterIdleImage value world
-        member this.CharacterIdleImage = lens Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
-        member this.GetCharacterJumpImage world : Image AssetTag = this.Get Property? CharacterJumpImage world
-        member this.SetCharacterJumpImage (value : Image AssetTag) world = this.Set Property? CharacterJumpImage value world
-        member this.CharacterJumpImage = lens Property? CharacterJumpImage this.GetCharacterJumpImage this.SetCharacterJumpImage this
-        member this.GetCharacterWalkSheet world : Image AssetTag = this.Get Property? CharacterWalkSheet world
-        member this.SetCharacterWalkSheet (value : Image AssetTag) world = this.Set Property? CharacterWalkSheet value world
-        member this.CharacterWalkSheet = lens Property? CharacterWalkSheet this.GetCharacterWalkSheet this.SetCharacterWalkSheet this
-        member this.GetCharacterFacingLeft world : bool = this.Get Property? CharacterFacingLeft world
-        member this.SetCharacterFacingLeft (value : bool) world = this.Set Property? CharacterFacingLeft value world
-        member this.CharacterFacingLeft = lens Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
+        member this.GetSideViewCharacterIdleImage world : Image AssetTag = this.Get Property? SideViewCharacterIdleImage world
+        member this.SetSideViewCharacterIdleImage (value : Image AssetTag) world = this.Set Property? SideViewCharacterIdleImage value world
+        member this.SideViewCharacterIdleImage = lens Property? SideViewCharacterIdleImage this.GetSideViewCharacterIdleImage this.SetSideViewCharacterIdleImage this
+        member this.GetSideViewCharacterJumpImage world : Image AssetTag = this.Get Property? SideViewCharacterJumpImage world
+        member this.SetSideViewCharacterJumpImage (value : Image AssetTag) world = this.Set Property? SideViewCharacterJumpImage value world
+        member this.SideViewCharacterJumpImage = lens Property? SideViewCharacterJumpImage this.GetSideViewCharacterJumpImage this.SetSideViewCharacterJumpImage this
+        member this.GetSideViewCharacterWalkSheet world : Image AssetTag = this.Get Property? SideViewCharacterWalkSheet world
+        member this.SetSideViewCharacterWalkSheet (value : Image AssetTag) world = this.Set Property? SideViewCharacterWalkSheet value world
+        member this.SideViewCharacterWalkSheet = lens Property? SideViewCharacterWalkSheet this.GetSideViewCharacterWalkSheet this.SetSideViewCharacterWalkSheet this
+        member this.GetSideViewCharacterFacingLeft world : bool = this.Get Property? SideViewCharacterFacingLeft world
+        member this.SetSideViewCharacterFacingLeft (value : bool) world = this.Set Property? SideViewCharacterFacingLeft value world
+        member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher2d ()
@@ -2235,25 +2235,25 @@ module SideViewCharacterDispatcherModule =
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
-             define Entity.CharacterIdleImage Assets.Default.CharacterIdleImage
-             define Entity.CharacterJumpImage Assets.Default.CharacterJumpImage
-             define Entity.CharacterWalkSheet Assets.Default.CharacterWalkImage
-             define Entity.CharacterFacingLeft false]
+             define Entity.SideViewCharacterIdleImage Assets.Default.SideViewCharacterIdleImage
+             define Entity.SideViewCharacterJumpImage Assets.Default.SideViewCharacterJumpImage
+             define Entity.SideViewCharacterWalkSheet Assets.Default.SideViewCharacterWalkImage
+             define Entity.SideViewCharacterFacingLeft false]
 
         override this.Update (entity, world) =
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
-            let facingLeft = entity.GetCharacterFacingLeft world
+            let facingLeft = entity.GetSideViewCharacterFacingLeft world
             let velocity = World.getBodyLinearVelocity2d (entity.GetPhysicsId world) world
-            if facingLeft && velocity.X > 1.0f then entity.SetCharacterFacingLeft false world
-            elif not facingLeft && velocity.X < -1.0f then entity.SetCharacterFacingLeft true world
+            if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
+            elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
             else world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let time = World.getUpdateTime world
                 let physicsId = entity.GetPhysicsId world
-                let facingLeft = entity.GetCharacterFacingLeft world
+                let facingLeft = entity.GetSideViewCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity2d physicsId world
                 let celSize = entity.GetCelSize world
                 let celRun = entity.GetCelRun world
@@ -2261,13 +2261,13 @@ module SideViewCharacterDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let (insetOpt, image) =
                     if not (World.isBodyOnGround2d physicsId world) then
-                        let image = entity.GetCharacterJumpImage world
+                        let image = entity.GetSideViewCharacterJumpImage world
                         (None, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
-                        let image = entity.GetCharacterIdleImage world
+                        let image = entity.GetSideViewCharacterIdleImage world
                         (None, image)
                     else
-                        let image = entity.GetCharacterWalkSheet world
+                        let image = entity.GetSideViewCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
