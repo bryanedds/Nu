@@ -199,10 +199,8 @@ type [<NoEquality; NoComparison>] Transform =
     static member makeDefault () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
-        transform.Rotation <- Quaternion.Identity
+        transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
-        transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
-        transform.AffineMatrixOpt_ <- ref Matrix4x4.Identity
         transform.Size_ <- Vector3.One
         transform
 
