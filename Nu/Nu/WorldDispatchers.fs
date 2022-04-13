@@ -2150,7 +2150,7 @@ module FillBarDispatcherModule =
             | None -> Constants.Engine.EntitySizeDefault2d
 
 [<AutoOpen>]
-module BasicEmitterDispatcherModule =
+module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
         inherit EntityDispatcher2d ()
@@ -2171,7 +2171,7 @@ module Effect2dDispatcherModule =
             [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
-module BlockDispatcherModule =
+module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
         inherit EntityDispatcher2d ()
@@ -2185,7 +2185,7 @@ module BlockDispatcherModule =
              define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
-module BoxDispatcherModule =
+module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
         inherit EntityDispatcher2d ()
