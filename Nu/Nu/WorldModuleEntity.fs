@@ -300,7 +300,7 @@ module WorldModuleEntity =
                 let world =
                     if dimensionsUnscaledChanged then
                         let world = World.publishEntityChange Property? AABB newTransform.AABB publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? DimensionsUnscaled newTransform.DimensionsUnscaled publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Dimensions newTransform.Dimensions publishChangeBindings publishChangeEvents entity world
                         let world = if scaleChanged then World.publishEntityChange Property? DimensionsScaled newTransform.DimensionsScaled publishChangeBindings publishChangeEvents entity world else world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
@@ -1097,8 +1097,8 @@ module WorldModuleEntity =
                 else world
             struct (changed, world)
 
-        static member internal getEntityDimensionsUnscaled entity world =
-            (World.getEntityState entity world).Transform.DimensionsUnscaled
+        static member internal getEntityDimensions entity world =
+            (World.getEntityState entity world).Transform.Dimensions
 
         static member internal getEntityDimensionsScaled entity world =
             (World.getEntityState entity world).Transform.DimensionsScaled
@@ -2083,7 +2083,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
         EntityGetters.Assign ("AABB", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityAABB entity world })
-        EntityGetters.Assign ("DimensionsUnscaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsUnscaled entity world })
+        EntityGetters.Assign ("Dimensions", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensions entity world })
         EntityGetters.Assign ("DimensionsScaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsScaled entity world })
         EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world })
         EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world })

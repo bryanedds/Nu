@@ -398,7 +398,7 @@ module TextFacetModule =
             let text = entity.GetText world
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable textTransform = Transform.make2d ()
                 textTransform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
@@ -1099,7 +1099,7 @@ module TileMapFacetModule =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap ->
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                let dimensions = transform.Dimensions // tile map currently ignores rotation and scale
                 let tileMapPosition = dimensions.Position.XY
                 let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
                 let bodyProperties =
@@ -1122,7 +1122,7 @@ module TileMapFacetModule =
                 match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
                 | Some tileMap ->
                     let mutable transform = entity.GetTransform world
-                    let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                    let dimensions = transform.Dimensions // tile map currently ignores rotation and scale
                     let viewBounds = World.getViewBounds2d transform.Absolute world
                     let tileMapMessages =
                         TmxMap.getLayeredMessages2d
@@ -1196,7 +1196,7 @@ module TmxMapFacetModule =
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
-            let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+            let dimensions = transform.Dimensions // tile map currently ignores rotation and scale
             let tileMap = entity.GetTmxMap world
             let tileMapPosition = dimensions.Position.XY
             let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
@@ -1217,7 +1217,7 @@ module TmxMapFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // tile map currently ignores rotation and scale
+                let dimensions = transform.Dimensions // tile map currently ignores rotation and scale
                 let viewBounds = World.getViewBounds2d transform.Absolute world
                 let tileMap = entity.GetTmxMap world
                 let tileMapMessages =
@@ -1455,7 +1455,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled then
                         let world = entity.SetDown true world
                         let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
@@ -1475,7 +1475,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
                         let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
@@ -1511,7 +1511,7 @@ module ButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
@@ -1560,7 +1560,7 @@ module LabelDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
@@ -1615,7 +1615,7 @@ module TextDispatcherModule =
                 match entity.GetBackgroundImageOpt world with
                 | Some spriteImage ->
                     let mutable transform = entity.GetTransform world
-                    let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                    let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                     let horizon = dimensions.Position.Y
                     let mutable spriteTransform = Transform.make2d ()
                     spriteTransform.Position <- dimensions.Position
@@ -1689,7 +1689,7 @@ module ToggleButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -1705,7 +1705,7 @@ module ToggleButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
                         let toggled = entity.GetToggled world
@@ -1753,7 +1753,7 @@ module ToggleButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
@@ -1821,7 +1821,7 @@ module RadioButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -1838,7 +1838,7 @@ module RadioButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
                         let dialed = entity.GetDialed world
@@ -1886,7 +1886,7 @@ module RadioButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable spriteTransform = Transform.make2d ()
                 spriteTransform.Position <- dimensions.Position
@@ -1979,7 +1979,7 @@ module FeelerDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let mousePositionWorld = World.mouseToWorld2d transform.Absolute data.Position world
-                if Math.isPointInBounds2d mousePositionWorld transform.DimensionsUnscaled.XY then
+                if Math.isPointInBounds2d mousePositionWorld transform.Dimensions.XY then
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
@@ -2082,7 +2082,7 @@ module FillBarDispatcherModule =
 
                 // border sprite
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsUnscaled // gui currently ignores rotation and scale
+                let dimensions = transform.Dimensions // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
                 let mutable borderTransform = Transform.make2d ()
                 borderTransform.Position <- dimensions.Position
