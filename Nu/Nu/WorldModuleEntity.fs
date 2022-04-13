@@ -2024,7 +2024,7 @@ module WorldModuleEntity =
                 let position2d =
                     if atMouse
                     then World.mouseToWorld2d entityState.Absolute rightClickPosition world
-                    else World.mouseToWorld2d entityState.Absolute (World.getEyeSize world * 0.5f) world
+                    else World.mouseToWorld2d entityState.Absolute (World.getEyeSize2d world * 0.5f) world
                 let mutable transform = entityState.Transform
                 transform.Position <- position2d.XYZ
                 let transform = Math.snapTransform positionSnap rotationSnap transform

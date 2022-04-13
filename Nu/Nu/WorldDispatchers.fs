@@ -2026,7 +2026,7 @@ module FeelerDispatcherModule =
 
         override this.Update (entity, world) =
             if entity.GetTouched world then
-                let mousePosition = World.getMousePosition world
+                let mousePosition = World.getMousePosition2d world
                 let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
                 let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
                 world

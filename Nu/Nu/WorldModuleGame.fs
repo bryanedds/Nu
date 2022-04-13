@@ -81,45 +81,87 @@ module WorldModuleGame =
                     else Unchecked.defaultof<_>)
                 Property? Model value world
 
-        /// Get the current eye center.
+        /// Get the current 3d eye position.
         [<FunctionBinding>]
-        static member getEyePosition world =
-            (World.getGameState world).EyePosition
+        static member getEyePosition3d world =
+            (World.getGameState world).EyePosition3d
 
-        /// Set the current eye center.
-        static member internal setEyePositionPlus value world =
-            World.updateGameState (fun gameState -> if v3Neq value gameState.EyePosition then { gameState with EyePosition = value } else Unchecked.defaultof<_>) Property? EyePosition value world
+        /// Set the current 3d eye position.
+        static member internal setEyePosition3dPlus value world =
+            World.updateGameState (fun gameState -> if v3Neq value gameState.EyePosition3d then { gameState with EyePosition3d = value } else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
-        /// Set the current eye center.
+        /// Set the current 3d eye position.
         [<FunctionBinding>]
-        static member setEyePosition value world =
-            World.setEyePositionPlus value world |> snd'
+        static member setEyePosition3d value world =
+            World.setEyePosition3dPlus value world |> snd'
 
-        /// Get the current eye size.
+        /// Get the current 3d eye rotation.
         [<FunctionBinding>]
-        static member getEyeSize world =
-            (World.getGameState world).EyeSize
+        static member getEyeRotation3d world =
+            (World.getGameState world).EyeRotation3d
+
+        /// Set the current 3d eye rotation.
+        static member internal setEyeRotation3dPlus value world =
+            World.updateGameState (fun gameState -> if quatNeq value gameState.EyeRotation3d then { gameState with EyeRotation3d = value } else Unchecked.defaultof<_>) Property? EyeRotation3d value world
+
+        /// Set the current 3d eye rotation.
+        [<FunctionBinding>]
+        static member setEyeRotation3d value world =
+            World.setEyeRotation3dPlus value world |> snd'
+
+        /// Get the current 3d eye projection.
+        [<FunctionBinding>]
+        static member getEyeProjection3d world =
+            (World.getGameState world).EyeProjection3dRef.Value
+
+        /// Set the current 3d eye projection.
+        static member internal setEyeProjection3dPlus value world =
+            World.updateGameState (fun gameState -> if not (value.Equals gameState.EyeProjection3dRef.Value) then { gameState with EyeProjection3dRef = ref value } else Unchecked.defaultof<_>) Property? EyeProjection3d value world
+
+        /// Set the current 3d eye projection.
+        [<FunctionBinding>]
+        static member setEyeProjection3d value world =
+            World.setEyeProjection3dPlus value world |> snd'
+
+        /// Get the current 2d eye position.
+        [<FunctionBinding>]
+        static member getEyePosition2d world =
+            (World.getGameState world).EyePosition2d
+
+        /// Set the current 2d eye position.
+        static member internal setEyePosition2dPlus value world =
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyePosition2d then { gameState with EyePosition2d = value } else Unchecked.defaultof<_>) Property? EyePosition2d value world
+
+        /// Set the current 2d eye position.
+        [<FunctionBinding>]
+        static member setEyePosition2d value world =
+            World.setEyePosition2dPlus value world |> snd'
+
+        /// Get the current 2d eye size.
+        [<FunctionBinding>]
+        static member getEyeSize2d world =
+            (World.getGameState world).EyeSize2d
             
         /// Get the margin around the camera eye given the display mode's full screen state and resolution.
         [<FunctionBinding>]
-        static member getEyeMargin world =
-            World.getAmbientStateBy (AmbientState.getEyeMargin (World.getEyeSize world)) world
+        static member getEyeMargin2d world =
+            World.getAmbientStateBy (AmbientState.getEyeMargin (World.getEyeSize2d world)) world
 
-        /// Set the current eye size.
-        static member internal setEyeSizePlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize then { gameState with EyeSize = value } else Unchecked.defaultof<_>) Property? EyeSize value world
+        /// Set the current 2d eye size.
+        static member internal setEyeSize2dPlus value world =
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize2d then { gameState with EyeSize2d = value } else Unchecked.defaultof<_>) Property? EyeSize2d value world
 
-        /// Set the current eye size.
+        /// Set the current 2d eye size.
         [<FunctionBinding>]
-        static member setEyeSize value world =
-            World.setEyeSizePlus value world |> snd'
+        static member setEyeSize2d value world =
+            World.setEyeSize2dPlus value world |> snd'
 
-        /// Get the current eye bounds in 2D space.
+        /// Get the current 2d eye bounds.
         [<FunctionBinding>]
         static member getEyeBounds2d world =
-            let eyePosition = World.getEyePosition world
-            let eyeSize = World.getEyeSize world
-            Box2 (eyePosition.XY - eyeSize * 0.5f, eyeSize)
+            let eyePosition = World.getEyePosition2d world
+            let eyeSize = World.getEyeSize2d world
+            Box2 (eyePosition - eyeSize * 0.5f, eyeSize)
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -158,18 +200,17 @@ module WorldModuleGame =
         /// Constrain the eye to the given 2d bounds.
         [<FunctionBinding>]
         static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds2d = World.getEyeBounds2d world
-            eyeBounds2d.Position <-
+            let mutable eyeBounds = World.getEyeBounds2d world
+            eyeBounds.Position <-
                 v2
-                    (if eyeBounds2d.Position.X < bounds.Position.X then bounds.Position.X
-                        elif eyeBounds2d.Right.X > bounds.Right.X then bounds.Right.X - eyeBounds2d.Size.X
-                        else eyeBounds2d.Position.X)
-                    (if eyeBounds2d.Position.Y < bounds.Position.Y then bounds.Position.Y
-                        elif eyeBounds2d.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds2d.Size.Y
-                        else eyeBounds2d.Position.Y)
-            let eyePosition = World.getEyePosition world
-            let eyePosition = eyeBounds2d.Center.XYZ.WithZ eyePosition.Z
-            World.setEyePosition eyePosition world
+                    (if eyeBounds.Position.X < bounds.Position.X then bounds.Position.X
+                        elif eyeBounds.Right.X > bounds.Right.X then bounds.Right.X - eyeBounds.Size.X
+                        else eyeBounds.Position.X)
+                    (if eyeBounds.Position.Y < bounds.Position.Y then bounds.Position.Y
+                        elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
+                        else eyeBounds.Position.Y)
+            let eyePosition = eyeBounds.Center
+            World.setEyePosition2d eyePosition world
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
@@ -275,69 +316,69 @@ module WorldModuleGame =
                 destination
                 world
 
-        /// Get the view of the eye in absolute terms (world space) in 2d.
+        /// Get the view of the 2d eye in absolute terms (world space).
         static member getViewAbsolute2d world =
-            Math.getViewAbsolute2d (World.getEyePosition world).XY (World.getEyeSize world)
+            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
         
-        /// Get the view of the eye in absolute terms (world space) with translation sliced on
-        /// integers in 2d.
+        /// Get the view of the 2d eye in absolute terms (world space) with translation sliced on
+        /// integers.
         static member getViewAbsoluteI2d world =
-            Math.getViewAbsolute2d (World.getEyePosition world).XY (World.getEyeSize world)
+            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
-        /// The relative view of the eye with original single values in 2d. Due to the problems
-        /// with SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+        /// The relative view of the 2d eye with original single values. Due to the problems with
+        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
         static member getViewRelative2d world =
-            Math.getViewRelative2d (World.getEyePosition world).XY (World.getEyeSize world)
+            Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
-        /// The relative view of the eye with translation sliced on integers in 2d. Good for
-        /// SDL rendering.
+        /// The relative view of the 2d eye with translation sliced on integers. Good for SDL
+        /// rendering.
         static member getViewRelativeI2d world =
-            Math.getViewRelativeI2d (World.getEyePosition world).XY (World.getEyeSize world)
+            Math.getViewRelativeI2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
-        /// Get the bounds of the eye's sight relative to its position in 2d.
+        /// Get the bounds of the 2d eye's sight relative to its position.
         [<FunctionBinding>]
         static member getViewBoundsRelative2d world =
             let gameState = World.getGameState world
             Box2
-                (v2 (gameState.EyePosition.X - gameState.EyeSize.X * 0.5f) (gameState.EyePosition.Y - gameState.EyeSize.Y * 0.5f),
-                 v2 gameState.EyeSize.X gameState.EyeSize.Y)
+                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f),
+                 v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
-        /// Get the bounds of the eye's sight not relative to its position in 2d.
+        /// Get the bounds of the eye2d 's sight not relative to its position.
         [<FunctionBinding>]
         static member getViewBoundsAbsolute2d world =
             let gameState = World.getGameState world
             Box2
-                (v2 (gameState.EyeSize.X * -0.5f) (gameState.EyeSize.Y * -0.5f),
-                 v2 gameState.EyeSize.X gameState.EyeSize.Y)
+                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f),
+                 v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
-        /// Get the bounds of the eye's sight in 2d.
+        /// Get the bounds of the 2d eye's sight.
         [<FunctionBinding>]
         static member getViewBounds2d absolute world =
             if absolute
             then World.getViewBoundsAbsolute2d world
             else World.getViewBoundsRelative2d world
 
-        /// Check that the given bounds is within the eye's sight in 2d.
+        /// Check that the given bounds is within the 2d eye's sight.
         [<FunctionBinding>]
         static member isBoundsInView2d absolute (bounds : Box2) world =
             let viewBounds = World.getViewBounds2d absolute world
             Math.isBoundsIntersectingBounds2d bounds viewBounds
 
-        /// Transform the given mouse position to screen space.
+        /// Transform the given mouse position to 2d screen space.
         [<FunctionBinding>]
-        static member mouseToScreen (mousePosition : Vector2) world =
+        static member mouseToScreen2d (mousePosition : Vector2) world =
             let gameState = World.getGameState world
             let positionScreen =
                 v2
-                    +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize.X * 0.5f)
-                    -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize.Y * 0.5f) // negation for right-handedness
+                    +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize2d.X * 0.5f)
+                    -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize2d.Y * 0.5f) // negation for right-handedness
             positionScreen
 
-        /// Transform the given mouse position to world space in 2d.
+        /// Transform the given mouse position to 2d world space.
         [<FunctionBinding>]
         static member mouseToWorld2d absolute mousePosition world =
-            let positionScreen = World.mouseToScreen mousePosition world
+            let positionScreen = World.mouseToScreen2d mousePosition world
             let view =
                 if absolute
                 then World.getViewAbsolute2d world
@@ -345,7 +386,7 @@ module WorldModuleGame =
             let positionWorld = positionScreen * view
             positionWorld
 
-        /// Transform the given mouse position to entity space in 2d.
+        /// Transform the given mouse position to 2d entity space.
         [<FunctionBinding>]
         static member mouseToEntity2d absolute entityPosition mousePosition world =
             let mousePositionWorld = World.mouseToWorld2d absolute mousePosition world
@@ -477,8 +518,11 @@ module WorldModuleGame =
         GameGetters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         GameGetters.Add ("DesiredScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getDesiredScreenOpt world })
-        GameGetters.Add ("EyePosition", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition world })
-        GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
+        GameGetters.Add ("EyePosition3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition3d world })
+        GameGetters.Add ("EyeRotation3d", fun world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEyeRotation3d world })
+        GameGetters.Add ("EyeProjection3d", fun world -> { PropertyType = typeof<Matrix4x4>; PropertyValue = World.getEyeProjection3d world })
+        GameGetters.Add ("EyePosition2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyePosition2d world })
+        GameGetters.Add ("EyeSize2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
         GameGetters.Add ("Order", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder world })
         GameGetters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
@@ -488,8 +532,11 @@ module WorldModuleGame =
         GameSetters.Add ("Model", fun property world -> World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("DesiredScreenOpt", fun property world -> World.setDesiredScreenOpt (property.PropertyValue :?> Screen option) world)
-        GameSetters.Add ("EyePosition", fun property world -> World.setEyePositionPlus (property.PropertyValue :?> Vector3) world)
-        GameSetters.Add ("EyeSize", fun property world -> World.setEyeSizePlus (property.PropertyValue :?> Vector2) world)
+        GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)
+        GameSetters.Add ("EyeRotation3d", fun property world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
+        GameSetters.Add ("EyeProjection3d", fun property world -> World.setEyeProjection3dPlus (property.PropertyValue :?> Matrix4x4) world)
+        GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)
+        GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
 
     /// Initialize getters and setters
     let internal init () =
