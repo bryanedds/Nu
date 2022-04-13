@@ -76,7 +76,8 @@
     <Compile Include="Ecs.fs" />
     <Compile Include="Systems.fs" />
     <Compile Include="Math.fs" />
-    <Compile Include="SpatialTree.fs" />
+    <Compile Include="Quadtree.fs" />
+    <Compile Include="Octree.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />

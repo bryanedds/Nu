@@ -508,12 +508,12 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          EyePosition3d : Vector3
-          EyeRotation3d : Quaternion
-          EyeProjection3dRef : Matrix4x4 ref
           EyePosition2d : Vector2
           //EyeRotation2d : single
           EyeSize2d : Vector2
+          EyePosition3d : Vector3
+          EyeRotation3d : Quaternion
+          EyeProjection3dRef : Matrix4x4 ref
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -530,11 +530,11 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreenOpt = None
+              EyePosition2d = v2Zero
+              EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               EyePosition3d = v3Zero
               EyeRotation3d = quatId
               EyeProjection3dRef = ref Matrix4x4.Identity
-              EyePosition2d = v2Zero
-              EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
