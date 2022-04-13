@@ -1235,7 +1235,8 @@ module WorldTypes =
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
           UpdateEntityInEntityTree : bool -> bool -> Box3 -> Entity -> World -> World -> World
-          RebuildEntityTree : World -> Entity SpatialTree }
+          RebuildQuadtree : World -> Entity Quadtree
+          RebuildOctree : World -> Entity Octree }
 
     /// The subsystems encapsulated by the engine.
     and [<ReferenceEquality; NoComparison>] internal Subsystems =
@@ -1268,7 +1269,8 @@ module WorldTypes =
               GameState : GameState
               // cache line 2
               EntityMounts : UMap<Entity, Entity USet>
-              mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
+              mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
+              mutable Octree : Entity Octree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState

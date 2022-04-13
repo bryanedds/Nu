@@ -32,6 +32,7 @@ module TransformMasks =
     let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
     let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000u
     let [<Literal>] AffineMatrixDirtyMask =         0b010000000000000000000u
+    let [<Literal>] Is2dMask =                      0b100000000000000000000u
     let [<Literal>] DefaultFlags =                  0b000110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
