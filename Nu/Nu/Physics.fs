@@ -377,9 +377,9 @@ type [<NoEquality; NoComparison>] BodySeparationMessage =
 type [<NoEquality; NoComparison>] BodyTransformMessage =
     { BodySource : BodySourceInternal
       Position : Vector3
-      Rotation : single
+      Rotation : Quaternion
       LinearVelocity : Vector3
-      AngularVelocity : single }
+      AngularVelocity : Vector3 }
 
 /// A message from the physics system.
 type [<NoEquality; NoComparison>] IntegrationMessage =

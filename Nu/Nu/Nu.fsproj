@@ -128,7 +128,6 @@
     <Compile Include="World.fs" />
     <Compile Include="ReflectionTests.fs" />
     <Compile Include="SpatialTreeTests.fs" />
-    <Compile Include="EffectTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

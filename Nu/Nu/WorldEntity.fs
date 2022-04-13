@@ -440,8 +440,8 @@ module WorldEntityModule =
             let entitiesSorted = World.sortEntities entities world
             Array.tryFind
                 (fun (entity : Entity) ->
-                    let positionWorld = World.mouseToWorld (entity.GetAbsolute world) position world
-                    let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
+                    let positionWorld = World.mouseToWorld2d (entity.GetAbsolute world) position world
+                    let picked = Math.isPointInBounds2d positionWorld (entity.GetAABB world).XY
                     picked)
                 entitiesSorted
 
