@@ -251,36 +251,64 @@ module Nu =
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                let (entities2d, entities3d) = Array.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
-                let entityTree =
+                let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                        (fun entityTree ->
-                            for entity in entities do
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
                                 let entityState = World.getEntityState entity world
                                 let entityAABB = World.getEntityStateAABB entityState
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.addElement entityOmnipresent entityAABB entity entityTree
-                            entityTree)
-                        (World.getEntityTree world)
-                World.setEntityTree entityTree world
+                                Quadtree.addElement entityOmnipresent entityAABB.XY entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
+                let octree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun octree ->
+                            for entity in entities3d do
+                                let entityState = World.getEntityState entity world
+                                let entityAABB = World.getEntityStateAABB entityState
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
+                                Octree.addElement entityOmnipresent entityAABB entity octree
+                            octree)
+                        (World.getOctree world)
+                let world = World.setOctree octree world
+                world
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                let (entities2d, entities3d) = Array.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
-                let entityTree =
+                let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                        (fun entityTree ->
-                            for entity in entities do
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
                                 let entityState = World.getEntityState entity world
                                 let entityAABB = World.getEntityStateAABB entityState
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.removeElement entityOmnipresent entityAABB entity entityTree
-                            entityTree)
-                        (World.getEntityTree world)
-                World.setEntityTree entityTree world
+                                Quadtree.removeElement entityOmnipresent entityAABB.XY entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
+                let octree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun octree ->
+                            for entity in entities3d do
+                                let entityState = World.getEntityState entity world
+                                let entityAABB = World.getEntityStateAABB entityState
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
+                                Octree.removeElement entityOmnipresent entityAABB entity octree
+                            octree)
+                        (World.getOctree world)
+                let world = World.setOctree octree world
+                world
 
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
@@ -380,7 +408,8 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher ()
+                [EntityDispatcher2d () :> EntityDispatcher
+                 EntityDispatcher3d () :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -445,7 +474,8 @@ module WorldModule3 =
                   Facets = World.makeDefaultFacets ()
                   TryGetExtrinsic = World.tryGetExtrinsic
                   UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                  RebuildEntityTree = World.rebuildEntityTree }
+                  RebuildQuadtree = World.rebuildQuadtree
+                  RebuildOctree = World.rebuildOctree }
 
             // make the world's subsystems
             let subsystems =
@@ -462,11 +492,14 @@ module WorldModule3 =
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
 
-            // make the world's entity tree
-            let entityTree = World.makeEntityTree ()
+            // make the world's quadtree
+            let quadtree = World.makeQuadtree ()
+
+            // make the world's octree
+            let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree (snd defaultGameDispatcher)
+            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -520,7 +553,8 @@ module WorldModule3 =
                       Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                       TryGetExtrinsic = World.tryGetExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                      RebuildEntityTree = World.rebuildEntityTree }
+                      RebuildQuadtree = World.rebuildQuadtree
+                      RebuildOctree = World.rebuildOctree }
 
                 // look up the active game dispather
                 let activeGameDispatcherType = if config.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
@@ -564,11 +598,14 @@ module WorldModule3 =
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)
 
-                    // make the world's entity tree
-                    let entityTree = World.makeEntityTree ()
+                    // make the world's quadtree
+                    let quadtree = World.makeQuadtree ()
+
+                    // make the world's octree
+                    let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher
+                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world

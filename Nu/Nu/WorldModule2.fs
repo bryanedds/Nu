@@ -58,23 +58,41 @@ module WorldModule2 =
             Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
 
         static member internal makeOctree () =
-            Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
+            Octree.make Constants.Engine.OctreeGranularity Constants.Engine.OctreeDepth Constants.Engine.OctreeBounds
 
-        static member internal rebuildEntityTree world =
+        static member internal rebuildQuadtree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
-                | None -> Seq.empty
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                | None -> Array.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
-                | None -> Seq.empty
-            let entities = Seq.append omniEntities selectedEntities
-            let tree = World.makeEntityTree ()
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                | None -> Array.empty
+            let entities = Array.append omniEntities selectedEntities
+            let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let aabb = entity.GetAABB world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb entity tree
-            tree
+                if entity.GetIs2d world then
+                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb.XY entity quadtree
+            quadtree
+
+        static member internal rebuildOctree world =
+            let omniEntities =
+                match World.getOmniScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                | None -> Array.empty
+            let selectedEntities =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                | None -> Array.empty
+            let entities = Array.append omniEntities selectedEntities
+            let octree = World.makeOctree ()
+            for entity in entities do
+                let aabb = entity.GetAABB world
+                if entity.GetIs2d world then
+                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb entity octree
+            octree
 
         /// Resolve a relation to an address in the current script context.
         static member resolve relation world =
@@ -670,35 +688,29 @@ module WorldModule2 =
                     else world
             | Dead -> world
 
-        static member private getEntities3 getElementsFromTree world =
-            let entityTree = World.getEntityTree world
-            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree world) entityTree
-            let world = World.setEntityTree entityTree world
-            let entities : Entity seq = getElementsFromTree spatialTree
+        static member private getEntities2dBy getElementsFromQuadtree world =
+            let quadtree = World.getQuadtree world
+            let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
+            let world = World.setQuadtree quadtreeCache world
+            let entities : Entity seq = getElementsFromQuadtree quadtree
             (entities, world)
 
-        /// Get all cullable (non-omnipresent) entities.
-        static member getEntitiesCullable world =
-            let entities = world |> World.getEntities1 |> Seq.filter (fun entity -> not (entity.GetOmnipresent world))
-            (entities, world)
+        /// Get all omnipresent (non-cullable) 2d entities.
+        static member getEntitiesOmnipresent2d world =
+            World.getEntities2dBy Quadtree.getElementsOmnipresent world
 
-        /// Get all omnipresent (non-cullable) entities.
-        static member getEntitiesOmnipresent world =
-            World.getEntities3 SpatialTree.getElementsOmnipresent world
+        /// Get all 2d entities in the current 2d view, including all omnipresent entities.
+        static member getEntitiesInView2d world =
+            let viewBounds = World.getViewBoundsRelative2d world
+            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds) world
 
-        /// Get all entities in the current view, including all omnipresent entities.
-        static member getEntitiesInView world =
-            let viewBounds2d = World.getViewBoundsRelative2d world
-            let viewBounds = Box3 (viewBounds2d.Position.XYZ - v3 0.0f 0.0f 1.0f, viewBounds2d.Size.XYZ + v3 0.0f 0.0f 2.0f)
-            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
+        /// Get all 2d entities in the given bounds, including all omnipresent entities.
+        static member getEntitiesInBounds2d bounds world =
+            World.getEntities2dBy (Quadtree.getElementsInBounds bounds) world
 
-        /// Get all entities in the given bounds, including all omnipresent entities.
-        static member getEntitiesInBounds bounds world =
-            World.getEntities3 (SpatialTree.getElementsInBounds bounds) world
-
-        /// Get all entities at the given point, including all omnipresent entities.
-        static member getEntitiesAtPoint point world =
-            World.getEntities3 (SpatialTree.getElementsAtPoint point) world
+        /// Get all 2d entities at the given point, including all omnipresent entities.
+        static member getEntitiesAtPoint2d point world =
+            World.getEntities2dBy (Quadtree.getElementsAtPoint point) world
 
         static member private updateSimulants world =
 
@@ -708,7 +720,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -749,7 +761,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
 #endif
             PostUpdateGatherTimer.Stop ()
 
@@ -792,7 +804,7 @@ module WorldModule2 =
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize.XYZ * 0.5f
                 let size = eyeSize.XYZ
-                let mutable transform = Transform.makeDefault ()
+                let mutable transform = Transform.make2d ()
                 transform.Position <- position
                 transform.Size <- size
                 transform.Elevation <- Single.MaxValue
@@ -827,7 +839,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
             ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first
