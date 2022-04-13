@@ -209,7 +209,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
-         absolute : bool,
          inset : Box2 inref,
          image : Image AssetTag,
          color : Color inref,
@@ -217,9 +216,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          glow : Color inref,
          flip : Flip,
          renderer) =
-        let view = if absolute then &viewAbsolute else &viewRelative
+        let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let dimensions = transform.Dimensions
+        let dimensions = transform.DimensionsScaled
         let position = dimensions.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
@@ -277,7 +276,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
-         absolute : bool,
          color : Color inref,
          glow : Color inref,
          mapSize : Vector2i,
@@ -286,9 +284,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
          renderer) =
-        let view = if absolute then &viewAbsolute else &viewRelative
+        let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let dimensions = transform.Dimensions
+        let dimensions = transform.DimensionsScaled
         let position = dimensions.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let size = dimensions.Size.XY
@@ -382,15 +380,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
-         absolute : bool,
          text : string,
          font : Font AssetTag,
          color : Color inref,
          justification : Justification,
          renderer) =
-        let view = if absolute then &viewAbsolute else &viewRelative
+        let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let dimensions = transform.Dimensions
+        let dimensions = transform.DimensionsScaled
         let position = dimensions.Position.XY
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
@@ -481,7 +478,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
-                    let dimensions = particle.Transform.Dimensions
+                    let dimensions = particle.Transform.DimensionsScaled
                     let position = dimensions.Position.XY
                     let positionView = position + positionOffset
                     let size = dimensions.Size.XY
@@ -538,7 +535,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> Box2.Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                 &descriptor.Transform, descriptor.Absolute, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
+                 &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
@@ -546,17 +543,17 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                     &sprite.Transform, sprite.Absolute, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                     &sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
         | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                 &descriptor.Transform, descriptor.Absolute, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
+                 &descriptor.Transform, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  renderer)
         | TextDescriptor descriptor ->
             SdlRenderer.renderText
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                 &descriptor.Transform, descriptor.Absolute, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
+                 &descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
                  renderer)
         | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
@@ -584,8 +581,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let transform = Transform.makeEmpty ()
-                let sprite = { Transform = transform; Absolute = true; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let mutable transform = Transform.makeDefault ()
+                transform.Absolute <- true
+                let sprite = { Transform = transform; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
                 bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
                 bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f

@@ -615,7 +615,7 @@ module BasicEmitter2dFacetModule =
              define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3Dup 0.5f; Inset = Box2.Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter"
-             define Entity.ParticleSystem ParticleSystem.empty]
+             nonPersistent Entity.ParticleSystem ParticleSystem.empty]
 
         override this.Register (entity, world) =
             let emitter = makeEmitter entity world
@@ -748,7 +748,7 @@ module Effect2dFacetModule =
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
              define Entity.EffectOffset v3Zero
-             define Entity.EffectTags Map.empty
+             nonPersistent Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              define Entity.ParticleSystem ParticleSystem.empty
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
@@ -2320,7 +2320,7 @@ module TmxMapDispatcherModule =
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
-             define Entity.TmxMap (TmxMap.makeDefault ())]
+             nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
 module GroupDispatcherModule =

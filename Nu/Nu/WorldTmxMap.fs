@@ -377,6 +377,7 @@ module TmxMap =
                             transform.Offset <- v3Dup 0.5f
                             transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
+                            transform.Absolute <- absolute
 
                             // check if in view bounds
                             if Math.isBoundsIntersectingBounds2d (Box2 (transform.Position.XY, transform.Size.XY)) viewBounds then
@@ -389,7 +390,6 @@ module TmxMap =
                                       RenderDescriptor =
                                         TileLayerDescriptor
                                             { Transform = transform
-                                              Absolute = absolute
                                               Color = tileMapColor
                                               Glow = tileMapGlow
                                               MapSize = Vector2i (tileMap.Width, tileMap.Height)

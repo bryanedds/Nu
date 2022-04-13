@@ -194,7 +194,7 @@ module Effects =
             "Rate " +
             "Shift " +
             "Resource Expand " +
-            "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angle Degrees Size Elevation Inset Color Glow Volume " +
+            "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Glow Volume " +
             "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Glows Volumes Aspects " +
             "Expand " +
             "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
@@ -556,11 +556,11 @@ module EffectSystem =
                 transform.Size <- slice.Size
                 transform.Angles <- slice.Angles
                 transform.Elevation <- slice.Elevation
+                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
-                              Absolute = effectSystem.Absolute
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
@@ -601,11 +601,11 @@ module EffectSystem =
                     transform.Size <- slice.Size
                     transform.Angles <- slice.Angles
                     transform.Elevation <- slice.Elevation
+                    transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
-                        Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
+                        Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
-                                 Absolute = effectSystem.Absolute
                                  InsetOpt = Some inset
                                  Image = AssetTag.specialize<Image> image
                                  Color = slice.Color
@@ -639,11 +639,11 @@ module EffectSystem =
                 transform.Size <- slice.Size
                 transform.Angles <- slice.Angles
                 transform.Elevation <- slice.Elevation
+                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
-                    Render (transform.Elevation, transform.Position.Y, font,
+                    Render2d (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
                             { Transform = transform
-                              Absolute = effectSystem.Absolute
                               Text = text
                               Font = AssetTag.specialize<Font> font
                               Color = slice.Color
