@@ -100,6 +100,8 @@ module WorldEntityModule =
         member this.GetIgnorePropertyBindings world = World.getEntityIgnorePropertyBindings this world
         member this.SetIgnorePropertyBindings value world = World.setEntityIgnorePropertyBindings value this world |> snd'
         member this.IgnorePropertyBindings = lens Property? IgnorePropertyBindings this.GetIgnorePropertyBindings this.SetIgnorePropertyBindings this
+        member this.GetIs2d world = World.getEntityIs2d this world
+        member this.Is2d = lensReadOnly Property? Is2d this.GetIs2d this
         member this.GetOptimized world = World.getEntityOptimized this world
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
         member this.GetDestroying world = World.getEntityDestroying this world
@@ -450,7 +452,7 @@ module WorldEntityModule =
             let order = World.getEntityOrder entity world
             let mutable previousOrderDeltaOpt = ValueNone
             let mutable previousOpt = ValueNone
-            let entities = World.getEntitiesFlattened entity.Group world |> Seq.toArray
+            let entities = World.getEntitiesFlattened entity.Group world
             for entity2 in entities do
                 let order2 = World.getEntityOrder entity2 world
                 let orderDelta = order - order2
