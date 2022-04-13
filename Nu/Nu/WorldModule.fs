@@ -176,7 +176,7 @@ module WorldModule =
             ignore world
 
         /// Make the world.
-        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher =
+        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher =
             let config = AmbientState.getConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
@@ -193,7 +193,8 @@ module WorldModule =
                   ScreenStates = screenStates
                   GameState = gameState
                   EntityMounts = UMap.makeEmpty HashIdentity.Structural config
-                  EntityTree = MutantCache.make id entityTree
+                  Quadtree = MutantCache.make id quadtree
+                  Octree = MutantCache.make id octree
                   SelectedEcsOpt = None
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
@@ -510,19 +511,33 @@ module WorldModule =
         static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
             World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
 
-    type World with // EntityTree
+    type World with // Quadtree
 
-        static member internal getEntityTree world =
-            world.EntityTree
+        static member internal getQuadtree world =
+            world.Quadtree
 
-        static member internal setEntityTree entityTree world =
+        static member internal setQuadtree quadtree world =
             if World.getImperative world then
-                world.EntityTree <- entityTree
+                world.Quadtree <- quadtree
                 world
-            else World.choose { world with EntityTree = entityTree }
+            else World.choose { world with Quadtree = quadtree }
 
-        static member internal updateEntityTree updater world =
-            World.setEntityTree (updater (World.getEntityTree world))
+        static member internal updateQuadtree updater world =
+            World.setQuadtree (updater (World.getQuadtree world))
+
+    type World with // Octree
+
+        static member internal getOctree world =
+            world.Octree
+
+        static member internal setOctree octree world =
+            if World.getImperative world then
+                world.Octree <- octree
+                world
+            else World.choose { world with Octree = octree }
+
+        static member internal updateOctree updater world =
+            World.setOctree (updater (World.getOctree world))
 
     type World with // SelectedEcsOpt
 
