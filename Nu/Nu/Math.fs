@@ -128,10 +128,6 @@ type [<NoEquality; NoComparison>] Transform =
     member inline this.Down = -this.Up
     member inline this.Backward = -this.Forward
 
-    member inline this.PositionScaled = this.Position_ * this.Scale_
-    member inline this.SizeScaled = this.Size_ * this.Scale_
-    member inline this.ExtentScaled = this.Extent * this.Scale_
-
     member this.DimensionsUnscaled =
         let size = this.Size_
         let extent = size * 0.5f
@@ -142,6 +138,9 @@ type [<NoEquality; NoComparison>] Transform =
             else this.Offset_
         Box3 (position + offset, size)
 
+    member inline this.PositionScaled = this.Position_ * this.Scale_
+    member inline this.SizeScaled = this.Size_ * this.Scale_
+    member inline this.ExtentScaled = this.Extent * this.Scale_
     member this.DimensionsScaled =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
@@ -156,11 +155,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AABB =
         let dimensions = this.DimensionsScaled
         dimensions.Orient this.Rotation_
-
-    member this.Copy =
-        let mutable copy = Transform.makeEmpty ()
-        Transform.assignByRef (&this, &copy)
-        copy
 
     member inline this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
@@ -189,9 +183,9 @@ type [<NoEquality; NoComparison>] Transform =
         target.Offset_ <- source.Offset_
         if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value
         if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value
-        target.Elevation_ <- source.Elevation_
-        target.Offset_ <- source.Offset_
+        target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
+        target.Elevation_ <- source.Elevation_
 
     /// Assign the value of the left transform to the right.
     static member inline assign (source : Transform, target : Transform byref) =
@@ -204,27 +198,17 @@ type [<NoEquality; NoComparison>] Transform =
     /// Make a transform with default values.
     static member makeDefault () =
         let mutable transform = Unchecked.defaultof<Transform>
+        transform.Flags_ <- DefaultFlags
+        transform.Rotation <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
         transform.RotationMatrixOpt_ <- ref Matrix4x4.Identity
         transform.AffineMatrixOpt_ <- ref Matrix4x4.Identity
         transform.Size_ <- Vector3.One
-        transform.Flags_ <- DefaultFlags
         transform
 
     interface Transform Component with
         member this.TypeName = nameof Transform
         member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
-
-[<AutoOpen>]
-module TransformOperators =
-
-    /// Check two transforms for equality.
-    let inline trEq (left : Transform) (right : Transform) =
-        Transform.equals left right
-
-    /// Check two transforms for inequality.
-    let inline trNeq (left : Transform) (right : Transform) =
-        not (Transform.equals left right)
 
 [<AutoOpen>]
 module Vector2 =

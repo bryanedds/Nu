@@ -93,7 +93,6 @@ type [<StructuralEquality; NoComparison>] Justification =
 /// A mutable sprite value.
 type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
-      mutable Absolute : bool
       mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; zero is full texture.
       mutable Image : Image AssetTag
       mutable Color : Color
@@ -104,7 +103,6 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
 /// A mutable particle value.
 type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
-      mutable Absolute : bool
       mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; zero is full texture.
       mutable Color : Color
       mutable Glow : Color

@@ -26,9 +26,11 @@ module WorldEntityModule =
         member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
         member this.GetAABB world = World.getEntityAABB this world
-        member this.AABB = lensReadOnly Property? Bounds this.GetAABB this
-        member this.GetDimensions world = World.getEntityDimensions this world
-        member this.Dimensions = lensReadOnly Property? Bounds this.GetDimensions this
+        member this.AABB = lensReadOnly Property? AABB this.GetAABB this
+        member this.GetDimensionsUnscaled world = World.getEntityDimensionsUnscaled this world
+        member this.DimensionsUnscaled = lensReadOnly Property? DimensionsUnscaled this.GetDimensionsUnscaled this
+        member this.GetDimensionsScaled world = World.getEntityDimensionsScaled this world
+        member this.DimensionsScaled = lensReadOnly Property? DimensionsScaled this.GetDimensionsScaled this
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this

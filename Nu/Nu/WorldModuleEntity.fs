@@ -295,14 +295,13 @@ module WorldModuleEntity =
                 let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
-                let dimensionsChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged
+                let dimensionsUnscaledChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
                 let world =
-                    if dimensionsChanged then
-                        let dimensions = newTransform.Dimensions
-                        let aabb = dimensions.Orient newTransform.Rotation // OPTIMIZATION: compute aabb with dimensions to avoid recomputation.
-                        let world = World.publishEntityChange Property? Dimensions dimensions publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? AABB aabb publishChangeBindings publishChangeEvents entity world
+                    if dimensionsUnscaledChanged then
+                        let world = World.publishEntityChange Property? AABB newTransform.AABB publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? DimensionsUnscaled newTransform.DimensionsUnscaled publishChangeBindings publishChangeEvents entity world
+                        let world = if scaleChanged then World.publishEntityChange Property? DimensionsScaled newTransform.DimensionsScaled publishChangeBindings publishChangeEvents entity world else world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
                         let world = if offsetChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
@@ -311,9 +310,9 @@ module WorldModuleEntity =
                     else world
                 let world =
                     if anglesChanged then
+                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Angles newTransform.Angles publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Degrees (Math.radiansToDegrees3d newTransform.Angles) publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation publishChangeBindings publishChangeEvents entity world
                         world
                     else world
                 let world =
@@ -1097,8 +1096,11 @@ module WorldModuleEntity =
                 else world
             struct (changed, world)
 
-        static member internal getEntityDimensions entity world =
-            (World.getEntityState entity world).Transform.Dimensions
+        static member internal getEntityDimensionsUnscaled entity world =
+            (World.getEntityState entity world).Transform.DimensionsUnscaled
+
+        static member internal getEntityDimensionsScaled entity world =
+            (World.getEntityState entity world).Transform.DimensionsScaled
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -2038,7 +2040,8 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
         EntityGetters.Assign ("AABB", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityAABB entity world })
-        EntityGetters.Assign ("Dimensions", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensions entity world })
+        EntityGetters.Assign ("DimensionsUnscaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsUnscaled entity world })
+        EntityGetters.Assign ("DimensionsScaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsScaled entity world })
         EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world })
         EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world })
         EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world })

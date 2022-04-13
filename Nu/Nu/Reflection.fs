@@ -19,41 +19,33 @@ module Reflection =
     let private NonPersistentPropertyNames =
         dictPlus
             StringComparer.Ordinal
-            [// misc properties
+            [// simulant properties
              ("Dispatcher", true)
-             ("Facets", true)
+             ("Order", true)
+             ("ScriptFrame", true)
+             ("ScriptFrameOpt", true)
+             ("ScriptUnsubscriptions", true)
+
+             // screen properties
              ("Ecs", true)
              ("TransitionState", true)
              ("TransitionUpdates", true)
              ("EntityTree", true)
-             ("Imperative", true)
+
+             // entity properties
+             ("Facets", true)
+             ("Surnames", true)
+             ("AABB", true)
+             ("DimensionsUnscaled", true)
+             ("DimensionsScaled", true)
+             ("Angles", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
-             ("Order", true)
-             ("Surnames", true)
-             ("Optimized", true)
-             ("ScriptFrame", true)
-             ("ScriptFrameOpt", true)
-             ("ScriptUnsubscriptions", true)
-             ("TmxMap", true)
-             ("Dimensions", true)
-             ("AABB", true)
-             ("NodeUnsubscribe", true)
-             ("BodyPosition", true)
-             ("BodyRotation", true)
-             ("BodySize", true)
-             ("BodyAngles", true)
-             ("BodyDimensions", true)
-
-             // emitter properties
-             ("ParticleSystem", true)
-
-             // effect properties
-             ("EffectTags", true)
-             ("EffectHistory", true)]
+             ("Imperative", true)
+             ("Optimized", true)]
 
     /// A dictionary of all loaded assemblies.
     let internal AssembliesLoaded =
@@ -218,7 +210,7 @@ module Reflection =
                     let propertyValue = converter.ConvertFrom propertySymbol
                     property.SetValue (target, propertyValue)
             | None -> ()
-        
+
     /// Read one of a target's xtension properties.
     let private readXtensionProperty
         (xtension : Xtension)
@@ -246,7 +238,7 @@ module Reflection =
                     else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
                 | _ -> xtension
         else xtension
-        
+
     /// Read a target's xtension properties from property descriptors.
     let private readXtensionProperties xtension (propertyDescriptors : Map<string, Symbol>) (target : 'a) =
         let definitions = getReflectivePropertyDefinitions target
@@ -254,7 +246,7 @@ module Reflection =
             (fun xtension -> readXtensionProperty xtension definitions target)
             xtension
             propertyDescriptors
-        
+
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target

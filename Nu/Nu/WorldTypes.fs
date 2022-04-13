@@ -835,7 +835,8 @@ module WorldTypes =
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
-        member this.Dimensions with get () = this.Transform.Dimensions
+        member this.DimensionsUnscaled with get () = this.Transform.DimensionsUnscaled
+        member this.DimensionsScaled with get () = this.Transform.DimensionsScaled
         member this.AABB with get () = this.Transform.AABB
 
     /// The game type that hosts the various screens used to navigate through a game.
