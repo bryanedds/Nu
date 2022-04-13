@@ -385,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and [<AbstractClass>] EntityDispatcher () =
+    and EntityDispatcher (is2d) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -456,7 +456,15 @@ module WorldTypes =
         default this.GetQuickSize (_, _) = if this.Is2d then Constants.Engine.EntitySizeDefault2d else Constants.Engine.EntitySizeDefault3d
 
         /// Whether the dispatcher has a 2-dimensional transform interpretation.
-        abstract Is2d : bool
+        member this.Is2d = is2d
+
+    /// A 2d entity dispatcher.
+    and EntityDispatcher2d () =
+        inherit EntityDispatcher (true)
+
+    /// A 3d entity dispatcher.
+    and EntityDispatcher3d () =
+        inherit EntityDispatcher (false)
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
