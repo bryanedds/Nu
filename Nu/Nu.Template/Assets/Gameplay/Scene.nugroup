@@ -11,16 +11,16 @@
    [[Position [256 -392 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
-   [[Position [456 -392]]
+   [[Position [456 -392 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
-   [[Position [-384 16]]
+   [[Position [-384 16 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
-   [[Position [-432 -384]]
+   [[Position [-432 -384 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
-   [[Position [-144 -384]]
+   [[Position [-144 -384 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
    [[Position [56 -360 0]]

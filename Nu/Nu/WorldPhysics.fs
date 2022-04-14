@@ -124,7 +124,7 @@ module WorldPhysics =
                 let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
                 World.enqueuePhysicsMessage2d destroyBodyMessage world
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                world
 
         /// Send a message to the physics system to destroy several physics bodies. Note that all bodies must be either
         /// all 2d or all 3d. A mixture may result in some bodies not being destroyed.
@@ -139,7 +139,7 @@ module WorldPhysics =
                 let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
                 World.enqueuePhysicsMessage2d destroyBodiesMessage world
             else
-                failwith ("2d body for any of '" + scstring physicsIds + "' not found and 3d physics not yet implemented")
+                world
 
         /// Send a message to the physics system to create a physics joint.
         [<FunctionBinding>]
@@ -166,7 +166,7 @@ module WorldPhysics =
                 let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
                 World.enqueuePhysicsMessage2d destroyJointMessage world
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                world
 
         /// Send a message to the physics system to destroy physics joints.
         [<FunctionBinding>]
@@ -175,7 +175,7 @@ module WorldPhysics =
                 let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
                 World.enqueuePhysicsMessage2d destroyJointsMessage world
             else
-                failwith ("2d body for any of '" + scstring physicsIds + "' not found and 3d physics not yet implemented")
+                world
 
         /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.
         [<FunctionBinding>]

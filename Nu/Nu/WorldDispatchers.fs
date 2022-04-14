@@ -199,7 +199,8 @@ module ScriptFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.ScriptOpt None
              define Entity.Script [||]
              define Entity.ScriptUnsubscriptions []
@@ -252,7 +253,8 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Blend Transparent
@@ -323,7 +325,8 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
@@ -387,7 +390,8 @@ module TextFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Text ""
              define Entity.Font Assets.Default.Font
              define Entity.Margins v3Zero
@@ -607,7 +611,8 @@ module BasicEmitter2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.SelfDestruct false
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
@@ -615,7 +620,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3Dup 0.5f; Inset = Box2.Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = Box2.Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -745,7 +750,8 @@ module Effect2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
@@ -935,10 +941,11 @@ module RigidBody2dFacetModule =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
-            World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
+            World.localizeBodyShape (entity.GetScale world * entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
@@ -954,7 +961,7 @@ module RigidBody2dFacetModule =
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Extent = v3Dup 0.5f; Center = v3Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None })
              define Entity.IgnoreCCD false
              define Entity.IsBullet false
              define Entity.IsSensor false
@@ -1026,7 +1033,8 @@ module Joint2dFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
@@ -1065,7 +1073,8 @@ module TileMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
@@ -1164,7 +1173,8 @@ module TmxMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
@@ -1371,7 +1381,8 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
@@ -1388,7 +1399,8 @@ module AnimatedSpriteDispatcherModule =
             [typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
@@ -1410,7 +1422,8 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -1420,7 +1433,8 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d<'model, 'message, 'command> (model)
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -1500,7 +1514,7 @@ module ButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (Vector3 (192.0f, 48.0f, 0.0f))
              define Entity.Down false
              define Entity.DownTextOffset v3Zero
@@ -1559,7 +1573,7 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.LabelImage Assets.Default.Image3]
 
@@ -1611,7 +1625,7 @@ module TextDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
@@ -1733,7 +1747,7 @@ module ToggleButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Toggled false
              define Entity.ToggledTextOffset v3Zero
@@ -1866,7 +1880,7 @@ module RadioButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Dialed false
              define Entity.DialedTextOffset v3Zero
@@ -1949,7 +1963,8 @@ module FpsDispatcherModule =
             else world
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.StartTime 0L
              define Entity.StartDateTime DateTime.UtcNow]
 
@@ -2025,7 +2040,7 @@ module FeelerDispatcherModule =
             (Cascade, entity.SetTouched false world)
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Touched false]
 
@@ -2074,7 +2089,7 @@ module FillBarDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
              define Entity.Size (v3 192.0f 48.0f 0.0f)
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
@@ -2174,7 +2189,8 @@ module Effect2dDispatcherModule =
             [typeof<Effect2dFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
@@ -2188,7 +2204,8 @@ module Block2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.BodyType Static
              define Entity.StaticImage Assets.Default.Image4]
 
@@ -2203,7 +2220,8 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
@@ -2238,7 +2256,8 @@ module SideViewCharacterDispatcherModule =
             [typeof<RigidBody2dFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
              define Entity.AnimationDelay 4L
@@ -2305,7 +2324,8 @@ module TileMapDispatcherModule =
             [typeof<TileMapFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
@@ -2329,8 +2349,10 @@ module TmxMapDispatcherModule =
             [typeof<TmxMapFacet>]
 
         static member Properties =
-            [define Entity.Offset (v3Dup 0.5f)
+            [define Entity.Offset Constants.Engine.EntityOffsetDefault2d
+             define Entity.Size Constants.Engine.EntitySizeDefault2d
              define Entity.Omnipresent true
+             define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"

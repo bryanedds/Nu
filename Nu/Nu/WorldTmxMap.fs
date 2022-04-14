@@ -374,7 +374,7 @@ module TmxMap =
                             // compute strip transform
                             let mutable transform = Transform.make2d ()
                             transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Position.XYZ
-                            transform.Offset <- v3Dup 0.5f
+                            transform.Offset <- v3 0.5f 0.5f 0.0f
                             transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute

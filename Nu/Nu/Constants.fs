@@ -23,6 +23,7 @@ module Engine =
     let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
+    let (*Literal*) EntityOffsetDefault2d = Vector3 (0.5f, 0.5f, 0.0f)
     let (*Literal*) EntitySizeDefault2d = Vector3 (48.0f, 48.0f, 0.0f)
     let (*Literal*) EntitySizeDefault3d = Vector3 1.0f
     let (*Literal*) QuadtreeGranularity = 4
