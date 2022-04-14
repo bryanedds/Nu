@@ -398,7 +398,6 @@ module WorldTypes =
              Define? Offset Vector3.Zero
              Define? Angles Vector3.Zero
              Define? Degrees Vector3.Zero
-             Define? Size Constants.Engine.EntitySizeDefault3d // NOTE: choosing 3D as default mostly arbitrarily...
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Omnipresent false
@@ -453,18 +452,13 @@ module WorldTypes =
 
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector3
-        default this.GetQuickSize (_, _) = if this.Is2d then Constants.Engine.EntitySizeDefault2d else Constants.Engine.EntitySizeDefault3d
+        default this.GetQuickSize (_, _) =
+            if this.Is2d
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
 
         /// Whether the dispatcher has a 2-dimensional transform interpretation.
         member this.Is2d = is2d
-
-    /// A 2d entity dispatcher.
-    and EntityDispatcher2d () =
-        inherit EntityDispatcher (true)
-
-    /// A 3d entity dispatcher.
-    and EntityDispatcher3d () =
-        inherit EntityDispatcher (false)
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
@@ -505,7 +499,10 @@ module WorldTypes =
 
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector3
-        default this.GetQuickSize (entity, world) = if getEntityIs2d entity world then Constants.Engine.EntitySizeDefault2d else Constants.Engine.EntitySizeDefault3d
+        default this.GetQuickSize (entity, world) =
+            if getEntityIs2d entity world
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
 
     /// Generalized interface for simulant state.
     and SimulantState =
