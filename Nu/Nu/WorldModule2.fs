@@ -806,6 +806,7 @@ module WorldModule2 =
                 let size = eyeSize.XYZ
                 let mutable transform = Transform.make2d ()
                 transform.Position <- position
+                transform.Offset <- v3Dup 0.5f
                 transform.Size <- size
                 transform.Elevation <- Single.MaxValue
                 transform.Absolute <- true
