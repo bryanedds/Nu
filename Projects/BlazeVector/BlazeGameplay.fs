@@ -60,7 +60,7 @@ module Enemy =
         inherit EntityDispatcher2d ()
         
         static let move (enemy : Entity) world =
-            let force = v3 -500.0f -2500.0f 0.0f
+            let force = v3 -750.0f -5000.0f 0.0f
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
@@ -125,9 +125,11 @@ module Player =
     type PlayerDispatcher () =
         inherit EntityDispatcher2d ()
 
-        static let [<Literal>] WalkForce = 1100.0f
-        static let [<Literal>] FallForce = -4000.0f
-        static let [<Literal>] ClimbForce = 1500.0f
+        static let [<Literal>] WalkForce = 1750.0f
+        static let [<Literal>] FallForce = -5000.0f
+        static let [<Literal>] ClimbForce = 2000.0f
+        static let [<Literal>] JumpForce = 3000.0f
+        static let [<Literal>] BulletForce = 25.0f
 
         static let createBullet (player : Entity) world =
             let mutable playerTransform = player.GetTransform world
@@ -138,7 +140,7 @@ module Player =
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            let world = World.applyBodyLinearImpulse (v3 15.0f 0.0f 0.0f) (bullet.GetPhysicsId world) world
+            let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) (bullet.GetPhysicsId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         static let shootBullet (player : Entity) world =
@@ -183,7 +185,7 @@ module Player =
             if  time >= player.GetLastTimeJump world + 12L &&
                 time <= player.GetLastTimeOnGround world + 10L then
                 let world = player.SetLastTimeJump time world
-                let world = World.applyBodyLinearImpulse (v3 0.0f 2000.0f 0.0f) (player.GetPhysicsId world) world
+                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) (player.GetPhysicsId world) world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 (Cascade, world)
             else (Cascade, world)
@@ -245,7 +247,7 @@ module Gameplay =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quitting)
 
         static let [<Literal>] SectionName = "Section"
-        static let [<Literal>] SectionCount = 1
+        static let [<Literal>] SectionCount = 16
 
         static let shiftEntities xShift entities world =
             Seq.fold
