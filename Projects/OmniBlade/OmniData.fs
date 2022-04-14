@@ -846,7 +846,7 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | EmptyProp
 
 type [<NoEquality; NoComparison>] PropDescriptor =
-    { PropBounds : Vector4
+    { PropBounds : Box2
       PropElevation : single
       PropData : PropData
       PropId : int }
@@ -879,7 +879,7 @@ module FieldData =
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
         let propSize = v2 (single object.Width) (single object.Height)
-        let propBounds = v4Bounds propPosition propSize
+        let propBounds = Box2 (propPosition, propSize)
         let propElevation =
             match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
             | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
@@ -990,7 +990,7 @@ module FieldData =
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (walkLength, _, _, _, _) ->
-                    let tileMapBounds = v4Bounds v2Zero (v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
+                    let tileMapBounds = Box2 (v2Zero, v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
                     let distanceFromOriginMax =
                         let walkLengthScalar =
                             match origin with

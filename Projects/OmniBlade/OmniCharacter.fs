@@ -197,7 +197,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member inset time (celSize : Vector2) state =
         let index = CharacterAnimationState.index time state
         let offset = v2 (single index.X) (single index.Y) * celSize
-        let inset = v4Bounds offset celSize
+        let inset = Box2 (offset, celSize)
         inset
 
     static member progressOpt time state =
@@ -245,8 +245,8 @@ module Character =
 
     type [<ReferenceEquality; NoComparison>] Character =
         private
-            { BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
+            { BoundsOriginal_ : Box2
+              Bounds_ : Box2
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState

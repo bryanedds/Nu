@@ -833,6 +833,12 @@ module Box3 =
         member this.XY =
             Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
 
+// TODO: implement.
+//[<AutoOpen>]
+//module Box2i =
+//    type Box2i with
+//        ...
+
 [<AutoOpen>]
 module Quaternion =
     type Quaternion with
