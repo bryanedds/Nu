@@ -136,8 +136,8 @@ type [<NoEquality; NoComparison>] Transform =
         let position = this.Position_ - extent
         let offset =
             if not this.Rotation_.IsIdentity
-            then Vector3.Transform (this.Offset_, this.Rotation_)
-            else this.Offset_
+            then Vector3.Transform (this.Offset_ * size, this.Rotation_)
+            else this.Offset_ * size
         Box3 (position + offset, size)
 
     member this.PositionScaled = this.Position_ * this.Scale_
@@ -150,8 +150,8 @@ type [<NoEquality; NoComparison>] Transform =
         let positionScaled = this.Position_ - extentScaled
         let offsetScaled =
             if not this.Rotation_.IsIdentity
-            then Vector3.Transform (this.Offset_, this.Rotation_) * scale
-            else this.Offset_ * scale
+            then Vector3.Transform (this.Offset_ * sizeScaled, this.Rotation_) * scale
+            else this.Offset_ * sizeScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
     member this.AABB =
