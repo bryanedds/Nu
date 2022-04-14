@@ -1004,10 +1004,10 @@ module RigidBody2dFacetModule =
                   IgnoreCCD = entity.GetIgnoreCCD world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
-            World.createBody2d entity (entity.GetId world) bodyProperties world
+            World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody2d (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module Joint2dFacetModule =
@@ -1033,10 +1033,10 @@ module Joint2dFacetModule =
             let jointProperties =
                 { JointId = (entity.GetPhysicsId world).CorrelationId
                   JointDevice = (entity.GetJointDevice world) }
-            World.createJoint2d entity (entity.GetId world) jointProperties world
+            World.createJoint entity (entity.GetId world) jointProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint2d (entity.GetPhysicsId world) world
+            World.destroyJoint (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -1111,11 +1111,11 @@ module TileMapFacetModule =
                         (entity.GetCollisionMask world)
                         (entity.GetPhysicsId world).CorrelationId
                         tileMapDescriptor
-                World.createBody2d entity (entity.GetId world) bodyProperties world
+                World.createBody entity (entity.GetId world) bodyProperties world
             | None -> world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody2d (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetPhysicsId world) world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -1209,10 +1209,10 @@ module TmxMapFacetModule =
                     (entity.GetCollisionMask world)
                     (entity.GetPhysicsId world).CorrelationId
                     tileMapDescriptor
-            World.createBody2d entity (entity.GetId world) bodyProperties world
+            World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody2d (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetPhysicsId world) world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2244,7 +2244,7 @@ module SideViewCharacterDispatcherModule =
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
             let facingLeft = entity.GetSideViewCharacterFacingLeft world
-            let velocity = World.getBodyLinearVelocity2d (entity.GetPhysicsId world) world
+            let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
             else world
@@ -2254,13 +2254,13 @@ module SideViewCharacterDispatcherModule =
                 let time = World.getUpdateTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetSideViewCharacterFacingLeft world
-                let velocity = World.getBodyLinearVelocity2d physicsId world
+                let velocity = World.getBodyLinearVelocity physicsId world
                 let celSize = entity.GetCelSize world
                 let celRun = entity.GetCelRun world
                 let animationDelay = entity.GetAnimationDelay world
                 let mutable transform = entity.GetTransform world
                 let (insetOpt, image) =
-                    if not (World.isBodyOnGround2d physicsId world) then
+                    if not (World.isBodyOnGround physicsId world) then
                         let image = entity.GetSideViewCharacterJumpImage world
                         (None, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
