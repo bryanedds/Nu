@@ -203,7 +203,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
-        transform.Size_ <- Constants.Engine.EntitySizeDefault2d
+        transform.Size_ <- Constants.Engine.EntitySize2dDefault
         transform.Is2d <- true
         transform
 
@@ -213,7 +213,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
-        transform.Size_ <- Constants.Engine.EntitySizeDefault3d
+        transform.Size_ <- Constants.Engine.EntitySize3dDefault
         transform
 
     interface Transform Component with

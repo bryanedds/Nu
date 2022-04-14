@@ -245,7 +245,7 @@ module Gameplay =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quitting)
 
         static let [<Literal>] SectionName = "Section"
-        static let [<Literal>] SectionCount = 16
+        static let [<Literal>] SectionCount = 1
 
         static let shiftEntities xShift entities world =
             Seq.fold
