@@ -91,7 +91,7 @@ type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 [<RequireQualifiedAccess>]
 module Octree =
 
-    /// Provides an enumerator interface to spatial tree queries.
+    /// Provides an enumerator interface to the octree queries.
     type internal OctreeEnumerator<'e when 'e : equality> (localElements : 'e HashSet, omnipresentElements : 'e HashSet) =
 
         let localList = List localElements // eagerly convert to list to keep iteration valid
@@ -138,7 +138,7 @@ module Octree =
                 localEnr <- Unchecked.defaultof<_>
                 omnipresentEnr <- Unchecked.defaultof<_>
             
-    /// Provides an enumerable interface to spatial tree queries.
+    /// Provides an enumerable interface to the octree queries.
     type internal OctreeEnumerable<'e when 'e : equality> (enr : 'e OctreeEnumerator) =
         interface IEnumerable<'e> with
             member this.GetEnumerator () = enr :> 'e IEnumerator
@@ -158,7 +158,7 @@ module Octree =
             tree.OmnipresentElements.Add element |> ignore
         else
             if not (Octnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside spatial tree's containment area or is being added redundantly."
+                Log.info "Element is outside the octree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
             else Octnode.addElement bounds element tree.Node
 
@@ -167,7 +167,7 @@ module Octree =
             tree.OmnipresentElements.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside spatial tree's containment area or is not present for removal."
+                Log.info "Element is outside the octree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
             else Octnode.removeElement bounds element tree.Node
 
@@ -176,7 +176,7 @@ module Octree =
         let newInBounds = Octnode.isIntersectingBounds newBounds tree.Node
         if oldInBounds && not newInBounds then
             // going out of bounds
-            Log.info "Element is outside spatial tree's containment area."
+            Log.info "Element is outside the octree's containment area."
             if not newInBounds then tree.OmnipresentElements.Add element |> ignore
             Octnode.updateElement oldBounds newBounds element tree.Node
         elif not oldInBounds && newInBounds then
