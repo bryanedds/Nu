@@ -6,29 +6,29 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-96 -184]]
+    [Position [-96 -184 0]]
     [Text Back]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
-    [Position [-256 96]]
-    [Size [512 96]]
+    [Position [-256 96 0]]
+    [Size [512 96 0]]
     [Text Credits]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code + Music + SFX: Bryan Edds"]]
-    [Position [-256 0]]
-    [Size [512 48]]
+    [Position [-256 0 0]]
+    [Size [512 48 0]]
     [Text "Code + Music + SFX: Bryan Edds"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: MindChamber"]]
-    [Position [-256 -96]]
-    [Size [512 48]]
+    [Position [-256 -96 0]]
+    [Size [512 48 0]]
     [Text "Art: MindChamber"]]]]]

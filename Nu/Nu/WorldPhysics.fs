@@ -168,71 +168,47 @@ module WorldPhysics =
         /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyEnabled enabled physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
-                World.enqueuePhysicsMessage2d setBodyEnabledMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
+            World.enqueuePhysicsMessage2d setBodyEnabledMessage world
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyPosition position physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
-                World.enqueuePhysicsMessage2d setBodyPositionMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
+            World.enqueuePhysicsMessage2d setBodyPositionMessage world
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyRotation rotation physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-                World.enqueuePhysicsMessage2d setBodyRotationMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
+            World.enqueuePhysicsMessage2d setBodyRotationMessage world
 
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyLinearVelocity linearVelocity physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-                World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
+            World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
         static member applyBodyLinearImpulse linearImpulse physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
-                World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+            World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
 
         /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyAngularVelocity angularVelocity physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
-                World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
+            World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
 
         /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
         [<FunctionBinding>]
         static member applyBodyAngularImpulse angularImpulse physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
-                World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
+            World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
         [<FunctionBinding>]
         static member applyBodyForce force physicsId world =
-            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
-                World.enqueuePhysicsMessage2d applyBodyForceMessage world
-            else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
+            World.enqueuePhysicsMessage2d applyBodyForceMessage world

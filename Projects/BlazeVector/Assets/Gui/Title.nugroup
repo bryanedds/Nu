@@ -6,21 +6,21 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Position [-96 -112]]
+    [Position [-96 -112 0]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-96 -184]]
+    [Position [-96 -184 0]]
     [Text Exit]]]
   [ButtonDispatcher
    [[Name Play]
-    [Position [-96 -40]]
+    [Position [-96 -40 0]]
     [Text Play]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" BlazeVector]]
-    [Position [-256 96]]
-    [Size [512 96]]
+    [Position [-256 96 0]]
+    [Size [512 96 0]]
     [Text BlazeVector]]]]]
