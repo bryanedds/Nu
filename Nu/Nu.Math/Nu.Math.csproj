@@ -39,6 +39,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Box2i.cs" />
     <Compile Include="Box2.cs" />
     <Compile Include="Box3.cs" />
     <Compile Include="ReadOnlySet.cs" />

@@ -42,6 +42,15 @@ namespace Nu
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Box3"/> struct.
+        /// </summary>
+        public Box3(float positionX, float positionY, float positionZ, float sizeX, float sizeY, float sizeZ)
+        {
+            Position = new Vector3(positionX, positionY, positionZ);
+            Size = new Vector3(sizeX, sizeY, sizeZ);
+        }
+
+        /// <summary>
         /// Gets or sets a vector describing half the size of the box.
         /// </summary>
         public Vector3 Extent => Size * 0.5f;
