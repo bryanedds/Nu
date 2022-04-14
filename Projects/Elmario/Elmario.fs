@@ -38,19 +38,19 @@ type ElmarioDispatcher () =
             | Jump ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
+                    let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
                     World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 else world
             | MoveLeft ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
+                else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
+                else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
             | Nop -> world
         just world
 
@@ -58,14 +58,14 @@ type ElmarioDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.DefaultScreen.Name Vanilla []
             [Content.group Simulants.DefaultGroup.Name []
-                [Content.character Simulants.Elmario.Name
-                    [Entity.Position == v2 0.0f 0.0f
-                     Entity.Size == v2 108.0f 108.0f]
-                 Content.block "Ground"
-                    [Entity.Position == v2 -384.0f -256.0f
-                     Entity.Size == v2 768.0f 64.0f
+                [Content.sideViewCharacter Simulants.Elmario.Name
+                    [Entity.Position == v3 0.0f 0.0f 0.0f
+                     Entity.Size == v3 108.0f 108.0f 0.0f]
+                 Content.block2d "Ground"
+                    [Entity.Position == v3 -384.0f -256.0f 0.0f
+                     Entity.Size == v3 768.0f 64.0f 0.0f
                      Entity.StaticImage == asset "Gameplay" "TreeTop"]
-                 Content.block "Rock"
-                    [Entity.Position == v2 320.0f -192.0f
-                     Entity.Size == v2 64.0f 64.0f
+                 Content.block2d "Rock"
+                    [Entity.Position == v3 320.0f -192.0f 0.0f
+                     Entity.Size == v3 64.0f 64.0f 0.0f
                      Entity.StaticImage == asset "Gameplay" "Rock"]]]]

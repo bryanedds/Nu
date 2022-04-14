@@ -682,7 +682,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.bodyExists2d physicsId world
+            let result = World.bodyExists physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
@@ -697,7 +697,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.getBodyContactNormals2d physicsId world
+            let result = World.getBodyContactNormals physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpList<Vector3>> value world |> Option.get
             struct (value, world)
@@ -712,7 +712,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.getBodyLinearVelocity2d physicsId world
+            let result = World.getBodyLinearVelocity physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Vector3> value world |> Option.get
             struct (value, world)
@@ -727,7 +727,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.getBodyToGroundContactNormals2d physicsId world
+            let result = World.getBodyToGroundContactNormals physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpList<Vector3>> value world |> Option.get
             struct (value, world)
@@ -742,7 +742,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.getBodyToGroundContactNormalOpt2d physicsId world
+            let result = World.getBodyToGroundContactNormalOpt physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector3>> value world |> Option.get
             struct (value, world)
@@ -757,7 +757,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.getBodyToGroundContactTangentOpt2d physicsId world
+            let result = World.getBodyToGroundContactTangentOpt physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector3>> value world |> Option.get
             struct (value, world)
@@ -772,7 +772,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.isBodyOnGround2d physicsId world
+            let result = World.isBodyOnGround physicsId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
@@ -801,7 +801,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<BodyProperties> bodyProperties world with
                 | Some value -> value :?> BodyProperties
                 | None -> failwith "Invalid argument type for 'bodyProperties'; expecting a value convertable to BodyProperties."
-            let result = World.createBody2d entity entityId bodyProperties world
+            let result = World.createBody entity entityId bodyProperties world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBody2d' due to: " + scstring exn, None)
@@ -837,7 +837,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createBodies2d entity entityId bodiesProperties world
+            let result = World.createBodies entity entityId bodiesProperties world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies2d' due to: " + scstring exn, None)
@@ -850,7 +850,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyBody2d physicsId world
+            let result = World.destroyBody physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody2d' due to: " + scstring exn, None)
@@ -872,7 +872,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyBodies2d physicsIds world
+            let result = World.destroyBodies physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies2d' due to: " + scstring exn, None)
@@ -899,7 +899,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<JointProperties> jointProperties world with
                 | Some value -> value :?> JointProperties
                 | None -> failwith "Invalid argument type for 'jointProperties'; expecting a value convertable to JointProperties."
-            let result = World.createJoint2d entity entityId jointProperties world
+            let result = World.createJoint entity entityId jointProperties world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoint2d' due to: " + scstring exn, None)
@@ -935,7 +935,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createJoints2d entity entityId jointsProperties world
+            let result = World.createJoints entity entityId jointsProperties world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints2d' due to: " + scstring exn, None)
@@ -948,7 +948,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyJoint2d physicsId world
+            let result = World.destroyJoint physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint2d' due to: " + scstring exn, None)
@@ -970,7 +970,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyJoints2d physicsIds world
+            let result = World.destroyJoints physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints2d' due to: " + scstring exn, None)
@@ -987,7 +987,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.setBodyEnabled2d enabled physicsId world
+            let result = World.setBodyEnabled enabled physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled2d' due to: " + scstring exn, None)
@@ -1004,7 +1004,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.setBodyPosition2d position physicsId world
+            let result = World.setBodyPosition position physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyPosition2d' due to: " + scstring exn, None)
@@ -1038,7 +1038,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.setBodyLinearVelocity2d linearVelocity physicsId world
+            let result = World.setBodyLinearVelocity linearVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyLinearVelocity2d' due to: " + scstring exn, None)
@@ -1055,7 +1055,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.applyBodyLinearImpulse2d linearImpulse physicsId world
+            let result = World.applyBodyLinearImpulse linearImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyLinearImpulse2d' due to: " + scstring exn, None)
@@ -1072,7 +1072,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.setBodyAngularVelocity2d angularVelocity physicsId world
+            let result = World.setBodyAngularVelocity angularVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyAngularVelocity2d' due to: " + scstring exn, None)
@@ -1089,7 +1089,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.applyBodyAngularImpulse2d angularImpulse physicsId world
+            let result = World.applyBodyAngularImpulse angularImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyAngularImpulse2d' due to: " + scstring exn, None)
@@ -1106,7 +1106,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.applyBodyForce2d force physicsId world
+            let result = World.applyBodyForce force physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyForce2d' due to: " + scstring exn, None)

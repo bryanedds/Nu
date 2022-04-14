@@ -12,12 +12,6 @@ module WorldPhysics =
 
     type World with
 
-        /// Localize a body shape to a specific physics object.
-        [<FunctionBinding>]
-        static member localizeBodyShape (extent : Vector3) (bodyShape : BodyShape) (world : World) =
-            ignore world // for world parameter for scripting
-            Physics.localizeBodyShape extent bodyShape
-
         static member internal getPhysicsEngine2d world =
             world.Subsystems.PhysicsEngine2d
 
@@ -27,157 +21,230 @@ module WorldPhysics =
         static member internal updatePhysicsEngine2d updater world =
             World.setPhysicsEngine2d (updater (World.getPhysicsEngine2d world)) world
 
-        /// Enqueue a physics message in the world.
+        /// Localize a body shape to a specific physics object.
+        [<FunctionBinding>]
+        static member localizeBodyShape (extent : Vector3) (bodyShape : BodyShape) (world : World) =
+            ignore world // for world parameter for scripting
+            Physics.localizeBodyShape extent bodyShape
+
+        /// Enqueue a 2d physics message in the world.
         static member enqueuePhysicsMessage2d (message : PhysicsMessage) world =
             World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
 
-        /// Enqueue multiple physics messages to the world.
+        /// Enqueue multiple 2d physics messages to the world.
         static member enqueuePhysicsMessages2d (messages : PhysicsMessage seq) world =
             Seq.fold (fun world message -> World.enqueuePhysicsMessage2d message world) world messages
 
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]
-        static member bodyExists2d physicsId world =
-            (World.getPhysicsEngine2d world).BodyExists physicsId
+        static member bodyExists physicsId world =
+            world.Subsystems.PhysicsEngine2d.BodyExists physicsId || false
 
         /// Get the contact normals of the body with the given physics id.
         [<FunctionBinding>]
-        static member getBodyContactNormals2d physicsId world =
-            (World.getPhysicsEngine2d world).GetBodyContactNormals physicsId
+        static member getBodyContactNormals physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.GetBodyContactNormals physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Get the linear velocity of the body with the given physics id.
         [<FunctionBinding>]
-        static member getBodyLinearVelocity2d physicsId world =
-            (World.getPhysicsEngine2d world).GetBodyLinearVelocity physicsId
+        static member getBodyLinearVelocity physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         [<FunctionBinding>]
-        static member getBodyToGroundContactNormals2d physicsId world =
-            (World.getPhysicsEngine2d world).GetBodyToGroundContactNormals physicsId
+        static member getBodyToGroundContactNormals physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
-        static member getBodyToGroundContactNormalOpt2d physicsId world =
-            (World.getPhysicsEngine2d world).GetBodyToGroundContactNormalOpt physicsId
+        static member getBodyToGroundContactNormalOpt physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
-        static member getBodyToGroundContactTangentOpt2d physicsId world =
-            (World.getPhysicsEngine2d world).GetBodyToGroundContactTangentOpt physicsId
+        static member getBodyToGroundContactTangentOpt physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Check that the body with the given physics id is on the ground.
         [<FunctionBinding>]
-        static member isBodyOnGround2d physicsId world =
-            (World.getPhysicsEngine2d world).IsBodyOnGround physicsId
+        static member isBodyOnGround physicsId world =
+            if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                world.Subsystems.PhysicsEngine2d.IsBodyOnGround physicsId
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
-        static member createBody2d (entity : Entity) entityId (bodyProperties : BodyProperties) world =
-            let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-            let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
-            let world = World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world
-            let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
-            World.enqueuePhysicsMessage2d createBodyMessage world
+        static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
+            if entity.GetIs2d world then
+                let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
+                let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
+                let world = World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world
+                let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
+                World.enqueuePhysicsMessage2d createBodyMessage world
+            else
+                failwithnie ()
 
         /// Send a message to the physics system to create several physics bodies.
         [<FunctionBinding>]
-        static member createBodies2d (entity : Entity) entityId bodiesProperties world =
-            let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
-            let world =
-                List.fold (fun world (bodyProperties : BodyProperties) ->
-                    let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-                    World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world)
-                    world bodiesProperties
-            let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
-            World.enqueuePhysicsMessage2d createBodiesMessage world
+        static member createBodies (entity : Entity) entityId bodiesProperties world =
+            if entity.GetIs2d world then
+                let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
+                let world =
+                    List.fold (fun world (bodyProperties : BodyProperties) ->
+                        let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
+                        World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world)
+                        world bodiesProperties
+                let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
+                World.enqueuePhysicsMessage2d createBodiesMessage world
+            else
+                failwithnie ()
 
         /// Send a message to the physics system to destroy a physics body.
         [<FunctionBinding>]
-        static member destroyBody2d physicsId world =
-            let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
-            let world = World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world
-            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-            World.enqueuePhysicsMessage2d destroyBodyMessage world
+        static member destroyBody physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
+                let world = World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world
+                let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+                World.enqueuePhysicsMessage2d destroyBodyMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
-        /// Send a message to the physics system to destroy several physics bodies.
+        /// Send a message to the physics system to destroy several physics bodies. Note that all bodies must be either
+        /// all 2d or all 3d. A mixture may result in some bodies not being destroyed.
         [<FunctionBinding>]
-        static member destroyBodies2d physicsIds world =
-            let eventTrace = EventTrace.debug "World" "destroyBodies" "" EventTrace.empty
-            let world =
-                List.fold (fun world physicsId ->
-                    World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world)
-                    world physicsIds
-            let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
-            World.enqueuePhysicsMessage2d destroyBodiesMessage world
+        static member destroyBodies physicsIds world =
+            if List.exists (world.Subsystems.PhysicsEngine2d.BodyExists) physicsIds then
+                let eventTrace = EventTrace.debug "World" "destroyBodies" "" EventTrace.empty
+                let world =
+                    List.fold (fun world physicsId ->
+                        World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world)
+                        world physicsIds
+                let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
+                World.enqueuePhysicsMessage2d destroyBodiesMessage world
+            else
+                failwith ("2d body for any of '" + scstring physicsIds + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to create a physics joint.
         [<FunctionBinding>]
-        static member createJoint2d (entity : Entity) entityId jointProperties world =
-            let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
-            World.enqueuePhysicsMessage2d createJointMessage world
+        static member createJoint (entity : Entity) entityId jointProperties world =
+            if entity.GetIs2d world then
+                let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
+                World.enqueuePhysicsMessage2d createJointMessage world
+            else
+                failwithnie ()
 
         /// Send a message to the physics system to create physics joints.
         [<FunctionBinding>]
-        static member createJoints2d (entity : Entity) entityId jointsProperties world =
-            let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
-            World.enqueuePhysicsMessage2d createJointsMessage world
+        static member createJoints (entity : Entity) entityId jointsProperties world =
+            if entity.GetIs2d world then
+                let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
+                World.enqueuePhysicsMessage2d createJointsMessage world
+            else
+                failwithnie ()
 
         /// Send a message to the physics system to destroy a physics joint.
         [<FunctionBinding>]
-        static member destroyJoint2d physicsId world =
-            let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
-            World.enqueuePhysicsMessage2d destroyJointMessage world
+        static member destroyJoint physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
+                World.enqueuePhysicsMessage2d destroyJointMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to destroy physics joints.
         [<FunctionBinding>]
-        static member destroyJoints2d physicsIds world =
-            let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
-            World.enqueuePhysicsMessage2d destroyJointsMessage world
+        static member destroyJoints physicsIds world =
+            if List.exists (world.Subsystems.PhysicsEngine2d.BodyExists) physicsIds then
+                let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
+                World.enqueuePhysicsMessage2d destroyJointsMessage world
+            else
+                failwith ("2d body for any of '" + scstring physicsIds + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyEnabled2d enabled physicsId world =
-            let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
-            World.enqueuePhysicsMessage2d setBodyEnabledMessage world
+        static member setBodyEnabled enabled physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
+                World.enqueuePhysicsMessage2d setBodyEnabledMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyPosition2d position physicsId world =
-            let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
-            World.enqueuePhysicsMessage2d setBodyPositionMessage world
+        static member setBodyPosition position physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
+                World.enqueuePhysicsMessage2d setBodyPositionMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyRotation rotation physicsId world =
-            let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-            World.enqueuePhysicsMessage2d setBodyRotationMessage world
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
+                World.enqueuePhysicsMessage2d setBodyRotationMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyLinearVelocity2d linearVelocity physicsId world =
-            let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-            World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
+        static member setBodyLinearVelocity linearVelocity physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
+                World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyLinearImpulse2d linearImpulse physicsId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
-            World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
+        static member applyBodyLinearImpulse linearImpulse physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+                World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyAngularVelocity2d angularVelocity physicsId world =
-            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
-            World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
+        static member setBodyAngularVelocity angularVelocity physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
+                World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyAngularImpulse2d angularImpulse physicsId world =
-            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
-            World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
+        static member applyBodyAngularImpulse angularImpulse physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
+                World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyForce2d force physicsId world =
-            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
-            World.enqueuePhysicsMessage2d applyBodyForceMessage world
+        static member applyBodyForce force physicsId world =
+            if world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
+                let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
+                World.enqueuePhysicsMessage2d applyBodyForceMessage world
+            else
+                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
