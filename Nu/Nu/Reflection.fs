@@ -22,6 +22,8 @@ module Reflection =
             [// simulant properties
              ("Dispatcher", true)
              ("Order", true)
+             ("Id", true)
+             ("IdRef", true)
              ("ScriptFrame", true)
              ("ScriptFrameOpt", true)
              ("ScriptUnsubscriptions", true)
@@ -38,13 +40,16 @@ module Reflection =
              ("AABB", true)
              ("Dimensions", true)
              ("DimensionsScaled", true)
+             ("RotationMatrix", true)
+             ("AffineMatrix", true)
              ("Angles", true)
+             ("Imperative", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
-             ("Imperative", true)
+             ("Is2d", true)
              ("Optimized", true)]
 
     /// A dictionary of all loaded assemblies.
@@ -60,9 +65,7 @@ module Reflection =
         match NonPersistentPropertyNames.TryGetValue propertyName with
         | (true, result) -> result
         | (false, _) ->
-            let result =
-                propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ids", StringComparison.Ordinal)
+            let result = false
             NonPersistentPropertyNames.Add (propertyName, result)
             result
 
