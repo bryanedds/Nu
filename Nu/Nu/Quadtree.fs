@@ -88,7 +88,7 @@ type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 [<RequireQualifiedAccess>]
 module Quadtree =
 
-    /// Provides an enumerator interface to spatial tree queries.
+    /// Provides an enumerator interface to the quadtree queries.
     type internal QuadtreeEnumerator<'e when 'e : equality> (localElements : 'e HashSet, omnipresentElements : 'e HashSet) =
 
         let localList = List localElements // eagerly convert to list to keep iteration valid
@@ -135,7 +135,7 @@ module Quadtree =
                 localEnr <- Unchecked.defaultof<_>
                 omnipresentEnr <- Unchecked.defaultof<_>
             
-    /// Provides an enumerable interface to spatial tree queries.
+    /// Provides an enumerable interface to the quadtree queries.
     type internal QuadtreeEnumerable<'e when 'e : equality> (enr : 'e QuadtreeEnumerator) =
         interface IEnumerable<'e> with
             member this.GetEnumerator () = enr :> 'e IEnumerator
@@ -155,7 +155,7 @@ module Quadtree =
             tree.OmnipresentElements.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside spatial tree's containment area or is being added redundantly."
+                Log.info "Element is outside the quadtree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
             else Quadnode.addElement bounds element tree.Node
 
@@ -164,7 +164,7 @@ module Quadtree =
             tree.OmnipresentElements.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside spatial tree's containment area or is not present for removal."
+                Log.info "Element is outside the quadtree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
             else Quadnode.removeElement bounds element tree.Node
 
@@ -173,7 +173,7 @@ module Quadtree =
         let newInBounds = Quadnode.isIntersectingBounds newBounds tree.Node
         if oldInBounds && not newInBounds then
             // going out of bounds
-            Log.info "Element is outside spatial tree's containment area."
+            Log.info "Element is outside the quadtree's containment area."
             if not newInBounds then tree.OmnipresentElements.Add element |> ignore
             Quadnode.updateElement oldBounds newBounds element tree.Node
         elif not oldInBounds && newInBounds then
