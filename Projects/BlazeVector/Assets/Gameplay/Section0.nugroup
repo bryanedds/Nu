@@ -7,34 +7,34 @@
  [[TileMapDispatcher
    [[Elevation -4]
     [Parallax 0.1]
-    [Position [-480 -304]]
+    [Position [-480 -304 0]]
     [TileMap
      [Gameplay BackgroundB]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [176 -72]]]]
+    [Position [176 -72 0]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [1376 -175.68]]]]
+    [Position [1376 -175.68 0]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [112 48.31998]]]]
+    [Position [112 48.31998 0]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [1464 -15.6805]]]]
+    [Position [1464 -15.6805 0]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [1256 112.32]]]]
+    [Position [1256 112.32 0]]]]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [928 112.32]]]]
+    [Position [928 112.32 0]]]]
   [TileMapDispatcher
    [[Elevation -8]
     [Parallax 0.1]
-    [Position [-480 -304]]
+    [Position [-480 -304 0]]
     [TileMap
      [Gameplay BackgroundA]]]]
   [TileMapDispatcher
-   [[Position [-480 -304]]
+   [[Position [-480 -304 0]]
     [TileMap
      [Gameplay Section0TileMap]]]]]]
