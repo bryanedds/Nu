@@ -199,7 +199,8 @@ module ScriptFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.ScriptOpt None
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.ScriptOpt None
              define Entity.Script [||]
              define Entity.ScriptUnsubscriptions []
              define Entity.RegisterScript Scripting.Unit
@@ -386,7 +387,8 @@ module TextFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Text ""
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Text ""
              define Entity.Font Assets.Default.Font
              define Entity.Margins v3Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
@@ -605,7 +607,8 @@ module BasicEmitter2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.SelfDestruct false
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.SelfDestruct false
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 0L
@@ -742,7 +745,8 @@ module Effect2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.SelfDestruct false
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -934,7 +938,8 @@ module RigidBody2dFacetModule =
             World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.BodyEnabled true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.DensityDefault
@@ -1021,7 +1026,8 @@ module Joint2dFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.JointDevice JointEmpty
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -2168,7 +2174,8 @@ module Effect2dDispatcherModule =
             [typeof<Effect2dFacet>]
 
         static member Properties =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module Block2dDispatcherModule =
@@ -2181,7 +2188,8 @@ module Block2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.BodyType Static
              define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
@@ -2195,7 +2203,8 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4]
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -2229,7 +2238,8 @@ module SideViewCharacterDispatcherModule =
             [typeof<RigidBody2dFacet>]
 
         static member Properties =
-            [define Entity.CelSize (v2 28.0f 28.0f)
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
              define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
@@ -2295,7 +2305,8 @@ module TileMapDispatcherModule =
             [typeof<TileMapFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -2318,7 +2329,8 @@ module TmxMapDispatcherModule =
             [typeof<TmxMapFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Offset (v3Dup 0.5f)
+             define Entity.Omnipresent true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
