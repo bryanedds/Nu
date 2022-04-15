@@ -12,7 +12,7 @@ module Chest =
 
     type [<ReferenceEquality; NoComparison>] Chest =
         private
-            { Bounds_ : Vector4
+            { Bounds_ : Box3
               Opened_ : bool }
 
         (* Bounds Properties *)

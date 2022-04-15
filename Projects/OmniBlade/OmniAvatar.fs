@@ -11,8 +11,8 @@ module Avatar =
 
     type [<ReferenceEquality; NoComparison>] Avatar =
         private
-            { BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
+            { BoundsOriginal_ : Box3
+              Bounds_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
               CollidedBodyShapes_ : BodyShapeSource list
@@ -21,7 +21,7 @@ module Avatar =
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
-        member this.LowerBoundsOriginal = v4Bounds this.BoundsOriginal_.Position (this.BoundsOriginal_.Size.MapY ((*) 0.5f))
+        member this.LowerBoundsOriginal = Box3 (this.BoundsOriginal_.Position, this.BoundsOriginal_.Size.MapY ((*) 0.5f))
         member this.PositionOriginal = this.BoundsOriginal_.Position
         member this.CenterOriginal = this.BoundsOriginal_.Center
         member this.BottomOriginal = this.BoundsOriginal_.Bottom
@@ -34,7 +34,7 @@ module Avatar =
         member this.Bottom = this.Bounds_.Bottom
         member this.BottomOffset = this.Bounds_.Bottom + Constants.Field.CharacterBottomOffset
         member this.Size = this.Bounds_.Size
-        member this.LowerBounds = v4Bounds (this.Bounds_.Position + v2 (this.Bounds_.Size.X * 0.25f) 0.0f) (this.Bounds_.Size * 0.5f)
+        member this.LowerBounds = Box3 (this.Bounds_.Position + v3 (this.Bounds_.Size.X * 0.25f) 0.0f 0.0f, this.Bounds_.Size * 0.5f)
         member this.LowerCenter = this.LowerBounds.Center
 
         (* Animation Properties *)
@@ -102,7 +102,7 @@ module Avatar =
 
     let lookAt bottomOffset (avatar : Avatar) =
         let delta = bottomOffset - avatar.BottomOffset
-        let direction = Direction.ofVector2 delta
+        let direction = Direction.ofVector3 delta
         updateDirection (constant direction) avatar
 
     let animate time characterAnimationType avatar =
@@ -125,7 +125,7 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let empty =
-        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let bounds = Box3 (v3Zero, Constants.Gameplay.CharacterSize)
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
@@ -135,8 +135,8 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let initial =
-        let position = v2 2064.0f 48.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
-        let bounds = v4Bounds position Constants.Gameplay.CharacterSize
+        let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
+        let bounds = Box3 (position, Constants.Gameplay.CharacterSize)
         let characterAnimationState = CharacterAnimationState.initial
         { empty with
             BoundsOriginal_ = bounds

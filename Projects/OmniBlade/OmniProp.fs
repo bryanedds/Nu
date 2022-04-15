@@ -22,10 +22,10 @@ module Prop =
                 Constants.PrettyPrinter.DetailedThresholdMax)>]
     type [<ReferenceEquality; NoComparison>] Prop =
         private
-            { Bounds_ : Vector4
+            { Bounds_ : Box3
               Elevation_ : single
               Advents_ : Advent Set
-              PointOfInterest_ : Vector2
+              PointOfInterest_ : Vector3
               PropData_ : PropData
               PropState_ : PropState
               PropId_ : int }
@@ -77,10 +77,10 @@ module Prop =
           PropId_ = propId }
 
     let empty =
-        { Bounds_ = v4Bounds v2Zero Constants.Gameplay.TileSize
+        { Bounds_ = Box3 (v3Zero, Constants.Gameplay.TileSize)
           Elevation_ = 0.0f
           Advents_ = Set.empty
-          PointOfInterest_ = v2Zero
+          PointOfInterest_ = v3Zero
           PropData_ = EmptyProp
           PropState_ = NilState
           PropId_ = 0 }

@@ -245,8 +245,8 @@ module Character =
 
     type [<ReferenceEquality; NoComparison>] Character =
         private
-            { BoundsOriginal_ : Box2
-              Bounds_ : Box2
+            { BoundsOriginal_ : Box3
+              Bounds_ : Box3
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState
@@ -379,8 +379,8 @@ module Character =
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
-                if Vector2.Dot (a, b) > 0.0f then
-                    let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
+                if Vector3.Dot (a, b) > 0.0f then
+                    let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
                     let d = r.Length ()
                     d <= offset 
                 else false)
@@ -391,8 +391,8 @@ module Character =
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
                 if a.Length () <= b.Length () then
-                    if Vector2.Dot (a, b) > 0.0f then
-                        let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
+                    if Vector3.Dot (a, b) > 0.0f then
+                        let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
                         let d = r.Length ()
                         d <= offset
                     else false
@@ -555,9 +555,6 @@ module Character =
     let updatePosition updater (character : Character) =
         { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
 
-    let updateCenter updater (character : Character) =
-        { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
-
     let updateBottom updater (character : Character) =
         { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
@@ -683,7 +680,7 @@ module Character =
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
                     | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
                 let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
-                let bounds = v4Bounds position size
+                let bounds = Box3 (position, size)
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
@@ -701,7 +698,7 @@ module Character =
         | None -> None
 
     let empty =
-        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let bounds = Box3 (v3Zero, Constants.Gameplay.CharacterSize)
         let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
@@ -713,7 +710,7 @@ module Character =
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
           InputState_ = NoInput
-          CelSize_ = Constants.Gameplay.CharacterSize }
+          CelSize_ = Constants.Gameplay.CharacterSize.XY }
 
 type Character = Character.Character
 

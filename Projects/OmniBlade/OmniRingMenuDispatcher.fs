@@ -52,14 +52,14 @@ module RingMenuDispatcher =
                         Map.ofSeq
                     Map.map (constant (Triple.insert (Map.count items))) items)
                 (fun itemName itemIndexAndCountAndEnabled world ->
-                    let buttonSize = v2 48.0f 48.0f
+                    let buttonSize = v3 48.0f 48.0f 0.0f
                     Content.button (scstring itemName)
                         [Entity.EnabledLocal <== itemIndexAndCountAndEnabled --> Triple.thd
                          Entity.PositionLocal <== itemIndexAndCountAndEnabled --> fun (itemIndex, itemCount, _) ->
                             let radius = menu.GetRadius world
                             let progress = single itemIndex / single itemCount
                             let rotation = progress * single Math.PI * 2.0f
-                            let position = v2 (radius * sin rotation) (radius * cos rotation)
+                            let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
                             position - buttonSize * 0.5f
                          Entity.Size == buttonSize
                          Entity.Elevation <== menu.Elevation
@@ -71,7 +71,7 @@ module RingMenuDispatcher =
                 Content.button itemCancelValue
                     [Entity.MountOpt == None
                      Entity.Visible <== menu.Visible
-                     Entity.Size == v2 48.0f 48.0f
+                     Entity.Size == v3 48.0f 48.0f 0.0f
                      Entity.Position == Constants.Battle.CancelPosition
                      Entity.Elevation <== menu.Elevation
                      Entity.UpImage == asset Assets.Battle.PackageName (itemCancelValue + "Up")
