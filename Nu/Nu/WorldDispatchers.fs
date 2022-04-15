@@ -265,10 +265,11 @@ module StaticSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsScaled
                 let staticImage = entity.GetStaticImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.Position.Y
+                      Horizon = dimensions.Position.Y
                       AssetTag = AssetTag.generalize staticImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -340,10 +341,11 @@ module AnimatedSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsScaled
                 let animationSheet = entity.GetAnimationSheet world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.Position.Y
+                      Horizon = dimensions.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
                       RenderDescriptor =
                         SpriteDescriptor
@@ -2292,7 +2294,7 @@ module SideViewCharacterDispatcherModule =
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.AABB.Position.Y
+                      Horizon = transform.Dimensions.Position.Y
                       AssetTag = AssetTag.generalize image
                       RenderDescriptor =
                         SpriteDescriptor
