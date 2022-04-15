@@ -37,9 +37,10 @@ module Reflection =
              // entity properties
              ("Facets", true)
              ("Surnames", true)
-             ("AABB", true)
-             ("Dimensions", true)
+             ("DimensionsRaw", true)
              ("DimensionsScaled", true)
+             ("DimensionsOriented", true)
+             ("DimensionsOverflowed", true)
              ("RotationMatrix", true)
              ("AffineMatrix", true)
              ("Angles", true)

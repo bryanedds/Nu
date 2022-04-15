@@ -218,7 +218,7 @@ module Gaia =
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
             let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
-            if Math.isPointInBounds2d mousePositionWorld (entity.GetAABB world).XY
+            if Math.isPointInBounds2d mousePositionWorld (entity.GetDimensionsOriented world).XY
             then (Some entity, world)
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world

@@ -25,12 +25,15 @@ module WorldEntityModule =
         member this.GetTransform world = (World.getEntityState this world).Transform
         member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
-        member this.GetAABB world = World.getEntityAABB this world
-        member this.AABB = lensReadOnly Property? AABB this.GetAABB this
-        member this.GetDimensions world = World.getEntityDimensions this world
-        member this.Dimensions = lensReadOnly Property? Dimensions this.GetDimensions this
+        member this.SetDimensionsRaw value world = World.setEntityDimensionsRaw value this world |> snd'
+        member this.GetDimensionsRaw world = World.getEntityDimensionsRaw this world
+        member this.DimensionsRaw = lens Property? DimensionsRaw this.GetDimensionsRaw this.SetDimensionsRaw this
         member this.GetDimensionsScaled world = World.getEntityDimensionsScaled this world
         member this.DimensionsScaled = lensReadOnly Property? DimensionsScaled this.GetDimensionsScaled this
+        member this.GetDimensionsOriented world = World.getEntityDimensionsOriented this world
+        member this.DimensionsOriented = lensReadOnly Property? DimensionsOriented this.GetDimensionsOriented this
+        member this.GetDimensionsOverflowed world = World.getEntityDimensionsOverflowed this world
+        member this.DimensionsOverflowed = lensReadOnly Property? DimensionsOverflowed this.GetDimensionsOverflowed this
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this
@@ -443,7 +446,7 @@ module WorldEntityModule =
             Array.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.mouseToWorld2d (entity.GetAbsolute world) position world
-                    let picked = Math.isPointInBounds2d positionWorld (entity.GetAABB world).XY
+                    let picked = Math.isPointInBounds2d positionWorld (entity.GetDimensionsOriented world).XY
                     picked)
                 entitiesSorted
 

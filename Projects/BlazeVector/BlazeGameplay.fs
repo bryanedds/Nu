@@ -52,8 +52,8 @@ module Enemy =
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative2d world
-            let aabb = this.GetAABB world
-            let center = aabb.Center
+            let dimensions = this.GetDimensionsOverflowed world
+            let center = dimensions.Center
             Math.isPointInBounds2d center.XY viewBounds
 
     type EnemyDispatcher () =

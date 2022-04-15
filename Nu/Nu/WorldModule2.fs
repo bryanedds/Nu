@@ -72,9 +72,9 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let quadtree = World.makeQuadtree ()
             for entity in entities do
-                let aabb = entity.GetAABB world
+                let dimensions = entity.GetDimensionsOverflowed world
                 if entity.GetIs2d world then
-                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb.XY entity quadtree
+                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions.XY entity quadtree
             quadtree
 
         static member internal rebuildOctree world =
@@ -89,9 +89,9 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let octree = World.makeOctree ()
             for entity in entities do
-                let aabb = entity.GetAABB world
+                let dimensions = entity.GetDimensionsOverflowed world
                 if entity.GetIs2d world then
-                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) aabb entity octree
+                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions entity octree
             octree
 
         /// Resolve a relation to an address in the current script context.
@@ -813,7 +813,7 @@ module WorldModule2 =
                 transform.Absolute <- true
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.Dimensions.Position.Y
+                      Horizon = transform.DimensionsScaled.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
                       RenderDescriptor =
                         SpriteDescriptor

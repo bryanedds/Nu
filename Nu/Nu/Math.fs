@@ -51,7 +51,7 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
-        //val mutable private AABBOpt_ : Box3 ref
+        //val mutable private DimensionsOverflowedOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Elevation_ : single
@@ -130,7 +130,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Backward = -this.Forward
 
-    member this.Dimensions
+    member this.DimensionsRaw
         with get () =
             let size = this.Size_
             let extent = size * 0.5f
@@ -833,12 +833,24 @@ module Box2 =
     type Box2 with
         member this.XYZ =
             Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+    let inline box2Eq (b : Box2) (b2 : Box2) =
+        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
+        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
+    let inline box2Neq (b : Box2) (b2 : Box2) =
+        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
+        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
 
 [<AutoOpen>]
 module Box3 =
     type Box3 with
         member this.XY =
             Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+    let inline box3Eq (b : Box3) (b2 : Box3) =
+        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y && b.Position.Z = b2.Position.Z &&
+        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y && b.Size.Z = b2.Size.Z
+    let inline box3Neq (b : Box3) (b2 : Box3) =
+        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y || b.Position.Z <> b2.Position.Z ||
+        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y || b.Size.Z <> b2.Size.Z
 
 // TODO: implement.
 //[<AutoOpen>]
