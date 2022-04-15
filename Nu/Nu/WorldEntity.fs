@@ -28,6 +28,7 @@ module WorldEntityModule =
         member this.SetDimensionsRaw value world = World.setEntityDimensionsRaw value this world |> snd'
         member this.GetDimensionsRaw world = World.getEntityDimensionsRaw this world
         member this.DimensionsRaw = lens Property? DimensionsRaw this.GetDimensionsRaw this.SetDimensionsRaw this
+        member this.SetDimensionsScaled value world = World.setEntityDimensionsScaled value this world
         member this.GetDimensionsScaled world = World.getEntityDimensionsScaled this world
         member this.DimensionsScaled = lensReadOnly Property? DimensionsScaled this.GetDimensionsScaled this
         member this.GetDimensionsOriented world = World.getEntityDimensionsOriented this world
