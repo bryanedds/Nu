@@ -397,7 +397,10 @@ module WorldTypes =
              Define? ScaleLocal Vector3.One
              Define? Offset Vector3.Zero
              Define? Angles Vector3.Zero
+             Define? AnglesLocal Vector3.Zero
              Define? Degrees Vector3.Zero
+             Define? DegreesLocal Vector3.Zero
+             Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Omnipresent false
@@ -825,6 +828,7 @@ module WorldTypes =
         member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
         member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
         member this.Degrees with get () = Math.radiansToDegrees3d this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3d value
+        member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
