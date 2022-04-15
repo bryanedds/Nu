@@ -385,7 +385,7 @@ module TmxMap =
                                 // accumulate descriptor
                                 descriptors.Add
                                     { Elevation = transform.Elevation
-                                      Horizon = transform.Position.Y
+                                      Horizon = transform.Dimensions.Position.Y
                                       AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
                                       RenderDescriptor =
                                         TileLayerDescriptor
