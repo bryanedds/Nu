@@ -678,7 +678,8 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let size = entity.GetSize world
+                    let dimensions = entity.GetDimensionsScaled world
+                    let size = dimensions.Size
                     let position = bodyTransformMessage.Position - size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
