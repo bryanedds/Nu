@@ -255,11 +255,11 @@ module WorldModuleEntity =
                 if not oldOmnipresent then
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                    let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                     let struct (changed, world) = World.updateEntityStateInternal updater oldEntityState entity world
                     let world =
                         if changed
-                        then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                        then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                         else world
                     struct (changed, world)
                 else World.updateEntityStateInternal updater oldEntityState entity world
@@ -295,13 +295,15 @@ module WorldModuleEntity =
                 let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
-                let dimensionsUnscaledChanged = positionChanged || offsetChanged || sizeChanged
+                let dimensionsRawChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
                 let world =
-                    if dimensionsUnscaledChanged then
-                        let world = World.publishEntityChange Property? AABB newTransform.AABB publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Dimensions newTransform.Dimensions publishChangeBindings publishChangeEvents entity world
-                        let world = if scaleChanged then World.publishEntityChange Property? DimensionsScaled newTransform.DimensionsScaled publishChangeBindings publishChangeEvents entity world else world
+                    if dimensionsRawChanged then
+                        // OPTIMIZATION: the only dimensions changes you can subscribe to are scaled and raw.
+                        //let world = World.publishEntityChange Property? DimensionsOverflowed newTransform.DimensionsOverflowed publishChangeBindings publishChangeEvents entity world
+                        //let world = World.publishEntityChange Property? DimensionsOriented newTransform.DimensionsOriented publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? DimensionsScaled newTransform.DimensionsScaled publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? DimensionsRaw newTransform.DimensionsRaw publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
                         let world = if offsetChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
@@ -324,9 +326,6 @@ module WorldModuleEntity =
 
         static member internal getEntityExists entity world =
             notNull (World.getEntityStateOpt entity world :> obj)
-
-        static member internal getEntityStateAABB entityState =
-            entityState.Transform.AABB
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
@@ -592,7 +591,7 @@ module WorldModuleEntity =
             let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
-            let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+            let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
             let struct (changed, world) =
                 let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier, even if this is inlined...
                 World.updateEntityStateWithoutEvent
@@ -602,7 +601,7 @@ module WorldModuleEntity =
                         else Unchecked.defaultof<_>)
                     entity world
             if changed
-            then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+            then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
             else world
 
         static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
@@ -621,7 +620,7 @@ module WorldModuleEntity =
                         entity world
                 else
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                    let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                     let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                     let struct (changed, world) =
                         World.updateEntityStateWithoutEvent
@@ -630,7 +629,7 @@ module WorldModuleEntity =
                                 then EntityState.setTransformByRef (&value, entityState)
                                 else Unchecked.defaultof<_>)
                             entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                     struct (changed, world)
             if changed then
                 let publishChangeBindings = oldEntityState.PublishChangeBindings
@@ -1097,11 +1096,29 @@ module WorldModuleEntity =
                 else world
             struct (changed, world)
 
-        static member internal getEntityDimensions entity world =
-            (World.getEntityState entity world).Transform.Dimensions
+        static member internal getEntityDimensionsRaw entity world =
+            (World.getEntityState entity world).Transform.DimensionsRaw
+
+        static member internal setEntityDimensionsRaw value entity world =
+            let entityState = World.getEntityState entity world
+            if box3Neq value entityState.DimensionsRaw then
+                if entityState.Optimized then
+                    entityState.DimensionsRaw <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.DimensionsRaw <- value
+                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+            else struct (false, world)
 
         static member internal getEntityDimensionsScaled entity world =
             (World.getEntityState entity world).Transform.DimensionsScaled
+
+        static member internal getEntityDimensionsOriented entity world =
+            (World.getEntityState entity world).Transform.DimensionsOriented
+
+        static member internal getEntityDimensionsOverflowed entity world =
+            (World.getEntityState entity world).Transform.DimensionsOverflowed
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -1193,9 +1210,9 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                    let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -1219,9 +1236,9 @@ module WorldModuleEntity =
                         let oldEntityState = entityState
                         let oldOmnipresent = oldEntityState.Omnipresent
                         let oldAbsolute = oldEntityState.Absolute
-                        let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                        let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                        let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.isSelected entity world
@@ -1295,11 +1312,11 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                    let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                    World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
@@ -1535,15 +1552,11 @@ module WorldModuleEntity =
             | Some _ as opt -> opt
             | None -> Some dispatcherName
 
-        static member internal getEntityAABB entity world =
-            let entityState = World.getEntityState entity world
-            World.getEntityStateAABB entityState
-
         static member internal getEntityInView2d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             if not transform.Omnipresent
-            then World.isBoundsInView2d transform.Absolute transform.AABB.XY world
+            then World.isBoundsInView2d transform.Absolute transform.DimensionsOverflowed.XY world
             else true
 
         static member internal getEntityQuickSize (entity : Entity) world =
@@ -1563,7 +1576,7 @@ module WorldModuleEntity =
         static member internal getEntitySortingPriority2d entity world =
             let entityState = World.getEntityState entity world
             { SortElevation = entityState.Transform.Elevation
-              SortHorizon = entityState.Transform.Dimensions.Position.Y
+              SortHorizon = entityState.Transform.DimensionsScaled.Position.Y
               SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
@@ -1661,8 +1674,8 @@ module WorldModuleEntity =
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let entityAABB = World.getEntityStateAABB entityState
-                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityAABB.XY entity entityTree
+                                        let entityDimensions = entityState.DimensionsOverflowed
+                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityDimensions.XY entity entityTree
                                         entityTree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -1672,8 +1685,8 @@ module WorldModuleEntity =
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let entityAABB = World.getEntityStateAABB entityState
-                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity entityTree
+                                        let entityDimensions = entityState.DimensionsOverflowed
+                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityDimensions entity entityTree
                                         entityTree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -1720,8 +1733,8 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity oldWorld
-                                        let entityAABB = World.getEntityStateAABB entityState
-                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityAABB.XY entity quadtree
+                                        let entityDimensions = entityState.DimensionsOverflowed
+                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityDimensions.XY entity quadtree
                                         quadtree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -1731,8 +1744,8 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
                                     (fun octree ->
                                         let entityState = World.getEntityState entity oldWorld
-                                        let entityAABB = World.getEntityStateAABB entityState
-                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityAABB entity octree
+                                        let entityDimensions = entityState.DimensionsOverflowed
+                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityDimensions entity octree
                                         octree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -1923,9 +1936,9 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | (None, None) ->
@@ -1949,9 +1962,9 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldAABB = if not oldEntityState.Omnipresent then World.getEntityStateAABB oldEntityState else Box3.Zero
+                let oldDimensions = if not oldEntityState.Omnipresent then oldEntityState.DimensionsOverflowed else Box3.Zero
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | Left error -> (Left error, world)
@@ -1979,7 +1992,7 @@ module WorldModuleEntity =
                 | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
-        static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldAABB (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldDimensions (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
             if WorldModule.isSelected entity world then
@@ -1991,14 +2004,14 @@ module WorldModuleEntity =
                 if newOmnipresent <> oldOmnipresent then
 
                     // remove and add entity in respective spatial tree
-                    let newAABB = World.getEntityStateAABB entityState
+                    let newDimensions = entityState.DimensionsOverflowed
                     if entityState.Is2d then
                         let quadree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                                 (fun quadree ->
-                                    Quadtree.removeElement oldOmnipresent oldAABB.XY entity quadree
-                                    Quadtree.addElement newOmnipresent newAABB.XY entity quadree
+                                    Quadtree.removeElement oldOmnipresent oldDimensions.XY entity quadree
+                                    Quadtree.addElement newOmnipresent newDimensions.XY entity quadree
                                     quadree)
                                 (World.getQuadtree world)
                         World.setQuadtree quadree world
@@ -2007,8 +2020,8 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
-                                    Octree.removeElement oldOmnipresent oldAABB entity octree
-                                    Octree.addElement newOmnipresent newAABB entity octree
+                                    Octree.removeElement oldOmnipresent oldDimensions entity octree
+                                    Octree.addElement newOmnipresent newDimensions entity octree
                                     octree)
                                 (World.getOctree world)
                         World.setOctree octree world
@@ -2017,22 +2030,22 @@ module WorldModuleEntity =
                 elif not newOmnipresent then
 
                     // OPTIMIZATION: only update when entity aabb has changed.
-                    let newAABB = World.getEntityStateAABB entityState
-                    if not (oldAABB.Equals newAABB) then
+                    let newDimensions = entityState.DimensionsOverflowed
+                    if not (oldDimensions.Equals newDimensions) then
 
                         // update entity in entity tree
                         if entityState.Is2d then
                             let quadree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                    (fun quadree -> Quadtree.updateElement oldAABB.XY newAABB.XY entity quadree; quadree)
+                                    (fun quadree -> Quadtree.updateElement oldDimensions.XY newDimensions.XY entity quadree; quadree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadree world
                         else
                             let octree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
-                                    (fun octree -> Octree.updateElement oldAABB newAABB entity octree; octree)
+                                    (fun octree -> Octree.updateElement oldDimensions newDimensions entity octree; octree)
                                     (World.getOctree world)
                             World.setOctree octree world
 
@@ -2082,9 +2095,10 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         EntityGetters.Assign ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
-        EntityGetters.Assign ("AABB", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityAABB entity world })
-        EntityGetters.Assign ("Dimensions", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensions entity world })
+        EntityGetters.Assign ("DimensionsRaw", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsRaw entity world })
         EntityGetters.Assign ("DimensionsScaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsScaled entity world })
+        EntityGetters.Assign ("DimensionsOriented", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsOriented entity world })
+        EntityGetters.Assign ("DimensionsOverflowed", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsOverflowed entity world })
         EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world })
         EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world })
         EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world })
@@ -2128,6 +2142,7 @@ module WorldModuleEntity =
     /// Initialize property setters.
     let private initSetters () =
         EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
+        EntitySetters.Assign ("DimensionsRaw", fun property entity world -> World.setEntityDimensionsRaw (property.PropertyValue :?> Box3) entity world)
         EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("Scale", fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world)
