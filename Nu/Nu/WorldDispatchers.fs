@@ -611,7 +611,7 @@ module BasicEmitter2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
+            [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.SelfDestruct false
              define Entity.EmitterBlend Transparent
@@ -750,7 +750,7 @@ module Effect2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
+            [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
@@ -1033,7 +1033,7 @@ module Joint2dFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
+            [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -2175,6 +2175,9 @@ module BasicEmitter2dDispatcherModule =
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
 
+        static member Properties =
+            [define Entity.Offset v3Zero]
+
 [<AutoOpen>]
 module Effect2dDispatcherModule =
 
@@ -2185,7 +2188,8 @@ module Effect2dDispatcherModule =
             [typeof<Effect2dFacet>]
 
         static member Properties =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+            [define Entity.Offset v3Zero
+             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module Block2dDispatcherModule =
