@@ -19,7 +19,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher<Character, unit, unit> (Character.empty)
+        inherit EntityDispatcher2d<Character, unit, unit> (Character.empty)
 
         static let getSpriteInset (character : Character) world =
             Character.getAnimationInset (World.getUpdateTime world) character
@@ -72,10 +72,8 @@ module CharacterDispatcher =
                 | Some afflictionY ->
                     let time = World.getUpdateTime world
                     let afflictionX = time / 8L % 8L |> int
-                    let inset =
-                        v4Bounds
-                            (v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y))
-                            Constants.Battle.AfflictionCelSize
+                    let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
+                    let inset = Box2 (afflictionPosition, Constants.Battle.AfflictionCelSize)
                     Some inset
                 | None -> None
             else None
@@ -93,24 +91,24 @@ module CharacterDispatcher =
                     | None -> None
                 match celXOpt with
                 | Some celX ->
-                    let inset = v4Bounds (v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f) Constants.Battle.ChargeOrbCelSize
+                    let chargeOrbPosition = v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f
+                    let inset = Box2 (chargeOrbPosition, Constants.Battle.ChargeOrbCelSize)
                     Some inset
                 | None -> None
             else None
 
         override this.Initializers (character, _) =
             [Entity.Omnipresent == true
-             Entity.Bounds <== character --> fun character -> character.Bounds]
+             Entity.DimensionsRaw <== character --> fun character -> character.Bounds]
 
         override this.View (character, entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
-                let transform = entity.GetTransform world
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                let dimensions = transform.DimensionsRaw
                 let characterView =
-                    Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, dimensions.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
                               InsetOpt = Some (getSpriteInset character world)
                               Image = character.AnimationSheet
                               Color = getSpriteColor character world

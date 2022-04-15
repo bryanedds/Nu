@@ -12,7 +12,7 @@ module Portal =
 
     type [<ReferenceEquality; NoComparison>] Portal =
         private
-            { Bounds_ : Vector4
+            { Bounds_ : Box3
               Active_ : bool }
 
         (* Bounds Properties *)

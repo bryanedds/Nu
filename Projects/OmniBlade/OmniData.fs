@@ -49,8 +49,8 @@ type Direction =
         | Downward -> Upward
         | Leftward -> Rightward
 
-    static member ofVector2 (v2 : Vector2) =
-        let angle = double (atan2 v2.Y v2.X)
+    static member ofVector3 (v3 : Vector3) =
+        let angle = double (atan2 v3.Y v3.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
             if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
@@ -59,8 +59,8 @@ type Direction =
             else                                                            Downward
         direction
 
-    static member ofVector2Biased (v2 : Vector2) =
-        let angle = double (atan2 v2.Y v2.X)
+    static member ofVector3Biased (v3 : Vector3) =
+        let angle = double (atan2 v3.Y v3.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
             if      angle > Math.PI * 1.74997 || angle <= Math.PI * 0.25003 then    Rightward
@@ -69,12 +69,12 @@ type Direction =
             else                                                                    Downward
         direction
 
-    static member toVector2 direction =
+    static member toVector3 direction =
         match direction with
-        | Upward -> v2Up
-        | Rightward -> v2Right
-        | Downward -> v2Down
-        | Leftward -> v2Left
+        | Upward -> v3Up
+        | Rightward -> v3Right
+        | Downward -> v3Down
+        | Leftward -> v3Left
 
 type EffectType =
     | Physical
@@ -791,11 +791,11 @@ type [<NoEquality; NoComparison>] ShopData =
 
 type [<NoEquality; NoComparison>] EnemyDescriptor =
     { EnemyType : EnemyType
-      EnemyPosition : Vector2 }
+      EnemyPosition : Vector3 }
 
 type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
-      BattleAllyPositions : Vector2 list
+      BattleAllyPositions : Vector3 list
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
       BattleTileIndexOffset : int
@@ -846,7 +846,7 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | EmptyProp
 
 type [<NoEquality; NoComparison>] PropDescriptor =
-    { PropBounds : Box2
+    { PropBounds : Box3
       PropElevation : single
       PropData : PropData
       PropId : int }
@@ -877,9 +877,9 @@ module FieldData =
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
-        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-        let propSize = v2 (single object.Width) (single object.Height)
-        let propBounds = Box2 (propPosition, propSize)
+        let propPosition = v3 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) 0.0f // invert y
+        let propSize = v3 (single object.Width) (single object.Height) 0.0f
+        let propBounds = Box3 (propPosition, propSize)
         let propElevation =
             match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
             | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
@@ -990,14 +990,14 @@ module FieldData =
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (walkLength, _, _, _, _) ->
-                    let tileMapBounds = Box2 (v2Zero, v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
+                    let tileMapBounds = Box3 (v3Zero, v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
                         let walkLengthScalar =
                             match origin with
                             | OriginC -> Constants.Field.WalkLengthScalarOpened
                             | _ -> Constants.Field.WalkLengthScalarClosed
                         let walkRatio = single walkLength * walkLengthScalar
-                        let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
+                        let tileMapBoundsScaled = tileMapBounds.Scale (v3 walkRatio walkRatio 0.0f)
                         let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
                         delta.Length ()
                     let distanceFromOrigin =

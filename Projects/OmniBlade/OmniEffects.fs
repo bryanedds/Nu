@@ -196,9 +196,9 @@ module Effects =
                  [|candle (PositionRelative (v3 0.0f altitude 0.0f))
                    candle (PositionRelative (v3 -halfWidth 0.0f 0.0f))
                    candle (PositionRelative (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Angle 90.0f)
-                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Angle 30.0f)
-                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Angle -30.0f)|]) }
+                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Angles (v3 90.0f 0.0f 0.0f))
+                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Angles (v3 30.0f 0.0f 0.0f))
+                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Angles (v3 -30.0f 0.0f 0.0f))|]) }
     
     let makeFireEffect position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
@@ -271,7 +271,12 @@ module Effects =
     
     let makeSnowballEffect () =
         let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L };{ TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
-        let rotate = Rotations (Set, Constant, Loop, [|{ TweenValue = 0.0f; TweenLength = 5L };{ TweenValue = 90.0f; TweenLength = 5L };{ TweenValue = 180.0f; TweenLength = 5L };{ TweenValue = 270.0f; TweenLength = 5L }|])
+        let rotate =
+            Degreeses (Set, Constant, Loop,
+                [|{ TweenValue = v3Zero; TweenLength = 5L }
+                  { TweenValue = v3 90.0f 0.0f 0.0f; TweenLength = 5L }
+                  { TweenValue = v3 180.0f 0.0f 0.0f; TweenLength = 5L }
+                  { TweenValue = v3 270.0f 0.0f 0.0f; TweenLength = 5L }|])
         { EffectName = "Snowball"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty

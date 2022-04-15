@@ -35,13 +35,13 @@ module ReticlesDispatcher =
         override this.Content (reticles, _) =
             [Content.button "Cancel"
                 [Entity.PositionLocal == Constants.Battle.CancelPosition
-                 Entity.Size == v2 48.0f 48.0f
+                 Entity.Size == v3 48.0f 48.0f 0.0f
                  Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
              Content.entityMap reticles $ fun index center _ ->
                 Content.button (CharacterIndex.toEntityName index)
-                    [Entity.Size == v2 96.0f 96.0f
+                    [Entity.Size == v3 96.0f 96.0f 0.0f
                      Entity.Center <== center
                      Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                      Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"

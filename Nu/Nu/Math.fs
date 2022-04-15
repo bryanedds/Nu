@@ -840,8 +840,13 @@ type Vector4iConverter () =
 [<AutoOpen>]
 module Box2 =
     type Box2 with
-        member this.XYZ =
-            Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.XYZ = Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.WithPosition position = Box2 (position, this.Size)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithSize size = Box2 (this.Position, size)
+
+    let box2Zero = Box2.Zero
     let inline box2Eq (b : Box2) (b2 : Box2) =
         b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
         b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
@@ -852,8 +857,13 @@ module Box2 =
 [<AutoOpen>]
 module Box3 =
     type Box3 with
-        member this.XY =
-            Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+        member this.XY = Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+        member this.WithPosition position = Box3 (position, this.Size)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithSize size = Box3 (this.Position, size)
+
+    let box3Zero = Box3.Zero
     let inline box3Eq (b : Box3) (b2 : Box3) =
         b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y && b.Position.Z = b2.Position.Z &&
         b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y && b.Size.Z = b2.Size.Z
@@ -861,11 +871,21 @@ module Box3 =
         b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y || b.Position.Z <> b2.Position.Z ||
         b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y || b.Size.Z <> b2.Size.Z
 
-// TODO: implement.
-//[<AutoOpen>]
-//module Box2i =
-//    type Box2i with
-//        ...
+[<AutoOpen>]
+module Box2i =
+    type Box2i with
+        member this.WithPosition position = Box2i (position, this.Size)
+        member this.WithCenterApproximate center = this.Translate (center - this.CenterApproximate)
+        member this.WithBottomApproximate bottom = this.Translate (bottom - this.BottomApproximate)
+        member this.WithSize size = Box2i (this.Position, size)
+
+    let box2iZero = Box2i.Zero
+    let inline box2iEq (b : Box2i) (b2 : Box2i) =
+        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
+        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
+    let inline box2iNeq (b : Box2i) (b2 : Box2i) =
+        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
+        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
 
 [<AutoOpen>]
 module Quaternion =
