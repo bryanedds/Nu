@@ -941,10 +941,10 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityDegrees value entity world =
-            World.setEntityAngles (Math.radiansToDegrees3d value) entity world
+            World.setEntityAngles (Math.degreesToRadians3d value) entity world
 
         static member internal setEntityDegreesLocal value entity world =
-            World.setEntityAnglesLocal (Math.radiansToDegrees3d value) entity world
+            World.setEntityAnglesLocal (Math.degreesToRadians3d value) entity world
 
         static member internal propagateEntityElevation3 mount mounter world =
             let elevationMount = World.getEntityElevation mount world
