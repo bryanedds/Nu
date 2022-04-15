@@ -130,33 +130,40 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Backward = -this.Forward
 
-    member this.Dimensions =
-        let size = this.Size_
-        let extent = size * 0.5f
-        let position = this.Position_ - extent
-        let offset =
-            if not this.Rotation_.IsIdentity
-            then Vector3.Transform (this.Offset_ * size, this.Rotation_)
-            else this.Offset_ * size
-        Box3 (position + offset, size)
+    member this.Dimensions
+        with get () =
+            let size = this.Size_
+            let extent = size * 0.5f
+            let position = this.Position_ - extent
+            let offset = this.Offset_ * size
+            Box3 (position + offset, size)
+        and set (value : Box3) =
+            let size = value.Size
+            let extent = size * 0.5f
+            let offset = this.Offset_ * size
+            let position = value.Position + extent - offset
+            this.Position_ <- position
+            this.Size <- size
 
     member this.PositionScaled = this.Position_ * this.Scale_
+    member this.OffsetScaled = this.Offset_ * this.Scale_
     member this.SizeScaled = this.Size_ * this.Scale_
     member this.ExtentScaled = this.Extent * this.Scale_
+
     member this.DimensionsScaled =
         let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let extentScaled = sizeScaled * 0.5f
         let positionScaled = this.Position_ - extentScaled
-        let offsetScaled =
-            if not this.Rotation_.IsIdentity
-            then Vector3.Transform (this.Offset_ * sizeScaled, this.Rotation_) * scale
-            else this.Offset_ * sizeScaled
+        let offsetScaled = this.Offset_ * sizeScaled
         Box3 (positionScaled + offsetScaled, sizeScaled)
 
-    member this.AABB =
+    member this.DimensionsOriented =
         let dimensions = this.DimensionsScaled
         dimensions.Orient this.Rotation_
+
+    member inline this.DimensionsOverflowed =
+        this.DimensionsOriented // no overflow value yet, so just stick with orienteds
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
