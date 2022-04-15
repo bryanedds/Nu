@@ -122,7 +122,6 @@ type [<NoEquality; NoComparison>] Transform =
             this.AffineMatrixOpt_.Value
         else Matrix4x4.Identity
 
-    member this.Extent = this.Size_ * 0.5f
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
     member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
@@ -134,9 +133,10 @@ type [<NoEquality; NoComparison>] Transform =
         with get () =
             let size = this.Size_
             let extent = size * 0.5f
-            let position = this.Position_ - extent
+            let alpha = this.Position_ - extent
             let offset = this.Offset_ * size
-            Box3 (position + offset, size)
+            let position = alpha + offset
+            Box3 (position, size)
         and set (value : Box3) =
             let size = value.Size
             let extent = size * 0.5f
@@ -148,15 +148,24 @@ type [<NoEquality; NoComparison>] Transform =
     member this.PositionScaled = this.Position_ * this.Scale_
     member this.OffsetScaled = this.Offset_ * this.Scale_
     member this.SizeScaled = this.Size_ * this.Scale_
-    member this.ExtentScaled = this.Extent * this.Scale_
 
-    member this.DimensionsScaled =
-        let scale = this.Scale_
-        let sizeScaled = this.Size_ * scale
-        let extentScaled = sizeScaled * 0.5f
-        let positionScaled = this.Position_ - extentScaled
-        let offsetScaled = this.Offset_ * sizeScaled
-        Box3 (positionScaled + offsetScaled, sizeScaled)
+    member this.DimensionsScaled
+        with get () = 
+            let scale = this.Scale_
+            let sizeScaled = this.Size_ * scale
+            let extentScaled = sizeScaled * 0.5f
+            let alphaScaled = this.Position_ - extentScaled
+            let offsetScaled = this.Offset_ * sizeScaled
+            let position = alphaScaled + offsetScaled
+            Box3 (position, sizeScaled)
+        and set (value : Box3) =
+            let scale = this.Scale_
+            let sizeScaled = value.Size * scale
+            let extentScaled = sizeScaled * 0.5f
+            let offsetScaled = this.Offset_ * sizeScaled
+            let positionScaled = value.Position * scale + extentScaled - offsetScaled
+            this.Position_ <- positionScaled + offsetScaled
+            this.Size <- sizeScaled / scale
 
     member this.DimensionsOriented =
         let dimensions = this.DimensionsScaled
