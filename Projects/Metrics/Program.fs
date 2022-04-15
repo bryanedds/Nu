@@ -68,23 +68,21 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     inherit EntityDispatcher ()
   #else
-    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (Assets.Default.Image)
   #endif
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.01f) world
+        entity.SetAngles (v3 ((entity.GetAngles world).X + 0.01f) 0.0f 0.0f) world
 
     override this.View (staticImage, entity, world) =
-        let transform = entity.GetTransform world
-        View.Render
+        let mutable transform = entity.GetTransform world
+        View.Render2d
             (transform.Elevation,
              transform.Position.Y,
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  Offset = Vector2.Zero
-                  Absolute = false
                   InsetOpt = None
                   Image = staticImage
                   Color = colWhite
@@ -198,20 +196,20 @@ type MyGameDispatcher () =
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = Fps.SetPosition (v2 200.0f -250.0f) world
+        let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
         let positions = // 19,663 entity positions (goal: 60FPS, current: 50FPS)
             seq {
                 for i in 0 .. 52 do
                     for j in 0 .. 52 do
                         for k in 0 .. 6 do
-                            yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
+                            yield v3 (single i * 12.0f + single k) (single j * 12.0f + single k) 0.0f }
         let world =
             Seq.foldi (fun i world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
-                let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
-                let world = entity.SetSize (v2One * 8.0f) world
+                let world = entity.SetPosition (position + v3 -450.0f -265.0f 0.0f) world
+                let world = entity.SetSize (v3One * 8.0f) world
                 world)
                 world positions
 #endif

@@ -43,6 +43,7 @@ module Reflection =
              ("RotationMatrix", true)
              ("AffineMatrix", true)
              ("Angles", true)
+             ("AnglesLocal", true)
              ("Imperative", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
