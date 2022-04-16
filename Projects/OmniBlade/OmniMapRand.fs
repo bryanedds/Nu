@@ -307,11 +307,11 @@ type MapRand =
         let bounds = Box2i (v2iZero, size)
         let (cursor, biases) =
             match origin with
-            | OriginC ->        (bounds.CenterApproximate,                      [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
-            | OriginN ->        (bounds.BottomApproximate,                      [2; 2; 1; 3])
-            | OriginE ->        (bounds.RightApproximate - v2iRight,            [3; 3; 0; 2])
-            | OriginS ->        (bounds.TopApproximate - v2iUp,                 [0; 0; 1; 3])
-            | OriginW ->        (bounds.LeftApproximate,                        [1; 1; 0; 2])
+            | OriginC ->        (bounds.Center,                                 [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
+            | OriginN ->        (bounds.Bottom,                                 [2; 2; 1; 3])
+            | OriginE ->        (bounds.Right - v2iRight,                       [3; 3; 0; 2])
+            | OriginS ->        (bounds.Top - v2iUp,                            [0; 0; 1; 3])
+            | OriginW ->        (bounds.Left,                                   [1; 1; 0; 2])
             | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Position.Y,     [2; 2; 3; 3])
             | OriginNW ->       (v2i bounds.Position.X bounds.Position.Y,       [2; 2; 1; 1])
             | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 0; 3; 3])

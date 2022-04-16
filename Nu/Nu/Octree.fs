@@ -18,10 +18,10 @@ module internal Octnode =
               Children : ValueEither<'e Octnode array, 'e HashSet> }
 
     let internal atPoint point node =
-        Math.isPointInBounds point node.Bounds
+        Math.isPointInBounds3d point node.Bounds
 
     let internal isIntersectingBounds bounds node =
-        Math.isBoundsIntersectingBounds bounds node.Bounds
+        Math.isBoundsIntersectingBounds3d bounds node.Bounds
 
     let rec internal addElement bounds element node =
         if isIntersectingBounds bounds node then
@@ -194,8 +194,8 @@ module Octree =
                     (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
                     (oldBounds.Position.Z - (rootBounds.Position.Z + oldBounds.Position.Z) % leafSize.Z)
             let leafBounds = Box3 (leafPosition, leafSize)
-            if  not (Math.isBoundsInBounds oldBounds leafBounds) ||
-                not (Math.isBoundsInBounds newBounds leafBounds) then
+            if  not (Math.isBoundsInBounds3d oldBounds leafBounds) ||
+                not (Math.isBoundsInBounds3d newBounds leafBounds) then
                 Octnode.updateElement oldBounds newBounds element tree.Node
         else
             // staying out of bounds

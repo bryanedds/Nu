@@ -51,71 +51,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets or sets a vector approximating half the size of the box.
-        /// </summary>
-        public Vector2i ExtentApproximate => new Vector2i(Size.X / 2, Size.Y / 2);
-
-        /// <summary>
-        /// Gets or sets a vector approximating the center of the box.
-        /// </summary>
-        public Vector2i CenterApproximate => Position + ExtentApproximate;
-
-        /// <summary>
-        /// Gets or sets the width of the box.
-        /// </summary>
-        public float Width => Size.X;
-
-        /// <summary>
-        /// Gets or sets the height of the box.
-        /// </summary>
-        public float Height => Size.Y;
-
-        /// <summary>
-        /// Check that the box is empty.
-        /// </summary>
-        public bool IsEmpty => this == Zero;
-
-        /// <summary>
-        /// Gets or sets the approximate top position of the box.
-        /// </summary>
-        public Vector2i TopApproximate => new Vector2i(Position.X + Size.X / 2, Position.Y + Size.Y);
-
-        /// <summary>
-        /// Gets or sets the approximate bottom position of the box.
-        /// </summary>
-        public Vector2i BottomApproximate => new Vector2i(Position.X + Size.X / 2, Position.Y);
-
-        /// <summary>
-        /// Gets or sets the approximate right position of the box.
-        /// </summary>
-        public Vector2i RightApproximate => new Vector2i(Position.X + Size.X, Position.Y + Size.Y / 2);
-
-        /// <summary>
-        /// Gets or sets the approximate left position of the box.
-        /// </summary>
-        public Vector2i LeftApproximate => new Vector2i(Position.X, Position.Y + Size.Y / 2);
-
-        /// <summary>
-        /// Gets or sets the top-left position of the box.
-        /// </summary>
-        public Vector2i TopLeft => new Vector2i(Position.X, Position.Y + Size.Y);
-
-        /// <summary>
-        /// Gets or sets the top-right position of the box.
-        /// </summary>
-        public Vector2i TopRight => new Vector2i(Position.X + Size.X, Position.Y + Size.Y);
-
-        /// <summary>
-        /// Gets or sets the bottom-left position of the box.
-        /// </summary>
-        public Vector2i BottomLeft => new Vector2i(Position.X, Position.Y);
-
-        /// <summary>
-        /// Gets or sets the bottom-right position of the box.
-        /// </summary>
-        public Vector2i BottomRight => new Vector2i(Position.X + Size.X, Position.Y);
-
-        /// <summary>
         /// Gets a box with a position 0,0 with the a size of 0,0.
         /// </summary>
         public static readonly Box2i Zero = default(Box2i);
@@ -124,14 +59,6 @@ namespace Nu
         /// Gets a box with a position 0,0 with the a size of 1,1.
         /// </summary>
         public static readonly Box2i Unit = new Box2i(new Vector2i(0, 0), new Vector2i(1, 1));
-
-        /// <summary>
-        /// Translate a box over the given distance.
-        /// </summary>
-        public Box2i Translate(Vector2i distance)
-        {
-            return new Box2i(Position + distance, Size);
-        }
 
         /// <summary>
         /// Create a bounding box by enclosing two points.
