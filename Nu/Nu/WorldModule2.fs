@@ -805,7 +805,7 @@ module WorldModule2 =
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize.XYZ * 0.5f
                 let size = eyeSize.XYZ
-                let mutable transform = Transform.make2d v3Cartesian2d
+                let mutable transform = Transform.make v3Cartesian2d
                 transform.Position <- position
                 transform.Offset <- v3 0.5f 0.5f 0.0f
                 transform.Size <- size
