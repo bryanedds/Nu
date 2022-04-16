@@ -99,13 +99,13 @@ module CharacterDispatcher =
 
         override this.Initializers (character, _) =
             [Entity.Omnipresent == true
-             Entity.DimensionsRaw <== character --> fun character -> character.Bounds]
+             Entity.Perimeter <== character --> fun character -> character.Bounds]
 
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
                 let characterView =
-                    Render2d (transform.Elevation, transform.DimensionsRaw.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, transform.Perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = Some (getSpriteInset character world)
@@ -130,7 +130,7 @@ module CharacterDispatcher =
                         afflictionTransform.Position <- afflictionPosition
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
                         afflictionTransform.Elevation <- transform.Elevation + 0.1f
-                        Render2d (afflictionTransform.Elevation, afflictionTransform.DimensionsRaw.Position.Y, AssetTag.generalize afflictionImage,
+                        Render2d (afflictionTransform.Elevation, afflictionTransform.Perimeter.Position.Y, AssetTag.generalize afflictionImage,
                             SpriteDescriptor
                                 { Transform = afflictionTransform
                                   InsetOpt = afflictionInsetOpt
@@ -156,7 +156,7 @@ module CharacterDispatcher =
                         chargeOrbTransform.Position <- chargeOrbPosition
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
-                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.DimensionsRaw.Position.Y, AssetTag.generalize chargeOrbImage,
+                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Perimeter.Position.Y, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
                                 { Transform = transform
                                   InsetOpt = chargeOrbInsetOpt

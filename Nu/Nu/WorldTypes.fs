@@ -863,9 +863,9 @@ module WorldTypes =
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
         member this.DimensionsRaw with get () = this.Transform.DimensionsRaw and set value = this.Transform.DimensionsRaw <- value
-        member this.DimensionsScaled with get () = this.Transform.DimensionsScaled and set value = this.Transform.DimensionsScaled <- value
+        member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
         member this.DimensionsOriented with get () = this.Transform.DimensionsOriented
-        member this.DimensionsOverflowed with get () = this.Transform.DimensionsOverflowed
+        member this.Bounds with get () = this.Transform.Bounds
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

@@ -75,7 +75,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
 
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
         Content.entityWithContent<TextDispatcher> name
-            [Entity.DimensionsRaw <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
+            [Entity.Perimeter <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
                 match dialogOpt with
                 | Some dialog ->
                     match dialog.DialogForm with
