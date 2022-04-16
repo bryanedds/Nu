@@ -89,7 +89,7 @@ module AvatarDispatcher =
 
                 // update animation generally
                 let velocity = entity.GetLinearVelocity world
-                let speed = velocity.Length ()
+                let speed = velocity.Magnitude
                 let direction = Direction.ofVector3Biased velocity
                 let avatar =
                     if speed > Constants.Field.AvatarIdleSpeedMax then
@@ -114,7 +114,7 @@ module AvatarDispatcher =
                     if  not (World.isSelectedScreenTransitioning world) &&
                         entity.GetEnabled world then
                         let velocity = entity.GetLinearVelocity world
-                        let speed = velocity.Length ()
+                        let speed = velocity.Magnitude
                         if speed <= Constants.Field.AvatarIdleSpeedMax
                         then Avatar.updateDirection (constant direction) avatar
                         else avatar

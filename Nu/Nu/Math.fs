@@ -13,6 +13,8 @@ module Vector2 =
 
     type Vector2 with
         member this.XYZ = Vector3 (this.X, this.Y, 0.0f)
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector2 (mapper this.X, this.Y)
         member this.MapY mapper = Vector2 (this.X, mapper this.Y)
         member this.WithX x = Vector2 (x, this.Y)
@@ -80,6 +82,8 @@ module Vector3 =
 
     type Vector3 with
         member this.XY = Vector2 (this.X, this.Y)
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
         member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
@@ -216,6 +220,9 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
+        member this.XYZ = v3 this.X this.Y this.Z
+        member this.Magnitude = this.Magnitude
+        member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)

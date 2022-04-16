@@ -260,7 +260,7 @@ module Field =
                     Spirits_ =
                         Array.filter (fun (spirit : Spirit) ->
                             let delta = field.Avatar.Bottom - spirit.Center
-                            let distance = delta.Length ()
+                            let distance = delta.Magnitude
                             distance < Constants.Field.SpiritRadius * 1.25f)
                             field.Spirits }
             let field =

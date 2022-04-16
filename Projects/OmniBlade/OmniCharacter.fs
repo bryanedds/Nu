@@ -366,13 +366,13 @@ module Character =
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
-                v.Length () <= radius)
+                v.Magnitude <= radius)
         | RadialTarget (radius, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
-                v.Length () <= radius)
+                v.Magnitude <= radius)
         | LineTarget (offset, aimType) ->
             characters |>
             evalAimType aimType target |>
@@ -381,7 +381,7 @@ module Character =
                 let b = target.Bottom - source.Bottom
                 if Vector3.Dot (a, b) > 0.0f then
                     let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
-                    let d = r.Length ()
+                    let d = r.Magnitude
                     d <= offset 
                 else false)
         | SegmentTarget (offset, aimType) ->
@@ -390,10 +390,10 @@ module Character =
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
-                if a.Length () <= b.Length () then
+                if a.Magnitude <= b.Magnitude then
                     if Vector3.Dot (a, b) > 0.0f then
                         let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
-                        let d = r.Length ()
+                        let d = r.Magnitude
                         d <= offset
                     else false
                 else false)

@@ -572,7 +572,7 @@ type [<NoEquality; NoComparison>] MoveType =
     static member computeStepAndStepCount (translation : Vector3) (moveType : MoveType) =
         match moveType.MoveSpeedOpt with
         | Some moveSpeed ->
-            let stepCount = translation.Length () / moveSpeed
+            let stepCount = translation.Magnitude / moveSpeed
             let step = translation / stepCount
             (step, int (ceil stepCount))
         | None -> (translation, 1)
@@ -997,20 +997,19 @@ module FieldData =
                             | OriginC -> Constants.Field.WalkLengthScalarOpened
                             | _ -> Constants.Field.WalkLengthScalarClosed
                         let walkRatio = single walkLength * walkLengthScalar
-                        let tileMapPerimeterScaled = tileMapPerimeter.Scale (v3 walkRatio walkRatio 0.0f)
-                        let delta = tileMapPerimeterScaled.Bottom - tileMapPerimeterScaled.Top
-                        delta.Length ()
+                        let delta = tileMapPerimeter.Bottom - tileMapPerimeter.Top
+                        delta.Magnitude * walkRatio
                     let distanceFromOrigin =
                         match origin with
-                        | OriginC -> let delta = avatarBottom - tileMapPerimeter.Center in delta.Length ()
-                        | OriginN -> let delta = avatarBottom - tileMapPerimeter.Top in delta.Length ()
-                        | OriginE -> let delta = avatarBottom - tileMapPerimeter.Right in delta.Length ()
-                        | OriginS -> let delta = avatarBottom - tileMapPerimeter.Bottom in delta.Length ()
-                        | OriginW -> let delta = avatarBottom - tileMapPerimeter.Left in delta.Length ()
-                        | OriginNE -> let delta = avatarBottom - tileMapPerimeter.TopRight in delta.Length ()
-                        | OriginNW -> let delta = avatarBottom - tileMapPerimeter.TopLeft in delta.Length ()
-                        | OriginSE -> let delta = avatarBottom - tileMapPerimeter.BottomRight in delta.Length ()
-                        | OriginSW -> let delta = avatarBottom - tileMapPerimeter.BottomLeft in delta.Length ()
+                        | OriginC -> let delta = avatarBottom - tileMapPerimeter.Center in delta.Magnitude
+                        | OriginN -> let delta = avatarBottom - tileMapPerimeter.Top in delta.Magnitude
+                        | OriginE -> let delta = avatarBottom - tileMapPerimeter.Right in delta.Magnitude
+                        | OriginS -> let delta = avatarBottom - tileMapPerimeter.Bottom in delta.Magnitude
+                        | OriginW -> let delta = avatarBottom - tileMapPerimeter.Left in delta.Magnitude
+                        | OriginNE -> let delta = avatarBottom - tileMapPerimeter.TopRight in delta.Magnitude
+                        | OriginNW -> let delta = avatarBottom - tileMapPerimeter.TopLeft in delta.Magnitude
+                        | OriginSE -> let delta = avatarBottom - tileMapPerimeter.BottomRight in delta.Magnitude
+                        | OriginSW -> let delta = avatarBottom - tileMapPerimeter.BottomLeft in delta.Magnitude
                     let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
                     | 0 | 1 -> Some WeakSpirit
