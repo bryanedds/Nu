@@ -749,10 +749,10 @@ module WorldTypes =
             let mutable transform =
                 if dispatcher.Is2d then
                     let offset = if dispatcher.IsCartesian then v3Cartesian2d else v3Zero
-                    Transform.make2d offset
+                    Transform.make offset
                 else
                     let offset = if dispatcher.IsCartesian then v3Cartesian3d else v3Zero
-                    Transform.make3d offset
+                    Transform.make offset
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
@@ -857,7 +857,7 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
-        member this.Is2d with get () = this.Transform.Is2d and set value = this.Transform.Is2d <- value
+        member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix

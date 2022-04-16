@@ -794,7 +794,7 @@ module Gaia =
                     if atMouse
                     then World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
                     else World.mouseToWorld2d (entity.GetAbsolute world) (World.getEyeSize2d world * 0.5f) world
-                let mutable entityTransform = Transform.make2d ()
+                let mutable entityTransform = Transform.make ()
                 entityTransform.Position <- entityPosition.XYZ
                 entityTransform.Size <- entity.GetQuickSize world
                 entityTransform.Elevation <- getCreationElevation form

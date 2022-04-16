@@ -400,7 +400,7 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable textTransform = Transform.make2d transform.Offset
+                let mutable textTransform = Transform.make transform.Offset
                 textTransform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
@@ -1530,7 +1530,7 @@ module ButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d transform.Offset
+                let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Elevation <- transform.Elevation
@@ -1576,7 +1576,7 @@ module LabelDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d transform.Offset
+                let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Elevation <- transform.Elevation
@@ -1628,7 +1628,7 @@ module TextDispatcherModule =
                     let mutable transform = entity.GetTransform world
                     let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                     let horizon = dimensions.Position.Y
-                    let mutable spriteTransform = Transform.make2d transform.Offset
+                    let mutable spriteTransform = Transform.make transform.Offset
                     spriteTransform.Position <- dimensions.Position
                     spriteTransform.Size <- dimensions.Size
                     spriteTransform.Elevation <- transform.Elevation
@@ -1763,7 +1763,7 @@ module ToggleButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d transform.Offset
+                let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Elevation <- transform.Elevation
@@ -1893,7 +1893,7 @@ module RadioButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d transform.Offset
+                let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
                 spriteTransform.Elevation <- transform.Elevation
@@ -2083,7 +2083,7 @@ module FillBarDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable borderTransform = Transform.make2d transform.Offset
+                let mutable borderTransform = Transform.make transform.Offset
                 borderTransform.Position <- dimensions.Position
                 borderTransform.Size <- dimensions.Size
                 borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -2114,7 +2114,7 @@ module FillBarDispatcherModule =
                 let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
                 let fillHeight = fillSize.Y - fillInset.Y * 2.0f
                 let fillSize = v3 fillWidth fillHeight 0.0f
-                let mutable fillTransform = Transform.make2d transform.Offset
+                let mutable fillTransform = Transform.make transform.Offset
                 fillTransform.Position <- fillPosition
                 fillTransform.Size <- fillSize
                 fillTransform.Elevation <- transform.Elevation

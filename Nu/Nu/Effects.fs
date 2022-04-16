@@ -549,7 +549,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.make2d slice.Offset
+                let mutable transform = Transform.make slice.Offset
                 transform.Position <- slice.Position
                 transform.Scale <- slice.Scale
                 transform.Size <- slice.Size
@@ -593,7 +593,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.make2d slice.Offset
+                    let mutable transform = Transform.make slice.Offset
                     transform.Position <- slice.Position
                     transform.Scale <- slice.Scale
                     transform.Size <- slice.Size
@@ -630,7 +630,7 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.make2d slice.Offset
+                let mutable transform = Transform.make slice.Offset
                 transform.Position <- slice.Position - slice.Size * 0.5f // assume centering
                 transform.Scale <- slice.Scale
                 transform.Size <- slice.Size

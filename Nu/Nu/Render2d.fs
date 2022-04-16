@@ -581,7 +581,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let mutable transform = Transform.make2d v3Cartesian2d
+                let mutable transform = Transform.make v3Cartesian2d
                 transform.Absolute <- true
                 let sprite = { Transform = transform; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
