@@ -702,7 +702,8 @@ module BattleDispatcher =
                 | Cyclone ->
                     let time = World.getUpdateTime world
                     let radius = 64.0f
-                    let position = (Battle.getCharacterPerimeter sourceIndex battle).Bottom
+                    let perimeter = Battle.getCharacterPerimeter sourceIndex battle
+                    let position = perimeter.Bottom
                     let playHits =
                         [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                          PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -720,7 +721,8 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                    let slashSpike = DisplaySlashSpike (10L, (Battle.getCharacterPerimeter sourceIndex battle).Bottom, targetIndex)
+                    let perimeter = Battle.getCharacterPerimeter sourceIndex battle
+                    let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
                     let impactSplashes = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex))
                     let battle = Battle.animateCharacter time SlashAnimation sourceIndex battle
                     withCmds (playSlash :: playHit :: slashSpike :: impactSplashes) battle

@@ -198,7 +198,7 @@ module Particles =
                 Array.map (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
-                    if Math.isPointInBounds positionNext box then
+                    if Math.isPointInBounds3d positionNext box then
                         let speed = body.LinearVelocity.Length ()
                         let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution

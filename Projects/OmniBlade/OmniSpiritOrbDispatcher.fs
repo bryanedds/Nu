@@ -48,7 +48,7 @@ module SpiritOrbDispatcher =
                 let delta = position - avatarLowerCenter
                 let distance = delta.Length ()
                 if distance < Constants.Field.SpiritRadius then
-                    let position = orbTransform.Perimeter.Center + delta * Constants.Field.SpiritOrbRatio - Constants.Field.SpiritOrbBlipSize * 0.5f
+                    let position = orbTransform.PerimeterCenter + delta * Constants.Field.SpiritOrbRatio - Constants.Field.SpiritOrbBlipSize * 0.5f
                     let mutable transform = Transform.make v3Cartesian2d
                     transform.Position <- position
                     transform.Size <- Constants.Field.SpiritOrbBlipSize

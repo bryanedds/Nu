@@ -281,7 +281,7 @@ module Field =
                         Array.definitize
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            match Array.tryFind (fun (spirit : Spirit) -> Math.isPointInBounds spirit.Position field.Avatar.LowerPerimeter) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> Math.isPointInBounds3d spirit.Position field.Avatar.LowerPerimeter) field.Spirits_ with
             | Some spirit ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->

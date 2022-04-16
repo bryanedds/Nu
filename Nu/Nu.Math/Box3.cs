@@ -50,78 +50,6 @@ namespace Nu
             Size = new Vector3(sizeX, sizeY, sizeZ);
         }
 
-        /// <summary>
-        /// Gets or sets a vector describing half the size of the box.
-        /// </summary>
-        public Vector3 Extent => Size * 0.5f;
-
-        /// <summary>
-        /// Gets or sets a vector describing the center of the box.
-        /// </summary>
-        public Vector3 Center => Position + Extent;
-
-        /// <summary>
-        /// Gets or sets the width of the box.
-        /// </summary>
-        public float Width => Size.X;
-
-        /// <summary>
-        /// Gets or sets the height of the box.
-        /// </summary>
-        public float Height => Size.Y;
-
-        /// <summary>
-        /// Gets or sets the depth of the box.
-        /// </summary>
-        public float Depth => Size.Z;
-
-        /// <summary>
-        /// Check that the box is empty.
-        /// </summary>
-        public bool IsEmpty => this == Zero;
-
-        /// <summary>
-        /// Gets or sets the top position of the box.
-        /// </summary>
-        public Vector3 Top => new Vector3(Position.X + (Size.X * 0.5f), Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the bottom position of the box.
-        /// </summary>
-        public Vector3 Bottom => new Vector3(Position.X + (Size.X * 0.5f), Position.Y, Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the right position of the box.
-        /// </summary>
-        public Vector3 Right => new Vector3(Position.X + Size.X, Position.Y + (Size.Y * 0.5f), Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the left position of the box.
-        /// </summary>
-        public Vector3 Left => new Vector3(Position.X, Position.Y + (Size.Y * 0.5f), Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the top-left position of the box.
-        /// </summary>
-        public Vector3 TopLeft => new Vector3(Position.X, Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the top-right position of the box.
-        /// </summary>
-        public Vector3 TopRight => new Vector3(Position.X + Size.X, Position.Y + Size.Y, Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the bottom-left position of the box.
-        /// </summary>
-        public Vector3 BottomLeft => new Vector3(Position.X, Position.Y, Position.Z + (Size.Z * 0.5f));
-
-        /// <summary>
-        /// Gets or sets the bottom-right position of the box.
-        /// </summary>
-        public Vector3 BottomRight => new Vector3(Position.X + Size.X, Position.Y, Position.Z + (Size.Z * 0.5f));
-
-        // TODO: implement front, back, and their variants.
-
         /// Gets a box with a position 0,0,0 with the a size of 0,0,0.
         /// </summary>
         public static readonly Box3 Zero = default(Box3);
@@ -130,23 +58,6 @@ namespace Nu
         /// Gets a box with a position 0,0 with the a size of 1,1.
         /// </summary>
         public static readonly Box2 Unit = new Box2(new Vector2(0, 0), new Vector2(1, 1));
-
-        public Box3 Translate(Vector3 distance)
-        {
-            return new Box3(Position + distance, Size);
-        }
-
-        /// <summary>
-        /// Returns a Box3 scaled by a given amount.
-        /// </summary>
-        /// <param name="scale">The scale to scale the box.</param>
-        /// <returns>The scaled box.</returns>
-        public Box3 Scale(Vector3 scale)
-        {
-            var center = Center;
-            var extent = Extent * scale;
-            return new Box3(center - extent, Size * scale);
-        }
 
         /// <summary>
         /// Create an oriented bounding box.

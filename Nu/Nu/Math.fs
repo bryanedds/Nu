@@ -8,234 +8,6 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Masks for Transform flags.
-module TransformMasks =
-
-    // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] OmnipresentMask =               0b000000000000000001000u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000010000u
-    let [<Literal>] ImperativeMask =                0b000000000000000100000u
-    let [<Literal>] PublishChangeBindingsMask =     0b000000000000001000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000000010000000u
-    let [<Literal>] EnabledMask =                   0b000000000000100000000u
-    let [<Literal>] VisibleMask =                   0b000000000001000000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b000000100000000000000u
-    let [<Literal>] MountedMask =                   0b000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000u
-    let [<Literal>] AffineMatrixDirtyMask =         0b010000000000000000000u
-    let [<Literal>] DefaultFlags =                  0b000110010001100100001u
-
-// NOTE: opening this in order to make the Transform property implementations reasonably succinct.
-open TransformMasks
-
-/// Carries transformation data specific to an Entity.
-type [<NoEquality; NoComparison>] Transform =
-    struct
-        // cache line 1
-        val mutable private Flags_ : uint
-        val mutable private Position_ : Vector3
-        val mutable private Rotation_ : Quaternion
-        // cache line 2
-        val mutable private Scale_ : Vector3
-        val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixOpt_ : Matrix4x4 ref
-        val mutable private AffineMatrixOpt_ : Matrix4x4 ref
-        // cache line 3
-        //val mutable private BoundsOpt_ : Box3 ref
-        val mutable private Angles_ : Vector3
-        val mutable private Size_ : Vector3
-        val mutable private Elevation_ : single
-        end
-
-    member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
-    member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
-    member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
-    member this.Omnipresent with get () = this.Flags_ &&& OmnipresentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
-    member this.Absolute with get () = this.Flags_ &&& AbsoluteMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
-    member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
-    member this.PublishChangeBindings with get () = this.Flags_ &&& PublishChangeBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeBindingsMask else this.Flags_ &&& ~~~PublishChangeBindingsMask
-    member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
-    member this.Enabled with get () = this.Flags_ &&& EnabledMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
-    member this.Visible with get () = this.Flags_ &&& VisibleMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
-    member this.AlwaysUpdate with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
-    member this.PublishUpdates with get () = this.Flags_ &&& PublishUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
-    member this.PublishPostUpdates with get () = this.Flags_ &&& PublishPostUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishPostUpdatesMask else this.Flags_ &&& ~~~PublishPostUpdatesMask
-    member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
-    member this.IgnorePropertyBindings with get () = this.Flags_ &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| IgnorePropertyBindingsMask else this.Flags_ &&& ~~~IgnorePropertyBindingsMask
-    member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
-    member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
-    member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
-    member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
-    member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
-    member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
-
-    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
-    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true
-    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true
-    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true
-    member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value; this.AffineMatrixDirty <- true
-
-    member this.Rotation
-        with get () = this.Rotation_
-        and set value =
-            this.Rotation_ <- value
-            let pitchYawRoll = value.PitchYawRoll ()
-            this.Angles_.X <- pitchYawRoll.X
-            this.Angles_.Y <- pitchYawRoll.Y
-            this.Angles_.Z <- pitchYawRoll.Z
-            this.RotationMatrixDirty <- true
-            this.AffineMatrixDirty <- true
-
-    member this.Angles
-        with get () = this.Angles_
-        and set value =
-            this.Angles_ <- value
-            this.Rotation_ <- Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
-            this.RotationMatrixDirty <- true
-            this.AffineMatrixDirty <- true
-
-    member this.RotationMatrix =
-        if notNull (this.RotationMatrixOpt_ :> obj) then
-            if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
-            this.RotationMatrixOpt_.Value
-        else Matrix4x4.Identity
-
-    member this.AffineMatrix =
-        if notNull (this.AffineMatrixOpt_ :> obj) then
-            if this.AffineMatrixDirty then
-                // TODO: P1: optimize this hella!
-                let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-                let rotationMatrix = this.RotationMatrix
-                let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-                this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
-            this.AffineMatrixOpt_.Value
-        else Matrix4x4.Identity
-
-    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
-    member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
-    member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
-    member this.Left = -this.Right
-    member this.Down = -this.Up
-    member this.Backward = -this.Forward
-
-    member this.PerimeterUnscaled
-        with get () =
-            let size = this.Size_
-            let extent = size * 0.5f
-            let alpha = this.Position_ - extent
-            let offset = this.Offset_ * size
-            let position = alpha + offset
-            Box3 (position, size)
-        and set (value : Box3) =
-            let size = value.Size
-            let extent = size * 0.5f
-            let offset = this.Offset_ * size
-            let position = value.Position + extent - offset
-            this.Position_ <- position
-            this.Size <- size
-
-    member this.Perimeter
-        with get () =
-            let scale = this.Scale_
-            let sizeScaled = this.Size_ * scale
-            let extentScaled = sizeScaled * 0.5f
-            let alphaScaled = this.Position_ - extentScaled
-            let offsetScaled = this.Offset_ * sizeScaled
-            let position = alphaScaled + offsetScaled
-            Box3 (position, sizeScaled)
-        and set (value : Box3) =
-            this.Scale_ <- Vector3.One
-            this.PerimeterUnscaled <- value
-
-    member this.PerimeterCenter
-        with get () =
-            let perimeter = this.Perimeter
-            perimeter.Center
-        and set (value : Vector3) =
-            this.Scale_ <- Vector3.One
-            let perimeter = this.Perimeter
-            let perimeterCenter = perimeter.Translate (value - perimeter.Center)
-            this.PerimeterUnscaled <- perimeterCenter
-
-    member this.PerimeterBottom
-        with get () =
-            let perimeter = this.Perimeter
-            perimeter.Bottom
-        and set (value : Vector3) =
-            this.Scale_ <- Vector3.One
-            let perimeter = this.Perimeter
-            let perimeterBottom = perimeter.Translate (value - perimeter.Bottom)
-            this.PerimeterUnscaled <- perimeterBottom
-
-    member this.PerimeterOriented =
-        let perimeter = this.Perimeter
-        perimeter.Orient this.Rotation_
-
-    member inline this.Bounds =
-        this.PerimeterOriented // no overflow value yet, so just stick with PerimeterOriented
-
-    member this.InvalidateFast () =
-        this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
-
-    /// Test transforms for equality.
-    static member equalsByRef (left : Transform inref, right : Transform inref) =
-        left.Flags_ = right.Flags_ &&
-        left.Position_.Equals right.Position_ &&
-        left.Rotation_.Equals right.Rotation_ &&
-        left.Scale_.Equals right.Scale_ &&
-        left.Offset_.Equals right.Offset_ &&
-        left.Angles_.Equals right.Angles_ &&
-        left.Size_.Equals right.Size_ &&
-        left.Elevation_ = right.Elevation_
-
-    /// Test transforms for equality.
-    static member inline equals (left : Transform) (right : Transform) =
-        Transform.equalsByRef (&left, &right)
-
-    /// Assign the value of the left transform to the right.
-    static member assignByRef (source : Transform inref, target : Transform byref) =
-        target.Flags_ <- source.Flags_
-        target.Position_ <- source.Position_
-        target.Rotation_ <- source.Rotation_
-        target.Scale_ <- source.Scale_
-        target.Offset_ <- source.Offset_
-        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value
-        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value
-        target.Angles_ <- source.Angles_
-        target.Size_ <- source.Size_
-        target.Elevation_ <- source.Elevation_
-
-    /// Assign the value of the left transform to the right.
-    static member inline assign (source : Transform, target : Transform byref) =
-        Transform.assignByRef (&source, &target)
-
-    /// Make an empty transform.
-    static member inline makeEmpty () =
-        Unchecked.defaultof<Transform>
-
-    /// Make a transform with default values.
-    static member make offset =
-        let mutable transform = Unchecked.defaultof<Transform>
-        transform.Flags_ <- DefaultFlags
-        transform.Rotation_ <- Quaternion.Identity
-        transform.Scale_ <- Vector3.One
-        transform.Offset_ <- offset
-        transform.Size_ <- Vector3.One
-        transform
-
-    interface Transform Component with
-        member this.TypeName = nameof Transform
-        member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
-
 [<AutoOpen>]
 module Vector2 =
 
@@ -843,6 +615,20 @@ type Vector4iConverter () =
 module Box2 =
     type Box2 with
         member this.XYZ = Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.Width = this.Size.X
+        member this.Height = this.Size.Y
+        member this.Extent = this.Size * 0.5f
+        member this.Center = this.Position + this.Extent
+        member this.Top = v2 (this.Position.X + this.Size.X * 0.5f) (this.Position.Y + this.Size.Y)
+        member this.Bottom = v2 (this.Position.X + this.Size.X * 0.5f) this.Position.Y
+        member this.Right = v2 (this.Position.X + this.Size.X) (this.Size.Y * 0.5f)
+        member this.Left = v2 this.Position.X (this.Position.Y + this.Size.Y * 0.5f)
+        member this.TopLeft = v2 this.Position.X (this.Position.Y + this.Size.Y)
+        member this.TopRight = v2 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y)
+        member this.BottomLeft = this.Position
+        member this.BottomRight = v2 (this.Position.X + this.Size.X) this.Position.Y
+        member this.IsEmpty = this.Equals Box2.Zero
+        member this.Translate translation = Box2 (this.Position + translation, this.Size)
         member this.WithPosition position = Box2 (position, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
@@ -860,6 +646,17 @@ module Box2 =
 module Box3 =
     type Box3 with
         member this.XY = Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+        member this.Extent = this.Size * 0.5f
+        member this.Center = this.Position + this.Extent
+        member this.Top = v3 (this.Position.X + this.Size.X * 0.5f) (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
+        member this.Bottom = v3 (this.Position.X + this.Size.X * 0.5f) this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
+        member this.Right = v3 (this.Position.X + this.Size.X) (this.Size.Y * 0.5f) (this.Position.Z + this.Size.Z * 0.5f)
+        member this.Left = v3 this.Position.X (this.Position.Y + this.Size.Y * 0.5f) (this.Position.Z + this.Size.Z * 0.5f)
+        member this.TopLeft = v3 this.Position.X (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
+        member this.TopRight = v3 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
+        member this.BottomLeft = v3 this.Position.X this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
+        member this.BottomRight = v3 (this.Position.X + this.Size.X) this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
+        member this.Translate translation = Box3 (this.Position + translation, this.Size)
         member this.WithPosition position = Box3 (position, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
@@ -876,9 +673,20 @@ module Box3 =
 [<AutoOpen>]
 module Box2i =
     type Box2i with
+        member this.Extent = this.Size / 2
+        member this.Center = this.Position + this.Extent
+        member this.Top = v2i (this.Position.X + this.Size.X / 2) (this.Position.Y + this.Size.Y)
+        member this.Bottom = v2i (this.Position.X + this.Size.X / 2) this.Position.Y
+        member this.Right = v2i (this.Position.X + this.Size.X) (this.Size.Y / 2)
+        member this.Left = v2i this.Position.X (this.Position.Y + this.Size.Y / 2)
+        member this.TopLeft = v2i this.Position.X (this.Position.Y + this.Size.Y)
+        member this.TopRight = v2i (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y)
+        member this.BottomLeft = this.Position
+        member this.BottomRight = v2i (this.Position.X + this.Size.X) this.Position.Y
+        member this.Translate translation = Box2i (this.Position + translation, this.Size)
         member this.WithPosition position = Box2i (position, this.Size)
-        member this.WithCenterApproximate center = this.Translate (center - this.CenterApproximate)
-        member this.WithBottomApproximate bottom = this.Translate (bottom - this.BottomApproximate)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
         member this.WithSize size = Box2i (this.Position, size)
 
     let box2iZero = Box2i.Zero
@@ -892,8 +700,8 @@ module Box2i =
 [<AutoOpen>]
 module Quaternion =
     type Quaternion with
-        member this.PitchYawRoll =
-            MathHelper.PitchYawRoll &this
+        member this.PitchYawRoll = MathHelper.PitchYawRoll &this
+
     let quatId = Quaternion.Identity
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
@@ -1116,6 +924,234 @@ type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
     static member inline defaultOutput =
         Unchecked.defaultof<RayCast2Output>
 
+/// Masks for Transform flags.
+module TransformMasks =
+
+    // OPTIMIZATION: Transform flag bit-masks for performance.
+    let [<Literal>] ActiveMask =                    0b000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
+    let [<Literal>] OmnipresentMask =               0b000000000000000001000u
+    let [<Literal>] AbsoluteMask =                  0b000000000000000010000u
+    let [<Literal>] ImperativeMask =                0b000000000000000100000u
+    let [<Literal>] PublishChangeBindingsMask =     0b000000000000001000000u
+    let [<Literal>] PublishChangeEventsMask =       0b000000000000010000000u
+    let [<Literal>] EnabledMask =                   0b000000000000100000000u
+    let [<Literal>] VisibleMask =                   0b000000000001000000000u
+    let [<Literal>] AlwaysUpdateMask =              0b000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b000000001000000000000u
+    let [<Literal>] PersistentMask =                0b000000010000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b000000100000000000000u
+    let [<Literal>] MountedMask =                   0b000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000u
+    let [<Literal>] AffineMatrixDirtyMask =         0b010000000000000000000u
+    let [<Literal>] DefaultFlags =                  0b000110010001100100001u
+
+// NOTE: opening this in order to make the Transform property implementations reasonably succinct.
+open TransformMasks
+
+/// Carries transformation data specific to an Entity.
+type [<NoEquality; NoComparison>] Transform =
+    struct
+        // cache line 1
+        val mutable private Flags_ : uint
+        val mutable private Position_ : Vector3
+        val mutable private Rotation_ : Quaternion
+        // cache line 2
+        val mutable private Scale_ : Vector3
+        val mutable private Offset_ : Vector3
+        val mutable private RotationMatrixOpt_ : Matrix4x4 ref
+        val mutable private AffineMatrixOpt_ : Matrix4x4 ref
+        // cache line 3
+        //val mutable private BoundsOpt_ : Box3 ref
+        val mutable private Angles_ : Vector3
+        val mutable private Size_ : Vector3
+        val mutable private Elevation_ : single
+        end
+
+    member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
+    member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
+    member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
+    member this.Omnipresent with get () = this.Flags_ &&& OmnipresentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
+    member this.Absolute with get () = this.Flags_ &&& AbsoluteMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
+    member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
+    member this.PublishChangeBindings with get () = this.Flags_ &&& PublishChangeBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeBindingsMask else this.Flags_ &&& ~~~PublishChangeBindingsMask
+    member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
+    member this.Enabled with get () = this.Flags_ &&& EnabledMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
+    member this.Visible with get () = this.Flags_ &&& VisibleMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
+    member this.AlwaysUpdate with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
+    member this.PublishUpdates with get () = this.Flags_ &&& PublishUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
+    member this.PublishPostUpdates with get () = this.Flags_ &&& PublishPostUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishPostUpdatesMask else this.Flags_ &&& ~~~PublishPostUpdatesMask
+    member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
+    member this.IgnorePropertyBindings with get () = this.Flags_ &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| IgnorePropertyBindingsMask else this.Flags_ &&& ~~~IgnorePropertyBindingsMask
+    member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
+    member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
+    member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
+    member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
+    member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
+    member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
+
+    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
+    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true
+    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true
+    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true
+    member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value; this.AffineMatrixDirty <- true
+
+    member this.Rotation
+        with get () = this.Rotation_
+        and set value =
+            this.Rotation_ <- value
+            let pitchYawRoll = value.PitchYawRoll
+            this.Angles_.X <- pitchYawRoll.X
+            this.Angles_.Y <- pitchYawRoll.Y
+            this.Angles_.Z <- pitchYawRoll.Z
+            this.RotationMatrixDirty <- true
+            this.AffineMatrixDirty <- true
+
+    member this.Angles
+        with get () = this.Angles_
+        and set value =
+            this.Angles_ <- value
+            this.Rotation_ <- Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
+            this.RotationMatrixDirty <- true
+            this.AffineMatrixDirty <- true
+
+    member this.RotationMatrix =
+        if notNull (this.RotationMatrixOpt_ :> obj) then
+            if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+            this.RotationMatrixOpt_.Value
+        else Matrix4x4.Identity
+
+    member this.AffineMatrix =
+        if notNull (this.AffineMatrixOpt_ :> obj) then
+            if this.AffineMatrixDirty then
+                // TODO: P1: optimize this hella!
+                let positionMatrix = Matrix4x4.CreateTranslation this.Position_
+                let rotationMatrix = this.RotationMatrix
+                let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+                this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
+            this.AffineMatrixOpt_.Value
+        else Matrix4x4.Identity
+
+    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
+    member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
+    member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
+    member this.Left = -this.Right
+    member this.Down = -this.Up
+    member this.Backward = -this.Forward
+
+    member this.PerimeterUnscaled
+        with get () =
+            let size = this.Size_
+            let extent = size * 0.5f
+            let alpha = this.Position_ - extent
+            let offset = this.Offset_ * size
+            let position = alpha + offset
+            Box3 (position, size)
+        and set (value : Box3) =
+            let size = value.Size
+            let extent = size * 0.5f
+            let offset = this.Offset_ * size
+            let position = value.Position + extent - offset
+            this.Position_ <- position
+            this.Size <- size
+
+    member this.Perimeter
+        with get () =
+            let scale = this.Scale_
+            let sizeScaled = this.Size_ * scale
+            let extentScaled = sizeScaled * 0.5f
+            let alphaScaled = this.Position_ - extentScaled
+            let offsetScaled = this.Offset_ * sizeScaled
+            let position = alphaScaled + offsetScaled
+            Box3 (position, sizeScaled)
+        and set (value : Box3) =
+            this.Scale_ <- Vector3.One
+            this.PerimeterUnscaled <- value
+
+    member this.PerimeterCenter
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.Center
+        and set (value : Vector3) =
+            this.Scale_ <- Vector3.One
+            let perimeter = this.Perimeter
+            let perimeterCenter = perimeter.Translate (value - perimeter.Center)
+            this.PerimeterUnscaled <- perimeterCenter
+
+    member this.PerimeterBottom
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.Bottom
+        and set (value : Vector3) =
+            this.Scale_ <- Vector3.One
+            let perimeter = this.Perimeter
+            let perimeterBottom = perimeter.Translate (value - perimeter.Bottom)
+            this.PerimeterUnscaled <- perimeterBottom
+
+    member this.PerimeterOriented =
+        let perimeter = this.Perimeter
+        perimeter.Orient this.Rotation_
+
+    member inline this.Bounds =
+        this.PerimeterOriented // no overflow value yet, so just stick with PerimeterOriented
+
+    member this.InvalidateFast () =
+        this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+
+    /// Test transforms for equality.
+    static member equalsByRef (left : Transform inref, right : Transform inref) =
+        left.Flags_ = right.Flags_ &&
+        left.Position_.Equals right.Position_ &&
+        left.Rotation_.Equals right.Rotation_ &&
+        left.Scale_.Equals right.Scale_ &&
+        left.Offset_.Equals right.Offset_ &&
+        left.Angles_.Equals right.Angles_ &&
+        left.Size_.Equals right.Size_ &&
+        left.Elevation_ = right.Elevation_
+
+    /// Test transforms for equality.
+    static member inline equals (left : Transform) (right : Transform) =
+        Transform.equalsByRef (&left, &right)
+
+    /// Assign the value of the left transform to the right.
+    static member assignByRef (source : Transform inref, target : Transform byref) =
+        target.Flags_ <- source.Flags_
+        target.Position_ <- source.Position_
+        target.Rotation_ <- source.Rotation_
+        target.Scale_ <- source.Scale_
+        target.Offset_ <- source.Offset_
+        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value
+        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value
+        target.Angles_ <- source.Angles_
+        target.Size_ <- source.Size_
+        target.Elevation_ <- source.Elevation_
+
+    /// Assign the value of the left transform to the right.
+    static member inline assign (source : Transform, target : Transform byref) =
+        Transform.assignByRef (&source, &target)
+
+    /// Make an empty transform.
+    static member inline makeEmpty () =
+        Unchecked.defaultof<Transform>
+
+    /// Make a transform with default values.
+    static member make offset =
+        let mutable transform = Unchecked.defaultof<Transform>
+        transform.Flags_ <- DefaultFlags
+        transform.Rotation_ <- Quaternion.Identity
+        transform.Scale_ <- Vector3.One
+        transform.Offset_ <- offset
+        transform.Size_ <- Vector3.One
+        transform
+
+    interface Transform Component with
+        member this.TypeName = nameof Transform
+        member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
+
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -1196,8 +1232,7 @@ module Math =
         transform
 
     /// Check that a point is within the given bounds.
-    /// TODO: move this into Box3 definition.
-    let isPointInBounds (point : Vector3) (bounds : Box3) =
+    let isPointInBounds3d (point : Vector3) (bounds : Box3) =
         point.X >= bounds.Position.X &&
         point.Y >= bounds.Position.Y &&
         point.Z >= bounds.Position.Z &&
@@ -1206,7 +1241,6 @@ module Math =
         point.Z <= bounds.Position.Z + bounds.Size.Z
 
     /// Check that a point is within the given bounds.
-    /// TODO: move this into Box2 definition.
     let isPointInBounds2d (point : Vector2) (bounds : Box2) =
         point.X >= bounds.Position.X &&
         point.Y >= bounds.Position.Y &&
@@ -1214,8 +1248,7 @@ module Math =
         point.Y <= bounds.Position.Y + bounds.Size.Y
 
     /// Check that a bounds is within the given bounds.
-    /// TODO: move this into Box3 definition.
-    let isBoundsInBounds (bounds : Box3) (bounds2 : Box3) =
+    let isBoundsInBounds3d (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X >= bounds2.Position.X &&
         bounds.Position.Y >= bounds2.Position.Y &&
         bounds.Position.Z >= bounds2.Position.Z &&
@@ -1224,7 +1257,6 @@ module Math =
         bounds.Position.Z + bounds.Size.Z <= bounds2.Position.Z + bounds2.Size.Z
 
     /// Check that a bounds is within the given bounds.
-    /// TODO: move this into Box2 definition.
     let isBoundsInBounds2d (bounds : Box2) (bounds2 : Box2) =
         bounds.Position.X >= bounds2.Position.X &&
         bounds.Position.Y >= bounds2.Position.Y &&
@@ -1232,8 +1264,7 @@ module Math =
         bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y
 
     /// Check that a bounds is intersecting the given bounds.
-    /// TODO: move this into Box3 definition.
-    let isBoundsIntersectingBounds (bounds : Box3) (bounds2 : Box3) =
+    let isBoundsIntersectingBounds3d (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
         bounds.Position.Z < bounds2.Position.Z + bounds2.Size.Z &&
