@@ -149,14 +149,18 @@ type [<NoEquality; NoComparison>] Transform =
     member this.OffsetScaled = this.Offset_ * this.Scale_
     member this.SizeScaled = this.Size_ * this.Scale_
 
-    member this.DimensionsScaled =
-        let scale = this.Scale_
-        let sizeScaled = this.Size_ * scale
-        let extentScaled = sizeScaled * 0.5f
-        let alphaScaled = this.Position_ - extentScaled
-        let offsetScaled = this.Offset_ * sizeScaled
-        let position = alphaScaled + offsetScaled
-        Box3 (position, sizeScaled)
+    member this.DimensionsScaled
+        with get () =
+            let scale = this.Scale_
+            let sizeScaled = this.Size_ * scale
+            let extentScaled = sizeScaled * 0.5f
+            let alphaScaled = this.Position_ - extentScaled
+            let offsetScaled = this.Offset_ * sizeScaled
+            let position = alphaScaled + offsetScaled
+            Box3 (position, sizeScaled)
+        and set (value : Box3) =
+            this.Scale_ <- Vector3.One
+            this.DimensionsRaw <- value
 
     member this.DimensionsOriented =
         let dimensions = this.DimensionsScaled
