@@ -385,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher (is2d) =
+    and EntityDispatcher (isCartesian, is2d) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -459,6 +459,9 @@ module WorldTypes =
             if this.Is2d
             then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.EntitySize3dDefault
+
+        /// Whether the dispatcher uses a cartesian (non-centered) offset by default.
+        member this.IsCartesian = isCartesian
 
         /// Whether the dispatcher has a 2-dimensional transform interpretation.
         member this.Is2d = is2d
@@ -743,7 +746,13 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let mutable transform = if dispatcher.Is2d then Transform.make2d () else Transform.make3d ()
+            let mutable transform =
+                if dispatcher.Is2d then
+                    let offset = if dispatcher.IsCartesian then v3Cartesian2d else v3Zero
+                    Transform.make2d offset
+                else
+                    let offset = if dispatcher.IsCartesian then v3Cartesian3d else v3Zero
+                    Transform.make3d offset
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform

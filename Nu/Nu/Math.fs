@@ -213,22 +213,24 @@ type [<NoEquality; NoComparison>] Transform =
     static member inline makeEmpty () =
         Unchecked.defaultof<Transform>
 
-    /// Make a transform with default 2d values.
-    static member make2d () =
+    /// Make a centered transform with default 2d values.
+    static member make2d offset =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
+        transform.Offset_ <- offset
         transform.Size_ <- Constants.Engine.EntitySize2dDefault
         transform.Is2d <- true
         transform
 
     /// Make a transform with default 3d values.
-    static member make3d () =
+    static member make3d offset =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
+        transform.Offset_ <- offset
         transform.Size_ <- Constants.Engine.EntitySize3dDefault
         transform
 
@@ -319,6 +321,8 @@ module Vector3 =
     let inline v3Eq (x : Vector3) (y : Vector3) = x.X = y.X && x.Y = y.Y && x.Z = y.Z
     let inline v3Neq (x : Vector3) (y : Vector3) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z
     let inline v3Dup (a : single) = v3 a a a
+    let v3Cartesian2d = v3 0.5f 0.5f 0.0f
+    let v3Cartesian3d = v3 0.5f 0.5f 0.5f
     let v3One = Vector3.One
     let v3Zero = Vector3.Zero
     let v3UnitX = Vector3.UnitX

@@ -104,9 +104,8 @@ module CharacterDispatcher =
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsRaw
                 let characterView =
-                    Render2d (transform.Elevation, dimensions.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, transform.DimensionsRaw.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = Some (getSpriteInset character world)
@@ -117,9 +116,9 @@ module CharacterDispatcher =
                               Flip = FlipNone })
                 let afflictionView =
                     match getAfflictionInsetOpt character world with
-                    | Some _ as insetOpt ->
-                        let image = Assets.Battle.AfflictionsAnimationSheet
-                        let position =
+                    | Some _ as afflictionInsetOpt ->
+                        let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
+                        let afflictionPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize
@@ -127,14 +126,15 @@ module CharacterDispatcher =
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
-                        let transform = { transform with Position = position; Size = Constants.Battle.AfflictionSize }
-                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                        let mutable afflictionTransform = Transform.make2d ()
+                        afflictionTransform.Position <- afflictionPosition
+                        afflictionTransform.Size <- Constants.Battle.AfflictionSize
+                        afflictionTransform.Elevation <- transform.Elevation + 0.1f
+                        Render2d (afflictionTransform.Elevation, afflictionTransform.DimensionsRaw.Position.Y, AssetTag.generalize afflictionImage,
                             SpriteDescriptor
-                                { Transform = transform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
-                                  InsetOpt = insetOpt
-                                  Image = image
+                                { Transform = afflictionTransform
+                                  InsetOpt = afflictionInsetOpt
+                                  Image = afflictionImage
                                   Color = colWhite
                                   Blend = Transparent
                                   Glow = colZero
@@ -142,9 +142,9 @@ module CharacterDispatcher =
                     | None -> View.empty
                 let chargeOrbView =
                     match getChargeOrbInsetOpt character world with
-                    | Some _ as insetOpt ->
-                        let image = Assets.Battle.ChargeOrbAnimationSheet
-                        let position =
+                    | Some _ as chargeOrbInsetOpt ->
+                        let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
+                        let chargeOrbPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
@@ -152,14 +152,15 @@ module CharacterDispatcher =
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
-                        let transform = { transform with Position = position; Size = Constants.Battle.ChargeOrbSize }
-                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                        let mutable chargeOrbTransform = Transform.make2d ()
+                        chargeOrbTransform.Position <- chargeOrbPosition
+                        chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
+                        chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
+                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.DimensionsRaw.Position.Y, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
                                 { Transform = transform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
-                                  InsetOpt = insetOpt
-                                  Image = image
+                                  InsetOpt = chargeOrbInsetOpt
+                                  Image = chargeOrbImage
                                   Color = colWhite
                                   Blend = Transparent
                                   Glow = colZero
