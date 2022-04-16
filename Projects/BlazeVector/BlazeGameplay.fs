@@ -52,7 +52,7 @@ module Enemy =
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative2d world
-            let dimensions = this.GetDimensionsOverflowed world
+            let dimensions = this.GetBounds world
             let center = dimensions.Center
             Math.isPointInBounds2d center.XY viewBounds
 

@@ -29,7 +29,7 @@ module PropDispatcher =
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyType == Static
-             entity.DimensionsRaw <== prop --> fun prop -> prop.Bounds
+             entity.Perimeter <== prop --> fun prop -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
@@ -240,7 +240,7 @@ module PropDispatcher =
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
-                let positionY = transform.DimensionsRaw.Position.Y
+                let positionY = transform.Perimeter.Position.Y
                 let assetTag = AssetTag.generalize image
                 Render2d (elevation, positionY, assetTag,
                     SpriteDescriptor

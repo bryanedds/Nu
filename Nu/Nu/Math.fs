@@ -50,7 +50,7 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
-        //val mutable private DimensionsOverflowedOpt_ : Box3 ref
+        //val mutable private BoundsOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Elevation_ : single
@@ -143,7 +143,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Position_ <- position
             this.Size <- size
 
-    member this.DimensionsScaled
+    member this.Perimeter
         with get () =
             let scale = this.Scale_
             let sizeScaled = this.Size_ * scale
@@ -157,11 +157,11 @@ type [<NoEquality; NoComparison>] Transform =
             this.DimensionsRaw <- value
 
     member this.DimensionsOriented =
-        let dimensions = this.DimensionsScaled
+        let dimensions = this.Perimeter
         dimensions.Orient this.Rotation_
 
-    member inline this.DimensionsOverflowed =
-        this.DimensionsOriented // no overflow value yet, so just stick with orienteds
+    member inline this.Bounds =
+        this.DimensionsOriented // no overflow value yet, so just stick with oriented's
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask

@@ -72,7 +72,7 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let quadtree = World.makeQuadtree ()
             for entity in entities do
-                let dimensions = entity.GetDimensionsOverflowed world
+                let dimensions = entity.GetBounds world
                 if entity.GetIs2d world then
                     Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions.XY entity quadtree
             quadtree
@@ -89,7 +89,7 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let octree = World.makeOctree ()
             for entity in entities do
-                let dimensions = entity.GetDimensionsOverflowed world
+                let dimensions = entity.GetBounds world
                 if entity.GetIs2d world then
                     Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions entity octree
             octree
@@ -678,7 +678,7 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let dimensions = entity.GetDimensionsScaled world
+                    let dimensions = entity.GetPerimeter world
                     let size = dimensions.Size
                     let position = bodyTransformMessage.Position - size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
@@ -813,7 +813,7 @@ module WorldModule2 =
                 transform.Absolute <- true
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.DimensionsScaled.Position.Y
+                      Horizon = transform.Perimeter.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
                       RenderDescriptor =
                         SpriteDescriptor
