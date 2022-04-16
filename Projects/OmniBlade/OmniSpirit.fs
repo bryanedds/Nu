@@ -94,16 +94,16 @@ module Spirit =
 
     type [<ReferenceEquality; NoComparison>] Spirit =
         private
-            { Bounds_ : Box3
+            { Perimeter_ : Box3
               SpiritType_ : SpiritType
               SpiritState_ : SpiritState }
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.Size = this.Bounds_.Size
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.Size = this.Perimeter_.Size
 
         (* Local Properties *)
         member this.SpiritType = this.SpiritType_
@@ -112,7 +112,7 @@ module Spirit =
         static member advance time target (spirit : Spirit) =
             let (movement, state) = SpiritState.advance time spirit.Center target spirit.SpiritState
             { spirit with
-                Bounds_ = spirit.Bounds_.Translate movement
+                Perimeter_ = spirit.Perimeter_.Translate movement
                 SpiritState_ = state }
 
         static member spawn time center spiritType spiritPattern =
@@ -120,10 +120,10 @@ module Spirit =
             let n = v3 (single (cos r)) (single (sin r)) 0.0f
             let p = center + n * Constants.Field.SpiritRadius
             let spiritState = { SpiritMovements = spiritPattern; SpiritMovementIndex = 0; SpiritMovementStart = time; SpiritMovementCachedOpt = None }
-            { Bounds_ = Box3 (p, Constants.Field.SpiritOrbBlipSize); SpiritType_ = spiritType; SpiritState_ = spiritState }
+            { Perimeter_ = Box3 (p, Constants.Field.SpiritOrbBlipSize); SpiritType_ = spiritType; SpiritState_ = spiritState }
 
         static member make bounds spiritType spiritState =
-            { Bounds_ = bounds
+            { Perimeter_ = bounds
               SpiritType_ = spiritType
               SpiritState_ = spiritState }
 

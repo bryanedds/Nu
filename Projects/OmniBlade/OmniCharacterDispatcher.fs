@@ -99,7 +99,7 @@ module CharacterDispatcher =
 
         override this.Initializers (character, _) =
             [Entity.Omnipresent == true
-             Entity.Perimeter <== character --> fun character -> character.Bounds]
+             Entity.Perimeter <== character --> fun character -> character.Perimeter]
 
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
