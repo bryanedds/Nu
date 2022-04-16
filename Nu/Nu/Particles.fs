@@ -184,7 +184,7 @@ module Particles =
                 Array.map (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - center
-                    let distanceSquared = delta.LengthSquared ()
+                    let distanceSquared = delta.MagnitudeSquared
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
                         let normal = Vector3.Normalize (center - positionNext)
@@ -199,7 +199,7 @@ module Particles =
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
                     if Math.isPointInBounds3d positionNext box then
-                        let speed = body.LinearVelocity.Length ()
+                        let speed = body.LinearVelocity.Magnitude
                         let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
@@ -219,7 +219,7 @@ module Particles =
                     let bodies =
                         Array.map (fun (body : Body) ->
                             let direction = position - body.Position
-                            let distance = direction.Length ()
+                            let distance = direction.Magnitude
                             let normal = direction / distance
                             if distance < radius then
                                 let pull = (radius - distance) / radius
