@@ -1114,6 +1114,18 @@ module WorldModuleEntity =
         static member internal getEntityDimensionsScaled entity world =
             (World.getEntityState entity world).Transform.DimensionsScaled
 
+        static member internal setEntityDimensionsScaled value entity world =
+            let entityState = World.getEntityState entity world
+            if box3Neq value entityState.DimensionsScaled then
+                if entityState.Optimized then
+                    entityState.DimensionsScaled <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.DimensionsScaled <- value
+                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+            else struct (false, world)
+
         static member internal getEntityDimensionsOriented entity world =
             (World.getEntityState entity world).Transform.DimensionsOriented
 
@@ -2143,6 +2155,7 @@ module WorldModuleEntity =
     let private initSetters () =
         EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
         EntitySetters.Assign ("DimensionsRaw", fun property entity world -> World.setEntityDimensionsRaw (property.PropertyValue :?> Box3) entity world)
+        EntitySetters.Assign ("DimensionsScaled", fun property entity world -> World.setEntityDimensionsScaled (property.PropertyValue :?> Box3) entity world)
         EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("Scale", fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world)
