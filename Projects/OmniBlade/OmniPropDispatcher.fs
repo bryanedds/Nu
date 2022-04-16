@@ -77,7 +77,7 @@ module PropDispatcher =
 
         override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
-                let transform = entity.GetTransform world
+                let mutable transform = entity.GetTransform world
                 let (background, image, color, blend, glow, insetOpt, flip) =
                     match prop.PropData with
                     | Sprite _ ->
