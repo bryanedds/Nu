@@ -192,11 +192,11 @@ module Battle =
     let isCharacterWounded characterIndex battle =
         (getCharacter characterIndex battle).IsWounded
 
-    let getCharacterBoundsOriginal characterIndex battle =
-        (getCharacter characterIndex battle).BoundsOriginal
+    let getCharacterPerimeterOriginal characterIndex battle =
+        (getCharacter characterIndex battle).PerimeterOriginal
 
-    let getCharacterBounds characterIndex battle =
-        (getCharacter characterIndex battle).Bounds
+    let getCharacterPerimeter characterIndex battle =
+        (getCharacter characterIndex battle).Perimeter
 
     let getCharacterAnimationFinished time characterIndex battle =
         getCharacterBy (Character.getAnimationFinished time) characterIndex battle

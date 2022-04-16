@@ -245,8 +245,8 @@ module Character =
 
     type [<ReferenceEquality; NoComparison>] Character =
         private
-            { BoundsOriginal_ : Box3
-              Bounds_ : Box3
+            { PerimeterOriginal_ : Box3
+              Perimeter_ : Box3
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState
@@ -257,19 +257,19 @@ module Character =
               InputState_ : CharacterInputState
               CelSize_ : Vector2 }
 
-        (* Bounds Original Properties *)
-        member this.BoundsOriginal = this.BoundsOriginal_
-        member this.PositionOriginal = this.BoundsOriginal_.Position
-        member this.CenterOriginal = this.BoundsOriginal_.Center
-        member this.BottomOriginal = this.BoundsOriginal_.Bottom
-        member this.SizeOriginal = this.BoundsOriginal_.Size
+        (* Perimeter Original Properties *)
+        member this.PerimeterOriginal = this.PerimeterOriginal_
+        member this.PositionOriginal = this.PerimeterOriginal_.Position
+        member this.CenterOriginal = this.PerimeterOriginal_.Center
+        member this.BottomOriginal = this.PerimeterOriginal_.Bottom
+        member this.SizeOriginal = this.PerimeterOriginal_.Size
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.Size = this.Bounds_.Size
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.Size = this.Perimeter_.Size
 
         (* Helper Properties *)
         member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
@@ -549,14 +549,14 @@ module Character =
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
-    let updateBounds updater (character : Character) =
-        { character with Bounds_ = updater character.Bounds_ }
+    let updatePerimeter updater (character : Character) =
+        { character with Perimeter_ = updater character.Perimeter_ }
 
     let updatePosition updater (character : Character) =
-        { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
+        { character with Perimeter_ = character.Position |> updater |> character.Perimeter.WithPosition }
 
     let updateBottom updater (character : Character) =
-        { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+        { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.IsHealthy then
@@ -657,8 +657,8 @@ module Character =
     let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterIndex_ = characterIndex
           CharacterType_ = characterType
           CharacterState_ = characterState
@@ -700,8 +700,8 @@ module Character =
     let empty =
         let bounds = Box3 (v3Zero, Constants.Gameplay.CharacterSize)
         let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterType_ = Ally Jinn
           CharacterState_ = CharacterState.empty
