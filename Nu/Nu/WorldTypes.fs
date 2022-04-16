@@ -863,7 +863,7 @@ module WorldTypes =
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
         member this.DimensionsRaw with get () = this.Transform.DimensionsRaw and set value = this.Transform.DimensionsRaw <- value
-        member this.DimensionsScaled with get () = this.Transform.DimensionsScaled and set value = this.Transform.DimensionsScaled <- value
+        member this.DimensionsScaled with get () = this.Transform.DimensionsScaled
         member this.DimensionsOriented with get () = this.Transform.DimensionsOriented
         member this.DimensionsOverflowed with get () = this.Transform.DimensionsOverflowed
 
