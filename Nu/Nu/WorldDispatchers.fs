@@ -398,11 +398,11 @@ module TextFacetModule =
             let text = entity.GetText world
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
-                let dimensionsRaw = transform.DimensionsRaw // gui currently ignores rotation and scale
-                let horizon = dimensionsRaw.Position.Y
+                let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
+                let horizon = perimeterUnscaled.Position.Y
                 let mutable textTransform = Transform.make transform.Offset
-                textTransform.Position <- dimensionsRaw.Position + entity.GetMargins world + entity.GetTextOffset world
-                textTransform.Size <- dimensionsRaw.Size - entity.GetMargins world * 2.0f
+                textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
+                textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
@@ -480,10 +480,10 @@ module BasicEmitter2dFacetModule =
             match tryMakeEmitter entity world with
             | Some emitter ->
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsOriented
+                let perimeterOriented = transform.PerimeterOriented
                 { emitter with
                     Body =
-                        { Position = dimensions.Center
+                        { Position = perimeterOriented.Center
                           Scale = transform.Scale
                           Angles = transform.Angles
                           LinearVelocity = v3Zero
@@ -576,8 +576,8 @@ module BasicEmitter2dFacetModule =
             let particleSystem =
                 match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicEmitter as emitter) ->
-                    let dimensions = entity.GetDimensionsOriented world
-                    let position = dimensions.Center
+                    let perimeterOriented = entity.GetPerimeterOriented world
+                    let position = perimeterOriented.Center
                     let emitter =
                         if v3Neq emitter.Body.Position position
                         then { emitter with Body = { emitter.Body with Position = position }}
@@ -781,12 +781,12 @@ module Effect2dFacetModule =
                 let time = World.getUpdateTime world
                 let world = entity.SetEffectTags Map.empty world
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.DimensionsOriented
+                let perimeterOriented = transform.PerimeterOriented
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
                 let effectAbsolute = entity.GetAbsolute world
                 let effectSlice =
-                    { Effects.Position = dimensions.Center
+                    { Effects.Position = perimeterOriented.Center
                       Effects.Scale = transform.Scale
                       Effects.Angles = transform.Angles
                       Effects.Elevation = transform.Elevation
@@ -1103,8 +1103,8 @@ module TileMapFacetModule =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap ->
                 let mutable transform = entity.GetTransform world
-                let dimensionsRaw = transform.DimensionsRaw // tile map currently ignores rotation and scale
-                let tileMapPosition = dimensionsRaw.Position.XY
+                let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
+                let tileMapPosition = perimeterUnscaled.Position.XY
                 let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
                 let bodyProperties =
                     TmxMap.getBodyProperties
@@ -1126,14 +1126,14 @@ module TileMapFacetModule =
                 match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
                 | Some tileMap ->
                     let mutable transform = entity.GetTransform world
-                    let dimensionsRaw = transform.DimensionsRaw // tile map currently ignores rotation and scale
+                    let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                     let viewBounds = World.getViewBounds2d transform.Absolute world
                     let tileMapMessages =
                         TmxMap.getLayeredMessages2d
                             (World.getUpdateTime world)
                             transform.Absolute
                             viewBounds
-                            dimensionsRaw.Position.XY
+                            perimeterUnscaled.Position.XY
                             transform.Elevation
                             (entity.GetColor world)
                             (entity.GetGlow world)
@@ -1199,9 +1199,9 @@ module TmxMapFacetModule =
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
-            let dimensionsRaw = transform.DimensionsRaw // tile map currently ignores rotation and scale
+            let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let tileMap = entity.GetTmxMap world
-            let tileMapPosition = dimensionsRaw.Position.XY
+            let tileMapPosition = perimeterUnscaled.Position.XY
             let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
             let bodyProperties =
                 TmxMap.getBodyProperties
@@ -1220,7 +1220,7 @@ module TmxMapFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let dimensionsRaw = transform.DimensionsRaw // tile map currently ignores rotation and scale
+                let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                 let viewBounds = World.getViewBounds2d transform.Absolute world
                 let tileMap = entity.GetTmxMap world
                 let tileMapMessages =
@@ -1228,7 +1228,7 @@ module TmxMapFacetModule =
                         (World.getUpdateTime world)
                         transform.Absolute
                         viewBounds
-                        dimensionsRaw.Position.XY
+                        perimeterUnscaled.Position.XY
                         transform.Elevation
                         (entity.GetColor world)
                         (entity.GetGlow world)

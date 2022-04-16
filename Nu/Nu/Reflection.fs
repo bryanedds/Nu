@@ -37,9 +37,9 @@ module Reflection =
              // entity properties
              ("Facets", true)
              ("Surnames", true)
-             ("DimensionsRaw", true)
+             ("PerimeterUnscaled", true)
              ("Perimeter", true)
-             ("DimensionsOriented", true)
+             ("PerimeterOriented", true)
              ("Bounds", true)
              ("RotationMatrix", true)
              ("AffineMatrix", true)

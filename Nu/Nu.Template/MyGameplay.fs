@@ -71,8 +71,8 @@ module MyGameplay =
                     else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
                 | UpdateEye ->
                     if World.getUpdateRate world <> 0L then
-                        let characterDimensions = Simulants.Gameplay.Player.Character.GetDimensionsOriented world
-                        let characterCenter = characterDimensions.Center
+                        let characterPerimeter = Simulants.Gameplay.Player.Character.GetPerimeter world
+                        let characterCenter = characterPerimeter.Center
                         Simulants.Game.SetEyePosition2d characterCenter.XY world
                     else world
                 | Nop -> world
