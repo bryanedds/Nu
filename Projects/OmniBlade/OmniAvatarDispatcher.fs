@@ -15,8 +15,8 @@ module AvatarDispatcher =
     type [<StructuralEquality; NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
-        | Collision of CollisionData
-        | Separation of SeparationData
+        | BodyCollision of BodyCollisionData
+        | BodySeparation of BodySeparationData
         | BodyRemoving of PhysicsId
         | TryFace of Direction
         | Nil

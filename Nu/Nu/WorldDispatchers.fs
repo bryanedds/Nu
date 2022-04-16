@@ -199,9 +199,7 @@ module ScriptFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.ScriptOpt None
+            [define Entity.ScriptOpt None
              define Entity.Script [||]
              define Entity.ScriptUnsubscriptions []
              define Entity.RegisterScript Scripting.Unit
@@ -253,9 +251,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.StaticImage Assets.Default.Image4
+            [define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
@@ -326,9 +322,7 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.CelSize (Vector2 (12.0f, 12.0f))
+            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
@@ -392,9 +386,7 @@ module TextFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.Text ""
+            [define Entity.Text ""
              define Entity.Font Assets.Default.Font
              define Entity.Margins v3Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
@@ -408,10 +400,9 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable textTransform = Transform.make2d ()
+                let mutable textTransform = Transform.make2d transform.Offset
                 textTransform.Position <- dimensions.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- dimensions.Size - entity.GetMargins world * 2.0f
-                textTransform.Offset <- transform.Offset
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
@@ -946,9 +937,7 @@ module RigidBody2dFacetModule =
             World.localizeBodyShape (entity.GetScale world * entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.BodyEnabled true
+            [define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.DensityDefault
@@ -995,7 +984,7 @@ module RigidBody2dFacetModule =
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
             let dimensions = transform.DimensionsScaled
-            let bodyProperties = 
+            let bodyProperties =
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
                   Position = dimensions.Center
                   Rotation = transform.Rotation
@@ -1075,9 +1064,7 @@ module TileMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.Omnipresent true
+            [define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1175,9 +1162,7 @@ module TmxMapFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.Omnipresent true
+            [define Entity.Omnipresent true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1263,18 +1248,18 @@ module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
     type EntityDispatcher2d () =
-        inherit EntityDispatcher (true)
+        inherit EntityDispatcher (true, true)
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset2dDefault
+            [define Entity.Offset v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
     type EntityDispatcher3d () =
-        inherit EntityDispatcher (false)
+        inherit EntityDispatcher (false, false)
 
         static member Properties =
-            [define Entity.Offset Constants.Engine.EntityOffset3dDefault
+            [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize3dDefault]
 
     type World with
@@ -1295,8 +1280,8 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, initial : 'model) =
-        inherit EntityDispatcher (is2d)
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isCartesian, is2d, initial : 'model) =
+        inherit EntityDispatcher (isCartesian, is2d)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1384,10 +1369,10 @@ module EntityDispatcherModule =
         default this.View (_, _, _) = View.empty
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (initial : 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, initial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, true, initial)
 
     and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (initial : 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, initial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, false, initial)
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -1436,7 +1421,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d ()
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityOffsetGuiDefault
+            [define Entity.Size v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
@@ -1447,7 +1432,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d<'model, 'message, 'command> (model)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityOffsetGuiDefault
+            [define Entity.Size v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
@@ -1545,10 +1530,9 @@ module ButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d ()
+                let mutable spriteTransform = Transform.make2d transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
-                spriteTransform.Offset <- transform.Offset
                 spriteTransform.Elevation <- transform.Elevation
                 spriteTransform.Absolute <- transform.Absolute
                 let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
@@ -1592,10 +1576,9 @@ module LabelDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d ()
+                let mutable spriteTransform = Transform.make2d transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
-                spriteTransform.Offset <- transform.Offset
                 spriteTransform.Elevation <- transform.Elevation
                 spriteTransform.Absolute <- transform.Absolute
                 let spriteImage = entity.GetLabelImage world
@@ -1645,10 +1628,9 @@ module TextDispatcherModule =
                     let mutable transform = entity.GetTransform world
                     let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                     let horizon = dimensions.Position.Y
-                    let mutable spriteTransform = Transform.make2d ()
+                    let mutable spriteTransform = Transform.make2d transform.Offset
                     spriteTransform.Position <- dimensions.Position
                     spriteTransform.Size <- dimensions.Size
-                    spriteTransform.Offset <- transform.Offset
                     spriteTransform.Elevation <- transform.Elevation
                     spriteTransform.Absolute <- transform.Absolute
                     World.enqueueRenderLayeredMessage2d
@@ -1781,10 +1763,9 @@ module ToggleButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d ()
+                let mutable spriteTransform = Transform.make2d transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
-                spriteTransform.Offset <- transform.Offset
                 spriteTransform.Elevation <- transform.Elevation
                 spriteTransform.Absolute <- transform.Absolute
                 let spriteImage =
@@ -1912,10 +1893,9 @@ module RadioButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable spriteTransform = Transform.make2d ()
+                let mutable spriteTransform = Transform.make2d transform.Offset
                 spriteTransform.Position <- dimensions.Position
                 spriteTransform.Size <- dimensions.Size
-                spriteTransform.Offset <- transform.Offset
                 spriteTransform.Elevation <- transform.Elevation
                 spriteTransform.Absolute <- transform.Absolute
                 let spriteImage =
@@ -2103,10 +2083,9 @@ module FillBarDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let dimensions = transform.DimensionsRaw // gui currently ignores rotation and scale
                 let horizon = dimensions.Position.Y
-                let mutable borderTransform = Transform.make2d ()
+                let mutable borderTransform = Transform.make2d transform.Offset
                 borderTransform.Position <- dimensions.Position
                 borderTransform.Size <- dimensions.Size
-                borderTransform.Offset <- transform.Offset
                 borderTransform.Elevation <- transform.Elevation + 0.5f
                 borderTransform.Absolute <- transform.Absolute
                 let disabledColor = entity.GetDisabledColor world
@@ -2135,10 +2114,9 @@ module FillBarDispatcherModule =
                 let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
                 let fillHeight = fillSize.Y - fillInset.Y * 2.0f
                 let fillSize = v3 fillWidth fillHeight 0.0f
-                let mutable fillTransform = Transform.make2d ()
+                let mutable fillTransform = Transform.make2d transform.Offset
                 fillTransform.Position <- fillPosition
                 fillTransform.Size <- fillSize
-                fillTransform.Offset <- transform.Offset
                 fillTransform.Elevation <- transform.Elevation
                 fillTransform.Absolute <- transform.Absolute
                 let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
