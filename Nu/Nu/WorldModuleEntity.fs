@@ -295,15 +295,15 @@ module WorldModuleEntity =
                 let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
-                let dimensionsRawChanged = positionChanged || offsetChanged || sizeChanged
+                let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
                 let world =
-                    if dimensionsRawChanged then
-                        // OPTIMIZATION: the only dimensions changes you can subscribe to are scaled and raw.
+                    if perimeterUnscaledChanged then
+                        // OPTIMIZATION: eliding Bounds and PerimeterOriented change event for speed.
                         //let world = World.publishEntityChange Property? Bounds newTransform.Bounds publishChangeBindings publishChangeEvents entity world
-                        //let world = World.publishEntityChange Property? DimensionsOriented newTransform.DimensionsOriented publishChangeBindings publishChangeEvents entity world
+                        //let world = World.publishEntityChange Property? PerimeterOriented newTransform.PerimeterOriented publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? DimensionsRaw newTransform.DimensionsRaw publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? PerimeterUnscaled newTransform.PerimeterUnscaled publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
                         let world = if offsetChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
@@ -1096,18 +1096,18 @@ module WorldModuleEntity =
                 else world
             struct (changed, world)
 
-        static member internal getEntityDimensionsRaw entity world =
-            (World.getEntityState entity world).Transform.DimensionsRaw
+        static member internal getEntityPerimeterUnscaled entity world =
+            (World.getEntityState entity world).Transform.PerimeterUnscaled
 
-        static member internal setEntityDimensionsRaw value entity world =
+        static member internal setEntityPerimeterUnscaled value entity world =
             let entityState = World.getEntityState entity world
-            if box3Neq value entityState.DimensionsRaw then
+            if box3Neq value entityState.PerimeterUnscaled then
                 if entityState.Optimized then
-                    entityState.DimensionsRaw <- value
+                    entityState.PerimeterUnscaled <- value
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
-                    transform.DimensionsRaw <- value
+                    transform.PerimeterUnscaled <- value
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
 
@@ -1126,8 +1126,8 @@ module WorldModuleEntity =
                     World.setEntityTransformByRef (&transform, entityState, entity, world)
             else struct (false, world)
 
-        static member internal getEntityDimensionsOriented entity world =
-            (World.getEntityState entity world).Transform.DimensionsOriented
+        static member internal getEntityPerimeterOriented entity world =
+            (World.getEntityState entity world).Transform.PerimeterOriented
 
         static member internal getEntityBounds entity world =
             (World.getEntityState entity world).Transform.Bounds
@@ -2107,9 +2107,9 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         EntityGetters.Assign ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
-        EntityGetters.Assign ("DimensionsRaw", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsRaw entity world })
+        EntityGetters.Assign ("PerimeterUnscaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterUnscaled entity world })
         EntityGetters.Assign ("Perimeter", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world })
-        EntityGetters.Assign ("DimensionsOriented", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityDimensionsOriented entity world })
+        EntityGetters.Assign ("PerimeterOriented", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterOriented entity world })
         EntityGetters.Assign ("Bounds", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world })
         EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world })
         EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world })
@@ -2154,7 +2154,7 @@ module WorldModuleEntity =
     /// Initialize property setters.
     let private initSetters () =
         EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
-        EntitySetters.Assign ("DimensionsRaw", fun property entity world -> World.setEntityDimensionsRaw (property.PropertyValue :?> Box3) entity world)
+        EntitySetters.Assign ("PerimeterUnscaled", fun property entity world -> World.setEntityPerimeterUnscaled (property.PropertyValue :?> Box3) entity world)
         EntitySetters.Assign ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
         EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)

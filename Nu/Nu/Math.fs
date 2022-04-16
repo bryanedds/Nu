@@ -127,7 +127,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Backward = -this.Forward
 
-    member this.DimensionsRaw
+    member this.PerimeterUnscaled
         with get () =
             let size = this.Size_
             let extent = size * 0.5f
@@ -154,14 +154,14 @@ type [<NoEquality; NoComparison>] Transform =
             Box3 (position, sizeScaled)
         and set (value : Box3) =
             this.Scale_ <- Vector3.One
-            this.DimensionsRaw <- value
+            this.PerimeterUnscaled <- value
 
-    member this.DimensionsOriented =
-        let dimensions = this.Perimeter
-        dimensions.Orient this.Rotation_
+    member this.PerimeterOriented =
+        let perimeter = this.Perimeter
+        perimeter.Orient this.Rotation_
 
     member inline this.Bounds =
-        this.DimensionsOriented // no overflow value yet, so just stick with oriented's
+        this.PerimeterOriented // no overflow value yet, so just stick with PerimeterOriented
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask

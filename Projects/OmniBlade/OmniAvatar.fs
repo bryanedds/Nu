@@ -11,8 +11,8 @@ module Avatar =
 
     type [<ReferenceEquality; NoComparison>] Avatar =
         private
-            { BoundsOriginal_ : Box3
-              Bounds_ : Box3
+            { PerimeterOriginal_ : Box3
+              Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
               CollidedBodyShapes_ : BodyShapeSource list
