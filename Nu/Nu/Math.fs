@@ -145,10 +145,6 @@ type [<NoEquality; NoComparison>] Transform =
             this.Position_ <- position
             this.Size <- size
 
-    member this.PositionScaled = this.Position_ * this.Scale_
-    member this.OffsetScaled = this.Offset_ * this.Scale_
-    member this.SizeScaled = this.Size_ * this.Scale_
-
     member this.DimensionsScaled
         with get () =
             let scale = this.Scale_
