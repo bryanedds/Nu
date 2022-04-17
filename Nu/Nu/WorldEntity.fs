@@ -597,7 +597,7 @@ module WorldEntityModule =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
                     // OPTIMIZATION: applying overlay only when it will change something
-                    if dispatcherName.Replace ("Dispatcher", "Overlay") <> overlayName then
+                    if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
                     else entityState

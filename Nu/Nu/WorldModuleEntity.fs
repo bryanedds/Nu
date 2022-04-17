@@ -1832,7 +1832,7 @@ module WorldModuleEntity =
                 | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // compute the optional overlay name
-            let overlayNameDefault = Overlay.typeNameToOverlayName dispatcherName
+            let overlayNameDefault = Overlay.dispatcherNameToOverlayName dispatcherName
             let overlayNameOpt =
                 match overlayDescriptor with
                 | NoOverlay -> None
