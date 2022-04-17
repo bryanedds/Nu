@@ -48,8 +48,7 @@ module Program =
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component scaled to a back-buffer
     of a varying size, render each component unscaled to an off-screen buffer of a static size and then blit that with
-    scaling to the back-buffer. NOTE: this only applies to 2D ~ will not apply to 3D once implemented in Nu (for
-    obvious reasons). *)
+    scaling to the back-buffer. NOTE: this only applies to 2d (for obvious reasons). *)
 
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you need to move the app
     from 60fps to 30fps. *)

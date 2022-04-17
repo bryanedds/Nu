@@ -4,4 +4,4 @@
 namespace Nu
 open Nu
 
-// 3D rendering implemented with OpenGL.
+// 3d rendering implemented with OpenGL.

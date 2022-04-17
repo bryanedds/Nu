@@ -1013,12 +1013,12 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
-/// The input for a 2D ray cast operation.
+/// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
     { RayBegin : Vector2
       RayEnd : Vector2 }
       
-/// The output of a 2D ray cast operation.
+/// The output of a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
     { mutable Normal : Vector2
       mutable Fraction : single }
@@ -1287,7 +1287,7 @@ module Math =
     let radiansToDegrees (radians : single) =
         MathHelper.RadiansToDegrees -radians
 
-    /// Convert radians to degrees in 3D.
+    /// Convert radians to degrees in 3d.
     let radiansToDegrees3d (radians : Vector3) =
         v3
             (radiansToDegrees radians.X)
@@ -1298,7 +1298,7 @@ module Math =
     let degreesToRadians (degrees : single) =
         MathHelper.DegreesToRadians -degrees
 
-    /// Convert degrees to radians in 3D.
+    /// Convert degrees to radians in 3d.
     let degreesToRadians3d (degrees : Vector3) =
         v3
             (degreesToRadians degrees.X)
@@ -1389,28 +1389,28 @@ module Math =
         bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
         bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
 
-    /// Get the 2D view of the eye in absolute terms (world space).
+    /// Get the 2d view of the eye in absolute terms (world space).
     let getViewAbsolute2d (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
         
-    /// Get the 2D view of the eye in absolute terms (world space) with translation sliced on
+    /// Get the 2d view of the eye in absolute terms (world space) with translation sliced on
     /// integers.
     let getViewAbsoluteI2d (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
 
-    /// The relative 2D view of the eye with original single values. Due to the problems with
+    /// The relative 2d view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelative2d (eyePosition : Vector2) (_ : Vector2) =
         Matrix3x3.CreateTranslation eyePosition
 
-    /// The relative 2D view of the eye with translation sliced on integers. Good for rendering.
+    /// The relative 2d view of the eye with translation sliced on integers. Good for rendering.
     let getViewRelativeI2d (eyePosition : Vector2) (_ : Vector2) =
         let translation = eyePosition
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3x3.CreateTranslation translationI
 
-    /// Perform a 2D ray cast on a circle.
+    /// Perform a 2d ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
     let rayCastCircle2d (position : Vector2) (radius : single) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let mutable s = input.RayBegin - position
@@ -1428,7 +1428,7 @@ module Math =
             else false
         else false
 
-    /// Perform a 2D ray cast on a rectangle.
+    /// Perform a 2d ray cast on a rectangle.
     /// BUG: There's a bug in AABB.RayCast that produces invalid normals.
     let rayCastRectangle2d (rectangle : Vector4) (input : RayCast2Input inref) (output : RayCast2Output outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
@@ -1441,7 +1441,7 @@ module Math =
         output.Fraction <- outputAether.Fraction
         result
 
-    /// Perform a 2D ray-cast on a line segment (edge).
+    /// Perform a 2d ray-cast on a line segment (edge).
     /// NOTE: due to unoptimized implementation, this function allocates one object per call!
     /// TODO: adapt the Aether code as was done for circle to improve performance and get rid of said
     /// allocation.

@@ -4,4 +4,4 @@
 namespace Nu
 open Nu
 
-// 3D physics with Bepu.
+// 3d physics with Bepu.
