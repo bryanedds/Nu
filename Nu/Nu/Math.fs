@@ -511,9 +511,9 @@ type Vector3iConverter () =
             | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) ->
                 Vector3i (scvalue x, scvalue y, scvalue z) :> obj
             | _ ->
-                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+                failconv "Invalid Vector3iConverter conversion from source." (Some symbol)
         | :? Vector3i -> source
-        | _ -> failconv "Invalid Vector4Converter conversion from source." None
+        | _ -> failconv "Invalid Vector3iConverter conversion from source." None
 
 [<AutoOpen>]
 module Vector4i =
@@ -614,9 +614,18 @@ type Vector4iConverter () =
             | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
                 Vector4i (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
             | _ ->
-                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+                failconv "Invalid Vector4iConverter conversion from source." (Some symbol)
         | :? Vector4i -> source
-        | _ -> failconv "Invalid Vector4Converter conversion from source." None
+        | _ -> failconv "Invalid Vector4iConverter conversion from source." None
+
+[<AutoOpen>]
+module Quaternion =
+    type Quaternion with
+        member this.PitchYawRoll = MathHelper.PitchYawRoll &this
+
+    let quatId = Quaternion.Identity
+    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
+    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
 
 [<AutoOpen>]
 module Box2 =
@@ -649,6 +658,40 @@ module Box2 =
     let inline box2Neq (b : Box2) (b2 : Box2) =
         b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
         b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
+
+/// Converts Box2 types.
+type Box2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Box2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let box2 = source :?> Box2
+            Symbols
+                ([Number (scstring box2.Position.X, None)
+                  Number (scstring box2.Position.Y, None)
+                  Number (scstring box2.Size.X, None)
+                  Number (scstring box2.Size.Y, None)], None) :> obj
+        elif destType = typeof<Box2> then source
+        else failconv "Invalid Box2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Box2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
+                Box2 (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | _ ->
+                failconv "Invalid Box2Converter conversion from source." (Some symbol)
+        | :? Box2 -> source
+        | _ -> failconv "Invalid Box2Converter conversion from source." None
 
 [<AutoOpen>]
 module Box3 =
@@ -707,6 +750,40 @@ module Box2i =
         b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
         b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
 
+/// Converts Box2i types.
+type Box2iConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Box2i>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let box2 = source :?> Box2i
+            Symbols
+                ([Number (scstring box2.Position.X, None)
+                  Number (scstring box2.Position.Y, None)
+                  Number (scstring box2.Size.X, None)
+                  Number (scstring box2.Size.Y, None)], None) :> obj
+        elif destType = typeof<Box2i> then source
+        else failconv "Invalid Box2iConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Box2i>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
+                Box2i (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | _ ->
+                failconv "Invalid Box2iConverter conversion from source." (Some symbol)
+        | :? Box2i -> source
+        | _ -> failconv "Invalid Box2iConverter conversion from source." None
+
 [<AutoOpen>]
 module Matrix3x3 =
 
@@ -751,15 +828,6 @@ module Matrix4x4 =
     let inline m4Neq (x : Matrix4x4) (y : Matrix4x4) = not (x.Equals y)
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
-
-[<AutoOpen>]
-module Quaternion =
-    type Quaternion with
-        member this.PitchYawRoll = MathHelper.PitchYawRoll &this
-
-    let quatId = Quaternion.Identity
-    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
-    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
 
 /// The Quaternion value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] QuaternionPluggable =
