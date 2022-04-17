@@ -39,6 +39,8 @@ module Reflection =
              ("Surnames", true)
              ("PerimeterUnscaled", true)
              ("Perimeter", true)
+             ("PerimeterCenter", true)
+             ("PerimeterBottom", true)
              ("PerimeterOriented", true)
              ("Bounds", true)
              ("RotationMatrix", true)
