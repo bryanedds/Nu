@@ -280,10 +280,15 @@ module WorldModule =
         static member setUpdateRate updateRate world =
             World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) Simulants.Game world
 
-        /// Check that the world is advancing.
+        /// Check that the update rate is non-zero.
         [<FunctionBinding>]
         static member isAdvancing world =
             World.getAmbientStateBy AmbientState.isAdvancing world
+
+        /// Check that the update rate is zero.
+        [<FunctionBinding>]
+        static member isHalted world =
+            World.getAmbientStateBy AmbientState.isHalted world
 
         /// Get the world's update time.
         [<FunctionBinding>]

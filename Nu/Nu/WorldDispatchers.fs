@@ -1012,6 +1012,9 @@ module RigidBody2dFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
+        override this.IsPhysical =
+            true
+
 [<AutoOpen>]
 module Joint2dFacetModule =
 
@@ -1042,6 +1045,9 @@ module Joint2dFacetModule =
 
         override this.UnregisterPhysics (entity, world) =
             World.destroyJoint (entity.GetPhysicsId world) world
+
+        override this.IsPhysical =
+            true
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -1150,6 +1156,9 @@ module TileMapFacetModule =
             | Some tileMap -> TmxMap.getQuickSize tileMap
             | None -> Constants.Engine.EntitySize2dDefault
 
+        override this.IsPhysical =
+            true
+
 [<AutoOpen>]
 module TmxMapFacetModule =
 
@@ -1242,6 +1251,9 @@ module TmxMapFacetModule =
         override this.GetQuickSize (entity, world) =
             let tileMap = entity.GetTmxMap world
             TmxMap.getQuickSize tileMap
+
+        override this.IsPhysical =
+            true
 
 [<AutoOpen>]
 module EntityDispatcherModule =
@@ -2185,6 +2197,9 @@ module Block2dDispatcherModule =
             [define Entity.BodyType Static
              define Entity.StaticImage Assets.Default.Image4]
 
+        override this.IsPhysical =
+            true
+
 [<AutoOpen>]
 module Box2dDispatcherModule =
 
@@ -2197,6 +2212,9 @@ module Box2dDispatcherModule =
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4]
+
+        override this.IsPhysical =
+            true
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -2286,6 +2304,9 @@ module SideViewCharacterDispatcherModule =
                     world
             else world
 
+        override this.IsPhysical =
+            true
+
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
@@ -2309,6 +2330,9 @@ module TileMapDispatcherModule =
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap]
 
+        override this.IsPhysical =
+            true
+
 [<AutoOpen>]
 module TmxMapDispatcherModule =
 
@@ -2329,6 +2353,9 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
+
+        override this.IsPhysical =
+            true
 
 [<AutoOpen>]
 module GroupDispatcherModule =

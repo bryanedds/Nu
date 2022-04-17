@@ -68,9 +68,13 @@ module AmbientState =
     let setUpdateRateImmediate updateRate state =
         { state with UpdateRate = updateRate }
 
-    /// Check that updating is enabled.
+    /// Check that update rate is non-zero.
     let isAdvancing state =
         getUpdateRate state <> 0L
+
+    /// Check that update rate is zero.
+    let isHalted state =
+        getUpdateRate state = 0L
 
     /// Get the update time.
     let getUpdateTime state =

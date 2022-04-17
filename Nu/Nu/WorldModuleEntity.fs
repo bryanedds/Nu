@@ -432,7 +432,9 @@ module WorldModuleEntity =
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
-        static member internal getEntityIs2d entity world = (World.getEntityState entity world).Dispatcher.Is2d
+        static member internal getEntityIsPhysical entity world = (World.getEntityState entity world).IsPhysical
+        static member internal getEntityIsCartesian entity world = (World.getEntityState entity world).IsCartesian
+        static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
@@ -527,20 +529,22 @@ module WorldModuleEntity =
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
             let mountState = World.getEntityState mount world
-            let rotationWorld = mountState.Rotation
-            let scaleWorld = mountState.Scale
-            let affineMatrixWorld = World.getEntityAffineMatrix mount world
-            let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
-            let affineMatrix = affineMatrixWorld * affineMatrixLocal
             let mounterState = World.getEntityState mounter world
-            let position = Vector3.Transform (mounterState.PositionLocal, affineMatrix)
-            let rotation = mounterState.RotationLocal * rotationWorld
-            let scale = mounterState.ScaleLocal * scaleWorld
-            let mutable transform = mounterState.Transform
-            transform.Position <- position
-            transform.Rotation <- rotation
-            transform.Scale <- scale
-            World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+            if World.isHalted world || mounterState.IsPhysical then
+                let rotationWorld = mountState.Rotation
+                let scaleWorld = mountState.Scale
+                let affineMatrixWorld = World.getEntityAffineMatrix mount world
+                let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
+                let affineMatrix = affineMatrixWorld * affineMatrixLocal
+                let position = Vector3.Transform (mounterState.PositionLocal, affineMatrix)
+                let rotation = mounterState.RotationLocal * rotationWorld
+                let scale = mounterState.ScaleLocal * scaleWorld
+                let mutable transform = mounterState.Transform
+                transform.Position <- position
+                transform.Rotation <- rotation
+                transform.Scale <- scale
+                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+            else world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
