@@ -226,7 +226,7 @@ module PropDispatcher =
                         let row = if mirror then 4 else 0
                         let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: P1: put this in Constants.
                         let inset =
-                            Box2 // TODO: P1: put the following hard-coded dimensions in Constants.
+                            Box2 // TODO: P1: put the following hard-coded values in Constants.
                                 (v2 (single column * 16.0f) (single (row + cel) * 16.0f),
                                  v2 16.0f 16.0f)
                         (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)

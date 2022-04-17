@@ -259,9 +259,9 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let entityDimensions = entityState.Bounds
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Quadtree.addElement entityOmnipresent entityDimensions.XY entity quadtree
+                                Quadtree.addElement entityOmnipresent entityBounds.XY entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
@@ -271,9 +271,9 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let entityDimensions = entityState.Bounds
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Octree.addElement entityOmnipresent entityDimensions entity octree
+                                Octree.addElement entityOmnipresent entityBounds entity octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
@@ -290,9 +290,9 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let entityDimensions = entityState.Bounds
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Quadtree.removeElement entityOmnipresent entityDimensions.XY entity quadtree
+                                Quadtree.removeElement entityOmnipresent entityBounds.XY entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
@@ -302,9 +302,9 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let entityDimensions = entityState.Bounds
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Octree.removeElement entityOmnipresent entityDimensions entity octree
+                                Octree.removeElement entityOmnipresent entityBounds entity octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world

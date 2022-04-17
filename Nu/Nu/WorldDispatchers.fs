@@ -261,11 +261,11 @@ module StaticSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.Perimeter
+                let perimeter = transform.Perimeter
                 let staticImage = entity.GetStaticImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = dimensions.Position.Y
+                      Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize staticImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -335,11 +335,11 @@ module AnimatedSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
-                let dimensions = transform.Perimeter
+                let perimeter = transform.Perimeter
                 let animationSheet = entity.GetAnimationSheet world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = dimensions.Position.Y
+                      Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
                       RenderDescriptor =
                         SpriteDescriptor
@@ -983,10 +983,10 @@ module RigidBody2dFacetModule =
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
-            let dimensions = transform.Perimeter
+            let perimeter = transform.Perimeter
             let bodyProperties =
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
-                  Position = dimensions.Center
+                  Position = perimeter.Center
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world

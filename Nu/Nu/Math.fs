@@ -705,6 +705,29 @@ module Box2i =
         b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
 
 [<AutoOpen>]
+module Matrix3x3 =
+    type Matrix3x3 with
+
+        /// Computes the matrix determinant.
+        member this.Determinant =
+            this.Row0.X * this.Row1.Y * this.Row2.Z +
+            this.Row0.Y * this.Row1.Z * this.Row2.X +
+            this.Row0.Z * this.Row1.X * this.Row2.Y -
+            this.Row0.Z * this.Row1.Y * this.Row2.X -
+            this.Row0.X * this.Row1.Z * this.Row2.Y -
+            this.Row0.Y * this.Row1.X * this.Row2.Z
+
+[<AutoOpen>]
+module Matrix4x4 =
+    type Matrix4x4 with
+
+        /// Computes the matrix determinant.
+        /// NOTE: this copies the matrix to a local variable to elide the FS0052 warning.
+        member this.Determinant =
+            let copy = this
+            copy.GetDeterminant ()
+
+[<AutoOpen>]
 module Quaternion =
     type Quaternion with
         member this.PitchYawRoll = MathHelper.PitchYawRoll &this

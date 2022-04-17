@@ -72,9 +72,9 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let quadtree = World.makeQuadtree ()
             for entity in entities do
-                let dimensions = entity.GetBounds world
+                let bounds = entity.GetBounds world
                 if entity.GetIs2d world then
-                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions.XY entity quadtree
+                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds.XY entity quadtree
             quadtree
 
         static member internal rebuildOctree world =
@@ -89,9 +89,9 @@ module WorldModule2 =
             let entities = Array.append omniEntities selectedEntities
             let octree = World.makeOctree ()
             for entity in entities do
-                let dimensions = entity.GetBounds world
+                let bounds = entity.GetBounds world
                 if entity.GetIs2d world then
-                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) dimensions entity octree
+                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds entity octree
             octree
 
         /// Resolve a relation to an address in the current script context.
@@ -678,8 +678,8 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let dimensions = entity.GetPerimeter world
-                    let size = dimensions.Size
+                    let perimeter = entity.GetPerimeter world
+                    let size = perimeter.Size
                     let position = bodyTransformMessage.Position - size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
