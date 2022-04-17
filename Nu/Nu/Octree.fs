@@ -144,7 +144,7 @@ module Octree =
             member this.GetEnumerator () = enr :> 'e IEnumerator
             member this.GetEnumerator () = enr :> IEnumerator
 
-    /// A spatial structure that organizes elements in a 3D grid.
+    /// A spatial structure that organizes elements in a 3d grid.
     type [<NoEquality; NoComparison>] Octree<'e when 'e : equality> =
         private
             { Node : 'e Octnode
@@ -232,5 +232,5 @@ module Octree =
           Granularity = granularity
           Bounds = bounds }
           
-/// A spatial structure that organizes elements in a 3D grid.
+/// A spatial structure that organizes elements in a 3d grid.
 type Octree<'e when 'e : equality> = Octree.Octree<'e>

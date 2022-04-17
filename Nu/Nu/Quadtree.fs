@@ -141,7 +141,7 @@ module Quadtree =
             member this.GetEnumerator () = enr :> 'e IEnumerator
             member this.GetEnumerator () = enr :> IEnumerator
 
-    /// A spatial structure that organizes elements on a 2D plane. TODO: document this.
+    /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
     type [<NoEquality; NoComparison>] Quadtree<'e when 'e : equality> =
         private
             { Node : 'e Quadnode
@@ -228,5 +228,5 @@ module Quadtree =
           Granularity = granularity
           Bounds = bounds }
           
-/// A spatial structure that organizes elements on a 2D plane. TODO: document this.
+/// A spatial structure that organizes elements on a 2d plane. TODO: document this.
 type Quadtree<'e when 'e : equality> = Quadtree.Quadtree<'e>
