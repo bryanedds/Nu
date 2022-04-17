@@ -18,7 +18,7 @@ module PropDispatcher =
         member this.Prop = this.ModelGeneric<Prop> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher2d<Prop, unit, unit> (Prop.empty)
+        inherit EntityDispatcher2d<Prop, unit, unit> (true, Prop.empty)
 
         static member Facets =
             [typeof<RigidBody2dFacet>]

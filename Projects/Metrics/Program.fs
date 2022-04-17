@@ -68,7 +68,7 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     inherit EntityDispatcher ()
   #else
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, Assets.Default.Image)
   #endif
 
   #if !ECS_HYBRID && !ECS
