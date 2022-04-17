@@ -403,6 +403,7 @@ module WorldTypes =
              Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
+             Define? Overflow 1.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
