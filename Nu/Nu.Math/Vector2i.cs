@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -19,17 +20,6 @@ namespace Nu
         {
             X = n;
             Y = n;
-        }
-
-        public Vector2i(Vector2 v)
-        {
-            X = (int) v.X;
-            Y = (int) v.Y;
-        }
-
-        public Vector2 Vector2
-        {
-            get { return new Vector2(X, Y); }
         }
 
         public float LengthSquared
@@ -145,9 +135,12 @@ namespace Nu
         public static Vector2i Left { get { return new Vector2i(-1, 0); } }
         public static readonly int SizeInBytes = Marshal.SizeOf<Vector2i>();
 
+        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+
+        /// <inheritdoc />
         public override string ToString()
         {
-            return "(" + X + ", " + Y + ")";
+            return string.Format("({0}{3} {1})", X, Y, ListSeparator);
         }
 
         public override int GetHashCode()
