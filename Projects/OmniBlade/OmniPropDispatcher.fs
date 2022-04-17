@@ -97,7 +97,7 @@ module PropDispatcher =
                                 let localTime = time / 10L
                                 let celSize = Constants.Gameplay.TileCelSize
                                 let celColumn = single (localTime % 4L)
-                                let inset = Box2 (v2 (celSize.X * celColumn) 0.0f, celSize) // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                                let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
                                 let image = Assets.Field.WarpAnimationSheet
                                 (true, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                             | StairsPortal descending ->
@@ -109,7 +109,7 @@ module PropDispatcher =
                                     | Downward -> Constants.Gameplay.TileCelSize.X * 2.0f
                                     | Leftward -> Constants.Gameplay.TileCelSize.X * 3.0f
                                 let offset = v2 offsetX offsetY
-                                (true, Assets.Field.StairsImage, colWhite, Transparent, colZero, Some (Box2 (offset, Constants.Gameplay.TileCelSize)), FlipNone)
+                                (true, Assets.Field.StairsImage, colWhite, Transparent, colZero, Some (box2 offset Constants.Gameplay.TileCelSize), FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                     | Door (doorType, _, _, _, _) ->
                         let image =
@@ -151,7 +151,7 @@ module PropDispatcher =
                             let localTime = time / 20L
                             let celSize = v2 32.0f 32.0f // TODO: P1: put this in Constants.
                             let celColumn = single (localTime % 4L)
-                            let inset = Box2 (v2 (celSize.X * celColumn) 0.0f, celSize) // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                            let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
                             let image = Assets.Field.SealAnimationSheet
                             (false, image, color, Transparent, colZero, Some inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
@@ -202,7 +202,7 @@ module PropDispatcher =
                             let column = column + CharacterAnimationState.directionToInt direction
                             let celSize = (size / 3.0f).V2
                             let insetPosition = v2 (single column) (single row) * celSize
-                            let inset = Box2 (insetPosition, celSize)
+                            let inset = box2 insetPosition celSize
                             (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                     | Shopkeep (shopkeepType, directionOpt, _, requirements) ->
@@ -217,7 +217,7 @@ module PropDispatcher =
                                     if direction = Upward then Downward else direction
                             let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
-                            let inset = Box2 (insetPosition, Constants.Gameplay.CharacterCelSize)
+                            let inset = box2 insetPosition Constants.Gameplay.CharacterCelSize
                             (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)
                     | Flame (flameType, mirror) ->
@@ -226,16 +226,16 @@ module PropDispatcher =
                         let row = if mirror then 4 else 0
                         let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: P1: put this in Constants.
                         let inset =
-                            Box2 // TODO: P1: put the following hard-coded values in Constants.
-                                (v2 (single column * 16.0f) (single (row + cel) * 16.0f),
-                                 v2 16.0f 16.0f)
+                            box2 // TODO: P1: put the following hard-coded values in Constants.
+                                (v2 (single column * 16.0f) (single (row + cel) * 16.0f))
+                                (v2 16.0f 16.0f)
                         (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)
                     | SavePoint ->
                         let time = World.getUpdateTime world
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
-                        let inset = Box2 (insetPosition, Constants.Gameplay.TileCelSize)
+                        let inset = box2 insetPosition Constants.Gameplay.TileCelSize
                         (false, image, colWhite, Additive, colZero, Some inset, FlipNone)
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, colWhite, Transparent, colZero, None, FlipNone)

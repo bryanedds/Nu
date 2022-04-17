@@ -197,7 +197,7 @@ type MapRand =
         | _ -> failwithumf ()
 
     static member private walk biasChance bias (cursor : Vector2i) map rand =
-        let bounds = Box2i (v2iZero, map.MapSize)
+        let bounds = box2i v2iZero map.MapSize
         let mutable cursor = cursor
         let (i, rand) = Rand.nextIntUnder 4 rand
         let (chance, rand) = Rand.nextSingleUnder 1.0f rand
@@ -304,7 +304,7 @@ type MapRand =
 
     static member makeFromRand walkLength biasChance (size : Vector2i) origin floor rand =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
-        let bounds = Box2i (v2iZero, size)
+        let bounds = box2i v2iZero size
         let (cursor, biases) =
             match origin with
             | OriginC ->        (bounds.Center,                                 [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w

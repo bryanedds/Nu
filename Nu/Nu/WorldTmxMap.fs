@@ -194,9 +194,9 @@ module TmxMap =
                         | "" ->
                             match tileBoxes.TryGetValue tileCenter.Y with
                             | (true, l) ->
-                                l.Add (Box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f, tileMapDescriptor.TileSizeF.V3))
+                                l.Add (box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f) tileMapDescriptor.TileSizeF.V3)
                             | (false, _) ->
-                                tileBoxes.Add (tileCenter.Y, List [Box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f, tileMapDescriptor.TileSizeF.V3)])
+                                tileBoxes.Add (tileCenter.Y, List [box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f) tileMapDescriptor.TileSizeF.V3])
                         | "Top" ->
                             let tileShape = BodyBox { Extent = v3 1.0f 0.5f 0.0f; Center = v3 0.0f 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
@@ -379,7 +379,7 @@ module TmxMap =
                             transform.Absolute <- absolute
 
                             // check if in view bounds
-                            if Math.isBoundsIntersectingBounds2d (Box2 (transform.Position.V2, transform.Size.V2)) viewBounds then
+                            if Math.isBoundsIntersectingBounds2d (box2 transform.Position.V2 transform.Size.V2) viewBounds then
 
                                 // accumulate descriptor
                                 descriptors.Add

@@ -255,7 +255,7 @@ module WorldModuleEntity =
                 if not oldOmnipresent then
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let struct (changed, world) = World.updateEntityStateInternal updater oldEntityState entity world
                     let world =
                         if changed
@@ -595,7 +595,7 @@ module WorldModuleEntity =
             let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
-            let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+            let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
             let struct (changed, world) =
                 let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier, even if this is inlined...
                 World.updateEntityStateWithoutEvent
@@ -624,7 +624,7 @@ module WorldModuleEntity =
                         entity world
                 else
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                     let struct (changed, world) =
                         World.updateEntityStateWithoutEvent
@@ -1277,7 +1277,7 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                     Right (World.getEntityState entity world, world)
@@ -1303,7 +1303,7 @@ module WorldModuleEntity =
                         let oldEntityState = entityState
                         let oldOmnipresent = oldEntityState.Omnipresent
                         let oldAbsolute = oldEntityState.Absolute
-                        let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                        let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                         let world = facet.Register (entity, world)
@@ -1379,7 +1379,7 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
@@ -2003,7 +2003,7 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world
@@ -2029,7 +2029,7 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else Box3.Zero
+                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world

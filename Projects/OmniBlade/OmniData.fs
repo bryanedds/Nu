@@ -879,7 +879,7 @@ module FieldData =
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v3 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) 0.0f // invert y
         let propSize = v3 (single object.Width) (single object.Height) 0.0f
-        let propPerimeter = Box3 (propPosition, propSize)
+        let propPerimeter = box3 propPosition propSize
         let propElevation =
             match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
             | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
@@ -990,7 +990,7 @@ module FieldData =
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (walkLength, _, _, _, _) ->
-                    let tileMapPerimeter = Box3 (v3Zero, v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
+                    let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
                         let walkLengthScalar =
                             match origin with
