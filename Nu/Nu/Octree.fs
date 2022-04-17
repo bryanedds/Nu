@@ -78,7 +78,7 @@ module internal Octnode =
                             [|for k in 0 .. granularity - 1 do
                                 let childOffset = v3 (childSize.X * single i) (childSize.Y * single j) (childSize.Z * single k)
                                 let childPosition = bounds.Position + childOffset
-                                let childBounds = Box3 (childPosition, childSize)
+                                let childBounds = box3 childPosition childSize
                                 yield make granularity childDepth childBounds|]|]|]
                 ValueLeft (nodes |> Array.concat |> Array.concat)
             else ValueRight (HashSet<'e> HashIdentity.Structural)
@@ -193,7 +193,7 @@ module Octree =
                     (oldBounds.Position.X - (rootBounds.Position.X + oldBounds.Position.X) % leafSize.X)
                     (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
                     (oldBounds.Position.Z - (rootBounds.Position.Z + oldBounds.Position.Z) % leafSize.Z)
-            let leafBounds = Box3 (leafPosition, leafSize)
+            let leafBounds = box3 leafPosition leafSize
             if  not (Math.isBoundsInBounds3d oldBounds leafBounds) ||
                 not (Math.isBoundsInBounds3d newBounds leafBounds) then
                 Octnode.updateElement oldBounds newBounds element tree.Node

@@ -73,7 +73,7 @@ module CharacterDispatcher =
                     let time = World.getUpdateTime world
                     let afflictionX = time / 8L % 8L |> int
                     let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
-                    let inset = Box2 (afflictionPosition, Constants.Battle.AfflictionCelSize)
+                    let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
                     Some inset
                 | None -> None
             else None
@@ -92,7 +92,7 @@ module CharacterDispatcher =
                 match celXOpt with
                 | Some celX ->
                     let chargeOrbPosition = v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f
-                    let inset = Box2 (chargeOrbPosition, Constants.Battle.ChargeOrbCelSize)
+                    let inset = box2 chargeOrbPosition Constants.Battle.ChargeOrbCelSize
                     Some inset
                 | None -> None
             else None

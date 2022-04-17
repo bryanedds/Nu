@@ -79,7 +79,7 @@ type [<StructuralEquality; NoComparison>] BodyBox =
       Center : Vector3 // TODO: P1: consider if these Center fields should be called Offset instead?
       PropertiesOpt : BodyShapeProperties option }
     static member toBox bodyBox =
-        Box3 (bodyBox.Center - bodyBox.Extent, bodyBox.Extent * 2.0f)
+        box3 (bodyBox.Center - bodyBox.Extent) (bodyBox.Extent * 2.0f)
     static member fromBox (box : Box3) =
         { Extent = box.Size * 0.5f; Center = box.Center; PropertiesOpt = None }
 

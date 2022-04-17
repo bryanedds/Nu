@@ -197,7 +197,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member inset time (celSize : Vector2) state =
         let index = CharacterAnimationState.index time state
         let offset = v2 (single index.X) (single index.Y) * celSize
-        let inset = Box2 (offset, celSize)
+        let inset = box2 offset celSize
         inset
 
     static member progressOpt time state =
@@ -680,7 +680,7 @@ module Character =
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
                     | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
                 let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
-                let bounds = Box3 (position, size)
+                let bounds = box3 position size
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
@@ -698,7 +698,7 @@ module Character =
         | None -> None
 
     let empty =
-        let bounds = Box3 (v3Zero, Constants.Gameplay.CharacterSize)
+        let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
         let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds

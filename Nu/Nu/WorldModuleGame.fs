@@ -119,7 +119,7 @@ module WorldModuleGame =
         static member getEyeBounds2d world =
             let eyePosition = World.getEyePosition2d world
             let eyeSize = World.getEyeSize2d world
-            Box2 (eyePosition - eyeSize * 0.5f, eyeSize)
+            box2 (eyePosition - eyeSize * 0.5f) eyeSize
 
         /// Get the current 3d eye position.
         [<FunctionBinding>]
@@ -340,17 +340,17 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewBoundsRelative2d world =
             let gameState = World.getGameState world
-            Box2
-                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f),
-                 v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+            box2
+                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
         /// Get the bounds of the eye2d 's sight not relative to its position.
         [<FunctionBinding>]
         static member getViewBoundsAbsolute2d world =
             let gameState = World.getGameState world
-            Box2
-                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f),
-                 v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+            box2
+                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
         /// Get the bounds of the 2d eye's sight.
         [<FunctionBinding>]

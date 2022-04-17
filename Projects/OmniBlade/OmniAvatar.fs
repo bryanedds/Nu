@@ -21,7 +21,7 @@ module Avatar =
 
         (* Perimeter Original Properties *)
         member this.PerimeterOriginal = this.PerimeterOriginal_
-        member this.LowerPerimeterOriginal = Box3 (this.PerimeterOriginal_.Position, this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
+        member this.LowerPerimeterOriginal = box3 this.PerimeterOriginal_.Position (this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
         member this.PositionOriginal = this.PerimeterOriginal_.Position
         member this.CenterOriginal = this.PerimeterOriginal_.Center
         member this.BottomOriginal = this.PerimeterOriginal_.Bottom
@@ -34,7 +34,7 @@ module Avatar =
         member this.Bottom = this.Perimeter_.Bottom
         member this.BottomOffset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
         member this.Size = this.Perimeter_.Size
-        member this.LowerPerimeter = Box3 (this.Perimeter_.Position + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f, this.Perimeter_.Size * 0.5f)
+        member this.LowerPerimeter = box3 (this.Perimeter_.Position + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f) (this.Perimeter_.Size * 0.5f)
         member this.LowerCenter = this.LowerPerimeter.Center
 
         (* Animation Properties *)
@@ -125,7 +125,7 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let empty =
-        let bounds = Box3 (v3Zero, Constants.Gameplay.CharacterSize)
+        let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
@@ -136,7 +136,7 @@ module Avatar =
 
     let initial =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
-        let bounds = Box3 (position, Constants.Gameplay.CharacterSize)
+        let bounds = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
         { empty with
             PerimeterOriginal_ = bounds

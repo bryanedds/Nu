@@ -75,7 +75,7 @@ module internal Quadnode =
                         let childDepth = depth - 1
                         let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
                         let childPosition = v2 bounds.Position.X bounds.Position.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
-                        let childBounds = Box2 (childPosition, childSize)
+                        let childBounds = box2 childPosition childSize
                         yield make granularity childDepth childBounds|]
                 ValueLeft nodes
             else ValueRight (HashSet<'e> HashIdentity.Structural)
@@ -189,7 +189,7 @@ module Quadtree =
                 v2
                     (oldBounds.Position.X - (rootBounds.Position.X + oldBounds.Position.X) % leafSize.X)
                     (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
-            let leafBounds = Box2 (leafPosition, leafSize)
+            let leafBounds = box2 leafPosition leafSize
             if  not (Math.isBoundsInBounds2d oldBounds leafBounds) ||
                 not (Math.isBoundsInBounds2d newBounds leafBounds) then
                 Quadnode.updateElement oldBounds newBounds element tree.Node

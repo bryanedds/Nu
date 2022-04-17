@@ -314,8 +314,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
                             (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
                     let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
-                    let tileBounds = Box2 (tilePositionView, tileSize)
-                    let viewBounds = Box2 (Vector2.Zero, eyeSize)
+                    let tileBounds = box2 tilePositionView tileSize
+                    let viewBounds = box2 v2Zero eyeSize
                     if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
                         let tileFlip =
                             match (tile.HorizontalFlip, tile.VerticalFlip) with
@@ -532,7 +532,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         match descriptor with
         | SpriteDescriptor descriptor ->
-            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> Box2.Zero
+            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
@@ -577,13 +577,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
-        let eyeMarginBounds = Box2 (eyeSize * -0.5f - eyeMargin, eyeSize + eyeMargin * 2.0f)
+        let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
                 let mutable transform = Transform.make v3Cartesian2d
                 transform.Absolute <- true
-                let sprite = { Transform = transform; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let sprite = { Transform = transform; Inset = box2Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
                 bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
                 bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f

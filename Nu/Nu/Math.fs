@@ -642,6 +642,7 @@ module Box2 =
         member this.WithSize size = Box2 (this.Position, size)
 
     let box2Zero = Box2.Zero
+    let inline box2 position size = Box2 (position, size)
     let inline box2Eq (b : Box2) (b2 : Box2) =
         b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
         b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
@@ -670,6 +671,7 @@ module Box3 =
         member this.WithSize size = Box3 (this.Position, size)
 
     let box3Zero = Box3.Zero
+    let inline box3 position size = Box3 (position, size)
     let inline box3Eq (b : Box3) (b2 : Box3) =
         b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y && b.Position.Z = b2.Position.Z &&
         b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y && b.Size.Z = b2.Size.Z
@@ -697,6 +699,7 @@ module Box2i =
         member this.WithSize size = Box2i (this.Position, size)
 
     let box2iZero = Box2i.Zero
+    let inline box2i position size = Box2i (position, size)
     let inline box2iEq (b : Box2i) (b2 : Box2i) =
         b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
         b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y

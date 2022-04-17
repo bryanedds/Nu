@@ -317,7 +317,7 @@ module AnimatedSpriteFacetModule =
                 let celJ = cel / celRun
                 let celX = single celI * celSize.X
                 let celY = single celJ * celSize.Y
-                let inset = Box2 (v2 celX celY, celSize)
+                let inset = box2 (v2 celX celY) celSize
                 Some inset
             else None
 
@@ -613,7 +613,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = Box2.Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -2224,7 +2224,7 @@ module SideViewCharacterDispatcherModule =
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
-            Box2 (offset, celSize)
+            box2 offset celSize
 
         static member Facets =
             [typeof<RigidBody2dFacet>]

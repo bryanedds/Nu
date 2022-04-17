@@ -77,7 +77,7 @@ module Prop =
           PropId_ = propId }
 
     let empty =
-        { Perimeter_ = Box3 (v3Zero, Constants.Gameplay.TileSize)
+        { Perimeter_ = box3 v3Zero Constants.Gameplay.TileSize
           Elevation_ = 0.0f
           Advents_ = Set.empty
           PointOfInterest_ = v3Zero

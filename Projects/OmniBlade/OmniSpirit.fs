@@ -120,7 +120,7 @@ module Spirit =
             let n = v3 (single (cos r)) (single (sin r)) 0.0f
             let p = center + n * Constants.Field.SpiritRadius
             let spiritState = { SpiritMovements = spiritPattern; SpiritMovementIndex = 0; SpiritMovementStart = time; SpiritMovementCachedOpt = None }
-            { Perimeter_ = Box3 (p, Constants.Field.SpiritOrbBlipSize); SpiritType_ = spiritType; SpiritState_ = spiritState }
+            { Perimeter_ = box3 p Constants.Field.SpiritOrbBlipSize; SpiritType_ = spiritType; SpiritState_ = spiritState }
 
         static member make bounds spiritType spiritState =
             { Perimeter_ = bounds
