@@ -461,6 +461,10 @@ module WorldTypes =
             then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.EntitySize3dDefault
 
+        /// Whether the dispatcher participates in a physics system.
+        abstract IsPhysical : bool
+        default this.IsPhysical = false
+
         /// Whether the dispatcher uses a cartesian (non-centered) offset by default.
         member this.IsCartesian = isCartesian
 
@@ -510,6 +514,10 @@ module WorldTypes =
             if getEntityIs2d entity world
             then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.EntitySize3dDefault
+
+        /// Whether a facet participates in a physics system.
+        abstract IsPhysical : bool
+        default this.IsPhysical = false
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -858,6 +866,8 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
+        member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets
+        member this.IsCartesian with get () = this.Dispatcher.IsCartesian
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
