@@ -1421,7 +1421,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d ()
 
         static member Properties =
-            [define Entity.Size v3Cartesian2d
+            [define Entity.Offset v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
@@ -1432,7 +1432,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d<'model, 'message, 'command> (model)
 
         static member Properties =
-            [define Entity.Size v3Cartesian2d
+            [define Entity.Offset v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
