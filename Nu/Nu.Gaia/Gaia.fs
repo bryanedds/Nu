@@ -1599,6 +1599,7 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4i 0 0 0 0] : Vector4i") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[quat 0 0 0 1] : Quaternion") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[right 0] : Either<int, obj>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore

@@ -419,6 +419,53 @@ module WorldScripting =
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
+        static member internal evalV3Extrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|x; y; z|], world) ->
+                let xOpt = match x with Double x -> Some (single x) | Single x -> Some x | Int x -> Some (single x) | _ -> None
+                let yOpt = match y with Double y -> Some (single y) | Single y -> Some y | Int y -> Some (single y) | _ -> None
+                let zOpt = match z with Double z -> Some (single z) | Single z -> Some z | Int z -> Some (single z) | _ -> None
+                match (xOpt, yOpt, zOpt) with
+                | (Some x, Some y, Some z) -> struct (Pluggable { Vector3 = Vector3 (x, y, z) }, world)
+                | (_, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single or Int for its arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
+
+        static member internal evalIndexV3Extrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector3Pluggable as v3 ->
+                    match indexer with
+                    | "X" -> struct (Single v3.Vector3.X, world)
+                    | "Y" -> struct (Single v3.Vector3.Y, world)
+                    | "Z" -> struct (Single v3.Vector3.Z, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V3.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V3 index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateV3Extrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector3Pluggable as v3 ->
+                    match indexer with
+                    | "X" -> struct (Pluggable { Vector3 = Vector3 (s, v3.Vector3.Y, v3.Vector3.Z) }, world)
+                    | "Y" -> struct (Pluggable { Vector3 = Vector3 (v3.Vector3.X, s, v3.Vector3.Z) }, world)
+                    | "Z" -> struct (Pluggable { Vector3 = Vector3 (v3.Vector3.X, v3.Vector3.Y, s) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V3.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V3 target, a keyword index of X, Y, or Z, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
         static member internal evalV4Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
@@ -467,7 +514,7 @@ module WorldScripting =
                     | "W" -> struct (Pluggable { Vector4 = Vector4 (v4.Vector4.X, v4.Vector4.Y, v4.Vector4.Z, s) }, world)
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4.", originOpt), world)
                 | _ -> failwithumf ()
-            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4 target, a keyword index of X or Y, and an Int value.", originOpt), world)
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4 target, a keyword index of X, Y, Z, or W, and an Int value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalV2iExtrinsic fnName exprs originOpt world =
@@ -507,6 +554,53 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i target, a keyword index of X or Y, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalV3iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|x; y; z|], world) ->
+                let xOpt = match x with Int x -> Some x | _ -> None
+                let yOpt = match y with Int y -> Some y | _ -> None
+                let zOpt = match z with Int z -> Some z | _ -> None
+                match (xOpt, yOpt, zOpt) with
+                | (Some x, Some y, Some z) -> struct (Pluggable { Vector3i = Vector3i (x, y, z) }, world)
+                | (_, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
+
+        static member internal evalIndexV3iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector3iPluggable as v3i ->
+                    match indexer with
+                    | "X" -> struct (Int v3i.Vector3i.X, world)
+                    | "Y" -> struct (Int v3i.Vector3i.Y, world)
+                    | "Z" -> struct (Int v3i.Vector3i.Z, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V3i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V3i index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateV3iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector3iPluggable as v3i ->
+                    match indexer with
+                    | "X" -> struct (Pluggable { Vector3i = Vector3i (i, v3i.Vector3i.Y, v3i.Vector3i.Z) }, world)
+                    | "Y" -> struct (Pluggable { Vector3i = Vector3i (v3i.Vector3i.X, i, v3i.Vector3i.Z) }, world)
+                    | "Z" -> struct (Pluggable { Vector3i = Vector3i (v3i.Vector3i.X, v3i.Vector3i.Y, i) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V3i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V3i target, a keyword index of X, Y, or Z, and an Int value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalV4iExtrinsic fnName exprs originOpt world =
@@ -558,6 +652,57 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4i.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4i target, a keyword index of X, Y, Z, or W, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalQuatExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|x; y; z; w|], world) ->
+                let xOpt = match x with Single x -> Some x | _ -> None
+                let yOpt = match y with Single y -> Some y | _ -> None
+                let zOpt = match z with Single z -> Some z | _ -> None
+                let wOpt = match w with Single w -> Some w | _ -> None
+                match (xOpt, yOpt, zOpt, wOpt) with
+                | (Some x, Some y, Some z, Some w) -> struct (Pluggable { Quaternion = Quaternion (x, y, z, w) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
+
+        static member internal evalIndexQuatExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? QuaternionPluggable as quat ->
+                    match indexer with
+                    | "X" -> struct (Single quat.Quaternion.X, world)
+                    | "Y" -> struct (Single quat.Quaternion.Y, world)
+                    | "Z" -> struct (Single quat.Quaternion.Z, world)
+                    | "W" -> struct (Single quat.Quaternion.W, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Quat.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Quat index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateQuatExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? QuaternionPluggable as quat ->
+                    match indexer with
+                    | "X" -> struct (Pluggable { Quaternion = Quaternion (s, quat.Quaternion.Y, quat.Quaternion.Z, quat.Quaternion.W) }, world)
+                    | "Y" -> struct (Pluggable { Quaternion = Quaternion (quat.Quaternion.X, s, quat.Quaternion.Z, quat.Quaternion.W) }, world)
+                    | "Z" -> struct (Pluggable { Quaternion = Quaternion (quat.Quaternion.X, quat.Quaternion.Y, s, quat.Quaternion.W) }, world)
+                    | "W" -> struct (Pluggable { Quaternion = Quaternion (quat.Quaternion.X, quat.Quaternion.Y, quat.Quaternion.Z, s) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Quat.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Quat target, a keyword index of X, Y, Z, or W, and an Int value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalColorExtrinsic fnName exprs originOpt world =
@@ -794,15 +939,24 @@ module WorldScripting =
                 [("v2", { Fn = World.evalV2Extrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2." })
                  ("index_Vector2", { Fn = World.evalIndexV2Extrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector2", { Fn = World.evalUpdateV2Extrinsic; Pars = [||]; DocOpt = None })
+                 ("v3", { Fn = World.evalV3Extrinsic; Pars = [|"x"; "y"; "z"|]; DocOpt = Some "Construct a Vector3." })
+                 ("index_Vector3", { Fn = World.evalIndexV3Extrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Vector3", { Fn = World.evalUpdateV3Extrinsic; Pars = [||]; DocOpt = None })
                  ("v4", { Fn = World.evalV4Extrinsic; Pars = [|"x"; "y"; "z"; "w"|]; DocOpt = Some "Construct a Vector4." })
                  ("index_Vector4", { Fn = World.evalIndexV4Extrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector4", { Fn = World.evalUpdateV4Extrinsic; Pars = [||]; DocOpt = None })
                  ("v2i", { Fn = World.evalV2iExtrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2i." })
                  ("index_Vector2i", { Fn = World.evalIndexV2iExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector2i", { Fn = World.evalUpdateV2iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("v3i", { Fn = World.evalV3iExtrinsic; Pars = [|"x"; "y"; "z"|]; DocOpt = Some "Construct a Vector3i." })
+                 ("index_Vector3i", { Fn = World.evalIndexV3iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Vector3i", { Fn = World.evalUpdateV3iExtrinsic; Pars = [||]; DocOpt = None })
                  ("v4i", { Fn = World.evalV4iExtrinsic; Pars = [|"x"; "y"; "w"; "z"|]; DocOpt = Some "Construct a Vector4i." })
                  ("index_Vector4i", { Fn = World.evalIndexV4iExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector4i", { Fn = World.evalUpdateV4iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("quat", { Fn = World.evalQuatExtrinsic; Pars = [|"x"; "y"; "w"; "z"|]; DocOpt = Some "Construct a Quaternion." })
+                 ("index_Quaternion", { Fn = World.evalIndexQuatExtrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Quaternion", { Fn = World.evalUpdateQuatExtrinsic; Pars = [||]; DocOpt = None })
                  ("color", { Fn = World.evalColorExtrinsic; Pars = [|"r"; "g"; "b"; "a"|]; DocOpt = Some "Construct a Color." })
                  ("index_Color", { Fn = World.evalIndexColorExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Color", { Fn = World.evalUpdateColorExtrinsic; Pars = [||]; DocOpt = None })
