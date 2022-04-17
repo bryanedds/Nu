@@ -295,16 +295,13 @@ module WorldModuleEntity =
                 let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
+                let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
                         // OPTIMIZATION: eliding Bounds, PerimeterOriented, PerimenterCenter, and PerimeterBottom change events for speed.
-                        //let world = World.publishEntityChange Property? Bounds newTransform.Bounds publishChangeBindings publishChangeEvents entity world
-                        //let world = World.publishEntityChange Property? PerimeterOriented newTransform.PerimeterOriented publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
-                        //let world = World.publishEntityChange Property? PerimeterCenter newTransform.PerimeterCenter publishChangeBindings publishChangeEvents entity world
-                        //let world = World.publishEntityChange Property? PerimeterBottom newTransform.PerimeterBottom publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? PerimeterUnscaled newTransform.PerimeterUnscaled publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
@@ -322,6 +319,10 @@ module WorldModuleEntity =
                 let world =
                     if elevationChanged
                     then World.publishEntityChange Property? Elevation newTransform.Elevation publishChangeBindings publishChangeEvents entity world
+                    else world
+                let world =
+                    if overflowChanged
+                    then World.publishEntityChange Property? Overflow newTransform.Overflow publishChangeBindings publishChangeEvents entity world
                     else world
                 world
             else world
@@ -417,6 +418,7 @@ module WorldModuleEntity =
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
         static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
+        static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChangeBindings entity world = (World.getEntityState entity world).PublishChangeBindings
@@ -713,7 +715,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Rotation <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal setEntityRotationLocal value entity world =
@@ -851,7 +854,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Offset <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal setEntitySize value entity world =
@@ -863,7 +867,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Size <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal setEntityAngles value entity world =
@@ -875,7 +880,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Angles <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal setEntityAnglesLocal value entity world =
@@ -1097,6 +1103,19 @@ module WorldModuleEntity =
                     World.setEntityVisible visible entity world |> snd'
                 else world
             struct (changed, world)
+        
+        static member internal setEntityOverflow value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Transform.Overflow then
+                if entityState.Optimized then
+                    entityState.Transform.Overflow <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Overflow <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
 
         static member internal getEntityPerimeterUnscaled entity world =
             (World.getEntityState entity world).Transform.PerimeterUnscaled
@@ -1110,7 +1129,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.PerimeterUnscaled <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityPerimeter entity world =
@@ -1125,7 +1145,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Perimeter <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityPerimeterCenter entity world =
@@ -1140,7 +1161,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.PerimeterCenter <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityPerimeterBottom entity world =
@@ -1155,7 +1177,8 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.PerimeterBottom <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
         static member internal getEntityPerimeterOriented entity world =
@@ -2159,6 +2182,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Size", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntitySize entity world })
         EntityGetters.Assign ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
         EntityGetters.Assign ("ElevationLocal", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevationLocal entity world })
+        EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityOverflow entity world })
         EntityGetters.Assign ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
@@ -2206,6 +2230,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world)
+        EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
