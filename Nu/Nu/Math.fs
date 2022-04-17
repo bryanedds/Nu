@@ -706,19 +706,29 @@ module Box2i =
 
 [<AutoOpen>]
 module Matrix3x3 =
+
     type Matrix3x3 with
 
-        /// Computes the matrix determinant.
-        member this.Determinant =
-            this.Row0.X * this.Row1.Y * this.Row2.Z +
-            this.Row0.Y * this.Row1.Z * this.Row2.X +
-            this.Row0.Z * this.Row1.X * this.Row2.Y -
-            this.Row0.Z * this.Row1.Y * this.Row2.X -
-            this.Row0.X * this.Row1.Z * this.Row2.Y -
-            this.Row0.Y * this.Row1.X * this.Row2.Z
+        /// Gets the inverse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
+        /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
+        /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
+        member this.InvertedView () =
+            let mutable m = this
+            m.M13 <- -m.M13
+            m.M23 <- -m.M23
+            m.M11 <- 1.0f / m.M11
+            m.M22 <- 1.0f / m.M22
+            m
+
+    let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
+    let inline m3Eq (x : Matrix3x3) (y : Matrix3x3) = x.Equals y
+    let inline m3Neq (x : Matrix3x3) (y : Matrix3x3) = not (x.Equals y)
+    let m3Identity = Matrix3x3.Identity
+    let m3Zero = Matrix3x3.Zero
 
 [<AutoOpen>]
 module Matrix4x4 =
+
     type Matrix4x4 with
 
         /// Computes the matrix determinant.
@@ -726,6 +736,18 @@ module Matrix4x4 =
         member this.Determinant =
             let copy = this
             copy.GetDeterminant ()
+
+    let inline m4 (r0 : Vector4) (r1 : Vector4) (r2 : Vector4) (r3 : Vector4) =
+        Matrix4x4
+            (r0.X, r0.Y, r0.Z, r0.W,
+             r1.X, r1.Y, r1.Z, r1.W,
+             r2.X, r2.Y, r2.Z, r2.W,
+             r3.X, r3.Y, r3.Z, r3.W)
+
+    let inline m4Eq (x : Matrix4x4) (y : Matrix4x4) = x.Equals y
+    let inline m4Neq (x : Matrix4x4) (y : Matrix4x4) = not (x.Equals y)
+    let m4Identity = Matrix4x4.Identity
+    let m4Zero = Unchecked.defaultof<Matrix4x4>
 
 [<AutoOpen>]
 module Quaternion =
@@ -919,28 +941,6 @@ type ColorConverter () =
                 failconv "Invalid ColorConverter conversion from source." (Some symbol)
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
-
-[<AutoOpen>]
-module Matrix3x3 =
-
-    type Matrix3x3 with
-
-        /// Gets the inverse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
-        /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
-        /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
-        member this.InvertedView () =
-            let mutable m = this
-            m.M13 <- -m.M13
-            m.M23 <- -m.M23
-            m.M11 <- 1.0f / m.M11
-            m.M22 <- 1.0f / m.M22
-            m
-
-    let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
-    let inline m3Eq (x : Matrix3x3) (y : Matrix3x3) = x = y // NOTE: didn't optimize away allocation here...
-    let inline m3Neq (x : Matrix3x3) (y : Matrix3x3) = x <> y // NOTE: didn't optimize away allocation here...
-    let m3Identity = Matrix3x3.Identity
-    let m3Zero = Matrix3x3.Zero
 
 /// The input for a 2D ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
