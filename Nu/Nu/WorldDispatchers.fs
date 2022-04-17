@@ -70,8 +70,8 @@ module FacetModule =
         member this.SignalEntityFacet<'model, 'message, 'command> signal facetName world =
             World.signalEntityFacet<'model, 'message, 'command> signal facetName this world
 
-    and [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
-        inherit Facet ()
+    and [<AbstractClass>] Facet<'model, 'message, 'command> (isPhysical, initial : 'model) =
+        inherit Facet (isPhysical)
 
         let mutable modelNameOpt =
             Unchecked.defaultof<string>
@@ -182,7 +182,7 @@ module ScriptFacetModule =
         member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
 
     type ScriptFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
@@ -248,7 +248,7 @@ module StaticSpriteFacetModule =
         member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
 
     type StaticSpriteFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4
@@ -305,7 +305,7 @@ module AnimatedSpriteFacetModule =
         member this.AnimationSheet = lens Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
 
     type AnimatedSpriteFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static let getSpriteInsetOpt (entity : Entity) world =
             let celCount = entity.GetCelCount world
@@ -383,7 +383,7 @@ module TextFacetModule =
         member this.TextOffset = lens Property? TextOffset this.GetTextOffset this.SetTextOffset this
 
     type TextFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static member Properties =
             [define Entity.Text ""
@@ -463,7 +463,7 @@ module BasicEmitter2dFacetModule =
         member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
 
     type BasicEmitter2dFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static let tryMakeEmitter (entity : Entity) world =
             World.tryMakeEmitter
@@ -709,7 +709,7 @@ module Effect2dFacetModule =
             time - startTime
 
     type Effect2dFacet () =
-        inherit Facet ()
+        inherit Facet (false)
 
         static let updateParticleSystem updater (entity : Entity) world =
             let particleSystem = entity.GetParticleSystem world
@@ -931,7 +931,7 @@ module RigidBody2dFacetModule =
         member this.BodySeparationEvent = Events.BodySeparation --> this
 
     type RigidBody2dFacet () =
-        inherit Facet ()
+        inherit Facet (true)
 
         static let getBodyShape (entity : Entity) world =
             World.localizeBodyShape (entity.GetScale world * entity.GetSize world) (entity.GetBodyShape world) world
@@ -1012,9 +1012,6 @@ module RigidBody2dFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module Joint2dFacetModule =
 
@@ -1024,7 +1021,7 @@ module Joint2dFacetModule =
         member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
 
     type Joint2dFacet () =
-        inherit Facet ()
+        inherit Facet (true)
 
         static member Properties =
             [define Entity.Offset v3Zero
@@ -1046,9 +1043,6 @@ module Joint2dFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyJoint (entity.GetPhysicsId world) world
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module TileMapFacetModule =
 
@@ -1067,7 +1061,7 @@ module TileMapFacetModule =
         member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
 
     type TileMapFacet () =
-        inherit Facet ()
+        inherit Facet (true)
 
         static member Properties =
             [define Entity.Omnipresent true
@@ -1156,9 +1150,6 @@ module TileMapFacetModule =
             | Some tileMap -> TmxMap.getQuickSize tileMap
             | None -> Constants.Engine.EntitySize2dDefault
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module TmxMapFacetModule =
 
@@ -1168,7 +1159,7 @@ module TmxMapFacetModule =
         member this.TmxMap = lens Property? TmxMap this.GetTmxMap this.SetTmxMap this
 
     type TmxMapFacet () =
-        inherit Facet ()
+        inherit Facet (true)
 
         static member Properties =
             [define Entity.Omnipresent true
@@ -1252,23 +1243,20 @@ module TmxMapFacetModule =
             let tileMap = entity.GetTmxMap world
             TmxMap.getQuickSize tileMap
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d () =
-        inherit EntityDispatcher (true, true)
+    type EntityDispatcher2d (isPhysical) =
+        inherit EntityDispatcher (isPhysical, true, true)
 
         static member Properties =
             [define Entity.Offset v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d () =
-        inherit EntityDispatcher (false, false)
+    type EntityDispatcher3d (isPhysical) =
+        inherit EntityDispatcher (isPhysical, false, false)
 
         static member Properties =
             [define Entity.Offset v3Zero
@@ -1292,8 +1280,8 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isCartesian, is2d, initial : 'model) =
-        inherit EntityDispatcher (isCartesian, is2d)
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isPhysical, isCartesian, is2d, initial : 'model) =
+        inherit EntityDispatcher (isPhysical, isCartesian, is2d)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1380,17 +1368,17 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (initial : 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, true, initial)
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (isPhysical, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, true, true, initial)
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (initial : 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, false, initial)
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (isPhysical, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, false, false, initial)
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1406,7 +1394,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1430,7 +1418,7 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (false)
 
         static member Properties =
             [define Entity.Offset v3Cartesian2d
@@ -1441,7 +1429,7 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (model)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, model)
 
         static member Properties =
             [define Entity.Offset v3Cartesian2d
@@ -2162,7 +2150,7 @@ module FillBarDispatcherModule =
 module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2174,7 +2162,7 @@ module BasicEmitter2dDispatcherModule =
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2187,7 +2175,7 @@ module Effect2dDispatcherModule =
 module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2197,14 +2185,11 @@ module Block2dDispatcherModule =
             [define Entity.BodyType Static
              define Entity.StaticImage Assets.Default.Image4]
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2212,9 +2197,6 @@ module Box2dDispatcherModule =
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4]
-
-        override this.IsPhysical =
-            true
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -2234,7 +2216,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2304,14 +2286,11 @@ module SideViewCharacterDispatcherModule =
                     world
             else world
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2330,14 +2309,11 @@ module TileMapDispatcherModule =
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap]
 
-        override this.IsPhysical =
-            true
-
 [<AutoOpen>]
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d ()
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<TmxMapFacet>]
@@ -2353,9 +2329,6 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
-
-        override this.IsPhysical =
-            true
 
 [<AutoOpen>]
 module GroupDispatcherModule =

@@ -385,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher (isCartesian, is2d) =
+    and EntityDispatcher (isPhysical, isCartesian, is2d) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -462,8 +462,7 @@ module WorldTypes =
             else Constants.Engine.EntitySize3dDefault
 
         /// Whether the dispatcher participates in a physics system.
-        abstract IsPhysical : bool
-        default this.IsPhysical = false
+        member this.IsPhysical = isPhysical
 
         /// Whether the dispatcher uses a cartesian (non-centered) offset by default.
         member this.IsCartesian = isCartesian
@@ -472,7 +471,7 @@ module WorldTypes =
         member this.Is2d = is2d
 
     /// Dynamically augments an entity's behavior in a composable way.
-    and Facet () =
+    and Facet (isPhysical) =
 
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
@@ -516,8 +515,7 @@ module WorldTypes =
             else Constants.Engine.EntitySize3dDefault
 
         /// Whether a facet participates in a physics system.
-        abstract IsPhysical : bool
-        default this.IsPhysical = false
+        member this.IsPhysical = isPhysical
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -866,7 +864,7 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
-        member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets
+        member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.IsCartesian with get () = this.Dispatcher.IsCartesian
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
