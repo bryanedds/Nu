@@ -12,7 +12,7 @@ open Nu
 module Vector2 =
 
     type Vector2 with
-        member this.XYZ = Vector3 (this.X, this.Y, 0.0f)
+        member this.V3 = Vector3 (this.X, this.Y, 0.0f)
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector2 (mapper this.X, this.Y)
@@ -81,7 +81,7 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
 module Vector3 =
 
     type Vector3 with
-        member this.XY = Vector2 (this.X, this.Y)
+        member this.V2 = Vector2 (this.X, this.Y)
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
@@ -220,7 +220,7 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
-        member this.XYZ = v3 this.X this.Y this.Z
+        member this.V3 = v3 this.X this.Y this.Z
         member this.Magnitude = this.Magnitude
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
@@ -326,7 +326,7 @@ type Vector4Converter () =
 module Vector2i =
 
     type Vector2i with
-        member this.XYZ = Vector3i (this.X, this.Y, 0)
+        member this.V3i = Vector3i (this.X, this.Y, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
@@ -420,7 +420,7 @@ type Vector2iConverter () =
 module Vector3i =
 
     type Vector3i with
-        member this.XY = Vector2i (this.X, this.Y)
+        member this.V2i = Vector2i (this.X, this.Y)
         member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
         member this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
@@ -621,7 +621,7 @@ type Vector4iConverter () =
 [<AutoOpen>]
 module Box2 =
     type Box2 with
-        member this.XYZ = Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.Box3 = Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
         member this.Width = this.Size.X
         member this.Height = this.Size.Y
         member this.Extent = this.Size * 0.5f
@@ -652,7 +652,7 @@ module Box2 =
 [<AutoOpen>]
 module Box3 =
     type Box3 with
-        member this.XY = Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+        member this.Box2 = Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
         member this.Extent = this.Size * 0.5f
         member this.Center = this.Position + this.Extent
         member this.Top = v3 (this.Position.X + this.Size.X * 0.5f) (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)

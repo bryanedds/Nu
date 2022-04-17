@@ -261,7 +261,7 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Quadtree.addElement entityOmnipresent entityBounds.XY entity quadtree
+                                Quadtree.addElement entityOmnipresent entityBounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
@@ -292,7 +292,7 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Quadtree.removeElement entityOmnipresent entityBounds.XY entity quadtree
+                                Quadtree.removeElement entityOmnipresent entityBounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world

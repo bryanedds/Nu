@@ -447,7 +447,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormals physicsId =
             List.filter
                 (fun normal ->
-                    let theta = Vector2.Dot (normal.XY, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
+                    let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
                     theta < Math.PI * 0.25)
                 ((physicsEngine :> PhysicsEngine).GetBodyContactNormals physicsId)
 

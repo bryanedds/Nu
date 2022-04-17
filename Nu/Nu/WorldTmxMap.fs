@@ -97,11 +97,11 @@ module TmxMap =
         let tileExtent = tileSize * 0.5f
         match shape with
         | BodyEmpty as be -> be
-        | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent.XYZ; Center = box.Center * tileSize.XYZ + tileOffset.XYZ }
-        | BodySphere circle -> BodySphere { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize.XYZ + tileOffset.XYZ }
-        | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize.XYZ + tileOffset.XYZ }
-        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Extent = boxRounded.Extent * tileExtent.XYZ; Radius = boxRounded.Radius; Center = boxRounded.Center * tileSize.XYZ + tileOffset.XYZ }
-        | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize.XYZ) polygon.Vertices; Center = polygon.Center * tileSize.XYZ + tileOffset.XYZ }
+        | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent.V3; Center = box.Center * tileSize.V3 + tileOffset.V3 }
+        | BodySphere circle -> BodySphere { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Extent = boxRounded.Extent * tileExtent.V3; Radius = boxRounded.Radius; Center = boxRounded.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize.V3) polygon.Vertices; Center = polygon.Center * tileSize.V3 + tileOffset.V3 }
         | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
     let getDescriptor tileMapPosition (tileMap : TmxMap) =
@@ -194,9 +194,9 @@ module TmxMap =
                         | "" ->
                             match tileBoxes.TryGetValue tileCenter.Y with
                             | (true, l) ->
-                                l.Add (Box3 (tileCenter.XYZ - tileMapDescriptor.TileSizeF.XYZ * 0.5f, tileMapDescriptor.TileSizeF.XYZ))
+                                l.Add (Box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f, tileMapDescriptor.TileSizeF.V3))
                             | (false, _) ->
-                                tileBoxes.Add (tileCenter.Y, List [Box3 (tileCenter.XYZ - tileMapDescriptor.TileSizeF.XYZ * 0.5f, tileMapDescriptor.TileSizeF.XYZ)])
+                                tileBoxes.Add (tileCenter.Y, List [Box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f, tileMapDescriptor.TileSizeF.V3)])
                         | "Top" ->
                             let tileShape = BodyBox { Extent = v3 1.0f 0.5f 0.0f; Center = v3 0.0f 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
@@ -373,13 +373,13 @@ module TmxMap =
 
                             // compute strip transform
                             let mutable transform = Transform.make v3Cartesian2d
-                            transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Position.XYZ
+                            transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Position.V3
                             transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute
 
                             // check if in view bounds
-                            if Math.isBoundsIntersectingBounds2d (Box2 (transform.Position.XY, transform.Size.XY)) viewBounds then
+                            if Math.isBoundsIntersectingBounds2d (Box2 (transform.Position.V2, transform.Size.V2)) viewBounds then
 
                                 // accumulate descriptor
                                 descriptors.Add

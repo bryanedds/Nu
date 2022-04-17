@@ -26,13 +26,13 @@ module WorldBindings =
         "setMasterSongVolume playSong playSong6 playSound " +
         "playSound3 fadeOutSong stopSong hintAudioPackageUse " +
         "hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse2d hintRenderPackageDisuse2d " +
-        "reloadRenderAssets2d localizeBodyShape bodyExists2d getBodyContactNormals2d " +
-        "getBodyLinearVelocity2d getBodyToGroundContactNormals2d getBodyToGroundContactNormalOpt2d getBodyToGroundContactTangentOpt2d " +
-        "isBodyOnGround2d createBody2d createBodies2d destroyBody2d " +
-        "destroyBodies2d createJoint2d createJoints2d destroyJoint2d " +
-        "destroyJoints2d setBodyEnabled2d setBodyPosition2d setBodyRotation " +
-        "setBodyLinearVelocity2d applyBodyLinearImpulse2d setBodyAngularVelocity2d applyBodyAngularImpulse2d " +
-        "applyBodyForce2d isMouseButtonDown getMousePosition2d isKeyboardKeyDown " +
+        "reloadRenderAssets2d localizeBodyShape bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
+        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
+        "applyBodyForce isMouseButtonDown getMousePosition2d isKeyboardKeyDown " +
         "expandContent destroyImmediate destroy tryGetParent " +
         "getParent getChildren getExists isSelected " +
         "ignorePropertyBindings getEntities0 getGroups0 writeGameToFile " +
@@ -675,7 +675,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'localizeBodyShape' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let bodyExists2d physicsId world =
+    let bodyExists physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -687,10 +687,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'bodyExists2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'bodyExists' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getBodyContactNormals2d physicsId world =
+    let getBodyContactNormals physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -702,10 +702,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<FSharpList<Vector3>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyContactNormals2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyContactNormals' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getBodyLinearVelocity2d physicsId world =
+    let getBodyLinearVelocity physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -717,10 +717,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<Vector3> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyLinearVelocity2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyLinearVelocity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getBodyToGroundContactNormals2d physicsId world =
+    let getBodyToGroundContactNormals physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -732,10 +732,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<FSharpList<Vector3>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormals2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormals' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getBodyToGroundContactNormalOpt2d physicsId world =
+    let getBodyToGroundContactNormalOpt physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -747,10 +747,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector3>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormalOpt2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormalOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getBodyToGroundContactTangentOpt2d physicsId world =
+    let getBodyToGroundContactTangentOpt physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -762,10 +762,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector3>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactTangentOpt2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactTangentOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let isBodyOnGround2d physicsId world =
+    let isBodyOnGround physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -777,10 +777,10 @@ module WorldBindings =
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBodyOnGround2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBodyOnGround' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createBody2d entity entityId bodyProperties world =
+    let createBody entity entityId bodyProperties world =
         let oldWorld = world
         try
             let struct (entity, world) =
@@ -804,10 +804,10 @@ module WorldBindings =
             let result = World.createBody entity entityId bodyProperties world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBody2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBody' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createBodies2d entity entityId bodiesProperties world =
+    let createBodies entity entityId bodiesProperties world =
         let oldWorld = world
         try
             let struct (entity, world) =
@@ -840,10 +840,10 @@ module WorldBindings =
             let result = World.createBodies entity entityId bodiesProperties world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let destroyBody2d physicsId world =
+    let destroyBody physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -853,10 +853,10 @@ module WorldBindings =
             let result = World.destroyBody physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let destroyBodies2d physicsIds world =
+    let destroyBodies physicsIds world =
         let oldWorld = world
         try
             let struct (physicsIds, world) =
@@ -875,10 +875,10 @@ module WorldBindings =
             let result = World.destroyBodies physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createJoint2d entity entityId jointProperties world =
+    let createJoint entity entityId jointProperties world =
         let oldWorld = world
         try
             let struct (entity, world) =
@@ -902,10 +902,10 @@ module WorldBindings =
             let result = World.createJoint entity entityId jointProperties world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoint2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoint' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createJoints2d entity entityId jointsProperties world =
+    let createJoints entity entityId jointsProperties world =
         let oldWorld = world
         try
             let struct (entity, world) =
@@ -938,10 +938,10 @@ module WorldBindings =
             let result = World.createJoints entity entityId jointsProperties world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let destroyJoint2d physicsId world =
+    let destroyJoint physicsId world =
         let oldWorld = world
         try
             let physicsId =
@@ -951,10 +951,10 @@ module WorldBindings =
             let result = World.destroyJoint physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let destroyJoints2d physicsIds world =
+    let destroyJoints physicsIds world =
         let oldWorld = world
         try
             let struct (physicsIds, world) =
@@ -973,10 +973,10 @@ module WorldBindings =
             let result = World.destroyJoints physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setBodyEnabled2d enabled physicsId world =
+    let setBodyEnabled enabled physicsId world =
         let oldWorld = world
         try
             let enabled =
@@ -990,10 +990,10 @@ module WorldBindings =
             let result = World.setBodyEnabled enabled physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setBodyPosition2d position physicsId world =
+    let setBodyPosition position physicsId world =
         let oldWorld = world
         try
             let position =
@@ -1007,7 +1007,7 @@ module WorldBindings =
             let result = World.setBodyPosition position physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyPosition2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyPosition' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let setBodyRotation rotation physicsId world =
@@ -1027,7 +1027,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyRotation' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setBodyLinearVelocity2d linearVelocity physicsId world =
+    let setBodyLinearVelocity linearVelocity physicsId world =
         let oldWorld = world
         try
             let linearVelocity =
@@ -1041,10 +1041,10 @@ module WorldBindings =
             let result = World.setBodyLinearVelocity linearVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyLinearVelocity2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyLinearVelocity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let applyBodyLinearImpulse2d linearImpulse physicsId world =
+    let applyBodyLinearImpulse linearImpulse physicsId world =
         let oldWorld = world
         try
             let linearImpulse =
@@ -1058,10 +1058,10 @@ module WorldBindings =
             let result = World.applyBodyLinearImpulse linearImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyLinearImpulse2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyLinearImpulse' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setBodyAngularVelocity2d angularVelocity physicsId world =
+    let setBodyAngularVelocity angularVelocity physicsId world =
         let oldWorld = world
         try
             let angularVelocity =
@@ -1075,10 +1075,10 @@ module WorldBindings =
             let result = World.setBodyAngularVelocity angularVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyAngularVelocity2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyAngularVelocity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let applyBodyAngularImpulse2d angularImpulse physicsId world =
+    let applyBodyAngularImpulse angularImpulse physicsId world =
         let oldWorld = world
         try
             let angularImpulse =
@@ -1092,10 +1092,10 @@ module WorldBindings =
             let result = World.applyBodyAngularImpulse angularImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyAngularImpulse2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyAngularImpulse' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let applyBodyForce2d force physicsId world =
+    let applyBodyForce force physicsId world =
         let oldWorld = world
         try
             let force =
@@ -1109,7 +1109,7 @@ module WorldBindings =
             let result = World.applyBodyForce force physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyForce2d' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyForce' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let isMouseButtonDown mouseButton world =
@@ -2959,188 +2959,188 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalBodyExists2dBinding fnName exprs originOpt world =
+    let evalBodyExistsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> bodyExists2d physicsId world
+            | [|physicsId|] -> bodyExists physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetBodyContactNormals2dBinding fnName exprs originOpt world =
+    let evalGetBodyContactNormalsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> getBodyContactNormals2d physicsId world
+            | [|physicsId|] -> getBodyContactNormals physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetBodyLinearVelocity2dBinding fnName exprs originOpt world =
+    let evalGetBodyLinearVelocityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> getBodyLinearVelocity2d physicsId world
+            | [|physicsId|] -> getBodyLinearVelocity physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetBodyToGroundContactNormals2dBinding fnName exprs originOpt world =
+    let evalGetBodyToGroundContactNormalsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> getBodyToGroundContactNormals2d physicsId world
+            | [|physicsId|] -> getBodyToGroundContactNormals physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetBodyToGroundContactNormalOpt2dBinding fnName exprs originOpt world =
+    let evalGetBodyToGroundContactNormalOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> getBodyToGroundContactNormalOpt2d physicsId world
+            | [|physicsId|] -> getBodyToGroundContactNormalOpt physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetBodyToGroundContactTangentOpt2dBinding fnName exprs originOpt world =
+    let evalGetBodyToGroundContactTangentOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> getBodyToGroundContactTangentOpt2d physicsId world
+            | [|physicsId|] -> getBodyToGroundContactTangentOpt physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsBodyOnGround2dBinding fnName exprs originOpt world =
+    let evalIsBodyOnGroundBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> isBodyOnGround2d physicsId world
+            | [|physicsId|] -> isBodyOnGround physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateBody2dBinding fnName exprs originOpt world =
+    let evalCreateBodyBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|entity; entityId; bodyProperties|] -> createBody2d entity entityId bodyProperties world
+            | [|entity; entityId; bodyProperties|] -> createBody entity entityId bodyProperties world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateBodies2dBinding fnName exprs originOpt world =
+    let evalCreateBodiesBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|entity; entityId; bodiesProperties|] -> createBodies2d entity entityId bodiesProperties world
+            | [|entity; entityId; bodiesProperties|] -> createBodies entity entityId bodiesProperties world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalDestroyBody2dBinding fnName exprs originOpt world =
+    let evalDestroyBodyBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> destroyBody2d physicsId world
+            | [|physicsId|] -> destroyBody physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalDestroyBodies2dBinding fnName exprs originOpt world =
+    let evalDestroyBodiesBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsIds|] -> destroyBodies2d physicsIds world
+            | [|physicsIds|] -> destroyBodies physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateJoint2dBinding fnName exprs originOpt world =
+    let evalCreateJointBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|entity; entityId; jointProperties|] -> createJoint2d entity entityId jointProperties world
+            | [|entity; entityId; jointProperties|] -> createJoint entity entityId jointProperties world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateJoints2dBinding fnName exprs originOpt world =
+    let evalCreateJointsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|entity; entityId; jointsProperties|] -> createJoints2d entity entityId jointsProperties world
+            | [|entity; entityId; jointsProperties|] -> createJoints entity entityId jointsProperties world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalDestroyJoint2dBinding fnName exprs originOpt world =
+    let evalDestroyJointBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsId|] -> destroyJoint2d physicsId world
+            | [|physicsId|] -> destroyJoint physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalDestroyJoints2dBinding fnName exprs originOpt world =
+    let evalDestroyJointsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|physicsIds|] -> destroyJoints2d physicsIds world
+            | [|physicsIds|] -> destroyJoints physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetBodyEnabled2dBinding fnName exprs originOpt world =
+    let evalSetBodyEnabledBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|enabled; physicsId|] -> setBodyEnabled2d enabled physicsId world
+            | [|enabled; physicsId|] -> setBodyEnabled enabled physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetBodyPosition2dBinding fnName exprs originOpt world =
+    let evalSetBodyPositionBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|position; physicsId|] -> setBodyPosition2d position physicsId world
+            | [|position; physicsId|] -> setBodyPosition position physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3157,56 +3157,56 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetBodyLinearVelocity2dBinding fnName exprs originOpt world =
+    let evalSetBodyLinearVelocityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|linearVelocity; physicsId|] -> setBodyLinearVelocity2d linearVelocity physicsId world
+            | [|linearVelocity; physicsId|] -> setBodyLinearVelocity linearVelocity physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalApplyBodyLinearImpulse2dBinding fnName exprs originOpt world =
+    let evalApplyBodyLinearImpulseBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|linearImpulse; physicsId|] -> applyBodyLinearImpulse2d linearImpulse physicsId world
+            | [|linearImpulse; physicsId|] -> applyBodyLinearImpulse linearImpulse physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetBodyAngularVelocity2dBinding fnName exprs originOpt world =
+    let evalSetBodyAngularVelocityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|angularVelocity; physicsId|] -> setBodyAngularVelocity2d angularVelocity physicsId world
+            | [|angularVelocity; physicsId|] -> setBodyAngularVelocity angularVelocity physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalApplyBodyAngularImpulse2dBinding fnName exprs originOpt world =
+    let evalApplyBodyAngularImpulseBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|angularImpulse; physicsId|] -> applyBodyAngularImpulse2d angularImpulse physicsId world
+            | [|angularImpulse; physicsId|] -> applyBodyAngularImpulse angularImpulse physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalApplyBodyForce2dBinding fnName exprs originOpt world =
+    let evalApplyBodyForceBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|force; physicsId|] -> applyBodyForce2d force physicsId world
+            | [|force; physicsId|] -> applyBodyForce force physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4170,29 +4170,29 @@ module WorldBindings =
              ("hintRenderPackageDisuse2d", { Fn = evalHintRenderPackageDisuse2dBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("reloadRenderAssets2d", { Fn = evalReloadRenderAssets2dBinding; Pars = [||]; DocOpt = None })
              ("localizeBodyShape", { Fn = evalLocalizeBodyShapeBinding; Pars = [|"extent"; "bodyShape"|]; DocOpt = None })
-             ("bodyExists2d", { Fn = evalBodyExists2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("getBodyContactNormals2d", { Fn = evalGetBodyContactNormals2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("getBodyLinearVelocity2d", { Fn = evalGetBodyLinearVelocity2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("getBodyToGroundContactNormals2d", { Fn = evalGetBodyToGroundContactNormals2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("getBodyToGroundContactNormalOpt2d", { Fn = evalGetBodyToGroundContactNormalOpt2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("getBodyToGroundContactTangentOpt2d", { Fn = evalGetBodyToGroundContactTangentOpt2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("isBodyOnGround2d", { Fn = evalIsBodyOnGround2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("createBody2d", { Fn = evalCreateBody2dBinding; Pars = [|"entity"; "entityId"; "bodyProperties"|]; DocOpt = None })
-             ("createBodies2d", { Fn = evalCreateBodies2dBinding; Pars = [|"entity"; "entityId"; "bodiesProperties"|]; DocOpt = None })
-             ("destroyBody2d", { Fn = evalDestroyBody2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("destroyBodies2d", { Fn = evalDestroyBodies2dBinding; Pars = [|"physicsIds"|]; DocOpt = None })
-             ("createJoint2d", { Fn = evalCreateJoint2dBinding; Pars = [|"entity"; "entityId"; "jointProperties"|]; DocOpt = None })
-             ("createJoints2d", { Fn = evalCreateJoints2dBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
-             ("destroyJoint2d", { Fn = evalDestroyJoint2dBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("destroyJoints2d", { Fn = evalDestroyJoints2dBinding; Pars = [|"physicsIds"|]; DocOpt = None })
-             ("setBodyEnabled2d", { Fn = evalSetBodyEnabled2dBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
-             ("setBodyPosition2d", { Fn = evalSetBodyPosition2dBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
+             ("bodyExists", { Fn = evalBodyExistsBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("getBodyContactNormals", { Fn = evalGetBodyContactNormalsBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("getBodyLinearVelocity", { Fn = evalGetBodyLinearVelocityBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("getBodyToGroundContactNormals", { Fn = evalGetBodyToGroundContactNormalsBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("getBodyToGroundContactNormalOpt", { Fn = evalGetBodyToGroundContactNormalOptBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("getBodyToGroundContactTangentOpt", { Fn = evalGetBodyToGroundContactTangentOptBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("isBodyOnGround", { Fn = evalIsBodyOnGroundBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("createBody", { Fn = evalCreateBodyBinding; Pars = [|"entity"; "entityId"; "bodyProperties"|]; DocOpt = None })
+             ("createBodies", { Fn = evalCreateBodiesBinding; Pars = [|"entity"; "entityId"; "bodiesProperties"|]; DocOpt = None })
+             ("destroyBody", { Fn = evalDestroyBodyBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("destroyBodies", { Fn = evalDestroyBodiesBinding; Pars = [|"physicsIds"|]; DocOpt = None })
+             ("createJoint", { Fn = evalCreateJointBinding; Pars = [|"entity"; "entityId"; "jointProperties"|]; DocOpt = None })
+             ("createJoints", { Fn = evalCreateJointsBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
+             ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"physicsId"|]; DocOpt = None })
+             ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"physicsIds"|]; DocOpt = None })
+             ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
+             ("setBodyPosition", { Fn = evalSetBodyPositionBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
-             ("setBodyLinearVelocity2d", { Fn = evalSetBodyLinearVelocity2dBinding; Pars = [|"linearVelocity"; "physicsId"|]; DocOpt = None })
-             ("applyBodyLinearImpulse2d", { Fn = evalApplyBodyLinearImpulse2dBinding; Pars = [|"linearImpulse"; "physicsId"|]; DocOpt = None })
-             ("setBodyAngularVelocity2d", { Fn = evalSetBodyAngularVelocity2dBinding; Pars = [|"angularVelocity"; "physicsId"|]; DocOpt = None })
-             ("applyBodyAngularImpulse2d", { Fn = evalApplyBodyAngularImpulse2dBinding; Pars = [|"angularImpulse"; "physicsId"|]; DocOpt = None })
-             ("applyBodyForce2d", { Fn = evalApplyBodyForce2dBinding; Pars = [|"force"; "physicsId"|]; DocOpt = None })
+             ("setBodyLinearVelocity", { Fn = evalSetBodyLinearVelocityBinding; Pars = [|"linearVelocity"; "physicsId"|]; DocOpt = None })
+             ("applyBodyLinearImpulse", { Fn = evalApplyBodyLinearImpulseBinding; Pars = [|"linearImpulse"; "physicsId"|]; DocOpt = None })
+             ("setBodyAngularVelocity", { Fn = evalSetBodyAngularVelocityBinding; Pars = [|"angularVelocity"; "physicsId"|]; DocOpt = None })
+             ("applyBodyAngularImpulse", { Fn = evalApplyBodyAngularImpulseBinding; Pars = [|"angularImpulse"; "physicsId"|]; DocOpt = None })
+             ("applyBodyForce", { Fn = evalApplyBodyForceBinding; Pars = [|"force"; "physicsId"|]; DocOpt = None })
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
              ("getMousePosition2d", { Fn = evalGetMousePosition2dBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })

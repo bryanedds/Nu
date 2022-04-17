@@ -74,7 +74,7 @@ module WorldModule2 =
             for entity in entities do
                 let bounds = entity.GetBounds world
                 if entity.GetIs2d world then
-                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds.XY entity quadtree
+                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds.Box2 entity quadtree
             quadtree
 
         static member internal rebuildOctree world =
@@ -366,8 +366,8 @@ module WorldModule2 =
             let world = splashGroup.SetPersistent false world
             let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
             let world = splashSprite.SetPersistent false world
-            let world = splashSprite.SetSize cameraEyeSize.XYZ world
-            let world = splashSprite.SetPosition (-cameraEyeSize.XYZ * 0.5f) world
+            let world = splashSprite.SetSize cameraEyeSize.V3 world
+            let world = splashSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
             let world =
                 match splashDescriptor.SplashImageOpt with
                 | Some splashImage ->
@@ -803,8 +803,8 @@ module WorldModule2 =
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.White.WithA (byte (alpha * 255.0f))
-                let position = -eyeSize.XYZ * 0.5f
-                let size = eyeSize.XYZ
+                let position = -eyeSize.V3 * 0.5f
+                let size = eyeSize.V3
                 let mutable transform = Transform.make v3Cartesian2d
                 transform.Position <- position
                 transform.Offset <- v3 0.5f 0.5f 0.0f
