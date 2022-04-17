@@ -262,7 +262,7 @@ module WorldTypes =
     /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortElevation : single
-          SortHorizon : single
+          SortLatitude : single
           SortTarget : Simulant }
 
         static member equals left right =
@@ -272,8 +272,8 @@ module WorldTypes =
         static member compare left right =
             if left.SortElevation < right.SortElevation then 1
             elif left.SortElevation > right.SortElevation then -1
-            elif left.SortHorizon < right.SortHorizon then -1
-            elif left.SortHorizon > right.SortHorizon then 1
+            elif left.SortLatitude < right.SortLatitude then -1
+            elif left.SortLatitude > right.SortLatitude then 1
             else 0
 
         override this.GetHashCode () =
