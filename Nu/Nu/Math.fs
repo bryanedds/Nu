@@ -996,9 +996,9 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
-        //val mutable private BoundsOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
+        val mutable private Overflow_ : single
         val mutable private Elevation_ : single
         end
 
@@ -1028,7 +1028,8 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true
     member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true
     member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true
-    member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value; this.AffineMatrixDirty <- true
+    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.AffineMatrixDirty <- true
+    member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
 
     member this.Rotation
         with get () = this.Rotation_
@@ -1126,8 +1127,12 @@ type [<NoEquality; NoComparison>] Transform =
         let perimeter = this.Perimeter
         perimeter.Orient this.Rotation_
 
-    member inline this.Bounds =
-        this.PerimeterOriented // no overflow value yet, so just stick with PerimeterOriented
+    member this.Bounds =
+        let perimeterOriented = this.PerimeterOriented
+        let sizeOverflowed = perimeterOriented.Size * this.Overflow_
+        let center = perimeterOriented.Center
+        let positionOverflowed = center - sizeOverflowed * 0.5f
+        Box3 (positionOverflowed, sizeOverflowed)
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
@@ -1141,7 +1146,8 @@ type [<NoEquality; NoComparison>] Transform =
         left.Offset_.Equals right.Offset_ &&
         left.Angles_.Equals right.Angles_ &&
         left.Size_.Equals right.Size_ &&
-        left.Elevation_ = right.Elevation_
+        left.Elevation_ = right.Elevation_ &&
+        left.Overflow_ = right.Overflow_
 
     /// Test transforms for equality.
     static member inline equals (left : Transform) (right : Transform) =
@@ -1159,6 +1165,7 @@ type [<NoEquality; NoComparison>] Transform =
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
+        target.Overflow_ <- source.Overflow_
 
     /// Assign the value of the left transform to the right.
     static member inline assign (source : Transform, target : Transform byref) =
@@ -1176,6 +1183,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Scale_ <- Vector3.One
         transform.Offset_ <- offset
         transform.Size_ <- Vector3.One
+        transform.Overflow_ <- 1.0f
         transform
 
     interface Transform Component with
