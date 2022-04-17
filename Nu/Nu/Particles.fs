@@ -749,7 +749,7 @@ module Particles =
                     particle'.Inset <- particle.Inset
                     particle'.Flip <- particle.Flip
             { Elevation = emitter.Elevation
-              Horizon = emitter.Body.Position.Y
+              Latitude = emitter.Body.Position.Y
               Absolute = emitter.Absolute
               Blend = emitter.Blend
               Image = emitter.Image

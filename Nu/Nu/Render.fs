@@ -144,7 +144,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
 /// Describes particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
     { Elevation : single
-      Horizon : single
+      Latitude : single
       Absolute : bool
       Blend : Blend
       Image : Image AssetTag
