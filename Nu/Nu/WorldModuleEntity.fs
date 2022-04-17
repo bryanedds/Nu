@@ -2073,7 +2073,7 @@ module WorldModuleEntity =
                 // OPTIMIZATION: only update when entity is not omnipresent.
                 elif not newOmnipresent then
 
-                    // OPTIMIZATION: only update when entity aabb has changed.
+                    // OPTIMIZATION: only update when entity bounds has changed.
                     let newBounds = entityState.Bounds
                     if not (oldBounds.Equals newBounds) then
 
