@@ -671,10 +671,8 @@ type Box2Converter () =
         if destType = typeof<Symbol> then
             let box2 = source :?> Box2
             Symbols
-                ([Number (scstring box2.Position.X, None)
-                  Number (scstring box2.Position.Y, None)
-                  Number (scstring box2.Size.X, None)
-                  Number (scstring box2.Size.Y, None)], None) :> obj
+                ([Symbols ([Number (scstring box2.Position.X, None); Number (scstring box2.Position.Y, None)], None)
+                  Symbols ([Number (scstring box2.Size.X, None); Number (scstring box2.Size.Y, None)], None)], None) :> obj
         elif destType = typeof<Box2> then source
         else failconv "Invalid Box2Converter conversion to source." None
 
@@ -686,8 +684,12 @@ type Box2Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
-                Box2 (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | Symbols ([positionSymbol; sizeSymbol], _) ->
+                match (positionSymbol, sizeSymbol) with
+                | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
+                    Box2 (scvalue px, scvalue py, scvalue sx, scvalue sy) :> obj
+                | _ ->
+                    failconv "Invalid Box2Converter conversion from source." (Some symbol)
             | _ ->
                 failconv "Invalid Box2Converter conversion from source." (Some symbol)
         | :? Box2 -> source
@@ -721,6 +723,42 @@ module Box3 =
     let inline box3Neq (b : Box3) (b2 : Box3) =
         b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y || b.Position.Z <> b2.Position.Z ||
         b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y || b.Size.Z <> b2.Size.Z
+
+/// Converts Box3 types.
+type Box3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Box3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let box3 = source :?> Box3
+            Symbols
+                ([Symbols ([Number (scstring box3.Position.X, None); Number (scstring box3.Position.Y, None); Number (scstring box3.Position.Z, None)], None)
+                  Symbols ([Number (scstring box3.Size.X, None); Number (scstring box3.Size.Y, None); Number (scstring box3.Size.Z, None)], None)], None) :> obj
+        elif destType = typeof<Box3> then source
+        else failconv "Invalid Box3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Box3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([positionSymbol; sizeSymbol], _) ->
+                match (positionSymbol, sizeSymbol) with
+                | (Symbols ([Number (px, _); Number (py, _); Number (pz, _)], _), Symbols ([Number (sx, _); Number (sy, _); Number (sz, _)], _)) ->
+                    Box3 (scvalue px, scvalue py, scvalue pz, scvalue sx, scvalue sy, scvalue sz) :> obj
+                | _ ->
+                    failconv "Invalid Box3Converter conversion from source." (Some symbol)
+            | _ ->
+                failconv "Invalid Box3Converter conversion from source." (Some symbol)
+        | :? Box2 -> source
+        | _ -> failconv "Invalid Box3Converter conversion from source." None
 
 [<AutoOpen>]
 module Box2i =
@@ -760,12 +798,10 @@ type Box2iConverter () =
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
-            let box2 = source :?> Box2i
+            let box2i = source :?> Box2i
             Symbols
-                ([Number (scstring box2.Position.X, None)
-                  Number (scstring box2.Position.Y, None)
-                  Number (scstring box2.Size.X, None)
-                  Number (scstring box2.Size.Y, None)], None) :> obj
+                ([Symbols ([Number (scstring box2i.Position.X, None); Number (scstring box2i.Position.Y, None)], None)
+                  Symbols ([Number (scstring box2i.Size.X, None); Number (scstring box2i.Size.Y, None)], None)], None) :> obj
         elif destType = typeof<Box2i> then source
         else failconv "Invalid Box2iConverter conversion to source." None
 
@@ -777,11 +813,15 @@ type Box2iConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
-                Box2i (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | Symbols ([positionSymbol; sizeSymbol], _) ->
+                match (positionSymbol, sizeSymbol) with
+                | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
+                    Box2i (scvalue px, scvalue py, scvalue sx, scvalue sy) :> obj
+                | _ ->
+                    failconv "Invalid Box2iConverter conversion from source." (Some symbol)
             | _ ->
                 failconv "Invalid Box2iConverter conversion from source." (Some symbol)
-        | :? Box2i -> source
+        | :? Box2 -> source
         | _ -> failconv "Invalid Box2iConverter conversion from source." None
 
 [<AutoOpen>]
