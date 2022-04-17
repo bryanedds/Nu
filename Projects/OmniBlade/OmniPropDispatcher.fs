@@ -200,7 +200,7 @@ module PropDispatcher =
                                     let direction = Direction.ofVector3 (prop.PointOfInterest - prop.Bottom)
                                     if direction = Upward then Downward else direction
                             let column = column + CharacterAnimationState.directionToInt direction
-                            let celSize = (size / 3.0f).XY
+                            let celSize = (size / 3.0f).V2
                             let insetPosition = v2 (single column) (single row) * celSize
                             let inset = Box2 (insetPosition, celSize)
                             (false, image, colWhite, Transparent, colZero, Some inset, FlipNone)

@@ -219,11 +219,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
-        let position = perimeter.Position.XY
+        let position = perimeter.Position.V2
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
         let rotation = transform.Angles.X
-        let size = perimeter.Size.XY
+        let size = perimeter.Size.V2
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
@@ -287,9 +287,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
-        let position = perimeter.Position.XY
+        let position = perimeter.Position.V2
         let positionView = Matrix3x3.Multiply (&position, &view)
-        let size = perimeter.Size.XY
+        let size = perimeter.Size.V2
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let rotation = transform.Angles.X
         let (allFound, tileSetTextures) =
@@ -388,10 +388,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
-        let position = perimeter.Position.XY
+        let position = perimeter.Position.V2
         let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
-        let size = perimeter.Size.XY
+        let size = perimeter.Size.V2
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
@@ -479,9 +479,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 while index < particles.Length do
                     let particle = &particles.[index]
                     let perimeter = particle.Transform.Perimeter
-                    let position = perimeter.Position.XY
+                    let position = perimeter.Position.V2
                     let positionView = position + positionOffset
-                    let size = perimeter.Size.XY
+                    let size = perimeter.Size.V2
                     let sizeView = Matrix3x3.Multiply (&size, &viewScale)
                     let rotation = particle.Transform.Angles.X
                     let color = &particle.Color
@@ -585,19 +585,19 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 transform.Absolute <- true
                 let sprite = { Transform = transform; Inset = Box2.Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
-                bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
+                bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
                 bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
                 let bottomMargin = { sprite with Transform = bottomMarginTransform }
                 let mutable leftMarginTransform = transform
-                leftMarginTransform.Position <- eyeMarginBounds.BottomLeft.XYZ
+                leftMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
                 leftMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
                 let leftMargin = { sprite with Transform = leftMarginTransform }
                 let mutable topMarginTransform = transform
-                topMarginTransform.Position <- eyeMarginBounds.TopLeft.XYZ - v3 0.0f eyeMargin.Y 0.0f
+                topMarginTransform.Position <- eyeMarginBounds.TopLeft.V3 - v3 0.0f eyeMargin.Y 0.0f
                 topMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
                 let topMargin = { sprite with Transform = topMarginTransform }
                 let mutable rightMarginTransform = transform
-                rightMarginTransform.Position <- eyeMarginBounds.BottomRight.XYZ - v3 eyeMargin.X 0.0f 0.0f
+                rightMarginTransform.Position <- eyeMarginBounds.BottomRight.V3 - v3 eyeMargin.X 0.0f 0.0f
                 rightMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
                 let rightMargin = { sprite with Transform = rightMarginTransform }
                 [|bottomMargin; leftMargin; topMargin; rightMargin|]

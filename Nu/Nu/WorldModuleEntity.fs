@@ -1600,7 +1600,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             if not transform.Omnipresent
-            then World.isBoundsInView2d transform.Absolute transform.Bounds.XY world
+            then World.isBoundsInView2d transform.Absolute transform.Bounds.Box2 world
             else true
 
         static member internal getEntityQuickSize (entity : Entity) world =
@@ -1719,7 +1719,7 @@ module WorldModuleEntity =
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
                                         let entityBounds = entityState.Bounds
-                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds.XY entity entityTree
+                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds.Box2 entity entityTree
                                         entityTree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -1778,7 +1778,7 @@ module WorldModuleEntity =
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity oldWorld
                                         let entityBounds = entityState.Bounds
-                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds.XY entity quadtree
+                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds.Box2 entity quadtree
                                         quadtree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -2054,8 +2054,8 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                                 (fun quadree ->
-                                    Quadtree.removeElement oldOmnipresent oldBounds.XY entity quadree
-                                    Quadtree.addElement newOmnipresent newBounds.XY entity quadree
+                                    Quadtree.removeElement oldOmnipresent oldBounds.Box2 entity quadree
+                                    Quadtree.addElement newOmnipresent newBounds.Box2 entity quadree
                                     quadree)
                                 (World.getQuadtree world)
                         World.setQuadtree quadree world
@@ -2082,7 +2082,7 @@ module WorldModuleEntity =
                             let quadree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                    (fun quadree -> Quadtree.updateElement oldBounds.XY newBounds.XY entity quadree; quadree)
+                                    (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadree world
                         else
@@ -2126,7 +2126,7 @@ module WorldModuleEntity =
                     then World.mouseToWorld2d entityState.Absolute rightClickPosition world
                     else World.mouseToWorld2d entityState.Absolute (World.getEyeSize2d world * 0.5f) world
                 let mutable transform = entityState.Transform
-                transform.Position <- position2d.XYZ
+                transform.Position <- position2d.V3
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)

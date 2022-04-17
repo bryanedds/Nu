@@ -73,7 +73,7 @@ module MyGameplay =
                     if World.getUpdateRate world <> 0L then
                         let characterPerimeter = Simulants.Gameplay.Player.Character.GetPerimeter world
                         let characterCenter = characterPerimeter.Center
-                        Simulants.Game.SetEyePosition2d characterCenter.XY world
+                        Simulants.Game.SetEyePosition2d characterCenter.V2 world
                     else world
                 | Nop -> world
             just world

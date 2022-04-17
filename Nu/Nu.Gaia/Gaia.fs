@@ -218,7 +218,7 @@ module Gaia =
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
             let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
-            if Math.isPointInBounds2d mousePositionWorld (entity.GetPerimeterOriented world).XY
+            if Math.isPointInBounds2d mousePositionWorld (entity.GetPerimeterOriented world).Box2
             then (Some entity, world)
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
@@ -274,7 +274,7 @@ module Gaia =
                             if entity.MountExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
-                        { editorState with DragEntityState = DragEntityPosition (entityPosition.XY + mousePositionWorld, mousePositionWorld, entity) })
+                        { editorState with DragEntityState = DragEntityPosition (entityPosition.V2 + mousePositionWorld, mousePositionWorld, entity) })
                         world
                 (handled, world)
             | (None, world) -> (handled, world)
@@ -794,8 +794,8 @@ module Gaia =
                     if atMouse
                     then World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
                     else World.mouseToWorld2d (entity.GetAbsolute world) (World.getEyeSize2d world * 0.5f) world
-                let mutable entityTransform = Transform.make ()
-                entityTransform.Position <- entityPosition.XYZ
+                let mutable entityTransform = entity.GetTransform world
+                entityTransform.Position <- entityPosition.V3
                 entityTransform.Size <- entity.GetQuickSize world
                 entityTransform.Elevation <- getCreationElevation form
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
@@ -1275,7 +1275,7 @@ module Gaia =
                     let mousePosition = World.getMousePosition2d world
                     let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
-                    let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.XYZ
+                    let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
                         if entity.MountExists world
                         then entity.SetPositionLocal entityPositionSnapped world

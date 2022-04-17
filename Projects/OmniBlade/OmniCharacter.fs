@@ -710,7 +710,7 @@ module Character =
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
           InputState_ = NoInput
-          CelSize_ = Constants.Gameplay.CharacterSize.XY }
+          CelSize_ = Constants.Gameplay.CharacterSize.V2 }
 
 type Character = Character.Character
 

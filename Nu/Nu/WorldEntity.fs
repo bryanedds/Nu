@@ -459,7 +459,7 @@ module WorldEntityModule =
             Array.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.mouseToWorld2d (entity.GetAbsolute world) position world
-                    let picked = Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).XY
+                    let picked = Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).Box2
                     picked)
                 entitiesSorted
 
