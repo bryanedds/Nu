@@ -78,10 +78,10 @@ type [<StructuralEquality; NoComparison>] BodyBox =
     { Extent : Vector3
       Center : Vector3 // TODO: P1: consider if these Center fields should be called Offset instead?
       PropertiesOpt : BodyShapeProperties option }
-    static member toDimensions bodyBox =
+    static member toBox bodyBox =
         Box3 (bodyBox.Center - bodyBox.Extent, bodyBox.Extent * 2.0f)
-    static member fromDimensions (dimensions : Box3) =
-        { Extent = dimensions.Size * 0.5f; Center = dimensions.Center; PropertiesOpt = None }
+    static member fromBox (box : Box3) =
+        { Extent = box.Size * 0.5f; Center = box.Center; PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
 type [<StructuralEquality; NoComparison>] BodySphere =

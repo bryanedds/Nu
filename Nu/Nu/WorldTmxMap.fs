@@ -255,7 +255,7 @@ module TmxMap =
 
         // convert strips into BodyShapes and add to the resulting list
         for strip in strips do
-            strip |> BodyBox.fromDimensions |> BodyBox |> bodyShapes.Add
+            strip |> BodyBox.fromBox |> BodyBox |> bodyShapes.Add
 
         // fin
         bodyShapes
