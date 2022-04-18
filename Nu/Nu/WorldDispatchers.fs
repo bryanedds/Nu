@@ -17,8 +17,8 @@ module DeclarativeOperators2 =
 
         static member internal actualizeView view world =
             match view with
-            | Render2d (elevation, latitude, assetTag, descriptor) ->
-                let message = { Elevation = elevation; Latitude = latitude; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+            | Render2d (elevation, horizon, assetTag, descriptor) ->
+                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
@@ -265,7 +265,7 @@ module StaticSpriteFacetModule =
                 let staticImage = entity.GetStaticImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Latitude = perimeter.Position.Y
+                      Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize staticImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -339,7 +339,7 @@ module AnimatedSpriteFacetModule =
                 let animationSheet = entity.GetAnimationSheet world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Latitude = perimeter.Position.Y
+                      Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
                       RenderDescriptor =
                         SpriteDescriptor
@@ -399,7 +399,7 @@ module TextFacetModule =
             if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
-                let latitude = perimeterUnscaled.Position.Y
+                let horizon = perimeterUnscaled.Position.Y
                 let mutable textTransform = Transform.make transform.Offset
                 textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
@@ -408,7 +408,7 @@ module TextFacetModule =
                 let font = entity.GetFont world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = textTransform.Elevation
-                      Latitude = latitude
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize font
                       RenderDescriptor =
                         TextDescriptor
@@ -657,7 +657,7 @@ module BasicEmitter2dFacetModule =
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
                         { Elevation = descriptor.Elevation
-                          Latitude = descriptor.Latitude
+                          Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
                 World.enqueueRenderLayeredMessages2d particlesMessages world
@@ -845,7 +845,7 @@ module Effect2dFacetModule =
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
                         { Elevation = descriptor.Elevation
-                          Latitude = descriptor.Latitude
+                          Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
                 let world = World.enqueueRenderLayeredMessages2d particlesMessages world
@@ -1529,7 +1529,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
-                let latitude = perimeter.Position.Y
+                let horizon = perimeter.Position.Y
                 let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- perimeter.Position
                 spriteTransform.Size <- perimeter.Size
@@ -1538,7 +1538,7 @@ module ButtonDispatcherModule =
                 let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Latitude = latitude
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1575,7 +1575,7 @@ module LabelDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
-                let latitude = perimeter.Position.Y
+                let horizon = perimeter.Position.Y
                 let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- perimeter.Position
                 spriteTransform.Size <- perimeter.Size
@@ -1584,7 +1584,7 @@ module LabelDispatcherModule =
                 let spriteImage = entity.GetLabelImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Latitude = latitude
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1627,7 +1627,7 @@ module TextDispatcherModule =
                 | Some spriteImage ->
                     let mutable transform = entity.GetTransform world
                     let perimeter = transform.Perimeter // gui currently ignores rotation
-                    let latitude = perimeter.Position.Y
+                    let horizon = perimeter.Position.Y
                     let mutable spriteTransform = Transform.make transform.Offset
                     spriteTransform.Position <- perimeter.Position
                     spriteTransform.Size <- perimeter.Size
@@ -1635,7 +1635,7 @@ module TextDispatcherModule =
                     spriteTransform.Absolute <- transform.Absolute
                     World.enqueueRenderLayeredMessage2d
                         { Elevation = spriteTransform.Elevation
-                          Latitude = latitude
+                          Horizon = horizon
                           AssetTag = AssetTag.generalize spriteImage
                           RenderDescriptor =
                             SpriteDescriptor
@@ -1762,7 +1762,7 @@ module ToggleButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
-                let latitude = perimeter.Position.Y
+                let horizon = perimeter.Position.Y
                 let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- perimeter.Position
                 spriteTransform.Size <- perimeter.Size
@@ -1774,7 +1774,7 @@ module ToggleButtonDispatcherModule =
                     else entity.GetUntoggledImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Latitude = latitude
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1892,7 +1892,7 @@ module RadioButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
-                let latitude = perimeter.Position.Y
+                let horizon = perimeter.Position.Y
                 let mutable spriteTransform = Transform.make transform.Offset
                 spriteTransform.Position <- perimeter.Position
                 spriteTransform.Size <- perimeter.Size
@@ -1904,7 +1904,7 @@ module RadioButtonDispatcherModule =
                     else entity.GetUndialedImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Latitude = latitude
+                      Horizon = horizon
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -2082,7 +2082,7 @@ module FillBarDispatcherModule =
                 // border sprite
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
-                let latitude = perimeter.Position.Y
+                let horizon = perimeter.Position.Y
                 let mutable borderTransform = Transform.make transform.Offset
                 borderTransform.Position <- perimeter.Position
                 borderTransform.Size <- perimeter.Size
@@ -2094,7 +2094,7 @@ module FillBarDispatcherModule =
                 let world =
                     World.enqueueRenderLayeredMessage2d
                         { Elevation = borderTransform.Elevation
-                          Latitude = latitude
+                          Horizon = horizon
                           AssetTag = AssetTag.generalize borderImage
                           RenderDescriptor =
                             SpriteDescriptor
@@ -2124,7 +2124,7 @@ module FillBarDispatcherModule =
                 let world =
                     World.enqueueRenderLayeredMessage2d
                         { Elevation = fillTransform.Elevation
-                          Latitude = latitude
+                          Horizon = horizon
                           AssetTag = AssetTag.generalize fillImage
                           RenderDescriptor =
                               SpriteDescriptor
@@ -2272,7 +2272,7 @@ module SideViewCharacterDispatcherModule =
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Latitude = transform.Perimeter.Position.Y
+                      Horizon = transform.Perimeter.Position.Y
                       AssetTag = AssetTag.generalize image
                       RenderDescriptor =
                         SpriteDescriptor

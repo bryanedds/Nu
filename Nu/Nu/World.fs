@@ -240,10 +240,10 @@ module Nu =
                 EventSystem.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortLatitude = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortLatitude = 0.0f; SortTarget = group } :> IComparable
-                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortLatitude = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortLatitude = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortHorizon = 0.0f; SortTarget = group } :> IComparable
+                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortHorizon = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world

@@ -14,7 +14,7 @@ open Nu
 /// A layered message to the 2d rendering system.
 type [<NoEquality; NoComparison>] RenderLayeredMessage2d =
     { Elevation : single
-      Latitude : single
+      Horizon : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
@@ -64,8 +64,8 @@ type RenderLayeredMessage2dComparer () =
         member this.Compare (left, right) =
             if left.Elevation < right.Elevation then -1
             elif left.Elevation > right.Elevation then 1
-            elif left.Latitude > right.Latitude then -1
-            elif left.Latitude < right.Latitude then 1
+            elif left.Horizon > right.Horizon then -1
+            elif left.Horizon < right.Horizon then 1
             else
                 let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
                 if assetNameCompare <> 0 then assetNameCompare
@@ -558,7 +558,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                 descriptor.Elevation, descriptor.Latitude, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
+                 descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
         | RenderCallback2d callback ->
             callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
@@ -602,7 +602,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let rightMargin = { sprite with Transform = rightMarginTransform }
                 [|bottomMargin; leftMargin; topMargin; rightMargin|]
             else [||]
-        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Latitude = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
+        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Horizon = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
         renderer.RenderLayeredMessages.Add message
 
     /// Get the render context.

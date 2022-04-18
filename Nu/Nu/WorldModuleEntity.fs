@@ -1647,7 +1647,7 @@ module WorldModuleEntity =
         static member internal getEntitySortingPriority2d entity world =
             let entityState = World.getEntityState entity world
             { SortElevation = entityState.Transform.Elevation
-              SortLatitude = entityState.Transform.Perimeter.Position.Y
+              SortHorizon = entityState.Transform.Perimeter.Position.Y
               SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
