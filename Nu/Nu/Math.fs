@@ -77,6 +77,36 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
             let y = Symbol.Number (scstring this.Vector2.Y, None)
             Symbol.Symbols ([v2; x; y], None)
 
+/// Converts Vector2 types.
+type Vector2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Vector2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v2 = source :?> Vector2
+            Symbols
+                ([Number (scstring v2.X, None)
+                  Number (scstring v2.Y, None)], None) :> obj
+        elif destType = typeof<Vector2> then source
+        else failconv "Invalid Vector2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Vector2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2 (scvalue x, scvalue y) :> obj
+            | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
+        | :? Vector2 -> source
+        | _ -> failconv "Invalid Vector2Converter conversion from source." None
+
 [<AutoOpen>]
 module Vector3 =
 
@@ -108,36 +138,6 @@ module Vector3 =
     let v3Left = v3 -1.0f 0.0f 0.0f
     let v3Forward = v3 -1.0f 0.0f 0.0f
     let v3Backward = v3 1.0f 0.0f 0.0f
-
-/// Converts Vector2 types.
-type Vector2Converter () =
-    inherit TypeConverter ()
-
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<Symbol> ||
-        destType = typeof<Vector2>
-
-    override this.ConvertTo (_, _, source, destType) =
-        if destType = typeof<Symbol> then
-            let v2 = source :?> Vector2
-            Symbols
-                ([Number (scstring v2.X, None)
-                  Number (scstring v2.Y, None)], None) :> obj
-        elif destType = typeof<Vector2> then source
-        else failconv "Invalid Vector2Converter conversion to source." None
-
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Symbol> ||
-        sourceType = typeof<Vector2>
-
-    override this.ConvertFrom (_, _, source) =
-        match source with
-        | :? Symbol as symbol ->
-            match symbol with
-            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2 (scvalue x, scvalue y) :> obj
-            | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
-        | :? Vector2 -> source
-        | _ -> failconv "Invalid Vector2Converter conversion from source." None
 
 /// The Vector3 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector3Pluggable =
@@ -627,6 +627,85 @@ module Quaternion =
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
 
+/// The Quaternion value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] QuaternionPluggable =
+    { Quaternion : Quaternion }
+
+    static member equals left right =
+        quatEq left.Quaternion right.Quaternion
+
+    static member compare left right =
+        compare
+            struct (left.Quaternion.X, left.Quaternion.Y, left.Quaternion.Z, left.Quaternion.W)
+            struct (right.Quaternion.X, right.Quaternion.Y, right.Quaternion.Z, right.Quaternion.W)
+
+    override this.GetHashCode () =
+        hash this.Quaternion
+
+    override this.Equals that =
+        match that with
+        | :? QuaternionPluggable as that -> QuaternionPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface QuaternionPluggable IComparable with
+        member this.CompareTo that =
+            QuaternionPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? QuaternionPluggable as that -> (this :> QuaternionPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Quaternion"
+
+        member this.FSharpType =
+            getType this.Quaternion
+
+        member this.ToSymbol () =
+            let quat = Symbol.Atom ("quat", None)
+            let x = Symbol.Number (scstring this.Quaternion.X, None)
+            let y = Symbol.Number (scstring this.Quaternion.Y, None)
+            let z = Symbol.Number (scstring this.Quaternion.Z, None)
+            let w = Symbol.Number (scstring this.Quaternion.W, None)
+            Symbol.Symbols ([quat; x; y; z; w], None)
+
+/// Converts Quaternion types.
+type QuaternionConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Quaternion>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let quat = source :?> Quaternion
+            Symbols
+                ([Number (scstring quat.X, None)
+                  Number (scstring quat.Y, None)
+                  Number (scstring quat.Z, None)
+                  Number (scstring quat.W, None)], None) :> obj
+        elif destType = typeof<Quaternion> then source
+        else failconv "Invalid QuaternionConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Quaternion>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
+                Quaternion (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | _ ->
+                failconv "Invalid QuaternionConverter conversion from source." (Some symbol)
+        | :? Quaternion -> source
+        | _ -> failconv "Invalid QuaternionConverter conversion from source." None
+
 [<AutoOpen>]
 module Box2 =
     type Box2 with
@@ -868,85 +947,6 @@ module Matrix4x4 =
     let inline m4Neq (x : Matrix4x4) (y : Matrix4x4) = not (x.Equals y)
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
-
-/// The Quaternion value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] QuaternionPluggable =
-    { Quaternion : Quaternion }
-
-    static member equals left right =
-        quatEq left.Quaternion right.Quaternion
-
-    static member compare left right =
-        compare
-            struct (left.Quaternion.X, left.Quaternion.Y, left.Quaternion.Z, left.Quaternion.W)
-            struct (right.Quaternion.X, right.Quaternion.Y, right.Quaternion.Z, right.Quaternion.W)
-
-    override this.GetHashCode () =
-        hash this.Quaternion
-
-    override this.Equals that =
-        match that with
-        | :? QuaternionPluggable as that -> QuaternionPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface QuaternionPluggable IComparable with
-        member this.CompareTo that =
-            QuaternionPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? QuaternionPluggable as that -> (this :> QuaternionPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Quaternion"
-
-        member this.FSharpType =
-            getType this.Quaternion
-
-        member this.ToSymbol () =
-            let quat = Symbol.Atom ("quat", None)
-            let x = Symbol.Number (scstring this.Quaternion.X, None)
-            let y = Symbol.Number (scstring this.Quaternion.Y, None)
-            let z = Symbol.Number (scstring this.Quaternion.Z, None)
-            let w = Symbol.Number (scstring this.Quaternion.W, None)
-            Symbol.Symbols ([quat; x; y; z; w], None)
-
-/// Converts Quaternion types.
-type QuaternionConverter () =
-    inherit TypeConverter ()
-
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<Symbol> ||
-        destType = typeof<Quaternion>
-
-    override this.ConvertTo (_, _, source, destType) =
-        if destType = typeof<Symbol> then
-            let quat = source :?> Quaternion
-            Symbols
-                ([Number (scstring quat.X, None)
-                  Number (scstring quat.Y, None)
-                  Number (scstring quat.Z, None)
-                  Number (scstring quat.W, None)], None) :> obj
-        elif destType = typeof<Quaternion> then source
-        else failconv "Invalid QuaternionConverter conversion to source." None
-
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Symbol> ||
-        sourceType = typeof<Quaternion>
-
-    override this.ConvertFrom (_, _, source) =
-        match source with
-        | :? Symbol as symbol ->
-            match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
-                Quaternion (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
-            | _ ->
-                failconv "Invalid QuaternionConverter conversion from source." (Some symbol)
-        | :? Quaternion -> source
-        | _ -> failconv "Invalid QuaternionConverter conversion from source." None
 
 [<AutoOpen>]
 module Color =
