@@ -76,6 +76,7 @@
     <Compile Include="Ecs.fs" />
     <Compile Include="Systems.fs" />
     <Compile Include="Math.fs" />
+    <Compile Include="Transform.fs" />
     <Compile Include="Quadtree.fs" />
     <Compile Include="Octree.fs" />
     <Compile Include="Reflection.fs" />
