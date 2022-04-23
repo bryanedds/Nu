@@ -51,7 +51,7 @@
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je suis la pour aider, mais je ne te protegerai pas gratuitement... Peut-etre si tu me donnes $FEE ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;Je peux te proteger et te secourir, mais pas gratuitement... Peut-etre si tu me donnes $FEE ors?&quot; [&quot;Oui&quot; [Recruit Peric]] [&quot;Non&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
