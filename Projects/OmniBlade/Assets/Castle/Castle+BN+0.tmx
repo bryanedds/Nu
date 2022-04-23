@@ -39,9 +39,9 @@
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Upward]
  [Sequence
-  [[Dialog &quot;Sot! Tu cours a ta perte...&quot;]
+  [[Dialog &quot;Tu cours sottement a ta perte...&quot;]
    [Dialog &quot;Son ame est notre a jamais...&quot;]
-   [Dialog &quot;...et la tienne l'est desormais!&quot;]
+   [Dialog &quot;...ainsi que la tienne!&quot;]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
