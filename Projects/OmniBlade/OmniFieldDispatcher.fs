@@ -1427,7 +1427,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> ArchetypeType.frenchName teammate.ArchetypeType + " Nv" + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                   | Some teammate -> ArchetypeType.frenchName teammate.ArchetypeType + " Nv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
