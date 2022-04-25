@@ -2338,8 +2338,8 @@ module TmxMapDispatcherModule =
 module SceneryModule =
 
     type Entity with
-        member this.GetEntityStates world : EntityState array = this.Get Property? EntityStates world
-        member this.SetEntityStates (value : EntityState array) world = this.Set Property? EntityStates value world
+        member this.GetEntityStates world : (Group * EntityState) array = this.Get Property? EntityStates world
+        member this.SetEntityStates (value : (Group * EntityState) array) world = this.Set Property? EntityStates value world
         member this.EntityStates = lens Property? EntityStates this.GetEntityStates this.SetEntityStates this
 
     type SceneryDispatcher () =
