@@ -8,7 +8,7 @@ open Nu
 
 // 3d rendering implemented with OpenGL.
 // Deferred, PBR, SSAO (or some variant such as SSDO), Variance Shadow Map (Non-Cascading for now), w/ FSAA.
-// In addition, I'll try to implement spheroidal reflection probes. Potentially light probes as well.
+// In addition, I'll try to implement spheroidal reflection probes. Potentially light probes as well for emissive light.
 // Not sure if I'll also implement a full scene mirror render pass for large water body reflection as that's quite expensive.
 // Additionally, there appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
