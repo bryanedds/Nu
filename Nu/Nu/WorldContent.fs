@@ -217,6 +217,9 @@ module Content =
     /// Describe a tmx map with the given initializers.
     let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
+    /// Describe static scenery with the given initializers.
+    let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
+
 [<AutoOpen>]
 module ContentOperators =
 
