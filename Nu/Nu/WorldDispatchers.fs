@@ -1262,6 +1262,10 @@ module EntityDispatcherModule =
             [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize3dDefault]
 
+        /// Attempt to actualize 3d entity to a batch.
+        abstract TryActualizeBatched : Entity * World -> World
+        default this.TryActualizeBatched (_, world) = world
+
     type World with
 
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =

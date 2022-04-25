@@ -150,15 +150,5 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Image : Image AssetTag
       Particles : Particle array }
 
-/// Describes what to render.
-/// TODO: see if we can make RenderCallback receive args by reference or something.
-type [<NoEquality; NoComparison>] RenderDescriptor =
-    | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpritesDescriptor
-    | TileLayerDescriptor of TileLayerDescriptor
-    | TextDescriptor of TextDescriptor
-    | ParticlesDescriptor of ParticlesDescriptor
-    | RenderCallback2d of (Matrix3x3 * Matrix3x3 * Vector2 * Vector2 * Vector2 * Renderer -> unit)
-
 /// A renderer tag interface.
 and Renderer = interface end
