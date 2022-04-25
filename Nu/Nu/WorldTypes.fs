@@ -1459,16 +1459,16 @@ module WorldTypes =
         /// A call-back at the end of each frame.
         abstract PostFrame : World -> World
         default this.PostFrame world = world
-        
-        /// Attempt to compress a sequence of entities to the given scenery entity, destroying all those that were
-        /// successfully compressed.
-        abstract TryCompressEntitiesToScenery : Entity seq -> Entity -> World -> World
-        default this.TryCompressEntitiesToScenery _ _ world = world // fail to compress any by default.
 
-        /// Attempt to uncompress a given scenery entity to a sequence of entities, creating all those that were
-        /// successfully uncompressed.
-        abstract TryUncompressSceneryToEntities : Entity -> World -> (Entity seq * World)
-        default this.TryUncompressSceneryToEntities _ world = (Seq.empty, world) // fail to uncompress any by default.
+        /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
+        /// successfully converted.
+        abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
+        default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
+
+        /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
+        /// successfully converted.
+        abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
+        default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
 
         /// Birth facets / dispatchers of type 'a from plugin.
         member internal this.Birth<'a> () =
