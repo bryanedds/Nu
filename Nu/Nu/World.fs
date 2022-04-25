@@ -427,7 +427,8 @@ module WorldModule3 =
                  Box2dDispatcher () :> EntityDispatcher
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
-                 TmxMapDispatcher () :> EntityDispatcher]
+                 TmxMapDispatcher () :> EntityDispatcher
+                 StaticSceneryDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these

@@ -2335,6 +2335,22 @@ module TmxMapDispatcherModule =
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
+module SceneryModule =
+
+    type Entity with
+        member this.GetEntityStates world : EntityState array = this.Get Property? EntityStates world
+        member this.SetEntityStates (value : EntityState array) world = this.Set Property? EntityStates value world
+        member this.EntityStates = lens Property? EntityStates this.GetEntityStates this.SetEntityStates this
+
+    type SceneryDispatcher () =
+        inherit EntityDispatcher3d (false)
+
+        static member Properties =
+            [nonPersistent Entity.EntityStates [||]]
+
+        // TODO: on register, create indirect draw arrays, and on unregister, destroy indirect arrays
+
+[<AutoOpen>]
 module GroupDispatcherModule =
 
     type World with

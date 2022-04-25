@@ -10,7 +10,7 @@ open Prime
 
 /// Flags contains the following:
 /// Static will elide Updates.
-/// Enclosed will discriminate on occluders.
+/// Enclosed will discriminate on occluders for both Update and Actualize.
 type [<CustomEquality; NoComparison>] Octentry<'e when 'e : equality> = 
     { Flags : int
       Entry : 'e }
