@@ -26,9 +26,14 @@ type Materials =
     { MaterialsOpaque : Map<Material, Material array>
       MaterialsTransparent : Material array }
 
+/// Describes a render pass.
+type [<CustomEquality; CustomComparison>] RenderPassDescriptor =
+    { RenderPassOrder : int64
+      RenderPassOp : Materials * Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit }
+
 /// A message to the 3d renderer.
 type [<NoEquality; NoComparison>] RenderMessage3d =
     | MaterialDescriptor of Material
     | MaterialsDescriptor of Material array
+    | RenderPassDescriptor of RenderPassDescriptor
     | RenderCallback3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit)
-    | RenderPass of (Materials * Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit)

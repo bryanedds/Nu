@@ -8,6 +8,11 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// The type of operation planned for elements gathered from tree.
+type [<Struct>] OperationType =
+    | Update
+    | Actualize
+
 /// Flags contains the following:
 /// Static will elide Updates.
 /// Enclosed will discriminate on occluders for both Update and Actualize.
@@ -210,16 +215,16 @@ module Octree =
             // staying out of bounds
             ()
 
-    let getElementsOmnipresent tree =
+    let getElementsOmnipresent optype tree =
         let set = HashSet HashIdentity.Structural
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
-    let getElementsAtPoint point tree =
+    let getElementsAtPoint optype point tree =
         let set = HashSet HashIdentity.Structural
         Octnode.getElementsAtPoint point tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
-    let getElementsInBounds bounds tree =
+    let getElementsInBounds optype bounds tree =
         let set = HashSet HashIdentity.Structural
         Octnode.getElementsInBounds bounds tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
