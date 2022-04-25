@@ -8,6 +8,15 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// Flags contains the following:
+/// Static will elide Updates.
+/// Enclosed will discriminate on occluders.
+type [<CustomEquality; NoComparison>] Octentry<'e when 'e : equality> = 
+    { Flags : int
+      Entry : 'e }
+    override this.GetHashCode () = this.Entry.GetHashCode ()
+    override this.Equals that = match that with :? Octentry<'e> as that -> this.Entry.Equals that.Entry | _ -> false
+
 [<RequireQualifiedAccess>]
 module internal Octnode =
 
@@ -15,7 +24,7 @@ module internal Octnode =
         private
             { Depth : int
               Bounds : Box3
-              Children : ValueEither<'e Octnode array, 'e HashSet> }
+              Children : ValueEither<'e Octnode array, 'e Octentry HashSet> }
 
     let internal atPoint point node =
         Math.isPointInBounds3d point node.Bounds
