@@ -12,14 +12,32 @@ type [<Struct>] IntendedOperation =
     | UpdateOperation
     | ActualizeOperation
 
+/// Masks for Octelement flags.
+module OctelementMasks =
+
+    // OPTIMIZATION: Octelement flag bit-masks for performance.
+    let [<Literal>] StaticMask =    0b00000001u
+    let [<Literal>] EnclosedMask =  0b00000010u
+
+// NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
+open OctelementMasks
+
+/// An element in an octree.
 /// Flags contains the following:
 /// Static will elide Updates.
 /// Enclosed will discriminate on occluders for both Update and Actualize.
-type [<CustomEquality; NoComparison>] Octentry<'e when 'e : equality> = 
-    { Flags : int
+type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> = 
+    { Flags : uint
       Entry : 'e }
+    member this.Static with get () = this.Flags &&& StaticMask <> 0u
+    member this.Enclosed with get () = this.Flags &&& EnclosedMask <> 0u
     override this.GetHashCode () = this.Entry.GetHashCode ()
-    override this.Equals that = match that with :? Octentry<'e> as that -> this.Entry.Equals that.Entry | _ -> false
+    override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
+    static member make static_ enclosed entry =
+        let flags =
+            (if static_ then StaticMask else 0u) |||
+            (if enclosed then EnclosedMask else 0u)
+        { Flags = flags; Entry = entry }
 
 [<RequireQualifiedAccess>]
 module internal Octnode =
@@ -28,7 +46,7 @@ module internal Octnode =
         private
             { Depth : int
               Bounds : Box3
-              Children : ValueEither<'e Octnode array, 'e Octentry HashSet> }
+              Children : ValueEither<'e Octnode array, 'e Octelement HashSet> }
 
     let internal atPoint point node =
         Math.isPointInBounds3d point node.Bounds
@@ -60,14 +78,22 @@ module internal Octnode =
             elif isIntersectingBounds newBounds node then
                 elements.Add element |> ignore
 
-    let rec internal getElementsAtPoint point node (set : 'e HashSet) =
+    let rec internal getElementsAtPoint point node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes -> for node in nodes do if atPoint point node then getElementsAtPoint point node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getElementsInBounds bounds node (set : 'e HashSet) =
+    let rec internal getElementsInBounds bounds node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
+        | ValueRight elements -> for element in elements do set.Add element |> ignore
+
+    let rec internal getElementsInFrustum frustum node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                if isIntersectingBounds bounds node then
+                    getElementsInBounds bounds node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
     let rec internal clone node =
@@ -94,7 +120,7 @@ module internal Octnode =
                                 let childBounds = box3 childPosition childSize
                                 yield make granularity childDepth childBounds|]|]|]
                 ValueLeft (nodes |> Array.concat |> Array.concat)
-            else ValueRight (HashSet<'e> HashIdentity.Structural)
+            else ValueRight (HashSet<'e Octelement> HashIdentity.Structural)
         { Depth = depth
           Bounds = bounds
           Children = children }
@@ -105,16 +131,16 @@ type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 module Octree =
 
     /// Provides an enumerator interface to the octree queries.
-    type internal OctreeEnumerator<'e when 'e : equality> (localElements : 'e HashSet, omnipresentElements : 'e HashSet) =
+    type internal OctreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e Octelement seq, localElements : 'e Octelement seq) =
 
-        let localList = List localElements // eagerly convert to list to keep iteration valid
         let omnipresentList = List omnipresentElements // eagerly convert to list to keep iteration valid
+        let localList = List localElements // eagerly convert to list to keep iteration valid
         let mutable localEnrValid = false
         let mutable omnipresentEnrValid = false
         let mutable localEnr = Unchecked.defaultof<_>
         let mutable omnipresentEnr = Unchecked.defaultof<_>
 
-        interface 'e IEnumerator with
+        interface Octelement<'e> IEnumerator with
             member this.MoveNext () =
                 if not localEnrValid then
                     localEnr <- localList.GetEnumerator ()
@@ -139,7 +165,7 @@ module Octree =
                 else failwithumf ()
 
             member this.Current =
-                (this :> 'e IEnumerator).Current :> obj
+                (this :> 'e Octelement IEnumerator).Current :> obj
 
             member this.Reset () =
                 localEnrValid <- false
@@ -153,15 +179,15 @@ module Octree =
             
     /// Provides an enumerable interface to the octree queries.
     type internal OctreeEnumerable<'e when 'e : equality> (enr : 'e OctreeEnumerator) =
-        interface IEnumerable<'e> with
-            member this.GetEnumerator () = enr :> 'e IEnumerator
+        interface IEnumerable<'e Octelement> with
+            member this.GetEnumerator () = enr :> 'e Octelement IEnumerator
             member this.GetEnumerator () = enr :> IEnumerator
 
     /// A spatial structure that organizes elements in a 3d grid.
     type [<NoEquality; NoComparison>] Octree<'e when 'e : equality> =
         private
             { Node : 'e Octnode
-              OmnipresentElements : 'e HashSet
+              OmnipresentElements : 'e Octelement HashSet
               Depth : int
               Granularity : int
               Bounds : Box3 }
@@ -214,19 +240,25 @@ module Octree =
             // staying out of bounds
             ()
 
-    let getElementsOmnipresent optype tree =
+    let getElementsOmnipresent tree =
         let set = HashSet HashIdentity.Structural
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsAtPoint optype point tree =
+    let getElementsAtPoint point tree =
         let set = HashSet HashIdentity.Structural
         Octnode.getElementsAtPoint point tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInBounds optype bounds tree =
+    let getElementsInBounds bounds tree =
         let set = HashSet HashIdentity.Structural
         Octnode.getElementsInBounds bounds tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+
+    let getElementsInFrustumForUpdates frustum tree =
+        let set = HashSet HashIdentity.Structural
+        Octnode.getElementsInFrustumForUpdates bounds tree.Node set
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        
 
     let getDepth tree =
         tree.Depth
