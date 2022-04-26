@@ -756,10 +756,10 @@ module WorldTypes =
             let mutable transform =
                 if dispatcher.Is2d then
                     let offset = if dispatcher.IsCartesian then v3Cartesian2d else v3Zero
-                    Transform.make offset
+                    Transform.makeDefault offset
                 else
                     let offset = if dispatcher.IsCartesian then v3Cartesian3d else v3Zero
-                    Transform.make offset
+                    Transform.makeDefault offset
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform

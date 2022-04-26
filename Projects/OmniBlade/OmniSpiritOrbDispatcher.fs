@@ -49,7 +49,7 @@ module SpiritOrbDispatcher =
                 let distance = delta.Magnitude
                 if distance < Constants.Field.SpiritRadius then
                     let position = orbTransform.Perimeter.Center + delta * Constants.Field.SpiritOrbRatio - Constants.Field.SpiritOrbBlipSize * 0.5f
-                    let mutable transform = Transform.make v3Cartesian2d
+                    let mutable transform = Transform.makeDefault v3Cartesian2d
                     transform.Position <- position
                     transform.Size <- Constants.Field.SpiritOrbBlipSize
                     transform.Elevation <- orbTransform.Elevation + 2.0f
@@ -67,7 +67,7 @@ module SpiritOrbDispatcher =
             let orbImage = Assets.Field.SpiritOrbImage
             let orbDescriptor = { Transform = orbTransform; InsetOpt = None; Image = orbImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
             let orbView = Render2d (orbTransform.Elevation, orbTransform.Perimeter.Position.Y, AssetTag.generalize orbImage, SpriteDescriptor orbDescriptor)
-            let mutable avatarTransform = Transform.make v3Cartesian2d
+            let mutable avatarTransform = Transform.makeDefault v3Cartesian2d
             avatarTransform.Position <- orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f
             avatarTransform.Size <- Constants.Field.SpiritOrbBlipSize
             avatarTransform.Elevation <- orbTransform.Elevation + 1.0f

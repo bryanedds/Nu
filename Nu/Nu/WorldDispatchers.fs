@@ -400,7 +400,7 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
                 let horizon = perimeterUnscaled.Position.Y
-                let mutable textTransform = Transform.make transform.Offset
+                let mutable textTransform = Transform.makeDefault transform.Offset
                 textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
@@ -1532,17 +1532,11 @@ module ButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter // gui currently ignores rotation
-                let horizon = perimeter.Position.Y
-                let mutable spriteTransform = Transform.make transform.Offset
-                spriteTransform.Position <- perimeter.Position
-                spriteTransform.Size <- perimeter.Size
-                spriteTransform.Elevation <- transform.Elevation
-                spriteTransform.Absolute <- transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = horizon
+                      Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1578,17 +1572,11 @@ module LabelDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter // gui currently ignores rotation
-                let horizon = perimeter.Position.Y
-                let mutable spriteTransform = Transform.make transform.Offset
-                spriteTransform.Position <- perimeter.Position
-                spriteTransform.Size <- perimeter.Size
-                spriteTransform.Elevation <- transform.Elevation
-                spriteTransform.Absolute <- transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage = entity.GetLabelImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = horizon
+                      Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1630,16 +1618,10 @@ module TextDispatcherModule =
                 match entity.GetBackgroundImageOpt world with
                 | Some spriteImage ->
                     let mutable transform = entity.GetTransform world
-                    let perimeter = transform.Perimeter // gui currently ignores rotation
-                    let horizon = perimeter.Position.Y
-                    let mutable spriteTransform = Transform.make transform.Offset
-                    spriteTransform.Position <- perimeter.Position
-                    spriteTransform.Size <- perimeter.Size
-                    spriteTransform.Elevation <- transform.Elevation
-                    spriteTransform.Absolute <- transform.Absolute
+                    let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                     World.enqueueRenderLayeredMessage2d
                         { Elevation = spriteTransform.Elevation
-                          Horizon = horizon
+                          Horizon = spriteTransform.Position.Y
                           AssetTag = AssetTag.generalize spriteImage
                           RenderDescriptor =
                             SpriteDescriptor
@@ -1765,20 +1747,14 @@ module ToggleButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter // gui currently ignores rotation
-                let horizon = perimeter.Position.Y
-                let mutable spriteTransform = Transform.make transform.Offset
-                spriteTransform.Position <- perimeter.Position
-                spriteTransform.Size <- perimeter.Size
-                spriteTransform.Elevation <- transform.Elevation
-                spriteTransform.Absolute <- transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage =
                     if entity.GetToggled world || entity.GetPressed world
                     then entity.GetToggledImage world
                     else entity.GetUntoggledImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = horizon
+                      Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -1895,20 +1871,14 @@ module RadioButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter // gui currently ignores rotation
-                let horizon = perimeter.Position.Y
-                let mutable spriteTransform = Transform.make transform.Offset
-                spriteTransform.Position <- perimeter.Position
-                spriteTransform.Size <- perimeter.Size
-                spriteTransform.Elevation <- transform.Elevation
-                spriteTransform.Absolute <- transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage =
                     if entity.GetDialed world || entity.GetPressed world
                     then entity.GetDialedImage world
                     else entity.GetUndialedImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = horizon
+                      Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor =
                         SpriteDescriptor
@@ -2087,7 +2057,7 @@ module FillBarDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
                 let horizon = perimeter.Position.Y
-                let mutable borderTransform = Transform.make transform.Offset
+                let mutable borderTransform = Transform.makeDefault transform.Offset
                 borderTransform.Position <- perimeter.Position
                 borderTransform.Size <- perimeter.Size
                 borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -2118,7 +2088,7 @@ module FillBarDispatcherModule =
                 let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
                 let fillHeight = fillSize.Y - fillInset.Y * 2.0f
                 let fillSize = v3 fillWidth fillHeight 0.0f
-                let mutable fillTransform = Transform.make transform.Offset
+                let mutable fillTransform = Transform.makeDefault transform.Offset
                 fillTransform.Position <- fillPosition
                 fillTransform.Size <- fillSize
                 fillTransform.Elevation <- transform.Elevation
