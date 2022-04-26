@@ -7,8 +7,9 @@ open System.Numerics
 open Nu
 
 // 3d rendering implemented with OpenGL 4.1 (or perhaps 4.3+ if we want to do something special for Mac).
-// Deferred, PBR, SSAO (or some variant such as SSDO), Variance Shadow Map (Non-Cascading for now), w/ FSAA.
-// In addition, I'll at some point implement spheroidal reflection probes, and light probes as well for emissive light.
+// Deferred, PBR, SSAO (or some variant such as SSDO), Variance Shadow Map (Non-Cascading for now), SSShadowing, SSRefls, SSDecals, and FSAA.
+// In addition, I'll at some point implement light probes for emissive light, and perhaps cube map reflection probes as well.
+// I might also use a velocity buffer for object-blurring if it turns out to be a general requirement for most modern games.
 // Not sure if I'll also implement a full scene mirror render pass for large water body reflection as that's quite expensive.
 // Additionally, there appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 

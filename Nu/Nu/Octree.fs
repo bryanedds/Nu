@@ -5,13 +5,12 @@ namespace Nu
 open System
 open System.Collections
 open System.Collections.Generic
-open System.Numerics
 open Prime
 
 /// The type of operation planned for elements gathered from tree.
-type [<Struct>] OperationType =
-    | Update
-    | Actualize
+type [<Struct>] IntendedOperation =
+    | UpdateOperation
+    | ActualizeOperation
 
 /// Flags contains the following:
 /// Static will elide Updates.
