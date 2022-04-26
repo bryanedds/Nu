@@ -28,22 +28,22 @@ namespace Nu
     public struct Color : IEquatable<Color>, IComparable<Color>, IComparable
     {
         /// <summary>
-        /// The X component of the Color.
+        /// The R component of the Color.
         /// </summary>
         public byte R;
 
         /// <summary>
-        /// The Y component of the Color.
+        /// The G component of the Color.
         /// </summary>
         public byte G;
 
         /// <summary>
-        /// The Z component of the Color.
+        /// The B component of the Color.
         /// </summary>
         public byte B;
 
         /// <summary>
-        /// The W component of the Color.
+        /// The A component of the Color.
         /// </summary>
         public byte A;
 
