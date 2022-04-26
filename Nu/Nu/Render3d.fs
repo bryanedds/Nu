@@ -8,6 +8,7 @@ open Nu
 
 // 3d rendering implemented with OpenGL 4.1 (or perhaps 4.3+ if we want to do something special for Mac).
 // Deferred, PBR, SSAO (or some variant such as SSDO), Variance Shadow Map (Non-Cascading for now), SSShadowing, SSRefls, SSDecals, and FSAA.
+// Also going to borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // In addition, I'll at some point implement light probes for emissive light, and perhaps cube map reflection probes as well.
 // I might also use a velocity buffer for object-blurring if it turns out to be a general requirement for most modern games.
 // Not sure if I'll also implement a full scene mirror render pass for large water body reflection as that's quite expensive.

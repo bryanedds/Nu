@@ -88,10 +88,10 @@ type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 module Quadtree =
 
     /// Provides an enumerator interface to the quadtree queries.
-    type internal QuadtreeEnumerator<'e when 'e : equality> (localElements : 'e HashSet, omnipresentElements : 'e HashSet) =
+    type internal QuadtreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e HashSet, localElements : 'e HashSet) =
 
-        let localList = List localElements // eagerly convert to list to keep iteration valid
         let omnipresentList = List omnipresentElements // eagerly convert to list to keep iteration valid
+        let localList = List localElements // eagerly convert to list to keep iteration valid
         let mutable localEnrValid = false
         let mutable omnipresentEnrValid = false
         let mutable localEnr = Unchecked.defaultof<_>
