@@ -229,7 +229,7 @@ type [<NoEquality; NoComparison>] Transform =
         Unchecked.defaultof<Transform>
 
     /// Make a transform with default values.
-    static member make offset =
+    static member makeDefault offset =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
@@ -237,6 +237,32 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Offset_ <- offset
         transform.Size_ <- Vector3.One
         transform.Overflow_ <- 1.0f
+        transform
+
+    /// Make a transform based on a perimeter.
+    static member makePerimeter (perimeter : Box3) offset elevation absolute =
+        let mutable transform = Unchecked.defaultof<Transform>
+        transform.Flags_ <- DefaultFlags
+        transform.Position_ <- perimeter.Position
+        transform.Rotation_ <- Quaternion.Identity
+        transform.Scale_ <- v3One
+        transform.Offset_ <- offset
+        transform.Size_ <- perimeter.Size
+        transform.Angles_ <- v3Zero
+        transform.Elevation_ <- elevation
+        transform.Absolute <- absolute
+        transform
+
+    /// Make a transform based human-intuited values.
+    static member makeIntuitive position scale offset size angles elevation absolute =
+        let mutable transform = Transform.makeDefault offset
+        transform.Flags_ <- DefaultFlags
+        transform.Position_ <- position
+        transform.Scale_ <- scale
+        transform.Size_ <- size
+        transform.Elevation_ <- elevation
+        transform.Angles <- angles
+        transform.Absolute <- absolute
         transform
 
     interface Transform Component with

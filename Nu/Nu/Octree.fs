@@ -8,9 +8,9 @@ open System.Collections.Generic
 open Prime
 
 /// The type of operation planned for elements gathered from tree.
-type [<Struct>] DiscriminatingIntention =
-    | UpdateIntention
-    | ActualizeIntention
+type [<Struct>] DiscriminatingIntent =
+    | UpdateIntent
+    | ActualizeIntent
 
 /// A frustum with conditional intersection.
 type [<StructuralEquality; NoComparison>] DiscriminatingFrustum =
@@ -96,12 +96,12 @@ module internal Octnode =
         | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getElementsInDiscriminatingFrustum intention frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInDiscriminatingFrustum intent frustum node (set : 'e Octelement HashSet) =
         match node.Children with
-        | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum.Unenclosed node then getElementsInDiscriminatingFrustum intention frustum node set
+        | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum.Unenclosed node then getElementsInDiscriminatingFrustum intent frustum node set
         | ValueRight elements ->
-            match intention with
-            | UpdateIntention ->
+            match intent with
+            | UpdateIntent ->
                 if not (isIntersectingFrustum frustum.Enclosed node) then
                     for element in elements do
                         if not element.Static && not element.Enclosed then
@@ -110,7 +110,7 @@ module internal Octnode =
                     for element in elements do
                         if not element.Static then
                             set.Add element |> ignore
-            | ActualizeIntention ->
+            | ActualizeIntent ->
                 if not (isIntersectingFrustum frustum.Enclosed node) then
                     for element in elements do
                         if not element.Enclosed then
@@ -277,9 +277,9 @@ module Octree =
         Octnode.getElementsInBounds bounds tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInDiscriminatingFrustum intention frustum tree =
+    let getElementsInDiscriminatingFrustum intent frustum tree =
         let set = HashSet HashIdentity.Structural
-        Octnode.getElementsInDiscriminatingFrustum intention frustum tree.Node set
+        Octnode.getElementsInDiscriminatingFrustum intent frustum tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =

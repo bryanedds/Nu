@@ -549,13 +549,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.make slice.Offset
-                transform.Position <- slice.Position
-                transform.Scale <- slice.Scale
-                transform.Size <- slice.Size
-                transform.Angles <- slice.Angles
-                transform.Elevation <- slice.Elevation
-                transform.Absolute <- effectSystem.Absolute
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
                 let spriteView =
                     Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
@@ -593,13 +587,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.make slice.Offset
-                    transform.Position <- slice.Position
-                    transform.Scale <- slice.Scale
-                    transform.Size <- slice.Size
-                    transform.Angles <- slice.Angles
-                    transform.Elevation <- slice.Elevation
-                    transform.Absolute <- effectSystem.Absolute
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
@@ -630,13 +618,8 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.make slice.Offset
-                transform.Position <- slice.Position - slice.Size * 0.5f // assume centering
-                transform.Scale <- slice.Scale
-                transform.Size <- slice.Size
-                transform.Angles <- slice.Angles
-                transform.Elevation <- slice.Elevation
-                transform.Absolute <- effectSystem.Absolute
+                let center = slice.Position - slice.Size * 0.5f // assume centering for text
+                let mutable transform = Transform.makeIntuitive center slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
                 let textView =
                     Render2d (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 

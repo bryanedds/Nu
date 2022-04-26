@@ -126,7 +126,7 @@ module CharacterDispatcher =
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
-                        let mutable afflictionTransform = Transform.make v3Cartesian2d
+                        let mutable afflictionTransform = Transform.makeDefault v3Cartesian2d
                         afflictionTransform.Position <- afflictionPosition
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
                         afflictionTransform.Elevation <- transform.Elevation + 0.1f
@@ -152,7 +152,7 @@ module CharacterDispatcher =
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
                             | BossStature ->
                                 transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
-                        let mutable chargeOrbTransform = Transform.make v3Cartesian2d
+                        let mutable chargeOrbTransform = Transform.makeDefault v3Cartesian2d
                         chargeOrbTransform.Position <- chargeOrbPosition
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
