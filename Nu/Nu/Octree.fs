@@ -8,9 +8,14 @@ open System.Collections.Generic
 open Prime
 
 /// The type of operation planned for elements gathered from tree.
-type [<Struct>] IntendedOperation =
-    | UpdateOperation
-    | ActualizeOperation
+type [<Struct>] DiscriminatingIntention =
+    | UpdateIntention
+    | ActualizeIntention
+
+/// A frustum with conditional intersection.
+type [<StructuralEquality; NoComparison>] DiscriminatingFrustum =
+    { Unenclosed : Frustum
+      Enclosed : Frustum }
 
 /// Masks for Octelement flags.
 module OctelementMasks =
@@ -48,11 +53,14 @@ module internal Octnode =
               Bounds : Box3
               Children : ValueEither<'e Octnode array, 'e Octelement HashSet> }
 
-    let internal atPoint point node =
+    let inline internal atPoint point node =
         Math.isPointInBounds3d point node.Bounds
 
-    let internal isIntersectingBounds bounds node =
+    let inline internal isIntersectingBounds bounds node =
         Math.isBoundsIntersectingBounds3d bounds node.Bounds
+
+    let inline internal isIntersectingFrustum (frustum : Frustum) node =
+        frustum.Intersects node.Bounds
 
     let rec internal addElement bounds element node =
         if isIntersectingBounds bounds node then
@@ -88,13 +96,28 @@ module internal Octnode =
         | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getElementsInFrustum frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInDiscriminatingFrustum intention frustum node (set : 'e Octelement HashSet) =
         match node.Children with
-        | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBounds bounds node then
-                    getElementsInBounds bounds node set
-        | ValueRight elements -> for element in elements do set.Add element |> ignore
+        | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum.Unenclosed node then getElementsInDiscriminatingFrustum intention frustum node set
+        | ValueRight elements ->
+            match intention with
+            | UpdateIntention ->
+                if not (isIntersectingFrustum frustum.Enclosed node) then
+                    for element in elements do
+                        if not element.Static && not element.Enclosed then
+                            set.Add element |> ignore
+                else
+                    for element in elements do
+                        if not element.Static then
+                            set.Add element |> ignore
+            | ActualizeIntention ->
+                if not (isIntersectingFrustum frustum.Enclosed node) then
+                    for element in elements do
+                        if not element.Enclosed then
+                            set.Add element |> ignore
+                else
+                    for element in elements do
+                        set.Add element |> ignore
 
     let rec internal clone node =
         { Depth = node.Depth
@@ -254,11 +277,10 @@ module Octree =
         Octnode.getElementsInBounds bounds tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInFrustumForUpdates frustum tree =
+    let getElementsInDiscriminatingFrustum intention frustum tree =
         let set = HashSet HashIdentity.Structural
-        Octnode.getElementsInFrustumForUpdates bounds tree.Node set
+        Octnode.getElementsInDiscriminatingFrustum intention frustum tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
-        
 
     let getDepth tree =
         tree.Depth

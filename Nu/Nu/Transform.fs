@@ -355,6 +355,7 @@ module Math =
         bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y
 
     /// Check that a bounds is intersecting the given bounds.
+    /// TODO: move this into Box3 definition.
     let isBoundsIntersectingBounds3d (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
