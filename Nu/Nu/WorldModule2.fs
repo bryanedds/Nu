@@ -679,9 +679,9 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let perimeter = entity.GetPerimeter world
-                    let size = perimeter.Size
-                    let position = bodyTransformMessage.Position - size * 0.5f
+                    let offset = entity.GetOffset world
+                    let size = entity.GetSize world
+                    let position = bodyTransformMessage.Position - size * offset
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
