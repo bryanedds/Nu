@@ -187,6 +187,7 @@ type [<NoEquality; NoComparison>] Transform =
         let positionOverflowed = center - sizeOverflowed * 0.5f
         Box3 (positionOverflowed, sizeOverflowed)
 
+    // TODO: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
         this.Position <- Math.snapF3d positionSnap this.Position
         this.Angles <- Math.snapR3d rotationSnap this.Angles

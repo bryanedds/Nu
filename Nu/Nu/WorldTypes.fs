@@ -1473,7 +1473,11 @@ module WorldTypes =
         /// Birth facets / dispatchers of type 'a from plugin.
         member internal this.Birth<'a> () =
             let assembly = (this.GetType ()).Assembly;
-            let types = (assembly.GetTypes ()) |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |> Array.filter (fun ty -> not ty.IsAbstract)
+            let types =
+                assembly.GetTypes () |>
+                Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
+                Array.filter (fun ty -> not ty.IsAbstract) |>
+                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
             let instances = types |> Array.map (fun ty -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
             Array.toList instances
 
