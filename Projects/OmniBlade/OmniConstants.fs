@@ -62,8 +62,8 @@ module Constants =
         let AvatarWalkForce = 60000.0f
         let AvatarWalkForceMouse = 66000.0f
 #else
-        let AvatarWalkForce = 40400.0f
-        let AvatarWalkForceMouse = 44400.0f
+        let AvatarWalkForce = 20200.0f
+        let AvatarWalkForceMouse = 22200.0f
 #endif
         let AvatarIdleSpeedMax = 5.0f
         let CharacterBottomOffset = v3 0.0f 24.0f 0.0f
