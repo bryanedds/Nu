@@ -432,10 +432,10 @@ module WorldModuleEntity =
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
+        static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIsPhysical entity world = (World.getEntityState entity world).IsPhysical
         static member internal getEntityIsCartesian entity world = (World.getEntityState entity world).IsCartesian
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
-        static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
@@ -2209,10 +2209,10 @@ module WorldModuleEntity =
         EntityGetters.Assign ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
+        EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("IsPhysical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsPhysical entity world })
         EntityGetters.Assign ("IsCartesian", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsCartesian entity world })
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
-        EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })

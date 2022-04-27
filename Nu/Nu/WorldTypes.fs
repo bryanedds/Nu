@@ -864,10 +864,10 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
+        member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.IsCartesian with get () = this.Dispatcher.IsCartesian
         member this.Is2d with get () = this.Dispatcher.Is2d
-        member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
