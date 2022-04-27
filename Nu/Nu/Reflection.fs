@@ -53,6 +53,9 @@ module Reflection =
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
+             ("Mounted", true)
+             ("IsPhysical", true)
+             ("IsCartesian", true)
              ("Is2d", true)
              ("Optimized", true)]
 
