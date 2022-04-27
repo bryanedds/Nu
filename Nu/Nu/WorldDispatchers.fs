@@ -1184,7 +1184,7 @@ module TmxMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMap) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TmxMap) entity world
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
@@ -1199,7 +1199,7 @@ module TmxMapFacetModule =
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
-            let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
+            let perimeterUnscaled = transform.PerimeterUnscaled // tmx map currently ignores rotation and scale
             let tileMap = entity.GetTmxMap world
             let tileMapPosition = perimeterUnscaled.Position.V2
             let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
