@@ -1262,10 +1262,6 @@ module EntityDispatcherModule =
             [define Entity.Offset v3Zero
              define Entity.Size Constants.Engine.EntitySize3dDefault]
 
-        /// Attempt to actualize 3d entity to a batch.
-        abstract TryActualizeBatched : Entity * World -> World
-        default this.TryActualizeBatched (_, world) = world
-
     type World with
 
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
@@ -1375,8 +1371,16 @@ module EntityDispatcherModule =
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (isPhysical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, true, true, initial)
 
+        static member Properties =
+            [define Entity.Offset v3Cartesian2d
+             define Entity.Size Constants.Engine.EntitySize2dDefault]
+
     and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (isPhysical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, false, false, initial)
+
+        static member Properties =
+            [define Entity.Offset v3Zero
+             define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
