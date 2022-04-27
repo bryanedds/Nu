@@ -1094,7 +1094,7 @@ module TileMapFacetModule =
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
-                    (entity.ChangeEvent Property? TileMap)
+                    (entity.ChangeEvent Property? TmxMap)
                     entity
                     world
             world
@@ -1192,7 +1192,7 @@ module TmxMapFacetModule =
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
-                    (entity.ChangeEvent Property? TileMap)
+                    (entity.ChangeEvent Property? TmxMap)
                     entity
                     world
             world
@@ -1200,9 +1200,9 @@ module TmxMapFacetModule =
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tmx map currently ignores rotation and scale
-            let tileMap = entity.GetTmxMap world
-            let tileMapPosition = perimeterUnscaled.Position.V2
-            let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
+            let tmxMap = entity.GetTmxMap world
+            let tmxMapPosition = perimeterUnscaled.Position.V2
+            let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tmxMap
             let bodyProperties =
                 TmxMap.getBodyProperties
                     transform.Enabled
@@ -1211,7 +1211,7 @@ module TmxMapFacetModule =
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
                     (entity.GetPhysicsId world).CorrelationId
-                    tileMapDescriptor
+                    tmxMapDescriptor
             World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
@@ -1222,8 +1222,8 @@ module TmxMapFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                 let viewBounds = World.getViewBounds2d transform.Absolute world
-                let tileMap = entity.GetTmxMap world
-                let tileMapMessages =
+                let tmxMap = entity.GetTmxMap world
+                let tmxMapMessages =
                     TmxMap.getLayeredMessages2d
                         (World.getUpdateTime world)
                         transform.Absolute
@@ -1235,13 +1235,13 @@ module TmxMapFacetModule =
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
-                        tileMap
-                World.enqueueRenderLayeredMessages2d tileMapMessages world
+                        tmxMap
+                World.enqueueRenderLayeredMessages2d tmxMapMessages world
             else world
 
         override this.GetQuickSize (entity, world) =
-            let tileMap = entity.GetTmxMap world
-            TmxMap.getQuickSize tileMap
+            let tmxMap = entity.GetTmxMap world
+            TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
 module EntityDispatcherModule =
