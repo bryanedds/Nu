@@ -2160,7 +2160,7 @@ module WorldModuleEntity =
                     else World.mouseToWorld2d entityState.Absolute (World.getEyeSize2d world * 0.5f) world
                 let mutable transform = entityState.Transform
                 transform.Position <- position2d.V3
-                let transform = Math.snapTransform positionSnap rotationSnap transform
+                transform.Snap (positionSnap, rotationSnap)
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
