@@ -273,7 +273,8 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Octree.addElement entityOmnipresent entityBounds entity octree
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                Octree.addElement entityOmnipresent entityBounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
@@ -304,7 +305,8 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                Octree.removeElement entityOmnipresent entityBounds entity octree
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                Octree.removeElement entityOmnipresent entityBounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
@@ -428,7 +430,7 @@ module WorldModule3 =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
-                 StaticSceneryDispatcher () :> EntityDispatcher]
+                 ConcatenatedSceneryDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these

@@ -1757,7 +1757,8 @@ module WorldModuleEntity =
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
                                         let entityBounds = entityState.Bounds
-                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds entity entityTree
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds element entityTree
                                         entityTree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -1816,7 +1817,8 @@ module WorldModuleEntity =
                                     (fun octree ->
                                         let entityState = World.getEntityState entity oldWorld
                                         let entityBounds = entityState.Bounds
-                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds entity octree
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds element octree
                                         octree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -2091,8 +2093,9 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
-                                    Octree.removeElement oldOmnipresent oldBounds entity octree
-                                    Octree.addElement newOmnipresent newBounds entity octree
+                                    let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                    Octree.removeElement oldOmnipresent oldBounds element octree
+                                    Octree.addElement newOmnipresent newBounds element octree
                                     octree)
                                 (World.getOctree world)
                         World.setOctree octree world
@@ -2116,7 +2119,10 @@ module WorldModuleEntity =
                             let octree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
-                                    (fun octree -> Octree.updateElement oldBounds newBounds entity octree; octree)
+                                    (fun octree ->
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.updateElement oldBounds newBounds element octree
+                                        octree)
                                     (World.getOctree world)
                             World.setOctree octree world
 

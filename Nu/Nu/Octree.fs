@@ -38,7 +38,7 @@ type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
     member this.Enclosed with get () = this.Flags &&& EnclosedMask <> 0u
     override this.GetHashCode () = this.Entry.GetHashCode ()
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make static_ enclosed entry =
+    static member make static_ enclosed (entry : 'e) =
         let flags =
             (if static_ then StaticMask else 0u) |||
             (if enclosed then EnclosedMask else 0u)

@@ -2307,12 +2307,18 @@ module TmxMapDispatcherModule =
 [<AutoOpen>]
 module SceneryModule =
 
+    type [<AbstractClass>] SceneryDispatcher () =
+        inherit EntityDispatcher3d (false)
+
+[<AutoOpen>]
+module ConcatenatedSceneryModule =
+
     type Entity with
         member this.GetEntityStates world : (Group * EntityState) array = this.Get Property? EntityStates world
         member this.SetEntityStates (value : (Group * EntityState) array) world = this.Set Property? EntityStates value world
         member this.EntityStates = lens Property? EntityStates this.GetEntityStates this.SetEntityStates this
 
-    type SceneryDispatcher () =
+    type ConcatenatedSceneryDispatcher () =
         inherit EntityDispatcher3d (false)
 
         static member Properties =
