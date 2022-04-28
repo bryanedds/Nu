@@ -486,36 +486,36 @@ module FieldDispatcher =
                 | None -> (false, false, Map.empty)
 
         let sidebar position elevation (field : Lens<Field, World>) =
-            Content.association Gen.name []
-                [Content.button Gen.name
+            Content.association "Sidebar" []
+                [Content.button "TeamButton"
                     [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TeamButtonUp"
                      Entity.DownImage == asset "Field" "TeamButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuTeamOpen]
-                 Content.button Gen.name
+                 Content.button "InventoryButton"
                     [Entity.PositionLocal == position - v3 0.0f 81.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "InventoryButtonUp"
                      Entity.DownImage == asset "Field" "InventoryButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuItemsOpen]
-                 Content.button Gen.name
+                 Content.button "TechButton"
                     [Entity.PositionLocal == position - v3 0.0f 162.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TechButtonUp"
                      Entity.DownImage == asset "Field" "TechButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuTechOpen]
-                 Content.button Gen.name
+                 Content.button "OptionButton"
                     [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "OptionButtonUp"
                      Entity.DownImage == asset "Field" "OptionButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuOptionsOpen]
-                 Content.button Gen.name
+                 Content.button "HelpButton"
                     [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "HelpButtonUp"
                      Entity.DownImage == asset "Field" "HelpButtonDown"]
-                 Content.button Gen.name
+                 Content.button "CloseButton"
                     [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "CloseButtonUp"
                      Entity.DownImage == asset "Field" "CloseButtonDown"
@@ -1398,7 +1398,7 @@ module FieldDispatcher =
 
                  // team
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuTeam _ -> true | _ -> false) $ fun field _ ->
-                    Content.panel Gen.name
+                    Content.panel "Team"
                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
@@ -1485,7 +1485,7 @@ module FieldDispatcher =
 
                  // inventory
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false) $ fun field _ ->
-                    Content.panel Gen.name
+                    Content.panel "Inventory"
                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
@@ -1512,7 +1512,7 @@ module FieldDispatcher =
 
                  // tech team
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
-                    Content.panel Gen.name
+                    Content.panel "TechTeam"
                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
@@ -1556,7 +1556,7 @@ module FieldDispatcher =
 
                  // options
                  Content.entityIf field (fun field -> match field.Menu.MenuState with MenuOptions -> true | _ -> false) $ fun field _ ->
-                    Content.panel Gen.name
+                    Content.panel "Option"
                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
