@@ -164,7 +164,7 @@ module Effects =
                 (Shift 0.1f,
                  Rate 0.5f,
                  [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
-                 [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.5f 0.0f 0.0f)|],
+                 [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.0f 0.5f 0.0f)|],
                  spike)
         { EffectName = "SlashSpike"
           LifeTimeOpt = Some 75L
@@ -179,7 +179,7 @@ module Effects =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
                 v2i 78 78, 2, 4, 3L, Loop,
-                [|Circle (radius, 2.0f, 100L)|],
+                [|Circle (radius, 2.0f, 100L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
     let makeArcaneCastEffect () =

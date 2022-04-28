@@ -618,8 +618,7 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let center = slice.Position - slice.Size * 0.5f // assume centering for text
-                let mutable transform = Transform.makeIntuitive center slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
                 let textView =
                     Render2d (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
