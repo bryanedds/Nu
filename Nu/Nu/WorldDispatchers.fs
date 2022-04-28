@@ -412,7 +412,7 @@ module TextFacetModule =
                       AssetTag = AssetTag.generalize font
                       RenderDescriptor =
                         TextDescriptor
-                            { Transform = transform
+                            { Transform = textTransform
                               Text = text
                               Font = font
                               Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
