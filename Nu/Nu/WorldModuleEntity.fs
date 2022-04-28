@@ -528,17 +528,14 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
-            let mountState = World.getEntityState mount world
             let mounterState = World.getEntityState mounter world
             if World.isHalted world || mounterState.IsPhysical then
-                let rotationWorld = mountState.Rotation
-                let scaleWorld = mountState.Scale
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixWorld * affineMatrixLocal
-                let position = Vector3.Transform (mounterState.PositionLocal, affineMatrix)
-                let rotation = mounterState.RotationLocal * rotationWorld
-                let scale = mounterState.ScaleLocal * scaleWorld
+                let position = affineMatrix.Translation
+                let rotation = affineMatrix.Rotation ()
+                let scale = affineMatrix.Scale ()
                 let mutable transform = mounterState.Transform
                 transform.Position <- position
                 transform.Rotation <- rotation
