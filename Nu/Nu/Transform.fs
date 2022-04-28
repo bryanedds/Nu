@@ -104,21 +104,17 @@ type [<NoEquality; NoComparison>] Transform =
             this.AffineMatrixDirty <- true
 
     member this.RotationMatrix =
-        if notNull (this.RotationMatrixOpt_ :> obj) then
-            if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
-            this.RotationMatrixOpt_.Value
-        else Matrix4x4.Identity
+        if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+        this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
-        if notNull (this.AffineMatrixOpt_ :> obj) then
-            if this.AffineMatrixDirty then
-                // TODO: P1: optimize this hella!
-                let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-                let rotationMatrix = this.RotationMatrix
-                let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-                this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
-            this.AffineMatrixOpt_.Value
-        else Matrix4x4.Identity
+        if this.AffineMatrixDirty then
+            // TODO: 3d: optimize this hella!
+            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
+            let rotationMatrix = this.RotationMatrix
+            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+            this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
+        this.AffineMatrixOpt_.Value
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
