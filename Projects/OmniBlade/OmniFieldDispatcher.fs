@@ -505,10 +505,10 @@ module FieldDispatcher =
                      Entity.DownImage == asset "Field" "TechButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuTechOpen]
-                 Content.button "OptionButton"
+                 Content.button "OptionsButton"
                     [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
-                     Entity.UpImage == asset "Field" "OptionButtonUp"
-                     Entity.DownImage == asset "Field" "OptionButtonDown"
+                     Entity.UpImage == asset "Field" "OptionsButtonUp"
+                     Entity.DownImage == asset "Field" "OptionsButtonDown"
                      Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
                      Entity.ClickEvent ==> msg MenuOptionsOpen]
                  Content.button "HelpButton"
