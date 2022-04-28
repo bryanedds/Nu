@@ -36,7 +36,9 @@ module SpiritOrbDispatcher =
             Array.fold (fun views inhabitant ->
                 let (position, image, color) =
                     match inhabitant with
-                    | SpiritInhabitant spirit -> (spirit.Position, Assets.Field.SpiritImage, SpiritType.getColor spirit.SpiritType)
+                    | SpiritInhabitant spirit ->
+                        let color = SpiritType.getColor spirit.SpiritType
+                        (spirit.Position, Assets.Field.SpiritImage, color)
                     | ChestInhabitant chest ->
                         let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
                         let color = colWhite.WithA (byte 127)
@@ -53,6 +55,7 @@ module SpiritOrbDispatcher =
                     transform.Position <- position
                     transform.Size <- Constants.Field.SpiritOrbBlipSize
                     transform.Elevation <- orbTransform.Elevation + 2.0f
+                    transform.Absolute <- orbTransform.Absolute
                     let colorFadeIn =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
                         if distanceNormalized < 0.25f then color.MapA (fun a -> single a * (distanceNormalized / 0.25f) |> byte) else color
@@ -71,6 +74,7 @@ module SpiritOrbDispatcher =
             avatarTransform.Position <- orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f
             avatarTransform.Size <- Constants.Field.SpiritOrbBlipSize
             avatarTransform.Elevation <- orbTransform.Elevation + 1.0f
+            avatarTransform.Absolute <- orbTransform.Absolute
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; InsetOpt = None; Image = avatarImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
             let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Perimeter.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
