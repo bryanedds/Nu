@@ -196,10 +196,10 @@ module Effects =
                  [|candle (PositionRelative (v3 0.0f altitude 0.0f))
                    candle (PositionRelative (v3 -halfWidth 0.0f 0.0f))
                    candle (PositionRelative (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Angles (v3 90.0f 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Angles (v3 30.0f 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Angles (v3 -30.0f 0.0f 0.0f))|]) }
-    
+                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 90.0f 0.0f 0.0f))
+                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 30.0f 0.0f 0.0f))
+                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 -30.0f 0.0f 0.0f))|]) }
+
     let makeFireEffect position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
         let activation timeOn timeOff = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = timeOn}; { LogicValue = false; LogicLength = timeOff }|])
@@ -236,8 +236,9 @@ module Effects =
                 (Shift 0.0f,
                  Rate 0.25f,
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 64L }; { LogicValue = false; LogicLength = 0L }|])|],
-                 [|Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
-                   Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
+                 [|Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
+                   Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
+                   Degrees (v3 -90.0f 0.0f 0.0f)
                    Color (colWhite.WithA (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
