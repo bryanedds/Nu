@@ -39,7 +39,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
