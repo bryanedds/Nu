@@ -44,5 +44,7 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor =
 type [<NoEquality; NoComparison>] RenderMessage3d =
     | MaterialDescriptor of Material
     | MaterialsDescriptor of Material array
-    | RenderPassDescriptor of RenderPassDescriptor
+    | RenderPrePassDescriptor of RenderPassDescriptor
+    | RenderSubstitutionPassDescriptor of RenderPassDescriptor
+    | RenderPostPassDescriptor of RenderPassDescriptor
     | RenderCallback3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit)
