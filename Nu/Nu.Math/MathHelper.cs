@@ -448,9 +448,9 @@ namespace Nu
         /// <param name="result">
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
         /// </param>
-        public static void Intersects(ref this Plane plane, ref Box3 box, out PlaneIntersectionType result)
+        public static void Intersects(in this Plane plane, ref Box3 box, out PlaneIntersectionType result)
         {
-            box.Intersects(ref plane, out result);
+            box.Intersects(in plane, out result);
         }
 
         /// <summary>
@@ -473,9 +473,9 @@ namespace Nu
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Frustum"/>.
         /// </param>
         /// </returns>
-        public static void Intersects(ref this Plane plane, ref Frustum frustum, out PlaneIntersectionType result)
+        public static void Intersects(in this Plane plane, in Frustum frustum, out PlaneIntersectionType result)
         {
-            frustum.Intersects(ref plane, out result);
+            frustum.Intersects(in plane, out result);
         }
 
         /// <summary>
@@ -497,9 +497,9 @@ namespace Nu
         /// <param name="result">
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Sphere"/>.
         /// </param>
-        public static void Intersects(ref this Plane plane, ref Sphere sphere, out PlaneIntersectionType result)
+        public static void Intersects(in this Plane plane, in Sphere sphere, out PlaneIntersectionType result)
         {
-            sphere.Intersects(ref plane, out result);
+            sphere.Intersects(in plane, out result);
         }
 
         /// <summary>
@@ -512,7 +512,7 @@ namespace Nu
         public static PlaneIntersectionType Intersects(this Plane plane, Vector3 point)
         {
             PlaneIntersectionType result;
-            plane.Intersects(ref point, out result);
+            plane.Intersects(in point, out result);
             return result;
         }
 
@@ -523,10 +523,10 @@ namespace Nu
         /// <param name="result">
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Vector3"/>.
         /// </param>
-        public static void Intersects(ref this Plane plane, ref Vector3 point, out PlaneIntersectionType result)
+        public static void Intersects(in this Plane plane, in Vector3 point, out PlaneIntersectionType result)
         {
             float distance;
-            plane.DotCoordinate(ref point, out distance);
+            plane.DotCoordinate(in point, out distance);
 
             if (distance > 0)
             {
@@ -568,7 +568,7 @@ namespace Nu
         /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>
         /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
         /// </param>
-        public static void DotCoordinate(ref this Plane plane, ref Vector3 value, out float result)
+        public static void DotCoordinate(in this Plane plane, in Vector3 value, out float result)
         {
             result = (plane.Normal.X * value.X) + (plane.Normal.Y * value.Y) + (plane.Normal.Z * value.Z) + plane.D;
         }
@@ -579,7 +579,7 @@ namespace Nu
         /// <param name="plane">The plane to check against</param>
         /// <param name="point">The point to check with</param>
         /// <returns>Greater than zero if on the positive side, less than zero if on the negative size, 0 otherwise</returns>
-        public static float ClassifyPoint(ref this Plane plane, ref Vector3 point)
+        public static float ClassifyPoint(in this Plane plane, in Vector3 point)
         {
             return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
         }

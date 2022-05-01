@@ -166,7 +166,7 @@ namespace Nu
         public bool Intersects(Sphere sphere)
         {
             bool result;
-            Intersects(ref sphere, out result);
+            Intersects(in sphere, out result);
             return result;
         }
 
@@ -178,7 +178,7 @@ namespace Nu
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(ref Sphere sphere, out bool result)
+        public void Intersects(in Sphere sphere, out bool result)
         {
             Vector3 min = this.Position, max = this.Position + this.Size;
             var squareDistance = 0.0f;
@@ -203,7 +203,7 @@ namespace Nu
         public PlaneIntersectionType Intersects(Plane plane)
         {
             PlaneIntersectionType result;
-            Intersects(ref plane, out result);
+            Intersects(in plane, out result);
             return result;
         }
 
@@ -215,7 +215,7 @@ namespace Nu
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(ref Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane plane, out PlaneIntersectionType result)
         {
             // See http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
 

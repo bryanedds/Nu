@@ -145,7 +145,7 @@ namespace Nu
         [Pure]
         public static Color Add(Color a, Color b)
         {
-            Add(ref a, ref b, out a);
+            Add(in a, in b, out a);
             return a;
         }
 
@@ -155,7 +155,7 @@ namespace Nu
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <param name="result">Result of operation.</param>
-        public static void Add(ref Color a, ref Color b, out Color result)
+        public static void Add(in Color a, in Color b, out Color result)
         {
             result.R = (byte)(a.R + b.R);
             result.G = (byte)(a.G + b.G);
@@ -172,7 +172,7 @@ namespace Nu
         [Pure]
         public static Color Subtract(Color a, Color b)
         {
-            Subtract(ref a, ref b, out a);
+            Subtract(in a, in b, out a);
             return a;
         }
 
@@ -182,7 +182,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">Result of subtraction.</param>
-        public static void Subtract(ref Color a, ref Color b, out Color result)
+        public static void Subtract(in Color a, in Color b, out Color result)
         {
             result.R = (byte)(a.R - b.R);
             result.G = (byte)(a.G - b.G);
@@ -199,7 +199,7 @@ namespace Nu
         [Pure]
         public static Color Multiply(Color color, float scale)
         {
-            Multiply(ref color, scale, out color);
+            Multiply(in color, scale, out color);
             return color;
         }
 
@@ -209,7 +209,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Color color, float scale, out Color result)
+        public static void Multiply(in Color color, float scale, out Color result)
         {
             result.R = (byte)(color.R * scale);
             result.G = (byte)(color.G * scale);
@@ -226,7 +226,7 @@ namespace Nu
         [Pure]
         public static Color Multiply(Color color, Color scale)
         {
-            Multiply(ref color, ref scale, out color);
+            Multiply(in color, in scale, out color);
             return color;
         }
 
@@ -236,7 +236,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Color color, ref Color scale, out Color result)
+        public static void Multiply(in Color color, in Color scale, out Color result)
         {
             result.R = (byte)(color.R * (scale.R / 255.0f));
             result.G = (byte)(color.G * (scale.G / 255.0f));
@@ -253,7 +253,7 @@ namespace Nu
         [Pure]
         public static Color Divide(Color color, float scale)
         {
-            Divide(ref color, scale, out color);
+            Divide(in color, scale, out color);
             return color;
         }
 
@@ -263,7 +263,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Color color, float scale, out Color result)
+        public static void Divide(in Color color, float scale, out Color result)
         {
             result.R = (byte)(color.R / scale);
             result.G = (byte)(color.G / scale);
@@ -280,7 +280,7 @@ namespace Nu
         [Pure]
         public static Color Divide(Color color, Color scale)
         {
-            Divide(ref color, ref scale, out color);
+            Divide(in color, in scale, out color);
             return color;
         }
 
@@ -290,7 +290,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Color color, ref Color scale, out Color result)
+        public static void Divide(in Color color, in Color scale, out Color result)
         {
             result.R = (byte)(color.R / (scale.R / 255.0f));
             result.G = (byte)(color.G / (scale.G / 255.0f));
@@ -320,7 +320,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise minimum.</param>
-        public static void ComponentMin(ref Color a, ref Color b, out Color result)
+        public static void ComponentMin(in Color a, in Color b, out Color result)
         {
             result.R = a.R < b.R ? a.R : b.R;
             result.G = a.G < b.G ? a.G : b.G;
@@ -350,7 +350,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise maximum.</param>
-        public static void ComponentMax(ref Color a, ref Color b, out Color result)
+        public static void ComponentMax(in Color a, in Color b, out Color result)
         {
             result.R = a.R > b.R ? a.R : b.R;
             result.G = a.G > b.G ? a.G : b.G;
@@ -382,7 +382,7 @@ namespace Nu
         /// <param name="min">Minimum color.</param>
         /// <param name="max">Maximum color.</param>
         /// <param name="result">The clamped color.</param>
-        public static void Clamp(ref Color color, ref Color min, ref Color max, out Color result)
+        public static void Clamp(in Color color, in Color min, in Color max, out Color result)
         {
             result.R = color.R < min.R ? min.R : color.R > max.R ? max.R : color.R;
             result.G = color.G < min.G ? min.G : color.G > max.G ? max.G : color.G;
@@ -404,7 +404,7 @@ namespace Nu
         /// </summary>
         /// <param name="input">The given <see cref="Color"/> to convert.</param>
         /// <param name="result">The resulting <see cref="Vector4"/>.</param>
-        public static void ToVector4(ref Color input, out Vector4 result)
+        public static void ToVector4(in Color input, out Vector4 result)
         {
             result.X = input.R;
             result.Y = input.G;

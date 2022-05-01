@@ -160,7 +160,7 @@ namespace Nu
         public ContainmentType Contains(Box3 box)
         {
             var result = default(ContainmentType);
-            this.Contains(ref box, out result);
+            this.Contains(in box, out result);
             return result;
         }
 
@@ -169,13 +169,13 @@ namespace Nu
         /// </summary>
         /// <param name="box">A <see cref="Box3"/> for testing.</param>
         /// <param name="result">Result of testing for containment between this <see cref="Frustum"/> and specified <see cref="Box3"/> as an output parameter.</param>
-        public void Contains(ref Box3 box, out ContainmentType result)
+        public void Contains(in Box3 box, out ContainmentType result)
         {
             var intersects = false;
             for (var i = 0; i < PlaneCount; ++i)
             {
                 var planeIntersectionType = default(PlaneIntersectionType);
-                box.Intersects(ref this._planes[i], out planeIntersectionType);
+                box.Intersects(in this._planes[i], out planeIntersectionType);
                 switch (planeIntersectionType)
                 {
                     case PlaneIntersectionType.Front:
@@ -203,7 +203,7 @@ namespace Nu
             for (var i = 0; i < PlaneCount; ++i)
             {
                 PlaneIntersectionType planeIntersectionType;
-                frustum.Intersects(ref _planes[i], out planeIntersectionType);
+                frustum.Intersects(in _planes[i], out planeIntersectionType);
                 switch (planeIntersectionType)
                 {
                     case PlaneIntersectionType.Front:
@@ -224,7 +224,7 @@ namespace Nu
         public ContainmentType Contains(Sphere sphere)
         {
             var result = default(ContainmentType);
-            this.Contains(ref sphere, out result);
+            this.Contains(in sphere, out result);
             return result;
         }
 
@@ -233,7 +233,7 @@ namespace Nu
         /// </summary>
         /// <param name="sphere">A <see cref="Sphere"/> for testing.</param>
         /// <param name="result">Result of testing for containment between this <see cref="Frustum"/> and specified <see cref="Sphere"/> as an output parameter.</param>
-        public void Contains(ref Sphere sphere, out ContainmentType result)
+        public void Contains(in Sphere sphere, out ContainmentType result)
         {
             var intersects = false;
             for (var i = 0; i < PlaneCount; ++i)
@@ -241,7 +241,7 @@ namespace Nu
                 var planeIntersectionType = default(PlaneIntersectionType);
 
                 // TODO: we might want to inline this for performance reasons
-                sphere.Intersects(ref this._planes[i], out planeIntersectionType);
+                sphere.Intersects(in this._planes[i], out planeIntersectionType);
                 switch (planeIntersectionType)
                 {
                     case PlaneIntersectionType.Front:
@@ -263,7 +263,7 @@ namespace Nu
         public ContainmentType Contains(Vector3 point)
         {
             var result = default(ContainmentType);
-            this.Contains(ref point, out result);
+            this.Contains(in point, out result);
             return result;
         }
 
@@ -272,12 +272,12 @@ namespace Nu
         /// </summary>
         /// <param name="point">A <see cref="Vector3"/> for testing.</param>
         /// <param name="result">Result of testing for containment between this <see cref="Frustum"/> and specified <see cref="Vector3"/> as an output parameter.</param>
-        public void Contains(ref Vector3 point, out ContainmentType result)
+        public void Contains(in Vector3 point, out ContainmentType result)
         {
             for (var i = 0; i < PlaneCount; ++i)
             {
                 // TODO: we might want to inline this for performance reasons
-                if (this._planes[i].ClassifyPoint(ref point) > 0)
+                if (this._planes[i].ClassifyPoint(in point) > 0)
                 {
                     result = ContainmentType.Disjoint;
                     return;
@@ -346,7 +346,7 @@ namespace Nu
         public bool Intersects(Box3 box)
         {
             var result = false;
-            this.Intersects(ref box, out result);
+            this.Intersects(in box, out result);
             return result;
         }
 
@@ -355,10 +355,10 @@ namespace Nu
         /// </summary>
         /// <param name="box">A <see cref="Box3"/> for intersection test.</param>
         /// <param name="result"><c>true</c> if specified <see cref="Box3"/> intersects with this <see cref="Frustum"/>; <c>false</c> otherwise as an output parameter.</param>
-        public void Intersects(ref Box3 box, out bool result)
+        public void Intersects(in Box3 box, out bool result)
         {
             var containment = default(ContainmentType);
-            this.Contains(ref box, out containment);
+            this.Contains(in box, out containment);
             result = containment != ContainmentType.Disjoint;
         }
 
@@ -380,7 +380,7 @@ namespace Nu
         public bool Intersects(Sphere sphere)
         {
             var result = default(bool);
-            this.Intersects(ref sphere, out result);
+            this.Intersects(in sphere, out result);
             return result;
         }
 
@@ -389,10 +389,10 @@ namespace Nu
         /// </summary>
         /// <param name="sphere">A <see cref="Sphere"/> for intersection test.</param>
         /// <param name="result"><c>true</c> if specified <see cref="Sphere"/> intersects with this <see cref="Frustum"/>; <c>false</c> otherwise as an output parameter.</param>
-        public void Intersects(ref Sphere sphere, out bool result)
+        public void Intersects(in Sphere sphere, out bool result)
         {
             var containment = default(ContainmentType);
-            this.Contains(ref sphere, out containment);
+            this.Contains(in sphere, out containment);
             result = containment != ContainmentType.Disjoint;
         }
 
@@ -404,7 +404,7 @@ namespace Nu
         public PlaneIntersectionType Intersects(Plane plane)
         {
             PlaneIntersectionType result;
-            Intersects(ref plane, out result);
+            Intersects(in plane, out result);
             return result;
         }
 
@@ -413,12 +413,12 @@ namespace Nu
         /// </summary>
         /// <param name="plane">A <see cref="Plane"/> for intersection test.</param>
         /// <param name="result">A plane intersection type as an output parameter.</param>
-        public void Intersects(ref Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane plane, out PlaneIntersectionType result)
         {
-            plane.Intersects(ref _corners[0], out result);
+            plane.Intersects(in _corners[0], out result);
             for (int i = 1; i < _corners.Length; i++)
             {
-                plane.Intersects(ref _corners[i], out PlaneIntersectionType intersection);
+                plane.Intersects(in _corners[i], out PlaneIntersectionType intersection);
                 if (intersection != result)
                     result = PlaneIntersectionType.Intersecting;
             }
@@ -432,7 +432,7 @@ namespace Nu
         public float? Intersects(Ray ray)
         {
             float? result;
-            Intersects(ref ray, out result);
+            Intersects(in ray, out result);
             return result;
         }
 
@@ -441,10 +441,10 @@ namespace Nu
         /// </summary>
         /// <param name="ray">A <see cref="Ray"/> for intersection test.</param>
         /// <param name="result">Distance at which ray intersects with this <see cref="Frustum"/> or null if no intersection happens as an output parameter.</param>
-        public void Intersects(ref Ray ray, out float? result)
+        public void Intersects(in Ray ray, out float? result)
         {
             ContainmentType ctype;
-            this.Contains(ref ray.Position, out ctype);
+            this.Contains(in ray.Position, out ctype);
 
             switch (ctype)
             {
@@ -483,14 +483,14 @@ namespace Nu
 
         private void CreateCorners()
         {
-            IntersectionPoint(ref this._planes[0], ref this._planes[2], ref this._planes[4], out this._corners[0]);
-            IntersectionPoint(ref this._planes[0], ref this._planes[3], ref this._planes[4], out this._corners[1]);
-            IntersectionPoint(ref this._planes[0], ref this._planes[3], ref this._planes[5], out this._corners[2]);
-            IntersectionPoint(ref this._planes[0], ref this._planes[2], ref this._planes[5], out this._corners[3]);
-            IntersectionPoint(ref this._planes[1], ref this._planes[2], ref this._planes[4], out this._corners[4]);
-            IntersectionPoint(ref this._planes[1], ref this._planes[3], ref this._planes[4], out this._corners[5]);
-            IntersectionPoint(ref this._planes[1], ref this._planes[3], ref this._planes[5], out this._corners[6]);
-            IntersectionPoint(ref this._planes[1], ref this._planes[2], ref this._planes[5], out this._corners[7]);
+            IntersectionPoint(in this._planes[0], in this._planes[2], in this._planes[4], out this._corners[0]);
+            IntersectionPoint(in this._planes[0], in this._planes[3], in this._planes[4], out this._corners[1]);
+            IntersectionPoint(in this._planes[0], in this._planes[3], in this._planes[5], out this._corners[2]);
+            IntersectionPoint(in this._planes[0], in this._planes[2], in this._planes[5], out this._corners[3]);
+            IntersectionPoint(in this._planes[1], in this._planes[2], in this._planes[4], out this._corners[4]);
+            IntersectionPoint(in this._planes[1], in this._planes[3], in this._planes[4], out this._corners[5]);
+            IntersectionPoint(in this._planes[1], in this._planes[3], in this._planes[5], out this._corners[6]);
+            IntersectionPoint(in this._planes[1], in this._planes[2], in this._planes[5], out this._corners[7]);
         }
 
         private void CreatePlanes()
@@ -510,7 +510,7 @@ namespace Nu
             this.NormalizePlane(ref this._planes[5]);
         }
 
-        private static void IntersectionPoint(ref Plane a, ref Plane b, ref Plane c, out Vector3 result)
+        private static void IntersectionPoint(in Plane a, in Plane b, in Plane c, out Vector3 result)
         {
             // Formula used
             //                d1 ( N2 * N3 ) + d2 ( N3 * N1 ) + d3 ( N1 * N2 )

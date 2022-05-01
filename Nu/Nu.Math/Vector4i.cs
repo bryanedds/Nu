@@ -149,7 +149,7 @@ namespace Nu
         [Pure]
         public static Vector4i Add(Vector4i a, Vector4i b)
         {
-            Add(ref a, ref b, out a);
+            Add(in a, in b, out a);
             return a;
         }
 
@@ -159,7 +159,7 @@ namespace Nu
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <param name="result">Result of operation.</param>
-        public static void Add(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void Add(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X + b.X;
             result.Y = a.Y + b.Y;
@@ -176,7 +176,7 @@ namespace Nu
         [Pure]
         public static Vector4i Subtract(Vector4i a, Vector4i b)
         {
-            Subtract(ref a, ref b, out a);
+            Subtract(in a, in b, out a);
             return a;
         }
 
@@ -186,7 +186,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">Result of subtraction.</param>
-        public static void Subtract(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void Subtract(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X - b.X;
             result.Y = a.Y - b.Y;
@@ -203,7 +203,7 @@ namespace Nu
         [Pure]
         public static Vector4i Multiply(Vector4i vector, int scale)
         {
-            Multiply(ref vector, scale, out vector);
+            Multiply(in vector, scale, out vector);
             return vector;
         }
 
@@ -213,7 +213,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Vector4i vector, int scale, out Vector4i result)
+        public static void Multiply(in Vector4i vector, int scale, out Vector4i result)
         {
             result.X = vector.X * scale;
             result.Y = vector.Y * scale;
@@ -230,7 +230,7 @@ namespace Nu
         [Pure]
         public static Vector4i Multiply(Vector4i vector, Vector4i scale)
         {
-            Multiply(ref vector, ref scale, out vector);
+            Multiply(in vector, in scale, out vector);
             return vector;
         }
 
@@ -240,7 +240,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Vector4i vector, ref Vector4i scale, out Vector4i result)
+        public static void Multiply(in Vector4i vector, in Vector4i scale, out Vector4i result)
         {
             result.X = vector.X * scale.X;
             result.Y = vector.Y * scale.Y;
@@ -257,7 +257,7 @@ namespace Nu
         [Pure]
         public static Vector4i Divide(Vector4i vector, int scale)
         {
-            Divide(ref vector, scale, out vector);
+            Divide(in vector, scale, out vector);
             return vector;
         }
 
@@ -267,7 +267,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Vector4i vector, int scale, out Vector4i result)
+        public static void Divide(in Vector4i vector, int scale, out Vector4i result)
         {
             result.X = vector.X / scale;
             result.Y = vector.Y / scale;
@@ -284,7 +284,7 @@ namespace Nu
         [Pure]
         public static Vector4i Divide(Vector4i vector, Vector4i scale)
         {
-            Divide(ref vector, ref scale, out vector);
+            Divide(in vector, in scale, out vector);
             return vector;
         }
 
@@ -294,7 +294,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Vector4i vector, ref Vector4i scale, out Vector4i result)
+        public static void Divide(in Vector4i vector, in Vector4i scale, out Vector4i result)
         {
             result.X = vector.X / scale.X;
             result.Y = vector.Y / scale.Y;
@@ -324,7 +324,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise minimum.</param>
-        public static void ComponentMin(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void ComponentMin(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X < b.X ? a.X : b.X;
             result.Y = a.Y < b.Y ? a.Y : b.Y;
@@ -354,7 +354,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise maximum.</param>
-        public static void ComponentMax(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void ComponentMax(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X > b.X ? a.X : b.X;
             result.Y = a.Y > b.Y ? a.Y : b.Y;
@@ -386,7 +386,7 @@ namespace Nu
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <param name="result">The clamped vector.</param>
-        public static void Clamp(ref Vector4i vec, ref Vector4i min, ref Vector4i max, out Vector4i result)
+        public static void Clamp(in Vector4i vec, in Vector4i min, in Vector4i max, out Vector4i result)
         {
             result.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
             result.Y = vec.Y < min.Y ? min.Y : vec.Y > max.Y ? max.Y : vec.Y;

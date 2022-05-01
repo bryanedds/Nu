@@ -521,7 +521,7 @@ namespace Nu
         public static Matrix3x3 CreateScale(Vector3 scale)
         {
             Matrix3x3 result;
-            CreateScale(ref scale, out result);
+            CreateScale(in scale, out result);
             return result;
         }
 
@@ -557,7 +557,7 @@ namespace Nu
         /// </summary>
         /// <param name="scale">Scale factors for the x, y, and z axes.</param>
         /// <param name="result">A scale matrix.</param>
-        public static void CreateScale(ref Vector3 scale, out Matrix3x3 result)
+        public static void CreateScale(in Vector3 scale, out Matrix3x3 result)
         {
             result = Identity;
             result.Row0.X = scale.X;
@@ -590,7 +590,7 @@ namespace Nu
         public static Matrix3x3 Add(Matrix3x3 left, Matrix3x3 right)
         {
             Matrix3x3 result;
-            Add(ref left, ref right, out result);
+            Add(in left, in right, out result);
             return result;
         }
 
@@ -600,7 +600,7 @@ namespace Nu
         /// <param name="left">The left operand of the addition.</param>
         /// <param name="right">The right operand of the addition.</param>
         /// <param name="result">A new instance that is the result of the addition.</param>
-        public static void Add(ref Matrix3x3 left, ref Matrix3x3 right, out Matrix3x3 result)
+        public static void Add(in Matrix3x3 left, in Matrix3x3 right, out Matrix3x3 result)
         {
             result.Row0 = left.Row0 + right.Row0;
             result.Row1 = left.Row1 + right.Row1;
@@ -616,7 +616,7 @@ namespace Nu
         public static Matrix3x3 Multiply(Matrix3x3 left, Matrix3x3 right)
         {
             Matrix3x3 result;
-            Multiply(ref left, ref right, out result);
+            Multiply(in left, in right, out result);
             return result;
         }
 
@@ -626,7 +626,7 @@ namespace Nu
         /// <param name="left">The left operand of the multiplication.</param>
         /// <param name="right">The right operand of the multiplication.</param>
         /// <param name="result">A new instance that is the result of the multiplication</param>
-        public static void Multiply(ref Matrix3x3 left, ref Matrix3x3 right, out Matrix3x3 result)
+        public static void Multiply(in Matrix3x3 left, in Matrix3x3 right, out Matrix3x3 result)
         {
             float   lM11 = left.Row0.X, lM12 = left.Row0.Y, lM13 = left.Row0.Z,
             lM21 = left.Row1.X, lM22 = left.Row1.Y, lM23 = left.Row1.Z,
@@ -654,7 +654,7 @@ namespace Nu
         /// <param name="mat">The matrix to invert</param>
         /// <param name="result">The inverse of the given matrix if it has one, or the input if it is singular</param>
         /// <exception cref="InvalidOperationException">Thrown if the Matrix3 is singular.</exception>
-        public static void Invert(ref Matrix3x3 mat, out Matrix3x3 result)
+        public static void Invert(in Matrix3x3 mat, out Matrix3x3 result)
         {
             int[] colIdx = { 0, 0, 0 };
             int[] rowIdx = { 0, 0, 0 };
@@ -769,7 +769,7 @@ namespace Nu
         public static Matrix3x3 Invert(Matrix3x3 mat)
         {
             Matrix3x3 result;
-            Invert(ref mat, out result);
+            Invert(in mat, out result);
             return result;
         }
 
@@ -790,7 +790,7 @@ namespace Nu
         /// </summary>
         /// <param name="mat">The matrix to transpose</param>
         /// <param name="result">The result of the calculation</param>
-        public static void Transpose(ref Matrix3x3 mat, out Matrix3x3 result)
+        public static void Transpose(in Matrix3x3 mat, out Matrix3x3 result)
         {
             result.Row0.X = mat.Row0.X;
             result.Row0.Y = mat.Row1.X;

@@ -104,7 +104,7 @@ namespace Nu
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(ref Box3 box, out ContainmentType result)
+        public void Contains(in Box3 box, out ContainmentType result)
         {
             result = this.Contains(box);
         }
@@ -147,7 +147,7 @@ namespace Nu
         /// </summary>
         /// <param name="frustum">The frustum for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(ref Frustum frustum, out ContainmentType result)
+        public void Contains(in Frustum frustum, out ContainmentType result)
         {
             result = this.Contains(frustum);
         }
@@ -160,7 +160,7 @@ namespace Nu
         public ContainmentType Contains(Sphere sphere)
         {
             ContainmentType result;
-            Contains(ref sphere, out result);
+            Contains(in sphere, out result);
             return result;
         }
 
@@ -169,7 +169,7 @@ namespace Nu
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(ref Sphere sphere, out ContainmentType result)
+        public void Contains(in Sphere sphere, out ContainmentType result)
         {
             float sqDistance = Vector3.DistanceSquared(sphere.Center, Center);
 
@@ -191,7 +191,7 @@ namespace Nu
         public ContainmentType Contains(Vector3 point)
         {
             ContainmentType result;
-            Contains(ref point, out result);
+            Contains(in point, out result);
             return result;
         }
 
@@ -200,7 +200,7 @@ namespace Nu
         /// </summary>
         /// <param name="point">The vector in 3D-space for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(ref Vector3 point, out ContainmentType result)
+        public void Contains(in Vector3 point, out ContainmentType result)
         {
             float sqRadius = Radius * Radius;
             float sqDistance = Vector3.DistanceSquared(point, Center);
@@ -227,7 +227,7 @@ namespace Nu
         public static Sphere CreateFromBox3(Box3 box)
         {
             Sphere result;
-            CreateFromBox3(ref box, out result);
+            CreateFromBox3(in box, out result);
             return result;
         }
 
@@ -236,7 +236,7 @@ namespace Nu
         /// </summary>
         /// <param name="box">The box to create the sphere from.</param>
         /// <param name="result">The new <see cref="Sphere"/> as an output parameter.</param>
-        public static void CreateFromBox3(ref Box3 box, out Sphere result)
+        public static void CreateFromBox3(in Box3 box, out Sphere result)
         {
             // Find the center of the box.
             Vector3 min = box.Position, max = box.Position + box.Size;
@@ -357,7 +357,7 @@ namespace Nu
         public static Sphere CreateMerged(Sphere original, Sphere additional)
         {
             Sphere result;
-            CreateMerged(ref original, ref additional, out result);
+            CreateMerged(in original, in additional, out result);
             return result;
         }
 
@@ -367,7 +367,7 @@ namespace Nu
         /// <param name="original">First sphere.</param>
         /// <param name="additional">Second sphere.</param>
         /// <param name="result">The new <see cref="Sphere"/> as an output parameter.</param>
-        public static void CreateMerged(ref Sphere original, ref Sphere additional, out Sphere result)
+        public static void CreateMerged(in Sphere original, in Sphere additional, out Sphere result)
         {
             Vector3 ocenterToaCenter = Vector3.Subtract(additional.Center, original.Center);
             float distance = ocenterToaCenter.Length();
@@ -443,9 +443,9 @@ namespace Nu
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <param name="result"><c>true</c> if <see cref="Box3"/> intersects with this sphere; <c>false</c> otherwise. As an output parameter.</param>
-        public void Intersects(ref Box3 box, out bool result)
+        public void Intersects(in Box3 box, out bool result)
         {
-            box.Intersects(ref this, out result);
+            box.Intersects(in this, out result);
         }
 
         /*
@@ -469,7 +469,7 @@ namespace Nu
         public bool Intersects(Sphere sphere)
         {
             bool result;
-            Intersects(ref sphere, out result);
+            Intersects(in sphere, out result);
             return result;
         }
 
@@ -478,7 +478,7 @@ namespace Nu
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <param name="result"><c>true</c> if other <see cref="Sphere"/> intersects with this sphere; <c>false</c> otherwise. As an output parameter.</param>
-        public void Intersects(ref Sphere sphere, out bool result)
+        public void Intersects(in Sphere sphere, out bool result)
         {
             float sqDistance = Vector3.DistanceSquared(sphere.Center, Center);
 
@@ -497,7 +497,7 @@ namespace Nu
         {
             var result = default(PlaneIntersectionType);
             // TODO: we might want to inline this for performance reasons
-            this.Intersects(ref plane, out result);
+            this.Intersects(in plane, out result);
             return result;
         }
 
@@ -506,7 +506,7 @@ namespace Nu
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <param name="result">Type of intersection as an output parameter.</param>
-        public void Intersects(ref Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane plane, out PlaneIntersectionType result)
         {
             // TODO: we might want to inline this for performance reasons
             var distance = Vector3.Dot(plane.Normal, this.Center);
@@ -534,9 +534,9 @@ namespace Nu
         /// </summary>
         /// <param name="ray">The ray for testing.</param>
         /// <param name="result">Distance of ray intersection or <c>null</c> if there is no intersection as an output parameter.</param>
-        public void Intersects(ref Ray ray, out float? result)
+        public void Intersects(in Ray ray, out float? result)
         {
-            ray.Intersects(ref this, out result);
+            ray.Intersects(in this, out result);
         }
 
         #endregion
@@ -571,7 +571,7 @@ namespace Nu
         /// </summary>
         /// <param name="matrix">The transformation <see cref="Matrix"/>.</param>
         /// <param name="result">Transformed <see cref="Sphere"/> as an output parameter.</param>
-        public void Transform(ref Matrix4x4 matrix, out Sphere result)
+        public void Transform(in Matrix4x4 matrix, out Sphere result)
         {
             result.Center = Vector3.Transform(this.Center, matrix);
             result.Radius = this.Radius * ((float)Math.Sqrt((double)Math.Max(((matrix.M11 * matrix.M11) + (matrix.M12 * matrix.M12)) + (matrix.M13 * matrix.M13), Math.Max(((matrix.M21 * matrix.M21) + (matrix.M22 * matrix.M22)) + (matrix.M23 * matrix.M23), ((matrix.M31 * matrix.M31) + (matrix.M32 * matrix.M32)) + (matrix.M33 * matrix.M33)))));
