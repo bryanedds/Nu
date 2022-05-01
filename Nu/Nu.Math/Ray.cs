@@ -182,7 +182,7 @@ namespace Nu
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray"/> does not intersect the <see cref="BoundingBox"/>.
         /// </param>
-        public void Intersects(ref Box3 box, out float? result)
+        public void Intersects(in Box3 box, out float? result)
         {
             result = Intersects(box);
         }
@@ -210,7 +210,7 @@ namespace Nu
         public float? Intersects(Sphere sphere)
         {
             float? result;
-            Intersects(ref sphere, out result);
+            Intersects(in sphere, out result);
             return result;
         }
 
@@ -225,7 +225,7 @@ namespace Nu
         public float? Intersects(Plane plane)
         {
             float? result;
-            Intersects(ref plane, out result);
+            Intersects(in plane, out result);
             return result;
         }
 
@@ -237,7 +237,7 @@ namespace Nu
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray"/> does not intersect the <see cref="Plane"/>.
         /// </param>
-        public void Intersects(ref Plane plane, out float? result)
+        public void Intersects(in Plane plane, out float? result)
         {
             var den = Vector3.Dot(Direction, plane.Normal);
             if (Math.Abs(den) < 0.00001f)
@@ -268,7 +268,7 @@ namespace Nu
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray"/> does not intersect the <see cref="Sphere"/>.
         /// </param>
-        public void Intersects(ref Sphere sphere, out float? result)
+        public void Intersects(in Sphere sphere, out float? result)
         {
             // Find the vector between where the ray starts the the sphere's centre
             Vector3 difference = sphere.Center - this.Position;
