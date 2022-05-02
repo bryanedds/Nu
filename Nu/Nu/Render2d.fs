@@ -637,45 +637,116 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member getRenderContext renderer =
         renderer.RenderContext
 
-    /// Make a Renderer.
-    static member make (window : nativeint) (renderContext : nativeint) =
+    /// Create a shader program from vertex and fragment code strings.
+    static member createShaderProgramFromStrs vertexShaderStr fragmentShaderStr =
 
-        let glContext = SDL.SDL_GL_CreateContext (window)
-
+        // construct gl program
         let program = Gl.CreateProgram ()
 
-        let vertexStr = "#version 140\nin vec2 LVertexPos2D; void main() { gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); }"
-        let fragmentStr = "#version 140\nout vec4 LFragment; void main() { LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); }"
-
+        // add vertex shader to program
         let vertexShader = Gl.CreateShader Gl.ShaderType.VertexShader
-        Gl.ShaderSource (vertexShader, 1, [|vertexStr|], null)
+        Gl.ShaderSource (vertexShader, 1, [|vertexShaderStr|], null)
         Gl.CompileShader vertexShader
         Gl.AttachShader (program, vertexShader)
 
+        // add fragement shader to program
         let fragmentShader = Gl.CreateShader Gl.ShaderType.FragmentShader
-        Gl.ShaderSource (fragmentShader, 1, [|fragmentStr|], null)
+        Gl.ShaderSource (fragmentShader, 1, [|fragmentShaderStr|], null)
         Gl.CompileShader fragmentShader
         Gl.AttachShader (program, fragmentShader)
 
+        // link program
         Gl.LinkProgram program
+        program
 
-        let lVertexPos2DAttrib = Gl.GetAttribLocation (program, "LVertexPos2D")
+    static member createTextureFramebuffer () =
 
-        Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+        // create frame buffer object
+        let framebuffers = [|0u|]
+        Gl.GenFramebuffers (1, framebuffers)
+        let framebuffer = framebuffers.[0]
+        Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
+
+        // create texture buffer
+        let textures = [|0u|]
+        Gl.GenTextures (1, textures)
+        let texture = textures.[0]
+        Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+        Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, Gl.PixelInternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, Gl.PixelFormat.Rgba, Gl.PixelType.Float, nativeint 0)
+        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int Gl.TextureParameter.Nearest)
+        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int Gl.TextureParameter.Nearest)
+        Gl.FramebufferTexture (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.ColorAttachment0, texture, 0)
+
+        // create depth and stencil buffers
+        let depthBuffers = [|0u|]
+        Gl.GenRenderbuffers (1, depthBuffers)
+        let depthBuffer = depthBuffers.[0]
+        Gl.BindRenderbuffer (Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
+        Gl.RenderbufferStorage (Gl.RenderbufferTarget.Renderbuffer, Gl.RenderbufferStorageEnum.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.DepthStencilAttachment, Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
+
+        // fin
+        (texture, framebuffer)
+
+    /// Make a Renderer.
+    static member make (window : nativeint) (renderContext : nativeint) =
+        
+        let glContext = SDL.SDL_GL_CreateContext (window)
+
+        let (textureFramebufferTexture, _) = SdlRenderer.createTextureFramebuffer ()
+
+        let whiteVertexShaderStr =
+            ["#version 410"
+             "in vec2 pos;"
+             "void main()"
+             "{"
+             "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
+             "}"] |> String.join "\n"
+        let whiteFragmentShaderStr =
+            ["#version 410"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
+             "}"] |> String.join "\n"
+        let whiteShaderProgram = SdlRenderer.createShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
+        let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
+        
+        let samplerVertexShaderStr =
+            ["#version 410"
+             "in vec2 pos;"
+             "out vec2 texCoord;"
+             "void main()"
+             "{"
+             "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
+             "  texCoord = vec2(pos.x, pos.y);"
+             "}"] |> String.join "\n"
+        let samplerFragmentShaderStr =
+            ["#version 410"
+             "uniform sampler2D tex;"
+             "in vec2 texCoord;"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "  frag = texture(tex, texCoord);"
+             "}"] |> String.join "\n"
+        let samplerShaderProgram = SdlRenderer.createShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
+        let sVertexPos2DAttrib = Gl.GetAttribLocation (samplerShaderProgram, "pos")
+        let sTexUniform = Gl.GetUniformLocation (samplerShaderProgram, "tex")
 
         let vertexData =
-            [|-0.95f; -0.95f;
-              +0.95f; -0.95f;
-              +0.95f; +0.95f;
-              -0.95f; +0.95f|]
-        let vertexBuffers = [|0u|]
+            [|-0.5f; -0.5f;
+              +0.5f; -0.5f;
+              +0.5f; +0.5f;
+              -0.5f; +0.5f|]
+        let mutable vertexBuffers = [|0u|]
         Gl.GenBuffers (1, vertexBuffers)
         let vertexBuffer = vertexBuffers.[0]
         Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
+        
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffers = [|0u|]
         Gl.GenBuffers (1, indexBuffers)
@@ -685,46 +756,38 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
 
-        let framebuffers = [|0u|]
-        Gl.GenFramebuffers (1, framebuffers)
-        let framebuffer = framebuffers.[0]
-        Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
-
-        let frametextures = [|0u|]
-        Gl.GenTextures (1, frametextures)
-        let frametexture = frametextures.[0]
-        Gl.BindTexture (Gl.TextureTarget.Texture2D, frametexture)
-        Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, Gl.PixelInternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, Gl.PixelFormat.Rgba, Gl.PixelType.Float, nativeint 0)
-        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int Gl.TextureParameter.Nearest)
-        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int Gl.TextureParameter.Nearest)
-        Gl.FramebufferTexture (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.ColorAttachment0, frametexture, 0)
-
-        let depthbuffers = [|0u|]
-        Gl.GenRenderbuffers (1, depthbuffers)
-        let depthbuffer = depthbuffers.[0]
-        Gl.BindRenderbuffer (Gl.RenderbufferTarget.Renderbuffer, depthbuffer)
-        Gl.RenderbufferStorage (Gl.RenderbufferTarget.Renderbuffer, Gl.RenderbufferStorageEnum.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        Gl.FramebufferRenderbuffer (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.DepthStencilAttachment, Gl.RenderbufferTarget.Renderbuffer, depthbuffer)
-
         while true do
 
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
-            Gl.DrawBuffers (1, [|Gl.DrawBuffersEnum.ColorAttachment0|])
-            Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)//textureFramebufferTexture)
+            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-
-            Gl.UseProgram program
-            Gl.EnableVertexAttribArray lVertexPos2DAttrib
+            Gl.UseProgram whiteShaderProgram
+            Gl.EnableVertexAttribArray wVertexPos2DAttrib
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            Gl.VertexAttribPointer (lVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
             Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
             Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray lVertexPos2DAttrib
+            Gl.DisableVertexAttribArray wVertexPos2DAttrib
             Gl.UseProgram 0u
 
-            // ...
+            //Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            //Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            //Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            //Gl.UseProgram whiteShaderProgram
+            //Gl.EnableVertexAttribArray sVertexPos2DAttrib
+            //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+            //Gl.VertexAttribPointer (sVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            //Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            //Gl.Uniform1i (sTexUniform, 0) // set attrib to texture slot 0
+            //Gl.ActiveTexture 0 // make texture slot 0 active
+            //Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+            //Gl.BindSampler (0u, 0u) // use texture's built-in sampling configuration
+            //Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            //Gl.DisableVertexAttribArray sVertexPos2DAttrib
+            //Gl.UseProgram 0u
 
             SDL.SDL_GL_SwapWindow window
+            Threading.Thread.Sleep 16
 
         let renderer =
             { RenderContext = renderContext

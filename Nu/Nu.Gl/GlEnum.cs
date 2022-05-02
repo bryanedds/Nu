@@ -5,6 +5,8 @@ namespace Nu
 #pragma warning disable CS1591
     public partial class Gl
     {
+        public const int TextureUnit0 = ((int)0x84C0);
+
         public enum ActiveAttribType : int
         {
             Float = ((int)0x1406),
@@ -2507,43 +2509,6 @@ namespace Nu
             ProxyTexture2DMultisample = ((int)0x9101),
             Texture2DMultisampleArray = ((int)0x9102),
             ProxyTexture2DMultisampleArray = ((int)0x9103),
-        }
-
-        [Obsolete("The TextureUnit enum is deprecated and may be removed in a future build.  Use ActiveTexture(Int32) instead, which will automatically offset your texture by the GL_TEXTURE0.")]
-        public enum TextureUnit : int
-        {
-            Texture0 = ((int)0x84C0),
-            Texture1 = ((int)0x84C1),
-            Texture2 = ((int)0x84C2),
-            Texture3 = ((int)0x84C3),
-            Texture4 = ((int)0x84C4),
-            Texture5 = ((int)0x84C5),
-            Texture6 = ((int)0x84C6),
-            Texture7 = ((int)0x84C7),
-            Texture8 = ((int)0x84C8),
-            Texture9 = ((int)0x84C9),
-            Texture10 = ((int)0x84CA),
-            Texture11 = ((int)0x84CB),
-            Texture12 = ((int)0x84CC),
-            Texture13 = ((int)0x84CD),
-            Texture14 = ((int)0x84CE),
-            Texture15 = ((int)0x84CF),
-            Texture16 = ((int)0x84D0),
-            Texture17 = ((int)0x84D1),
-            Texture18 = ((int)0x84D2),
-            Texture19 = ((int)0x84D3),
-            Texture20 = ((int)0x84D4),
-            Texture21 = ((int)0x84D5),
-            Texture22 = ((int)0x84D6),
-            Texture23 = ((int)0x84D7),
-            Texture24 = ((int)0x84D8),
-            Texture25 = ((int)0x84D9),
-            Texture26 = ((int)0x84DA),
-            Texture27 = ((int)0x84DB),
-            Texture28 = ((int)0x84DC),
-            Texture29 = ((int)0x84DD),
-            Texture30 = ((int)0x84DE),
-            Texture31 = ((int)0x84DF)
         }
 
         public enum TransformFeedbackMode : int
