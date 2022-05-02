@@ -639,7 +639,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
-        
+
         let glContext = SDL.SDL_GL_CreateContext (window)
 
         let program = Gl.CreateProgram ()
@@ -664,20 +664,20 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
 
         let vertexData =
-            [|-0.5f; -0.5f;
-              +0.5f; -0.5f;
-              +0.5f; +0.5f;
-              -0.5f; +0.5f|]
-        let mutable vertexBuffers = [|0u|]
+            [|-0.95f; -0.95f;
+              +0.95f; -0.95f;
+              +0.95f; +0.95f;
+              -0.95f; +0.95f|]
+        let vertexBuffers = [|0u|]
         Gl.GenBuffers (1, vertexBuffers)
         let vertexBuffer = vertexBuffers.[0]
         Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-        
+
         let indexData = [|0u; 1u; 2u; 3u|]
-        let mutable indexBuffers = [|0u|]
+        let indexBuffers = [|0u|]
         Gl.GenBuffers (1, indexBuffers)
         let indexBuffer = indexBuffers.[0]
         Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
@@ -685,8 +685,34 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
 
+        let framebuffers = [|0u|]
+        Gl.GenFramebuffers (1, framebuffers)
+        let framebuffer = framebuffers.[0]
+        Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
+
+        let frametextures = [|0u|]
+        Gl.GenTextures (1, frametextures)
+        let frametexture = frametextures.[0]
+        Gl.BindTexture (Gl.TextureTarget.Texture2D, frametexture)
+        Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, Gl.PixelInternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, Gl.PixelFormat.Rgba, Gl.PixelType.Float, nativeint 0)
+        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int Gl.TextureParameter.Nearest)
+        Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int Gl.TextureParameter.Nearest)
+        Gl.FramebufferTexture (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.ColorAttachment0, frametexture, 0)
+
+        let depthbuffers = [|0u|]
+        Gl.GenRenderbuffers (1, depthbuffers)
+        let depthbuffer = depthbuffers.[0]
+        Gl.BindRenderbuffer (Gl.RenderbufferTarget.Renderbuffer, depthbuffer)
+        Gl.RenderbufferStorage (Gl.RenderbufferTarget.Renderbuffer, Gl.RenderbufferStorageEnum.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.DepthStencilAttachment, Gl.RenderbufferTarget.Renderbuffer, depthbuffer)
+
         while true do
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit) // just the color for now
+
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
+            Gl.DrawBuffers (1, [|Gl.DrawBuffersEnum.ColorAttachment0|])
+            Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+
             Gl.UseProgram program
             Gl.EnableVertexAttribArray lVertexPos2DAttrib
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
@@ -695,8 +721,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
             Gl.DisableVertexAttribArray lVertexPos2DAttrib
             Gl.UseProgram 0u
+
+            // ...
+
             SDL.SDL_GL_SwapWindow window
-            Threading.Thread.Sleep 16
 
         let renderer =
             { RenderContext = renderContext
