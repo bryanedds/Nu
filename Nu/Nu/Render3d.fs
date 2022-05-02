@@ -25,26 +25,28 @@ type Materials =
     { MaterialsOpaque : Map<Material, Material array>
       MaterialsTransparent : Material array }
 
-/// Describes a render pass.
-type [<CustomEquality; CustomComparison>] RenderPassDescriptor =
+/// Describes a 3d render pass.
+type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPassOp : Materials * Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit }
+      RenderPass3d : Materials * Matrix4x4 * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? RenderPassDescriptor as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
+            | :? RenderPassDescriptor3d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
             | _ -> -1
     override this.Equals (that : obj) =
         match that with
-        | :? RenderPassDescriptor as that -> this.RenderPassOrder = that.RenderPassOrder
+        | :? RenderPassDescriptor3d as that -> this.RenderPassOrder = that.RenderPassOrder
         | _ -> false
     override this.GetHashCode () = hash this.RenderPassOrder
 
 /// A message to the 3d renderer.
-type [<NoEquality; NoComparison>] RenderMessage3d =
+and [<NoEquality; NoComparison>] RenderMessage3d =
     | MaterialDescriptor of Material
     | MaterialsDescriptor of Material array
-    | RenderPrePassDescriptor of RenderPassDescriptor
-    | RenderSubstitutionPassDescriptor of RenderPassDescriptor
-    | RenderPostPassDescriptor of RenderPassDescriptor
-    | RenderCallback3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer -> unit)
+    | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
+    | RenderPrePassDescriptor3d of RenderPassDescriptor3d
+    | RenderPostPassDescriptor3d of RenderPassDescriptor3d
+
+/// The 3d renderer. Represents the 3d rendering system in Nu generally.
+and Renderer3d () = class end
