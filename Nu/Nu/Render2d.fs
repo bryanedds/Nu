@@ -688,10 +688,44 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         // fin
         (texture, framebuffer)
 
+    /// Create a full screen quad.
+    static member createFullScreenQuad () =
+
+        // create vertices
+        let vertexData =
+            [|-1.0f; -1.0f;
+              +1.0f; -1.0f;
+              +1.0f; +1.0f;
+              -1.0f; +1.0f|]
+
+        // create vertex buffer
+        let vertexBuffers = [|0u|]
+        Gl.GenBuffers (1, vertexBuffers)
+        let vertexBuffer = vertexBuffers.[0]
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
+        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+
+        // create index buffer
+        let indexData = [|0u; 1u; 2u; 3u|]
+        let indexBuffers = [|0u|]
+        Gl.GenBuffers (1, indexBuffers)
+        let indexBuffer = indexBuffers.[0]
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
+        let indexDataSize = IntPtr (4 * sizeof<uint>)
+        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+
+        // fin
+        (vertexBuffer, indexBuffer)
+
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
         
         let glContext = SDL.SDL_GL_CreateContext (window)
+
+        Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
 
         let (textureFramebufferTexture, _) = SdlRenderer.createTextureFramebuffer ()
 
@@ -719,7 +753,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
              "void main()"
              "{"
              "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
-             "  texCoord = vec2(pos.x, pos.y);"
+             "  texCoord = vec2((pos.x + 1) / 2, (pos.y + 1) / 2);"
              "}"] |> String.join "\n"
         let samplerFragmentShaderStr =
             ["#version 410"
@@ -756,12 +790,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
 
+        let (fullScreenQuadVertices, fullScreenQuadIndices) = SdlRenderer.createFullScreenQuad ()
+
         while true do
 
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            // 3d rendering...
+            // 3d rendering here...
 
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
@@ -778,9 +814,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
             Gl.UseProgram samplerShaderProgram
             Gl.EnableVertexAttribArray sVertexPos2DAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
             Gl.VertexAttribPointer (sVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
             Gl.Uniform1i (sTexUniform, 0) // set attrib to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
