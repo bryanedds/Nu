@@ -735,10 +735,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let sTexUniform = Gl.GetUniformLocation (samplerShaderProgram, "tex")
 
         let vertexData =
-            [|-0.5f; -0.5f;
-              +0.5f; -0.5f;
-              +0.5f; +0.5f;
-              -0.5f; +0.5f|]
+            [|-0.9f; -0.9f;
+              +0.9f; -0.9f;
+              +0.9f; +0.9f;
+              -0.9f; +0.9f|]
         let mutable vertexBuffers = [|0u|]
         Gl.GenBuffers (1, vertexBuffers)
         let vertexBuffer = vertexBuffers.[0]
@@ -746,7 +746,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-        
+
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffers = [|0u|]
         Gl.GenBuffers (1, indexBuffers)
@@ -758,7 +758,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
         while true do
 
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)//textureFramebufferTexture)
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            // 3d rendering...
+
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
             Gl.UseProgram whiteShaderProgram
@@ -770,21 +775,19 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.DisableVertexAttribArray wVertexPos2DAttrib
             Gl.UseProgram 0u
 
-            //Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            //Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            //Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            //Gl.UseProgram whiteShaderProgram
-            //Gl.EnableVertexAttribArray sVertexPos2DAttrib
-            //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            //Gl.VertexAttribPointer (sVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            //Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
-            //Gl.Uniform1i (sTexUniform, 0) // set attrib to texture slot 0
-            //Gl.ActiveTexture 0 // make texture slot 0 active
-            //Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            //Gl.BindSampler (0u, 0u) // use texture's built-in sampling configuration
-            //Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            //Gl.DisableVertexAttribArray sVertexPos2DAttrib
-            //Gl.UseProgram 0u
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            Gl.UseProgram samplerShaderProgram
+            Gl.EnableVertexAttribArray sVertexPos2DAttrib
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+            Gl.VertexAttribPointer (sVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            Gl.Uniform1i (sTexUniform, 0) // set attrib to texture slot 0
+            Gl.ActiveTexture 0 // make texture slot 0 active
+            Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+            Gl.BindSampler (0u, 0u) // use texture's built-in sampling configuration
+            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            Gl.DisableVertexAttribArray sVertexPos2DAttrib
+            Gl.UseProgram 0u
 
             SDL.SDL_GL_SwapWindow window
             Threading.Thread.Sleep 16
