@@ -695,6 +695,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
             Gl.DisableVertexAttribArray lVertexPos2DAttrib
             Gl.UseProgram 0u
+            SDL.SDL_GL_SwapWindow window
             Threading.Thread.Sleep 16
 
         let renderer =
