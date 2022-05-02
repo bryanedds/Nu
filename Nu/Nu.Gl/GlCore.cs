@@ -478,7 +478,7 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glGetMultisamplefv", ExactSpelling = true)]
             internal extern static void GetMultisamplefv(GetMultisamplePName pname, UInt32 index, [OutAttribute] Single[] val);
             [DllImport(Gl.Library, EntryPoint = "glGetObjectLabel", ExactSpelling = true)]
-            internal extern static void GetObjectLabel(ObjectLabel identifier, UInt32 name, Int32 bufSize, [OutAttribute] Int32[] length, [OutAttribute] System.Text.StringBuilder label);
+            internal extern static void GetObjectLabel(ObjectLabelEnum identifier, UInt32 name, Int32 bufSize, [OutAttribute] Int32[] length, [OutAttribute] System.Text.StringBuilder label);
             [DllImport(Gl.Library, EntryPoint = "glGetObjectPtrLabel", ExactSpelling = true)]
             internal extern static void GetObjectPtrLabel([OutAttribute] IntPtr ptr, Int32 bufSize, [OutAttribute] Int32[] length, [OutAttribute] System.Text.StringBuilder label);
             [DllImport(Gl.Library, EntryPoint = "glGetPointerv", ExactSpelling = true)]
@@ -684,7 +684,7 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glLinkProgram", ExactSpelling = true)]
             internal extern static void LinkProgram(UInt32 program);
             [DllImport(Gl.Library, EntryPoint = "glLogicOp", ExactSpelling = true)]
-            internal extern static void LogicOp(LogicOp opcode);
+            internal extern static void LogicOp(LogicOpEnum opcode);
             [DllImport(Gl.Library, EntryPoint = "glMapBuffer", ExactSpelling = true)]
             internal extern static IntPtr MapBuffer(BufferTarget target, BufferAccess access);
             [DllImport(Gl.Library, EntryPoint = "glMapNamedBuffer", ExactSpelling = true)]
@@ -710,7 +710,7 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glMultiDrawElementsIndirect", ExactSpelling = true)]
             internal extern static void MultiDrawElementsIndirect(BeginMode mode, DrawElementsType type, IntPtr indirect, Int32 drawcount, Int32 stride);
             [DllImport(Gl.Library, EntryPoint = "glObjectLabel", ExactSpelling = true)]
-            internal extern static void ObjectLabel(ObjectLabel identifier, UInt32 name, Int32 length, String label);
+            internal extern static void ObjectLabel(ObjectLabelEnum identifier, UInt32 name, Int32 length, String label);
             [DllImport(Gl.Library, EntryPoint = "glObjectPtrLabel", ExactSpelling = true)]
             internal extern static void ObjectPtrLabel(IntPtr ptr, Int32 length, String label);
             [DllImport(Gl.Library, EntryPoint = "glPatchParameteri", ExactSpelling = true)]
@@ -732,7 +732,7 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glPointSize", ExactSpelling = true)]
             internal extern static void PointSize(Single size);
             [DllImport(Gl.Library, EntryPoint = "glPolygonMode", ExactSpelling = true)]
-            internal extern static void PolygonMode(MaterialFace face, PolygonMode mode);
+            internal extern static void PolygonMode(MaterialFace face, PolygonModeEnum mode);
             [DllImport(Gl.Library, EntryPoint = "glPolygonOffset", ExactSpelling = true)]
             internal extern static void PolygonOffset(Single factor, Single units);
             [DllImport(Gl.Library, EntryPoint = "glPrimitiveRestartIndex", ExactSpelling = true)]
@@ -820,13 +820,13 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glReadnPixels", ExactSpelling = true)]
             internal extern static void ReadnPixels(Int32 x, Int32 y, Int32 width, Int32 height, PixelFormat format, PixelType type, Int32 bufSize, Int32[] data);
             [DllImport(Gl.Library, EntryPoint = "glRenderbufferStorage", ExactSpelling = true)]
-            internal extern static void RenderbufferStorage(RenderbufferTarget target, RenderbufferStorage internalFormat, Int32 width, Int32 height);
+            internal extern static void RenderbufferStorage(RenderbufferTarget target, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height);
             [DllImport(Gl.Library, EntryPoint = "glNamedRenderbufferStorage", ExactSpelling = true)]
-            internal extern static void NamedRenderbufferStorage(UInt32 renderbuffer, RenderbufferStorage internalFormat, Int32 width, Int32 height);
+            internal extern static void NamedRenderbufferStorage(UInt32 renderbuffer, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height);
             [DllImport(Gl.Library, EntryPoint = "glRenderbufferStorageMultisample", ExactSpelling = true)]
-            internal extern static void RenderbufferStorageMultisample(RenderbufferTarget target, Int32 samples, RenderbufferStorage internalFormat, Int32 width, Int32 height);
+            internal extern static void RenderbufferStorageMultisample(RenderbufferTarget target, Int32 samples, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height);
             [DllImport(Gl.Library, EntryPoint = "glNamedRenderbufferStorageMultisample", ExactSpelling = true)]
-            internal extern static void NamedRenderbufferStorageMultisample(UInt32 renderbuffer, Int32 samples, RenderbufferStorage internalFormat, Int32 width, Int32 height);
+            internal extern static void NamedRenderbufferStorageMultisample(UInt32 renderbuffer, Int32 samples, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height);
             [DllImport(Gl.Library, EntryPoint = "glSampleCoverage", ExactSpelling = true)]
             internal extern static void SampleCoverage(Single value, Boolean invert);
             [DllImport(Gl.Library, EntryPoint = "glSampleMaski", ExactSpelling = true)]
@@ -866,9 +866,9 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glStencilMaskSeparate", ExactSpelling = true)]
             internal extern static void StencilMaskSeparate(StencilFace face, UInt32 mask);
             [DllImport(Gl.Library, EntryPoint = "glStencilOp", ExactSpelling = true)]
-            internal extern static void StencilOp(StencilOp sfail, StencilOp dpfail, StencilOp dppass);
+            internal extern static void StencilOp(StencilOpEnum sfail, StencilOpEnum dpfail, StencilOpEnum dppass);
             [DllImport(Gl.Library, EntryPoint = "glStencilOpSeparate", ExactSpelling = true)]
-            internal extern static void StencilOpSeparate(StencilFace face, StencilOp sfail, StencilOp dpfail, StencilOp dppass);
+            internal extern static void StencilOpSeparate(StencilFace face, StencilOpEnum sfail, StencilOpEnum dpfail, StencilOpEnum dppass);
             [DllImport(Gl.Library, EntryPoint = "glTexBuffer", ExactSpelling = true)]
             internal extern static void TexBuffer(TextureBufferTarget target, SizedInternalFormat internalFormat, UInt32 buffer);
             [DllImport(Gl.Library, EntryPoint = "glTextureBuffer", ExactSpelling = true)]
@@ -1180,17 +1180,17 @@ namespace Nu
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribDivisor", ExactSpelling = true)]
             internal extern static void VertexAttribDivisor(UInt32 index, UInt32 divisor);
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribFormat", ExactSpelling = true)]
-            internal extern static void VertexAttribFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, Boolean normalized, UInt32 relativeoffset);
+            internal extern static void VertexAttribFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, Boolean normalized, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribIFormat", ExactSpelling = true)]
-            internal extern static void VertexAttribIFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset);
+            internal extern static void VertexAttribIFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribLFormat", ExactSpelling = true)]
-            internal extern static void VertexAttribLFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset);
+            internal extern static void VertexAttribLFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexArrayAttribFormat", ExactSpelling = true)]
-            internal extern static void VertexArrayAttribFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, Boolean normalized, UInt32 relativeoffset);
+            internal extern static void VertexArrayAttribFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, Boolean normalized, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexArrayAttribIFormat", ExactSpelling = true)]
-            internal extern static void VertexArrayAttribIFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset);
+            internal extern static void VertexArrayAttribIFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexArrayAttribLFormat", ExactSpelling = true)]
-            internal extern static void VertexArrayAttribLFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset);
+            internal extern static void VertexArrayAttribLFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset);
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribPointer", ExactSpelling = true)]
             internal extern static void VertexAttribPointer(UInt32 index, Int32 size, VertexAttribPointerType type, Boolean normalized, Int32 stride, IntPtr pointer);
             [DllImport(Gl.Library, EntryPoint = "glVertexAttribIPointer", ExactSpelling = true)]

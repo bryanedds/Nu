@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Runtime.InteropServices
 open SDL2
 open TiledSharp
 open Prime
@@ -637,7 +638,65 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         renderer.RenderContext
 
     /// Make a Renderer.
-    static member make renderContext =
+    static member make (window : nativeint) (renderContext : nativeint) =
+        
+        let glContext = SDL.SDL_GL_CreateContext (window)
+
+        let program = Gl.CreateProgram ()
+
+        let vertexStr = "#version 140\nin vec2 LVertexPos2D; void main() { gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); }"
+        let fragmentStr = "#version 140\nout vec4 LFragment; void main() { LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); }"
+
+        let vertexShader = Gl.CreateShader Gl.ShaderType.VertexShader
+        Gl.ShaderSource (vertexShader, 1, [|vertexStr|], null)
+        Gl.CompileShader vertexShader
+        Gl.AttachShader (program, vertexShader)
+
+        let fragmentShader = Gl.CreateShader Gl.ShaderType.FragmentShader
+        Gl.ShaderSource (fragmentShader, 1, [|fragmentStr|], null)
+        Gl.CompileShader fragmentShader
+        Gl.AttachShader (program, fragmentShader)
+
+        Gl.LinkProgram program
+
+        let lVertexPos2DAttrib = Gl.GetAttribLocation (program, "LVertexPos2D")
+
+        Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+
+        let vertexData =
+            [|-0.5f; -0.5f;
+              +0.5f; -0.5f;
+              +0.5f; +0.5f;
+              -0.5f; +0.5f|]
+        let mutable vertexBuffers = [|0u|]
+        Gl.GenBuffers (1, vertexBuffers)
+        let vertexBuffer = vertexBuffers.[0]
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
+        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+        
+        let indexData = [|0u; 1u; 2u; 3u|]
+        let mutable indexBuffers = [|0u|]
+        Gl.GenBuffers (1, indexBuffers)
+        let indexBuffer = indexBuffers.[0]
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
+        let indexDataSize = IntPtr (4 * sizeof<uint>)
+        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+
+        while true do
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit) // just the color for now
+            Gl.UseProgram program
+            Gl.EnableVertexAttribArray lVertexPos2DAttrib
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+            Gl.VertexAttribPointer (lVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            Gl.DisableVertexAttribArray lVertexPos2DAttrib
+            Gl.UseProgram 0u
+            Threading.Thread.Sleep 16
+
         let renderer =
             { RenderContext = renderContext
               RenderPackages = dictPlus StringComparer.Ordinal []

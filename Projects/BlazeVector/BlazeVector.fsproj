@@ -84,6 +84,11 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Nu\Nu.Gl\Nu.Gl.csproj">
+      <Name>Nu.Gl</Name>
+      <Project>{b3933fb6-9bec-45e8-a61f-e7e0d84d964a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
       <Name>Nu.Pipe</Name>
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>

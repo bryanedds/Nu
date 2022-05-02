@@ -117,6 +117,11 @@
     <None Include="Assets\Gui\Credits.nugroup" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Nu\Nu.Gl\Nu.Gl.csproj">
+      <Name>Nu.Gl</Name>
+      <Project>{b3933fb6-9bec-45e8-a61f-e7e0d84d964a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
