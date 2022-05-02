@@ -132,6 +132,11 @@
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Nu.Gl\Nu.Gl.csproj">
+      <Name>Nu.Gl</Name>
+      <Project>{b3933fb6-9bec-45e8-a61f-e7e0d84d964a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="Aether.Physics2D">
       <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>

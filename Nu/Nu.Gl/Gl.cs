@@ -6421,7 +6421,7 @@ namespace Nu
         /// <param name="label">
         /// The address of a string that will receive the object label.
         /// </param>
-        public static void GetObjectLabel(ObjectLabel identifier, UInt32 name, Int32 bufSize, [OutAttribute] Int32[] length, [OutAttribute] System.Text.StringBuilder label)
+        public static void GetObjectLabel(ObjectLabelEnum identifier, UInt32 name, Int32 bufSize, [OutAttribute] Int32[] length, [OutAttribute] System.Text.StringBuilder label)
         {
             Delegates.glGetObjectLabel(identifier, name, bufSize, length, label);
         }
@@ -9389,7 +9389,7 @@ namespace Nu
         /// GL_XOR, GL_EQUIV, GL_AND_REVERSE, GL_AND_INVERTED, GL_OR_REVERSE, and GL_OR_INVERTED. The initial
         /// value is GL_COPY.
         /// </param>
-        public static void LogicOp(LogicOp opcode)
+        public static void LogicOp(LogicOpEnum opcode)
         {
             Delegates.glLogicOp(opcode);
         }
@@ -9757,7 +9757,7 @@ namespace Nu
         /// <param name="label">
         /// The address of a string containing the label to assign to the object.
         /// </param>
-        public static void ObjectLabel(ObjectLabel identifier, UInt32 name, Int32 length, String label)
+        public static void ObjectLabel(ObjectLabelEnum identifier, UInt32 name, Int32 length, String label)
         {
             Delegates.glObjectLabel(identifier, name, length, label);
         }
@@ -9985,7 +9985,7 @@ namespace Nu
         /// Specifies how polygons will be rasterized. Accepted values are GL_POINT, GL_LINE, and GL_FILL. The
         /// initial value is GL_FILL for both front- and back-facing polygons.
         /// </param>
-        public static void PolygonMode(MaterialFace face, PolygonMode mode)
+        public static void PolygonMode(MaterialFace face, PolygonModeEnum mode)
         {
             Delegates.glPolygonMode(face, mode);
         }
@@ -11263,7 +11263,7 @@ namespace Nu
         /// <param name="height">
         /// Specifies the height of the renderbuffer, in pixels.
         /// </param>
-        public static void RenderbufferStorage(RenderbufferTarget target, RenderbufferStorage internalFormat, Int32 width, Int32 height)
+        public static void RenderbufferStorage(RenderbufferTarget target, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height)
         {
             Delegates.glRenderbufferStorage(target, internalFormat, width, height);
         }
@@ -11288,7 +11288,7 @@ namespace Nu
         /// <param name="height">
         /// Specifies the height of the renderbuffer, in pixels.
         /// </param>
-        public static void NamedRenderbufferStorage(UInt32 renderbuffer, RenderbufferStorage internalFormat, Int32 width, Int32 height)
+        public static void NamedRenderbufferStorage(UInt32 renderbuffer, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height)
         {
             Delegates.glNamedRenderbufferStorage(renderbuffer, internalFormat, width, height);
         }
@@ -11316,7 +11316,7 @@ namespace Nu
         /// <param name="height">
         /// Specifies the height of the renderbuffer, in pixels.
         /// </param>
-        public static void RenderbufferStorageMultisample(RenderbufferTarget target, Int32 samples, RenderbufferStorage internalFormat, Int32 width, Int32 height)
+        public static void RenderbufferStorageMultisample(RenderbufferTarget target, Int32 samples, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height)
         {
             Delegates.glRenderbufferStorageMultisample(target, samples, internalFormat, width, height);
         }
@@ -11343,7 +11343,7 @@ namespace Nu
         /// <param name="height">
         /// Specifies the height of the renderbuffer, in pixels.
         /// </param>
-        public static void NamedRenderbufferStorageMultisample(UInt32 renderbuffer, Int32 samples, RenderbufferStorage internalFormat, Int32 width, Int32 height)
+        public static void NamedRenderbufferStorageMultisample(UInt32 renderbuffer, Int32 samples, RenderbufferStorageEnum internalFormat, Int32 width, Int32 height)
         {
             Delegates.glNamedRenderbufferStorageMultisample(renderbuffer, samples, internalFormat, width, height);
         }
@@ -11855,7 +11855,7 @@ namespace Nu
         /// test passes and either there is no depth buffer or depth testing is not enabled. dppass accepts the
         /// same symbolic constants as sfail. The initial value is GL_KEEP.
         /// </param>
-        public static void StencilOp(StencilOp sfail, StencilOp dpfail, StencilOp dppass)
+        public static void StencilOp(StencilOpEnum sfail, StencilOpEnum dpfail, StencilOpEnum dppass)
         {
             Delegates.glStencilOp(sfail, dpfail, dppass);
         }
@@ -11888,7 +11888,7 @@ namespace Nu
         /// test passes and either there is no depth buffer or depth testing is not enabled. dppass accepts the
         /// same symbolic constants as sfail. The initial value is GL_KEEP.
         /// </param>
-        public static void StencilOpSeparate(StencilFace face, StencilOp sfail, StencilOp dpfail, StencilOp dppass)
+        public static void StencilOpSeparate(StencilFace face, StencilOpEnum sfail, StencilOpEnum dpfail, StencilOpEnum dppass)
         {
             Delegates.glStencilOpSeparate(face, sfail, dpfail, dppass);
         }
@@ -17503,7 +17503,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexAttribFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, Boolean normalized, UInt32 relativeoffset)
+        public static void VertexAttribFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, Boolean normalized, UInt32 relativeoffset)
         {
             Delegates.glVertexAttribFormat(attribindex, size, type, normalized, relativeoffset);
         }
@@ -17531,7 +17531,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexAttribIFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset)
+        public static void VertexAttribIFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset)
         {
             Delegates.glVertexAttribIFormat(attribindex, size, type, relativeoffset);
         }
@@ -17559,7 +17559,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexAttribLFormat(UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset)
+        public static void VertexAttribLFormat(UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset)
         {
             Delegates.glVertexAttribLFormat(attribindex, size, type, relativeoffset);
         }
@@ -17594,7 +17594,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexArrayAttribFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, Boolean normalized, UInt32 relativeoffset)
+        public static void VertexArrayAttribFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, Boolean normalized, UInt32 relativeoffset)
         {
             Delegates.glVertexArrayAttribFormat(vaobj, attribindex, size, type, normalized, relativeoffset);
         }
@@ -17625,7 +17625,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexArrayAttribIFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset)
+        public static void VertexArrayAttribIFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset)
         {
             Delegates.glVertexArrayAttribIFormat(vaobj, attribindex, size, type, relativeoffset);
         }
@@ -17656,7 +17656,7 @@ namespace Nu
         /// <param name="relativeoffset">
         /// The distance between elements within the buffer.
         /// </param>
-        public static void VertexArrayAttribLFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormat type, UInt32 relativeoffset)
+        public static void VertexArrayAttribLFormat(UInt32 vaobj, UInt32 attribindex, Int32 size, VertexAttribFormatEnum type, UInt32 relativeoffset)
         {
             Delegates.glVertexArrayAttribLFormat(vaobj, attribindex, size, type, relativeoffset);
         }

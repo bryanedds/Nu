@@ -19,7 +19,7 @@ type [<StructuralEquality; NoComparison>] SdlWindowConfig =
         { WindowTitle = "Nu Game"
           WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
           WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the view that SDL will use to render.
 type [<StructuralEquality; NoComparison>] SdlViewConfig =

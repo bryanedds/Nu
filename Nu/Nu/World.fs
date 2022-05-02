@@ -518,7 +518,7 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake sdlDeps config (plugin : NuPlugin) =
+        static member tryMake (sdlDeps : SdlDeps) config (plugin : NuPlugin) =
 
             // ensure game engine is initialized
             Nu.init config.NuConfig
@@ -568,9 +568,9 @@ module WorldModule3 =
                     let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
                     let renderer2d =
-                        match SdlDeps.getRenderContextOpt sdlDeps with
-                        | Some renderContext -> SdlRenderer.make renderContext :> Renderer2d
-                        | None -> MockRenderer2d.make () :> Renderer2d
+                        match (SdlDeps.getWindowOpt sdlDeps, SdlDeps.getRenderContextOpt sdlDeps) with
+                        | (Some window, Some renderContext) -> SdlRenderer.make window renderContext :> Renderer2d
+                        | (_, _) -> MockRenderer2d.make () :> Renderer2d
                     renderer2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace Nu
 {
     /// <summary>
-    /// Bindings to OpenGL 4.5 methods as well as some helper shortcuts.
+    /// Some helper shortcuts.
     /// </summary>
     partial class Gl
     {
