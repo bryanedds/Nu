@@ -19,24 +19,41 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
-    | RenderCallback2d of (Matrix3x3 * Matrix3x3 * Vector2 * Vector2 * Vector2 * Renderer -> unit)
+    | RenderCallbackDescriptor2d of (Matrix3x3 * Matrix3x3 * Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
 
 /// A layered message to the 2d rendering system.
-type [<NoEquality; NoComparison>] RenderLayeredMessage2d =
+and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
     { Elevation : single
       Horizon : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
+/// Describes a 2d render pass.
+and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
+    { RenderPassOrder : int64
+      RenderPass2d : Matrix3x3 * Renderer2d -> unit } // TODO: check if an M33 accounts for camera zoom.
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? RenderPassDescriptor2d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
+            | _ -> -1
+    override this.Equals (that : obj) =
+        match that with
+        | :? RenderPassDescriptor2d as that -> this.RenderPassOrder = that.RenderPassOrder
+        | _ -> false
+    override this.GetHashCode () = hash this.RenderPassOrder
+
 /// A message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
+    | RenderUpdateMaterial2d of (Renderer -> unit)
+    | RenderPrePassDescriptor2d of RenderPassDescriptor2d
+    | RenderPostPassDescriptor2d of RenderPassDescriptor2d
     | HintRenderPackageUseMessage2d of string
     | HintRenderPackageDisuseMessage2d of string
     | ReloadRenderAssetsMessage2d
-    //| ScreenFlashMessage2d of ...
 
-/// The renderer. Represents the rendering system in Nu generally.
+/// The 2d renderer. Represents the 2d rendering system in Nu generally.
 and Renderer2d =
     inherit Renderer
     /// Pop all of the render messages that have been enqueued.
@@ -570,7 +587,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
-        | RenderCallback2d callback ->
+        | RenderCallbackDescriptor2d callback ->
             callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
