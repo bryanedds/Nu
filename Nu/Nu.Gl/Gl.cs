@@ -35,15 +35,12 @@ namespace Nu
         /// texture units an implementation supports is implementation dependent, but must be at least 80.
         /// </para>
         /// </summary>
-        /// <param name="texture">
-        /// Specifies which texture unit to make active. The number of texture units is implementation
-        /// dependent, but must be at least 80. texture must be one of GL_TEXTUREi, where i ranges from zero to
-        /// the value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS minus one. The initial value is GL_TEXTURE0.
+        /// <param name="textureUnitOffset">
+        /// The offset from TextureUnit.Texture0.
         /// </param>
-        [Obsolete("ActiveTexture(TextureUnit) is deprecated, please use ActiveTexture(int) instead.")]
-        public static void ActiveTexture(TextureUnit texture)
+        public static void ActiveTexture(int textureUnitOffset)
         {
-            Delegates.glActiveTexture((int)texture);
+            Delegates.glActiveTexture(TextureUnit0 + textureUnitOffset);
         }
         /// <summary>
         /// Attaches a shader object to a program object.
