@@ -720,6 +720,36 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         // fin
         (vertexBuffer, indexBuffer)
 
+    static member createBlitShaderProgram () =
+        
+        // vertex shader code
+        let samplerVertexShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "in vec2 pos;"
+             "out vec2 texCoord;"
+             "void main()"
+             "{"
+             "  gl_Position = vec4(pos.x, pos.y, 0, 1);"
+             "  texCoord = vec2((pos.x + 1) * 0.5, (pos.y + 1) * 0.5);"
+             "}"] |> String.join "\n"
+
+        // fragment shader code
+        let samplerFragmentShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "uniform sampler2D tex;"
+             "in vec2 texCoord;"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "  frag = texture(tex, texCoord);"
+             "}"] |> String.join "\n"
+
+        // create blit shader program
+        let blitShaderProgram = SdlRenderer.createShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
+        let texUniform = Gl.GetUniformLocation (blitShaderProgram, "tex")
+        let posAttrib = Gl.GetAttribLocation (blitShaderProgram, "pos")
+        (blitShaderProgram, texUniform, posAttrib)
+
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
         
@@ -730,14 +760,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let (textureFramebufferTexture, _) = SdlRenderer.createTextureFramebuffer ()
 
         let whiteVertexShaderStr =
-            ["#version 410"
+            [Constants.Render.GlslVersionPragma
              "in vec2 pos;"
              "void main()"
              "{"
              "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
              "}"] |> String.join "\n"
         let whiteFragmentShaderStr =
-            ["#version 410"
+            [Constants.Render.GlslVersionPragma
              "out vec4 frag;"
              "void main()"
              "{"
@@ -745,28 +775,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
              "}"] |> String.join "\n"
         let whiteShaderProgram = SdlRenderer.createShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
         let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
-        
-        let samplerVertexShaderStr =
-            ["#version 410"
-             "in vec2 pos;"
-             "out vec2 texCoord;"
-             "void main()"
-             "{"
-             "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
-             "  texCoord = vec2((pos.x + 1) / 2, (pos.y + 1) / 2);"
-             "}"] |> String.join "\n"
-        let samplerFragmentShaderStr =
-            ["#version 410"
-             "uniform sampler2D tex;"
-             "in vec2 texCoord;"
-             "out vec4 frag;"
-             "void main()"
-             "{"
-             "  frag = texture(tex, texCoord);"
-             "}"] |> String.join "\n"
-        let samplerShaderProgram = SdlRenderer.createShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
-        let sVertexPos2DAttrib = Gl.GetAttribLocation (samplerShaderProgram, "pos")
-        let sTexUniform = Gl.GetUniformLocation (samplerShaderProgram, "tex")
+
+        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = SdlRenderer.createBlitShaderProgram ()
 
         let vertexData =
             [|-0.9f; -0.9f;
@@ -797,7 +807,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            //
             // 3d rendering here...
+            //
 
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
@@ -812,17 +824,17 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.UseProgram 0u
 
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.UseProgram samplerShaderProgram
-            Gl.EnableVertexAttribArray sVertexPos2DAttrib
+            Gl.UseProgram blitShaderProgram
+            Gl.EnableVertexAttribArray blitPosAttrib
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
-            Gl.VertexAttribPointer (sVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
             Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
-            Gl.Uniform1i (sTexUniform, 0) // set attrib to texture slot 0
+            Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
             Gl.BindSampler (0u, 0u) // use texture's built-in sampling configuration
             Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray sVertexPos2DAttrib
+            Gl.DisableVertexAttribArray blitPosAttrib
             Gl.UseProgram 0u
 
             SDL.SDL_GL_SwapWindow window
