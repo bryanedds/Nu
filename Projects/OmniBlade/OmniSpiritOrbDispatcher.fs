@@ -41,11 +41,11 @@ module SpiritOrbDispatcher =
                         (spirit.Position, Assets.Field.SpiritImage, color)
                     | ChestInhabitant chest ->
                         let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
-                        let color = colWhite.WithA (byte 127)
+                        let color = Color.One.WithA 0.5f
                         (chest.Center, image, color)
                     | PortalInhabitant portal ->
                         let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.ImageEmpty
-                        let color = colWhite.WithA (byte 127)
+                        let color = Color.One.WithA 0.5f
                         (portal.Center, image, color)
                 let delta = position - avatarLowerCenter
                 let distance = delta.Magnitude
@@ -58,8 +58,8 @@ module SpiritOrbDispatcher =
                     transform.Absolute <- orbTransform.Absolute
                     let colorFadeIn =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
-                        if distanceNormalized < 0.25f then color.MapA (fun a -> single a * (distanceNormalized / 0.25f) |> byte) else color
-                    let descriptor = { Transform = transform; InsetOpt = None; Image = image; Blend = Transparent; Color = colorFadeIn; Glow = colZero; Flip = FlipNone }
+                        if distanceNormalized < 0.25f then color.MapA ((*) (distanceNormalized / 0.25f)) else color
+                    let descriptor = { Transform = transform; InsetOpt = None; Image = image; Blend = Transparent; Color = colorFadeIn; Glow = Color.Zero; Flip = FlipNone }
                     let view = Render2d (transform.Elevation, transform.Perimeter.Position.Y, AssetTag.generalize image, SpriteDescriptor descriptor)
                     view :: views
                 else views)
@@ -68,7 +68,7 @@ module SpiritOrbDispatcher =
         override this.View (spiritOrb, entity, world) =
             let mutable orbTransform = entity.GetTransform world
             let orbImage = Assets.Field.SpiritOrbImage
-            let orbDescriptor = { Transform = orbTransform; InsetOpt = None; Image = orbImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
+            let orbDescriptor = { Transform = orbTransform; InsetOpt = None; Image = orbImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
             let orbView = Render2d (orbTransform.Elevation, orbTransform.Perimeter.Position.Y, AssetTag.generalize orbImage, SpriteDescriptor orbDescriptor)
             let mutable avatarTransform = Transform.makeDefault v3Cartesian2d
             avatarTransform.Position <- orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f
@@ -76,7 +76,7 @@ module SpiritOrbDispatcher =
             avatarTransform.Elevation <- orbTransform.Elevation + 1.0f
             avatarTransform.Absolute <- orbTransform.Absolute
             let avatarImage = Assets.Field.SpiritAvatarImage
-            let avatarDescriptor = { Transform = avatarTransform; InsetOpt = None; Image = avatarImage; Color = colWhite; Blend = Transparent; Glow = colZero; Flip = FlipNone }
+            let avatarDescriptor = { Transform = avatarTransform; InsetOpt = None; Image = avatarImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
             let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Perimeter.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
             let spiritViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
             let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant spiritOrb.Chests)

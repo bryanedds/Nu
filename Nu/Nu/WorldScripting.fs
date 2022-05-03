@@ -712,6 +712,22 @@ module WorldScripting =
             | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
             | struct ([|r; g; b; a|], world) ->
+                let rOpt = match r with Single r -> Some r | _ -> None
+                let gOpt = match g with Single g -> Some g | _ -> None
+                let bOpt = match b with Single b -> Some b | _ -> None
+                let aOpt = match a with Single a -> Some a | _ -> None
+                match (rOpt, gOpt, bOpt, aOpt) with
+                | (Some r, Some g, Some b, Some a) -> struct (Pluggable { Color = Color (r, g, b, a) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
+
+        static member internal evalColor8Extrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|r; g; b; a|], world) ->
                 let rOpt = match r with Int r -> Some r | _ -> None
                 let gOpt = match g with Int g -> Some g | _ -> None
                 let bOpt = match b with Int b -> Some b | _ -> None
@@ -729,10 +745,14 @@ module WorldScripting =
                 match pluggable with
                 | :? ColorPluggable as color ->
                     match indexer with
-                    | "R" -> struct (Int (int color.Color.R), world)
-                    | "G" -> struct (Int (int color.Color.G), world)
-                    | "B" -> struct (Int (int color.Color.B), world)
-                    | "A" -> struct (Int (int color.Color.A), world)
+                    | "R" -> struct (Single color.Color.R, world)
+                    | "G" -> struct (Single color.Color.G, world)
+                    | "B" -> struct (Single color.Color.B, world)
+                    | "A" -> struct (Single color.Color.A, world)
+                    | "R8" -> struct (Int (int color.Color.R8), world)
+                    | "G8" -> struct (Int (int color.Color.G8), world)
+                    | "B8" -> struct (Int (int color.Color.B8), world)
+                    | "A8" -> struct (Int (int color.Color.A8), world)
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color index.", originOpt), world)
@@ -743,17 +763,30 @@ module WorldScripting =
             | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
-                match pluggable with
-                | :? ColorPluggable as color ->
-                    match indexer with
-                    | "R" -> struct (Pluggable { Color = Color (byte i, color.Color.G, color.Color.B, color.Color.A) }, world)
-                    | "G" -> struct (Pluggable { Color = Color (color.Color.R, byte i, color.Color.B, color.Color.A) }, world)
-                    | "B" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, byte i, color.Color.A) }, world)
-                    | "A" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, color.Color.B, byte i) }, world)
-                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
-                | _ -> failwithumf ()
-            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color target, a keyword index of R, G, B, or A, and an Int value.", originOpt), world)
+            | struct ([|Keyword indexer; field; Pluggable pluggable|], world) ->
+                match field with
+                | Single s ->
+                    match pluggable with
+                    | :? ColorPluggable as color ->
+                        match indexer with
+                        | "R" -> struct (Pluggable { Color = Color (s, color.Color.G, color.Color.B, color.Color.A) }, world)
+                        | "G" -> struct (Pluggable { Color = Color (color.Color.R, s, color.Color.B, color.Color.A) }, world)
+                        | "B" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, s, color.Color.A) }, world)
+                        | "A" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, color.Color.B, s) }, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
+                    | _ -> failwithumf ()
+                | Int i ->
+                    match pluggable with
+                    | :? ColorPluggable as color ->
+                        match indexer with
+                        | "R8" -> struct (Pluggable { Color = Color (byte i, color.Color.G8, color.Color.B8, color.Color.A8) }, world)
+                        | "G8" -> struct (Pluggable { Color = Color (color.Color.R8, byte i, color.Color.B8, color.Color.A8) }, world)
+                        | "B8" -> struct (Pluggable { Color = Color (color.Color.R8, color.Color.G8, byte i, color.Color.A8) }, world)
+                        | "A8" -> struct (Pluggable { Color = Color (color.Color.R8, color.Color.G8, color.Color.B8, byte i) }, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
+                    | _ -> failwithumf ()
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color target, a keyword index of R, G, B, or A, and an Int value or a keyword index of R8, G8, B8, or A8, and a Single value.", originOpt), world)
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color target, a keyword index of R, G, B, or A, and an Int value or a keyword index of R8, G8, B8, or A8, and a Single value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalGetExtrinsic fnName exprs originOpt world =
@@ -957,7 +990,8 @@ module WorldScripting =
                  ("quat", { Fn = World.evalQuatExtrinsic; Pars = [|"x"; "y"; "w"; "z"|]; DocOpt = Some "Construct a Quaternion." })
                  ("index_Quaternion", { Fn = World.evalIndexQuatExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Quaternion", { Fn = World.evalUpdateQuatExtrinsic; Pars = [||]; DocOpt = None })
-                 ("color", { Fn = World.evalColorExtrinsic; Pars = [|"r"; "g"; "b"; "a"|]; DocOpt = Some "Construct a Color." })
+                 ("color", { Fn = World.evalColorExtrinsic; Pars = [|"r"; "g"; "b"; "a"|]; DocOpt = Some "Construct a Color from normalized floating point components." })
+                 ("color8", { Fn = World.evalColor8Extrinsic; Pars = [|"r8"; "g8"; "b8"; "a8"|]; DocOpt = Some "Construct a Color from byte components." })
                  ("index_Color", { Fn = World.evalIndexColorExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Color", { Fn = World.evalUpdateColorExtrinsic; Pars = [||]; DocOpt = None })
                  ("get", { Fn = World.evalGetExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property." })

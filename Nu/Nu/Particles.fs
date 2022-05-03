@@ -789,7 +789,7 @@ module Particles =
                   Offset = v3Zero
                   Size = Constants.Engine.ParticleSizeDefault
                   Inset = box2Zero
-                  Color = Color.White
+                  Color = Color.One
                   Glow = Color.Zero
                   Flip = FlipNone }
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
@@ -805,7 +805,7 @@ module Particles =
                 while index <= watermark do
                     let particle = &emitter.ParticleRing.[index]
                     let progress = Life.getProgress time particle.Life
-                    particle.Color.A <- byte ((1.0f - progress) * 255.0f)
+                    particle.Color.A <- 1.0f - progress
                     index <- inc index
                 Output.empty
             let particleBehaviors =

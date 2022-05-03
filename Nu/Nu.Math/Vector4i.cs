@@ -529,12 +529,10 @@ namespace Nu
             return !left.Equals(right);
         }
 
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("({0}{4} {1}{4} {2}{4} {3})", X, Y, Z, W, ListSeparator);
+            return string.Format("({0}, {1}, {2}, {3})", X, Y, Z, W);
         }
 
         /// <summary>

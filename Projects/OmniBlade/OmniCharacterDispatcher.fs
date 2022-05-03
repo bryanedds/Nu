@@ -30,7 +30,7 @@ module CharacterDispatcher =
                     match Character.getAnimationProgressOpt (World.getUpdateTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
-                else Color.White
+                else Color.One
             color
 
         static let getSpriteGlow (character : Character) world =
@@ -135,9 +135,9 @@ module CharacterDispatcher =
                                 { Transform = afflictionTransform
                                   InsetOpt = afflictionInsetOpt
                                   Image = afflictionImage
-                                  Color = colWhite
+                                  Color = Color.One
                                   Blend = Transparent
-                                  Glow = colZero
+                                  Glow = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 let chargeOrbView =
@@ -161,9 +161,9 @@ module CharacterDispatcher =
                                 { Transform = transform
                                   InsetOpt = chargeOrbInsetOpt
                                   Image = chargeOrbImage
-                                  Color = colWhite
+                                  Color = Color.One
                                   Blend = Transparent
-                                  Glow = colZero
+                                  Glow = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 Views [|characterView; afflictionView; chargeOrbView|]

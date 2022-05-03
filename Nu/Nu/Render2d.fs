@@ -245,6 +245,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          glow : Color inref,
          flip : Flip,
          renderer) =
+        let mutable color = color
+        let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
@@ -282,16 +284,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                 rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                if color.A <> byte 0 then
+                if color.A <> 0.0f then
                     SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
                     let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                if glow.A <> byte 0 then
+                if glow.A <> 0.0f then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
                     let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
@@ -313,6 +315,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
          renderer) =
+        let mutable color = color
+        let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
@@ -386,16 +390,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         let mutable rotationCenter = SDL.SDL_Point ()
                         rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
                         rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
-                        if color.A <> byte 0 then
+                        if color.A <> 0.0f then
                             SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
+                            SDL.SDL_SetTextureColorMod (tileSetTexture, color.R8, color.G8, color.B8) |> ignore
+                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A8) |> ignore
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-                        if glow.A <> byte 0 then
+                        if glow.A <> 0.0f then
                             SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
+                            SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R8, glow.G8, glow.B8) |> ignore
+                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A8) |> ignore
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
                 tileIndex <- inc tileIndex
@@ -414,6 +418,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          color : Color inref,
          justification : Justification,
          renderer) =
+        let mutable color = color
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
@@ -428,10 +433,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
-                renderColor.r <- color.R
-                renderColor.g <- color.G
-                renderColor.b <- color.B
-                renderColor.a <- color.A
+                renderColor.r <- color.R8
+                renderColor.g <- color.G8
+                renderColor.b <- color.B8
+                renderColor.a <- color.A8
                 // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                 // texture one or more times a frame must be understood! Although, maybe it all happens in software
                 // and vram fragmentation would not be a concern in the first place... perf could still be, however.
@@ -535,16 +540,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                     rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                    if color.A <> byte 0 then
+                    if color.A <> 0.0f then
                         SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
+                        SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
+                        SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
                         let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                         if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                    if glow.A <> byte 0 then
+                    if glow.A <> 0.0f then
                         SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
+                        SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
+                        SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
                         let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                         if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                     index <- inc index
@@ -612,7 +617,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             if eyeMargin <> v2Zero then
                 let mutable transform = Transform.makeDefault v3Cartesian2d
                 transform.Absolute <- true
-                let sprite = { Transform = transform; Inset = box2Zero; Image = image; Color = colBlack; Blend = Overwrite; Glow = colZero; Flip = FlipNone }
+                let sprite = { Transform = transform; Inset = box2Zero; Image = image; Color = Color.Black; Blend = Overwrite; Glow = Color.Zero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
                 bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
                 bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f

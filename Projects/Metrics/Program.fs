@@ -85,9 +85,9 @@ type MetricsEntityDispatcher () =
                 { Transform = transform
                   InsetOpt = None
                   Image = staticImage
-                  Color = colWhite
+                  Color = Color.One
                   Blend = Transparent
-                  Glow = colZero
+                  Glow = Color.Zero
                   Flip = FlipNone })
   #endif
 
@@ -235,7 +235,7 @@ type MyGameDispatcher () =
                         if comp.Active then
                             let state = comp.Entity.State world
                             if state.Visible then
-                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
                                 let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                                 messages.Add layeredMessage
                 World.enqueueRenderLayeredMessages messages world
@@ -260,9 +260,9 @@ type ElmishEntityDispatcher () =
                   Absolute = false
                   InsetOpt = None
                   Image = staticImage
-                  Color = colWhite
+                  Color = Color.One
                   Blend = Transparent
-                  Glow = colZero
+                  Glow = Color.Zero
                   Flip = FlipNone })
 
 #if PROPERTIES
@@ -412,7 +412,7 @@ type PhantomGameDispatcher () =
                     for phantom in phantoms.Phantoms do
                         SdlRenderer.renderSprite
                             viewAbsolute viewRelative eyeCenter eyeSize
-                            phantom.Value.PhantomTransform (v2Dup 0.5f) None phantom.Value.PhantomImage colWhite colZero FlipNone
+                            phantom.Value.PhantomTransform (v2Dup 0.5f) None phantom.Value.PhantomImage Color.One Color.Zero FlipNone
                             sdlRenderer))
 #endif
 

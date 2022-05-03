@@ -141,61 +141,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Calculates the binomial coefficient <paramref name="n"/> above <paramref name="k"/>.
-        /// </summary>
-        /// <param name="n">The n.</param>
-        /// <param name="k">The k.</param>
-        /// <returns>n! / (k! * (n - k)!)</returns>
-        public static long BinomialCoefficient(int n, int k)
-        {
-            return Factorial(n) / (Factorial(k) * Factorial(n - k));
-        }
-
-        /// <summary>
-        /// Convert degrees to radians
-        /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
-        public static float DegreesToRadians(float degrees)
-        {
-            const float degToRad = (float)System.Math.PI / 180.0f;
-            return degrees * degToRad;
-        }
-
-        /// <summary>
-        /// Convert radians to degrees
-        /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
-        public static float RadiansToDegrees(float radians)
-        {
-            const float radToDeg = 180.0f / (float)System.Math.PI;
-            return radians * radToDeg;
-        }
-
-        /// <summary>
-        /// Convert degrees to radians
-        /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
-        public static double DegreesToRadians(double degrees)
-        {
-            const double degToRad = System.Math.PI / 180.0;
-            return degrees * degToRad;
-        }
-
-        /// <summary>
-        /// Convert radians to degrees
-        /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
-        public static double RadiansToDegrees(double radians)
-        {
-            const double radToDeg = 180.0 / System.Math.PI;
-            return radians * radToDeg;
-        }
-
-        /// <summary>
         /// Swaps two double values.
         /// </summary>
         /// <param name="a">The first value.</param>
@@ -253,6 +198,95 @@ namespace Nu
         public static double Clamp(double n, double min, double max)
         {
             return Math.Max(Math.Min(n, max), min);
+        }
+
+        /// <summary>
+        /// Linearly interpolates between two values.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns> 
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>value1 + (value2 - value1) * amount</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// See <see cref="MathHelper.LerpPrecise"/> for a less efficient version with more precision around edge cases.
+        /// </remarks>
+        public static float Lerp(float value1, float value2, float amount)
+        {
+            return value1 + (value2 - value1) * amount;
+        }
+
+        /// <summary>
+        /// Linearly interpolates between two values.
+        /// This method is a less efficient, more precise version of <see cref="MathHelper.Lerp"/>.
+        /// See remarks for more info.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns>
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>((1 - amount) * value1) + (value2 * amount)</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// This method does not have the floating point precision issue that <see cref="MathHelper.Lerp"/> has.
+        /// i.e. If there is a big gap between value1 and value2 in magnitude (e.g. value1=10000000000000000, value2=1),
+        /// right at the edge of the interpolation range (amount=1), <see cref="MathHelper.Lerp"/> will return 0 (whereas it should return 1).
+        /// This also holds for value1=10^17, value2=10; value1=10^18,value2=10^2... so on.
+        /// For an in depth explanation of the issue, see below references:
+        /// Relevant Wikipedia Article: https://en.wikipedia.org/wiki/Linear_interpolation#Programming_language_support
+        /// Relevant StackOverflow Answer: http://stackoverflow.com/questions/4353525/floating-point-linear-interpolation#answer-23716956
+        /// </remarks>
+        public static float LerpPrecise(float value1, float value2, float amount)
+        {
+            return ((1 - amount) * value1) + (value2 * amount);
+        }
+
+        /// <summary>
+        /// Performs a Hermite spline interpolation.
+        /// </summary>
+        /// <param name="value1">Source position.</param>
+        /// <param name="tangent1">Source tangent.</param>
+        /// <param name="value2">Source position.</param>
+        /// <param name="tangent2">Source tangent.</param>
+        /// <param name="amount">Weighting factor.</param>
+        /// <returns>The result of the Hermite spline interpolation.</returns>
+        public static float Hermite(float value1, float tangent1, float value2, float tangent2, float amount)
+        {
+            // All transformed to double not to lose precission
+            // Otherwise, for high numbers of param:amount the result is NaN instead of Infinity
+            double v1 = value1, v2 = value2, t1 = tangent1, t2 = tangent2, s = amount, result;
+            double sCubed = s * s * s;
+            double sSquared = s * s;
+
+            if (amount == 0f)
+                result = value1;
+            else if (amount == 1f)
+                result = value2;
+            else
+                result = (2 * v1 - 2 * v2 + t2 + t1) * sCubed +
+                    (3 * v2 - 3 * v1 - 2 * t1 - t2) * sSquared +
+                    t1 * s +
+                    v1;
+            return (float)result;
+        }
+
+        /// <summary>
+        /// Interpolates between two values using a cubic equation.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Source value.</param>
+        /// <param name="amount">Weighting value.</param>
+        /// <returns>Interpolated value.</returns>
+        public static float SmoothStep(float value1, float value2, float amount)
+        {
+            // It is expected that 0 < amount < 1
+            // If amount < 0, return value1
+            // If amount > 1, return value2
+            float result = MathHelper.Clamp(amount, 0f, 1f);
+            result = MathHelper.Hermite(value1, 0f, value2, 0f, result);
+
+            return result;
         }
 
         /// <summary>
@@ -365,19 +399,74 @@ namespace Nu
         }
 
         /// <summary>
+        /// Impose the sign of a number onto a value.
+        /// </summary>
+        public static double CopySign(double value, double sign)
+        {
+            return (IsNegative(value) == IsNegative(sign)) ? value : -value;
+        }
+
+        /// <summary>
+        /// Calculates the binomial coefficient <paramref name="n"/> above <paramref name="k"/>.
+        /// </summary>
+        /// <param name="n">The n.</param>
+        /// <param name="k">The k.</param>
+        /// <returns>n! / (k! * (n - k)!)</returns>
+        public static long BinomialCoefficient(int n, int k)
+        {
+            return Factorial(n) / (Factorial(k) * Factorial(n - k));
+        }
+
+        /// <summary>
         /// Determine if a value is negative (includning NaN).
         /// </summary>
-        static bool IsNegative(double value)
+        public static bool IsNegative(this double value)
         {
             return Math.Sign(value) == -1;
         }
 
         /// <summary>
-        /// Impose the sign of a number onto a value.
+        /// Convert degrees to radians
         /// </summary>
-        static double CopySign(double value, double sign)
+        /// <param name="degrees">An angle in degrees</param>
+        /// <returns>The angle expressed in radians</returns>
+        public static float ToRadians(this float degrees)
         {
-            return (IsNegative(value) == IsNegative(sign)) ? value : -value;
+            const float degToRad = (float)System.Math.PI / 180.0f;
+            return degrees * degToRad;
+        }
+
+        /// <summary>
+        /// Convert radians to degrees
+        /// </summary>
+        /// <param name="radians">An angle in radians</param>
+        /// <returns>The angle expressed in degrees</returns>
+        public static float ToDegrees(this float radians)
+        {
+            const float radToDeg = 180.0f / (float)System.Math.PI;
+            return radians * radToDeg;
+        }
+
+        /// <summary>
+        /// Convert degrees to radians
+        /// </summary>
+        /// <param name="degrees">An angle in degrees</param>
+        /// <returns>The angle expressed in radians</returns>
+        public static double ToRadians(this double degrees)
+        {
+            const double degToRad = System.Math.PI / 180.0;
+            return degrees * degToRad;
+        }
+
+        /// <summary>
+        /// Convert radians to degrees
+        /// </summary>
+        /// <param name="radians">An angle in radians</param>
+        /// <returns>The angle expressed in degrees</returns>
+        public static double ToDegrees(this double radians)
+        {
+            const double radToDeg = 180.0 / System.Math.PI;
+            return radians * radToDeg;
         }
 
         /// <summary>
@@ -436,7 +525,7 @@ namespace Nu
         /// <returns>
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
         /// </returns>
-        public static PlaneIntersectionType Intersects(this Plane plane, Box3 box)
+        public static PlaneIntersectionType Intersects(in this Plane plane, Box3 box)
         {
             return box.Intersects(plane);
         }
@@ -460,9 +549,11 @@ namespace Nu
         /// <returns>
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Frustum"/>.
         /// </returns>
-        public static PlaneIntersectionType Intersects(this Plane plane, Frustum frustum)
+        public static PlaneIntersectionType Intersects(in this Plane plane, Frustum frustum)
         {
-            return frustum.Intersects(plane);
+			PlaneIntersectionType result;
+			frustum.Intersects(in plane, out result);
+            return result;
         }
 
         /// <summary>
@@ -485,9 +576,11 @@ namespace Nu
         /// <returns>
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Sphere"/>.
         /// </returns>
-        public static PlaneIntersectionType Intersects(this Plane plane, Sphere sphere)
+        public static PlaneIntersectionType Intersects(in this Plane plane, Sphere sphere)
         {
-            return sphere.Intersects(plane);
+			PlaneIntersectionType result;
+			sphere.Intersects(in plane, out result);
+            return result;
         }
 
         /// <summary>
@@ -509,7 +602,7 @@ namespace Nu
         /// <returns>
         /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Vector3"/>.
         /// </returns>
-        public static PlaneIntersectionType Intersects(this Plane plane, Vector3 point)
+        public static PlaneIntersectionType Intersects(in this Plane plane, Vector3 point)
         {
             PlaneIntersectionType result;
             plane.Intersects(in point, out result);

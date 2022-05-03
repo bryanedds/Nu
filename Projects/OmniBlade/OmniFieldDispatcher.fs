@@ -182,7 +182,7 @@ module FieldDispatcher =
                         | Some propId ->
                             Field.updatePropState
                                 (function
-                                 | CharacterState (_, animationState) -> CharacterState (colWhite.MapA (single >> (*) progress >> byte), animationState)
+                                 | CharacterState (_, animationState) -> CharacterState (Color.One.MapA ((*) progress), animationState)
                                  | propState -> propState)
                                 propId
                                 field
@@ -196,7 +196,7 @@ module FieldDispatcher =
                                     | Sprite (_, _, color, _, _, _, _) ->
                                         Prop.updatePropState
                                             (function
-                                             | SpriteState (image, _, blend, glow, flip, _) -> SpriteState (image, color.MapA (single >> (*) progress >> byte), blend, glow, flip, true)
+                                             | SpriteState (image, _, blend, glow, flip, _) -> SpriteState (image, color.MapA ((*) progress), blend, glow, flip, true)
                                              | propState -> propState)
                                             prop
                                     | _ -> prop)
@@ -1307,7 +1307,7 @@ module FieldDispatcher =
                                 if deltaTime < halfTransitionTime
                                 then deltaTime / halfTransitionTime
                                 else 1.0f - (deltaTime - halfTransitionTime) / halfTransitionTime
-                            Color.Black.WithA (byte (progress * 255.0f))
+                            Color.Black.WithA progress
                         | None -> Color.Zero]
 
                  // tmx map
@@ -1340,7 +1340,7 @@ module FieldDispatcher =
                      Entity.Color <== field --> fun field ->
                         let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
                         let fade = min 1.0f progress
-                        colWhite.ScaleA fade
+                        Color.One.ScaleA fade
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
