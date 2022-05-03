@@ -162,6 +162,17 @@ namespace Nu
         }
 
         /// <summary>
+        /// Divides a color by a scalar.
+        /// </summary>
+        /// <param name="color">Left operand.</param>
+        /// <param name="scale">Right operand.</param>
+        /// <returns>Result of the operation.</returns>
+        public static Color Divide(Color color, float scale)
+        {
+            return color / scale;
+        }
+
+        /// <summary>
         /// Divides a color by the components of a color (scale).
         /// </summary>
         /// <param name="color">Left operand.</param>
@@ -175,17 +186,6 @@ namespace Nu
             result.B = color.B / scale.B;
             result.A = color.A / scale.A;
             return result;
-        }
-
-        /// <summary>
-        /// Divides a color by a scalar.
-        /// </summary>
-        /// <param name="color">Left operand.</param>
-        /// <param name="scale">Right operand.</param>
-        /// <returns>Result of the operation.</returns>
-        public static Color Divide(Color color, float scale)
-        {
-            return color / scale;
         }
 
         /// <summary>

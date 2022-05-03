@@ -520,7 +520,7 @@ module EffectSystem =
             | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
         | Aspects aspects ->
             Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
-    
+
     and private evalAspects aspects slice effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 

@@ -83,10 +83,10 @@
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
+    <Compile Include="Gl.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="AetherPhysics.fs" />
     <Compile Include="BepuPhysics.fs" />
-    <Compile Include="Gl.fs" />
     <Compile Include="Render.fs" />
     <Compile Include="Render2d.fs" />
     <Compile Include="Render3d.fs" />
