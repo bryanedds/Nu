@@ -506,12 +506,10 @@ namespace Nu
             return new Vector3i(values.X, values.Y, values.Z);
         }
 
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("({0}{3} {1}{3} {2})", X, Y, Z, ListSeparator);
+            return string.Format("({0}, {1}, {2})", X, Y, Z);
         }
 
         /// <summary>

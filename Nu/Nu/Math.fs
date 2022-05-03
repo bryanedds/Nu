@@ -956,30 +956,42 @@ module Color =
         member this.MapG mapper = Color (this.R, mapper this.G, this.B, this.A)
         member this.MapB mapper = Color (this.R, this.G, mapper this.B, this.A)
         member this.MapA mapper = Color (this.R, this.G, this.B, mapper this.A)
-        member this.ScaleR scalar = Color (byte (single this.R * scalar), this.G, this.B, this.A)
-        member this.ScaleG scalar = Color (this.R, byte (single this.G * scalar), this.B, this.A)
-        member this.ScaleB scalar = Color (this.R, this.G, byte (single this.B * scalar), this.A)
-        member this.ScaleA scalar = Color (this.R, this.G, this.B, byte (single this.A * scalar))
+        member this.MapR8 mapper = Color (mapper this.R8, this.G8, this.B8, this.A8)
+        member this.MapG8 mapper = Color (this.R8, mapper this.G8, this.B8, this.A8)
+        member this.MapB8 mapper = Color (this.R8, this.G8, mapper this.B8, this.A8)
+        member this.MapA8 mapper = Color (this.R8, this.G8, this.B8, mapper this.A8)
+        member this.ScaleR scalar = Color (this.R * scalar, this.G, this.B, this.A)
+        member this.ScaleG scalar = Color (this.R, this.G * scalar, this.B, this.A)
+        member this.ScaleB scalar = Color (this.R, this.G, this.B * scalar, this.A)
+        member this.ScaleA scalar = Color (this.R, this.G, this.B, this.A * scalar)
+        member this.ScaleR8 scalar = Color (byte (single this.R8 * scalar), this.G8, this.B8, this.A8)
+        member this.ScaleG8 scalar = Color (this.R8, byte (single this.G8 * scalar), this.B8, this.A8)
+        member this.ScaleB8 scalar = Color (this.R8, this.G8, byte (single this.B * scalar), this.A8)
+        member this.ScaleA8 scalar = Color (this.R8, this.G8, this.B8, byte (single this.A8 * scalar))
         member this.WithR r = Color (r, this.G, this.B, this.A)
         member this.WithG g = Color (this.R, g, this.B, this.A)
         member this.WithB b = Color (this.R, this.G, b, this.A)
         member this.WithA a = Color (this.R, this.G, this.B, a)
+        member this.WithR8 r = Color (r, this.G8, this.B8, this.A8)
+        member this.WithG8 g = Color (this.R8, g, this.B8, this.A8)
+        member this.WithB8 b = Color (this.R8, this.G8, b, this.A8)
+        member this.WithA8 a = Color (this.R8, this.G8, this.B8, a)
 
-    let inline col r g b a = Color (r, g, b, a)
-    let inline colEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
-    let inline colNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
-    let inline colDup (a : byte) = col a a a a
-    let colZero = Color.Zero
-    let colWhite = Color.White
-    let colBlack = Color.Black
-    let colGray = Color.Gray
+    let inline color (r : single) (g : single) (b : single) (a : single) = Color (r, g, b, a)
+    let inline colorDup (a : single) = color a a a a
+    let inline color8 (r : byte) (g : byte) (b : byte) (a : byte) = Color (r, g, b, a)
+    let inline color8Dup (a : byte) = color8 a a a a
+    let inline colorEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
+    let inline colorNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
+    let colorZero = Color.Zero
+    let colorOne = Color.One
 
 /// The Color value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] ColorPluggable =
     { Color : Color }
 
     static member equals left right =
-        colEq left.Color right.Color
+        colorEq left.Color right.Color
 
     static member compare left right =
         compare
@@ -1012,12 +1024,17 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
             getType this.Color
 
         member this.ToSymbol () =
-            let col = Symbol.Atom ("col", None)
-            let r = Symbol.Number (scstring this.Color.R, None)
-            let g = Symbol.Number (scstring this.Color.G, None)
-            let b = Symbol.Number (scstring this.Color.B, None)
-            let a = Symbol.Number (scstring this.Color.A, None)
-            Symbol.Symbols ([col; r; g; b; a], None)
+            let packed = this.Color.Packed
+            let unpacked = Color packed
+            if this.Color.Equals unpacked then
+                Symbol.Atom ("#" + packed.ToString "X8", None) // Q: is Atom an accurate representation?
+            else
+                let col = Symbol.Atom ("col", None)
+                let r = Symbol.Number (scstring this.Color.R, None)
+                let g = Symbol.Number (scstring this.Color.G, None)
+                let b = Symbol.Number (scstring this.Color.B, None)
+                let a = Symbol.Number (scstring this.Color.A, None)
+                Symbol.Symbols ([col; r; g; b; a], None)
 
 /// Converts Color types.
 type ColorConverter () =
@@ -1047,7 +1064,7 @@ type ColorConverter () =
         | :? Symbol as symbol ->
             match symbol with
             | Symbols ([Number (r, _); Number (g, _); Number (b, _); Number (a, _)], _) ->
-                Color (scvalue r, scvalue g, scvalue b, scvalue a) :> obj
+                Color (scvalue<single> r, scvalue<single> g, scvalue<single> b, scvalue<single> a) :> obj
             | _ ->
                 failconv "Invalid ColorConverter conversion from source." (Some symbol)
         | :? Color -> source
@@ -1092,7 +1109,7 @@ module Math =
 
     /// Convert radians to degrees.
     let radiansToDegrees (radians : single) =
-        MathHelper.RadiansToDegrees -radians
+        -radians.ToDegrees ()
 
     /// Convert radians to degrees in 3d.
     let radiansToDegrees3d (radians : Vector3) =
@@ -1103,7 +1120,7 @@ module Math =
 
     /// Convert degrees to radians.
     let degreesToRadians (degrees : single) =
-        MathHelper.DegreesToRadians -degrees
+        -degrees.ToRadians ()
 
     /// Convert degrees to radians in 3d.
     let degreesToRadians3d (degrees : Vector3) =

@@ -252,7 +252,7 @@ module StaticSpriteFacetModule =
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -327,7 +327,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet Assets.Default.Image4
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -391,7 +391,7 @@ module TextFacetModule =
              define Entity.Margins v3Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextColor Color.Black
-             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))
+             define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
              define Entity.TextOffset v3Zero]
 
         override this.Actualize (entity, world) =
@@ -613,7 +613,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -793,7 +793,7 @@ module Effect2dFacetModule =
                       Effects.Offset = entity.GetEffectOffset world
                       Effects.Size = transform.Size
                       Effects.InsetOpt = None
-                      Effects.Color = Color.White
+                      Effects.Color = Color.One
                       Effects.Blend = Transparent
                       Effects.Glow = Color.Zero
                       Effects.Flip = FlipNone
@@ -1070,7 +1070,7 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
@@ -1168,7 +1168,7 @@ module TmxMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
@@ -1393,7 +1393,7 @@ module StaticSpriteDispatcherModule =
 
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
              define Entity.Flip FlipNone]
@@ -1413,7 +1413,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet Assets.Default.Image4
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
 
@@ -1434,7 +1434,7 @@ module GuiDispatcherModule =
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher2d<'model, 'message, 'command> (false, model)
@@ -1445,7 +1445,7 @@ module GuiDispatcherModule =
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))]
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -1547,7 +1547,7 @@ module ButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1587,7 +1587,7 @@ module LabelDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1632,7 +1632,7 @@ module TextDispatcherModule =
                                 { Transform = spriteTransform
                                   InsetOpt = None
                                   Image = spriteImage
-                                  Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+                                  Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                                   Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
@@ -1765,7 +1765,7 @@ module ToggleButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -1889,7 +1889,7 @@ module RadioButtonDispatcherModule =
                             { Transform = spriteTransform
                               InsetOpt = None
                               Image = spriteImage
-                              Color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
@@ -2049,9 +2049,9 @@ module FillBarDispatcherModule =
         static member Properties =
             [define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillColor (Color (byte 255, byte 0, byte 0, byte 255))
+             define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
              define Entity.FillImage Assets.Default.Image9
-             define Entity.BorderColor (Color (byte 0, byte 0, byte 0, byte 255))
+             define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Actualize (entity, world) =
@@ -2257,7 +2257,7 @@ module SideViewCharacterDispatcherModule =
                             { Transform = transform
                               InsetOpt = insetOpt
                               Image = image
-                              Color = Color.White
+                              Color = Color.One
                               Blend = Transparent
                               Glow = Color.Zero
                               Flip = if facingLeft then FlipH else FlipNone }}
@@ -2280,7 +2280,7 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
@@ -2303,7 +2303,7 @@ module TmxMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.Color Color.White
+             define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]

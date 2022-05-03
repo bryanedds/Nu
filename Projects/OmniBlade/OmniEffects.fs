@@ -39,10 +39,10 @@ module Effects =
     let makeHitPointsChangeEffect delta =
         let colorOpaque =
             if delta < 0
-            then col (byte 255) (byte 255) (byte 255) (byte 255)
-            else col (byte 0) (byte 255) (byte 255) (byte 255)
+            then color8 (byte 255) (byte 255) (byte 255) (byte 255)
+            else color8 (byte 0) (byte 255) (byte 255) (byte 255)
         let colorTransparent =
-            colorOpaque.WithA (byte 0)
+            colorOpaque.WithA8 (byte 0)
         { EffectName = "HitPointsChange"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
@@ -94,9 +94,9 @@ module Effects =
                        { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 65L }|])
                    Colors
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.White; TweenLength = 40L }
-                       { TweenValue = Color.White; TweenLength = 40L }
-                       { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
+                     [|{ TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                  Nil)
         let explosionSprite =
             AnimatedSprite
@@ -106,9 +106,9 @@ module Effects =
                    Size (v3 96.0f 96.0f 0.0f)
                    Colors
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.White; TweenLength = 30L }
-                       { TweenValue = Color.White; TweenLength = 30L }
-                       { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
+                     [|{ TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                  Nil)
         let thunderSoundEffect =
             SoundEffect
@@ -153,8 +153,8 @@ module Effects =
                (Resource (AssetTag.toPair image),
                 [|Colors
                    (Set, EaseOut, Once,
-                    [|{ TweenValue = Color.White; TweenLength = 24L }
-                      { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
+                    [|{ TweenValue = Color.One; TweenLength = 24L }
+                      { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
     let makeSlashSpikeEffect position position2 =
@@ -239,7 +239,7 @@ module Effects =
                  [|Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
                    Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
                    Degrees (v3 -90.0f 0.0f 0.0f)
-                   Color (colWhite.WithA (byte 207))|],
+                   Color (Color.One.WithA8 (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
     let makeIceEffect () =
@@ -366,8 +366,8 @@ module Effects =
         let fade =
             Colors
                (Set, EaseOut, Once,
-                [|{ TweenValue = Color.White; TweenLength = 24L }
-                  { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])
+                [|{ TweenValue = Color.One; TweenLength = 24L }
+                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
         let orbit radiusX radiusY repetitions =
             Aspects
                 [|Positions

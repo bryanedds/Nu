@@ -803,7 +803,7 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Color.White.WithA (byte (alpha * 255.0f))
+                let color = Color.One.WithA alpha
                 let position = -eyeSize.V3 * 0.5f
                 let size = eyeSize.V3
                 let mutable transform = Transform.makeDefault v3Cartesian2d

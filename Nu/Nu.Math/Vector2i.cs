@@ -135,12 +135,10 @@ namespace Nu
         public static Vector2i Left { get { return new Vector2i(-1, 0); } }
         public static readonly int SizeInBytes = Marshal.SizeOf<Vector2i>();
 
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("({0}{3} {1})", X, Y, ListSeparator);
+            return string.Format("({0}, {1})", X, Y);
         }
 
         public override int GetHashCode()
