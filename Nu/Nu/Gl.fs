@@ -124,3 +124,34 @@ module Gl =
         let texUniform = Gl.GetUniformLocation (blitShaderProgram, "tex")
         let posAttrib = Gl.GetAttribLocation (blitShaderProgram, "pos")
         (blitShaderProgram, texUniform, posAttrib)
+
+    /// Create a blit shader.
+    let Create2dShaderProgram () =
+        
+        // vertex shader code
+        let samplerVertexShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "in vec2 pos;"
+             "out vec2 texCoord;"
+             "void main()"
+             "{"
+             "  gl_Position = vec4(pos.x, pos.y, 0, 1);"
+             "  texCoord = vec2((pos.x + 1) * 0.5, (pos.y + 1) * 0.5);"
+             "}"] |> String.join "\n"
+
+        // fragment shader code
+        let samplerFragmentShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "uniform sampler2D tex;"
+             "in vec2 texCoord;"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "  frag = texture(tex, texCoord);"
+             "}"] |> String.join "\n"
+
+        // create blit shader program
+        let blitShaderProgram = CreateShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
+        let texUniform = Gl.GetUniformLocation (blitShaderProgram, "tex")
+        let posAttrib = Gl.GetAttribLocation (blitShaderProgram, "pos")
+        (blitShaderProgram, texUniform, posAttrib)
