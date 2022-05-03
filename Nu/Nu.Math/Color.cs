@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using System.Diagnostics.Contracts;
 
 namespace Nu
 {
@@ -52,6 +51,13 @@ namespace Nu
         public byte A8 => (byte)(A * 255.0f);
 
         /// <summary>
+        /// Instantiates a new <see cref="Vector4"/> from the R, G, B and A components of a <see cref="Color"/>.
+        /// </summary>
+        /// <param name="col">The color which the instantiated vector will use the X,Y,Z and W from, in that order.</param>
+        /// <returns>The vector that was instantiated.</returns>
+        public Vector4 Vector4 => new Vector4(R, G, B, A);
+
+        /// <summary>
         /// The packed value.
         /// </summary>
         public uint Packed =>
@@ -70,6 +76,17 @@ namespace Nu
             B = b;
             A = a;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Color"/> struct from a Vector4.
+        /// </summary>
+        public Color(Vector4 v)
+		{
+            R = v.X;
+            G = v.Y;
+            B = v.Z;
+            A = v.W;
+		}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Color"/> struct from byte values.
@@ -97,25 +114,8 @@ namespace Nu
 		}
 
         /// <summary>
-        /// Instantiates a new <see cref="Color"/> from the X, Y, Z and W components of a <see cref="Vector4"/>.
-        /// </summary>
-        /// <param name="vec">The vector which the instantiated color will use the X,Y,Z and W from, in that order.</param>
-        /// <returns>The color that was instantiated.</returns>
-        [Pure]
-        public static explicit operator Color(Vector4 vec) => new Color(vec.X, vec.Y, vec.Z, vec.W);
-
-        /// <summary>
-        /// Instantiates a new <see cref="Vector4"/> from the X, Y, Z and W components of a <see cref="Color"/>.
-        /// </summary>
-        /// <param name="col">The color which the instantiated vector will use the X,Y,Z and W from, in that order.</param>
-        /// <returns>The vector that was instantiated.</returns>
-        [Pure]
-        public static explicit operator Vector4(Color col) => new Vector4(col.R, col.G, col.B, col.A);
-
-        /// <summary>
         /// Deconstructs this Color and turns it into a tuple containing 4 floats.
         /// </summary>
-        [Pure]
         public void Deconstruct(out float r, out float g, out float b, out float a)
         {
             r = R;
@@ -129,7 +129,6 @@ namespace Nu
         /// </summary>
         /// <param name="other">The Color structure to compare to.</param>
         /// <returns>True if both Color structures contain the same components; false otherwise.</returns>
-        [Pure]
         public bool Equals(Color other)
         {
             return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
@@ -141,7 +140,6 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Color Multiply(Color color, float scale)
         {
             return color * scale;
@@ -185,7 +183,6 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Color Divide(Color color, float scale)
         {
             return color / scale;
@@ -197,7 +194,6 @@ namespace Nu
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Color operator +(Color left, Color right)
         {
             left.R += right.R;
@@ -213,7 +209,6 @@ namespace Nu
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Color operator -(Color left, Color right)
         {
             left.R -= right.R;
@@ -229,7 +224,6 @@ namespace Nu
         /// <param name="color">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Color operator *(Color color, float scale)
         {
             color.R = (byte)(color.R * scale);
@@ -245,7 +239,6 @@ namespace Nu
         /// <param name="scale">The scalar.</param>
         /// <param name="color">The instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Color operator *(float scale, Color color)
         {
             color.R = (byte)(color.R * scale);
@@ -261,7 +254,6 @@ namespace Nu
         /// <param name="scale">Left operand.</param>
         /// <param name="color">Right operand.</param>
         /// <returns>Result of multiplication.</returns>
-        [Pure]
         public static Color operator *(Color color, Color scale)
         {
             color.R = (byte)(color.R * (scale.R / 255.0f));
@@ -277,7 +269,6 @@ namespace Nu
         /// <param name="color">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Color operator /(Color color, float scale)
         {
             color.R = (byte)(color.R / scale);
@@ -293,7 +284,6 @@ namespace Nu
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left equals right; false otherwise.</returns>
-        [Pure]
         public static bool operator ==(Color left, Color right)
         {
             return left.Equals(right);
@@ -305,7 +295,6 @@ namespace Nu
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left does not equal right; false otherwise.</returns>
-        [Pure]
         public static bool operator !=(Color left, Color right)
         {
             return !left.Equals(right);
@@ -315,7 +304,6 @@ namespace Nu
         /// Creates a <see cref="string"/> that describes this Color structure.
         /// </summary>
         /// <returns>A <see cref="string"/> that describes this Color structure.</returns>
-        [Pure]
         public override string ToString()
         {
             return $"({R}, {G}, {B}, {A})";
@@ -326,7 +314,6 @@ namespace Nu
         /// </summary>
         /// <param name="obj">An object to compare to.</param>
         /// <returns>True obj is a Color structure with the same components as this Color; false otherwise.</returns>
-        [Pure]
         public override bool Equals(object obj)
         {
             return obj is Color other && Equals(other);
@@ -336,7 +323,6 @@ namespace Nu
         /// Calculates the hash code for this Color structure.
         /// </summary>
         /// <returns>A System.Int32 containing the hashcode of this Color structure.</returns>
-        [Pure]
         public override int GetHashCode()
         {
             unchecked
