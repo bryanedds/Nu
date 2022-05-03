@@ -491,8 +491,8 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
+                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.Vector4) (keyFrame2.TweenValue.Vector4) progress algorithm
+                let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
         | Glows (applicator, algorithm, playback, keyFrames) ->

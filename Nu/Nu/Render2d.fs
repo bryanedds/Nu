@@ -646,93 +646,93 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
         
-        let glContext = SDL.SDL_GL_CreateContext (window)
-
-        Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
-
-        Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-
-        let (textureFramebufferTexture, _) = Gl.CreateTextureFramebuffer ()
-
-        let whiteVertexShaderStr =
-            [Constants.Render.GlslVersionPragma
-             "in vec2 pos;"
-             "void main()"
-             "{"
-             "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
-             "}"] |> String.join "\n"
-        let whiteFragmentShaderStr =
-            [Constants.Render.GlslVersionPragma
-             "out vec4 frag;"
-             "void main()"
-             "{"
-             "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
-             "}"] |> String.join "\n"
-        let whiteShaderProgram = Gl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
-        let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
-
-        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Gl.CreateBlitShaderProgram ()
-
-        let vertexData =
-            [|-0.9f; -0.9f;
-              +0.9f; -0.9f;
-              +0.9f; +0.9f;
-              -0.9f; +0.9f|]
-        let mutable vertexBuffers = [|0u|]
-        Gl.GenBuffers (1, vertexBuffers)
-        let vertexBuffer = vertexBuffers.[0]
-        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-        let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
-        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
-        let indexData = [|0u; 1u; 2u; 3u|]
-        let indexBuffers = [|0u|]
-        Gl.GenBuffers (1, indexBuffers)
-        let indexBuffer = indexBuffers.[0]
-        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
-        let indexDataSize = IntPtr (4 * sizeof<uint>)
-        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
-        let (fullScreenQuadVertices, fullScreenQuadIndices) = Gl.CreateFullScreenQuad ()
-
-        while true do
-
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            //
-            // 3d rendering here...
-            //
-
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
-            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            Gl.UseProgram whiteShaderProgram
-            Gl.EnableVertexAttribArray wVertexPos2DAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
-            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray wVertexPos2DAttrib
-            Gl.UseProgram 0u
-
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.UseProgram blitShaderProgram
-            Gl.EnableVertexAttribArray blitPosAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
-            Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
-            Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
-            Gl.ActiveTexture 0 // make texture slot 0 active
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray blitPosAttrib
-            Gl.UseProgram 0u
-
-            SDL.SDL_GL_SwapWindow window
-            //Threading.Thread.Sleep 16
+        //let glContext = SDL.SDL_GL_CreateContext (window)
+        //
+        //Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
+        //
+        //Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        //
+        //let (textureFramebufferTexture, _) = Gl.CreateTextureFramebuffer ()
+        //
+        //let whiteVertexShaderStr =
+        //    [Constants.Render.GlslVersionPragma
+        //     "in vec2 pos;"
+        //     "void main()"
+        //     "{"
+        //     "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
+        //     "}"] |> String.join "\n"
+        //let whiteFragmentShaderStr =
+        //    [Constants.Render.GlslVersionPragma
+        //     "out vec4 frag;"
+        //     "void main()"
+        //     "{"
+        //     "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
+        //     "}"] |> String.join "\n"
+        //let whiteShaderProgram = Gl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
+        //let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
+        //
+        //let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Gl.CreateBlitShaderProgram ()
+        //
+        //let vertexData =
+        //    [|-0.9f; -0.9f;
+        //      +0.9f; -0.9f;
+        //      +0.9f; +0.9f;
+        //      -0.9f; +0.9f|]
+        //let mutable vertexBuffers = [|0u|]
+        //Gl.GenBuffers (1, vertexBuffers)
+        //let vertexBuffer = vertexBuffers.[0]
+        //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+        //let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
+        //let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+        //Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+        //
+        //let indexData = [|0u; 1u; 2u; 3u|]
+        //let indexBuffers = [|0u|]
+        //Gl.GenBuffers (1, indexBuffers)
+        //let indexBuffer = indexBuffers.[0]
+        //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
+        //let indexDataSize = IntPtr (4 * sizeof<uint>)
+        //let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        //Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+        //
+        //let (fullScreenQuadVertices, fullScreenQuadIndices) = Gl.CreateFullScreenQuad ()
+        //
+        //while true do
+        //
+        //    Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+        //    Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+        //    Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+        //    //
+        //    // 3d rendering here...
+        //    //
+        //
+        //    Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
+        //    Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+        //    Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+        //    Gl.UseProgram whiteShaderProgram
+        //    Gl.EnableVertexAttribArray wVertexPos2DAttrib
+        //    Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+        //    Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+        //    Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+        //    Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+        //    Gl.DisableVertexAttribArray wVertexPos2DAttrib
+        //    Gl.UseProgram 0u
+        //
+        //    Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+        //    Gl.UseProgram blitShaderProgram
+        //    Gl.EnableVertexAttribArray blitPosAttrib
+        //    Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
+        //    Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+        //    Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
+        //    Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
+        //    Gl.ActiveTexture 0 // make texture slot 0 active
+        //    Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+        //    Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+        //    Gl.DisableVertexAttribArray blitPosAttrib
+        //    Gl.UseProgram 0u
+        //
+        //    SDL.SDL_GL_SwapWindow window
+        //    //Threading.Thread.Sleep 16
 
         let renderer =
             { RenderContext = renderContext
