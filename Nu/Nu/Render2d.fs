@@ -643,6 +643,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         
         let glContext = SDL.SDL_GL_CreateContext (window)
 
+        Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
+
         Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
 
         let (textureFramebufferTexture, _) = Gl.CreateTextureFramebuffer ()
@@ -720,13 +722,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            Gl.BindSampler (0u, 0u) // use texture's built-in sampling configuration
             Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
             Gl.DisableVertexAttribArray blitPosAttrib
             Gl.UseProgram 0u
 
             SDL.SDL_GL_SwapWindow window
-            Threading.Thread.Sleep 16
+            //Threading.Thread.Sleep 16
 
         let renderer =
             { RenderContext = renderContext
