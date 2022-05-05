@@ -16,28 +16,30 @@ type TextureMetadata =
       TextureHeight : int
       TextureInternalFormat : Gl.PixelInternalFormat }
 
-/// A vertex for a sprite batch.
-type [<NoEquality; NoComparison; Struct; StructLayout (LayoutKind.Sequential)>] SpriteBatchVertex =
-    { mutable SbvPosition : Vector4
-      mutable SbvColor : Color
-      mutable SbvTexCoord : Vector2 }
-
-type [<StructuralEquality; NoComparison>] SpriteBatchState =
-    { BlendingFactorSrc : Gl.BlendingFactorSrc
-      BlendingFactorDest : Gl.BlendingFactorDest
-      Texture : uint }
-
-type SpriteBatchEnv =
-    { SpriteIndex : int
-      CpuBuffer : nativeint
-      GpuBuffer : uint
-      BatchState : SpriteBatchState }
-
 [<RequireQualifiedAccess>]
 module Gl =
 
     [<RequireQualifiedAccess>]
     module Hl =
+    
+        type [<NoEquality; NoComparison; Struct; StructLayout (LayoutKind.Sequential)>] SpriteBatchVertex =
+            private
+                { mutable SbvPosition : Vector4
+                  mutable SbvColor : Color
+                  mutable SbvTexCoord : Vector2 }
+
+        type [<StructuralEquality; NoComparison>] SpriteBatchState =
+            private
+                { BlendingFactorSrc : Gl.BlendingFactorSrc
+                  BlendingFactorDest : Gl.BlendingFactorDest
+                  Texture : uint }
+        
+        type [<NoEquality; NoComparison>] SpriteBatchEnv =
+            private
+                { SpriteIndex : int
+                  CpuBuffer : nativeint
+                  GpuBuffer : uint
+                  BatchState : SpriteBatchState }
 
         /// Create a texture frame buffer.
         let CreateTextureFramebuffer () =
