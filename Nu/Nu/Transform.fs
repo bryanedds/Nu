@@ -46,7 +46,7 @@ type [<NoEquality; NoComparison>] Transform =
         // cache line 2
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixOpt_ : Matrix4x4 ref // TODO: 3d: consider making this 3x3 for speed.
+        val mutable private RotationMatrixOpt_ : Matrix4x4 ref // TODO: 3D:  consider making this 3x3 for speed.
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
         val mutable private Angles_ : Vector3
@@ -109,7 +109,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.AffineMatrix =
         if this.AffineMatrixDirty then
-            // TODO: 3d: optimize this hella!
+            // TODO: 3D:  optimize this hella!
             let positionMatrix = Matrix4x4.CreateTranslation this.Position_
             let rotationMatrix = this.RotationMatrix
             let scaleMatrix = Matrix4x4.CreateScale this.Scale_
