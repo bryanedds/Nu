@@ -74,6 +74,7 @@ module Render =
     let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion
+    let SpriteBatchSize = 1024
 
 [<RequireQualifiedAccess>]
 module Audio =
