@@ -231,7 +231,7 @@ module Gl =
             Gl.VertexAttribPointer (0, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvPosition))
             Gl.VertexAttribPointer (1, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvColor))
             Gl.VertexAttribPointer (2, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvTexCoord))
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, buffer)
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
             Gl.BindVertexArray 0u
             (buffer, vao)
 
@@ -252,7 +252,7 @@ module Gl =
             Gl.BindVertexArray 0u
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
 
-        let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color texture bfs bfd (envOpt : SpriteBatchEnv option) =
+        let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color texture (coords : Box2) bfs bfd (envOpt : SpriteBatchEnv option) =
 
             let env =
                 let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; Texture = texture }
@@ -274,41 +274,41 @@ module Gl =
 
             let vertexSize = nativeint sizeof<SpriteBatchVertex>
             let cpuOffset = env.CpuBuffer + vertexSize * nativeint 4
-            let mutable vertex0 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             let position0 = (position - center).Rotate rotation
+            let mutable vertex0 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             vertex0.SbvPosition <- v4 position0.X position0.Y 0.0f 0.0f
             vertex0.SbvColor <- color
-            vertex0.SbvTexCoord <- v2Zero
+            vertex0.SbvTexCoord <- coords.BottomLeft
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
 
             let cpuOffset = cpuOffset + vertexSize
-            let mutable vertex1 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             let position1Unrotated = v2 (position.X + size.X) position.Y
             let position1 = (position1Unrotated - center).Rotate rotation
+            let mutable vertex1 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             vertex1.SbvPosition <- v4 position1.X position1.Y 0.0f 0.0f
             vertex1.SbvColor <- color
-            vertex1.SbvTexCoord <- v2Zero
+            vertex1.SbvTexCoord <- coords.BottomRight
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex1, cpuOffset, false)
 
             let cpuOffset = cpuOffset + vertexSize
-            let mutable vertex2 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
             let position2 = (position2Unrotated - center).Rotate rotation
+            let mutable vertex2 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             vertex2.SbvPosition <- v4 position2.X position2.Y 0.0f 0.0f
             vertex2.SbvColor <- color
-            vertex2.SbvTexCoord <- v2Zero
+            vertex2.SbvTexCoord <- coords.TopRight
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
 
             let cpuOffset = cpuOffset + vertexSize
-            let mutable vertex3 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             let position3Unrotated = v2 position.X (position.Y + size.Y)
             let position3 = (position3Unrotated - center).Rotate rotation
+            let mutable vertex3 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
             vertex3.SbvPosition <- v4 position3.X position3.Y 0.0f 0.0f
             vertex3.SbvColor <- color
-            vertex3.SbvTexCoord <- v2Zero
+            vertex3.SbvTexCoord <- coords.TopLeft
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex3, cpuOffset, false)
 
-            { env with SpriteIndex = inc env.SpriteIndex }
+            Some { env with SpriteIndex = inc env.SpriteIndex }
 
         let FlushSpriteBatch envOpt =
             match envOpt with

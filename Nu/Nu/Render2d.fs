@@ -119,7 +119,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | TextureAsset (_, texture) -> Gl.Hl.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
-    static member private tryLoadRenderAsset (asset : obj Asset) renderContext renderer =
+    static member private tryLoadRenderAsset (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
@@ -149,7 +149,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer.RenderContext renderer) assets
+                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
@@ -242,7 +242,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          blend : Blend,
          glow : Color inref,
          flip : Flip,
-         renderer) =
+         renderer,
+         spriteBatchEnvOpt) =
         let mutable color = color
         let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
@@ -257,44 +258,47 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
-        match SdlRenderer.tryFindRenderAsset image renderer with
+        match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (metadata, texture) ->
-                let mutable sourceRect = SDL.SDL_Rect ()
-                if inset.Position.X = 0.0f && inset.Position.Y = 0.0f && inset.Size.X = 0.0f && inset.Size.Y = 0.0f then
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- metadata.TextureWidth
-                    sourceRect.h <- metadata.TextureHeight
-                else
-                    sourceRect.x <- int inset.Position.X
-                    sourceRect.y <- int inset.Position.Y
-                    sourceRect.w <- int inset.Size.X
-                    sourceRect.h <- int inset.Size.Y
-                let mutable destRect = SDL.SDL_Rect ()
-                destRect.x <- int (+positionOffset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                destRect.y <- int (-positionOffset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
-                destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
-                let mutable rotationCenter = SDL.SDL_Point ()
-                rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
-                rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                if color.A <> 0.0f then
-                    SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                if glow.A <> 0.0f then
-                    SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-            | _ -> Log.trace "Cannot render sprite with a non-texture asset."
-        | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
+
+                let inset =
+                    if inset.Position.X = 0.0f && inset.Position.Y = 0.0f && inset.Size.X = 0.0f && inset.Size.Y = 0.0f
+                    then box2 v2Zero (v2 (single metadata.TextureWidth) (single metadata.TextureHeight))
+                    else inset
+
+                let spriteBatchEnvOpt =
+                    if color.A <> 0.0f then
+                        Gl.Hl.AugmentSpriteBatch
+                            perimeter.Center.V2
+                            perimeter.Position.V2
+                            perimeter.Size.V2
+                            rotation color texture inset
+                            Gl.BlendingFactorSrc.One
+                            Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            spriteBatchEnvOpt
+                    else spriteBatchEnvOpt
+
+                let spriteBatchEnvOpt =
+                    if glow.A <> 0.0f then
+                        Gl.Hl.AugmentSpriteBatch
+                            perimeter.Center.V2
+                            perimeter.Position.V2
+                            perimeter.Size.V2
+                            rotation color texture inset
+                            Gl.BlendingFactorSrc.One
+                            Gl.BlendingFactorDest.One
+                            spriteBatchEnvOpt
+                    else spriteBatchEnvOpt
+
+                spriteBatchEnvOpt
+            | _ ->
+                Log.trace "Cannot render sprite with a non-texture asset."
+                spriteBatchEnvOpt
+        | _ ->
+            Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
+            spriteBatchEnvOpt
 
     /// Render tile layer.
     static member renderTileLayer
@@ -311,96 +315,98 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
-         renderer) =
-        let mutable color = color
-        let mutable glow = glow
-        let view = if transform.Absolute then &viewAbsolute else &viewRelative
-        let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let perimeter = transform.Perimeter
-        let position = perimeter.Position.V2
-        let positionView = Matrix3x3.Multiply (&position, &view)
-        let size = perimeter.Size.V2
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        let rotation = transform.Angles.X
-        let (allFound, tileSetTextures) =
-            tileAssets |>
-            Array.map (fun (tileSet, tileSetImage) ->
-                match SdlRenderer.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | ValueSome (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
-                | ValueSome _ -> None
-                | ValueNone -> None) |>
-            Array.definitizePlus
-        if allFound then
-            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-            let tilesLength = Array.length tiles
-            let mutable tileIndex = 0
-            while tileIndex < tilesLength do
-                let tile = &tiles.[tileIndex] // iteration would be faster if TmxLayerTile were a struct...
-                if tile.Gid <> 0 then // not the empty tile
-                    let mapRun = mapSize.X
-                    let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-                    let tilePositionView =
-                        v2
-                            (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
-                            (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                    let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
-                    let tileBounds = box2 tilePositionView tileSize
-                    let viewBounds = box2 v2Zero eyeSize
-                    if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
-                        let tileFlip =
-                            match (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-                            | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-                            | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                            | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                        let mutable tileOffset = 1 // gid 0 is the empty tile
-                        let mutable tileSetIndex = 0
-                        let mutable tileSetWidth = 0
-                        let mutable tileSetTexture = nativeint 0
-                        for (set, _, texture) in tileSetTextures do
-                            let tileCountOpt = set.TileCount
-                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                                tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-                                tileSetTexture <- texture
-                            if  tileSetTexture = nativeint 0 then
-                                tileSetIndex <- inc tileSetIndex
-                                tileOffset <- tileOffset + tileCount
-                        let tileId = tile.Gid - tileOffset
-                        let tileIdPosition = tileId * tileSourceSize.X
-                        let tileSourcePosition =
-                            v2
-                                (single (tileIdPosition % tileSetWidth))
-                                (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-                        let mutable sourceRect = SDL.SDL_Rect ()
-                        sourceRect.x <- int tileSourcePosition.X
-                        sourceRect.y <- int tileSourcePosition.Y
-                        sourceRect.w <- tileSourceSize.X
-                        sourceRect.h <- tileSourceSize.Y
-                        let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int tilePositionOffset.X * Constants.Render.VirtualScalar
-                        destRect.y <- int tilePositionOffset.Y * Constants.Render.VirtualScalar
-                        destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
-                        destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-                        let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
-                        let mutable rotationCenter = SDL.SDL_Point ()
-                        rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
-                        rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
-                        if color.A <> 0.0f then
-                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, color.R8, color.G8, color.B8) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A8) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-                        if glow.A <> 0.0f then
-                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R8, glow.G8, glow.B8) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A8) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-                tileIndex <- inc tileIndex
-        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+         renderer,
+         spriteBatchEnvOpt) =
+        spriteBatchEnvOpt
+        //let mutable color = color
+        //let mutable glow = glow
+        //let view = if transform.Absolute then &viewAbsolute else &viewRelative
+        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        //let perimeter = transform.Perimeter
+        //let position = perimeter.Position.V2
+        //let positionView = Matrix3x3.Multiply (&position, &view)
+        //let size = perimeter.Size.V2
+        //let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+        //let rotation = transform.Angles.X
+        //let (allFound, tileSetTextures) =
+        //    tileAssets |>
+        //    Array.map (fun (tileSet, tileSetImage) ->
+        //        match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
+        //        | ValueSome (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
+        //        | ValueSome _ -> None
+        //        | ValueNone -> None) |>
+        //    Array.definitizePlus
+        //if allFound then
+        //    // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+        //    let tilesLength = Array.length tiles
+        //    let mutable tileIndex = 0
+        //    while tileIndex < tilesLength do
+        //        let tile = &tiles.[tileIndex] // iteration would be faster if TmxLayerTile were a struct...
+        //        if tile.Gid <> 0 then // not the empty tile
+        //            let mapRun = mapSize.X
+        //            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+        //            let tilePositionView =
+        //                v2
+        //                    (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
+        //                    (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+        //            let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
+        //            let tileBounds = box2 tilePositionView tileSize
+        //            let viewBounds = box2 v2Zero eyeSize
+        //            if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
+        //                let tileFlip =
+        //                    match (tile.HorizontalFlip, tile.VerticalFlip) with
+        //                    | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        //                    | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+        //                    | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+        //                    | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+        //                let mutable tileOffset = 1 // gid 0 is the empty tile
+        //                let mutable tileSetIndex = 0
+        //                let mutable tileSetWidth = 0
+        //                let mutable tileSetTexture = nativeint 0
+        //                for (set, _, texture) in tileSetTextures do
+        //                    let tileCountOpt = set.TileCount
+        //                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+        //                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+        //                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+        //                        tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+        //                        tileSetTexture <- texture
+        //                    if  tileSetTexture = nativeint 0 then
+        //                        tileSetIndex <- inc tileSetIndex
+        //                        tileOffset <- tileOffset + tileCount
+        //                let tileId = tile.Gid - tileOffset
+        //                let tileIdPosition = tileId * tileSourceSize.X
+        //                let tileSourcePosition =
+        //                    v2
+        //                        (single (tileIdPosition % tileSetWidth))
+        //                        (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+        //                let mutable sourceRect = SDL.SDL_Rect ()
+        //                sourceRect.x <- int tileSourcePosition.X
+        //                sourceRect.y <- int tileSourcePosition.Y
+        //                sourceRect.w <- tileSourceSize.X
+        //                sourceRect.h <- tileSourceSize.Y
+        //                let mutable destRect = SDL.SDL_Rect ()
+        //                destRect.x <- int tilePositionOffset.X * Constants.Render.VirtualScalar
+        //                destRect.y <- int tilePositionOffset.Y * Constants.Render.VirtualScalar
+        //                destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
+        //                destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
+        //                let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
+        //                let mutable rotationCenter = SDL.SDL_Point ()
+        //                rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
+        //                rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
+        //                if color.A <> 0.0f then
+        //                    SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
+        //                    SDL.SDL_SetTextureColorMod (tileSetTexture, color.R8, color.G8, color.B8) |> ignore
+        //                    SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A8) |> ignore
+        //                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
+        //                    if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+        //                if glow.A <> 0.0f then
+        //                    SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+        //                    SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R8, glow.G8, glow.B8) |> ignore
+        //                    SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A8) |> ignore
+        //                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
+        //                    if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+        //        tileIndex <- inc tileIndex
+        //else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render text.
     static member renderText
@@ -414,71 +420,73 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          font : Font AssetTag,
          color : Color inref,
          justification : Justification,
-         renderer) =
-        let mutable color = color
-        let view = if transform.Absolute then &viewAbsolute else &viewRelative
-        let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let perimeter = transform.Perimeter
-        let position = perimeter.Position.V2
-        let positionView = Matrix3x3.Multiply (&position, &view)
-        let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
-        let size = perimeter.Size.V2
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        let font = AssetTag.generalize font
-        match SdlRenderer.tryFindRenderAsset font renderer with
-        | ValueSome renderAsset ->
-            match renderAsset with
-            | FontAsset (_, font) ->
-                let mutable renderColor = SDL.SDL_Color ()
-                renderColor.r <- color.R8
-                renderColor.g <- color.G8
-                renderColor.b <- color.B8
-                renderColor.a <- color.A8
-                // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
-                // texture one or more times a frame must be understood! Although, maybe it all happens in software
-                // and vram fragmentation would not be a concern in the first place... perf could still be, however.
-                let (offset, textSurface) =
-                    match justification with
-                    | Unjustified wrapped ->
-                        let textSurface =
-                            if wrapped
-                            then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
-                            else SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                        (Vector2.Zero, textSurface)
-                    | Justified (h, v) ->
-                        let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                        let mutable width = 0
-                        let mutable height = 0
-                        SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
-                        let offsetX =
-                            match h with
-                            | JustifyLeft -> 0.0f
-                            | JustifyCenter -> (sizeView.X - single width) * 0.5f
-                            | JustifyRight -> sizeView.X - single width
-                        let offsetY =
-                            match v with
-                            | JustifyTop -> 0.0f
-                            | JustifyMiddle -> (sizeView.Y - single height) * 0.5f
-                            | JustifyBottom -> sizeView.Y - single height
-                        (v2 offsetX offsetY, textSurface)
-                if textSurface <> IntPtr.Zero then
-                    let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                    let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
-                    let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- textureSizeX
-                    sourceRect.h <- textureSizeY
-                    let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int (+positionOffset.X + offset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                    destRect.y <- int (-positionOffset.Y + offset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                    destRect.w <- textureSizeX * Constants.Render.VirtualScalar
-                    destRect.h <- textureSizeY * Constants.Render.VirtualScalar
-                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, &sourceRect, &destRect) |> ignore
-                    SDL.SDL_DestroyTexture textTexture
-                    SDL.SDL_FreeSurface textSurface
-            | _ -> Log.debug "Cannot render text with a non-font asset."
-        | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
+         renderer,
+         spriteBatchEnvOpt) =
+        spriteBatchEnvOpt
+        //let mutable color = color
+        //let view = if transform.Absolute then &viewAbsolute else &viewRelative
+        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        //let perimeter = transform.Perimeter
+        //let position = perimeter.Position.V2
+        //let positionView = Matrix3x3.Multiply (&position, &view)
+        //let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
+        //let size = perimeter.Size.V2
+        //let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+        //let font = AssetTag.generalize font
+        //match GlRenderer2d.tryFindRenderAsset font renderer with
+        //| ValueSome renderAsset ->
+        //    match renderAsset with
+        //    | FontAsset (_, font) ->
+        //        let mutable renderColor = SDL.SDL_Color ()
+        //        renderColor.r <- color.R8
+        //        renderColor.g <- color.G8
+        //        renderColor.b <- color.B8
+        //        renderColor.a <- color.A8
+        //        // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
+        //        // texture one or more times a frame must be understood! Although, maybe it all happens in software
+        //        // and vram fragmentation would not be a concern in the first place... perf could still be, however.
+        //        let (offset, textSurface) =
+        //            match justification with
+        //            | Unjustified wrapped ->
+        //                let textSurface =
+        //                    if wrapped
+        //                    then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+        //                    else SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
+        //                (Vector2.Zero, textSurface)
+        //            | Justified (h, v) ->
+        //                let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
+        //                let mutable width = 0
+        //                let mutable height = 0
+        //                SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+        //                let offsetX =
+        //                    match h with
+        //                    | JustifyLeft -> 0.0f
+        //                    | JustifyCenter -> (sizeView.X - single width) * 0.5f
+        //                    | JustifyRight -> sizeView.X - single width
+        //                let offsetY =
+        //                    match v with
+        //                    | JustifyTop -> 0.0f
+        //                    | JustifyMiddle -> (sizeView.Y - single height) * 0.5f
+        //                    | JustifyBottom -> sizeView.Y - single height
+        //                (v2 offsetX offsetY, textSurface)
+        //        if textSurface <> IntPtr.Zero then
+        //            let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
+        //            let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
+        //            let mutable sourceRect = SDL.SDL_Rect ()
+        //            sourceRect.x <- 0
+        //            sourceRect.y <- 0
+        //            sourceRect.w <- textureSizeX
+        //            sourceRect.h <- textureSizeY
+        //            let mutable destRect = SDL.SDL_Rect ()
+        //            destRect.x <- int (+positionOffset.X + offset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
+        //            destRect.y <- int (-positionOffset.Y + offset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
+        //            destRect.w <- textureSizeX * Constants.Render.VirtualScalar
+        //            destRect.h <- textureSizeY * Constants.Render.VirtualScalar
+        //            if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, &sourceRect, &destRect) |> ignore
+        //            SDL.SDL_DestroyTexture textTexture
+        //            SDL.SDL_FreeSurface textSurface
+        //    | _ -> Log.debug "Cannot render text with a non-font asset."
+        //| _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
     /// Render particles.
     static member renderParticles
@@ -493,65 +501,67 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          blend : Blend,
          image : Image AssetTag,
          particles : Particle array,
-         renderer) =
-        let view = if absolute then &viewAbsolute else &viewRelative
-        let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let positionOffset = -(v2Zero * view) + v2 eyeMargin.X -eyeMargin.Y
-        let blend = Blend.toSdlBlendMode blend
-        let image = AssetTag.generalize image
-        match SdlRenderer.tryFindRenderAsset image renderer with
-        | ValueSome renderAsset ->
-            match renderAsset with
-            | TextureAsset texture ->
-                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
-                let mutable sourceRect = SDL.SDL_Rect ()
-                let mutable destRect = SDL.SDL_Rect ()
-                let mutable index = 0
-                while index < particles.Length do
-                    let particle = &particles.[index]
-                    let perimeter = particle.Transform.Perimeter
-                    let position = perimeter.Position.V2
-                    let positionView = position + positionOffset
-                    let size = perimeter.Size.V2
-                    let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-                    let rotation = particle.Transform.Angles.X
-                    let color = &particle.Color
-                    let glow = &particle.Glow
-                    let flip = Flip.toSdlFlip particle.Flip
-                    let inset = particle.Inset
-                    if inset.IsEmpty then
-                        sourceRect.x <- 0
-                        sourceRect.y <- 0
-                        sourceRect.w <- textureSizeX
-                        sourceRect.h <- textureSizeY
-                    else
-                        sourceRect.x <- int inset.Position.X
-                        sourceRect.y <- int inset.Position.Y
-                        sourceRect.w <- int inset.Size.X
-                        sourceRect.h <- int inset.Size.Y
-                    destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                    destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
-                    destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                    let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
-                    let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
-                    rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                    if color.A <> 0.0f then
-                        SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                    if glow.A <> 0.0f then
-                        SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                    index <- inc index
-            | _ -> Log.trace "Cannot render particle with a non-texture asset."
-        | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
+         renderer,
+         spriteBatchEnvOpt) =
+        spriteBatchEnvOpt
+        //let view = if absolute then &viewAbsolute else &viewRelative
+        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        //let positionOffset = -(v2Zero * view) + v2 eyeMargin.X -eyeMargin.Y
+        //let blend = Blend.toSdlBlendMode blend
+        //let image = AssetTag.generalize image
+        //match GlRenderer2d.tryFindRenderAsset image renderer with
+        //| ValueSome renderAsset ->
+        //    match renderAsset with
+        //    | TextureAsset texture ->
+        //        let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
+        //        let mutable sourceRect = SDL.SDL_Rect ()
+        //        let mutable destRect = SDL.SDL_Rect ()
+        //        let mutable index = 0
+        //        while index < particles.Length do
+        //            let particle = &particles.[index]
+        //            let perimeter = particle.Transform.Perimeter
+        //            let position = perimeter.Position.V2
+        //            let positionView = position + positionOffset
+        //            let size = perimeter.Size.V2
+        //            let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+        //            let rotation = particle.Transform.Angles.X
+        //            let color = &particle.Color
+        //            let glow = &particle.Glow
+        //            let flip = Flip.toSdlFlip particle.Flip
+        //            let inset = particle.Inset
+        //            if inset.IsEmpty then
+        //                sourceRect.x <- 0
+        //                sourceRect.y <- 0
+        //                sourceRect.w <- textureSizeX
+        //                sourceRect.h <- textureSizeY
+        //            else
+        //                sourceRect.x <- int inset.Position.X
+        //                sourceRect.y <- int inset.Position.Y
+        //                sourceRect.w <- int inset.Size.X
+        //                sourceRect.h <- int inset.Size.Y
+        //            destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
+        //            destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
+        //            destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
+        //            destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
+        //            let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
+        //            let mutable rotationCenter = SDL.SDL_Point ()
+        //            rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
+        //            rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
+        //            if color.A <> 0.0f then
+        //                SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
+        //                SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
+        //                SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
+        //                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
+        //                if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+        //            if glow.A <> 0.0f then
+        //                SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+        //                SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
+        //                SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
+        //                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
+        //                if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+        //            index <- inc index
+        //    | _ -> Log.trace "Cannot render particle with a non-texture asset."
+        //| _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
     static member private renderDescriptor
         (viewAbsolute : Matrix3x3 byref,
@@ -560,52 +570,49 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          descriptor,
-         renderer) =
+         renderer,
+         spriteBatchEnvOpt) =
         match descriptor with
         | SpriteDescriptor descriptor ->
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
-            SdlRenderer.renderSprite
+            GlRenderer2d.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
-                 renderer)
+                 renderer, spriteBatchEnvOpt)
         | SpritesDescriptor descriptor ->
-            let sprites = descriptor.Sprites
-            for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
-                SdlRenderer.renderSprite
-                    (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-                     &sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
-                     renderer)
+            spriteBatchEnvOpt
+            //let sprites = descriptor.Sprites
+            //for index in 0 .. sprites.Length - 1 do
+            //    let sprite = &sprites.[index]
+            //    GlRenderer2d.renderSprite
+            //        (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
+            //         &sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+            //         renderer, spriteBatchEnvOpt)
         | TileLayerDescriptor descriptor ->
-            SdlRenderer.renderTileLayer
+            GlRenderer2d.renderTileLayer
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
-                 renderer)
+                 renderer, spriteBatchEnvOpt)
         | TextDescriptor descriptor ->
-            SdlRenderer.renderText
+            GlRenderer2d.renderText
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
-                 renderer)
+                 renderer, spriteBatchEnvOpt)
         | ParticlesDescriptor descriptor ->
-            SdlRenderer.renderParticles
+            GlRenderer2d.renderParticles
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
-                 renderer)
+                 renderer, spriteBatchEnvOpt)
         | RenderCallbackDescriptor2d callback ->
-            callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
+            spriteBatchEnvOpt
+            //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
-        let renderContext = renderer.RenderContext
-        let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
-        match targetResult with
-        | 0 ->
-            SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
-            let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
-            for message in renderer.RenderLayeredMessages do
-                SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
-        | _ ->
-            Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
+        let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
+        let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
+        Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
+            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteBatchEnvOpt))
+            None renderer.RenderLayeredMessages |> ignore<Gl.Hl.SpriteBatchEnv option>
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
         let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
@@ -645,11 +652,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         
         let glContext = SDL.SDL_GL_CreateContext (window)
         
-        Hl.Enable Hl.EnableCap.CullFace // for some reason, enabled by default
+        Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
         
-        Hl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         
-        let (textureFramebufferTexture, _) = Hl.CreateTextureFramebuffer ()
+        let (textureFramebufferTexture, _) = Gl.Hl.CreateTextureFramebuffer ()
         
         let whiteVertexShaderStr =
             [Constants.Render.GlslVersionPragma
@@ -665,10 +672,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
              "{"
              "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
              "}"] |> String.join "\n"
-        let whiteShaderProgram = Hl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
-        let wVertexPos2DAttrib = Hl.GetAttribLocation (whiteShaderProgram, "pos")
+        let whiteShaderProgram = Gl.Hl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
+        let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
         
-        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Hl.CreateBlitShaderProgram ()
+        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Gl.Hl.CreateBlitShaderProgram ()
         
         let vertexData =
             [|-0.9f; -0.9f;
@@ -676,58 +683,58 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
               +0.9f; +0.9f;
               -0.9f; +0.9f|]
         let mutable vertexBuffers = [|0u|]
-        Hl.GenBuffers (1, vertexBuffers)
+        Gl.GenBuffers (1, vertexBuffers)
         let vertexBuffer = vertexBuffers.[0]
-        Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, vertexBuffer)
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        Hl.BufferData (Hl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Hl.BufferUsageHint.StaticDraw)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
         
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffers = [|0u|]
-        Hl.GenBuffers (1, indexBuffers)
+        Gl.GenBuffers (1, indexBuffers)
         let indexBuffer = indexBuffers.[0]
-        Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, indexBuffer)
+        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
         let indexDataSize = IntPtr (4 * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        Hl.BufferData (Hl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Hl.BufferUsageHint.StaticDraw)
+        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
         
-        let (fullScreenQuadVertices, fullScreenQuadIndices) = Hl.CreateFullScreenQuad ()
+        let (fullScreenQuadVertices, fullScreenQuadIndices) = Gl.Hl.CreateFullScreenQuad ()
         
         while true do
-        
-            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, 0u)
-            Hl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Hl.Clear (Hl.ClearBufferMask.ColorBufferBit ||| Hl.ClearBufferMask.DepthBufferBit ||| Hl.ClearBufferMask.StencilBufferBit)
+
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
             //
             // 3d rendering here...
             //
-        
-            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
-            Hl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Hl.Clear (Hl.ClearBufferMask.ColorBufferBit ||| Hl.ClearBufferMask.DepthBufferBit ||| Hl.ClearBufferMask.StencilBufferBit)
-            Hl.UseProgram whiteShaderProgram
-            Hl.EnableVertexAttribArray wVertexPos2DAttrib
-            Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, vertexBuffer)
-            Hl.VertexAttribPointer (wVertexPos2DAttrib, 2, Hl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Hl.BindBuffer (Hl.BufferTarget.ElementArrayBuffer, indexBuffer)
-            Hl.DrawElements (Hl.BeginMode.TriangleFan, 4, Hl.DrawElementsType.UnsignedInt, nativeint 0)
-            Hl.DisableVertexAttribArray wVertexPos2DAttrib
-            Hl.UseProgram 0u
-        
-            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, 0u)
-            Hl.UseProgram blitShaderProgram
-            Hl.EnableVertexAttribArray blitPosAttrib
-            Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
-            Hl.VertexAttribPointer (blitPosAttrib, 2, Hl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Hl.BindBuffer (Hl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
-            Hl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
-            Hl.ActiveTexture 0 // make texture slot 0 active
-            Hl.BindTexture (Hl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            Hl.DrawElements (Hl.BeginMode.TriangleFan, 4, Hl.DrawElementsType.UnsignedInt, nativeint 0)
-            Hl.DisableVertexAttribArray blitPosAttrib
-            Hl.UseProgram 0u
-        
+
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
+            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            Gl.UseProgram whiteShaderProgram
+            Gl.EnableVertexAttribArray wVertexPos2DAttrib
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+            Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            Gl.DisableVertexAttribArray wVertexPos2DAttrib
+            Gl.UseProgram 0u
+
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            Gl.UseProgram blitShaderProgram
+            Gl.EnableVertexAttribArray blitPosAttrib
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
+            Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
+            Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
+            Gl.ActiveTexture 0 // make texture slot 0 active
+            Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            Gl.DisableVertexAttribArray blitPosAttrib
+            Gl.UseProgram 0u
+
             SDL.SDL_GL_SwapWindow window
             //Threading.Thread.Sleep 16
 
@@ -758,15 +765,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderLayeredMessages.Add layeredMessage
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
-            SdlRenderer.handleRenderMessages renderMessages renderer
-            SdlRenderer.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer
-            SdlRenderer.sortRenderLayeredMessages renderer
-            SdlRenderer.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
+            GlRenderer2d.handleRenderMessages renderMessages renderer
+            GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer
+            GlRenderer2d.sortRenderLayeredMessages renderer
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
             renderer.RenderLayeredMessages.Clear ()
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
-            for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset renderer
+            for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
             renderer :> Renderer2d
