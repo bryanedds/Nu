@@ -569,7 +569,7 @@ module WorldModule3 =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
                     let renderer2d =
                         match (SdlDeps.getWindowOpt sdlDeps, SdlDeps.getRenderContextOpt sdlDeps) with
-                        | (Some window, Some renderContext) -> SdlRenderer.make window renderContext :> Renderer2d
+                        | (Some window, Some renderContext) -> GlRenderer2d.make window renderContext :> Renderer2d
                         | (_, _) -> MockRenderer2d.make () :> Renderer2d
                     renderer2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =

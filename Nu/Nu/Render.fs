@@ -20,8 +20,8 @@ type TileMap = private { __ : unit }
 
 /// An asset that is used for rendering.
 type [<NoEquality; NoComparison>] RenderAsset =
-    | TextureAsset of nativeint
-    | FontAsset of nativeint * int
+    | TextureAsset of TextureMetadata * uint
+    | FontAsset of int * nativeint
 
 /// The flipness of a sprite.
 [<Syntax

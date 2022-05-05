@@ -99,9 +99,8 @@ type RenderLayeredMessage2dComparer () =
                 if assetNameCompare <> 0 then assetNameCompare
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
-
 /// The SDL implementation of Renderer.
-type [<ReferenceEquality; NoComparison>] SdlRenderer =
+type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderContext : nativeint
           RenderPackages : RenderAsset Packages
@@ -115,22 +114,21 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
 
     static member private freeRenderAsset renderAsset renderer =
-        SdlRenderer.invalidateCaches renderer
+        GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset texture -> SDL.SDL_DestroyTexture texture
-        | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
+        | TextureAsset (_, texture) -> Gl.Hl.DeleteTexture texture
+        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderContext renderer =
-        SdlRenderer.invalidateCaches renderer
+        GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            let textureOpt = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
-            if textureOpt <> IntPtr.Zero then
-                Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
-            else
-                let errorMsg = SDL.SDL_GetError ()
-                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+            match Gl.Hl.TryCreateSpriteTexture asset.FilePath with
+            | Right texture ->
+                Some (asset.AssetTag.AssetName, TextureAsset texture)
+            | Left error ->
+                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
@@ -140,7 +138,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 match Int32.TryParse fontSizeText with
                 | (true, fontSize) ->
                     let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontOpt, fontSize))
+                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontSize, fontOpt))
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
@@ -151,7 +149,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (fun asset -> SdlRenderer.tryLoadRenderAsset asset renderer.RenderContext renderer) assets
+                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer.RenderContext renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
@@ -189,7 +187,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
+                GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, assets) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
@@ -201,12 +199,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 | (false, _) -> ValueNone
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
-        SdlRenderer.tryLoadRenderPackage hintPackageName renderer
+        GlRenderer2d.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some assets ->
-            for asset in assets do SdlRenderer.freeRenderAsset asset.Value renderer
+            for asset in assets do GlRenderer2d.freeRenderAsset asset.Value renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
@@ -214,18 +212,18 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         renderer.RenderPackages.Clear ()
         for packageName in packageNames do
-            SdlRenderer.tryLoadRenderPackage packageName renderer
+            GlRenderer2d.tryLoadRenderPackage packageName renderer
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | RenderLayeredMessage2d message -> renderer.RenderLayeredMessages.Add message
-        | HintRenderPackageUseMessage2d hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
-        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage2d -> SdlRenderer.handleReloadRenderAssets renderer
+        | HintRenderPackageUseMessage2d hintPackageUse -> GlRenderer2d.handleHintRenderPackageUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> GlRenderer2d.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage2d -> GlRenderer2d.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
-            SdlRenderer.handleRenderMessage renderMessage renderer
+            GlRenderer2d.handleRenderMessage renderMessage renderer
 
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
@@ -262,14 +260,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         match SdlRenderer.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset texture ->
-                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
+            | TextureAsset (metadata, texture) ->
                 let mutable sourceRect = SDL.SDL_Rect ()
                 if inset.Position.X = 0.0f && inset.Position.Y = 0.0f && inset.Size.X = 0.0f && inset.Size.Y = 0.0f then
                     sourceRect.x <- 0
                     sourceRect.y <- 0
-                    sourceRect.w <- textureSizeX
-                    sourceRect.h <- textureSizeY
+                    sourceRect.w <- metadata.TextureWidth
+                    sourceRect.h <- metadata.TextureHeight
                 else
                     sourceRect.x <- int inset.Position.X
                     sourceRect.y <- int inset.Position.Y
@@ -431,7 +428,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         match SdlRenderer.tryFindRenderAsset font renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | FontAsset (font, _) ->
+            | FontAsset (_, font) ->
                 let mutable renderColor = SDL.SDL_Color ()
                 renderColor.r <- color.R8
                 renderColor.g <- color.G8
@@ -648,11 +645,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         
         let glContext = SDL.SDL_GL_CreateContext (window)
         
-        Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
+        Hl.Enable Hl.EnableCap.CullFace // for some reason, enabled by default
         
-        Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Hl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         
-        let (textureFramebufferTexture, _) = Gl.CreateTextureFramebuffer ()
+        let (textureFramebufferTexture, _) = Hl.CreateTextureFramebuffer ()
         
         let whiteVertexShaderStr =
             [Constants.Render.GlslVersionPragma
@@ -668,10 +665,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
              "{"
              "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
              "}"] |> String.join "\n"
-        let whiteShaderProgram = Gl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
-        let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
+        let whiteShaderProgram = Hl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
+        let wVertexPos2DAttrib = Hl.GetAttribLocation (whiteShaderProgram, "pos")
         
-        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Gl.CreateBlitShaderProgram ()
+        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Hl.CreateBlitShaderProgram ()
         
         let vertexData =
             [|-0.9f; -0.9f;
@@ -679,57 +676,57 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
               +0.9f; +0.9f;
               -0.9f; +0.9f|]
         let mutable vertexBuffers = [|0u|]
-        Gl.GenBuffers (1, vertexBuffers)
+        Hl.GenBuffers (1, vertexBuffers)
         let vertexBuffer = vertexBuffers.[0]
-        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
+        Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+        Hl.BufferData (Hl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Hl.BufferUsageHint.StaticDraw)
         
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffers = [|0u|]
-        Gl.GenBuffers (1, indexBuffers)
+        Hl.GenBuffers (1, indexBuffers)
         let indexBuffer = indexBuffers.[0]
-        Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
+        Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, indexBuffer)
         let indexDataSize = IntPtr (4 * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+        Hl.BufferData (Hl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Hl.BufferUsageHint.StaticDraw)
         
-        let (fullScreenQuadVertices, fullScreenQuadIndices) = Gl.CreateFullScreenQuad ()
+        let (fullScreenQuadVertices, fullScreenQuadIndices) = Hl.CreateFullScreenQuad ()
         
         while true do
         
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, 0u)
+            Hl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            Hl.Clear (Hl.ClearBufferMask.ColorBufferBit ||| Hl.ClearBufferMask.DepthBufferBit ||| Hl.ClearBufferMask.StencilBufferBit)
             //
             // 3d rendering here...
             //
         
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
-            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            Gl.UseProgram whiteShaderProgram
-            Gl.EnableVertexAttribArray wVertexPos2DAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
-            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray wVertexPos2DAttrib
-            Gl.UseProgram 0u
+            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
+            Hl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
+            Hl.Clear (Hl.ClearBufferMask.ColorBufferBit ||| Hl.ClearBufferMask.DepthBufferBit ||| Hl.ClearBufferMask.StencilBufferBit)
+            Hl.UseProgram whiteShaderProgram
+            Hl.EnableVertexAttribArray wVertexPos2DAttrib
+            Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, vertexBuffer)
+            Hl.VertexAttribPointer (wVertexPos2DAttrib, 2, Hl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Hl.BindBuffer (Hl.BufferTarget.ElementArrayBuffer, indexBuffer)
+            Hl.DrawElements (Hl.BeginMode.TriangleFan, 4, Hl.DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.DisableVertexAttribArray wVertexPos2DAttrib
+            Hl.UseProgram 0u
         
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.UseProgram blitShaderProgram
-            Gl.EnableVertexAttribArray blitPosAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
-            Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
-            Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
-            Gl.ActiveTexture 0 // make texture slot 0 active
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray blitPosAttrib
-            Gl.UseProgram 0u
+            Hl.BindFramebuffer (Hl.FramebufferTarget.Framebuffer, 0u)
+            Hl.UseProgram blitShaderProgram
+            Hl.EnableVertexAttribArray blitPosAttrib
+            Hl.BindBuffer (Hl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
+            Hl.VertexAttribPointer (blitPosAttrib, 2, Hl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
+            Hl.BindBuffer (Hl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
+            Hl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
+            Hl.ActiveTexture 0 // make texture slot 0 active
+            Hl.BindTexture (Hl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+            Hl.DrawElements (Hl.BeginMode.TriangleFan, 4, Hl.DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.DisableVertexAttribArray blitPosAttrib
+            Hl.UseProgram 0u
         
             SDL.SDL_GL_SwapWindow window
             //Threading.Thread.Sleep 16
