@@ -22,11 +22,10 @@ module Gl =
     [<RequireQualifiedAccess>]
     module Hl =
     
-        type [<NoEquality; NoComparison; Struct; StructLayout (LayoutKind.Sequential)>] SpriteBatchVertex =
-            private
-                { mutable SbvPosition : Vector4
-                  mutable SbvColor : Color
-                  mutable SbvTexCoord : Vector2 }
+        type [<NoEquality; NoComparison; Struct; StructLayout (LayoutKind.Sequential)>] private SpriteBatchVertex =
+            { mutable SbvPosition : Vector4
+              mutable SbvColor : Color
+              mutable SbvTexCoord : Vector2 }
 
         type [<StructuralEquality; NoComparison>] SpriteBatchState =
             private
@@ -39,6 +38,7 @@ module Gl =
                 { SpriteIndex : int
                   CpuBuffer : nativeint
                   GpuBuffer : uint
+                  GpuVao : uint
                   BatchState : SpriteBatchState }
 
         /// Create a texture frame buffer.
@@ -216,22 +216,24 @@ module Gl =
             Gl.DeleteTextures (1, [|texture|])
 
         let private CreateSpriteBatchBuffer (maxSprites) =
-            //Gl.GenVertexArrays(1, &this->vao);
+            let vaos = [|0u|]
+            Gl.GenVertexArrays (1, vaos)
+            let vao = vaos.[0]
             let buffers = [|0u|]
-            Gl.GenBuffers(1, buffers);
+            Gl.GenBuffers (1, buffers)
             let buffer = buffers.[0]
-            //Gl.BindVertexArray(this->vao);
+            Gl.BindVertexArray vao
             Gl.BindBuffer(Gl.BufferTarget.ArrayBuffer, buffer)
-            Gl.BufferData(Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw);
-            //Gl.EnableVertexAttribArray(0);
-            //Gl.EnableVertexAttribArray(1);
-            //Gl.EnableVertexAttribArray(2);
-            Gl.VertexAttribPointer (0, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvPosition));
-            Gl.VertexAttribPointer (1, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvColor));
-            Gl.VertexAttribPointer (2, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvTexCoord));
-            //Gl.BindBuffer(Gl.BufferTarget.ArrayBuffer, buffer);
-            //Gl.BindVertexArray(0);
-            buffer
+            Gl.BufferData(Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
+            Gl.EnableVertexAttribArray 0
+            Gl.EnableVertexAttribArray 1
+            Gl.EnableVertexAttribArray 2
+            Gl.VertexAttribPointer (0, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvPosition))
+            Gl.VertexAttribPointer (1, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvColor))
+            Gl.VertexAttribPointer (2, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, Property? SbvTexCoord))
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, buffer)
+            Gl.BindVertexArray 0u
+            (buffer, vao)
 
         let private BeginSpriteBatch (buffer : uint) =
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, buffer)
@@ -241,11 +243,11 @@ module Gl =
             Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
 
-        let private RenderSpriteBatch numSprites texture cpuBuffer gpuBuffer =
+        let private RenderSpriteBatch numSprites texture cpuBuffer gpuBuffer gpuVao =
             Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
             Gl.BufferSubData (Gl.BufferTarget.ArrayBuffer, nativeint 0, nativeint (sizeof<SpriteBatchVertex> * 4 * numSprites), cpuBuffer)
-            //Gl.BindVertexArray(this->vao);
+            Gl.BindVertexArray gpuVao
             Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * numSprites)
             Gl.BindVertexArray 0u
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
@@ -262,13 +264,13 @@ module Gl =
                     match envOpt with
                     | Some env ->
                         EndSpriteBatch ()
-                        RenderSpriteBatch env.SpriteIndex env.BatchState.Texture env.CpuBuffer env.GpuBuffer
+                        RenderSpriteBatch env.SpriteIndex env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
                     | None -> ()
-                    let gpuBuffer = CreateSpriteBatchBuffer Constants.Render.SpriteBatchSize
+                    let (gpuBuffer, gpuVao) = CreateSpriteBatchBuffer Constants.Render.SpriteBatchSize
                     let cpuBuffer = BeginSpriteBatch gpuBuffer
                     let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; Texture = texture }
-                    { SpriteIndex = 0; CpuBuffer = cpuBuffer; GpuBuffer = gpuBuffer; BatchState = batchState }
-                else Option.get envOpt // guaranteed to be
+                    { SpriteIndex = 0; CpuBuffer = cpuBuffer; GpuBuffer = gpuBuffer; GpuVao = gpuVao; BatchState = batchState }
+                else Option.get envOpt // guaranteed to exist
 
             let vertexSize = nativeint sizeof<SpriteBatchVertex>
             let cpuOffset = env.CpuBuffer + vertexSize * nativeint 4
@@ -313,6 +315,5 @@ module Gl =
             | Some env ->
                 if env.SpriteIndex > 0 then
                     EndSpriteBatch ()
-                    RenderSpriteBatch env.SpriteIndex env.BatchState.Texture env.CpuBuffer env.GpuBuffer
-                else ()
+                    RenderSpriteBatch env.SpriteIndex env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
             | None -> ()
