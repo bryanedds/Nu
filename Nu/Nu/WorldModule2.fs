@@ -91,7 +91,7 @@ module WorldModule2 =
             for entity in entities do
                 let bounds = entity.GetBounds world
                 if not (entity.GetIs2d world) then
-                    let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                    let element = Octelement.make false false entity // TODO: 3D:  populate flags correctly.
                     Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds element octree
             octree
 

@@ -267,7 +267,7 @@ module WorldEntityModule =
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
-        /// TODO: P1: make this work for more than just position!
+        /// TODO: 3D:  make this work 3-dimensionally!
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             let world =
                 match
