@@ -23,25 +23,6 @@ type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of TextureMetadata * uint
     | FontAsset of int * nativeint
 
-/// The flipness of a sprite.
-[<Syntax
-    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
-
-    /// Convert to a flip value recognized by SDL.
-    static member toSdlFlip flip =
-        match flip with
-        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-
 /// The blend mode of a sprite.
 [<Syntax
     ("Transparent Additive Modulate Overwrite", "", "", "", "",

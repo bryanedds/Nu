@@ -9,6 +9,17 @@ open SDL2
 open Prime
 open Nu
 
+/// The flipness of a texture.
+[<Syntax
+    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison; Struct>] Flip =
+    | FlipNone
+    | FlipH
+    | FlipV
+    | FlipHV
+
 /// A texture's metadata.
 type TextureMetadata =
     { TextureWidth : int
@@ -200,11 +211,11 @@ module Gl =
             Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter) 
             Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
             SDL.SDL_FreeSurface surfacePtr
-            let error = Gl.GetError ()
-            if error = Gl.ErrorCode.NoError then
+            match Gl.GetError () with
+            | Gl.ErrorCode.NoError ->
                 let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
                 Right (metadata, texture)
-            else Left (string error)
+            | error -> Left (string error)
 
         let TryCreateSpriteTexture (filePath) =
             TryCreateTexture2d
@@ -240,7 +251,7 @@ module Gl =
             Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
             Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
             Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * spriteMax), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
+            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 6 * spriteMax), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
             Assert ()
 
             // map cpu buffer
@@ -271,18 +282,18 @@ module Gl =
             // unmap cpu buffer
             Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
             Assert ()
-            
+
             // setup program
             Gl.UseProgram spriteProgram
             Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
             Assert ()
-            
+
             // draw geometry
-            Gl.DrawArrays (Gl.BeginMode.TriangleFan, 0, 4 * spriteCount)
+            Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * spriteCount)
             Assert ()
-            
+
             // teardown program
             Gl.BindTexture (Gl.TextureTarget.Texture2D, 0u)
             Gl.UseProgram 0u
@@ -293,7 +304,7 @@ module Gl =
             Gl.BindVertexArray 0u
             Gl.DeleteVertexArrays (1, [|gpuVao|])
 
-        let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
+        let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 
             let env =
                 let batchState = { Texture = texture; BlendingFactorSrc = bfs; BlendingFactorDest = bfd }
@@ -316,41 +327,53 @@ module Gl =
                       BatchState = batchState }
                 else Option.get envOpt // guaranteed to exist
 
-            let vertexSize = nativeint sizeof<SpriteBatchVertex>
-            let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 4
+            let flipper =
+                match flip with
+                | FlipNone -> v2 1.0f -1.0f
+                | FlipH -> v2 -1.0f -1.0f
+                | FlipV -> v2 1.0f 1.0f
+                | FlipHV -> v2 -1.0f 1.0f
+
             let position0 = (position - center).Rotate rotation
             let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
             vertex0.SbvPosition <- position0
-            vertex0.SbvCoord <- coords.BottomLeft
+            vertex0.SbvCoord <- coords.BottomLeft * flipper
             vertex0.SbvColor <- color
-            Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
 
-            let cpuOffset = cpuOffset + vertexSize
             let position1Unrotated = v2 (position.X + size.X) position.Y
             let position1 = (position1Unrotated - center).Rotate rotation
             let mutable vertex1 = Unchecked.defaultof<SpriteBatchVertex>
             vertex1.SbvPosition <- position1
-            vertex1.SbvCoord <- coords.BottomRight
+            vertex1.SbvCoord <- coords.BottomRight * flipper
             vertex1.SbvColor <- color
-            Marshal.StructureToPtr<SpriteBatchVertex> (vertex1, cpuOffset, false)
 
-            let cpuOffset = cpuOffset + vertexSize
             let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
             let position2 = (position2Unrotated - center).Rotate rotation
             let mutable vertex2 = Unchecked.defaultof<SpriteBatchVertex>
             vertex2.SbvPosition <- position2
-            vertex2.SbvCoord <- coords.TopRight
+            vertex2.SbvCoord <- coords.TopRight * flipper
             vertex2.SbvColor <- color
-            Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
 
-            let cpuOffset = cpuOffset + vertexSize
             let position3Unrotated = v2 position.X (position.Y + size.Y)
             let position3 = (position3Unrotated - center).Rotate rotation
             let mutable vertex3 = Unchecked.defaultof<SpriteBatchVertex>
             vertex3.SbvPosition <- position3
-            vertex3.SbvCoord <- coords.TopLeft
+            vertex3.SbvCoord <- coords.TopLeft * flipper
             vertex3.SbvColor <- color
+
+            let vertexSize = nativeint sizeof<SpriteBatchVertex>
+            let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
+            Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<SpriteBatchVertex> (vertex1, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex3, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
 
             Some { env with SpriteIndex = inc env.SpriteIndex }
 
@@ -361,6 +384,6 @@ module Gl =
                     EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.GpuBuffer env.GpuVao
             | None -> ()
 
-        let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTexUniform spriteProgram =
-            let envOpt = AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTexUniform spriteProgram None
+        let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTexUniform spriteProgram =
+            let envOpt = AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTexUniform spriteProgram None
             FlushSpriteBatch envOpt
