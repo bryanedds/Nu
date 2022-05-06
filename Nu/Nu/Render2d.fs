@@ -259,7 +259,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
-        let flip = Flip.toSdlFlip flip
+        //let flip = Flip.toSdlFlip flip
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -273,22 +273,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let spriteBatchEnvOpt =
                     if color.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            perimeter.Center.V2
-                            perimeter.Position.V2
-                            perimeter.Size.V2
-                            rotation color inset
-                            texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            perimeter.Center.V2 perimeter.Position.V2 perimeter.Size.V2 rotation color inset
+                            texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                             spriteTexUniform spriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 let spriteBatchEnvOpt =
                     if glow.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            perimeter.Center.V2
-                            perimeter.Position.V2
-                            perimeter.Size.V2
-                            rotation color inset
-                            texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            perimeter.Center.V2 perimeter.Position.V2 perimeter.Size.V2 rotation color inset
+                            texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                             spriteTexUniform spriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
@@ -675,7 +669,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             Gl.Hl.RenderSprite
                 v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 v2Zero v2One)
-                texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                texture FlipHV Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                 spriteTexUniform spriteProgram
 
             SDL.SDL_GL_SwapWindow window
