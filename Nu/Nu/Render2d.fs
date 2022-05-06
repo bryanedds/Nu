@@ -657,57 +657,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
+        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext (window)
 
         // configure gl globally
         Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
-
-        //let (textureFramebufferTexture, _) = Gl.Hl.CreateTextureFramebuffer ()
-        //
-        //let whiteVertexShaderStr =
-        //    [Constants.Render.GlslVersionPragma
-        //     "in vec2 pos;"
-        //     "void main()"
-        //     "{"
-        //     "  gl_Position = vec4(pos.x, pos.y, 0, 1);"
-        //     "}"] |> String.join "\n"
-        //let whiteFragmentShaderStr =
-        //    [Constants.Render.GlslVersionPragma
-        //     "out vec4 frag;"
-        //     "void main()"
-        //     "{"
-        //     "  frag = vec4(1, 1, 1, 1);"
-        //     "}"] |> String.join "\n"
-        //let whiteShaderProgram = Gl.Hl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
-        //let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
-        //
-        //let vertexData =
-        //    [|-0.9f; -0.9f;
-        //      +0.9f; -0.9f;
-        //      +0.9f; +0.9f;
-        //      -0.9f; +0.9f|]
-        //let mutable vertexBuffers = [|0u|]
-        //Gl.GenBuffers (1, vertexBuffers)
-        //let vertexBuffer = vertexBuffers.[0]
-        //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-        //let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
-        //let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        //Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-        //
-        //let indexData = [|0u; 1u; 2u; 3u|]
-        //let indexBuffers = [|0u|]
-        //Gl.GenBuffers (1, indexBuffers)
-        //let indexBuffer = indexBuffers.[0]
-        //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
-        //let indexDataSize = IntPtr (4 * sizeof<uint>)
-        //let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        //Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
-        let (spriteQuadVertices, spriteQuadIndices) = Gl.Hl.CreateSpriteQuad ()
-
+        
+        // exercise sprite batching
         let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
-
+        let texture = "C:/Temp/lol.png" |> Gl.Hl.TryCreateSpriteTexture |> Either.getRight |> snd
         while true do
 
             // prepare a new frame
@@ -715,45 +673,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
 
-            //Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, textureFramebufferTexture)
-            //Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            //Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-            //Gl.UseProgram whiteShaderProgram
-            //Gl.EnableVertexAttribArray wVertexPos2DAttrib
-            //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            //Gl.VertexAttribPointer (wVertexPos2DAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            //Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, indexBuffer)
-            //Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            //Gl.DisableVertexAttribArray wVertexPos2DAttrib
-            //Gl.UseProgram 0u
-
-            let texture = "C:/Temp/lol.png" |> Gl.Hl.TryCreateSpriteTexture |> Either.getRight |> snd
-
             Gl.Hl.RenderSprite
                 v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 v2Zero v2One)
                 texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                 spriteTexUniform spriteProgram
-
-            //Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            //Gl.UseProgram spriteShaderProgram
-            //Gl.EnableVertexAttribArray spritePosAttrib
-            //Gl.EnableVertexAttribArray spriteCoordAttrib
-            //Gl.EnableVertexAttribArray spriteColorAttrib
-            //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, spriteQuadVertices)
-            //Gl.VertexAttribPointer (spritePosAttrib, 2, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvPosition"))
-            //Gl.VertexAttribPointer (spriteCoordAttrib, 2, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvCoord"))
-            //Gl.VertexAttribPointer (spriteColorAttrib, 4, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvColor"))
-            //Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, spriteQuadIndices)
-            //Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
-            //Gl.ActiveTexture 0 // make texture slot 0 active
-            //Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            //Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            //Gl.DisableVertexAttribArray spriteColorAttrib
-            //Gl.DisableVertexAttribArray spriteCoordAttrib
-            //Gl.DisableVertexAttribArray spritePosAttrib
-            //Gl.UseProgram 0u
-
-            let error = Gl.GetError ()
 
             SDL.SDL_GL_SwapWindow window
 
