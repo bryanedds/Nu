@@ -660,7 +660,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let glContext = SDL.SDL_GL_CreateContext (window)
 
         // configure gl globally
-        Gl.Enable Gl.EnableCap.CullFace // for some reason, disabled by default
         Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
 
