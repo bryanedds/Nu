@@ -3,8 +3,6 @@
 
 namespace Nu
 open System
-open System.Drawing
-open System.Drawing.Imaging
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
@@ -60,6 +58,7 @@ module Gl =
             Gl.GenFramebuffers (1, framebuffers)
             let framebuffer = framebuffers.[0]
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
+            Assert ()
 
             // create texture buffer
             let textures = [|0u|]
@@ -70,6 +69,7 @@ module Gl =
             Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int Gl.TextureParameter.Nearest)
             Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int Gl.TextureParameter.Nearest)
             Gl.FramebufferTexture (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.ColorAttachment0, texture, 0)
+            Assert ()
 
             // create depth and stencil buffers
             let depthBuffers = [|0u|]
@@ -78,41 +78,10 @@ module Gl =
             Gl.BindRenderbuffer (Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
             Gl.RenderbufferStorage (Gl.RenderbufferTarget.Renderbuffer, Gl.RenderbufferStorageEnum.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
             Gl.FramebufferRenderbuffer (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.DepthStencilAttachment, Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
+            Assert ()
 
             // fin
             (texture, framebuffer)
-
-        /// Create a full screen quad.
-        let CreateFullScreenQuad () =
-
-            // build vertex data
-            let vertexData =
-                [|-1.0f; -1.0f;
-                  +1.0f; -1.0f;
-                  +1.0f; +1.0f;
-                  -1.0f; +1.0f|]
-
-            // create vertex buffer
-            let vertexBuffers = [|0u|]
-            Gl.GenBuffers (1, vertexBuffers)
-            let vertexBuffer = vertexBuffers.[0]
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
-            let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
-            // create index buffer
-            let indexData = [|0u; 1u; 2u; 3u|]
-            let indexBuffers = [|0u|]
-            Gl.GenBuffers (1, indexBuffers)
-            let indexBuffer = indexBuffers.[0]
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
-            let indexDataSize = IntPtr (4 * sizeof<uint>)
-            let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-
-            // fin
-            (vertexBuffer, indexBuffer)
 
         /// Create a sprite quad.
         let CreateSpriteQuad () =
@@ -132,6 +101,7 @@ module Gl =
             let vertexDataSize = IntPtr (8 * 4 * sizeof<single>)
             let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
             Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+            Assert ()
 
             // create index buffer
             let indexData = [|0u; 1u; 2u; 3u|]
@@ -142,6 +112,7 @@ module Gl =
             let indexDataSize = IntPtr (4 * sizeof<uint>)
             let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
             Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+            Assert ()
 
             // fin
             (vertexBuffer, indexBuffer)
@@ -151,21 +122,27 @@ module Gl =
 
             // construct gl program
             let program = Gl.CreateProgram ()
+            Assert ()
 
             // add vertex shader to program
             let vertexShader = Gl.CreateShader Gl.ShaderType.VertexShader
             Gl.ShaderSource (vertexShader, 1, [|vertexShaderStr|], null)
             Gl.CompileShader vertexShader
             Gl.AttachShader (program, vertexShader)
+            Assert ()
 
             // add fragement shader to program
             let fragmentShader = Gl.CreateShader Gl.ShaderType.FragmentShader
             Gl.ShaderSource (fragmentShader, 1, [|fragmentShaderStr|], null)
             Gl.CompileShader fragmentShader
             Gl.AttachShader (program, fragmentShader)
+            Assert ()
 
             // link program
             Gl.LinkProgram program
+            Assert ()
+
+            // fin
             program
 
         /// Create a sprite shader program with uniforms:
@@ -206,6 +183,9 @@ module Gl =
             // create shader program
             let program = CreateShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
             let texUniform = Gl.GetUniformLocation (program, "tex")
+            Assert ()
+
+            // fin
             (texUniform, program)
 
         let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
@@ -247,12 +227,6 @@ module Gl =
             Gl.GenVertexArrays (1, gpuVaos)
             let gpuVao = gpuVaos.[0]
             Gl.BindVertexArray gpuVao
-            Gl.EnableVertexAttribArray 0
-            Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
-            Gl.EnableVertexAttribArray 1
-            Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
-            Gl.EnableVertexAttribArray 2
-            Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
             Assert ()
 
             // setup gpu buffer
@@ -260,10 +234,16 @@ module Gl =
             Gl.GenBuffers (1, gpuBuffers)
             let gpuBuffer = gpuBuffers.[0]
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
+            Gl.EnableVertexAttribArray 0
+            Gl.EnableVertexAttribArray 1
+            Gl.EnableVertexAttribArray 2
+            Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
+            Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
+            Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
             Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * spriteMax), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
             Assert ()
 
-            // setup cpu buffer
+            // map cpu buffer
             let cpuBuffer = Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
             Assert ()
 
@@ -280,34 +260,38 @@ module Gl =
             // fin
             (cpuBuffer, gpuBuffer, gpuVao)
 
-        let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
+        let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram texture gpuBuffer gpuVao =
 
             // setup buffers
             Gl.BindVertexArray gpuVao
             Gl.EnableVertexAttribArray 0
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
-            Gl.BufferSubData (Gl.BufferTarget.ArrayBuffer, nativeint 0, nativeint (sizeof<SpriteBatchVertex> * 4 * spriteCount), cpuBuffer)
             Assert ()
 
+            // unmap cpu buffer
+            Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
+            Assert ()
+            
             // setup program
             Gl.UseProgram spriteProgram
             Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
             Assert ()
-
+            
             // draw geometry
             Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * spriteCount)
             Assert ()
-
+            
             // teardown program
             Gl.BindTexture (Gl.TextureTarget.Texture2D, 0u)
             Gl.UseProgram 0u
 
             // teardown buffers
-            Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
+            Gl.DeleteBuffers (1, [|gpuBuffer|])
             Gl.BindVertexArray 0u
+            Gl.DeleteVertexArrays (1, [|gpuVao|])
 
         let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 
@@ -319,7 +303,7 @@ module Gl =
                     | None -> true
                 if batchStateObsolete then
                     match envOpt with
-                    | Some env -> EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
+                    | Some env -> EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.GpuBuffer env.GpuVao
                     | None -> ()
                     let (cpuBuffer, gpuBuffer, gpuVao) = BeginSpriteBatch Constants.Render.SpriteBatchSize
                     let batchState = { Texture = texture; BlendingFactorSrc = bfs; BlendingFactorDest = bfd }
@@ -374,7 +358,7 @@ module Gl =
             match envOpt with
             | Some env ->
                 if env.SpriteIndex > 0 then
-                    EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
+                    EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.GpuBuffer env.GpuVao
             | None -> ()
 
         let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTexUniform spriteProgram =
