@@ -7,6 +7,7 @@ open System.Drawing
 open System.Drawing.Imaging
 open System.Numerics
 open System.Runtime.InteropServices
+open SDL2
 open Prime
 open Nu
 
@@ -202,23 +203,22 @@ module Gl =
             (texUniform, program)
 
         let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
+            let internalFormat = Gl.PixelInternalFormat.Rgba8
+            let surfacePtr = SDL_image.IMG_Load filePath
+            let surface = Marshal.PtrToStructure<SDL.SDL_Surface> surfacePtr
             let textures = [|0u|]
             Gl.GenTextures (1, textures)
             let texture = textures.[0]
             Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
             Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter) 
-            try
-                let internalFormat = Gl.PixelInternalFormat.Rgba8
-                use bitmap = new Bitmap (filePath)
-                let bitmapData = bitmap.LockBits (Rectangle (0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb)
-                Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, bitmap.Width, bitmap.Height, 0, Gl.PixelFormat.Rgba, Gl.PixelType.Byte, bitmapData.Scan0)
-                let error = Gl.GetError ()
-                if error = Gl.ErrorCode.NoError then
-                    let metadata = { TextureWidth = bitmap.Width; TextureHeight = bitmap.Height; TextureInternalFormat = internalFormat }
-                    Right (metadata, texture)
-                else Left (string error)
-            with exn -> Left (string exn)
+            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
+            SDL.SDL_FreeSurface surfacePtr
+            let error = Gl.GetError ()
+            if error = Gl.ErrorCode.NoError then
+                let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
+                Right (metadata, texture)
+            else Left (string error)
 
         let TryCreateSpriteTexture (filePath) =
             TryCreateTexture2d
@@ -230,6 +230,7 @@ module Gl =
             Gl.DeleteTextures (1, [|texture|])
 
         let private BeginSpriteBatch maxSprites =
+            Gl.Enable Gl.EnableCap.Blend
             let vaos = [|0u|]
             Gl.GenVertexArrays (1, vaos)
             let gpuVao = vaos.[0]
@@ -248,6 +249,7 @@ module Gl =
             let cpuBuffer = Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
             Gl.BindVertexArray 0u
+            Gl.Disable Gl.EnableCap.Blend
             (cpuBuffer, gpuBuffer, gpuVao)
 
         let private EndSpriteBatch numSprites spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
@@ -274,8 +276,8 @@ module Gl =
 
             // teardown buffers
             Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
-            Gl.BindVertexArray 0u
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
+            Gl.BindVertexArray 0u
 
         let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 

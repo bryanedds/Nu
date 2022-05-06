@@ -653,14 +653,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
 
+        // create gl context
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext (window)
 
+        // configure gl globally
         Gl.Enable Gl.EnableCap.CullFace // for some reason, disabled by default
-
         Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
 
         //let (textureFramebufferTexture, _) = Gl.Hl.CreateTextureFramebuffer ()
         //
@@ -709,6 +711,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         while true do
 
+            // prepare a new frame
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
             Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
@@ -754,7 +757,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let error = Gl.GetError ()
 
             SDL.SDL_GL_SwapWindow window
-            Threading.Thread.Sleep 16
+
+            let mutable polledEvent = SDL.SDL_Event ()
+            SDL.SDL_PollEvent &polledEvent |> ignore
 
         let renderer =
             { RenderContext = renderContext
