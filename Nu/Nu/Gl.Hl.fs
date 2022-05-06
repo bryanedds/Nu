@@ -50,7 +50,7 @@ module Gl =
         let Assert () =
             let error = Gl.GetError ()
             if error <> Gl.ErrorCode.NoError then
-                failwithf "Gl assertion failed due to: %s" (string error)
+                Log.debug ("Gl assertion failed due to: " + string error)
 
         /// Create a texture frame buffer.
         let CreateTextureFramebuffer () =
@@ -235,7 +235,7 @@ module Gl =
         let DeleteTexture (texture : uint) =
             Gl.DeleteTextures (1, [|texture|])
 
-        let private BeginSpriteBatch maxSprites =
+        let private BeginSpriteBatch spriteMax =
 
             // setup draw state
             Gl.Enable Gl.EnableCap.Blend
@@ -248,10 +248,10 @@ module Gl =
             let gpuVao = gpuVaos.[0]
             Gl.BindVertexArray gpuVao
             Gl.EnableVertexAttribArray 0
-            Gl.EnableVertexAttribArray 1
-            Gl.EnableVertexAttribArray 2
             Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
+            Gl.EnableVertexAttribArray 1
             Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
+            Gl.EnableVertexAttribArray 2
             Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
             Assert ()
 
@@ -260,7 +260,7 @@ module Gl =
             Gl.GenBuffers (1, gpuBuffers)
             let gpuBuffer = gpuBuffers.[0]
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
+            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * spriteMax), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
             Assert ()
 
             // setup cpu buffer
@@ -280,23 +280,25 @@ module Gl =
             // fin
             (cpuBuffer, gpuBuffer, gpuVao)
 
-        let private EndSpriteBatch numSprites spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
+        let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
 
             // setup buffers
             Gl.BindVertexArray gpuVao
+            Gl.EnableVertexAttribArray 0
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
-            let error = Gl.GetError ()
-            Gl.BufferSubData (Gl.BufferTarget.ArrayBuffer, nativeint 0, nativeint (sizeof<SpriteBatchVertex> * 4 * numSprites), cpuBuffer)
-            let error = Gl.GetError ()
+            Gl.BufferSubData (Gl.BufferTarget.ArrayBuffer, nativeint 0, nativeint (sizeof<SpriteBatchVertex> * 4 * spriteCount), cpuBuffer)
+            Assert ()
 
             // setup program
             Gl.UseProgram spriteProgram
             Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
             Gl.ActiveTexture 0 // make texture slot 0 active
             Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+            Assert ()
 
             // draw geometry
-            Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * numSprites)
+            Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * spriteCount)
+            Assert ()
 
             // teardown program
             Gl.BindTexture (Gl.TextureTarget.Texture2D, 0u)
