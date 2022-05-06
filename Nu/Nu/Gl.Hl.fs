@@ -46,6 +46,12 @@ module Gl =
                   GpuVao : uint
                   BatchState : SpriteBatchState }
 
+        /// Assert a lack of Gl error.
+        let Assert () =
+            let error = Gl.GetError ()
+            if error <> Gl.ErrorCode.NoError then
+                failwithf "Gl assertion failed due to: %s" (string error)
+
         /// Create a texture frame buffer.
         let CreateTextureFramebuffer () =
 
@@ -230,26 +236,48 @@ module Gl =
             Gl.DeleteTextures (1, [|texture|])
 
         let private BeginSpriteBatch maxSprites =
+
+            // setup draw state
             Gl.Enable Gl.EnableCap.Blend
-            let vaos = [|0u|]
-            Gl.GenVertexArrays (1, vaos)
-            let gpuVao = vaos.[0]
-            let gpuBuffers = [|0u|]
-            Gl.GenBuffers (1, gpuBuffers)
-            let gpuBuffer = gpuBuffers.[0]
+            Gl.Enable Gl.EnableCap.CullFace
+            Assert ()
+
+            // setup gpu vao
+            let gpuVaos = [|0u|]
+            Gl.GenVertexArrays (1, gpuVaos)
+            let gpuVao = gpuVaos.[0]
             Gl.BindVertexArray gpuVao
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
             Gl.EnableVertexAttribArray 0
             Gl.EnableVertexAttribArray 1
             Gl.EnableVertexAttribArray 2
             Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
             Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
             Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
+            Assert ()
+
+            // setup gpu buffer
+            let gpuBuffers = [|0u|]
+            Gl.GenBuffers (1, gpuBuffers)
+            let gpuBuffer = gpuBuffers.[0]
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
+            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
+            Assert ()
+
+            // setup cpu buffer
             let cpuBuffer = Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
+            Assert ()
+
+            // tear down gpu buffer
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
+
+            // tear down gpu vao
             Gl.BindVertexArray 0u
+
+            // teardown draw state
+            Gl.Disable Gl.EnableCap.CullFace
             Gl.Disable Gl.EnableCap.Blend
+
+            // fin
             (cpuBuffer, gpuBuffer, gpuVao)
 
         let private EndSpriteBatch numSprites spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
