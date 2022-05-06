@@ -243,6 +243,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          glow : Color inref,
          flip : Flip,
          renderer,
+         spriteTexUniform,
+         spriteProgram,
          spriteBatchEnvOpt) =
         let mutable color = color
         let mutable glow = glow
@@ -274,10 +276,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             perimeter.Center.V2
                             perimeter.Position.V2
                             perimeter.Size.V2
-                            rotation color texture inset
-                            Gl.BlendingFactorSrc.One
-                            Gl.BlendingFactorDest.OneMinusSrcAlpha
-                            spriteBatchEnvOpt
+                            rotation color inset
+                            texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            spriteTexUniform spriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 let spriteBatchEnvOpt =
@@ -286,10 +287,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             perimeter.Center.V2
                             perimeter.Position.V2
                             perimeter.Size.V2
-                            rotation color texture inset
-                            Gl.BlendingFactorSrc.One
-                            Gl.BlendingFactorDest.One
-                            spriteBatchEnvOpt
+                            rotation color inset
+                            texture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            spriteTexUniform spriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 spriteBatchEnvOpt
@@ -571,6 +571,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeMargin : Vector2,
          descriptor,
          renderer,
+         spriteTexUniform,
+         spriteProgram,
          spriteBatchEnvOpt) =
         match descriptor with
         | SpriteDescriptor descriptor ->
@@ -578,7 +580,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
-                 renderer, spriteBatchEnvOpt)
+                 renderer, spriteTexUniform, spriteProgram, spriteBatchEnvOpt)
         | SpritesDescriptor descriptor ->
             spriteBatchEnvOpt
             //let sprites = descriptor.Sprites
@@ -608,10 +610,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
+        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
         let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
         let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
         Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
-            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteBatchEnvOpt))
+            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteTexUniform, spriteProgram, spriteBatchEnvOpt))
             None renderer.RenderLayeredMessages |> ignore<Gl.Hl.SpriteBatchEnv option>
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
@@ -649,34 +652,34 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
     /// Make a Renderer.
     static member make (window : nativeint) (renderContext : nativeint) =
-        
+
         let glContext = SDL.SDL_GL_CreateContext (window)
-        
-        Gl.Enable Gl.EnableCap.CullFace // for some reason, enabled by default
-        
+
+        Gl.Enable Gl.EnableCap.CullFace // for some reason, disabled by default
+
         Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        
+
         let (textureFramebufferTexture, _) = Gl.Hl.CreateTextureFramebuffer ()
-        
+
         let whiteVertexShaderStr =
             [Constants.Render.GlslVersionPragma
              "in vec2 pos;"
              "void main()"
              "{"
-             "  gl_Position = vec4( pos.x, pos.y, 0, 1 );"
+             "  gl_Position = vec4(pos.x, pos.y, 0, 1);"
              "}"] |> String.join "\n"
         let whiteFragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "out vec4 frag;"
              "void main()"
              "{"
-             "  frag = vec4( 1.0, 1.0, 1.0, 1.0 );"
+             "  frag = vec4(1, 1, 1, 1);"
              "}"] |> String.join "\n"
         let whiteShaderProgram = Gl.Hl.CreateShaderProgramFromStrs whiteVertexShaderStr whiteFragmentShaderStr
         let wVertexPos2DAttrib = Gl.GetAttribLocation (whiteShaderProgram, "pos")
-        
-        let (blitShaderProgram, blitTexUniform, blitPosAttrib) = Gl.Hl.CreateBlitShaderProgram ()
-        
+
+        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
+
         let vertexData =
             [|-0.9f; -0.9f;
               +0.9f; -0.9f;
@@ -689,7 +692,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let vertexDataSize = IntPtr (2 * 4 * sizeof<single>)
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-        
+
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffers = [|0u|]
         Gl.GenBuffers (1, indexBuffers)
@@ -698,9 +701,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let indexDataSize = IntPtr (4 * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
-        
-        let (fullScreenQuadVertices, fullScreenQuadIndices) = Gl.Hl.CreateFullScreenQuad ()
-        
+
+        let (spriteQuadVertices, spriteQuadIndices) = Gl.Hl.CreateSpriteQuad ()
+
         while true do
 
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
@@ -722,21 +725,34 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             Gl.DisableVertexAttribArray wVertexPos2DAttrib
             Gl.UseProgram 0u
 
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.UseProgram blitShaderProgram
-            Gl.EnableVertexAttribArray blitPosAttrib
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, fullScreenQuadVertices)
-            Gl.VertexAttribPointer (blitPosAttrib, 2, Gl.VertexAttribPointerType.Float, false, 2 * sizeof<single>, nativeint 0)
-            Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, fullScreenQuadIndices)
-            Gl.Uniform1i (blitTexUniform, 0) // set attrib to texture slot 0
-            Gl.ActiveTexture 0 // make texture slot 0 active
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
-            Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
-            Gl.DisableVertexAttribArray blitPosAttrib
-            Gl.UseProgram 0u
+            Gl.Hl.RenderSprite
+                v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 v2Zero v2One)
+                textureFramebufferTexture Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                spriteTexUniform spriteProgram
+
+            //Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            //Gl.UseProgram spriteShaderProgram
+            //Gl.EnableVertexAttribArray spritePosAttrib
+            //Gl.EnableVertexAttribArray spriteCoordAttrib
+            //Gl.EnableVertexAttribArray spriteColorAttrib
+            //Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, spriteQuadVertices)
+            //Gl.VertexAttribPointer (spritePosAttrib, 2, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvPosition"))
+            //Gl.VertexAttribPointer (spriteCoordAttrib, 2, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvCoord"))
+            //Gl.VertexAttribPointer (spriteColorAttrib, 4, Gl.VertexAttribPointerType.Float, false, sizeof<Gl.Hl.SpriteBatchVertex>, Marshal.OffsetOf (typeof<Gl.Hl.SpriteBatchVertex>, "SbvColor"))
+            //Gl.BindBuffer (Gl.BufferTarget.ElementArrayBuffer, spriteQuadIndices)
+            //Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
+            //Gl.ActiveTexture 0 // make texture slot 0 active
+            //Gl.BindTexture (Gl.TextureTarget.Texture2D, textureFramebufferTexture) // bind texture to slot 0
+            //Gl.DrawElements (Gl.BeginMode.TriangleFan, 4, Gl.DrawElementsType.UnsignedInt, nativeint 0)
+            //Gl.DisableVertexAttribArray spriteColorAttrib
+            //Gl.DisableVertexAttribArray spriteCoordAttrib
+            //Gl.DisableVertexAttribArray spritePosAttrib
+            //Gl.UseProgram 0u
+
+            let error = Gl.GetError ()
 
             SDL.SDL_GL_SwapWindow window
-            //Threading.Thread.Sleep 16
+            Threading.Thread.Sleep 16
 
         let renderer =
             { RenderContext = renderContext
