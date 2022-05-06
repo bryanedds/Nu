@@ -229,45 +229,56 @@ module Gl =
         let DeleteTexture (texture : uint) =
             Gl.DeleteTextures (1, [|texture|])
 
-        let private CreateSpriteBatchBuffer (maxSprites) =
+        let private BeginSpriteBatch maxSprites =
             let vaos = [|0u|]
             Gl.GenVertexArrays (1, vaos)
             let vao = vaos.[0]
-            let buffers = [|0u|]
-            Gl.GenBuffers (1, buffers)
-            let buffer = buffers.[0]
+            let gpuBuffers = [|0u|]
+            Gl.GenBuffers (1, gpuBuffers)
+            let gpuBuffer = gpuBuffers.[0]
             Gl.BindVertexArray vao
-            Gl.BindBuffer(Gl.BufferTarget.ArrayBuffer, buffer)
-            Gl.BufferData(Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
+            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
+            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 4 * maxSprites), nativeint 0, Gl.BufferUsageHint.DynamicDraw)
             Gl.EnableVertexAttribArray 0
             Gl.EnableVertexAttribArray 1
             Gl.EnableVertexAttribArray 2
             Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
             Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
             Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
+            let cpuBuffer = Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
             Gl.BindVertexArray 0u
-            (buffer, vao)
+            (cpuBuffer, gpuBuffer, vao)
 
-        let private BeginSpriteBatch (buffer : uint) =
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, buffer)
-            Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
-
-        let private EndSpriteBatch () =
-            Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
-
-        let private RenderSpriteBatch numSprites spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
-            Gl.UseProgram spriteProgram
-            Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
-            Gl.ActiveTexture 0 // make texture slot 0 active
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+        let private EndSpriteBatch numSprites spriteTexUniform spriteProgram texture cpuBuffer gpuBuffer gpuVao =
+            let error = Gl.GetError ()
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
+            let error = Gl.GetError ()
+
+            let test = Marshal.PtrToStructure<SpriteBatchVertex> cpuBuffer
+
+
             Gl.BufferSubData (Gl.BufferTarget.ArrayBuffer, nativeint 0, nativeint (sizeof<SpriteBatchVertex> * 4 * numSprites), cpuBuffer)
+            let error = Gl.GetError ()
             Gl.BindVertexArray gpuVao
+            let error = Gl.GetError ()
+            Gl.UseProgram spriteProgram
+            let error = Gl.GetError ()
+            Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
+            let error = Gl.GetError ()
+            Gl.ActiveTexture 0 // make texture slot 0 active
+            let error = Gl.GetError ()
+            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+            let error = Gl.GetError ()
+
             Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * numSprites)
+            let error = Gl.GetError ()
+            Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
+            let error = Gl.GetError ()
             Gl.BindVertexArray 0u
+            let error = Gl.GetError ()
             Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
+            let error = Gl.GetError ()
             Gl.UseProgram 0u
 
         let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
@@ -280,12 +291,9 @@ module Gl =
                     | None -> true
                 if batchStateObsolete then
                     match envOpt with
-                    | Some env ->
-                        EndSpriteBatch ()
-                        RenderSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
+                    | Some env -> EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
                     | None -> ()
-                    let (gpuBuffer, gpuVao) = CreateSpriteBatchBuffer Constants.Render.SpriteBatchSize
-                    let cpuBuffer = BeginSpriteBatch gpuBuffer
+                    let (cpuBuffer, gpuBuffer, gpuVao) = BeginSpriteBatch Constants.Render.SpriteBatchSize
                     let batchState = { Texture = texture; BlendingFactorSrc = bfs; BlendingFactorDest = bfd }
                     { SpriteIndex = 0
                       SpriteTexUniform = spriteTextureUniform
@@ -297,18 +305,20 @@ module Gl =
                 else Option.get envOpt // guaranteed to exist
 
             let vertexSize = nativeint sizeof<SpriteBatchVertex>
-            let cpuOffset = env.CpuBuffer + vertexSize * nativeint 4
+            let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 4
             let position0 = (position - center).Rotate rotation
-            let mutable vertex0 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
+            let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
             vertex0.SbvPosition <- position0
             vertex0.SbvCoord <- coords.BottomLeft
             vertex0.SbvColor <- color
             Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
 
+            let test = Marshal.PtrToStructure<SpriteBatchVertex> env.CpuBuffer
+
             let cpuOffset = cpuOffset + vertexSize
             let position1Unrotated = v2 (position.X + size.X) position.Y
             let position1 = (position1Unrotated - center).Rotate rotation
-            let mutable vertex1 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
+            let mutable vertex1 = Unchecked.defaultof<SpriteBatchVertex>
             vertex1.SbvPosition <- position1
             vertex1.SbvCoord <- coords.BottomRight
             vertex1.SbvColor <- color
@@ -317,7 +327,7 @@ module Gl =
             let cpuOffset = cpuOffset + vertexSize
             let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
             let position2 = (position2Unrotated - center).Rotate rotation
-            let mutable vertex2 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
+            let mutable vertex2 = Unchecked.defaultof<SpriteBatchVertex>
             vertex2.SbvPosition <- position2
             vertex2.SbvCoord <- coords.TopRight
             vertex2.SbvColor <- color
@@ -326,7 +336,7 @@ module Gl =
             let cpuOffset = cpuOffset + vertexSize
             let position3Unrotated = v2 position.X (position.Y + size.Y)
             let position3 = (position3Unrotated - center).Rotate rotation
-            let mutable vertex3 = Marshal.PtrToStructure<SpriteBatchVertex> cpuOffset
+            let mutable vertex3 = Unchecked.defaultof<SpriteBatchVertex>
             vertex3.SbvPosition <- position3
             vertex3.SbvCoord <- coords.TopLeft
             vertex3.SbvColor <- color
@@ -338,8 +348,7 @@ module Gl =
             match envOpt with
             | Some env ->
                 if env.SpriteIndex > 0 then
-                    EndSpriteBatch ()
-                    RenderSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
+                    EndSpriteBatch env.SpriteIndex env.SpriteTexUniform env.SpriteProgram env.BatchState.Texture env.CpuBuffer env.GpuBuffer env.GpuVao
             | None -> ()
 
         let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture bfs bfd spriteTexUniform spriteProgram =
