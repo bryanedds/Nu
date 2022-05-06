@@ -280,7 +280,7 @@ module Gl =
             Assert ()
             
             // draw geometry
-            Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * spriteCount)
+            Gl.DrawArrays (Gl.BeginMode.TriangleFan, 0, 4 * spriteCount)
             Assert ()
             
             // teardown program
