@@ -668,8 +668,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
 
             Gl.Hl.RenderSprite
-                v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 v2Zero v2One)
-                texture FlipNone Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 (v2 0.0f 0.5f) (v2 1.0f 0.5f))
+                texture FlipV Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                 spriteTexUniform spriteProgram
 
             SDL.SDL_GL_SwapWindow window
