@@ -669,7 +669,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             Gl.Hl.RenderSprite
                 v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 v2Zero v2One)
-                texture FlipHV Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                texture FlipNone Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
                 spriteTexUniform spriteProgram
 
             SDL.SDL_GL_SwapWindow window
