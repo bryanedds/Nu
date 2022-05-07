@@ -12,9 +12,9 @@ open Prime
 
 /// Specifies the screen-clearing routine.
 /// NOTE: this type is here only to make the screen clear constant defineable in Constants.fs.
-type ScreenClear =
+type [<StructuralEquality; NoComparison>] ScreenClear =
     | NoClear
-    | ColorClear of byte * byte * byte
+    | ColorClear of Color
 
 [<RequireQualifiedAccess>]
 module internal CoreInternal =

@@ -48,8 +48,7 @@ module SdlDeps =
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality; NoComparison>] SdlDeps =
         private
-            { RenderContextOpt : nativeint option
-              WindowOpt : nativeint option
+            { WindowOpt : nativeint option
               Config : SdlConfig
               Destroy : unit -> unit }
     
@@ -59,14 +58,9 @@ module SdlDeps =
 
     /// An empty SdlDeps.
     let empty =
-        { RenderContextOpt = None
-          WindowOpt = None
+        { WindowOpt = None
           Config = SdlConfig.defaultConfig
           Destroy = id }
-
-    /// Get an sdlDep's optional render context.
-    let getRenderContextOpt sdlDeps =
-        sdlDeps.RenderContextOpt
 
     /// Get an sdlDep's optional window.
     let getWindowOpt sdlDeps =
@@ -115,7 +109,6 @@ module SdlDeps =
     let tryMake sdlConfig =
         match attemptPerformSdlInit
             (fun () ->
-                SDL.SDL_SetHint (SDL.SDL_HINT_RENDER_BATCHING, "1") |> ignore
                 let initConfig = SDL.SDL_INIT_EVERYTHING - SDL.SDL_INIT_SENSOR // NOTE: avoids depending on the presence of tilt sensor hardware.
                 SDL.SDL_Init initConfig)
             (fun () -> SDL.SDL_Quit ()) with
@@ -129,32 +122,27 @@ module SdlDeps =
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
-                match tryMakeSdlResource
-                    (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
-                    (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
+                match tryMakeSdlGlobalResource
+                    (fun () -> SDL_ttf.TTF_Init ())
+                    (fun () -> SDL_ttf.TTF_Quit (); destroy window) with
                 | Left error -> Left error
-                | Right (renderContext, destroy) ->
+                | Right ((), destroy) ->
                     match tryMakeSdlGlobalResource
-                        (fun () -> SDL_ttf.TTF_Init ())
-                        (fun () -> SDL_ttf.TTF_Quit (); destroy renderContext) with
+#if MIX_INIT_OGG
+                        (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
+#else
+                        (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
+#endif
+                        (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
                     | Left error -> Left error
                     | Right ((), destroy) ->
                         match tryMakeSdlGlobalResource
-#if MIX_INIT_OGG
-                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
-#else
-                            (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
-#endif
-                            (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
+                            (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                            (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                         | Left error -> Left error
                         | Right ((), destroy) ->
-                            match tryMakeSdlGlobalResource
-                                (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
-                                (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
-                            | Left error -> Left error
-                            | Right ((), destroy) ->
-                                GamepadState.init ()
-                                SDL.SDL_RaiseWindow window
-                                Right { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
-                                    
+                            GamepadState.init ()
+                            SDL.SDL_RaiseWindow window
+                            Right { WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
+
 type SdlDeps = SdlDeps.SdlDeps

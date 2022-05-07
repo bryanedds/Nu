@@ -64,47 +64,56 @@ module Gl =
         /// Attempt to create a 2d texture from a file.
         let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
 
-            // load the texture into an SDL surface
+            // load the texture into an SDL surface, converting its format if needed
+            let (surfacePtr, surface) =
+                let unconvertedPtr = SDL_image.IMG_Load filePath
+                let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
+                let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
+                if unconvertedFormat.format <> SDL.SDL_PIXELFORMAT_RGBA8888 then
+                    let mutable convertedFormat = SDL.SDL_PixelFormat ()
+                    convertedFormat.format <- SDL.SDL_PIXELFORMAT_RGBA8888
+                    convertedFormat.BitsPerPixel <- byte 32 // this seems to be the only additional field that needs a definition to make a functioning SDL_PixelFormat...
+                    let convertedFormatPtr = Marshal.AllocHGlobal sizeof<SDL.SDL_PixelFormat>
+                    Marshal.StructureToPtr (convertedFormat, convertedFormatPtr, false)
+                    let convertedPtr = SDL.SDL_ConvertSurface (unconvertedPtr, convertedFormatPtr, 0u)
+                    Marshal.FreeHGlobal convertedFormatPtr
+                    SDL.SDL_FreeSurface unconvertedPtr
+                    let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
+                    (convertedPtr, converted)
+                else (unconvertedPtr, unconverted)
+
+            // vertically flip the rows of the texture
+            let rowTop = Array.zeroCreate<byte> surface.pitch
+            let rowBottom = Array.zeroCreate<byte> surface.pitch
+            for i in 0 .. dec (surface.h / 2) do
+                let offsetTop = i * surface.pitch
+                let pixelsTop = surface.pixels + nativeint offsetTop
+                let offsetBottom = (dec surface.h - i) * surface.pitch
+                let pixelsBottom = surface.pixels + nativeint offsetBottom
+                Marshal.Copy (pixelsTop, rowTop, 0, surface.pitch)
+                Marshal.Copy (pixelsBottom, rowBottom, 0, surface.pitch)
+                Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
+                Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
+
+            // upload the texture to gl
+            let textures = [|0u|]
+            Gl.GenTextures (1, textures)
+            let texture = textures.[0]
+            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
+            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter)
             let internalFormat = Gl.PixelInternalFormat.Rgba8
-            let surfacePtr = SDL_image.IMG_Load filePath
-            let surface = Marshal.PtrToStructure<SDL.SDL_Surface> surfacePtr
-            let format = Marshal.PtrToStructure<SDL.SDL_PixelFormat> surface.format
-            if format.BytesPerPixel = byte 4 then
+            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
 
-                // vertically flip the rows of the texture
-                let rowTop = Array.zeroCreate<byte> surface.pitch
-                let rowBottom = Array.zeroCreate<byte> surface.pitch
-                for i in 0 .. dec (surface.h / 2) do
-                    let offsetTop = i * surface.pitch
-                    let pixelsTop = surface.pixels + nativeint offsetTop
-                    let offsetBottom = (dec surface.h - i) * surface.pitch
-                    let pixelsBottom = surface.pixels + nativeint offsetBottom
-                    Marshal.Copy (pixelsTop, rowTop, 0, surface.pitch)
-                    Marshal.Copy (pixelsBottom, rowBottom, 0, surface.pitch)
-                    Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
-                    Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
-            
-                // upload the texture to gl
-                let textures = [|0u|]
-                Gl.GenTextures (1, textures)
-                let texture = textures.[0]
-                Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
-                Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
-                Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter)
-                Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
+            // teardown surface
+            SDL.SDL_FreeSurface surfacePtr
 
-                // teardown surface
-                SDL.SDL_FreeSurface surfacePtr
-
-                // check for errors
-                match Gl.GetError () with
-                | Gl.ErrorCode.NoError ->
-                    let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
-                    Right (metadata, texture)
-                | error -> Left (string error)
-
-            // unsupported format
-            else Left ("Unsupported texture format (currently only 32-bits per pixel is supported).")
+            // check for errors
+            match Gl.GetError () with
+            | Gl.ErrorCode.NoError ->
+                let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
+                Right (metadata, texture)
+            | error -> Left (string error)
 
         /// Attempt to create a sprite texture.
         let TryCreateSpriteTexture (filePath) =

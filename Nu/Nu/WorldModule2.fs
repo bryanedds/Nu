@@ -888,16 +888,8 @@ module WorldModule2 =
             let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
             world
 
-        static member private render renderMessages renderContext (renderer : Renderer2d) (eyePosition : Vector2) eyeSize eyeMargin =
-            match Constants.Render.ScreenClearing with
-            | NoClear -> ()
-            | ColorClear (r, g, b) ->
-                SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
-                SDL.SDL_RenderClear renderContext |> ignore
+        static member private render renderMessages (renderer : Renderer2d) (eyePosition : Vector2) eyeSize eyeMargin =
             renderer.Render eyePosition eyeSize eyeMargin renderMessages
-            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
-                SDL.SDL_RenderFlush renderContext |> ignore
-            SDL.SDL_RenderPresent renderContext
 
         static member private play audioMessages (audioPlayer : AudioPlayer) =
             audioPlayer.Play audioMessages
@@ -1004,14 +996,11 @@ module WorldModule2 =
                                                         // process rendering on main thread
                                                         RenderTimer.Start ()
                                                         let world =
-                                                            match SdlDeps.getRenderContextOpt sdlDeps with
-                                                            | Some renderContext ->
-                                                                let renderer = World.getRenderer2d world
-                                                                let renderMessages = renderer.PopMessages ()
-                                                                let world = World.setRenderer2d renderer world
-                                                                World.render renderMessages renderContext renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
-                                                                world
-                                                            | None -> world
+                                                            let renderer = World.getRenderer2d world
+                                                            let renderMessages = renderer.PopMessages ()
+                                                            let world = World.setRenderer2d renderer world
+                                                            World.render renderMessages renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
+                                                            world
                                                         RenderTimer.Stop ()
     
                                                         // process audio on main thread

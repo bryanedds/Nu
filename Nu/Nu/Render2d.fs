@@ -102,7 +102,8 @@ type RenderLayeredMessage2dComparer () =
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
-        { RenderContext : nativeint
+        { RenderWindow : nativeint
+          RenderContext : nativeint
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -603,13 +604,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             spriteBatchEnvOpt
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
-    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
+    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer spriteBatchEnvOpt =
         let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
         let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
         let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
         Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
             GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteTexUniform, spriteProgram, spriteBatchEnvOpt))
-            None renderer.RenderLayeredMessages |> ignore<Gl.Hl.SpriteBatchEnv option>
+            spriteBatchEnvOpt renderer.RenderLayeredMessages
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
         let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
@@ -640,12 +641,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Horizon = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
         renderer.RenderLayeredMessages.Add message
 
-    /// Get the render context.
-    static member getRenderContext renderer =
-        renderer.RenderContext
-
     /// Make a Renderer.
-    static member make (window : nativeint) (renderContext : nativeint) =
+    static member make (window : nativeint) =
 
         // create gl context
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
@@ -654,36 +651,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext (window)
 
-        // configure gl globally
-        Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        
-        // exercise sprite batching
-        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
-        let texture = "C:/Temp/lol.png" |> Gl.Hl.TryCreateSpriteTexture |> Either.getRight |> snd
-        while true do
-
-            // prepare a new frame
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
-            Gl.ClearColor (0.0f, 0.0f, 0.0f, 0.0f)
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
-
-            Gl.Hl.RenderSprite
-                v2Zero (v2 -1.0f -1.0f) (v2 2.0f 2.0f) 0.0f Color.Wheat (box2 (v2 0.0f 0.5f) (v2 1.0f 0.5f))
-                texture FlipNone Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
-                spriteTexUniform spriteProgram
-
-            SDL.SDL_GL_SwapWindow window
-
-            let mutable polledEvent = SDL.SDL_Event ()
-            SDL.SDL_PollEvent &polledEvent |> ignore
-
+        // make renderer
         let renderer =
-            { RenderContext = renderContext
+            { RenderWindow = window
+              RenderContext = glContext
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
               RenderMessages = List ()
               RenderLayeredMessages = List () }
+
+        // fin
         renderer
 
     interface Renderer2d with
@@ -704,11 +682,27 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderLayeredMessages.Add layeredMessage
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
+
+            // prepare frame
+            Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            match Constants.Render.ScreenClearing with
+            | ColorClear color -> Gl.ClearColor (color.R, color.G, color.B, color.A)
+            | NoClear -> ()
+            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+
+            // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
             GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer
             GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
+            let envOpt = GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer None
             renderer.RenderLayeredMessages.Clear ()
+
+            // end frame
+            Gl.Hl.FlushSpriteBatch envOpt
+            
+            // swap frame
+            SDL.SDL_GL_SwapWindow renderer.RenderWindow
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
