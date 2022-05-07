@@ -72,7 +72,7 @@ module Gl =
             let rowBottom = Array.zeroCreate<byte> surface.pitch
 
             // vertically flip the rows of the texture
-            for i in 0 .. surface.h / 2 - 1 do
+            for i in 0 .. dec (surface.h / 2) do
                 let offsetTop = i * surface.pitch
                 let pixelsTop = surface.pixels + nativeint offsetTop
                 let offsetBottom = (dec surface.h - i) * surface.pitch
