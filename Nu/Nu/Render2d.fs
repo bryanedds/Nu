@@ -127,7 +127,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            match Gl.Hl.TryCreateSpriteTexture asset.FilePath renderer.RenderWindow with
+            match Gl.Hl.TryCreateSpriteTexture asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->

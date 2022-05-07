@@ -62,7 +62,7 @@ module Gl =
                 Log.debug ("Gl assertion failed due to: " + string error)
 
         /// Attempt to create a 2d texture from a file.
-        let TryCreateTexture2d minFilter magFilter (filePath : string) window =
+        let TryCreateTexture2d minFilter magFilter (filePath : string) =
 
             // load the texture into an SDL surface, converting its format if needed
             let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
@@ -111,12 +111,11 @@ module Gl =
             | error -> Left (string error)
 
         /// Attempt to create a sprite texture.
-        let TryCreateSpriteTexture filePath window =
+        let TryCreateSpriteTexture filePath =
             TryCreateTexture2d
                 Gl.TextureParameter.Nearest
                 Gl.TextureParameter.Nearest
                 filePath
-                window
 
         let DeleteTexture (texture : uint) =
             Gl.DeleteTextures (1, [|texture|])
