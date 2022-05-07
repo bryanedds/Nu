@@ -233,6 +233,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
     static member private renderSpriteInline // TODO: 3D: inline this after testing.
         centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) (glow : Color) flip renderer spriteBatchEnvOpt =
+        
+        // invert transform
+        let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+        let positionInverse : Vector2 = positionOffset / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+        let sizeInverse : Vector2 = sizeView / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
 
         // compute coords
         let coords =
@@ -246,7 +251,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let spriteBatchEnvOpt =
             if color.A <> 0.0f then
                 Gl.Hl.AugmentSpriteBatch
-                    centerOffset positionOffset sizeView rotation color coords
+                    centerInverse positionInverse sizeInverse rotation color coords
                     texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.OneMinusSrcAlpha
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
@@ -255,7 +260,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let spriteBatchEnvOpt =
             if glow.A <> 0.0f then
                 Gl.Hl.AugmentSpriteBatch
-                    centerOffset positionOffset sizeView rotation color coords
+                    centerInverse positionInverse sizeInverse rotation color coords
                     texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.One
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
@@ -285,14 +290,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
         let center = perimeter.Center.V2
-        let centerView = Matrix3x3.Multiply (&center, &view) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+        let centerView = Matrix3x3.Multiply (&center, &view)
         let centerOffset = centerView + v2 eyeMargin.X -eyeMargin.Y
         let position = perimeter.Position.V2
-        let positionView = Matrix3x3.Multiply (&position, &view) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+        let positionView = Matrix3x3.Multiply (&position, &view)
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
         let rotation = transform.Angles.X
         let size = perimeter.Size.V2
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         match GlRenderer2d.tryFindRenderAsset image renderer with
