@@ -371,28 +371,28 @@ module Gl =
                 | FlipV -> v2 1.0f -1.0f
                 | FlipHV -> v2 -1.0f -1.0f
 
-            let position0 = (position - center).Rotate rotation
+            let position0 = (position - center).Rotate rotation + center
             let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
             vertex0.SbvPosition <- position0
             vertex0.SbvCoord <- coords.BottomLeft * flipper
             vertex0.SbvColor <- color
 
             let position1Unrotated = v2 (position.X + size.X) position.Y
-            let position1 = (position1Unrotated - center).Rotate rotation
+            let position1 = (position1Unrotated - center).Rotate rotation + center
             let mutable vertex1 = Unchecked.defaultof<SpriteBatchVertex>
             vertex1.SbvPosition <- position1
             vertex1.SbvCoord <- coords.BottomRight * flipper
             vertex1.SbvColor <- color
 
             let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
-            let position2 = (position2Unrotated - center).Rotate rotation
+            let position2 = (position2Unrotated - center).Rotate rotation + center
             let mutable vertex2 = Unchecked.defaultof<SpriteBatchVertex>
             vertex2.SbvPosition <- position2
             vertex2.SbvCoord <- coords.TopRight * flipper
             vertex2.SbvColor <- color
 
             let position3Unrotated = v2 position.X (position.Y + size.Y)
-            let position3 = (position3Unrotated - center).Rotate rotation
+            let position3 = (position3Unrotated - center).Rotate rotation + center
             let mutable vertex3 = Unchecked.defaultof<SpriteBatchVertex>
             vertex3.SbvPosition <- position3
             vertex3.SbvCoord <- coords.TopLeft * flipper
