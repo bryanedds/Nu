@@ -62,21 +62,16 @@ module Gl =
                 Log.debug ("Gl assertion failed due to: " + string error)
 
         /// Attempt to create a 2d texture from a file.
-        let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
+        let TryCreateTexture2d minFilter magFilter (filePath : string) window =
 
             // load the texture into an SDL surface, converting its format if needed
+            let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
             let (surfacePtr, surface) =
                 let unconvertedPtr = SDL_image.IMG_Load filePath
                 let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
                 let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
-                if unconvertedFormat.format <> SDL.SDL_PIXELFORMAT_RGBA8888 then
-                    let mutable convertedFormat = SDL.SDL_PixelFormat ()
-                    convertedFormat.format <- SDL.SDL_PIXELFORMAT_RGBA8888
-                    convertedFormat.BitsPerPixel <- byte 32 // this seems to be the only additional field that needs a definition to make a functioning SDL_PixelFormat...
-                    let convertedFormatPtr = Marshal.AllocHGlobal sizeof<SDL.SDL_PixelFormat>
-                    Marshal.StructureToPtr (convertedFormat, convertedFormatPtr, false)
-                    let convertedPtr = SDL.SDL_ConvertSurface (unconvertedPtr, convertedFormatPtr, 0u)
-                    Marshal.FreeHGlobal convertedFormatPtr
+                if unconvertedFormat.format <> format then
+                    let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
                     SDL.SDL_FreeSurface unconvertedPtr
                     let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
                     (convertedPtr, converted)
@@ -116,11 +111,12 @@ module Gl =
             | error -> Left (string error)
 
         /// Attempt to create a sprite texture.
-        let TryCreateSpriteTexture (filePath) =
+        let TryCreateSpriteTexture filePath window =
             TryCreateTexture2d
-                (Gl.TextureParameter.Nearest,
-                 Gl.TextureParameter.Nearest,
-                 filePath)
+                Gl.TextureParameter.Nearest
+                Gl.TextureParameter.Nearest
+                filePath
+                window
 
         let DeleteTexture (texture : uint) =
             Gl.DeleteTextures (1, [|texture|])

@@ -127,7 +127,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            match Gl.Hl.TryCreateSpriteTexture asset.FilePath with
+            match Gl.Hl.TryCreateSpriteTexture asset.FilePath renderer.RenderWindow with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
@@ -253,14 +253,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
         let center = perimeter.Center.V2
-        let centerView = Matrix3x3.Multiply (&center, &view) / Constants.Render.VirtualResolutionF
+        let centerView = Matrix3x3.Multiply (&center, &view) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
         let centerOffset = centerView + v2 eyeMargin.X -eyeMargin.Y
         let position = perimeter.Position.V2
-        let positionView = Matrix3x3.Multiply (&position, &view) / Constants.Render.VirtualResolutionF
+        let positionView = Matrix3x3.Multiply (&position, &view) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
         let rotation = transform.Angles.X
         let size = perimeter.Size.V2
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale) / Constants.Render.VirtualResolutionF
+        let sizeView = Matrix3x3.Multiply (&size, &viewScale) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         //let flip = Flip.toSdlFlip flip
@@ -282,16 +282,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let spriteBatchEnvOpt =
                     if color.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            centerView positionView sizeView rotation color insetView
-                            texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            centerOffset positionOffset sizeView rotation color insetView
+                            texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.OneMinusSrcAlpha
                             renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 let spriteBatchEnvOpt =
                     if glow.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            centerView positionView sizeView rotation color insetView
-                            texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
+                            centerOffset positionOffset sizeView rotation color insetView
+                            texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.One
                             renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
