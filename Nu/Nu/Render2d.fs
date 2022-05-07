@@ -231,12 +231,44 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
+    static member private renderSpriteInline // TODO: 3D: inline this after testing.
+        centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) (glow : Color) flip renderer spriteBatchEnvOpt =
+
+        // compute coords
+        let coords =
+            let textureWidth = single textureMetadata.TextureWidth
+            let textureHeight = single textureMetadata.TextureHeight
+            if not (inset.Equals box2Zero)
+            then Box2 (single inset.Position.X / textureWidth, single inset.Position.Y / textureHeight, single inset.Size.X / textureWidth, single inset.Size.Y / textureHeight)
+            else Box2.Unit
+
+        // attempt to draw normal sprite
+        let spriteBatchEnvOpt =
+            if color.A <> 0.0f then
+                Gl.Hl.AugmentSpriteBatch
+                    centerOffset positionOffset sizeView rotation color coords
+                    texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.OneMinusSrcAlpha
+                    renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
+            else spriteBatchEnvOpt
+
+        // attempt to draw glow sprite
+        let spriteBatchEnvOpt =
+            if glow.A <> 0.0f then
+                Gl.Hl.AugmentSpriteBatch
+                    centerOffset positionOffset sizeView rotation color coords
+                    texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.One
+                    renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
+            else spriteBatchEnvOpt
+
+        // fin
+        spriteBatchEnvOpt
+
     /// Render sprite.
     static member renderSprite
         (viewAbsolute : Matrix3x3 byref,
          viewRelative : Matrix3x3 byref,
          _ : Vector2,
-         eyeSize : Vector2,
+         _ : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
          inset : Box2 inref,
@@ -263,39 +295,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let sizeView = Matrix3x3.Multiply (&size, &viewScale) / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
-        //let flip = Flip.toSdlFlip flip
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (metadata, texture) ->
-
-                let inset =
-                    if inset.Position.X = 0.0f && inset.Position.Y = 0.0f && inset.Size.X = 0.0f && inset.Size.Y = 0.0f
-                    then box2 v2Zero (v2 (single metadata.TextureWidth) (single metadata.TextureHeight))
-                    else inset
-
-                let insetView =
-                    box2
-                        (v2 (single inset.Position.X / single metadata.TextureWidth) (single inset.Position.Y / single metadata.TextureHeight))
-                        (v2 (single inset.Size.X / single metadata.TextureWidth) (single inset.Size.Y / single metadata.TextureHeight))
-
-                let spriteBatchEnvOpt =
-                    if color.A <> 0.0f then
-                        Gl.Hl.AugmentSpriteBatch
-                            centerOffset positionOffset sizeView rotation color insetView
-                            texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.OneMinusSrcAlpha
-                            renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
-                    else spriteBatchEnvOpt
-
-                let spriteBatchEnvOpt =
-                    if glow.A <> 0.0f then
-                        Gl.Hl.AugmentSpriteBatch
-                            centerOffset positionOffset sizeView rotation color insetView
-                            texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.One
-                            renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
-                    else spriteBatchEnvOpt
-
-                spriteBatchEnvOpt
+            | TextureAsset (textureMetadata, texture) ->
+                GlRenderer2d.renderSpriteInline
+                    centerOffset positionOffset sizeView rotation inset textureMetadata texture color glow flip renderer spriteBatchEnvOpt
             | _ ->
                 Log.trace "Cannot render sprite with a non-texture asset."
                 spriteBatchEnvOpt
@@ -320,96 +325,90 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          tileAssets : (TmxTileset * Image AssetTag) array,
          renderer,
          spriteBatchEnvOpt) =
-        spriteBatchEnvOpt
-        //let mutable color = color
-        //let mutable glow = glow
-        //let view = if transform.Absolute then &viewAbsolute else &viewRelative
-        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        //let perimeter = transform.Perimeter
-        //let position = perimeter.Position.V2
-        //let positionView = Matrix3x3.Multiply (&position, &view)
-        //let size = perimeter.Size.V2
-        //let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        //let rotation = transform.Angles.X
-        //let (allFound, tileSetTextures) =
-        //    tileAssets |>
-        //    Array.map (fun (tileSet, tileSetImage) ->
-        //        match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-        //        | ValueSome (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
-        //        | ValueSome _ -> None
-        //        | ValueNone -> None) |>
-        //    Array.definitizePlus
-        //if allFound then
-        //    // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-        //    let tilesLength = Array.length tiles
-        //    let mutable tileIndex = 0
-        //    while tileIndex < tilesLength do
-        //        let tile = &tiles.[tileIndex] // iteration would be faster if TmxLayerTile were a struct...
-        //        if tile.Gid <> 0 then // not the empty tile
-        //            let mapRun = mapSize.X
-        //            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-        //            let tilePositionView =
-        //                v2
-        //                    (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
-        //                    (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-        //            let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
-        //            let tileBounds = box2 tilePositionView tileSize
-        //            let viewBounds = box2 v2Zero eyeSize
-        //            if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
-        //                let tileFlip =
-        //                    match (tile.HorizontalFlip, tile.VerticalFlip) with
-        //                    | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-        //                    | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-        //                    | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        //                    | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        //                let mutable tileOffset = 1 // gid 0 is the empty tile
-        //                let mutable tileSetIndex = 0
-        //                let mutable tileSetWidth = 0
-        //                let mutable tileSetTexture = nativeint 0
-        //                for (set, _, texture) in tileSetTextures do
-        //                    let tileCountOpt = set.TileCount
-        //                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-        //                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-        //                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-        //                        tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-        //                        tileSetTexture <- texture
-        //                    if  tileSetTexture = nativeint 0 then
-        //                        tileSetIndex <- inc tileSetIndex
-        //                        tileOffset <- tileOffset + tileCount
-        //                let tileId = tile.Gid - tileOffset
-        //                let tileIdPosition = tileId * tileSourceSize.X
-        //                let tileSourcePosition =
-        //                    v2
-        //                        (single (tileIdPosition % tileSetWidth))
-        //                        (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-        //                let mutable sourceRect = SDL.SDL_Rect ()
-        //                sourceRect.x <- int tileSourcePosition.X
-        //                sourceRect.y <- int tileSourcePosition.Y
-        //                sourceRect.w <- tileSourceSize.X
-        //                sourceRect.h <- tileSourceSize.Y
-        //                let mutable destRect = SDL.SDL_Rect ()
-        //                destRect.x <- int tilePositionOffset.X * Constants.Render.VirtualScalar
-        //                destRect.y <- int tilePositionOffset.Y * Constants.Render.VirtualScalar
-        //                destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
-        //                destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-        //                let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
-        //                let mutable rotationCenter = SDL.SDL_Point ()
-        //                rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
-        //                rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
-        //                if color.A <> 0.0f then
-        //                    SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-        //                    SDL.SDL_SetTextureColorMod (tileSetTexture, color.R8, color.G8, color.B8) |> ignore
-        //                    SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A8) |> ignore
-        //                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-        //                    if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-        //                if glow.A <> 0.0f then
-        //                    SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-        //                    SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R8, glow.G8, glow.B8) |> ignore
-        //                    SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A8) |> ignore
-        //                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-        //                    if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-        //        tileIndex <- inc tileIndex
-        //else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+        let mutable color = color
+        let mutable glow = glow
+        let view = if transform.Absolute then &viewAbsolute else &viewRelative
+        let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        let perimeter = transform.Perimeter
+        let position = perimeter.Position.V2
+        let positionView = Matrix3x3.Multiply (&position, &view)
+        let size = perimeter.Size.V2
+        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+        let (allFound, tileSetTextures) =
+            tileAssets |>
+            Array.map (fun (tileSet, tileSetImage) ->
+                match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome _ -> None
+                | ValueNone -> None) |>
+            Array.definitizePlus
+        if allFound then
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            let tilesLength = Array.length tiles
+            let mutable tileIndex = 0
+            let mutable spriteBatchEnvOpt = spriteBatchEnvOpt
+            while tileIndex < tilesLength do
+                let tile = &tiles.[tileIndex]
+                if tile.Gid <> 0 then // not the empty tile
+                    let mapRun = mapSize.X
+                    let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+                    let tilePositionView =
+                        v2
+                            (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
+                            (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                    let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
+                    let tileCenterOffset = tilePositionOffset + tileSize * 0.5f // just rotate around center
+                    let tileBounds = box2 tilePositionView tileSize
+                    let viewBounds = box2 v2Zero eyeSize
+                    if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
+
+                        // compute tile flip
+                        let flip =
+                            match (tile.HorizontalFlip, tile.VerticalFlip) with
+                            | (false, false) -> FlipNone
+                            | (true, false) -> FlipH
+                            | (false, true) -> FlipV
+                            | (true, true) -> FlipHV
+
+                        // attempt to compute tile set texture
+                        let mutable tileOffset = 1 // gid 0 is the empty tile
+                        let mutable tileSetIndex = 0
+                        let mutable tileSetWidth = 0
+                        let mutable tileSetTextureOpt = None
+                        for (set, _, textureMetadata, texture) in tileSetTextures do
+                            let tileCountOpt = set.TileCount
+                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                                tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+                                tileSetTextureOpt <- Some (textureMetadata, texture)
+                            if Option.isNone tileSetTextureOpt then
+                                tileSetIndex <- inc tileSetIndex
+                                tileOffset <- tileOffset + tileCount
+
+                        // attempt to render tile
+                        match tileSetTextureOpt with
+                        | Some (textureMetadata, texture) ->
+                            let tileId = tile.Gid - tileOffset
+                            let tileIdPosition = tileId * tileSourceSize.X
+                            let tileSourcePosition =
+                                v2
+                                    (single (tileIdPosition % tileSetWidth))
+                                    (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let inset =
+                                box2
+                                    tileSourcePosition
+                                    (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
+                            spriteBatchEnvOpt <-
+                                GlRenderer2d.renderSpriteInline
+                                    tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color glow flip renderer spriteBatchEnvOpt
+                        | None -> ()
+
+                tileIndex <- inc tileIndex
+            spriteBatchEnvOpt
+        else
+            Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+            spriteBatchEnvOpt
 
     /// Render text.
     static member renderText
