@@ -102,7 +102,9 @@ type RenderLayeredMessage2dComparer () =
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
-        { RenderWindow : nativeint
+        { RenderSpriteTexUniform : int
+          RenderSpriteProgram : uint
+          RenderWindow : nativeint
           RenderContext : nativeint
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -244,20 +246,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          glow : Color inref,
          flip : Flip,
          renderer,
-         spriteTexUniform,
-         spriteProgram,
          spriteBatchEnvOpt) =
         let mutable color = color
         let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let perimeter = transform.Perimeter
+        let center = perimeter.Center.V2
+        let centerView = Matrix3x3.Multiply (&center, &view) / Constants.Render.VirtualResolutionF
+        let centerOffset = centerView + v2 eyeMargin.X -eyeMargin.Y
         let position = perimeter.Position.V2
-        let positionView = Matrix3x3.Multiply (&position, &view)
+        let positionView = Matrix3x3.Multiply (&position, &view) / Constants.Render.VirtualResolutionF
         let positionOffset = positionView + v2 eyeMargin.X -eyeMargin.Y
         let rotation = transform.Angles.X
         let size = perimeter.Size.V2
-        let sizeView = Matrix3x3.Multiply (&size, &viewScale)
+        let sizeView = Matrix3x3.Multiply (&size, &viewScale) / Constants.Render.VirtualResolutionF
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         //let flip = Flip.toSdlFlip flip
@@ -271,20 +274,25 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     then box2 v2Zero (v2 (single metadata.TextureWidth) (single metadata.TextureHeight))
                     else inset
 
+                let insetView =
+                    box2
+                        (v2 (single inset.Position.X / single metadata.TextureWidth) (single inset.Position.Y / single metadata.TextureHeight))
+                        (v2 (single inset.Size.X / single metadata.TextureWidth) (single inset.Size.Y / single metadata.TextureHeight))
+
                 let spriteBatchEnvOpt =
                     if color.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            perimeter.Center.V2 perimeter.Position.V2 perimeter.Size.V2 rotation color inset
+                            centerView positionView sizeView rotation color insetView
                             texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
-                            spriteTexUniform spriteProgram spriteBatchEnvOpt
+                            renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 let spriteBatchEnvOpt =
                     if glow.A <> 0.0f then
                         Gl.Hl.AugmentSpriteBatch
-                            perimeter.Center.V2 perimeter.Position.V2 perimeter.Size.V2 rotation color inset
+                            centerView positionView sizeView rotation color insetView
                             texture flip Gl.BlendingFactorSrc.One Gl.BlendingFactorDest.OneMinusSrcAlpha
-                            spriteTexUniform spriteProgram spriteBatchEnvOpt
+                            renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
                     else spriteBatchEnvOpt
 
                 spriteBatchEnvOpt
@@ -566,8 +574,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeMargin : Vector2,
          descriptor,
          renderer,
-         spriteTexUniform,
-         spriteProgram,
          spriteBatchEnvOpt) =
         match descriptor with
         | SpriteDescriptor descriptor ->
@@ -575,7 +581,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
-                 renderer, spriteTexUniform, spriteProgram, spriteBatchEnvOpt)
+                 renderer, spriteBatchEnvOpt)
         | SpritesDescriptor descriptor ->
             spriteBatchEnvOpt
             //let sprites = descriptor.Sprites
@@ -605,11 +611,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer spriteBatchEnvOpt =
-        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
         let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
         let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
         Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
-            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteTexUniform, spriteProgram, spriteBatchEnvOpt))
+            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteBatchEnvOpt))
             spriteBatchEnvOpt renderer.RenderLayeredMessages
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
@@ -651,9 +656,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext (window)
 
+        // create sprite program
+        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
+
         // make renderer
         let renderer =
-            { RenderWindow = window
+            { RenderSpriteTexUniform = spriteTexUniform
+              RenderSpriteProgram = spriteProgram
+              RenderWindow = window
               RenderContext = glContext
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -683,8 +693,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
 
+            // compute views
+            let viewPortSize = v2i Constants.Render.ResolutionX Constants.Render.ResolutionY
+
             // prepare frame
-            Gl.Viewport (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            Gl.Viewport (0, 0, viewPortSize.X, viewPortSize.Y)
             Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
             match Constants.Render.ScreenClearing with
             | ColorClear color -> Gl.ClearColor (color.R, color.G, color.B, color.A)
