@@ -71,7 +71,7 @@ module Render =
     let (*Literal*) RendererFlagsDefault =
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
-    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
+    let (*Literal*) ScreenClearing = ColorClear Color.One // TODO: move this to ViewConfig or WorldConfig?
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion
     let SpriteBatchSize = 1024
