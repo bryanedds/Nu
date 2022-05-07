@@ -61,6 +61,56 @@ module Gl =
             if error <> Gl.ErrorCode.NoError then
                 Log.debug ("Gl assertion failed due to: " + string error)
 
+        /// Attempt to create a 2d texture from a file.
+        let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
+
+            // load the texture into an SDL surface
+            let internalFormat = Gl.PixelInternalFormat.Rgba8
+            let surfacePtr = SDL_image.IMG_Load filePath
+            let surface = Marshal.PtrToStructure<SDL.SDL_Surface> surfacePtr
+            let rowTop = Array.zeroCreate<byte> surface.pitch
+            let rowBottom = Array.zeroCreate<byte> surface.pitch
+
+            // vertically flip the rows of the texture
+            for i in 0 .. surface.h / 2 - 1 do
+                let offsetTop = i * surface.pitch
+                let pixelsTop = surface.pixels + nativeint offsetTop
+                let offsetBottom = (dec surface.h - i) * surface.pitch
+                let pixelsBottom = surface.pixels + nativeint offsetBottom
+                Marshal.Copy (pixelsTop, rowTop, 0, surface.pitch)
+                Marshal.Copy (pixelsBottom, rowBottom, 0, surface.pitch)
+                Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
+                Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
+            
+            // upload the texture to gl
+            let textures = [|0u|]
+            Gl.GenTextures (1, textures)
+            let texture = textures.[0]
+            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
+            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter)
+            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
+
+            // teardown surface
+            SDL.SDL_FreeSurface surfacePtr
+
+            // check for errors
+            match Gl.GetError () with
+            | Gl.ErrorCode.NoError ->
+                let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
+                Right (metadata, texture)
+            | error -> Left (string error)
+
+        /// Attempt to create a sprite texture.
+        let TryCreateSpriteTexture (filePath) =
+            TryCreateTexture2d
+                (Gl.TextureParameter.Nearest,
+                 Gl.TextureParameter.Nearest,
+                 filePath)
+
+        let DeleteTexture (texture : uint) =
+            Gl.DeleteTextures (1, [|texture|])
+
         /// Create a texture frame buffer.
         let CreateTextureFramebuffer () =
 
@@ -199,33 +249,6 @@ module Gl =
             // fin
             (texUniform, program)
 
-        let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
-            let internalFormat = Gl.PixelInternalFormat.Rgba8
-            let surfacePtr = SDL_image.IMG_Load filePath
-            let surface = Marshal.PtrToStructure<SDL.SDL_Surface> surfacePtr
-            let textures = [|0u|]
-            Gl.GenTextures (1, textures)
-            let texture = textures.[0]
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter) 
-            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
-            SDL.SDL_FreeSurface surfacePtr
-            match Gl.GetError () with
-            | Gl.ErrorCode.NoError ->
-                let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
-                Right (metadata, texture)
-            | error -> Left (string error)
-
-        let TryCreateSpriteTexture (filePath) =
-            TryCreateTexture2d
-                (Gl.TextureParameter.Nearest,
-                 Gl.TextureParameter.Nearest,
-                 filePath)
-
-        let DeleteTexture (texture : uint) =
-            Gl.DeleteTextures (1, [|texture|])
-
         let private BeginSpriteBatch spriteMax =
 
             // setup draw state
@@ -329,10 +352,10 @@ module Gl =
 
             let flipper =
                 match flip with
-                | FlipNone -> v2 1.0f -1.0f
-                | FlipH -> v2 -1.0f -1.0f
-                | FlipV -> v2 1.0f 1.0f
-                | FlipHV -> v2 -1.0f 1.0f
+                | FlipNone -> v2 1.0f 1.0f
+                | FlipH -> v2 -1.0f 1.0f
+                | FlipV -> v2 1.0f -1.0f
+                | FlipHV -> v2 -1.0f -1.0f
 
             let position0 = (position - center).Rotate rotation
             let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
