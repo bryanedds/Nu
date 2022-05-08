@@ -711,7 +711,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             // swap frame
             match renderer.RenderWindow with
             | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | WfglWindow window -> window.WfglSwapBuffers ()
+            | WfglWindow window -> window.WfglSwapWindow ()
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

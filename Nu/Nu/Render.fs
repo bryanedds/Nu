@@ -140,8 +140,8 @@ type [<NoEquality; NoComparison>] SglWindow =
 
 /// A window for rendering in Windows Forms.
 type [<NoEquality; NoComparison>] WfglWindow =
-    { WfglWindow : nativeint
-      WfglSwapBuffers : unit -> unit }
+    { WfglSwapWindow : unit -> unit
+      WfglWindow : nativeint }
 
 /// A window for rendering.
 type [<NoEquality; NoComparison>] Window =
