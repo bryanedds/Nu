@@ -117,11 +117,6 @@
     <None Include="Assets\Gui\Credits.nugroup" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Nu\Nu.Gl\Nu.Gl.csproj">
-      <Name>Nu.Gl</Name>
-      <Project>{b3933fb6-9bec-45e8-a61f-e7e0d84d964a}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
@@ -171,6 +166,9 @@
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenGL.Net">
+      <HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.7.10.0\lib\net472\Prime.dll</HintPath>
