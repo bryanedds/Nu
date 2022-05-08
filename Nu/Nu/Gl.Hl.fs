@@ -61,6 +61,15 @@ module Gl =
             if error <> Gl.ErrorCode.NoError then
                 Log.debug ("Gl assertion failed due to: " + string error)
 
+        let CreateGl410Context window =
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
+            SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
+            let glContext = SDL.SDL_GL_CreateContext window
+            Assert ()
+            glContext
+
         /// Attempt to create a 2d texture from a file.
         let TryCreateTexture2d minFilter magFilter (filePath : string) =
 
