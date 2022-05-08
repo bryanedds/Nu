@@ -1628,8 +1628,7 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let tryMakeWorld useGameplayScreen sdlDeps worldConfig (plugin : NuPlugin) =
-        let worldEir = World.tryMake sdlDeps worldConfig plugin
-        match worldEir with
+        match World.tryMake sdlDeps worldConfig plugin with
         | Right world ->
             let world =
                 World.setEventFilter
@@ -1654,15 +1653,28 @@ module Gaia =
 
     /// Attempt to make Gaia's SDL dependencies.
     let tryMakeSdlDeps (form : GaiaForm) =
-        let sdlConfig =
-            { ViewConfig = ExistingWindow form.displayPanel.Handle
-              ViewW = Constants.Render.ResolutionX
-              ViewH = Constants.Render.ResolutionY
-              RendererFlags = Constants.Render.RendererFlagsDefault
-              AudioChunkSize = Constants.Audio.BufferSizeDefault }
-        match SdlDeps.tryMake sdlConfig with
-        | Left msg -> Left msg
-        | Right sdlDeps -> Right (sdlConfig, sdlDeps)
+        let graphics = form.CreateGraphics ()
+        let hdc = graphics.GetHdc ()
+        let pixelFormatSet =
+            match Wgl.TryChoosePixelFormat hdc Wgl.PreferredPfd with
+            | Some (pixelFormat, pfd) -> Wgl.SetPixelFormat hdc pixelFormat pfd <> 0
+            | None -> false
+        if pixelFormatSet then
+            let hglrc = Wgl.CreateContext hdc
+            if hglrc <> nativeint 0 then
+                if Wgl.MakeCurrent hdc hglrc then
+                    let sdlConfig =
+                        { ViewConfig = WglWindow { WglContext = hglrc; SwapBuffers = fun () -> Wgl.SwapBuffers hdc |> ignore<bool> }
+                          ViewW = Constants.Render.ResolutionX
+                          ViewH = Constants.Render.ResolutionY
+                          RendererFlags = Constants.Render.RendererFlagsDefault
+                          AudioChunkSize = Constants.Audio.BufferSizeDefault }
+                    match SdlDeps.tryMake sdlConfig with
+                    | Left msg -> Left msg
+                    | Right sdlDeps -> Right (sdlConfig, sdlDeps)
+                else Left "Could not set wgl context to current."
+            else Left "Could not create wgl context."
+        else Left "Could not set wgl pixel format."
 
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =

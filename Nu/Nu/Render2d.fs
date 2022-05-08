@@ -104,8 +104,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderSpriteTexUniform : int
           RenderSpriteProgram : uint
-          RenderWindow : nativeint
-          RenderContext : nativeint
+          RenderContext : RenderContext
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -396,14 +395,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         | Some (textureMetadata, texture) ->
                             let tileId = tile.Gid - tileOffset
                             let tileIdPosition = tileId * tileSourceSize.X
-                            let tileSourcePosition =
-                                v2
-                                    (single (tileIdPosition % tileSetWidth))
-                                    (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-                            let inset =
-                                box2
-                                    tileSourcePosition
-                                    (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
+                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
                             spriteBatchEnvOpt <-
                                 GlRenderer2d.renderSpriteInline
                                     tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color glow flip renderer spriteBatchEnvOpt
@@ -651,14 +644,19 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderLayeredMessages.Add message
 
     /// Make a Renderer.
-    static member make (window : nativeint) =
+    static member make renderContext =
 
-        // create gl context
-        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
-        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
-        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
-        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
-        let glContext = SDL.SDL_GL_CreateContext (window)
+        // ensure gl context exists
+        match renderContext with
+        | SglContext context ->
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
+            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
+            SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
+            let glContext = SDL.SDL_GL_CreateContext context.SglWindow
+            if glContext = nativeint 0 then failwith "Could not create SDL OpenGL context."
+        | WglContext _ ->
+            () // gl context already exists
 
         // create sprite program
         let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
@@ -667,8 +665,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let renderer =
             { RenderSpriteTexUniform = spriteTexUniform
               RenderSpriteProgram = spriteProgram
-              RenderWindow = window
-              RenderContext = glContext
+              RenderContext = renderContext
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
@@ -717,9 +714,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             // end frame
             Gl.Hl.FlushSpriteBatch envOpt
-            
+
             // swap frame
-            SDL.SDL_GL_SwapWindow renderer.RenderWindow
+            match renderer.RenderContext with
+            | SglContext context -> SDL.SDL_GL_SwapWindow context.SglWindow
+            | WglContext context -> context.SwapBuffers ()
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

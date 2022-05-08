@@ -22,12 +22,12 @@ type [<StructuralEquality; NoComparison>] SdlWindowConfig =
           WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the view that SDL will use to render.
-type [<StructuralEquality; NoComparison>] SdlViewConfig =
+type [<NoEquality; NoComparison>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
-    | ExistingWindow of nativeint
+    | WglWindow of WglContext
 
 /// Describes the general configuration of SDL.
-type [<StructuralEquality; NoComparison>] SdlConfig =
+type [<NoEquality; NoComparison>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int
@@ -48,7 +48,7 @@ module SdlDeps =
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality; NoComparison>] SdlDeps =
         private
-            { WindowOpt : nativeint option
+            { RenderContextOpt : RenderContext option
               Config : SdlConfig
               Destroy : unit -> unit }
     
@@ -58,13 +58,13 @@ module SdlDeps =
 
     /// An empty SdlDeps.
     let empty =
-        { WindowOpt = None
+        { RenderContextOpt = None
           Config = SdlConfig.defaultConfig
           Destroy = id }
 
-    /// Get an sdlDep's optional window.
-    let getWindowOpt sdlDeps =
-        sdlDeps.WindowOpt
+    /// Get an sdlDep's optional render context.
+    let getRenderContextOpt sdlDeps =
+        sdlDeps.RenderContextOpt
 
     /// Get an sdlDep's config.
     let getConfig sdlDeps =
@@ -72,14 +72,14 @@ module SdlDeps =
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen sdlDeps =
-        match sdlDeps.WindowOpt with
-        | Some window ->
+        match sdlDeps.RenderContextOpt with
+        | Some (SglContext context) ->
             let flags =
                 if fullScreen
                 then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN
                 else 0u
-            SDL.SDL_SetWindowFullscreen (window, flags) |> ignore
-        | None -> ()
+            SDL.SDL_SetWindowFullscreen (context.SglWindow, flags) |> ignore
+        | _ -> ()
         sdlDeps
 
     /// Attempt to initalize an SDL module.
@@ -88,6 +88,17 @@ module SdlDeps =
         let error = SDL.SDL_GetError ()
         if initResult = 0 then Right ((), destroy)
         else Left error
+
+    /// Attempt to initalize an SDL resource.
+    let internal tryMakeSdlResourcePlus create destroy =
+        let resourceEir = create ()
+        match resourceEir with
+        | Right resource ->
+            if resource <> IntPtr.Zero then Right (resourceEir, destroy)
+            else
+                let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
+                Left error
+        | Left _ -> Right (resourceEir, destroy)
 
     /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
@@ -114,17 +125,24 @@ module SdlDeps =
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->
-            match tryMakeSdlResource
+            match tryMakeSdlResourcePlus
                 (fun () ->
                     match sdlConfig.ViewConfig with
-                    | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
-                    | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
-                (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
+                    | NewWindow windowConfig ->
+                        let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
+                        Right window
+                    | WglWindow wglContext ->
+                        Left wglContext)
+                (fun windowOpt ->
+                    match windowOpt with
+                    | Right window -> SDL.SDL_DestroyWindow window
+                    | Left _ -> ()
+                    destroy ()) with
             | Left error -> Left error
-            | Right (window, destroy) ->
+            | Right (contextOrWindow, destroy) ->
                 match tryMakeSdlGlobalResource
                     (fun () -> SDL_ttf.TTF_Init ())
-                    (fun () -> SDL_ttf.TTF_Quit (); destroy window) with
+                    (fun () -> SDL_ttf.TTF_Quit (); destroy contextOrWindow) with
                 | Left error -> Left error
                 | Right ((), destroy) ->
                     match tryMakeSdlGlobalResource
@@ -142,7 +160,13 @@ module SdlDeps =
                         | Left error -> Left error
                         | Right ((), destroy) ->
                             GamepadState.init ()
-                            SDL.SDL_RaiseWindow window
-                            Right { WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
+                            let context =
+                                match contextOrWindow with
+                                | Right window ->
+                                    SDL.SDL_RaiseWindow window
+                                    SglContext { SglWindow = window }
+                                | Left context ->
+                                    WglContext context
+                            Right { RenderContextOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
 type SdlDeps = SdlDeps.SdlDeps

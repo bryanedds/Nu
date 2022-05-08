@@ -123,7 +123,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
-type [<StructuralEquality; NoComparison>] NuConfig =
+type [<NoEquality; NoComparison>] NuConfig =
     { RunSynchronously : bool }
 
     /// The default configuration for Nu.
@@ -137,7 +137,7 @@ type [<StructuralEquality; NoComparison>] NuConfig =
         { RunSynchronously = runSynchronously }
 
 /// Configuration parameters for the world.
-type [<StructuralEquality; NoComparison>] WorldConfig =
+type [<NoEquality; NoComparison>] WorldConfig =
     { Imperative : bool
       StandAlone : bool
       UpdateRate : int64
