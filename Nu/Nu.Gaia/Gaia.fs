@@ -1653,28 +1653,15 @@ module Gaia =
 
     /// Attempt to make Gaia's SDL dependencies.
     let tryMakeSdlDeps (form : GaiaForm) =
-        let graphics = form.CreateGraphics ()
-        let hdc = graphics.GetHdc ()
-        let pixelFormatSet =
-            match Wgl.TryChoosePixelFormat hdc Wgl.PreferredPfd with
-            | Some (pixelFormat, pfd) -> Wgl.SetPixelFormat hdc pixelFormat pfd <> 0
-            | None -> false
-        if pixelFormatSet then
-            let hglrc = Wgl.CreateContext hdc
-            if hglrc <> nativeint 0 then
-                if Wgl.MakeCurrent hdc hglrc then
-                    let sdlConfig =
-                        { ViewConfig = WglWindow { WglContext = hglrc; SwapBuffers = fun () -> Wgl.SwapBuffers hdc |> ignore<bool> }
-                          ViewW = Constants.Render.ResolutionX
-                          ViewH = Constants.Render.ResolutionY
-                          RendererFlags = Constants.Render.RendererFlagsDefault
-                          AudioChunkSize = Constants.Audio.BufferSizeDefault }
-                    match SdlDeps.tryMake sdlConfig with
-                    | Left msg -> Left msg
-                    | Right sdlDeps -> Right (sdlConfig, sdlDeps)
-                else Left "Could not set wgl context to current."
-            else Left "Could not create wgl context."
-        else Left "Could not set wgl pixel format."
+        let sdlConfig =
+            { ViewConfig = ExistingWindow { WfglWindow = form.displayPanel.Handle; WfglSwapBuffers = fun () -> form.displayPanel.Invalidate () }
+              ViewW = Constants.Render.ResolutionX
+              ViewH = Constants.Render.ResolutionY
+              RendererFlags = Constants.Render.RendererFlagsDefault
+              AudioChunkSize = Constants.Audio.BufferSizeDefault }
+        match SdlDeps.tryMake sdlConfig with
+        | Left msg -> Left msg
+        | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =

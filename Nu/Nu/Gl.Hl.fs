@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
 type TextureMetadata =
     { TextureWidth : int
       TextureHeight : int
-      TextureInternalFormat : Gl.PixelInternalFormat }
+      TextureInternalFormat : OpenGL.InternalFormat }
 
 [<RequireQualifiedAccess>]
 module Gl =
@@ -42,8 +42,8 @@ module Gl =
         type [<StructuralEquality; NoComparison>] SpriteBatchState =
             private
                 { Texture : uint
-                  BlendingFactorSrc : Gl.BlendingFactorSrc
-                  BlendingFactorDest : Gl.BlendingFactorDest }
+                  BlendingFactorSrc : OpenGL.BlendingFactor
+                  BlendingFactorDest : OpenGL.BlendingFactor }
         
         type [<NoEquality; NoComparison>] SpriteBatchEnv =
             private
@@ -57,16 +57,21 @@ module Gl =
 
         /// Assert a lack of Gl error.
         let Assert () =
-            let error = Gl.GetError ()
-            if error <> Gl.ErrorCode.NoError then
+            let error = OpenGL.Gl.GetError ()
+            if error <> OpenGL.ErrorCode.NoError then
                 Log.debug ("Gl assertion failed due to: " + string error)
 
-        let CreateGl410Context window =
+        /// Create an SDL OpenGL context.
+        let CreateSgl410Context window =
+            OpenGL.Gl.Initialize ()
             SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
             SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
             SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
             SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
             let glContext = SDL.SDL_GL_CreateContext window
+            OpenGL.Gl.BindAPI ()
+            let version = OpenGL.Gl.GetString OpenGL.StringName.Version
+            Log.info ("Initialized OpenGL " + version + ".")
             Assert ()
             glContext
 
@@ -100,21 +105,19 @@ module Gl =
                 Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
             // upload the texture to gl
-            let textures = [|0u|]
-            Gl.GenTextures (1, textures)
-            let texture = textures.[0]
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int minFilter)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int magFilter)
-            let internalFormat = Gl.PixelInternalFormat.Rgba8
-            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, internalFormat, surface.w, surface.h, 0, Gl.PixelFormat.Rgba, Gl.PixelType.UnsignedByte, surface.pixels)
+            let texture = OpenGL.Gl.GenTexture ()
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+            OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
+            OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
+            let internalFormat = OpenGL.InternalFormat.Rgba8
+            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, surface.pixels)
 
             // teardown surface
             SDL.SDL_FreeSurface surfacePtr
 
             // check for errors
-            match Gl.GetError () with
-            | Gl.ErrorCode.NoError ->
+            match OpenGL.Gl.GetError () with
+            | OpenGL.ErrorCode.NoError ->
                 let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
                 Right (metadata, texture)
             | error -> Left (string error)
@@ -122,41 +125,35 @@ module Gl =
         /// Attempt to create a sprite texture.
         let TryCreateSpriteTexture filePath =
             TryCreateTexture2d
-                Gl.TextureParameter.Nearest
-                Gl.TextureParameter.Nearest
+                OpenGL.TextureMinFilter.Nearest
+                OpenGL.TextureMagFilter.Nearest
                 filePath
 
         let DeleteTexture (texture : uint) =
-            Gl.DeleteTextures (1, [|texture|])
+            OpenGL.Gl.DeleteTextures texture
 
         /// Create a texture frame buffer.
         let CreateTextureFramebuffer () =
 
             // create frame buffer object
-            let framebuffers = [|0u|]
-            Gl.GenFramebuffers (1, framebuffers)
-            let framebuffer = framebuffers.[0]
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, framebuffer)
+            let framebuffer = OpenGL.Gl.GenFramebuffer ()
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
             Assert ()
 
             // create texture buffer
-            let textures = [|0u|]
-            Gl.GenTextures (1, textures)
-            let texture = textures.[0]
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
-            Gl.TexImage2D (Gl.TextureTarget.Texture2D, 0, Gl.PixelInternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, Gl.PixelFormat.Rgba, Gl.PixelType.Float, nativeint 0)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMinFilter, int Gl.TextureParameter.Nearest)
-            Gl.TexParameteri (Gl.TextureTarget.Texture2D, Gl.TextureParameterName.TextureMagFilter, int Gl.TextureParameter.Nearest)
-            Gl.FramebufferTexture (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.ColorAttachment0, texture, 0)
+            let texture = OpenGL.Gl.GenTexture ()
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
+            OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
+            OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
+            OpenGL.Gl.FramebufferTexture (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, texture, 0)
             Assert ()
 
             // create depth and stencil buffers
-            let depthBuffers = [|0u|]
-            Gl.GenRenderbuffers (1, depthBuffers)
-            let depthBuffer = depthBuffers.[0]
-            Gl.BindRenderbuffer (Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
-            Gl.RenderbufferStorage (Gl.RenderbufferTarget.Renderbuffer, Gl.RenderbufferStorageEnum.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-            Gl.FramebufferRenderbuffer (Gl.FramebufferTarget.Framebuffer, Gl.FramebufferAttachment.DepthStencilAttachment, Gl.RenderbufferTarget.Renderbuffer, depthBuffer)
+            let depthBuffer = OpenGL.Gl.GenRenderbuffer ()
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, depthBuffer)
+            OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, depthBuffer)
             Assert ()
 
             // fin
@@ -173,24 +170,20 @@ module Gl =
                   -1.0f; +1.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f; 1.0f|]
 
             // create vertex buffer
-            let vertexBuffers = [|0u|]
-            Gl.GenBuffers (1, vertexBuffers)
-            let vertexBuffer = vertexBuffers.[0]
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, vertexBuffer)
-            let vertexDataSize = IntPtr (8 * 4 * sizeof<single>)
+            let vertexBuffer = OpenGL.Gl.GenBuffer ()
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+            let vertexDataSize = 8u * 4u * uint sizeof<single>
             let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
             Assert ()
 
             // create index buffer
             let indexData = [|0u; 1u; 2u; 3u|]
-            let indexBuffers = [|0u|]
-            Gl.GenBuffers (1, indexBuffers)
-            let indexBuffer = indexBuffers.[0]
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, indexBuffer)
-            let indexDataSize = IntPtr (4 * sizeof<uint>)
+            let indexBuffer = OpenGL.Gl.GenBuffer ()
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
+            let indexDataSize = 4u * uint sizeof<uint>
             let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), Gl.BufferUsageHint.StaticDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
             Assert ()
 
             // fin
@@ -200,25 +193,25 @@ module Gl =
         let CreateShaderProgramFromStrs vertexShaderStr fragmentShaderStr =
 
             // construct gl program
-            let program = Gl.CreateProgram ()
+            let program = OpenGL.Gl.CreateProgram ()
             Assert ()
 
             // add vertex shader to program
-            let vertexShader = Gl.CreateShader Gl.ShaderType.VertexShader
-            Gl.ShaderSource (vertexShader, 1, [|vertexShaderStr|], null)
-            Gl.CompileShader vertexShader
-            Gl.AttachShader (program, vertexShader)
+            let vertexShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.VertexShader
+            OpenGL.Gl.ShaderSource (vertexShader, [|vertexShaderStr|], null)
+            OpenGL.Gl.CompileShader vertexShader
+            OpenGL.Gl.AttachShader (program, vertexShader)
             Assert ()
 
             // add fragement shader to program
-            let fragmentShader = Gl.CreateShader Gl.ShaderType.FragmentShader
-            Gl.ShaderSource (fragmentShader, 1, [|fragmentShaderStr|], null)
-            Gl.CompileShader fragmentShader
-            Gl.AttachShader (program, fragmentShader)
+            let fragmentShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.FragmentShader
+            OpenGL.Gl.ShaderSource (fragmentShader, [|fragmentShaderStr|], null)
+            OpenGL.Gl.CompileShader fragmentShader
+            OpenGL.Gl.AttachShader (program, fragmentShader)
             Assert ()
 
             // link program
-            Gl.LinkProgram program
+            OpenGL.Gl.LinkProgram program
             Assert ()
 
             // fin
@@ -261,7 +254,7 @@ module Gl =
 
             // create shader program
             let program = CreateShaderProgramFromStrs samplerVertexShaderStr samplerFragmentShaderStr
-            let texUniform = Gl.GetUniformLocation (program, "tex")
+            let texUniform = OpenGL.Gl.GetUniformLocation (program, "tex")
             Assert ()
 
             // fin
@@ -270,44 +263,40 @@ module Gl =
         let private BeginSpriteBatch spriteMax =
 
             // setup draw state
-            Gl.Enable Gl.EnableCap.Blend
-            Gl.Enable Gl.EnableCap.CullFace
+            OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
             Assert ()
 
             // setup gpu vao
-            let gpuVaos = [|0u|]
-            Gl.GenVertexArrays (1, gpuVaos)
-            let gpuVao = gpuVaos.[0]
-            Gl.BindVertexArray gpuVao
+            let gpuVao = OpenGL.Gl.GenVertexArray ()
+            OpenGL.Gl.BindVertexArray gpuVao
             Assert ()
 
             // setup gpu buffer
-            let gpuBuffers = [|0u|]
-            Gl.GenBuffers (1, gpuBuffers)
-            let gpuBuffer = gpuBuffers.[0]
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
-            Gl.EnableVertexAttribArray 0
-            Gl.EnableVertexAttribArray 1
-            Gl.EnableVertexAttribArray 2
-            Gl.VertexAttribPointer (0, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
-            Gl.VertexAttribPointer (1, 2, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
-            Gl.VertexAttribPointer (2, 4, Gl.VertexAttribPointerType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
-            Gl.BufferData (Gl.BufferTarget.ArrayBuffer, nativeint (sizeof<SpriteBatchVertex> * 6 * spriteMax), nativeint 0, Gl.BufferUsageHint.StaticDraw)
+            let gpuBuffer = OpenGL.Gl.GenBuffer ()
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
+            OpenGL.Gl.EnableVertexAttribArray 0u
+            OpenGL.Gl.EnableVertexAttribArray 1u
+            OpenGL.Gl.EnableVertexAttribArray 2u
+            OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
+            OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
+            OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<SpriteBatchVertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.StaticDraw)
             Assert ()
 
             // map cpu buffer
-            let cpuBuffer = Gl.MapBuffer (Gl.BufferTarget.ArrayBuffer, Gl.BufferAccess.WriteOnly)
+            let cpuBuffer = OpenGL.Gl.MapBuffer (OpenGL.BufferTarget.ArrayBuffer, OpenGL.BufferAccess.WriteOnly)
             Assert ()
 
             // tear down gpu buffer
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
 
             // tear down gpu vao
-            Gl.BindVertexArray 0u
+            OpenGL.Gl.BindVertexArray 0u
 
             // teardown draw state
-            Gl.Disable Gl.EnableCap.CullFace
-            Gl.Disable Gl.EnableCap.Blend
+            OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
             // fin
             (cpuBuffer, gpuBuffer, gpuVao)
@@ -315,35 +304,34 @@ module Gl =
         let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram texture gpuBuffer gpuVao =
 
             // setup buffers
-            Gl.BindVertexArray gpuVao
-            Gl.EnableVertexAttribArray 0
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, gpuBuffer)
+            OpenGL.Gl.BindVertexArray gpuVao
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
             Assert ()
 
             // unmap cpu buffer
-            Gl.UnmapBuffer Gl.BufferTarget.ArrayBuffer |> ignore<bool>
+            OpenGL.Gl.UnmapBuffer OpenGL.BufferTarget.ArrayBuffer |> ignore<bool>
             Assert ()
 
             // setup program
-            Gl.UseProgram spriteProgram
-            Gl.Uniform1i (spriteTexUniform, 0) // set uniform to texture slot 0
-            Gl.ActiveTexture 0 // make texture slot 0 active
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, texture)
+            OpenGL.Gl.UseProgram spriteProgram
+            OpenGL.Gl.Uniform1i (0, 1, spriteTexUniform)
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
             Assert ()
 
             // draw geometry
-            Gl.DrawArrays (Gl.BeginMode.Triangles, 0, 6 * spriteCount)
+            OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * spriteCount)
             Assert ()
 
             // teardown program
-            Gl.BindTexture (Gl.TextureTarget.Texture2D, 0u)
-            Gl.UseProgram 0u
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+            OpenGL.Gl.UseProgram 0u
 
             // teardown buffers
-            Gl.BindBuffer (Gl.BufferTarget.ArrayBuffer, 0u)
-            Gl.DeleteBuffers (1, [|gpuBuffer|])
-            Gl.BindVertexArray 0u
-            Gl.DeleteVertexArrays (1, [|gpuVao|])
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+            OpenGL.Gl.DeleteBuffers gpuBuffer
+            OpenGL.Gl.BindVertexArray 0u
+            OpenGL.Gl.DeleteVertexArrays gpuVao
 
         let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 

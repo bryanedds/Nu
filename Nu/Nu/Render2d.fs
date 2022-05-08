@@ -104,7 +104,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderSpriteTexUniform : int
           RenderSpriteProgram : uint
-          RenderContext : RenderContext
+          RenderWindow : Window
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -251,7 +251,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             if color.A <> 0.0f then
                 Gl.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.OneMinusSrcAlpha
+                    texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
 
@@ -260,7 +260,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             if glow.A <> 0.0f then
                 Gl.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip Gl.BlendingFactorSrc.SrcAlpha Gl.BlendingFactorDest.One
+                    texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.One
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
 
@@ -644,19 +644,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderLayeredMessages.Add message
 
     /// Make a Renderer.
-    static member make renderContext =
+    static member make window =
 
-        // ensure gl context exists
-        match renderContext with
-        | SglContext context ->
-            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
-            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1) |> ignore<int>
-            SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
-            SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
-            let glContext = SDL.SDL_GL_CreateContext context.SglWindow
-            if glContext = nativeint 0 then failwith "Could not create SDL OpenGL context."
-        | WglContext _ ->
-            () // gl context already exists
+        // create SDL OpenGL context if needed
+        match window with
+        | SglWindow window -> Gl.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
+        | WfglWindow _ -> () // context already exists
 
         // create sprite program
         let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
@@ -665,7 +658,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let renderer =
             { RenderSpriteTexUniform = spriteTexUniform
               RenderSpriteProgram = spriteProgram
-              RenderContext = renderContext
+              RenderWindow = window
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
@@ -698,12 +691,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let viewPortSize = v2i Constants.Render.ResolutionX Constants.Render.ResolutionY
 
             // prepare frame
-            Gl.Viewport (0, 0, viewPortSize.X, viewPortSize.Y)
-            Gl.BindFramebuffer (Gl.FramebufferTarget.Framebuffer, 0u)
+            OpenGL.Gl.Viewport (0, 0, viewPortSize.X, viewPortSize.Y)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
             match Constants.Render.ScreenClearing with
-            | ColorClear color -> Gl.ClearColor (color.R, color.G, color.B, color.A)
+            | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
             | NoClear -> ()
-            Gl.Clear (Gl.ClearBufferMask.ColorBufferBit ||| Gl.ClearBufferMask.DepthBufferBit ||| Gl.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
@@ -716,9 +709,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             Gl.Hl.FlushSpriteBatch envOpt
 
             // swap frame
-            match renderer.RenderContext with
-            | SglContext context -> SDL.SDL_GL_SwapWindow context.SglWindow
-            | WglContext context -> context.SwapBuffers ()
+            match renderer.RenderWindow with
+            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | WfglWindow window -> window.WfglSwapBuffers ()
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

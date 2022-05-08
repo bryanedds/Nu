@@ -134,16 +134,16 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 /// A renderer tag interface.
 and Renderer = interface end
 
-/// A context for rendering in SDL OpenGL.
-type [<NoEquality; NoComparison>] SglContext =
+/// A window for rendering in SDL OpenGL.
+type [<NoEquality; NoComparison>] SglWindow =
     { SglWindow : nativeint }
 
-/// A context for rendering in Windows OpenGL.
-type [<NoEquality; NoComparison>] WglContext =
-    { WglContext : nativeint
-      SwapBuffers : unit -> unit }
+/// A window for rendering in Windows Forms.
+type [<NoEquality; NoComparison>] WfglWindow =
+    { WfglWindow : nativeint
+      WfglSwapBuffers : unit -> unit }
 
-/// A context for rendering.
-type [<NoEquality; NoComparison>] RenderContext =
-    | SglContext of SglContext
-    | WglContext of WglContext
+/// A window for rendering.
+type [<NoEquality; NoComparison>] Window =
+    | SglWindow of SglWindow
+    | WfglWindow of WfglWindow

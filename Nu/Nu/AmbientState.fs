@@ -162,8 +162,8 @@ module AmbientState =
 
     /// Attempt to get the window flags.
     let tryGetWindowFlags state =
-        match Option.flatten (Option.map SdlDeps.getRenderContextOpt state.SdlDepsOpt) with
-        | Some (SglContext context) -> Some (SDL.SDL_GetWindowFlags context.SglWindow)
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) -> Some (SDL.SDL_GetWindowFlags window.SglWindow)
         | _ -> None
 
     /// Attempt to check that the window is minimized.
@@ -196,10 +196,10 @@ module AmbientState =
 
     /// Get the margin around the camera eye given the display mode's full screen state and resolution.
     let getEyeMargin (eyeSize : Vector2) state =
-        match Option.flatten (Option.map SdlDeps.getRenderContextOpt state.SdlDepsOpt) with
-        | Some (SglContext context) ->
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->
             let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (context.SglWindow, width, height) |> ignore
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
             let eyeMargin =
                 v2
                     (single width.Value - eyeSize.X * single Constants.Render.VirtualScalar)

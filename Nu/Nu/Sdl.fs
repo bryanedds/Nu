@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison>] SdlWindowConfig =
 /// Describes the view that SDL will use to render.
 type [<NoEquality; NoComparison>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
-    | WglWindow of WglContext
+    | ExistingWindow of WfglWindow
 
 /// Describes the general configuration of SDL.
 type [<NoEquality; NoComparison>] SdlConfig =
@@ -48,7 +48,7 @@ module SdlDeps =
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality; NoComparison>] SdlDeps =
         private
-            { RenderContextOpt : RenderContext option
+            { WindowOpt : Window option
               Config : SdlConfig
               Destroy : unit -> unit }
     
@@ -58,13 +58,13 @@ module SdlDeps =
 
     /// An empty SdlDeps.
     let empty =
-        { RenderContextOpt = None
+        { WindowOpt = None
           Config = SdlConfig.defaultConfig
           Destroy = id }
 
-    /// Get an sdlDep's optional render context.
-    let getRenderContextOpt sdlDeps =
-        sdlDeps.RenderContextOpt
+    /// Get an sdlDep's optional window.
+    let getWindowOpt sdlDeps =
+        sdlDeps.WindowOpt
 
     /// Get an sdlDep's config.
     let getConfig sdlDeps =
@@ -72,13 +72,13 @@ module SdlDeps =
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen sdlDeps =
-        match sdlDeps.RenderContextOpt with
-        | Some (SglContext context) ->
+        match sdlDeps.WindowOpt with
+        | Some (SglWindow window) ->
             let flags =
                 if fullScreen
                 then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN
                 else 0u
-            SDL.SDL_SetWindowFullscreen (context.SglWindow, flags) |> ignore
+            SDL.SDL_SetWindowFullscreen (window.SglWindow, flags) |> ignore
         | _ -> ()
         sdlDeps
 
@@ -131,8 +131,8 @@ module SdlDeps =
                     | NewWindow windowConfig ->
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
-                    | WglWindow wglContext ->
-                        Left wglContext)
+                    | ExistingWindow window ->
+                        Left window)
                 (fun windowOpt ->
                     match windowOpt with
                     | Right window -> SDL.SDL_DestroyWindow window
@@ -164,9 +164,9 @@ module SdlDeps =
                                 match contextOrWindow with
                                 | Right window ->
                                     SDL.SDL_RaiseWindow window
-                                    SglContext { SglWindow = window }
-                                | Left context ->
-                                    WglContext context
-                            Right { RenderContextOpt = Some context; Config = sdlConfig; Destroy = destroy }
+                                    SglWindow { SglWindow = window }
+                                | Left window ->
+                                    WfglWindow window
+                            Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
 type SdlDeps = SdlDeps.SdlDeps
