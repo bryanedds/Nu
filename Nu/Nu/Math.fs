@@ -1059,8 +1059,9 @@ type ColorConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Atom (atom, _) ->
-                let packed = match UInt32.TryParse (atom.Substring 1, NumberStyles.HexNumber, CultureInfo.InvariantCulture) with (true, color) -> uint color | (false, _) -> 0u
+            | Atom (str, _)
+            | Text (str, _) -> // NOTE: can also come in as text from a csv file.
+                let packed = match UInt32.TryParse (str.Substring 1, NumberStyles.HexNumber, CultureInfo.InvariantCulture) with (true, color) -> uint color | (false, _) -> 0u
                 Color packed :> obj
             | Symbols ([Number (r, _); Number (g, _); Number (b, _); Number (a, _)], _) ->
                 Color (scvalue<single> r, scvalue<single> g, scvalue<single> b, scvalue<single> a) :> obj
