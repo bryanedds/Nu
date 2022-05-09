@@ -122,17 +122,10 @@ module WorldGameModule =
         /// Get the view of the 2d eye in absolute terms (world space).
         member this.GetViewAbsolute2d (_ : World) = World.getViewAbsolute2d
         
-        /// Get the view of the 2d eye in absolute terms (world space) with translation sliced on
-        /// integers.
-        member this.GetViewAbsoluteI2d (_ : World) = World.getViewAbsoluteI2d
-
         /// The relative view of the 2d eye with original single values. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
         member this.GetViewRelative2d world = World.getViewRelative2d world
-
-        /// The relative view of the 2d eye with translation sliced on integers. Good for rendering.
-        member this.GetViewRelativeI2d world = World.getViewRelativeI2d world
 
         /// Get the bounds of the 2d eye's sight relative to its position.
         member this.GetViewBoundsRelative2d world = World.getViewBoundsRelative2d world
