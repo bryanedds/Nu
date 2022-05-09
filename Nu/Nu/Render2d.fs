@@ -319,7 +319,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member renderTileLayer
         (viewAbsolute : Matrix3x3 byref,
          viewRelative : Matrix3x3 byref,
-         _ : Vector2,
+         eyePosition : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
@@ -361,12 +361,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
                     let tilePositionView =
                         v2
-                            (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
-                            (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                            (positionView.X + tileSize.X * single i)
+                            (positionView.Y - tileSize.Y * single (inc j) + sizeView.Y)
                     let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
                     let tileCenterOffset = tilePositionOffset + tileSize * 0.5f // just rotate around center
                     let tileBounds = box2 tilePositionView tileSize
-                    let viewBounds = box2 v2Zero eyeSize
+                    let viewBounds = box2 (eyeSize * -0.5f) eyeSize
                     if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
 
                         // compute tile flip
