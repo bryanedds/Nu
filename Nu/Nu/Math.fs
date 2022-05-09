@@ -1028,7 +1028,7 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
             let packed = this.Color.Packed
             let unpacked = Color packed
             if this.Color.Equals unpacked then
-                Symbol.Text ("#" + packed.ToString "X8", None)
+                Symbol.Atom ("#" + packed.ToString "X8", None)
             else
                 let col = Symbol.Atom ("col", None)
                 let r = Symbol.Number (scstring this.Color.R, None)
@@ -1051,7 +1051,7 @@ type ColorConverter () =
             let packed = col.Packed
             let unpacked = Color packed
             if col.Equals unpacked then
-                Symbol.Text ("#" + packed.ToString "X8", None) :> obj
+                Symbol.Atom ("#" + packed.ToString "X8", None) :> obj
             else
                 Symbols
                     ([Number (scstring col.R, None)
@@ -1069,8 +1069,8 @@ type ColorConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Text (text, _) -> // Q: is Atom an appropriate representation?
-                let packed = match UInt32.TryParse (text.Substring 1, NumberStyles.HexNumber, CultureInfo.InvariantCulture) with (true, color) -> uint color | (false, _) -> 0u
+            | Atom (atom, _) ->
+                let packed = match UInt32.TryParse (atom.Substring 1, NumberStyles.HexNumber, CultureInfo.InvariantCulture) with (true, color) -> uint color | (false, _) -> 0u
                 Color packed :> obj
             | Symbols ([Number (r, _); Number (g, _); Number (b, _); Number (a, _)], _) ->
                 Color (scvalue<single> r, scvalue<single> g, scvalue<single> b, scvalue<single> a) :> obj
