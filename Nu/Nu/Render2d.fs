@@ -649,7 +649,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // create SDL OpenGL context if needed
         match window with
         | SglWindow window -> Gl.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
-        | WfglWindow _ -> () // context already exists
+        | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
 
         // create sprite program
         let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
