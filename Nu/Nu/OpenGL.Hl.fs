@@ -26,7 +26,7 @@ type TextureMetadata =
       TextureHeight : int
       TextureInternalFormat : OpenGL.InternalFormat }
 
-/// Force qualification of OpenGL namespace unless opened explicitly.
+/// Force qualification of OpenGL namespace in Nu unless opened explicitly.
 [<RequireQualifiedAccess>]
 module OpenGL = let _ = ()
 
