@@ -232,11 +232,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
     static member private renderSpriteInline // TODO: 3D: inline this after testing.
         centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) (glow : Color) flip renderer spriteBatchEnvOpt =
-        
-        // invert transform
-        let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
-        let positionInverse : Vector2 = positionOffset / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
-        let sizeInverse : Vector2 = sizeView / Constants.Render.VirtualResolutionF * single Constants.Render.VirtualScalar
+
+        // invert transform for normalized [-1, +1] coords
+        let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionF2
+        let positionInverse : Vector2 = positionOffset / Constants.Render.VirtualResolutionF2
+        let sizeInverse : Vector2 = sizeView / Constants.Render.VirtualResolutionF2
 
         // compute coords
         let coords =
