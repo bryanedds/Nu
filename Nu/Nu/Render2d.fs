@@ -362,7 +362,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let tilePositionView =
                         v2
                             (positionView.X + tileSize.X * single i)
-                            (positionView.Y - tileSize.Y * single (inc j) + sizeView.Y)
+                            (positionView.Y - tileSize.Y - tileSize.Y * single j + sizeView.Y)
                     let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
                     let tileCenterOffset = tilePositionOffset + tileSize * 0.5f // just rotate around center
                     let tileBounds = box2 tilePositionView tileSize
@@ -611,8 +611,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
     static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer spriteBatchEnvOpt =
-        let mutable viewAbsolute = (Math.getViewAbsoluteI2d eyePosition eyeSize).InvertedView ()
-        let mutable viewRelative = (Math.getViewRelativeI2d eyePosition eyeSize).InvertedView ()
+        let mutable viewAbsolute = (Math.getViewAbsolute2d eyePosition eyeSize).InvertedView ()
+        let mutable viewRelative = (Math.getViewRelative2d eyePosition eyeSize).InvertedView ()
         Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
             GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteBatchEnvOpt))
             spriteBatchEnvOpt renderer.RenderLayeredMessages

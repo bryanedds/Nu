@@ -320,21 +320,11 @@ module WorldModuleGame =
         static member getViewAbsolute2d world =
             Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
         
-        /// Get the view of the 2d eye in absolute terms (world space) with translation sliced on
-        /// integers.
-        static member getViewAbsoluteI2d world =
-            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-
         /// The relative view of the 2d eye with original single values. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
         static member getViewRelative2d world =
             Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-
-        /// The relative view of the 2d eye with translation sliced on integers. Good for SDL
-        /// rendering.
-        static member getViewRelativeI2d world =
-            Math.getViewRelativeI2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
         /// Get the bounds of the 2d eye's sight relative to its position.
         [<FunctionBinding>]

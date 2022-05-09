@@ -1210,23 +1210,12 @@ module Math =
     /// Get the 2d view of the eye in absolute terms (world space).
     let getViewAbsolute2d (_ : Vector2) (_ : Vector2) =
         Matrix3x3.Identity
-        
-    /// Get the 2d view of the eye in absolute terms (world space) with translation sliced on
-    /// integers.
-    let getViewAbsoluteI2d (_ : Vector2) (_ : Vector2) =
-        Matrix3x3.Identity
 
     /// The relative 2d view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelative2d (eyePosition : Vector2) (_ : Vector2) =
         Matrix3x3.CreateTranslation eyePosition
-
-    /// The relative 2d view of the eye with translation sliced on integers. Good for rendering.
-    let getViewRelativeI2d (eyePosition : Vector2) (_ : Vector2) =
-        let translation = eyePosition
-        let translationI = Vector2 (single (int translation.X), single (int translation.Y))
-        Matrix3x3.CreateTranslation translationI
 
     /// Perform a 2d ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
