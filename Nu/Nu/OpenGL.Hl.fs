@@ -372,10 +372,10 @@ module Hl =
 
         let flipper =
             match flip with
-            | FlipNone -> v2 1.0f 1.0f
-            | FlipH -> v2 -1.0f 1.0f
-            | FlipV -> v2 1.0f -1.0f
-            | FlipHV -> v2 -1.0f -1.0f
+            | FlipNone -> v2 1.0f -1.0f
+            | FlipH -> v2 -1.0f -1.0f
+            | FlipV -> v2 1.0f 1.0f
+            | FlipHV -> v2 -1.0f 1.0f
 
         let position0 = (position - center).Rotate rotation + center
         let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
@@ -404,6 +404,7 @@ module Hl =
         vertex3.SbvCoord <- coords.TopLeft * flipper
         vertex3.SbvColor <- color
 
+        // TODO: consider using an EBO to reduce bus utilization.
         let vertexSize = nativeint sizeof<SpriteBatchVertex>
         let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
         Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)

@@ -241,9 +241,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let coords =
             let textureWidth = single textureMetadata.TextureWidth
             let textureHeight = single textureMetadata.TextureHeight
-            if not (inset.Equals box2Zero)
-            then Box2 (single inset.Position.X / textureWidth, single inset.Position.Y / textureHeight, single inset.Size.X / textureWidth, single inset.Size.Y / textureHeight)
-            else Box2.Unit
+            if not (inset.Equals box2Zero) then
+                let sx = single inset.Size.X / textureWidth
+                let sy = single -inset.Size.Y / textureHeight
+                let px = single inset.Position.X / textureWidth
+                let py = single (inset.Position.Y + inset.Size.Y) / textureHeight
+                Box2 (px, py, sx, sy)
+            else Box2 (0.0f, 1.0f, 1.0f, -1.0f)
 
         // attempt to draw normal sprite
         let spriteBatchEnvOpt =
