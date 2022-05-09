@@ -1025,17 +1025,12 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
             getType this.Color
 
         member this.ToSymbol () =
-            let packed = this.Color.Packed
-            let unpacked = Color packed
-            if this.Color.Equals unpacked then
-                Symbol.Atom ("#" + packed.ToString "X8", None)
-            else
-                let col = Symbol.Atom ("col", None)
-                let r = Symbol.Number (scstring this.Color.R, None)
-                let g = Symbol.Number (scstring this.Color.G, None)
-                let b = Symbol.Number (scstring this.Color.B, None)
-                let a = Symbol.Number (scstring this.Color.A, None)
-                Symbol.Symbols ([col; r; g; b; a], None)
+            let col = Symbol.Atom ("col", None)
+            let r = Symbol.Number (scstring this.Color.R, None)
+            let g = Symbol.Number (scstring this.Color.G, None)
+            let b = Symbol.Number (scstring this.Color.B, None)
+            let a = Symbol.Number (scstring this.Color.A, None)
+            Symbol.Symbols ([col; r; g; b; a], None)
 
 /// Converts Color types.
 type ColorConverter () =
@@ -1048,16 +1043,11 @@ type ColorConverter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let col = source :?> Color
-            let packed = col.Packed
-            let unpacked = Color packed
-            if col.Equals unpacked then
-                Symbol.Atom ("#" + packed.ToString "X8", None) :> obj
-            else
-                Symbols
-                    ([Number (scstring col.R, None)
-                      Number (scstring col.G, None)
-                      Number (scstring col.B, None)
-                      Number (scstring col.A, None)], None) :> obj
+            Symbols
+                ([Number (scstring col.R, None)
+                  Number (scstring col.G, None)
+                  Number (scstring col.B, None)
+                  Number (scstring col.A, None)], None) :> obj
         elif destType = typeof<Color> then source
         else failconv "Invalid ColorConverter conversion to source." None
 
