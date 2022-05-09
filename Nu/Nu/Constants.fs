@@ -60,7 +60,7 @@ module Render =
     let [<Literal>] VirtualResolutionY = 540
     let (*Literal*) VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
     let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
-    let (*Literal*) VirtualResolutionF2 = VirtualResolutionF * 2.0f
+    let (*Literal*) VirtualResolutionOver2F = VirtualResolutionF / 2.0f
     let (*Literal*) VirtualScalar =
         match ConfigurationManager.AppSettings.["VirtualScalar"] with
         | null -> 2

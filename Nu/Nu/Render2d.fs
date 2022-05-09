@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
 open SDL2
 open TiledSharp
 open Prime
@@ -118,7 +117,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, texture) -> Gl.Hl.DeleteTexture texture
+        | TextureAsset (_, texture) -> OpenGL.Hl.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
@@ -126,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            match Gl.Hl.TryCreateSpriteTexture asset.FilePath with
+            match OpenGL.Hl.TryCreateSpriteTexture asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
@@ -234,9 +233,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) (glow : Color) flip renderer spriteBatchEnvOpt =
 
         // invert transform for normalized [-1, +1] coords
-        let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionF2
-        let positionInverse : Vector2 = positionOffset / Constants.Render.VirtualResolutionF2
-        let sizeInverse : Vector2 = sizeView / Constants.Render.VirtualResolutionF2
+        let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionOver2F
+        let positionInverse : Vector2 = positionOffset / Constants.Render.VirtualResolutionOver2F
+        let sizeInverse : Vector2 = sizeView / Constants.Render.VirtualResolutionOver2F
 
         // compute coords
         let coords =
@@ -249,7 +248,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw normal sprite
         let spriteBatchEnvOpt =
             if color.A <> 0.0f then
-                Gl.Hl.AugmentSpriteBatch
+                OpenGL.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
                     texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
@@ -258,7 +257,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw glow sprite
         let spriteBatchEnvOpt =
             if glow.A <> 0.0f then
-                Gl.Hl.AugmentSpriteBatch
+                OpenGL.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
                     texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.One
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
@@ -648,11 +647,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // create SDL OpenGL context if needed
         match window with
-        | SglWindow window -> Gl.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
+        | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
         | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
 
         // create sprite program
-        let (spriteTexUniform, spriteProgram) = Gl.Hl.CreateSpriteProgram ()
+        let (spriteTexUniform, spriteProgram) = OpenGL.Hl.CreateSpriteProgram ()
 
         // make renderer
         let renderer =
@@ -706,7 +705,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
-            Gl.Hl.FlushSpriteBatch envOpt
+            OpenGL.Hl.FlushSpriteBatch envOpt
 
             // swap frame
             match renderer.RenderWindow with
