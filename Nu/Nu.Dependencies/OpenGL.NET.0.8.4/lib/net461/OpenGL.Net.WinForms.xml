@@ -1,0 +1,553 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>OpenGL.Net.WinForms</name>
+    </assembly>
+    <members>
+        <member name="T:OpenGL.GlControl">
+            <summary>
+            Basic <see cref="T:System.Windows.Forms.UserControl"/> for rendering using OpenGL.Net.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.#ctor">
+            <summary>
+            Construct a GlControl.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ContextVersion">
+            <summary>
+            Get or set the version to be requested to the OpenGL driver.
+            </summary>
+        </member>
+        <member name="T:OpenGL.GlControl.ProfileType">
+            <summary>
+            Profile permission.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ProfileType.Core">
+            <summary>
+            Requires the core profile
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ProfileType.Compatibility">
+            <summary>
+            Requires the compatibility profile.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ProfileType.Embedded">
+            <summary>
+            Embedded profile (OpenGL ES).
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ProfileType.SecurityCritical2">
+            <summary>
+            Security Critical (OpenGL SC 2).
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ContextProfile">
+            <summary>
+            Get or set the permission to create a debug context.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._ProfileType">
+            <summary>
+            The permission to create a debug context.
+            </summary>
+        </member>
+        <member name="T:OpenGL.GlControl.AttributePermission">
+            <summary>
+            Attribute permission.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.AttributePermission.Required">
+            <summary>
+            Requires the attribute. Throw an error is not supported.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.AttributePermission.Enabled">
+            <summary>
+            Enable the attribute to be set, if supported.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.AttributePermission.EnabledInDebugger">
+            <summary>
+            Requires the attrbute to be set, but only when a debugger is attached.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.AttributePermission.DonCare">
+            <summary>
+            Do not specify the attribute.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.DebugContext">
+            <summary>
+            Get or set the permission to create a debug context.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DebugContextBit">
+            <summary>
+            The permission to create a debug context.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ForwardCompatibleContext">
+            <summary>
+            Get or set the permission to create a forward compatible context.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._ForwardCompatibleContextBit">
+            <summary>
+            The permission to create a debug context.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.RobustContext">
+            <summary>
+            Get or set the permission to create a robust context.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._RobustContextBit">
+            <summary>
+            The permission to create a robust context.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ColorBits">
+            <summary>
+            Get or set the OpenGL minimum color buffer bits.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._ColorBits">
+            <summary>
+            The OpenGL color buffer bits.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.DepthBits">
+            <summary>
+            Get or set the OpenGL minimum depth buffer bits.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DepthBits">
+            <summary>
+            The OpenGL depth buffer bits.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.StencilBits">
+            <summary>
+            Get or set the OpenGL minimum stencil buffer bits.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._StencilBits">
+            <summary>
+            The OpenGL stencil buffer bits.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.MultisampleBits">
+            <summary>
+            Get or set the OpenGL minimum multisample buffer "bits".
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._MultisampleBits">
+            <summary>
+            The OpenGL multisample buffer bits.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.DoubleBuffer">
+            <summary>
+            Get or set the OpenGL double buffering flag.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DoubleBuffer">
+            <summary>
+            The OpenGL double buffering flag.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.SwapInterval">
+            <summary>
+            Get or set the OpenGL swap buffers interval.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._SwapInterval">
+            <summary>
+            The OpenGL swap buffers interval.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ControlPixelFormat">
+            <summary>
+            The <see cref="T:OpenGL.DevicePixelFormat"/> describing the minimum pixel format required by this control.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.DesignerValidatePixelFormat">
+            <summary>
+            Performs a design-time check to validate the current pixel format.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DesignerPixelFormatNotice">
+            <summary>
+            Notice to be displayed at design-time about current pixel format selection.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.Animation">
+            <summary>
+            Get or set the flag indicating whether control should update itself continuosly.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._Animation">
+            <summary>
+            Flag indicating whether control should update itself continuosly.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.AnimationTime">
+            <summary>
+            Get or set the time interval between animation updates, in milliseconds.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._AnimationTime">
+            <summary>
+            The time interval between animation updates, in milliseconds.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.AnimationTimer">
+            <summary>
+            Get or set the flag for enabling animation using timers.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._AnimationTimerFlag">
+            <summary>
+            The flag for enabling animation using timers.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.CreateAnimationTimer">
+            <summary>
+            Create animation timer resources.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.AnimationTimer_Tick(System.Object,System.EventArgs)">
+            <summary>
+            Animation timer callback.
+            </summary>
+            <param name="sender">
+            The <see cref="T:System.Windows.Forms.Timer"/> that has triggered the event.
+            </param>
+            <param name="e">
+            The event arguments.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControl._AnimationTimer">
+            <summary>
+            Timer used 
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._AnimationInvalidated">
+            <summary>
+            Boolean used for avoiding excessive Invalidate() calls
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.DrawDesign(System.Windows.Forms.PaintEventArgs)">
+            <summary>
+            Draw design mode graphics.
+            </summary>
+            <param name="e">
+            A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that specify the event arguments.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControl._DesignPen">
+            <summary>
+            Pen used for drawing the UserControl at design time.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DesignBrush">
+            <summary>
+            Brush used for drawing the UserControl at design time.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._DesignFont">
+            <summary>
+            Font used for drawing  the UserControl in the case of failures.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.DrawFailure(System.Windows.Forms.PaintEventArgs,System.Exception)">
+            <summary>
+            Draw design mode graphics in case of failures.
+            </summary>
+            <param name="e">
+            A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that specify the event arguments.
+            </param>
+            <param name="exception">
+            An <see cref="T:System.Exception"/> that describe the error encountered.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControl._FailurePen">
+            <summary>
+            Pen used for drawing  the UserControl in the case of failures.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._FailureBrush">
+            <summary>
+            Brush used for drawing the UserControl in the case of failures.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.Device">
+            <summary>
+            Get the <see cref="T:OpenGL.DeviceContext"/> created on this GlControl.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.CreateDeviceContext">
+            <summary>
+            Create the device context and set the pixel format.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.CreateDeviceContext(OpenGL.DevicePixelFormat)">
+            <summary>
+            Create the device context and set the pixel format.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.GetDisplay">
+            <summary>
+            Get the display associated with this Control.
+            </summary>
+            <returns>
+            It returns an <see cref="T:System.IntPtr"/> valid for GLX functions as display parameter.
+            </returns>
+        </member>
+        <member name="F:OpenGL.GlControl._DeviceContext">
+            <summary>
+            The <see cref="T:OpenGL.DeviceContext"/> created on this GlControl.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.CreateContext">
+            <summary>
+            Create the GlControl context.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.MakeCurrentContext">
+            <summary>
+            Make the GlControl context current.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.DeleteContext">
+            <summary>
+            Delete the GlControl context.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.CreateDesktopContext">
+            <summary>
+            Create the GlControl context, eventually shared with others.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.ReuseOtherContext">
+            <summary>
+            Reuse the GlControl context of another GlControl, eventually shared with others.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.SharingControl_ContextCreated(System.Object,OpenGL.GlControlEventArgs)">
+            <summary>
+            Ensure <see cref="F:OpenGL.GlControl._RenderContext"/> is in sync with other <see cref="T:OpenGL.GlControl"/> owning the context.
+            </summary>
+            <param name="sender">
+            The <see cref="T:OpenGL.GlControl"/> raising the event.
+            </param>
+            <param name="e">
+            A <see cref="T:OpenGL.GlControlEventArgs"/> specifying the event arguments.
+            </param>
+        </member>
+        <member name="M:OpenGL.GlControl.SharingControl_ContextDestroying(System.Object,OpenGL.GlControlEventArgs)">
+            <summary>
+            Ensure <see cref="F:OpenGL.GlControl._RenderContext"/> is in sync with other <see cref="T:OpenGL.GlControl"/> owning the context.
+            </summary>
+            <param name="sender">
+            The <see cref="T:OpenGL.GlControl"/> raising the event.
+            </param>
+            <param name="e">
+            A <see cref="T:OpenGL.GlControlEventArgs"/> specifying the event arguments.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControl._RenderContext">
+            <summary>
+            The OpenGL context created on this GlControl.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._SharingControl">
+            <summary>
+            The <see cref="T:OpenGL.GlControl"/> that owns <see cref="F:OpenGL.GlControl._RenderContext"/>.
+            </summary>
+        </member>
+        <member name="T:OpenGL.GlControl.ContextSharingOption">
+            <summary>
+            Context sharing options.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ContextSharingOption.OwnContext">
+            <summary>
+            Create its own context.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl.ContextSharingOption.SingleContext">
+            <summary>
+            Do not create its own context, but reuse the first one created by application.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ContextSharing">
+            <summary>
+            Get or set the context sharing option.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._ContextSharing">
+            <summary>
+            The context sharing option.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.ContextSharingGroup">
+            <summary>
+            Get or set a tag for defining sharing groups.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._ContextSharingGroup">
+            <summary>
+            A tag for defining sharing groups.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._SharingGroups">
+            <summary>
+            Map group names with the contextes for sharing resources (glShareLists or other means).
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._SharingControls">
+            <summary>
+            Map group names with the GlControl that has created a context, reused by others.
+            </summary>
+        </member>
+        <member name="E:OpenGL.GlControl.ContextCreated">
+            <summary>
+            Event raised on control creation time, allow user to allocate resource on control.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.OnContextCreated">
+            <summary>
+            Raise the event <see cref="E:OpenGL.GlControl.ContextCreated"/>.
+            </summary>
+        </member>
+        <member name="E:OpenGL.GlControl.ContextDestroying">
+            <summary>
+            Event raised on control disposition time, allow user to dispose resources on control.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.OnContextDestroying">
+            <summary>
+            Raise the event <see cref="E:OpenGL.GlControl.ContextDestroying"/>.
+            </summary>
+        </member>
+        <member name="E:OpenGL.GlControl.Render">
+            <summary>
+            Event raised on control render time, allow user to draw on control.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.OnRender">
+            <summary>
+            Raise the event <see cref="E:OpenGL.GlControl.Render"/>.
+            </summary>
+        </member>
+        <member name="E:OpenGL.GlControl.ContextUpdate">
+            <summary>
+            Event raised on control render time, allow user to update resources. It is executed AFTER the <see cref="E:OpenGL.GlControl.Render"/>
+            event.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.OnContextUpdate">
+            <summary>
+            Raise the event <see cref="E:OpenGL.GlControl.ContextUpdate"/>.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.FrameDrawTime">
+            <summary>
+            Get the time spent for drawing the last frame.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._FrameDrawTime">
+            <summary>
+            The time spent for drawing the last frame.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.FrameSwapTime">
+            <summary>
+            Get the time spent for swapping the last frame.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControl._FrameSwapTime">
+            <summary>
+            The time spent for drawing the last frame.
+            </summary>
+        </member>
+        <member name="P:OpenGL.GlControl.CreateParams">
+            <summary>
+            Get the <see cref="P:OpenGL.GlControl.CreateParams"/> relative this UserControl.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.OnHandleCreated(System.EventArgs)">
+            <summary>
+            Raises the <see cref="E:System.Windows.Forms.Control.HandleCreated"/> event.
+            </summary>
+            <param name="e">
+            An <see cref="T:System.EventArgs"/> that contains the event data.
+            </param>
+        </member>
+        <member name="M:OpenGL.GlControl.OnHandleDestroyed(System.EventArgs)">
+            <summary>
+            Raises the <see cref="E:System.Windows.Forms.Control.HandleDestroyed"/> event.
+            </summary>
+            <param name="e">
+            An <see cref="T:System.EventArgs"/> that contains the event data.
+            </param>
+        </member>
+        <member name="M:OpenGL.GlControl.OnPaint(System.Windows.Forms.PaintEventArgs)">
+            <summary>
+            Raises the Paint event.
+            </summary>
+            <param name="e">
+            A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data.
+            </param>
+        </member>
+        <member name="M:OpenGL.GlControl.Dispose(System.Boolean)">
+            <summary> 
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">
+            true if managed resources should be disposed; otherwise, false.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControl.components">
+            <summary> 
+            Variabile di progettazione necessaria.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControl.InitializeComponent">
+            <summary> 
+            Metodo necessario per il supporto della finestra di progettazione. Non modificare 
+            il contenuto del metodo con l'editor di codice.
+            </summary>
+        </member>
+        <member name="T:OpenGL.GlControlEventArgs">
+            <summary>
+            Arguments for <see cref="T:OpenGL.GlControl"/> events.
+            </summary>
+        </member>
+        <member name="M:OpenGL.GlControlEventArgs.#ctor(OpenGL.DeviceContext,System.IntPtr)">
+            <summary>
+            Construct a GlControlEventArgs.
+            </summary>
+            <param name="deviceContext">
+            The <see cref="F:OpenGL.GlControlEventArgs.DeviceContext"/> used for the underlying <see cref="T:OpenGL.GlControl"/>.
+            </param>
+            <param name="renderContext">
+            The OpenGL context used for rendering.
+            </param>
+        </member>
+        <member name="F:OpenGL.GlControlEventArgs.DeviceContext">
+            <summary>
+            The <see cref="F:OpenGL.GlControlEventArgs.DeviceContext"/> used for the underlying <see cref="T:OpenGL.GlControl"/>.
+            </summary>
+        </member>
+        <member name="F:OpenGL.GlControlEventArgs.RenderContext">
+            <summary>
+            The OpenGL context used for rendering.
+            </summary>
+        </member>
+    </members>
+</doc>
