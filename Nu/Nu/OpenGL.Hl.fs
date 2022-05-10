@@ -411,7 +411,8 @@ module Hl =
         vertex3.SbvCoords <- coords.TopLeft * flipper
         vertex3.SbvColor <- color
 
-        // TODO: consider using an EBO to reduce bus utilization.
+        // TODO: 3D: consider using an EBO to reduce bus utilization.
+        // TODO: 3D: consider using a single pre-allocated SpriteVectex[6] to reduce marshaling calls.
         let vertexSize = nativeint sizeof<SpriteBatchVertex>
         let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
         Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
