@@ -241,13 +241,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let coords =
             let texelWidth = 1.0f / single textureMetadata.TextureWidth
             let texelHeight = 1.0f / single textureMetadata.TextureHeight
-            let texelWidthEpsilon = texelWidth / Constants.Render.SpriteTexelEpsilonDivisor
-            let texelHeightEpsilon = texelHeight / Constants.Render.SpriteTexelEpsilonDivisor
+            let texelBorderInset = Constants.Render.SpriteTexelEpsilon
+            let texelBorderInsetTimes2 = Constants.Render.SpriteTexelEpsilonTimes2
             if not (inset.Equals box2Zero) then
-                let px = single inset.Position.X * texelWidth + texelWidthEpsilon
-                let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - texelHeightEpsilon
-                let sx = single inset.Size.X * texelWidth - texelWidthEpsilon * 2.0f
-                let sy = single -inset.Size.Y * texelHeight + texelHeightEpsilon * 2.0f
+                let px = single inset.Position.X * texelWidth + texelBorderInset
+                let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - texelBorderInset
+                let sx = single inset.Size.X * texelWidth - texelBorderInsetTimes2
+                let sy = single -inset.Size.Y * texelHeight + texelBorderInsetTimes2
                 Box2 (px, py, sx, sy)
             else Box2 (0.0f, 1.0f, 1.0f, -1.0f)
 

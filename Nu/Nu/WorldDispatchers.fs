@@ -1937,6 +1937,7 @@ module FpsDispatcherModule =
             let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
+                Log.info framesStr
                 entity.SetText framesStr world
             else world
 
