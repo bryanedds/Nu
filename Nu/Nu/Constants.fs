@@ -78,7 +78,7 @@ module Render =
     let SpriteBatchSize = 1024
     let SpriteTexelEpsilonDivisor =
         // TODO: 3D: check if this is too large when zooming over tile maps and far from the origin.
-        // Honestly, it might just make sense to make this 3.0f and be done with it...
+        // Honestly, it might just make sense to make this 4.0f or 8.0f and be done with it...
         512.0f
 
 [<RequireQualifiedAccess>]

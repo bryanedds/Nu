@@ -265,7 +265,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             if glow.A <> 0.0f then
                 OpenGL.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip OpenGL.BlendingFactor.One OpenGL.BlendingFactor.One OpenGL.BlendEquationMode.FuncAdd
+                    texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.One OpenGL.BlendEquationMode.FuncAdd
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
 
