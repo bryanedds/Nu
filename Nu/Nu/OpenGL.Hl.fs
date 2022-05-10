@@ -51,6 +51,7 @@ module Hl =
         private
             { BlendingFactorSrc : OpenGL.BlendingFactor
               BlendingFactorDest : OpenGL.BlendingFactor
+              BlendingEquation : OpenGL.BlendEquationMode
               Texture : uint }
     
     type [<NoEquality; NoComparison>] SpriteBatchEnv =
@@ -300,7 +301,7 @@ module Hl =
         // fin
         (cpuBuffer, gpuBuffer, gpuVao)
 
-    let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram bfs bfd texture gpuBuffer gpuVao =
+    let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram bfs bfd beq texture gpuBuffer gpuVao =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -321,6 +322,7 @@ module Hl =
         OpenGL.Gl.Uniform1i (0, 1, spriteTexUniform)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        OpenGL.Gl.BlendEquation beq
         OpenGL.Gl.BlendFunc (bfs, bfd)
         Assert ()
 
@@ -329,6 +331,8 @@ module Hl =
         Assert ()
 
         // teardown program
+        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
 
@@ -342,10 +346,10 @@ module Hl =
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
 
-    let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
+    let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 
         let env =
-            let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; Texture = texture }
+            let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; BlendingEquation = beq; Texture = texture }
             let batchStateObsolete =
                 match envOpt with
                 | Some env -> not (batchState.Equals env.BatchState) || env.SpriteIndex = Constants.Render.SpriteBatchSize
@@ -355,12 +359,11 @@ module Hl =
                 | Some env ->
                     EndSpriteBatch
                         env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                        env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDest env.BatchState.Texture
-                        env.GpuBuffer
-                        env.GpuVao
+                        env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDest env.BatchState.BlendingEquation
+                        env.BatchState.Texture env.GpuBuffer env.GpuVao
                 | None -> ()
                 let (cpuBuffer, gpuBuffer, gpuVao) = BeginSpriteBatch Constants.Render.SpriteBatchSize
-                let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; Texture = texture }
+                let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; BlendingEquation = beq; Texture = texture }
                 { SpriteIndex = 0
                   SpriteTexUniform = spriteTextureUniform
                   SpriteProgram = spriteProgram
@@ -427,13 +430,10 @@ module Hl =
             if env.SpriteIndex > 0 then
                 EndSpriteBatch
                     env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                    env.BatchState.BlendingFactorSrc
-                    env.BatchState.BlendingFactorDest
-                    env.BatchState.Texture
-                    env.GpuBuffer
-                    env.GpuVao
+                    env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDest env.BatchState.BlendingEquation
+                    env.BatchState.Texture env.GpuBuffer env.GpuVao
         | None -> ()
 
-    let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTexUniform spriteProgram =
-        let envOpt = AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd spriteTexUniform spriteProgram None
+    let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTexUniform spriteProgram =
+        let envOpt = AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTexUniform spriteProgram None
         FlushSpriteBatch envOpt
