@@ -76,6 +76,7 @@ module Render =
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion
     let SpriteBatchSize = 1024
+    let SpriteBatchPoolSize = 32
     let SpriteTexelEpsilon = 0.0001f // TODO: 3D: test this with zooming camera on tile map and tile map far off origin to make sure it's high enough.
     let SpriteTexelEpsilonTimes2 = SpriteTexelEpsilon * 2.0f
 

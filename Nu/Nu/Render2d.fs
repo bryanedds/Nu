@@ -101,9 +101,8 @@ type RenderLayeredMessage2dComparer () =
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
-        { RenderSpriteTexUniform : int
-          RenderSpriteProgram : uint
-          RenderWindow : Window
+        { RenderWindow : Window
+          mutable RenderSpriteBatchEnv : OpenGL.Hl.SpriteBatch.Env
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -230,7 +229,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
     static member private renderSpriteInline // TODO: 3D: inline this after testing.
-        centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer spriteBatchEnvOpt =
+        centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
 
         // invert transform for normalized [-1, +1] coords
         let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionOver2F
@@ -259,25 +258,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | Overwrite -> (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
 
         // attempt to draw normal sprite
-        let spriteBatchEnvOpt =
-            if color.A <> 0.0f then
-                OpenGL.Hl.AugmentSpriteBatch
-                    centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip bfs bfd beq
-                    renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
-            else spriteBatchEnvOpt
+        if color.A <> 0.0f then
+            OpenGL.Hl.SpriteBatch.NextSprite
+                centerInverse positionInverse sizeInverse rotation coords color flip
+                bfs bfd beq texture renderer.RenderSpriteBatchEnv
 
         // attempt to draw glow sprite
-        let spriteBatchEnvOpt =
-            if glow.A <> 0.0f then
-                OpenGL.Hl.AugmentSpriteBatch
-                    centerInverse positionInverse sizeInverse rotation glow coords
-                    texture flip bfs bfd beq
-                    renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
-            else spriteBatchEnvOpt
-
-        // fin
-        spriteBatchEnvOpt
+        if glow.A <> 0.0f then
+            OpenGL.Hl.SpriteBatch.NextSprite
+                centerInverse positionInverse sizeInverse rotation coords glow flip
+                bfs bfd beq texture renderer.RenderSpriteBatchEnv
 
     /// Render sprite.
     static member renderSprite
@@ -293,8 +283,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          blend : Blend,
          glow : Color inref,
          flip : Flip,
-         renderer,
-         spriteBatchEnvOpt) =
+         renderer) =
         let mutable color = color
         let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
@@ -314,14 +303,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (textureMetadata, texture) ->
-                GlRenderer2d.renderSpriteInline
-                    centerOffset positionOffset sizeView rotation inset textureMetadata texture color blend glow flip renderer spriteBatchEnvOpt
-            | _ ->
-                Log.trace "Cannot render sprite with a non-texture asset."
-                spriteBatchEnvOpt
-        | _ ->
-            Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
-            spriteBatchEnvOpt
+                GlRenderer2d.renderSpriteInline centerOffset positionOffset sizeView rotation inset textureMetadata texture color blend glow flip renderer
+            | _ -> Log.trace "Cannot render sprite with a non-texture asset."
+        | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
     /// Render tile layer.
     static member renderTileLayer
@@ -338,8 +322,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
-         renderer,
-         spriteBatchEnvOpt) =
+         renderer) =
         let mutable color = color
         let mutable glow = glow
         let view = if transform.Absolute then &viewAbsolute else &viewRelative
@@ -361,7 +344,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
             let tilesLength = Array.length tiles
             let mutable tileIndex = 0
-            let mutable spriteBatchEnvOpt = spriteBatchEnvOpt
             while tileIndex < tilesLength do
                 let tile = &tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
@@ -408,16 +390,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            spriteBatchEnvOpt <-
-                                GlRenderer2d.renderSpriteInline
-                                    tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color Transparent glow flip renderer spriteBatchEnvOpt
+                            GlRenderer2d.renderSpriteInline tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color Transparent glow flip renderer
                         | None -> ()
 
                 tileIndex <- inc tileIndex
-            spriteBatchEnvOpt
-        else
-            Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
-            spriteBatchEnvOpt
+        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render text.
     static member renderText
@@ -431,9 +408,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          font : Font AssetTag,
          color : Color inref,
          justification : Justification,
-         renderer,
-         spriteBatchEnvOpt) =
-        spriteBatchEnvOpt
+         renderer) =
+        ()
         //let mutable color = color
         //let view = if transform.Absolute then &viewAbsolute else &viewRelative
         //let viewScale = Matrix3x3.ExtractScaleMatrix &view
@@ -512,9 +488,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          blend : Blend,
          image : Image AssetTag,
          particles : Particle array,
-         renderer,
-         spriteBatchEnvOpt) =
-        spriteBatchEnvOpt
+         renderer) =
+        ()
         //let view = if absolute then &viewAbsolute else &viewRelative
         //let viewScale = Matrix3x3.ExtractScaleMatrix &view
         //let positionOffset = -(v2Zero * view) + v2 eyeMargin.X -eyeMargin.Y
@@ -581,17 +556,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          descriptor,
-         renderer,
-         spriteBatchEnvOpt) =
+         renderer) =
         match descriptor with
         | SpriteDescriptor descriptor ->
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
             GlRenderer2d.renderSprite
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
-                 renderer, spriteBatchEnvOpt)
+                 renderer)
         | SpritesDescriptor descriptor ->
-            spriteBatchEnvOpt
+            ()
             //let sprites = descriptor.Sprites
             //for index in 0 .. sprites.Length - 1 do
             //    let sprite = &sprites.[index]
@@ -603,27 +577,26 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderTileLayer
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
-                 renderer, spriteBatchEnvOpt)
+                 renderer)
         | TextDescriptor descriptor ->
             GlRenderer2d.renderText
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  &descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
-                 renderer, spriteBatchEnvOpt)
+                 renderer)
         | ParticlesDescriptor descriptor ->
             GlRenderer2d.renderParticles
                 (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
                  descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
-                 renderer, spriteBatchEnvOpt)
+                 renderer)
         | RenderCallbackDescriptor2d callback ->
-            spriteBatchEnvOpt
+            ()
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
-    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer spriteBatchEnvOpt =
+    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
         let mutable viewAbsolute = (Math.getViewAbsolute2d eyePosition eyeSize).InvertedView ()
         let mutable viewRelative = (Math.getViewRelative2d eyePosition eyeSize).InvertedView ()
-        Seq.fold (fun spriteBatchEnvOpt (message : RenderLayeredMessage2d) ->
-            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer, spriteBatchEnvOpt))
-            spriteBatchEnvOpt renderer.RenderLayeredMessages
+        for message in renderer.RenderLayeredMessages do
+            GlRenderer2d.renderDescriptor (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin, message.RenderDescriptor, renderer)
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
         let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
@@ -662,14 +635,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
         | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
 
-        // create sprite program
-        let (spriteTexUniform, spriteProgram) = OpenGL.Hl.CreateSpriteProgram ()
+        // create sprite batch env
+        let spriteBatchEnv = OpenGL.Hl.SpriteBatch.BeginEnv ()
 
         // make renderer
         let renderer =
-            { RenderSpriteTexUniform = spriteTexUniform
-              RenderSpriteProgram = spriteProgram
-              RenderWindow = window
+            { RenderWindow = window
+              RenderSpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
@@ -713,11 +685,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.handleRenderMessages renderMessages renderer
             GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer
             GlRenderer2d.sortRenderLayeredMessages renderer
-            let envOpt = GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer None
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
-            OpenGL.Hl.FlushSpriteBatch envOpt
+            OpenGL.Hl.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
 
             // swap frame
             match renderer.RenderWindow with

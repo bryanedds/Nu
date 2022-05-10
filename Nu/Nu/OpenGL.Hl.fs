@@ -31,6 +31,7 @@ type TextureMetadata =
 module OpenGL = let _ = ()
 
 namespace OpenGL
+open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
@@ -40,39 +41,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
-    type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] SpriteBatchVertex =
-        struct
-            val mutable SbvPosition : Vector2
-            val mutable SbvCoords : Vector2
-            val mutable SbvColor : Color
-            end
-
-    type [<StructuralEquality; NoComparison>] SpriteBatchState =
-        private
-            { BlendingFactorSrc : OpenGL.BlendingFactor
-              BlendingFactorDst : OpenGL.BlendingFactor
-              BlendingEquation : OpenGL.BlendEquationMode
-              Texture : uint }
-    
-    type [<NoEquality; NoComparison>] SpriteBatchEnv =
-        private
-            { SpriteIndex : int
-              SpriteTexUniform : int
-              SpriteProgram : uint
-              CpuBuffer : nativeint
-              GpuBuffer : uint
-              GpuVao : uint
-              BatchState : SpriteBatchState }
-
-    /// Assert a lack of Gl error.
-    let Assert () =
+    /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
+    let Assert (a : 'a) =
 #if DEBUG
         let error = OpenGL.Gl.GetError ()
         if error <> OpenGL.ErrorCode.NoError then
             Log.debug ("Gl assertion failed due to: " + string error)
-#else
-        ()
 #endif
+        a
 
     /// Create an SDL OpenGL context.
     let CreateSgl410Context window =
@@ -236,8 +212,8 @@ module Hl =
     ///     0: vec2 pos
     ///     1: vec2 coordIn
     ///     2: vec4 colorIn
-    let CreateSpriteProgram () =
-    
+    let private CreateSpriteProgram () =
+
         // vertex shader code
         let samplerVertexShaderStr =
             [Constants.Render.GlslVersionPragma
@@ -273,172 +249,242 @@ module Hl =
         // fin
         (texUniform, program)
 
-    let private BeginSpriteBatch spriteMax =
+    [<RequireQualifiedAccess>]
+    module SpriteBatch =
 
-        // setup gpu vao
-        let gpuVao = OpenGL.Gl.GenVertexArray ()
-        OpenGL.Gl.BindVertexArray gpuVao
-        Assert ()
+        type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
+            struct
+                val mutable Pos : Vector2
+                val mutable Coords : Vector2
+                val mutable Color : Color
+                end
 
-        // setup gpu buffer
-        let gpuBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
-        OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.EnableVertexAttribArray 2u
-        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
-        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoords"))
-        OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<SpriteBatchVertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.StaticDraw)
-        Assert ()
+        type [<NoEquality; NoComparison>] private Context =
+            { mutable CpuBufferOpt : nativeint ValueOption
+              GpuBuffer : uint
+              GpuVao : uint }
 
-        // map cpu buffer
-        let cpuBuffer = OpenGL.Gl.MapBuffer (OpenGL.BufferTarget.ArrayBuffer, OpenGL.BufferAccess.WriteOnly)
-        Assert ()
+            static member bind context =
+                OpenGL.Gl.BindVertexArray context.GpuVao
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, context.GpuBuffer)
 
-        // tear down gpu buffer
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+            static member unbind (_ : Context) =
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+                OpenGL.Gl.BindVertexArray 0u
 
-        // tear down gpu vao
-        OpenGL.Gl.BindVertexArray 0u
+            static member create spriteMax =
 
-        // fin
-        (cpuBuffer, gpuBuffer, gpuVao)
+                // setup gpu vao
+                let gpuVao = OpenGL.Gl.GenVertexArray ()
+                OpenGL.Gl.BindVertexArray gpuVao
+                Assert ()
 
-    let private EndSpriteBatch spriteCount spriteTexUniform spriteProgram bfs bfd beq texture gpuBuffer gpuVao =
+                // setup gpu buffer
+                let gpuBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
+                OpenGL.Gl.EnableVertexAttribArray 0u
+                OpenGL.Gl.EnableVertexAttribArray 1u
+                OpenGL.Gl.EnableVertexAttribArray 2u
+                OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Pos"))
+                OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Coords"))
+                OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Color"))
+                OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<Vertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
+                Assert ()
 
-        // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-        Assert ()
+                // unbind
+                let context = { CpuBufferOpt = ValueNone; GpuBuffer = gpuBuffer; GpuVao = gpuVao }
+                Context.unbind context
+                Assert ()
+                context
 
-        // setup buffers
-        OpenGL.Gl.BindVertexArray gpuVao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
-        Assert ()
+            static member destroy context =
+                OpenGL.Gl.DeleteBuffers context.GpuBuffer
+                OpenGL.Gl.DeleteVertexArrays context.GpuVao
+                Context.unbind context
 
-        // unmap cpu buffer
-        OpenGL.Gl.UnmapBuffer OpenGL.BufferTarget.ArrayBuffer |> ignore<bool>
-        Assert ()
+            static member map context =
+                Context.bind context
+                let cpuBuffer = OpenGL.Gl.MapBuffer (OpenGL.BufferTarget.ArrayBuffer, OpenGL.BufferAccess.WriteOnly)
+                context.CpuBufferOpt <- ValueSome cpuBuffer
+                Context.unbind context
+                cpuBuffer
 
-        // setup program
-        OpenGL.Gl.UseProgram spriteProgram
-        OpenGL.Gl.Uniform1i (0, 1, spriteTexUniform)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
-        OpenGL.Gl.BlendEquation beq
-        OpenGL.Gl.BlendFunc (bfs, bfd)
-        Assert ()
+            static member unmap context =
+                let result = OpenGL.Gl.UnmapBuffer OpenGL.BufferTarget.ArrayBuffer
+                context.CpuBufferOpt <- ValueNone
+                result
 
-        // draw geometry
-        OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * spriteCount)
-        Assert ()
+        type [<NoEquality; NoComparison>] private Pool =
+            { mutable ContextCurrent : int
+              Contexts : Context List
+              SpriteMax : int }
 
-        // teardown program
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
-        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.UseProgram 0u
+            static member create spriteMax prealloc =
+                let contexts = Seq.init (max 1 prealloc) (fun _ -> Assert (Context.create spriteMax)) |> List
+                { ContextCurrent = 0
+                  Contexts = contexts
+                  SpriteMax = spriteMax }
 
-        // teardown buffers
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
-        OpenGL.Gl.DeleteBuffers gpuBuffer
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Gl.DeleteVertexArrays gpuVao
+            static member destroy pool =
+                for context in pool.Contexts do
+                    Context.destroy context
 
-        // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
-        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+            static member next pool =
+                pool.ContextCurrent <- inc pool.ContextCurrent
 
-    let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
+            static member reset pool =
+                pool.ContextCurrent <- 0
 
-        let env =
-            let batchState = { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
-            let batchStateObsolete =
-                match envOpt with
-                | Some env -> not (batchState.Equals env.BatchState) || env.SpriteIndex = Constants.Render.SpriteBatchSize
-                | None -> true
-            if batchStateObsolete then
-                match envOpt with
-                | Some env ->
-                    EndSpriteBatch
-                        env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                        env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDst env.BatchState.BlendingEquation
-                        env.BatchState.Texture env.GpuBuffer env.GpuVao
-                | None -> ()
-                let (cpuBuffer, gpuBuffer, gpuVao) = BeginSpriteBatch Constants.Render.SpriteBatchSize
-                let batchState = { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
-                { SpriteIndex = 0
-                  SpriteTexUniform = spriteTextureUniform
-                  SpriteProgram = spriteProgram
-                  CpuBuffer = cpuBuffer
-                  GpuBuffer = gpuBuffer
-                  GpuVao = gpuVao
-                  BatchState = batchState }
-            else Option.get envOpt // guaranteed to exist
+            member this.Current =
+                while this.ContextCurrent >= this.Contexts.Count do this.Contexts.Add (Context.create this.SpriteMax)
+                this.Contexts.[this.ContextCurrent]
 
-        let flipper =
-            match flip with
-            | FlipNone -> v2 1.0f -1.0f
-            | FlipH -> v2 -1.0f -1.0f
-            | FlipV -> v2 1.0f 1.0f
-            | FlipHV -> v2 -1.0f 1.0f
+        type [<StructuralEquality; NoComparison>] private State =
+            { BlendingFactorSrc : OpenGL.BlendingFactor
+              BlendingFactorDst : OpenGL.BlendingFactor
+              BlendingEquation : OpenGL.BlendEquationMode
+              Texture : uint }
 
-        let position0 = (position - center).Rotate rotation + center
-        let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
-        vertex0.SbvPosition <- position0
-        vertex0.SbvCoords <- coords.BottomLeft * flipper
-        vertex0.SbvColor <- color
+            static member create bfs bfd beq texture =
+                { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
-        let position1Unrotated = v2 (position.X + size.X) position.Y
-        let position1 = (position1Unrotated - center).Rotate rotation + center
-        let mutable vertex1 = Unchecked.defaultof<SpriteBatchVertex>
-        vertex1.SbvPosition <- position1
-        vertex1.SbvCoords <- coords.BottomRight * flipper
-        vertex1.SbvColor <- color
+        type [<NoEquality; NoComparison>] Env =
+            private
+                { mutable SpriteIndex : int
+                  SpriteTexUniform : int
+                  SpriteProgram : uint
+                  Pool : Pool
+                  mutable State : State }
 
-        let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
-        let position2 = (position2Unrotated - center).Rotate rotation + center
-        let mutable vertex2 = Unchecked.defaultof<SpriteBatchVertex>
-        vertex2.SbvPosition <- position2
-        vertex2.SbvCoords <- coords.TopRight * flipper
-        vertex2.SbvColor <- color
+            static member create bfs bfd beq texture spriteTextureUniform spriteProgram =
+                let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
+                let state = State.create bfs bfd beq texture
+                { SpriteIndex = 0; SpriteTexUniform = spriteTextureUniform; SpriteProgram = spriteProgram; Pool = pool; State = state }
 
-        let position3Unrotated = v2 position.X (position.Y + size.Y)
-        let position3 = (position3Unrotated - center).Rotate rotation + center
-        let mutable vertex3 = Unchecked.defaultof<SpriteBatchVertex>
-        vertex3.SbvPosition <- position3
-        vertex3.SbvCoords <- coords.TopLeft * flipper
-        vertex3.SbvColor <- color
+            static member destroy env =
+                Pool.destroy env.Pool
 
-        // TODO: 3D: consider using an EBO to reduce bus utilization.
-        // TODO: 3D: consider using a single pre-allocated SpriteVectex[6] to reduce marshaling calls.
-        let vertexSize = nativeint sizeof<SpriteBatchVertex>
-        let cpuOffset = env.CpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
-        let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex1, cpuOffset, false)
-        let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
-        let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex3, cpuOffset, false)
-        let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex0, cpuOffset, false)
-        let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<SpriteBatchVertex> (vertex2, cpuOffset, false)
+            static member reset env =
+                Pool.reset env.Pool
+                env.SpriteIndex <- 0
 
-        Some { env with SpriteIndex = inc env.SpriteIndex }
+        let private Flush env =
 
-    let FlushSpriteBatch envOpt =
-        match envOpt with
-        | Some env ->
-            if env.SpriteIndex > 0 then
-                EndSpriteBatch
-                    env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                    env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDst env.BatchState.BlendingEquation
-                    env.BatchState.Texture env.GpuBuffer env.GpuVao
-        | None -> ()
+            // setup state
+            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+            OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+            Assert ()
 
-    let RenderSprite center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTexUniform spriteProgram =
-        let envOpt = AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTexUniform spriteProgram None
-        FlushSpriteBatch envOpt
+            // setup context
+            let context = env.Pool.Current
+            Context.bind context
+            Assert ()
+
+            // setup program
+            OpenGL.Gl.UseProgram env.SpriteProgram
+            OpenGL.Gl.Uniform1i (0, 1, env.SpriteTexUniform)
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
+            OpenGL.Gl.BlendEquation env.State.BlendingEquation
+            OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
+            Assert ()
+
+            // attempt to draw geometry
+            if Context.unmap context then
+                OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
+                Assert ()
+            else Log.debug "Failed to draw sprite batch arrays due to inability to unmap cpu buffer."
+
+            // teardown program
+            OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+            OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+            OpenGL.Gl.UseProgram 0u
+            Assert ()
+
+            // teardown context
+            Context.unbind context
+            Assert ()
+
+            // teardown state
+            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+            OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+            Assert ()
+
+            // next pool
+            Pool.next env.Pool
+            env.SpriteIndex <- 0
+
+        let BeginEnv () =
+            let (spriteTexUniform, spriteProgram) = CreateSpriteProgram ()
+            Env.create OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u spriteTexUniform spriteProgram
+
+        let NextSprite center (position : Vector2) (size : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
+
+            let state = State.create bfs bfd beq texture
+            if not (state.Equals env.State) || env.SpriteIndex = Constants.Render.SpriteBatchSize then
+                if env.SpriteIndex > 0 then Flush env
+                Assert ()
+                env.State <- state
+
+            let cpuBuffer =
+                let context = env.Pool.Current
+                match context.CpuBufferOpt with
+                | ValueSome cpuBuffer -> cpuBuffer
+                | ValueNone -> Assert (Context.map context)
+
+            let flipper =
+                match flip with
+                | FlipNone -> v2 1.0f -1.0f
+                | FlipH -> v2 -1.0f -1.0f
+                | FlipV -> v2 1.0f 1.0f
+                | FlipHV -> v2 -1.0f 1.0f
+
+            let position0 = (position - center).Rotate rotation + center
+            let mutable vertex0 = Unchecked.defaultof<Vertex>
+            vertex0.Pos <- position0
+            vertex0.Coords <- coords.BottomLeft * flipper
+            vertex0.Color <- color
+
+            let position1Unrotated = v2 (position.X + size.X) position.Y
+            let position1 = (position1Unrotated - center).Rotate rotation + center
+            let mutable vertex1 = Unchecked.defaultof<Vertex>
+            vertex1.Pos <- position1
+            vertex1.Coords <- coords.BottomRight * flipper
+            vertex1.Color <- color
+
+            let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
+            let position2 = (position2Unrotated - center).Rotate rotation + center
+            let mutable vertex2 = Unchecked.defaultof<Vertex>
+            vertex2.Pos <- position2
+            vertex2.Coords <- coords.TopRight * flipper
+            vertex2.Color <- color
+
+            let position3Unrotated = v2 position.X (position.Y + size.Y)
+            let position3 = (position3Unrotated - center).Rotate rotation + center
+            let mutable vertex3 = Unchecked.defaultof<Vertex>
+            vertex3.Pos <- position3
+            vertex3.Coords <- coords.TopLeft * flipper
+            vertex3.Color <- color
+
+            // TODO: 3D: consider using an EBO to reduce bus utilization.
+            // TODO: 3D: consider using a single pre-allocated SpriteVectex[6] to reduce marshaling calls.
+            let vertexSize = nativeint sizeof<Vertex>
+            let cpuOffset = cpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
+            Marshal.StructureToPtr<Vertex> (vertex0, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<Vertex> (vertex1, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<Vertex> (vertex2, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<Vertex> (vertex3, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<Vertex> (vertex0, cpuOffset, false)
+            let cpuOffset = cpuOffset + vertexSize
+            Marshal.StructureToPtr<Vertex> (vertex2, cpuOffset, false)
+
+            env.SpriteIndex <-inc env.SpriteIndex
+
+        let EndFrame env =
+            if env.SpriteIndex > 0 then Flush env
+            Pool.reset env.Pool
