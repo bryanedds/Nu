@@ -57,9 +57,13 @@ module Gl =
 
         /// Assert a lack of Gl error.
         let Assert () =
+#if DEBUG
             let error = Gl.GetError ()
             if error <> Gl.ErrorCode.NoError then
                 Log.debug ("Gl assertion failed due to: " + string error)
+#else
+            ()
+#endif
 
         let CreateGl410Context window =
             SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4) |> ignore<int>
