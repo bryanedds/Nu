@@ -43,14 +43,14 @@ module Hl =
     type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] SpriteBatchVertex =
         struct
             val mutable SbvPosition : Vector2
-            val mutable SbvCoord : Vector2
+            val mutable SbvCoords : Vector2
             val mutable SbvColor : Color
             end
 
     type [<StructuralEquality; NoComparison>] SpriteBatchState =
         private
             { BlendingFactorSrc : OpenGL.BlendingFactor
-              BlendingFactorDest : OpenGL.BlendingFactor
+              BlendingFactorDst : OpenGL.BlendingFactor
               BlendingEquation : OpenGL.BlendEquationMode
               Texture : uint }
     
@@ -283,7 +283,7 @@ module Hl =
         OpenGL.Gl.EnableVertexAttribArray 1u
         OpenGL.Gl.EnableVertexAttribArray 2u
         OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvPosition"))
-        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoord"))
+        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvCoords"))
         OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<SpriteBatchVertex>, Marshal.OffsetOf (typeof<SpriteBatchVertex>, "SbvColor"))
         OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<SpriteBatchVertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.StaticDraw)
         Assert ()
@@ -349,7 +349,7 @@ module Hl =
     let AugmentSpriteBatch center (position : Vector2) (size : Vector2) rotation color (coords : Box2) texture flip bfs bfd beq spriteTextureUniform spriteProgram (envOpt : SpriteBatchEnv option) =
 
         let env =
-            let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; BlendingEquation = beq; Texture = texture }
+            let batchState = { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
             let batchStateObsolete =
                 match envOpt with
                 | Some env -> not (batchState.Equals env.BatchState) || env.SpriteIndex = Constants.Render.SpriteBatchSize
@@ -359,11 +359,11 @@ module Hl =
                 | Some env ->
                     EndSpriteBatch
                         env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                        env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDest env.BatchState.BlendingEquation
+                        env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDst env.BatchState.BlendingEquation
                         env.BatchState.Texture env.GpuBuffer env.GpuVao
                 | None -> ()
                 let (cpuBuffer, gpuBuffer, gpuVao) = BeginSpriteBatch Constants.Render.SpriteBatchSize
-                let batchState = { BlendingFactorSrc = bfs; BlendingFactorDest = bfd; BlendingEquation = beq; Texture = texture }
+                let batchState = { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
                 { SpriteIndex = 0
                   SpriteTexUniform = spriteTextureUniform
                   SpriteProgram = spriteProgram
@@ -383,28 +383,28 @@ module Hl =
         let position0 = (position - center).Rotate rotation + center
         let mutable vertex0 = Unchecked.defaultof<SpriteBatchVertex>
         vertex0.SbvPosition <- position0
-        vertex0.SbvCoord <- coords.BottomLeft * flipper
+        vertex0.SbvCoords <- coords.BottomLeft * flipper
         vertex0.SbvColor <- color
 
         let position1Unrotated = v2 (position.X + size.X) position.Y
         let position1 = (position1Unrotated - center).Rotate rotation + center
         let mutable vertex1 = Unchecked.defaultof<SpriteBatchVertex>
         vertex1.SbvPosition <- position1
-        vertex1.SbvCoord <- coords.BottomRight * flipper
+        vertex1.SbvCoords <- coords.BottomRight * flipper
         vertex1.SbvColor <- color
 
         let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
         let position2 = (position2Unrotated - center).Rotate rotation + center
         let mutable vertex2 = Unchecked.defaultof<SpriteBatchVertex>
         vertex2.SbvPosition <- position2
-        vertex2.SbvCoord <- coords.TopRight * flipper
+        vertex2.SbvCoords <- coords.TopRight * flipper
         vertex2.SbvColor <- color
 
         let position3Unrotated = v2 position.X (position.Y + size.Y)
         let position3 = (position3Unrotated - center).Rotate rotation + center
         let mutable vertex3 = Unchecked.defaultof<SpriteBatchVertex>
         vertex3.SbvPosition <- position3
-        vertex3.SbvCoord <- coords.TopLeft * flipper
+        vertex3.SbvCoords <- coords.TopLeft * flipper
         vertex3.SbvColor <- color
 
         // TODO: consider using an EBO to reduce bus utilization.
@@ -430,7 +430,7 @@ module Hl =
             if env.SpriteIndex > 0 then
                 EndSpriteBatch
                     env.SpriteIndex env.SpriteTexUniform env.SpriteProgram
-                    env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDest env.BatchState.BlendingEquation
+                    env.BatchState.BlendingFactorSrc env.BatchState.BlendingFactorDst env.BatchState.BlendingEquation
                     env.BatchState.Texture env.GpuBuffer env.GpuVao
         | None -> ()
 
