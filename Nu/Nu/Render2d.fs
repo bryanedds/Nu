@@ -230,7 +230,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
     static member private renderSpriteInline // TODO: 3D: inline this after testing.
-        centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) (glow : Color) flip renderer spriteBatchEnvOpt =
+        centerOffset positionOffset sizeView rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer spriteBatchEnvOpt =
 
         // invert transform for normalized [-1, +1] coords
         let centerInverse : Vector2 = centerOffset / Constants.Render.VirtualResolutionOver2F
@@ -251,12 +251,19 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 Box2 (px, py, sx, sy)
             else Box2 (0.0f, 1.0f, 1.0f, -1.0f)
 
+        // compute blending instructions
+        let (bfs, bfd, beq) =
+            match blend with
+            | Transparent -> (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha, OpenGL.BlendEquationMode.FuncAdd)
+            | Additive -> (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
+            | Overwrite -> (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
+
         // attempt to draw normal sprite
         let spriteBatchEnvOpt =
             if color.A <> 0.0f then
                 OpenGL.Hl.AugmentSpriteBatch
                     centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd
+                    texture flip bfs bfd beq
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
 
@@ -264,8 +271,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let spriteBatchEnvOpt =
             if glow.A <> 0.0f then
                 OpenGL.Hl.AugmentSpriteBatch
-                    centerInverse positionInverse sizeInverse rotation color coords
-                    texture flip OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.One OpenGL.BlendEquationMode.FuncAdd
+                    centerInverse positionInverse sizeInverse rotation glow coords
+                    texture flip bfs bfd beq
                     renderer.RenderSpriteTexUniform renderer.RenderSpriteProgram spriteBatchEnvOpt
             else spriteBatchEnvOpt
 
@@ -303,13 +310,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let size = perimeter.Size.V2
         let sizeView = Matrix3x3.Multiply (&size, &viewScale)
         let image = AssetTag.generalize image
-        let blend = Blend.toSdlBlendMode blend
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (textureMetadata, texture) ->
                 GlRenderer2d.renderSpriteInline
-                    centerOffset positionOffset sizeView rotation inset textureMetadata texture color glow flip renderer spriteBatchEnvOpt
+                    centerOffset positionOffset sizeView rotation inset textureMetadata texture color blend glow flip renderer spriteBatchEnvOpt
             | _ ->
                 Log.trace "Cannot render sprite with a non-texture asset."
                 spriteBatchEnvOpt
@@ -321,7 +327,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member renderTileLayer
         (viewAbsolute : Matrix3x3 byref,
          viewRelative : Matrix3x3 byref,
-         eyePosition : Vector2,
+         _ : Vector2,
          eyeSize : Vector2,
          eyeMargin : Vector2,
          transform : Transform byref,
@@ -404,7 +410,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
                             spriteBatchEnvOpt <-
                                 GlRenderer2d.renderSpriteInline
-                                    tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color glow flip renderer spriteBatchEnvOpt
+                                    tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color Transparent glow flip renderer spriteBatchEnvOpt
                         | None -> ()
 
                 tileIndex <- inc tileIndex
