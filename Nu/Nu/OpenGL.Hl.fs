@@ -66,9 +66,13 @@ module Hl =
 
     /// Assert a lack of Gl error.
     let Assert () =
+#if DEBUG
         let error = OpenGL.Gl.GetError ()
         if error <> OpenGL.ErrorCode.NoError then
             Log.debug ("Gl assertion failed due to: " + string error)
+#else
+        ()
+#endif
 
     /// Create an SDL OpenGL context.
     let CreateSgl410Context window =
