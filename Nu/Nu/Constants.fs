@@ -76,7 +76,10 @@ module Render =
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion
     let SpriteBatchSize = 1024
-    let SpriteTexelEpsilonDivisor = 16384.0f // TODO: 3D: check if this is too large when zooming over tile maps.
+    let SpriteTexelEpsilonDivisor =
+        // TODO: 3D: check if this is too large when zooming over tile maps and far from the origin.
+        // Honestly, it might just make sense to make this 3 and be done with it...
+        512.0f
 
 [<RequireQualifiedAccess>]
 module Audio =
