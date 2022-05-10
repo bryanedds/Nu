@@ -257,7 +257,7 @@ module Hl =
              "out vec4 frag;"
              "void main()"
              "{"
-             "  frag = texture(tex, coord);"
+             "  frag = color * texture(tex, coord);"
              "}"] |> String.join "\n"
 
         // create shader program
