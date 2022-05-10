@@ -241,8 +241,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let coords =
             let texelWidth = 1.0f / single textureMetadata.TextureWidth
             let texelHeight = 1.0f / single textureMetadata.TextureHeight
-            let texelWidthEpsilon = texelWidth / 16384.0f
-            let texelHeightEpsilon = texelHeight / 16384.0f
+            let texelWidthEpsilon = texelWidth / Constants.Render.SpriteTexelEpsilonDivisor
+            let texelHeightEpsilon = texelHeight / Constants.Render.SpriteTexelEpsilonDivisor
             if not (inset.Equals box2Zero) then
                 let px = single inset.Position.X * texelWidth + texelWidthEpsilon
                 let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - texelHeightEpsilon
