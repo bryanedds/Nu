@@ -25,22 +25,13 @@ type [<NoEquality; NoComparison>] RenderAsset =
 
 /// The blend mode of a sprite.
 [<Syntax
-    ("Transparent Additive Modulate Overwrite", "", "", "", "",
+    ("Transparent Additive Overwrite", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Blend =
     | Transparent
     | Additive
-    | Modulate
     | Overwrite
-
-    /// Convert to a blend mode value recognized by SDL.
-    static member toSdlBlendMode flip =
-        match flip with
-        | Transparent -> SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND
-        | Additive -> SDL.SDL_BlendMode.SDL_BLENDMODE_ADD
-        | Modulate -> SDL.SDL_BlendMode.SDL_BLENDMODE_MOD
-        | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
 
 /// Horizontal justification.
 [<Syntax
