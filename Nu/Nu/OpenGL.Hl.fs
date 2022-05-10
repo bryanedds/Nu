@@ -209,23 +209,23 @@ module Hl =
     /// Create a sprite shader program with uniforms:
     ///     0: sampler2D tex
     /// and attributes:
-    ///     0: vec2 pos
-    ///     1: vec2 coordIn
+    ///     0: vec2 position
+    ///     1: vec2 coordsIn
     ///     2: vec4 colorIn
     let private CreateSpriteProgram () =
 
         // vertex shader code
         let samplerVertexShaderStr =
             [Constants.Render.GlslVersionPragma
-             "layout(location = 0) in vec2 pos;"
-             "layout(location = 1) in vec2 coordIn;"
+             "layout(location = 0) in vec2 position;"
+             "layout(location = 1) in vec2 coordsIn;"
              "layout(location = 2) in vec4 colorIn;"
-             "out vec2 coord;"
+             "out vec2 coords;"
              "out vec4 color;"
              "void main()"
              "{"
-             "  gl_Position = vec4(pos.x, pos.y, 0, 1);"
-             "  coord = coordIn;"
+             "  gl_Position = vec4(position.x, position.y, 0, 1);"
+             "  coords = coordsIn;"
              "  color = colorIn;"
              "}"] |> String.join "\n"
 
@@ -233,12 +233,12 @@ module Hl =
         let samplerFragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "uniform sampler2D tex;"
-             "in vec2 coord;"
+             "in vec2 coords;"
              "in vec4 color;"
              "out vec4 frag;"
              "void main()"
              "{"
-             "  frag = color * texture(tex, coord);"
+             "  frag = color * texture(tex, coords);"
              "}"] |> String.join "\n"
 
         // create shader program
@@ -254,7 +254,7 @@ module Hl =
 
         type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
             struct
-                val mutable Pos : Vector2
+                val mutable Position : Vector2
                 val mutable Coords : Vector2
                 val mutable Color : Color
                 end
@@ -285,7 +285,7 @@ module Hl =
                 OpenGL.Gl.EnableVertexAttribArray 0u
                 OpenGL.Gl.EnableVertexAttribArray 1u
                 OpenGL.Gl.EnableVertexAttribArray 2u
-                OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Pos"))
+                OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Position"))
                 OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Coords"))
                 OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Color"))
                 OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<Vertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
@@ -442,28 +442,28 @@ module Hl =
 
             let position0 = (position - center).Rotate rotation + center
             let mutable vertex0 = Unchecked.defaultof<Vertex>
-            vertex0.Pos <- position0
+            vertex0.Position <- position0
             vertex0.Coords <- coords.BottomLeft * flipper
             vertex0.Color <- color
 
             let position1Unrotated = v2 (position.X + size.X) position.Y
             let position1 = (position1Unrotated - center).Rotate rotation + center
             let mutable vertex1 = Unchecked.defaultof<Vertex>
-            vertex1.Pos <- position1
+            vertex1.Position <- position1
             vertex1.Coords <- coords.BottomRight * flipper
             vertex1.Color <- color
 
             let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
             let position2 = (position2Unrotated - center).Rotate rotation + center
             let mutable vertex2 = Unchecked.defaultof<Vertex>
-            vertex2.Pos <- position2
+            vertex2.Position <- position2
             vertex2.Coords <- coords.TopRight * flipper
             vertex2.Color <- color
 
             let position3Unrotated = v2 position.X (position.Y + size.Y)
             let position3 = (position3Unrotated - center).Rotate rotation + center
             let mutable vertex3 = Unchecked.defaultof<Vertex>
-            vertex3.Pos <- position3
+            vertex3.Position <- position3
             vertex3.Coords <- coords.TopLeft * flipper
             vertex3.Color <- color
 
