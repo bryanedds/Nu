@@ -23,8 +23,8 @@ module Vector2 =
         member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
     let inline v2 x y = Vector2 (x, y)
-    let inline v2Eq (x : Vector2) (y : Vector2) = x.X = y.X && x.Y = y.Y
-    let inline v2Neq (x : Vector2) (y : Vector2) = x.X <> y.X || x.Y <> y.Y
+    let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
+    let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
     let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
     let v2Zero = Vector2.Zero
@@ -123,8 +123,8 @@ module Vector3 =
         member this.WithZ z = Vector3 (this.X, this.Y, z)
 
     let inline v3 x y z = Vector3 (x, y, z)
-    let inline v3Eq (x : Vector3) (y : Vector3) = x.X = y.X && x.Y = y.Y && x.Z = y.Z
-    let inline v3Neq (x : Vector3) (y : Vector3) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z
+    let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
+    let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let inline v3Dup (a : single) = v3 a a a
     let v3Cartesian2d = v3 0.5f 0.5f 0.0f
     let v3Cartesian3d = v3 0.5f 0.5f 0.5f
@@ -234,8 +234,8 @@ module Vector4 =
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
-    let inline v4Eq (x : Vector4) (y : Vector4) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
-    let inline v4Neq (x : Vector4) (y : Vector4) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z || x.W <> y.W
+    let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
+    let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
     let v4Zero = Vector4.Zero
@@ -334,8 +334,8 @@ module Vector2i =
         member this.WithY y = Vector2i (this.X, y)
 
     let inline v2i x y = Vector2i (x, y)
-    let inline v2iEq (x : Vector2i) (y : Vector2i) = x.X = y.X && x.Y = y.Y
-    let inline v2iNeq (x : Vector2i) (y : Vector2i) = x.X <> y.X || x.Y <> y.Y
+    let inline v2iEq (v : Vector2i) (v2 : Vector2i) = v.X = v2.X && v.Y = v2.Y
+    let inline v2iNeq (v : Vector2i) (v2 : Vector2i) = v.X <> v2.X || v.Y <> v2.Y
     let inline v2iDup (a : int) = v2i a a
     let v2iOne = Vector2i.One
     let v2iZero = Vector2i.Zero
@@ -430,8 +430,8 @@ module Vector3i =
         member this.WithZ z = Vector3i (this.X, this.Y, z)
 
     let inline v3i x y z = Vector3i (x, y, z)
-    let inline v3iEq (x : Vector3i) (y : Vector3i) = x.X = y.X && x.Y = y.Y && x.Z = y.Z
-    let inline v3iNeq (x : Vector3i) (y : Vector3i) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z
+    let inline v3iEq (v : Vector3i) (v2 : Vector3i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
+    let inline v3iNeq (v : Vector3i) (v2 : Vector3i) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let inline v3iDup (a : int) = v3i a a a
     let v3iOne = Vector3i.One
     let v3iZero = Vector3i.Zero
@@ -530,8 +530,8 @@ module Vector4i =
         member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
-    let inline v4iEq (x : Vector4i) (y : Vector4i) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
-    let inline v4iNeq (x : Vector4i) (y : Vector4i) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z || x.W <> y.W
+    let inline v4iEq (v : Vector4i) (v2 : Vector4i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
+    let inline v4iNeq (v : Vector4i) (v2 : Vector4i) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let inline v4iDup (a : int) = v4i a a a a
     let v4iOne = Vector4i.One
     let v4iZero = Vector4i.Zero
@@ -625,8 +625,8 @@ module Quaternion =
         member this.PitchYawRoll = MathHelper.PitchYawRoll &this
 
     let quatId = Quaternion.Identity
-    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.X = q2.X && q.Y = q2.Y && q.Z = q2.Z && q.W = q2.W
-    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = q.X <> q2.X || q.Y <> q2.Y || q.Z <> q2.Z || q.W <> q2.W
+    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
+    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
 
 /// The Quaternion value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] QuaternionPluggable =
@@ -732,12 +732,8 @@ module Box2 =
 
     let box2Zero = Box2.Zero
     let inline box2 position size = Box2 (position, size)
-    let inline box2Eq (b : Box2) (b2 : Box2) =
-        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
-        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
-    let inline box2Neq (b : Box2) (b2 : Box2) =
-        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
-        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
+    let inline box2Eq (b : Box2) (b2 : Box2) = b.Equals b2
+    let inline box2Neq (b : Box2) (b2 : Box2) = not (b.Equals b2)
 
 /// Converts Box2 types.
 type Box2Converter () =
@@ -797,12 +793,8 @@ module Box3 =
 
     let box3Zero = Box3.Zero
     let inline box3 position size = Box3 (position, size)
-    let inline box3Eq (b : Box3) (b2 : Box3) =
-        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y && b.Position.Z = b2.Position.Z &&
-        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y && b.Size.Z = b2.Size.Z
-    let inline box3Neq (b : Box3) (b2 : Box3) =
-        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y || b.Position.Z <> b2.Position.Z ||
-        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y || b.Size.Z <> b2.Size.Z
+    let inline box3Eq (b : Box3) (b2 : Box3) = b.Equals b2
+    let inline box3Neq (b : Box3) (b2 : Box3) = not (b.Equals b2)
 
 /// Converts Box3 types.
 type Box3Converter () =
@@ -861,12 +853,8 @@ module Box2i =
 
     let box2iZero = Box2i.Zero
     let inline box2i position size = Box2i (position, size)
-    let inline box2iEq (b : Box2i) (b2 : Box2i) =
-        b.Position.X = b2.Position.X && b.Position.Y = b2.Position.Y &&
-        b.Size.X = b2.Size.X && b.Size.Y = b2.Size.Y
-    let inline box2iNeq (b : Box2i) (b2 : Box2i) =
-        b.Position.X <> b2.Position.X || b.Position.Y <> b2.Position.Y ||
-        b.Size.X <> b2.Size.X || b.Size.Y <> b2.Size.Y
+    let inline box2iEq (b : Box2i) (b2 : Box2i) = b.Equals b2
+    let inline box2iNeq (b : Box2i) (b2 : Box2i) = not (b.Equals b2)
 
 /// Converts Box2i types.
 type Box2iConverter () =
