@@ -75,13 +75,13 @@ module SpriteBatch =
             result
 
     type [<NoEquality; NoComparison>] private Pool =
-        { mutable ContextCurrent : int
+        { mutable ContextIndex : int
           Contexts : Context List
           SpriteMax : int }
 
         static member create spriteMax prealloc =
             let contexts = Seq.init (max 1 prealloc) (fun _ -> OpenGL.Hl.Assert (Context.create spriteMax)) |> List
-            { ContextCurrent = 0
+            { ContextIndex = 0
               Contexts = contexts
               SpriteMax = spriteMax }
 
@@ -89,17 +89,17 @@ module SpriteBatch =
             for context in pool.Contexts do
                 Context.destroy context
             pool.Contexts.Clear ()
-            pool.ContextCurrent <- 0
+            pool.ContextIndex <- 0
 
         static member next pool =
-            pool.ContextCurrent <- inc pool.ContextCurrent
+            pool.ContextIndex <- inc pool.ContextIndex
 
         static member reset pool =
-            pool.ContextCurrent <- 0
+            pool.ContextIndex <- 0
 
         member this.Current =
-            while this.ContextCurrent >= this.Contexts.Count do this.Contexts.Add (Context.create this.SpriteMax)
-            this.Contexts.[this.ContextCurrent]
+            while this.ContextIndex >= this.Contexts.Count do this.Contexts.Add (Context.create this.SpriteMax)
+            this.Contexts.[this.ContextIndex]
 
     type [<StructuralEquality; NoComparison>] private State =
         { BlendingFactorSrc : OpenGL.BlendingFactor
@@ -118,7 +118,7 @@ module SpriteBatch =
               Pool : Pool
               mutable State : State }
 
-    /// Create a sprite batch shader with uniforms:
+    /// Create a batched sprite shader with uniforms:
     ///     0: sampler2D tex
     /// and attributes:
     ///     0: vec2 position
@@ -205,8 +205,8 @@ module SpriteBatch =
         OpenGL.Hl.Assert ()
 
         // next pool
-        Pool.next env.Pool
         env.SpriteIndex <- 0
+        Pool.next env.Pool
 
     let CreateEnv () =
         let (texUniform, shader) = CreateShader ()
