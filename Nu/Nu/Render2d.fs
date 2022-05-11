@@ -102,7 +102,7 @@ type RenderLayeredMessage2dComparer () =
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderWindow : Window
-          mutable RenderSpriteBatchEnv : OpenGL.Hl.SpriteBatch.Env
+          mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.Env
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -259,13 +259,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.Hl.SpriteBatch.NextSprite
+            OpenGL.SpriteBatch.NextSprite
                 centerInverse positionInverse sizeInverse rotation coords color flip
                 bfs bfd beq texture renderer.RenderSpriteBatchEnv
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
-            OpenGL.Hl.SpriteBatch.NextSprite
+            OpenGL.SpriteBatch.NextSprite
                 centerInverse positionInverse sizeInverse rotation coords glow flip
                 bfs bfd beq texture renderer.RenderSpriteBatchEnv
 
@@ -636,7 +636,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
 
         // create sprite batch env
-        let spriteBatchEnv = OpenGL.Hl.SpriteBatch.BeginEnv ()
+        let spriteBatchEnv = OpenGL.SpriteBatch.BeginEnv ()
 
         // make renderer
         let renderer =
@@ -689,7 +689,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
-            OpenGL.Hl.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+            OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
 
             // swap frame
             match renderer.RenderWindow with

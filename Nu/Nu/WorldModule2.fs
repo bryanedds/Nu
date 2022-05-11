@@ -960,7 +960,7 @@ module WorldModule2 =
                                                                 Async.AwaitTask rendererThread |> Async.RunSynchronously
                                                                 world
                                                             | None -> world
-    
+
                                                         // attempt to finish audio player thread
                                                         let world =
                                                             match audioPlayerThreadOpt with
@@ -968,7 +968,7 @@ module WorldModule2 =
                                                                 Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
                                                                 world
                                                             | None -> world
-    
+
                                                         // attempt to start renderer thread
                                                         let (rendererThreadOpt, world) =
                                                             match SdlDeps.getRenderContextOpt sdlDeps with
@@ -982,7 +982,7 @@ module WorldModule2 =
                                                                 let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyePosition eyeSize eyeMargin)
                                                                 (Some rendererThread, world)
                                                             | None -> (None, world)
-    
+
                                                         // attempt to start audio player thread
                                                         let (audioPlayerThreadOpt, world) =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
@@ -1002,7 +1002,7 @@ module WorldModule2 =
                                                             World.render renderMessages renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
                                                             world
                                                         RenderTimer.Stop ()
-    
+
                                                         // process audio on main thread
                                                         AudioTimer.Start ()
                                                         let world =
@@ -1022,12 +1022,12 @@ module WorldModule2 =
                                                         PostFrameTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
-    
+
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
                                                             World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
-    
+
                                                         | Dead -> world
                                                     | Dead -> world
                                                 | Dead -> world
