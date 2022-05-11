@@ -39,11 +39,16 @@ module SpriteBatch =
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<Vertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Hl.Assert ()
 
-            // unbind
-            let context = { CpuBufferOpt = ValueNone; GpuBuffer = gpuBuffer; GpuVao = gpuVao }
-            Context.unbind context
+            // teardown gpu buffer
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
             OpenGL.Hl.Assert ()
-            context
+
+            // tardown gpu vao
+            OpenGL.Gl.BindVertexArray 0u
+            OpenGL.Hl.Assert ()
+
+            // make context value
+            { CpuBufferOpt = ValueNone; GpuBuffer = gpuBuffer; GpuVao = gpuVao }
 
         static member destroy context =
             OpenGL.Gl.DeleteBuffers context.GpuBuffer
@@ -184,7 +189,7 @@ module SpriteBatch =
             OpenGL.Hl.Assert ()
         else Log.debug "Failed to draw sprite batch arrays due to inability to unmap cpu buffer."
 
-        // teardown program
+        // teardown shader
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
