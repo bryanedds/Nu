@@ -53,7 +53,6 @@ module SpriteBatch =
         static member destroy context =
             OpenGL.Gl.DeleteBuffers context.GpuBuffer
             OpenGL.Gl.DeleteVertexArrays context.GpuVao
-            Context.unbind context
 
         static member bind context =
             OpenGL.Gl.BindVertexArray context.GpuVao
