@@ -20,14 +20,6 @@ module SpriteBatch =
           GpuBuffer : uint
           GpuVao : uint }
 
-        static member bind context =
-            OpenGL.Gl.BindVertexArray context.GpuVao
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, context.GpuBuffer)
-
-        static member unbind (_ : Context) =
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
-            OpenGL.Gl.BindVertexArray 0u
-
         static member create spriteMax =
 
             // setup gpu vao
@@ -57,6 +49,14 @@ module SpriteBatch =
             OpenGL.Gl.DeleteBuffers context.GpuBuffer
             OpenGL.Gl.DeleteVertexArrays context.GpuVao
             Context.unbind context
+
+        static member bind context =
+            OpenGL.Gl.BindVertexArray context.GpuVao
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, context.GpuBuffer)
+
+        static member unbind (_ : Context) =
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+            OpenGL.Gl.BindVertexArray 0u
 
         static member map context =
             Context.bind context
