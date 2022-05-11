@@ -636,7 +636,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
 
         // create sprite batch env
-        let spriteBatchEnv = OpenGL.SpriteBatch.BeginEnv ()
+        let spriteBatchEnv = OpenGL.SpriteBatch.CreateEnv ()
 
         // make renderer
         let renderer =
@@ -697,6 +697,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | WfglWindow window -> window.WfglSwapWindow ()
 
         member renderer.CleanUp () =
+            OpenGL.SpriteBatch.DestroyEnv renderer.RenderSpriteBatchEnv
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
