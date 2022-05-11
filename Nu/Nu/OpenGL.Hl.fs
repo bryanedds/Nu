@@ -356,18 +356,6 @@ module Hl =
                   Pool : Pool
                   mutable State : State }
 
-            static member create bfs bfd beq texture spriteTextureUniform spriteProgram =
-                let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
-                let state = State.create bfs bfd beq texture
-                { SpriteIndex = 0; SpriteTexUniform = spriteTextureUniform; SpriteProgram = spriteProgram; Pool = pool; State = state }
-
-            static member destroy env =
-                Pool.destroy env.Pool
-
-            static member reset env =
-                Pool.reset env.Pool
-                env.SpriteIndex <- 0
-
         let private Flush env =
 
             // setup state
@@ -417,22 +405,27 @@ module Hl =
 
         let BeginEnv () =
             let (spriteTexUniform, spriteProgram) = CreateSpriteProgram ()
-            Env.create OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u spriteTexUniform spriteProgram
+            let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
+            let state = State.create OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+            { SpriteIndex = 0; SpriteTexUniform = spriteTexUniform; SpriteProgram = spriteProgram; Pool = pool; State = state }
 
         let NextSprite center (position : Vector2) (size : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
 
+            // adjust to potential sprite batch state changes
             let state = State.create bfs bfd beq texture
             if not (state.Equals env.State) || env.SpriteIndex = Constants.Render.SpriteBatchSize then
                 if env.SpriteIndex > 0 then Flush env
-                Assert ()
                 env.State <- state
+            Assert ()
 
+            // access the current context's cpu buffer
             let cpuBuffer =
                 let context = env.Pool.Current
                 match context.CpuBufferOpt with
                 | ValueSome cpuBuffer -> cpuBuffer
                 | ValueNone -> Assert (Context.map context)
 
+            // compute a coord flipping value
             let flipper =
                 match flip with
                 | FlipNone -> v2 1.0f -1.0f
@@ -440,33 +433,34 @@ module Hl =
                 | FlipV -> v2 1.0f 1.0f
                 | FlipHV -> v2 -1.0f 1.0f
 
+            // compute vertex positions
             let position0 = (position - center).Rotate rotation + center
+            let position1Unrotated = v2 (position.X + size.X) position.Y
+            let position1 = (position1Unrotated - center).Rotate rotation + center
+            let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
+            let position2 = (position2Unrotated - center).Rotate rotation + center
+            let position3Unrotated = v2 position.X (position.Y + size.Y)
+            let position3 = (position3Unrotated - center).Rotate rotation + center
+
+            // compute vertices
             let mutable vertex0 = Unchecked.defaultof<Vertex>
             vertex0.Position <- position0
             vertex0.Coords <- coords.BottomLeft * flipper
             vertex0.Color <- color
-
-            let position1Unrotated = v2 (position.X + size.X) position.Y
-            let position1 = (position1Unrotated - center).Rotate rotation + center
             let mutable vertex1 = Unchecked.defaultof<Vertex>
             vertex1.Position <- position1
             vertex1.Coords <- coords.BottomRight * flipper
             vertex1.Color <- color
-
-            let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
-            let position2 = (position2Unrotated - center).Rotate rotation + center
             let mutable vertex2 = Unchecked.defaultof<Vertex>
             vertex2.Position <- position2
             vertex2.Coords <- coords.TopRight * flipper
             vertex2.Color <- color
-
-            let position3Unrotated = v2 position.X (position.Y + size.Y)
-            let position3 = (position3Unrotated - center).Rotate rotation + center
             let mutable vertex3 = Unchecked.defaultof<Vertex>
             vertex3.Position <- position3
             vertex3.Coords <- coords.TopLeft * flipper
             vertex3.Color <- color
 
+            // upload vertices
             // TODO: 3D: consider using an EBO to reduce bus utilization.
             // TODO: 3D: consider using a single pre-allocated SpriteVectex[6] to reduce marshaling calls.
             let vertexSize = nativeint sizeof<Vertex>
@@ -483,6 +477,7 @@ module Hl =
             let cpuOffset = cpuOffset + vertexSize
             Marshal.StructureToPtr<Vertex> (vertex2, cpuOffset, false)
 
+            // advance sprite index
             env.SpriteIndex <-inc env.SpriteIndex
 
         let EndFrame env =
