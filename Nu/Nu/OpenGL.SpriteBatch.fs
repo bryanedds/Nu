@@ -84,6 +84,8 @@ module SpriteBatch =
         static member destroy pool =
             for context in pool.Contexts do
                 Context.destroy context
+            pool.Contexts.Clear ()
+            pool.ContextCurrent <- 0
 
         static member next pool =
             pool.ContextCurrent <- inc pool.ContextCurrent
@@ -202,7 +204,7 @@ module SpriteBatch =
         Pool.next env.Pool
         env.SpriteIndex <- 0
 
-    let BeginEnv () =
+    let CreateEnv () =
         let (texUniform, shader) = CreateShader ()
         let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
         let state = State.create OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
@@ -282,3 +284,7 @@ module SpriteBatch =
     let EndFrame env =
         if env.SpriteIndex > 0 then Flush env
         Pool.reset env.Pool
+
+    let DestroyEnv env =
+        env.SpriteIndex <- 0
+        Pool.destroy env.Pool
