@@ -102,24 +102,29 @@ module SpriteBatch =
             this.Contexts.[this.ContextIndex]
 
     type [<StructuralEquality; NoComparison>] private State =
-        { BlendingFactorSrc : OpenGL.BlendingFactor
+        { Absolute : bool
+          BlendingFactorSrc : OpenGL.BlendingFactor
           BlendingFactorDst : OpenGL.BlendingFactor
           BlendingEquation : OpenGL.BlendEquationMode
           Texture : uint }
 
-        static member create bfs bfd beq texture =
-            { BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
+        static member create absolute bfs bfd beq texture =
+            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
     type [<NoEquality; NoComparison>] Env =
         private
             { mutable SpriteIndex : int
+              mutable ViewProjectionAbsolute : Matrix4x4
+              mutable ViewProjectionRelative : Matrix4x4
+              ViewProjectionUniform : int
               TexUniform : int
               Shader : uint
               Pool : Pool
               mutable State : State }
 
     /// Create a batched sprite shader with uniforms:
-    ///     0: sampler2D tex
+    ///     0: mat4 viewProjection
+    ///     1: sampler2D tex
     /// and attributes:
     ///     0: vec2 position
     ///     1: vec2 coordsIn
@@ -132,11 +137,12 @@ module SpriteBatch =
              "layout(location = 0) in vec2 position;"
              "layout(location = 1) in vec2 coordsIn;"
              "layout(location = 2) in vec4 colorIn;"
+             "uniform mat4 viewProjection;"
              "out vec2 coords;"
              "out vec4 color;"
              "void main()"
              "{"
-             "  gl_Position = vec4(position.x, position.y, 0, 1);"
+             "  gl_Position = viewProjection * vec4(position.x, position.y, 0, 1);"
              "  coords = coordsIn;"
              "  color = colorIn;"
              "}"] |> String.join "\n"
@@ -155,11 +161,12 @@ module SpriteBatch =
 
         // create shader
         let shader = OpenGL.Hl.CreateShaderFromStrs samplerVertexShaderStr samplerFragmentShaderStr
+        let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         OpenGL.Hl.Assert ()
 
         // fin
-        (texUniform, shader)
+        (viewProjectionUniform, texUniform, shader)
 
     let private Flush env =
 
@@ -175,7 +182,8 @@ module SpriteBatch =
 
         // setup shader
         OpenGL.Gl.UseProgram env.Shader
-        OpenGL.Gl.Uniform1i (0, 1, env.TexUniform)
+        OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
+        OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
         OpenGL.Gl.BlendEquation env.State.BlendingEquation
@@ -209,15 +217,26 @@ module SpriteBatch =
         Pool.next env.Pool
 
     let CreateEnv () =
-        let (texUniform, shader) = CreateShader ()
+        let (viewProjectionUniform, texUniform, shader) = CreateShader ()
         let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
-        let state = State.create OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
-        { SpriteIndex = 0; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
+        let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
 
-    let NextSprite center (position : Vector2) (size : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
+    let BeginFrame (viewport : Box2i) viewRelative env =
+        let projection =
+            Matrix4x4.CreateOrthographicOffCenter
+                (single (viewport.Position.X),
+                 single (viewport.Position.X + viewport.Size.X),
+                 single (viewport.Position.Y),
+                 single (viewport.Position.Y + viewport.Size.Y),
+                 -1.0f, 1.0f)
+        env.ViewProjectionAbsolute <- projection
+        env.ViewProjectionRelative <- viewRelative * projection
+
+    let NextSprite absolute (position : Vector2) (size : Vector2) (pivot : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
 
         // adjust to potential sprite batch state changes
-        let state = State.create bfs bfd beq texture
+        let state = State.create absolute bfs bfd beq texture
         if not (state.Equals env.State) || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             if env.SpriteIndex > 0 then Flush env
             env.State <- state
@@ -239,6 +258,7 @@ module SpriteBatch =
             | FlipHV -> v2 -1.0f 1.0f
 
         // compute vertex positions
+        let center = position + pivot
         let position0 = (position - center).Rotate rotation + center
         let position1Unrotated = v2 (position.X + size.X) position.Y
         let position1 = (position1Unrotated - center).Rotate rotation + center
@@ -267,7 +287,7 @@ module SpriteBatch =
 
         // upload vertices
         // TODO: 3D: consider using an EBO to reduce bus utilization.
-        // TODO: 3D: consider using a single pre-allocated SpriteVectex[6] to reduce marshaling calls.
+        // TODO: 3D: consider using a single pre-allocated SpriteVertex[6] to reduce marshaling calls.
         let vertexSize = nativeint sizeof<Vertex>
         let cpuOffset = cpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
         Marshal.StructureToPtr<Vertex> (vertex0, cpuOffset, false)
