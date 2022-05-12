@@ -94,8 +94,8 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : Sprite array }
 
-/// Describes how to render a tile map layer to the rendering system.
-type [<NoEquality; NoComparison>] TileLayerDescriptor =
+/// Describes how to render tile map tiles to the rendering system.
+type [<NoEquality; NoComparison>] TilesDescriptor =
     { mutable Transform : Transform
       Color : Color
       Glow : Color
