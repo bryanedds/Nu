@@ -6,6 +6,8 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Threading
+open System.Threading.Tasks
 open SDL2
 open TiledSharp
 open Prime
@@ -68,6 +70,8 @@ and Renderer2d =
     abstract EnqueueLayeredMessage : RenderLayeredMessage2d -> unit
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
+    /// Swap a rendered frame of the game.
+    abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> Renderer2d
 
@@ -83,6 +87,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer2d =
         member renderer.EnqueueMessage _ = ()
         member renderer.EnqueueLayeredMessage _ = ()
         member renderer.Render _ _ _ _ = ()
+        member renderer.Swap () = ()
         member renderer.CleanUp () = renderer :> Renderer2d
 
     static member make () =
@@ -661,7 +666,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             // end frame
             OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
 
-            // swap frame
+        member renderer.Swap () =
             match renderer.RenderWindow with
             | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
             | WfglWindow window -> window.WfglSwapWindow ()
@@ -673,3 +678,63 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
             renderer :> Renderer2d
+
+/// A render thread for 2d rendering.
+type RenderThread2d (renderer : Renderer2d) =
+
+    let terminatedLock = obj ()
+    let mutable terminated = false
+    let submissionLock = obj ()
+    let mutable submissionOpt = Option<Vector2 * Vector2 * Vector2 * RenderMessage2d List>.None
+    let swapLock = obj ()
+    let mutable swap = false
+
+    member this.Terminated =
+        lock terminatedLock (fun () -> terminated)
+
+    member this.Start () =
+
+        // run thread as task
+        Task.Factory.StartNew (fun () ->
+
+            // loop until terminated
+            while not this.Terminated do
+
+                // loop until rendered or terminated
+                let mutable rendered = false
+                while not rendered && not this.Terminated do
+                    rendered <-
+                        lock submissionLock (fun () ->
+                            match submissionOpt with
+                            | Some (eyePosition, eyeSize, eyeMargin, messages) ->
+                                renderer.Render eyePosition eyeSize eyeMargin messages
+                                submissionOpt <- None
+                                true
+                            | None -> false)
+                    if not rendered then Thread.Sleep 0
+                    
+                // loop until swapped or terminated
+                let mutable swapped = false
+                while not swapped && not this.Terminated do
+                    swapped <- lock swapLock (fun () ->
+                        if swap then
+                            renderer.Swap ()
+                            swap <- false
+                            true
+                        else false)
+                    if not swapped then Thread.Sleep 0)
+
+    member this.Submit eyePosition eyeSize eyeMargin messages =
+        lock submissionLock (fun () ->
+            while Option.isSome submissionOpt do Thread.Sleep 0
+            submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin, messages)))
+
+    member this.Swap () =
+        lock swapLock (fun () ->
+            if swap then raise (InvalidOperationException "Redundant swap calls")
+            swap <- true)
+
+    member this.Terminate () =
+        lock terminatedLock (fun () ->
+            if terminated then raise (InvalidOperationException "Redundant terminate calls")
+            terminated <- true)
