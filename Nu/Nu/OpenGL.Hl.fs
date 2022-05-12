@@ -65,7 +65,7 @@ module Hl =
         glContext
 
     /// Attempt to create a 2d texture from a file.
-    let TryCreateTexture2d minFilter magFilter (filePath : string) =
+    let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
 
         // load the texture into an SDL surface, converting its format if needed
         let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
@@ -118,10 +118,7 @@ module Hl =
 
     /// Attempt to create a sprite texture.
     let TryCreateSpriteTexture filePath =
-        TryCreateTexture2d
-            OpenGL.TextureMinFilter.Nearest
-            OpenGL.TextureMagFilter.Nearest
-            filePath
+        TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, filePath)
 
     /// Delete a texture.
     let DeleteTexture (texture : uint) =
@@ -185,7 +182,7 @@ module Hl =
         (vertexBuffer, indexBuffer)
 
     /// Create a shader from vertex and fragment code strings.
-    let CreateShaderFromStrs vertexShaderStr fragmentShaderStr =
+    let CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr) =
 
         // construct gl program
         let program = OpenGL.Gl.CreateProgram ()

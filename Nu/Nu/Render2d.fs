@@ -259,12 +259,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw normal sprite
         if color.A <> 0.0f then
             OpenGL.SpriteBatch.NextSprite
-                absolute position size pivot rotation coords color flip bfs bfd beq texture renderer.RenderSpriteBatchEnv
+                (absolute, position, size, pivot, rotation, coords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
             OpenGL.SpriteBatch.NextSprite
-                absolute position size pivot rotation coords glow flip bfs bfd beq texture renderer.RenderSpriteBatchEnv
+                (absolute, position, size, pivot, rotation, coords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -649,7 +649,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
             | NoClear -> ()
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.SpriteBatch.BeginFrame viewport viewAbsolute viewRelative renderer.RenderSpriteBatchEnv
+            OpenGL.SpriteBatch.BeginFrame (viewport, viewAbsolute, viewRelative, renderer.RenderSpriteBatchEnv)
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
