@@ -679,9 +679,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderPackages.Clear ()
             renderer :> Renderer2d
 
-/// A render thread for 2d rendering.
+/// A 2d render process that may or may not be threaded.
+type RenderProcess2d =
+    interface
+        abstract Terminated : bool
+        abstract Start : unit -> unit
+        abstract Submit : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
+        abstract Swap : unit -> unit
+        abstract Terminate : unit -> unit
+        end
+
+/// A threaded 2d render process.
 type RenderThread2d (createRenderer2d, window : Window) =
 
+    let mutable taskOpt = null
     let terminatedLock = obj ()
     let mutable terminated = false
     let submissionLock = obj ()
@@ -689,55 +700,57 @@ type RenderThread2d (createRenderer2d, window : Window) =
     let swapLock = obj ()
     let mutable swap = false
 
-    member this.Terminated =
-        lock terminatedLock (fun () -> terminated)
+    interface RenderProcess2d with
 
-    member this.Start () =
+        member this.Terminated =
+            lock terminatedLock (fun () -> terminated)
 
-        // run thread as task
-        Task.Factory.StartNew (fun () ->
+        member this.Start () =
 
-            // create renderer
-            let renderer = createRenderer2d window : Renderer2d
+            // run thread as task
+            taskOpt <- Task.Factory.StartNew (fun () ->
 
-            // loop until terminated
-            while not this.Terminated do
+                // create renderer
+                let renderer = createRenderer2d window : Renderer2d
 
-                // loop until rendered or terminated
-                let mutable rendered = false
-                while not rendered && not this.Terminated do
-                    rendered <-
-                        lock submissionLock (fun () ->
-                            match submissionOpt with
-                            | Some (eyePosition, eyeSize, eyeMargin, messages) ->
-                                renderer.Render eyePosition eyeSize eyeMargin messages
-                                submissionOpt <- None
-                                true
-                            | None -> false)
-                    if not rendered then Thread.Sleep 0
+                // loop until terminated
+                while not (this :> RenderProcess2d).Terminated do
+
+                    // loop until rendered or terminated
+                    let mutable rendered = false
+                    while not rendered && not (this :> RenderProcess2d).Terminated do
+                        rendered <-
+                            lock submissionLock (fun () ->
+                                match submissionOpt with
+                                | Some (eyePosition, eyeSize, eyeMargin, messages) ->
+                                    renderer.Render eyePosition eyeSize eyeMargin messages
+                                    submissionOpt <- None
+                                    true
+                                | None -> false)
+                        if not rendered then Thread.Sleep 0
                     
-                // loop until swapped or terminated
-                let mutable swapped = false
-                while not swapped && not this.Terminated do
-                    swapped <- lock swapLock (fun () ->
-                        if swap then
-                            renderer.Swap ()
-                            swap <- false
-                            true
-                        else false)
-                    if not swapped then Thread.Sleep 0)
+                    // loop until swapped or terminated
+                    let mutable swapped = false
+                    while not swapped && not (this :> RenderProcess2d).Terminated do
+                        swapped <- lock swapLock (fun () ->
+                            if swap then
+                                renderer.Swap ()
+                                swap <- false
+                                true
+                            else false)
+                        if not swapped then Thread.Sleep 0)
 
-    member this.Submit eyePosition eyeSize eyeMargin messages =
-        lock submissionLock (fun () ->
-            while Option.isSome submissionOpt do Thread.Sleep 0
-            submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin, messages)))
+        member this.Submit eyePosition eyeSize eyeMargin messages =
+            lock submissionLock (fun () ->
+                while Option.isSome submissionOpt do Thread.Sleep 0
+                submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin, messages)))
 
-    member this.Swap () =
-        lock swapLock (fun () ->
-            if swap then raise (InvalidOperationException "Redundant swap calls")
-            swap <- true)
+        member this.Swap () =
+            lock swapLock (fun () ->
+                if swap then raise (InvalidOperationException "Redundant swap calls.")
+                swap <- true)
 
-    member this.Terminate () =
-        lock terminatedLock (fun () ->
-            if terminated then raise (InvalidOperationException "Redundant terminate calls")
-            terminated <- true)
+        member this.Terminate () =
+            lock terminatedLock (fun () ->
+                if terminated then raise (InvalidOperationException "Redundant terminate calls.")
+                terminated <- true)
