@@ -894,20 +894,6 @@ type Box2iConverter () =
 
 [<AutoOpen>]
 module Matrix3x3 =
-
-    type Matrix3x3 with
-
-        /// Gets the inverse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
-        /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
-        /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
-        member this.InvertedView () =
-            let mutable m = this
-            m.M13 <- -m.M13
-            m.M23 <- -m.M23
-            m.M11 <- 1.0f / m.M11
-            m.M22 <- 1.0f / m.M22
-            m
-
     let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
     let inline m3Eq (x : Matrix3x3) (y : Matrix3x3) = x.Equals y
     let inline m3Neq (x : Matrix3x3) (y : Matrix3x3) = not (x.Equals y)
