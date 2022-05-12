@@ -222,7 +222,7 @@ module SpriteBatch =
         let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
 
-    let BeginFrame (viewport : Box2i) viewRelative env =
+    let BeginFrame (viewport : Box2i) viewAbsolute viewRelative env =
         let projection =
             Matrix4x4.CreateOrthographicOffCenter
                 (single (viewport.Position.X),
@@ -230,7 +230,7 @@ module SpriteBatch =
                  single (viewport.Position.Y),
                  single (viewport.Position.Y + viewport.Size.Y),
                  -1.0f, 1.0f)
-        env.ViewProjectionAbsolute <- projection
+        env.ViewProjectionAbsolute <- viewAbsolute * projection
         env.ViewProjectionRelative <- viewRelative * projection
 
     let NextSprite absolute (position : Vector2) (size : Vector2) (pivot : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
