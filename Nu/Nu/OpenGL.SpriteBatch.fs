@@ -123,8 +123,8 @@ module SpriteBatch =
               mutable State : State }
 
     /// Create a batched sprite shader with uniforms:
-    ///     0: mat4 viewProjection
-    ///     1: sampler2D tex
+    ///     0: sampler2D tex
+    ///     1: mat4 viewProjection
     /// and attributes:
     ///     0: vec2 position
     ///     1: vec2 coordsIn
@@ -132,6 +132,7 @@ module SpriteBatch =
     let private CreateShader () =
 
         // vertex shader code
+        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
         let samplerVertexShaderStr =
             [Constants.Render.GlslVersionPragma
              "layout(location = 0) in vec2 position;"
@@ -148,6 +149,7 @@ module SpriteBatch =
              "}"] |> String.join "\n"
 
         // fragment shader code
+        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
         let samplerFragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "uniform sampler2D tex;"
