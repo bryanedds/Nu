@@ -162,7 +162,7 @@ module SpriteBatch =
              "}"] |> String.join "\n"
 
         // create shader
-        let shader = OpenGL.Hl.CreateShaderFromStrs samplerVertexShaderStr samplerFragmentShaderStr
+        let shader = OpenGL.Hl.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
         let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         OpenGL.Hl.Assert ()
@@ -224,7 +224,7 @@ module SpriteBatch =
         let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
 
-    let BeginFrame (viewport : Box2i) viewAbsolute viewRelative env =
+    let BeginFrame (viewport : Box2i, viewAbsolute, viewRelative, env) =
         let projection =
             Matrix4x4.CreateOrthographicOffCenter
                 (single (viewport.Position.X),
@@ -235,7 +235,7 @@ module SpriteBatch =
         env.ViewProjectionAbsolute <- viewAbsolute * projection
         env.ViewProjectionRelative <- viewRelative * projection
 
-    let NextSprite absolute (position : Vector2) (size : Vector2) (pivot : Vector2) rotation (coords : Box2) color flip bfs bfd beq texture env =
+    let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, coords : Box2, color, flip, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
