@@ -890,6 +890,7 @@ module WorldModule2 =
 
         static member private render renderMessages (renderer : Renderer2d) (eyePosition : Vector2) eyeSize eyeMargin =
             renderer.Render eyePosition eyeSize eyeMargin renderMessages
+            renderer.Swap ()
 
         static member private play audioMessages (audioPlayer : AudioPlayer) =
             audioPlayer.Play audioMessages
@@ -988,7 +989,6 @@ module WorldModule2 =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                 let audioPlayer = World.getAudioPlayer world
                                                                 let audioMessages = audioPlayer.PopMessages ()
-                                                                let world = World.setAudioPlayer audioPlayer world
                                                                 let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer)
                                                                 (Some audioPlayerThread, world)
                                                             else (None, world)
@@ -998,7 +998,6 @@ module WorldModule2 =
                                                         let world =
                                                             let renderer = World.getRenderer2d world
                                                             let renderMessages = renderer.PopMessages ()
-                                                            let world = World.setRenderer2d renderer world
                                                             World.render renderMessages renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
                                                             world
                                                         RenderTimer.Stop ()
@@ -1009,7 +1008,6 @@ module WorldModule2 =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                 let audioPlayer = World.getAudioPlayer world
                                                                 let audioMessages = audioPlayer.PopMessages ()
-                                                                let world = World.setAudioPlayer audioPlayer world
                                                                 World.play audioMessages audioPlayer
                                                                 world
                                                             else world
