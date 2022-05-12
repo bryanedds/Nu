@@ -16,7 +16,7 @@ open Nu
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
-    | TileLayerDescriptor of TileLayerDescriptor
+    | TilesDescriptor of TilesDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
     | RenderCallbackDescriptor2d of (bool * Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
@@ -290,14 +290,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    /// Render tile layer.
-    static member renderTileLayer
-        (viewAbsolute : Matrix3x3 byref,
-         viewRelative : Matrix3x3 byref,
-         _ : Vector2,
-         eyeSize : Vector2,
-         eyeMargin : Vector2,
-         transform : Transform byref,
+    /// Render tiles.
+    static member renderTiles
+        (transform : Transform byref,
          color : Color inref,
          glow : Color inref,
          mapSize : Vector2i,
@@ -305,80 +300,78 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
+         eyePosition : Vector2,
+         eyeSize : Vector2,
          renderer) =
-        ()
-        //let mutable color = color
-        //let mutable glow = glow
-        //let view = if transform.Absolute then &viewAbsolute else &viewRelative
-        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        //let perimeter = transform.Perimeter
-        //let position = perimeter.Position.V2
-        //let positionView = Matrix3x3.Multiply (&position, &view)
-        //let size = perimeter.Size.V2
-        //let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        //let (allFound, tileSetTextures) =
-        //    tileAssets |>
-        //    Array.map (fun (tileSet, tileSetImage) ->
-        //        match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-        //        | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
-        //        | ValueSome _ -> None
-        //        | ValueNone -> None) |>
-        //    Array.definitizePlus
-        //if allFound then
-        //    // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-        //    let tilesLength = Array.length tiles
-        //    let mutable tileIndex = 0
-        //    while tileIndex < tilesLength do
-        //        let tile = &tiles.[tileIndex]
-        //        if tile.Gid <> 0 then // not the empty tile
-        //            let mapRun = mapSize.X
-        //            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-        //            let tilePositionView =
-        //                v2
-        //                    (positionView.X + tileSize.X * single i)
-        //                    (positionView.Y - tileSize.Y - tileSize.Y * single j + sizeView.Y)
-        //            let tilePositionOffset = tilePositionView + v2 eyeMargin.X eyeMargin.Y
-        //            let tileCenterOffset = tilePositionOffset + tileSize * 0.5f // just rotate around center
-        //            let tileBounds = box2 tilePositionView tileSize
-        //            let viewBounds = box2 (eyeSize * -0.5f) eyeSize
-        //            if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
-        //
-        //                // compute tile flip
-        //                let flip =
-        //                    match (tile.HorizontalFlip, tile.VerticalFlip) with
-        //                    | (false, false) -> FlipNone
-        //                    | (true, false) -> FlipH
-        //                    | (false, true) -> FlipV
-        //                    | (true, true) -> FlipHV
-        //
-        //                // attempt to compute tile set texture
-        //                let mutable tileOffset = 1 // gid 0 is the empty tile
-        //                let mutable tileSetIndex = 0
-        //                let mutable tileSetWidth = 0
-        //                let mutable tileSetTextureOpt = None
-        //                for (set, _, textureMetadata, texture) in tileSetTextures do
-        //                    let tileCountOpt = set.TileCount
-        //                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-        //                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-        //                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-        //                        tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-        //                        tileSetTextureOpt <- Some (textureMetadata, texture)
-        //                    if Option.isNone tileSetTextureOpt then
-        //                        tileSetIndex <- inc tileSetIndex
-        //                        tileOffset <- tileOffset + tileCount
-        //
-        //                // attempt to render tile
-        //                match tileSetTextureOpt with
-        //                | Some (textureMetadata, texture) ->
-        //                    let tileId = tile.Gid - tileOffset
-        //                    let tileIdPosition = tileId * tileSourceSize.X
-        //                    let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-        //                    let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-        //                    GlRenderer2d.renderSpriteInline tileCenterOffset tilePositionOffset tileSize 0.0f inset textureMetadata texture color Transparent glow flip renderer
-        //                | None -> ()
-        //
-        //        tileIndex <- inc tileIndex
-        //else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+        let absolute = transform.Absolute
+        let perimeter = transform.Perimeter
+        let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+        let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
+        let eyePosition = eyePosition * Constants.Render.VirtualScalar2
+        let eyeSize = eyeSize * Constants.Render.VirtualScalar2
+        let tileSize = tileSize * Constants.Render.VirtualScalar2
+        let tilePivot = tileSize * 0.5f // just rotate around center
+        let (allFound, tileSetTextures) =
+            tileAssets |>
+            Array.map (fun (tileSet, tileSetImage) ->
+                match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome _ -> None
+                | ValueNone -> None) |>
+            Array.definitizePlus
+        if allFound then
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            let tilesLength = Array.length tiles
+            let mutable tileIndex = 0
+            while tileIndex < tilesLength do
+                let tile = &tiles.[tileIndex]
+                if tile.Gid <> 0 then // not the empty tile
+                    let mapRun = mapSize.X
+                    let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+                    let tilePosition =
+                        v2
+                            (position.X + tileSize.X * single i)
+                            (position.Y - tileSize.Y - tileSize.Y * single j + size.Y)
+                    let tileBounds = box2 tilePosition tileSize
+                    let viewBounds = box2 (eyePosition - eyeSize * 0.5f) eyeSize
+                    if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
+        
+                        // compute tile flip
+                        let flip =
+                            match (tile.HorizontalFlip, tile.VerticalFlip) with
+                            | (false, false) -> FlipNone
+                            | (true, false) -> FlipH
+                            | (false, true) -> FlipV
+                            | (true, true) -> FlipHV
+        
+                        // attempt to compute tile set texture
+                        let mutable tileOffset = 1 // gid 0 is the empty tile
+                        let mutable tileSetIndex = 0
+                        let mutable tileSetWidth = 0
+                        let mutable tileSetTextureOpt = None
+                        for (set, _, textureMetadata, texture) in tileSetTextures do
+                            let tileCountOpt = set.TileCount
+                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                                tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+                                tileSetTextureOpt <- Some (textureMetadata, texture)
+                            if Option.isNone tileSetTextureOpt then
+                                tileSetIndex <- inc tileSetIndex
+                                tileOffset <- tileOffset + tileCount
+        
+                        // attempt to render tile
+                        match tileSetTextureOpt with
+                        | Some (textureMetadata, texture) ->
+                            let tileId = tile.Gid - tileOffset
+                            let tileIdPosition = tileId * tileSourceSize.X
+                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
+                            GlRenderer2d.renderSpriteInline absolute tilePosition tileSize tilePivot 0.0f inset textureMetadata texture color Transparent glow flip renderer
+                        | None -> ()
+        
+                tileIndex <- inc tileIndex
+        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render text.
     static member renderText
@@ -533,7 +526,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         //    | _ -> Log.trace "Cannot render particle with a non-texture asset."
         //| _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderDescriptor descriptor renderer =
+    static member private renderDescriptor descriptor eyePosition eyeSize renderer =
         match descriptor with
         | SpriteDescriptor descriptor ->
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
@@ -547,10 +540,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             //        (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
             //         &sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
             //         renderer, spriteBatchEnvOpt)
-        | TileLayerDescriptor descriptor ->
-            ()
-            //GlRenderer2d.renderTileLayer
-            //    (&descriptor.Transform, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, renderer)
+        | TilesDescriptor descriptor ->
+            GlRenderer2d.renderTiles
+                (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
+                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
+                 eyePosition, eyeSize, renderer)
         | TextDescriptor descriptor ->
             ()
             //GlRenderer2d.renderText
@@ -563,9 +557,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             ()
             //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
 
-    static member private renderLayeredMessages renderer =
+    static member private renderLayeredMessages eyePosition eyeSize renderer =
         for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor renderer
+            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
         let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
@@ -642,10 +636,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
 
-            // compute view
+            // compute views
             let viewport = box2i v2iZero (v2i Constants.Render.ResolutionX Constants.Render.ResolutionY)
-            let viewAbsolute = Matrix4x4.CreateTranslation (eyeSize * 0.5f * Constants.Render.VirtualScalar2 + eyeMargin).V3
-            let viewRelative = Matrix4x4.CreateTranslation (eyePosition + eyeSize * 0.5f * Constants.Render.VirtualScalar2 + eyeMargin).V3
+            let viewAbsolute = Matrix4x4.CreateTranslation (eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2).V3
+            let viewRelative = Matrix4x4.CreateTranslation (-eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2).V3
 
             // prepare frame
             OpenGL.Gl.Viewport (viewport.Position.X, viewport.Position.Y, viewport.Size.X, viewport.Size.Y)
@@ -660,7 +654,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.handleRenderMessages renderMessages renderer
             GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer // TODO: 3D: make sure margins are being rendered correctly.
             GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages renderer
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
