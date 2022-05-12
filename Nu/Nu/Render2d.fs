@@ -644,6 +644,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             // compute view
             let viewport = box2i v2iZero (v2i Constants.Render.ResolutionX Constants.Render.ResolutionY)
+            let viewAbsolute = Matrix4x4.CreateTranslation (eyeSize * 0.5f * Constants.Render.VirtualScalar2 + eyeMargin).V3
             let viewRelative = Matrix4x4.CreateTranslation (eyePosition + eyeSize * 0.5f * Constants.Render.VirtualScalar2 + eyeMargin).V3
 
             // prepare frame
@@ -653,7 +654,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
             | NoClear -> ()
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.SpriteBatch.BeginFrame viewport viewRelative renderer.RenderSpriteBatchEnv
+            OpenGL.SpriteBatch.BeginFrame viewport viewAbsolute viewRelative renderer.RenderSpriteBatchEnv
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
