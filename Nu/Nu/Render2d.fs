@@ -231,13 +231,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
-    static member private renderSpriteInline // TODO: 3D: inline this after testing.
+    static member inline private renderSpriteInline
         absolute position size pivot rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
 
         // compute coords
+        // TODO: 3D: consider putting the texel multiplies in the shader.
         let coords =
-            let texelWidth = 1.0f / single textureMetadata.TextureWidth // TODO: 3D: consider pre-dividing.
-            let texelHeight = 1.0f / single textureMetadata.TextureHeight // TODO: 3D: consider pre-dividing.
+            let texelWidth = textureMetadata.TextureTexelWidth
+            let texelHeight = textureMetadata.TextureTexelHeight
             let texelBorderInset = Constants.Render.SpriteTexelEpsilon
             let texelBorderInsetTimes2 = Constants.Render.SpriteTexelEpsilonTimes2
             if not (inset.Equals box2Zero) then

@@ -24,6 +24,8 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
 type TextureMetadata =
     { TextureWidth : int
       TextureHeight : int
+      TextureTexelWidth : single
+      TextureTexelHeight : single
       TextureInternalFormat : OpenGL.InternalFormat }
 
 /// Force qualification of OpenGL namespace in Nu unless opened explicitly.
@@ -105,7 +107,12 @@ module Hl =
         // check for errors
         match OpenGL.Gl.GetError () with
         | OpenGL.ErrorCode.NoError ->
-            let metadata = { TextureWidth = surface.w; TextureHeight = surface.h; TextureInternalFormat = internalFormat }
+            let metadata =
+                { TextureWidth = surface.w
+                  TextureHeight = surface.h
+                  TextureTexelWidth = 1.0f / single surface.w
+                  TextureTexelHeight = 1.0f / single surface.h
+                  TextureInternalFormat = internalFormat }
             Right (metadata, texture)
         | error -> Left (string error)
 
