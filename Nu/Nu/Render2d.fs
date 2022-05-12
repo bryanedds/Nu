@@ -680,7 +680,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer :> Renderer2d
 
 /// A render thread for 2d rendering.
-type RenderThread2d (renderer : Renderer2d) =
+type RenderThread2d (createRenderer2d, window : Window) =
 
     let terminatedLock = obj ()
     let mutable terminated = false
@@ -696,6 +696,9 @@ type RenderThread2d (renderer : Renderer2d) =
 
         // run thread as task
         Task.Factory.StartNew (fun () ->
+
+            // create renderer
+            let renderer = createRenderer2d window : Renderer2d
 
             // loop until terminated
             while not this.Terminated do
