@@ -288,7 +288,7 @@ module SpriteBatch =
         vertex3.Color <- color
 
         // upload vertices
-        // TODO: 3D: consider using an EBO to reduce bus utilization.
+        // TODO: 3D: consider using a single static EBO for indices to reduce bus utilization.
         // TODO: 3D: consider using a single pre-allocated SpriteVertex[6] to reduce marshaling calls.
         let vertexSize = nativeint sizeof<Vertex>
         let cpuOffset = cpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
