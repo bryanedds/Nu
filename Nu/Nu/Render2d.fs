@@ -60,14 +60,6 @@ and Renderer2d =
     inherit Renderer
     /// The sprite batch operational environment if it exists for this implementation.
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.Env option
-    /// Pop all of the render messages that have been enqueued.
-    abstract PopMessages : unit -> RenderMessage2d List
-    /// Clear all of the render messages that have been enqueued.
-    abstract ClearMessages : unit -> unit
-    /// Enqueue a message from an external source.
-    abstract EnqueueMessage : RenderMessage2d -> unit
-    /// Enqueue a layered message for rendering, bypassing EnqueueMessage for speed.
-    abstract EnqueueLayeredMessage : RenderLayeredMessage2d -> unit
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
     /// Swap a rendered frame of the game.
@@ -82,10 +74,6 @@ type [<ReferenceEquality; NoComparison>] MockRenderer2d =
 
     interface Renderer2d with
         member renderer.SpriteBatchEnvOpt = None
-        member renderer.PopMessages () = List ()
-        member renderer.ClearMessages () = ()
-        member renderer.EnqueueMessage _ = ()
-        member renderer.EnqueueLayeredMessage _ = ()
         member renderer.Render _ _ _ _ = ()
         member renderer.Swap () = ()
         member renderer.CleanUp () = ()
@@ -114,7 +102,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          mutable RenderMessages : RenderMessage2d List
           RenderLayeredMessages : RenderLayeredMessage2d List }
 
     static member private invalidateCaches renderer =
@@ -614,7 +601,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderMessages = List ()
               RenderLayeredMessages = List () }
 
         // fin
@@ -624,21 +610,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.SpriteBatchEnvOpt =
             Some renderer.RenderSpriteBatchEnv
-
-        member renderer.PopMessages () =
-            let messages = renderer.RenderMessages
-            renderer.RenderMessages <- List ()
-            messages
-
-        member renderer.ClearMessages () =
-            renderer.RenderMessages <- List ()
-            renderer.RenderLayeredMessages.Clear ()
-
-        member renderer.EnqueueMessage renderMessage =
-            renderer.RenderMessages.Add renderMessage
-
-        member renderer.EnqueueLayeredMessage layeredMessage =
-            renderer.RenderLayeredMessages.Add layeredMessage
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
 
@@ -684,16 +655,19 @@ type RenderProcess2d =
         abstract Started : bool
         abstract Terminated : bool
         abstract Start : unit -> unit
-        abstract Submit : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
+        abstract EnqueueMessage : RenderMessage2d -> unit
+        abstract ClearMessages : unit -> unit
+        abstract SubmitMessages : Vector2 -> Vector2 -> Vector2 -> unit
         abstract Swap : unit -> unit
         abstract Terminate : unit -> unit
         end
 
 /// A non-threaded 2d render process.
-type RenderInline2d (createRenderer2d, window : nativeint) =
+type RenderInline2d (createRenderer2d) =
 
     let mutable started = false
     let mutable terminated = false
+    let mutable messages = List ()
     let mutable rendererOpt = Option<Renderer2d>.None
 
     interface RenderProcess2d with
@@ -708,12 +682,22 @@ type RenderInline2d (createRenderer2d, window : nativeint) =
             match rendererOpt with
             | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
             | None ->
-                rendererOpt <- Some (createRenderer2d window)
+                rendererOpt <- Some (createRenderer2d ())
                 started <- true
 
-        member this.Submit eyePosition eyeSize eyeMargin messages =
+        member this.EnqueueMessage message =
             match rendererOpt with
-            | Some renderer -> renderer.Render eyePosition eyeSize eyeMargin messages
+            | Some _ -> messages.Add message
+            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+
+        member this.ClearMessages () =
+            messages <- List ()
+
+        member this.SubmitMessages eyePosition eyeSize eyeMargin =
+            match rendererOpt with
+            | Some renderer ->
+                renderer.Render eyePosition eyeSize eyeMargin messages
+                messages.Clear ()
             | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
 
         member this.Swap () =
@@ -730,15 +714,17 @@ type RenderInline2d (createRenderer2d, window : nativeint) =
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
 /// A threaded 2d render process.
-type RenderThread2d (createRenderer2d, window : Window) =
+type RenderThread2d (createRenderer2d) =
 
     let mutable taskOpt = null
     let startedLock = obj ()
     let mutable started = false
     let terminatedLock = obj ()
     let mutable terminated = false
+    let messagesLock = obj ()
+    let mutable messages = List ()
     let submissionLock = obj ()
-    let mutable submissionOpt = Option<Vector2 * Vector2 * Vector2 * RenderMessage2d List>.None
+    let mutable submissionOpt = Option<Vector2 * Vector2 * Vector2>.None
     let swapLock = obj ()
     let mutable swap = false
 
@@ -759,7 +745,7 @@ type RenderThread2d (createRenderer2d, window : Window) =
             taskOpt <- Task.Factory.StartNew (fun () ->
 
                 // create renderer
-                let renderer = createRenderer2d window : Renderer2d
+                let renderer = createRenderer2d () : Renderer2d
 
                 // mark as started
                 lock startedLock (fun () -> started <- true)
@@ -771,15 +757,17 @@ type RenderThread2d (createRenderer2d, window : Window) =
                     let mutable rendered = false
                     while not rendered && not this.Terminated do
                         rendered <-
-                            lock submissionLock (fun () ->
-                                match submissionOpt with
-                                | Some (eyePosition, eyeSize, eyeMargin, messages) ->
-                                    renderer.Render eyePosition eyeSize eyeMargin messages
-                                    submissionOpt <- None
-                                    true
-                                | None -> false)
+                            lock messagesLock (fun () ->
+                                lock submissionLock (fun () ->
+                                    match submissionOpt with
+                                    | Some (eyePosition, eyeSize, eyeMargin) ->
+                                        renderer.Render eyePosition eyeSize eyeMargin messages
+                                        messages <- List ()
+                                        submissionOpt <- None
+                                        true
+                                    | None -> false))
                         if not rendered then Thread.Sleep 0
-                    
+
                     // loop until swapped or terminated
                     let mutable swapped = false
                     while not swapped && not this.Terminated do
@@ -794,10 +782,18 @@ type RenderThread2d (createRenderer2d, window : Window) =
                 // clean up
                 renderer.CleanUp ())
 
-        member this.Submit eyePosition eyeSize eyeMargin messages =
+        member this.EnqueueMessage message =
+            lock messagesLock (fun () ->
+                messages.Add message)
+
+        member this.ClearMessages () =
+            lock messagesLock (fun () ->
+                messages <- List ())
+
+        member this.SubmitMessages eyePosition eyeSize eyeMargin =
             lock submissionLock (fun () ->
                 while Option.isSome submissionOpt do Thread.Sleep 0
-                submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin, messages)))
+                submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin)))
 
         member this.Swap () =
             lock swapLock (fun () ->
@@ -808,3 +804,4 @@ type RenderThread2d (createRenderer2d, window : Window) =
             lock terminatedLock (fun () ->
                 if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
                 terminated <- true)
+            taskOpt.Wait ()
