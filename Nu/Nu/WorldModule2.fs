@@ -505,8 +505,8 @@ module WorldModule2 =
         /// Clear all messages in all subsystems.
         static member clearMessages world =
              let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             let world = World.updateRenderer2d (fun renderer -> renderer.ClearMessages (); renderer) world
-             let world = World.updateAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages (); audioPlayer) world
+             World.withRenderProcess2d (fun renderProcess -> renderProcess.ClearMessages ()) world
+             World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
              world
 
         /// Shelve the a world for background storage.
@@ -888,13 +888,6 @@ module WorldModule2 =
             let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
             world
 
-        static member private render renderMessages (renderer : Renderer2d) (eyePosition : Vector2) eyeSize eyeMargin =
-            renderer.Render eyePosition eyeSize eyeMargin renderMessages
-            renderer.Swap ()
-
-        static member private play audioMessages (audioPlayer : AudioPlayer) =
-            audioPlayer.Play audioMessages
-
         static member private cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
@@ -996,9 +989,9 @@ module WorldModule2 =
                                                         // process rendering on main thread
                                                         RenderTimer.Start ()
                                                         let world =
-                                                            let renderer = World.getRenderer2d world
-                                                            let renderMessages = renderer.PopMessages ()
-                                                            World.render renderMessages renderer (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
+                                                            let renderProcess2d = World.getRenderProcess2d world
+                                                            renderProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
+                                                            renderProcess2d.Swap ()
                                                             world
                                                         RenderTimer.Stop ()
 
@@ -1008,7 +1001,7 @@ module WorldModule2 =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                 let audioPlayer = World.getAudioPlayer world
                                                                 let audioMessages = audioPlayer.PopMessages ()
-                                                                World.play audioMessages audioPlayer
+                                                                audioPlayer.Play audioMessages
                                                                 world
                                                             else world
                                                         AudioTimer.Stop ()

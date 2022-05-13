@@ -574,7 +574,7 @@ module WorldModule =
             World.setSubsystems (updater world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
-            World.updateSubsystems (fun subsystems -> subsystems.Renderer2d.CleanUp (); subsystems) world
+            World.updateSubsystems (fun subsystems -> subsystems.RenderProcess2d.Terminate (); subsystems) world
 
     type World with // EventSystem
 

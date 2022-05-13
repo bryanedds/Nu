@@ -483,7 +483,7 @@ module WorldModule3 =
             // make the world's subsystems
             let subsystems =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
-                  Renderer2d = MockRenderer2d.make ()
+                  RenderProcess2d = RenderInline2d (fun () -> MockRenderer2d.make () :> Renderer2d)
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -567,18 +567,21 @@ module WorldModule3 =
                 let subsystems =
                     let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
-                    let renderer2d =
-                        match SdlDeps.getWindowOpt sdlDeps with
-                        | Some window -> GlRenderer2d.make window :> Renderer2d
-                        | None -> MockRenderer2d.make () :> Renderer2d
-                    renderer2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
+                    let createRenderer2d =
+                        fun () ->
+                            match SdlDeps.getWindowOpt sdlDeps with
+                            | Some window -> GlRenderer2d.make window :> Renderer2d
+                            | None -> MockRenderer2d.make () :> Renderer2d
+                    let renderProcess2d = RenderInline2d (createRenderer2d) :> RenderProcess2d
+                    renderProcess2d.Start ()
+                    renderProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine2d = physicsEngine2d
-                      Renderer2d = renderer2d
+                      RenderProcess2d = renderProcess2d
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
