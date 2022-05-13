@@ -70,9 +70,6 @@ module Render =
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
-    let (*Literal*) RendererFlagsDefault =
-        SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
-        SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
     let (*Literal*) ScreenClearing = ColorClear Color.One // TODO: move this to ViewConfig or WorldConfig?
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion

@@ -31,7 +31,6 @@ type [<NoEquality; NoComparison>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int
-      RendererFlags : SDL.SDL_RendererFlags
       AudioChunkSize : int }
 
     /// A default SdlConfig.
@@ -39,7 +38,6 @@ type [<NoEquality; NoComparison>] SdlConfig =
         { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
-          RendererFlags = Constants.Render.RendererFlagsDefault
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
 [<AutoOpen>]
