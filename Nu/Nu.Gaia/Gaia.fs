@@ -1660,7 +1660,6 @@ module Gaia =
             { ViewConfig = ExistingWindow wfglWindow
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
-              RendererFlags = Constants.Render.RendererFlagsDefault
               AudioChunkSize = Constants.Audio.BufferSizeDefault }
         match SdlDeps.tryMake sdlConfig with
         | Left msg -> Left msg
