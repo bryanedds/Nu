@@ -43,7 +43,7 @@ module Hl =
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
-#if DEBUG
+#if DEBUG_RENDERING
         let error = OpenGL.Gl.GetError ()
         if error <> OpenGL.ErrorCode.NoError then
             Log.debug ("Gl assertion failed due to: " + string error)
