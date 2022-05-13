@@ -236,7 +236,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
-    static member inline private renderSpriteInline
+    static member inline private batchSprite
         absolute position size pivot rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
 
         // compute coords
@@ -292,7 +292,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (textureMetadata, texture) ->
-                GlRenderer2d.renderSpriteInline absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
+                GlRenderer2d.batchSprite absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
@@ -373,7 +373,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.renderSpriteInline absolute tilePosition tileSize tilePivot 0.0f inset textureMetadata texture color Transparent glow flip renderer
+                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f inset textureMetadata texture color Transparent glow flip renderer
                         | None -> ()
         
                 tileIndex <- inc tileIndex
@@ -742,6 +742,9 @@ type RenderThread2d (createRenderer2d, window : Window) =
     let swapLock = obj ()
     let mutable swap = false
 
+    member this.Terminated =
+        (this :> RenderProcess2d).Terminated
+
     interface RenderProcess2d with
 
         member this.Started =
@@ -762,11 +765,11 @@ type RenderThread2d (createRenderer2d, window : Window) =
                 lock startedLock (fun () -> started <- true)
 
                 // loop until terminated
-                while not (this :> RenderProcess2d).Terminated do
+                while not this.Terminated do
 
                     // loop until rendered or terminated
                     let mutable rendered = false
-                    while not rendered && not (this :> RenderProcess2d).Terminated do
+                    while not rendered && not this.Terminated do
                         rendered <-
                             lock submissionLock (fun () ->
                                 match submissionOpt with
@@ -779,7 +782,7 @@ type RenderThread2d (createRenderer2d, window : Window) =
                     
                     // loop until swapped or terminated
                     let mutable swapped = false
-                    while not swapped && not (this :> RenderProcess2d).Terminated do
+                    while not swapped && not this.Terminated do
                         swapped <- lock swapLock (fun () ->
                             if swap then
                                 renderer.Swap ()
