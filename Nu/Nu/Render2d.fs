@@ -787,7 +787,10 @@ type RenderThread2d (createRenderer2d, window : Window) =
                                 swap <- false
                                 true
                             else false)
-                        if not swapped then Thread.Sleep 0)
+                        if not swapped then Thread.Sleep 0
+
+                // clean up
+                renderer.CleanUp () |> ignore<Renderer2d>)
 
         member this.Submit eyePosition eyeSize eyeMargin messages =
             lock submissionLock (fun () ->
