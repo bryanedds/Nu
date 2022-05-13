@@ -586,10 +586,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     /// Make a Renderer.
     static member make window =
 
-        // create SDL OpenGL context if needed
+        // create SDL-OpenGL context if needed
         match window with
         | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
-        | WfglWindow window -> SDL.SDL_CreateWindowFrom window.WfglWindow |> ignore<nativeint>
+        | WfglWindow _ -> ()
 
         // create sprite batch env
         let spriteBatchEnv = OpenGL.SpriteBatch.CreateEnv ()
@@ -716,7 +716,7 @@ type RenderInline2d (createRenderer2d) =
 /// A threaded 2d render process.
 type RenderThread2d (createRenderer2d) =
 
-    let mutable taskOpt = null
+    let mutable taskOpt = None
     let startedLock = obj ()
     let mutable started = false
     let terminatedLock = obj ()
@@ -731,6 +731,12 @@ type RenderThread2d (createRenderer2d) =
     member this.Terminated =
         (this :> RenderProcess2d).Terminated
 
+    member this.Started =
+        lock startedLock (fun () -> started)
+
+    member this.Swapping =
+        lock swapLock (fun () -> swap)
+
     interface RenderProcess2d with
 
         member this.Started =
@@ -742,7 +748,7 @@ type RenderThread2d (createRenderer2d) =
         member this.Start () =
 
             // run thread as task
-            taskOpt <- Task.Factory.StartNew (fun () ->
+            let task = new Task (fun () ->
 
                 // create renderer
                 let renderer = createRenderer2d () : Renderer2d
@@ -782,6 +788,15 @@ type RenderThread2d (createRenderer2d) =
                 // clean up
                 renderer.CleanUp ())
 
+            // remember task
+            taskOpt <- Some task
+
+            // start task
+            task.Start ()
+
+            // wait until started (renderer initialized)
+            while not this.Started do Thread.Sleep 0
+
         member this.EnqueueMessage message =
             lock messagesLock (fun () ->
                 messages.Add message)
@@ -799,9 +814,15 @@ type RenderThread2d (createRenderer2d) =
             lock swapLock (fun () ->
                 if swap then raise (InvalidOperationException "Redundant Swap calls.")
                 swap <- true)
+            while this.Swapping do Thread.Sleep 0
 
         member this.Terminate () =
-            lock terminatedLock (fun () ->
-                if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
-                terminated <- true)
-            taskOpt.Wait ()
+            match taskOpt with
+            | Some task ->
+                match this.Started with false -> failwithumf () | true -> ()
+                lock terminatedLock (fun () ->
+                    if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
+                    terminated <- true)
+                task.Wait ()
+                task.Dispose ()
+            | None -> raise (InvalidOperationException "Cannot terminate before starting.")

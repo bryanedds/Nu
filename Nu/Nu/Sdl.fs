@@ -132,11 +132,10 @@ module SdlDeps =
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
                     | ExistingWindow window ->
-                        Left window)
+                        let windowSdl = SDL.SDL_CreateWindowFrom window.WfglWindow
+                        Left (windowSdl, window))
                 (fun windowOpt ->
-                    match windowOpt with
-                    | Right window -> SDL.SDL_DestroyWindow window
-                    | Left _ -> ()
+                    match windowOpt with Right window | Left (window, _) -> SDL.SDL_DestroyWindow window
                     destroy ()) with
             | Left error -> Left error
             | Right (contextOrWindow, destroy) ->
@@ -165,7 +164,7 @@ module SdlDeps =
                                 | Right window ->
                                     SDL.SDL_RaiseWindow window
                                     SglWindow { SglWindow = window }
-                                | Left window ->
+                                | Left (_, window) ->
                                     WfglWindow window
                             Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
