@@ -814,7 +814,6 @@ type RenderThread2d (createRenderer2d) =
             lock swapLock (fun () ->
                 if swap then raise (InvalidOperationException "Redundant Swap calls.")
                 swap <- true)
-            while this.Swapping do Thread.Sleep 0
 
         member this.Terminate () =
             match taskOpt with

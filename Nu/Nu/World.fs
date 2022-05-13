@@ -572,7 +572,10 @@ module WorldModule3 =
                             match SdlDeps.getWindowOpt sdlDeps with
                             | Some window -> GlRenderer2d.make window :> Renderer2d
                             | None -> MockRenderer2d.make () :> Renderer2d
-                    let renderProcess2d = RenderInline2d (createRenderer2d) :> RenderProcess2d
+                    let renderProcess2d =
+                        if config.StandAlone
+                        then RenderThread2d (createRenderer2d) :> RenderProcess2d
+                        else RenderInline2d (createRenderer2d) :> RenderProcess2d
                     renderProcess2d.Start ()
                     renderProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
