@@ -682,6 +682,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 /// A 2d render process that may or may not be threaded.
 type RenderProcess2d =
     interface
+        abstract Started : bool
         abstract Terminated : bool
         abstract Start : unit -> unit
         abstract Submit : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
@@ -689,10 +690,52 @@ type RenderProcess2d =
         abstract Terminate : unit -> unit
         end
 
+/// A non-threaded 2d render process.
+type RenderInline2d (createRenderer2d, window : nativeint) =
+
+    let mutable started = false
+    let mutable terminated = false
+    let mutable rendererOpt = Option<Renderer2d>.None
+
+    interface RenderProcess2d with
+
+        member this.Started =
+            started
+
+        member this.Terminated =
+            terminated
+
+        member this.Start () =
+            match rendererOpt with
+            | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
+            | None ->
+                rendererOpt <- Some (createRenderer2d window)
+                started <- true
+
+        member this.Submit eyePosition eyeSize eyeMargin messages =
+            match rendererOpt with
+            | Some renderer -> renderer.Render eyePosition eyeSize eyeMargin messages
+            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+
+        member this.Swap () =
+            match rendererOpt with
+            | Some renderer -> renderer.Swap ()
+            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+
+        member this.Terminate () =
+            match rendererOpt with
+            | Some renderer ->
+                renderer.CleanUp () |> ignore<Renderer2d>
+                rendererOpt <- None
+                terminated <- true
+            | None -> raise (InvalidOperationException "Redundant Terminate calls.")
+
 /// A threaded 2d render process.
 type RenderThread2d (createRenderer2d, window : Window) =
 
     let mutable taskOpt = null
+    let startedLock = obj ()
+    let mutable started = false
     let terminatedLock = obj ()
     let mutable terminated = false
     let submissionLock = obj ()
@@ -701,6 +744,9 @@ type RenderThread2d (createRenderer2d, window : Window) =
     let mutable swap = false
 
     interface RenderProcess2d with
+
+        member this.Started =
+            lock startedLock (fun () -> started)
 
         member this.Terminated =
             lock terminatedLock (fun () -> terminated)
@@ -712,6 +758,9 @@ type RenderThread2d (createRenderer2d, window : Window) =
 
                 // create renderer
                 let renderer = createRenderer2d window : Renderer2d
+
+                // mark as started
+                lock startedLock (fun () -> started <- true)
 
                 // loop until terminated
                 while not (this :> RenderProcess2d).Terminated do
@@ -747,10 +796,10 @@ type RenderThread2d (createRenderer2d, window : Window) =
 
         member this.Swap () =
             lock swapLock (fun () ->
-                if swap then raise (InvalidOperationException "Redundant swap calls.")
+                if swap then raise (InvalidOperationException "Redundant Swap calls.")
                 swap <- true)
 
         member this.Terminate () =
             lock terminatedLock (fun () ->
-                if terminated then raise (InvalidOperationException "Redundant terminate calls.")
+                if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
                 terminated <- true)
