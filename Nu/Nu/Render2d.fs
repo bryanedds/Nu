@@ -728,13 +728,16 @@ type RenderThread2d (createRenderer2d) =
     let swapLock = obj ()
     let mutable swap = false
 
+    member this.Started =
+        (this :> RenderProcess2d).Started
+
     member this.Terminated =
         (this :> RenderProcess2d).Terminated
 
-    member this.Started =
-        lock startedLock (fun () -> started)
+    member private this.SubmissionOpt =
+        lock submissionLock (fun () -> submissionOpt)
 
-    member this.Swapping =
+    member private this.Swapping =
         lock swapLock (fun () -> swap)
 
     interface RenderProcess2d with
@@ -759,31 +762,36 @@ type RenderThread2d (createRenderer2d) =
                 // loop until terminated
                 while not this.Terminated do
 
-                    // loop until rendered or terminated
-                    let mutable rendered = false
-                    while not rendered && not this.Terminated do
-                        rendered <-
-                            lock messagesLock (fun () ->
-                                lock submissionLock (fun () ->
-                                    match submissionOpt with
-                                    | Some (eyePosition, eyeSize, eyeMargin) ->
-                                        renderer.Render eyePosition eyeSize eyeMargin messages
-                                        messages <- List ()
-                                        submissionOpt <- None
-                                        true
-                                    | None -> false))
-                        if not rendered then Thread.Sleep 0
+                    // loop until submission exists
+                    while Option.isNone this.SubmissionOpt && not this.Terminated do
+                        Thread.Sleep 0
 
-                    // loop until swapped or terminated
-                    let mutable swapped = false
-                    while not swapped && not this.Terminated do
-                        swapped <- lock swapLock (fun () ->
-                            if swap then
-                                renderer.Swap ()
-                                swap <- false
-                                true
-                            else false)
-                        if not swapped then Thread.Sleep 0
+                    // receive submission
+                    let (eyePosition, eyeSize, eyeMargin) =
+                        lock submissionLock (fun () ->
+                            let submission = Option.get submissionOpt
+                            submissionOpt <- None
+                            submission)
+
+                    // receive messages
+                    let messagesReceived =
+                        lock messagesLock (fun () ->
+                            let messagesReceived = messages
+                            messages <- List ()
+                            messagesReceived)
+
+                    // render
+                    renderer.Render eyePosition eyeSize eyeMargin messagesReceived
+
+                    // loop until swapping
+                    while not this.Swapping && not this.Terminated do
+                        Thread.Sleep 0
+
+                    // swap
+                    renderer.Swap ()
+
+                    // clear swap
+                    lock swapLock (fun () -> swap <- false)
 
                 // clean up
                 renderer.CleanUp ())
@@ -807,13 +815,16 @@ type RenderThread2d (createRenderer2d) =
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             lock submissionLock (fun () ->
-                while Option.isSome submissionOpt do Thread.Sleep 0
                 submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin)))
 
         member this.Swap () =
-            lock swapLock (fun () ->
-                if swap then raise (InvalidOperationException "Redundant Swap calls.")
-                swap <- true)
+            match this.SubmissionOpt with
+            | Some _ ->
+                lock swapLock (fun () ->
+                    if swap then raise (InvalidOperationException "Redundant Swap calls.")
+                    swap <- true)
+                while this.Swapping do Thread.Sleep 0
+            | None -> () // ignore invalid swap order
 
         member this.Terminate () =
             match taskOpt with
