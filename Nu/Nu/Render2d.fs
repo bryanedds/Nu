@@ -73,7 +73,7 @@ and Renderer2d =
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
-    abstract CleanUp : unit -> Renderer2d
+    abstract CleanUp : unit -> unit
 
 /// The mock implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] MockRenderer2d =
@@ -88,7 +88,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer2d =
         member renderer.EnqueueLayeredMessage _ = ()
         member renderer.Render _ _ _ _ = ()
         member renderer.Swap () = ()
-        member renderer.CleanUp () = renderer :> Renderer2d
+        member renderer.CleanUp () = ()
 
     static member make () =
         { MockRenderer2d = () }
@@ -677,7 +677,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
-            renderer :> Renderer2d
 
 /// A 2d render process that may or may not be threaded.
 type RenderProcess2d =
@@ -725,7 +724,7 @@ type RenderInline2d (createRenderer2d, window : nativeint) =
         member this.Terminate () =
             match rendererOpt with
             | Some renderer ->
-                renderer.CleanUp () |> ignore<Renderer2d>
+                renderer.CleanUp ()
                 rendererOpt <- None
                 terminated <- true
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
@@ -790,7 +789,7 @@ type RenderThread2d (createRenderer2d, window : Window) =
                         if not swapped then Thread.Sleep 0
 
                 // clean up
-                renderer.CleanUp () |> ignore<Renderer2d>)
+                renderer.CleanUp ())
 
         member this.Submit eyePosition eyeSize eyeMargin messages =
             lock submissionLock (fun () ->
