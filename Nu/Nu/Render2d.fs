@@ -589,7 +589,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // create SDL-OpenGL context if needed
         match window with
         | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
-        | WfglWindow _ -> ()
+        | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
 
         // create sprite batch env
         let spriteBatchEnv = OpenGL.SpriteBatch.CreateEnv ()
