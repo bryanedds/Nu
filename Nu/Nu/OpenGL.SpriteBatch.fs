@@ -11,7 +11,7 @@ module SpriteBatch =
     type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
         struct
             val mutable Position : Vector2
-            val mutable Coords : Vector2
+            val mutable TexCoords : Vector2
             val mutable Color : Color
             end
 
@@ -34,7 +34,7 @@ module SpriteBatch =
             OpenGL.Gl.EnableVertexAttribArray 1u
             OpenGL.Gl.EnableVertexAttribArray 2u
             OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Position"))
-            OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Coords"))
+            OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "TexCoords"))
             OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Color"))
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<Vertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Hl.Assert ()
@@ -127,7 +127,7 @@ module SpriteBatch =
     ///     1: mat4 viewProjection
     /// and attributes:
     ///     0: vec2 position
-    ///     1: vec2 coordsIn
+    ///     1: vec2 texCoordsIn
     ///     2: vec4 colorIn
     let private CreateShader () =
 
@@ -136,15 +136,15 @@ module SpriteBatch =
         let samplerVertexShaderStr =
             [Constants.Render.GlslVersionPragma
              "layout(location = 0) in vec2 position;"
-             "layout(location = 1) in vec2 coordsIn;"
+             "layout(location = 1) in vec2 texCoordsIn;"
              "layout(location = 2) in vec4 colorIn;"
              "uniform mat4 viewProjection;"
-             "out vec2 coords;"
+             "out vec2 texCoords;"
              "out vec4 color;"
              "void main()"
              "{"
              "  gl_Position = viewProjection * vec4(position.x, position.y, 0, 1);"
-             "  coords = coordsIn;"
+             "  texCoords = texCoordsIn;"
              "  color = colorIn;"
              "}"] |> String.join "\n"
 
@@ -153,12 +153,12 @@ module SpriteBatch =
         let samplerFragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "uniform sampler2D tex;"
-             "in vec2 coords;"
+             "in vec2 texCoords;"
              "in vec4 color;"
              "out vec4 frag;"
              "void main()"
              "{"
-             "  frag = color * texture(tex, coords);"
+             "  frag = color * texture(tex, texCoords);"
              "}"] |> String.join "\n"
 
         // create shader
@@ -235,7 +235,7 @@ module SpriteBatch =
         env.ViewProjectionAbsolute <- viewAbsolute * projection
         env.ViewProjectionRelative <- viewRelative * projection
 
-    let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, coords : Box2, color, flip, bfs, bfd, beq, texture, env) =
+    let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
@@ -272,19 +272,19 @@ module SpriteBatch =
         // compute vertices
         let mutable vertex0 = Unchecked.defaultof<Vertex>
         vertex0.Position <- position0
-        vertex0.Coords <- coords.BottomLeft * flipper
+        vertex0.TexCoords <- texCoords.BottomLeft * flipper
         vertex0.Color <- color
         let mutable vertex1 = Unchecked.defaultof<Vertex>
         vertex1.Position <- position1
-        vertex1.Coords <- coords.BottomRight * flipper
+        vertex1.TexCoords <- texCoords.BottomRight * flipper
         vertex1.Color <- color
         let mutable vertex2 = Unchecked.defaultof<Vertex>
         vertex2.Position <- position2
-        vertex2.Coords <- coords.TopRight * flipper
+        vertex2.TexCoords <- texCoords.TopRight * flipper
         vertex2.Color <- color
         let mutable vertex3 = Unchecked.defaultof<Vertex>
         vertex3.Position <- position3
-        vertex3.Coords <- coords.TopLeft * flipper
+        vertex3.TexCoords <- texCoords.TopLeft * flipper
         vertex3.Color <- color
 
         // upload vertices
