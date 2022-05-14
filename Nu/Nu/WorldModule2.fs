@@ -893,7 +893,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness (audioPlayerThreadOpt : Task option) world =
+        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness world =
             TotalTimer.Start ()
             if runWhile world then
                 if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFps) // don't let game run too fast while full screen unfocused
@@ -947,29 +947,21 @@ module WorldModule2 =
                                                     match World.getLiveness world with
                                                     | Live ->
 
-                                                        // finish renderer thread
-                                                        let renderProcess2d = World.getRenderProcess2d world
-                                                        renderProcess2d.Swap ()
-
-                                                        // finish audio player thread
+                                                        // process audio
+                                                        AudioTimer.Start ()
                                                         let world =
-                                                            match audioPlayerThreadOpt with
-                                                            | Some audioPlayerThread ->
-                                                                Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
-                                                                world
-                                                            | None -> world
-
-                                                        // start renderer thread
-                                                        renderProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
-
-                                                        // start audio player thread
-                                                        let (audioPlayerThreadOpt, world) =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                 let audioPlayer = World.getAudioPlayer world
                                                                 let audioMessages = audioPlayer.PopMessages ()
-                                                                let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> audioPlayer.Play audioMessages)
-                                                                (Some audioPlayerThread, world)
-                                                            else (None, world)
+                                                                audioPlayer.Play audioMessages
+                                                                world
+                                                            else world
+                                                        AudioTimer.Stop ()
+
+                                                        // process rendering
+                                                        let renderProcess2d = World.getRenderProcess2d world
+                                                        renderProcess2d.Swap ()
+                                                        renderProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()
@@ -982,7 +974,7 @@ module WorldModule2 =
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
-                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness audioPlayerThreadOpt world
+                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness world
 
                                                         | Dead -> world
                                                     | Dead -> world
@@ -1000,7 +992,7 @@ module WorldModule2 =
         /// Run the game engine with the given handler.
         static member run4 runWhile sdlDeps liveness world =
             let result =
-                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None world
+                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness world
                     World.cleanUp world
                     Constants.Engine.SuccessExitCode
                 with exn ->
