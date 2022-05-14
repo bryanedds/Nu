@@ -15,14 +15,14 @@ open Prime
 open Nu
 
 /// Describes what to render.
-/// TODO: see if we can make RenderCallback receive args by reference or something.
+/// TODO: 3D: make sure RenderCallbackDescriptor2d has all the parameters it needs, in a struct if necessary.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
     | TilesDescriptor of TilesDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
-    | RenderCallbackDescriptor2d of (bool * Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
+    | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
 
 /// A layered message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
@@ -262,15 +262,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             OpenGL.SpriteBatch.NextSprite
                 (absolute, position, size, pivot, rotation, texCoords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
+    /// Compute the 2d viewport.
     static member computeViewport (_ : GlRenderer2d) =
         box2i v2iZero (v2i Constants.Render.ResolutionX Constants.Render.ResolutionY)
 
+    /// Compute the 2d absolute view matrix.
     static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) eyeMargin =
-        Matrix4x4.CreateTranslation (eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2).V3
+        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
+        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
+    /// Compute the 2d relative view matrix.
     static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) eyeMargin =
-        Matrix4x4.CreateTranslation (-eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2).V3
+        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
+        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
+    /// Compute the 2d projection matrix.
     static member computeProjection (viewport : Box2i) (_ : GlRenderer2d) =
         Matrix4x4.CreateOrthographicOffCenter
             (single (viewport.Position.X),
@@ -278,6 +284,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
              single (viewport.Position.Y),
              single (viewport.Position.Y + viewport.Size.Y),
              -1.0f, 1.0f)
+
+    /// Get the sprite quad created by OpenGL.Hl.CreateSpriteQuad.
+    static member getSpriteQuad renderer =
+        renderer.RenderSpriteQuad
+
+    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
+    static member getSpriteShader renderer =
+        renderer.RenderSpriteShader
 
     /// Render sprite.
     static member renderSprite
@@ -398,102 +412,98 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          renderer : GlRenderer2d) =
+        ()
+        let transform = transform
+        let color = color
+        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
+            let mutable transform = transform
+            let absolute = transform.Absolute
+            let perimeter = transform.Perimeter
+            let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+            let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
+            let eyePosition = eyePosition * Constants.Render.VirtualScalar2
+            let eyeSize = eyeSize * Constants.Render.VirtualScalar2
+            let viewport = GlRenderer2d.computeViewport renderer
+            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin
+            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin
+            let projection = GlRenderer2d.computeProjection viewport renderer
+            let viewProjection = if absolute then viewAbsolute * projection else viewRelative * projection
+            let font = AssetTag.generalize font
+            match GlRenderer2d.tryFindRenderAsset font renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | FontAsset (_, font) ->
+                
+                    // construct sdl color
+                    let mutable colorSdl = SDL.SDL_Color ()
+                    colorSdl.r <- color.R8
+                    colorSdl.g <- color.G8
+                    colorSdl.b <- color.B8
+                    colorSdl.a <- color.A8
 
-        // render text immediately
-        OpenGL.SpriteBatch.EndBatch renderer.RenderSpriteBatchEnv
+                    // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
+                    // texture one or more times a frame must be understood! Although, maybe it all happens in software
+                    // and vram fragmentation would not be a concern in the first place... perf could still be, however.
+                    let (offset, textSurface) =
+                        match justification with
+                        | Unjustified wrapped ->
+                            let textSurface =
+                                if wrapped
+                                then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
+                                else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                            (Vector2.Zero, textSurface)
+                        | Justified (h, v) ->
+                            let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                            let mutable width = 0
+                            let mutable height = 0
+                            SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+                            let offsetX =
+                                match h with
+                                | JustifyLeft -> 0.0f
+                                | JustifyCenter -> (size.X - single width) * 0.5f
+                                | JustifyRight -> size.X - single width
+                            let offsetY =
+                                match v with
+                                | JustifyTop -> 0.0f
+                                | JustifyMiddle -> (size.Y - single height) * 0.5f
+                                | JustifyBottom -> size.Y - single height
+                            let offset = v2 offsetX offsetY * Constants.Render.VirtualScalar2
+                            (offset, textSurface)
 
-        let mutable color = color
-        let absolute = transform.Absolute
-        let perimeter = transform.Perimeter
-        let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
-        let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-        let eyePosition = eyePosition * Constants.Render.VirtualScalar2
-        let eyeSize = eyeSize * Constants.Render.VirtualScalar2
-        let viewport = GlRenderer2d.computeViewport renderer
-        let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin
-        let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin
-        let projection = GlRenderer2d.computeProjection viewport renderer
-        let viewProjection = if absolute then viewAbsolute * projection else viewRelative * projection
-        let translation = Matrix4x4.CreateTranslation position.V3
-        let modelViewProjection = viewProjection * translation
-        let font = AssetTag.generalize font
-        match GlRenderer2d.tryFindRenderAsset font renderer with
-        | ValueSome renderAsset ->
-            match renderAsset with
-            | FontAsset (_, font) ->
-                let mutable renderColor = SDL.SDL_Color ()
-                renderColor.r <- color.R8
-                renderColor.g <- color.G8
-                renderColor.b <- color.B8
-                renderColor.a <- color.A8
-                // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
-                // texture one or more times a frame must be understood! Although, maybe it all happens in software
-                // and vram fragmentation would not be a concern in the first place... perf could still be, however.
-                let (offset, textSurface) =
-                    match justification with
-                    | Unjustified wrapped ->
-                        let textSurface =
-                            if wrapped
-                            then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 size.X)
-                            else SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                        (Vector2.Zero, textSurface)
-                    | Justified (h, v) ->
-                        let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                        let mutable width = 0
-                        let mutable height = 0
-                        SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
-                        let offsetX =
-                            match h with
-                            | JustifyLeft -> 0.0f
-                            | JustifyCenter -> (size.X - single width) * 0.5f
-                            | JustifyRight -> size.X - single width
-                        let offsetY =
-                            match v with
-                            | JustifyTop -> 0.0f
-                            | JustifyMiddle -> (size.Y - single height) * 0.5f
-                            | JustifyBottom -> size.Y - single height
-                        (v2 offsetX offsetY, textSurface)
-                if textSurface <> IntPtr.Zero then
+                    if textSurface <> IntPtr.Zero then
 
-                    // marshal surface
-                    let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurface
+                        // marshal surface
+                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurface
 
-                    // setup texture
-                    let textTexture = OpenGL.Gl.GenTexture ()
-                    OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                    OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, OpenGL.TextureMinFilter.Linear)
-                    OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, OpenGL.TextureMinFilter.Linear)
-                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
-                    OpenGL.Hl.Assert ()
+                        // construct mvp matrix
+                        let translation = position // + offset
+                        let modelTranslation = Matrix4x4.CreateTranslation translation.V3
+                        let modelScale = Matrix4x4.CreateScale (v3 size.X size.Y 0.0f)
+                        let modelMatrix = modelScale * modelTranslation
+                        let modelViewProjection = modelMatrix * viewProjection
 
-                    // draw text sprite
-                    let (indices, vertices) = renderer.RenderSpriteQuad
-                    let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
-                    OpenGL.Hl.DrawSprite (indices, vertices, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
-                    OpenGL.Hl.Assert ()
+                        // setup texture
+                        let textTexture = OpenGL.Gl.GenTexture ()
+                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
+                        OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, OpenGL.TextureMinFilter.Linear)
+                        OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, OpenGL.TextureMinFilter.Linear)
+                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                        OpenGL.Hl.Assert ()
 
-                    // teardown texture
-                    OpenGL.Gl.DeleteTextures textTexture
-                    OpenGL.Hl.Assert ()
+                        // draw text sprite
+                        let (indices, vertices) = renderer.RenderSpriteQuad
+                        let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
+                        OpenGL.Hl.DrawSprite (indices, vertices, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
+                        OpenGL.Hl.Assert ()
 
-                    //let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                    //let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
-                    //let mutable sourceRect = SDL.SDL_Rect ()
-                    //sourceRect.x <- 0
-                    //sourceRect.y <- 0
-                    //sourceRect.w <- textureSizeX
-                    //sourceRect.h <- textureSizeY
-                    //let mutable destRect = SDL.SDL_Rect ()
-                    //destRect.x <- int (+positionOffset.X + offset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                    //destRect.y <- int (-positionOffset.Y + offset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                    //destRect.w <- textureSizeX * Constants.Render.VirtualScalar
-                    //destRect.h <- textureSizeY * Constants.Render.VirtualScalar
-                    //if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, &sourceRect, &destRect) |> ignore
-                    //SDL.SDL_DestroyTexture textTexture
+                        // teardown texture
+                        OpenGL.Gl.DeleteTextures textTexture
+                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+                        OpenGL.Hl.Assert ()
 
-                SDL.SDL_FreeSurface textSurface
-            | _ -> Log.debug "Cannot render text with a non-font asset."
-        | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
+                    SDL.SDL_FreeSurface textSurface
+                | _ -> Log.debug "Cannot render text with a non-font asset."
+            | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
     /// Render particles.
     static member renderParticles
@@ -569,7 +579,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         //    | _ -> Log.trace "Cannot render particle with a non-texture asset."
         //| _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderDescriptor descriptor eyePosition eyeSize renderer =
+    static member inline private renderCallback callback eyePosition eyeSize eyeMargin renderer =
+        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
+            callback (eyePosition, eyeSize, eyeMargin, renderer)
+
+    static member private renderDescriptor descriptor eyePosition eyeSize eyeMargin renderer =
         match descriptor with
         | SpriteDescriptor descriptor ->
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
@@ -592,12 +606,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             //GlRenderer2d.renderParticles
             //    (descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCallbackDescriptor2d callback ->
-            ()
-            //callback (viewAbsolute, viewRelative, eyePosition, eyeSize, eyeMargin, renderer)
+            GlRenderer2d.renderCallback callback eyePosition eyeSize eyeMargin renderer
 
-    static member private renderLayeredMessages eyePosition eyeSize renderer =
+    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
         for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
+            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize eyeMargin renderer
 
     static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
         let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
@@ -686,7 +699,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.handleRenderMessages renderMessages renderer
             GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer // TODO: 3D: make sure margins are being rendered correctly.
             GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
