@@ -226,9 +226,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member inline private batchSprite
         absolute position size pivot rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
 
-        // compute coords
+        // compute tex coords
         // TODO: 3D: consider putting the texel multiplies in the shader.
-        let coords =
+        let texCoords =
             let texelWidth = textureMetadata.TextureTexelWidth
             let texelHeight = textureMetadata.TextureTexelHeight
             let texelBorderInset = Constants.Render.SpriteTexelEpsilon
@@ -251,13 +251,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw normal sprite
         if color.A <> 0.0f then
             OpenGL.SpriteBatch.NextSprite
-                (absolute, position, size, pivot, rotation, coords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+                (absolute, position, size, pivot, rotation, texCoords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
             let (bfs, bfd, beq) = (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
             OpenGL.SpriteBatch.NextSprite
-                (absolute, position, size, pivot, rotation, coords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+                (absolute, position, size, pivot, rotation, texCoords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
