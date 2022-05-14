@@ -482,12 +482,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         let modelMatrix = modelScale * modelTranslation
                         let modelViewProjection = modelMatrix * viewProjection
 
-                        // setup texture
+                        // upload texture
                         let textTexture = OpenGL.Gl.GenTexture ()
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
                         OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
                         OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
                         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
                         OpenGL.Hl.Assert ()
 
                         // draw text sprite
@@ -496,9 +497,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.DrawSprite (indices, vertices, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
-                        // teardown texture
+                        // destroy texture
                         OpenGL.Gl.DeleteTextures textTexture
-                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
                         OpenGL.Hl.Assert ()
 
                     SDL.SDL_FreeSurface textSurface
