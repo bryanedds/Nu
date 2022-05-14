@@ -753,7 +753,7 @@ type RenderThread2d (createRenderer2d) =
 
             // loop until submission exists
             while Option.isNone this.SubmissionOpt && not this.Terminated do
-                Thread.Sleep 0
+                Thread.Yield () |> ignore<bool>
 
             // receive submission
             let (eyePosition, eyeSize, eyeMargin) =
@@ -774,7 +774,7 @@ type RenderThread2d (createRenderer2d) =
 
             // loop until swapping
             while not this.Swapping && not this.Terminated do
-                Thread.Sleep 0
+                Thread.Yield () |> ignore<bool>
 
             // swap
             renderer.Swap ()
@@ -797,7 +797,7 @@ type RenderThread2d (createRenderer2d) =
             let thread = Thread this.Run
             threadOpt <- Some thread
             thread.Start ()
-            while not this.Started do Thread.Sleep 0
+            while not this.Started do Thread.Yield () |> ignore<bool>
 
         member this.EnqueueMessage message =
             lock messagesLock (fun () ->
@@ -817,7 +817,7 @@ type RenderThread2d (createRenderer2d) =
                 lock swapLock (fun () ->
                     if swap then raise (InvalidOperationException "Redundant Swap calls.")
                     swap <- true)
-                while this.Swapping do Thread.Sleep 0
+                while this.Swapping do Thread.Yield () |> ignore<bool>
             | None -> () // ignore invalid swap order
 
         member this.Terminate () =
