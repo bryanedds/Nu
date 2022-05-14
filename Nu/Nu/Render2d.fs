@@ -772,14 +772,14 @@ type RenderThread2d (createRenderer2d) =
             // render
             renderer.Render eyePosition eyeSize eyeMargin messagesReceived
 
-            // loop until swapping
+            // loop until swap is requested
             while not this.Swapping && not this.Terminated do
                 Thread.Yield () |> ignore<bool>
 
             // swap
             renderer.Swap ()
 
-            // clear swap
+            // complete swap request
             lock swapLock (fun () -> swap <- false)
 
         // clean up
