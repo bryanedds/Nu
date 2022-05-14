@@ -487,7 +487,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
                         OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
                         OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
-                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
                         OpenGL.Hl.Assert ()
 
