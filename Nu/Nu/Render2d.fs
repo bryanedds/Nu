@@ -526,14 +526,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
             GlRenderer2d.renderSprite (&descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
         | SpritesDescriptor descriptor ->
-            ()
-            //let sprites = descriptor.Sprites
-            //for index in 0 .. sprites.Length - 1 do
-            //    let sprite = &sprites.[index]
-            //    GlRenderer2d.renderSprite
-            //        (&viewAbsolute, &viewRelative, eyePosition, eyeSize, eyeMargin,
-            //         &sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
-            //         renderer, spriteBatchEnvOpt)
+            let sprites = descriptor.Sprites
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = &sprites.[index]
+                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
         | TilesDescriptor descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
