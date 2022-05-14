@@ -716,7 +716,7 @@ type RenderInline2d (createRenderer2d) =
 /// A threaded 2d render process.
 type RenderThread2d (createRenderer2d) =
 
-    let mutable taskOpt = None
+    let mutable threadOpt = None
     let startedLock = obj ()
     let mutable started = false
     let terminatedLock = obj ()
@@ -728,10 +728,10 @@ type RenderThread2d (createRenderer2d) =
     let swapLock = obj ()
     let mutable swap = false
 
-    member this.Started =
+    member private this.Started =
         (this :> RenderProcess2d).Started
 
-    member this.Terminated =
+    member private this.Terminated =
         (this :> RenderProcess2d).Terminated
 
     member private this.SubmissionOpt =
@@ -739,6 +739,51 @@ type RenderThread2d (createRenderer2d) =
 
     member private this.Swapping =
         lock swapLock (fun () -> swap)
+
+    member private this.Run () =
+
+        // create renderer
+        let renderer = createRenderer2d () : Renderer2d
+
+        // mark as started
+        lock startedLock (fun () -> started <- true)
+
+        // loop until terminated
+        while not this.Terminated do
+
+            // loop until submission exists
+            while Option.isNone this.SubmissionOpt && not this.Terminated do
+                Thread.Sleep 0
+
+            // receive submission
+            let (eyePosition, eyeSize, eyeMargin) =
+                lock submissionLock (fun () ->
+                    let submission = Option.get submissionOpt
+                    submissionOpt <- None
+                    submission)
+
+            // receive messages
+            let messagesReceived =
+                lock messagesLock (fun () ->
+                    let messagesReceived = messages
+                    messages <- List ()
+                    messagesReceived)
+
+            // render
+            renderer.Render eyePosition eyeSize eyeMargin messagesReceived
+
+            // loop until swapping
+            while not this.Swapping && not this.Terminated do
+                Thread.Sleep 0
+
+            // swap
+            renderer.Swap ()
+
+            // clear swap
+            lock swapLock (fun () -> swap <- false)
+
+        // clean up
+        renderer.CleanUp ()
 
     interface RenderProcess2d with
 
@@ -749,60 +794,9 @@ type RenderThread2d (createRenderer2d) =
             lock terminatedLock (fun () -> terminated)
 
         member this.Start () =
-
-            // run thread as task
-            let task = new Task (fun () ->
-
-                // create renderer
-                let renderer = createRenderer2d () : Renderer2d
-
-                // mark as started
-                lock startedLock (fun () -> started <- true)
-
-                // loop until terminated
-                while not this.Terminated do
-
-                    // loop until submission exists
-                    while Option.isNone this.SubmissionOpt && not this.Terminated do
-                        Thread.Sleep 0
-
-                    // receive submission
-                    let (eyePosition, eyeSize, eyeMargin) =
-                        lock submissionLock (fun () ->
-                            let submission = Option.get submissionOpt
-                            submissionOpt <- None
-                            submission)
-
-                    // receive messages
-                    let messagesReceived =
-                        lock messagesLock (fun () ->
-                            let messagesReceived = messages
-                            messages <- List ()
-                            messagesReceived)
-
-                    // render
-                    renderer.Render eyePosition eyeSize eyeMargin messagesReceived
-
-                    // loop until swapping
-                    while not this.Swapping && not this.Terminated do
-                        Thread.Sleep 0
-
-                    // swap
-                    renderer.Swap ()
-
-                    // clear swap
-                    lock swapLock (fun () -> swap <- false)
-
-                // clean up
-                renderer.CleanUp ())
-
-            // remember task
-            taskOpt <- Some task
-
-            // start task
-            task.Start ()
-
-            // wait until started (renderer initialized)
+            let thread = Thread this.Run
+            threadOpt <- Some thread
+            thread.Start ()
             while not this.Started do Thread.Sleep 0
 
         member this.EnqueueMessage message =
@@ -827,12 +821,11 @@ type RenderThread2d (createRenderer2d) =
             | None -> () // ignore invalid swap order
 
         member this.Terminate () =
-            match taskOpt with
-            | Some task ->
+            match threadOpt with
+            | Some thread ->
                 match this.Started with false -> failwithumf () | true -> ()
                 lock terminatedLock (fun () ->
                     if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
                     terminated <- true)
-                task.Wait ()
-                task.Dispose ()
+                thread.Join ()
             | None -> raise (InvalidOperationException "Cannot terminate before starting.")
