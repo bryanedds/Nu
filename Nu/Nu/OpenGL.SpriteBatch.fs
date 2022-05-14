@@ -111,6 +111,9 @@ module SpriteBatch =
         static member create absolute bfs bfd beq texture =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
+        static member defaultState =
+            State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+
     type [<NoEquality; NoComparison>] Env =
         private
             { mutable SpriteIndex : int
@@ -167,7 +170,13 @@ module SpriteBatch =
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         (viewProjectionUniform, texUniform, shader)
 
-    let private Flush env =
+    let private BeginBatch state env =
+        env.State <- state
+        let context = env.Pool.Current
+        let cpuBuffer = OpenGL.Hl.Assert (Context.map context)
+        context.CpuBufferOpt <- ValueSome cpuBuffer
+
+    let private EndBatch env =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -214,31 +223,41 @@ module SpriteBatch =
         env.SpriteIndex <- 0
         Pool.next env.Pool
 
-    let CreateEnv () =
-        let (viewProjectionUniform, texUniform, shader) = CreateShader ()
-        let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolPrealloc
-        let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
+    let private RestartBatch state env =
+        EndBatch env
+        OpenGL.Hl.Assert ()
+        BeginBatch state env
+
+    let private InterruptBatch fn env =
+        let state = env.State
+        EndBatch env
+        OpenGL.Hl.Assert ()
+        fn ()
+        OpenGL.Hl.Assert ()
+        BeginBatch state env
 
     let BeginFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
+        BeginBatch State.defaultState env
+
+    let EndFrame env =
+        EndBatch env
+        Pool.reset env.Pool
+
+    let InterruptFrame fn env =
+        InterruptBatch fn env
 
     let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
         if not (state.Equals env.State) || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            if env.SpriteIndex > 0 then Flush env
-            env.State <- state
-        OpenGL.Hl.Assert ()
+            RestartBatch state env
+            OpenGL.Hl.Assert ()
 
         // access the current context's cpu buffer
-        let cpuBuffer =
-            let context = env.Pool.Current
-            match context.CpuBufferOpt with
-            | ValueSome cpuBuffer -> cpuBuffer
-            | ValueNone -> OpenGL.Hl.Assert (Context.map context)
+        let cpuBuffer = env.Pool.Current.CpuBufferOpt.Value
 
         // compute a coord flipping value
         let flipper =
@@ -296,14 +315,10 @@ module SpriteBatch =
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
 
-    let EndBatch env =
-        if env.SpriteIndex > 0 then
-            Flush env
-            Pool.next env.Pool
-
-    let EndFrame env =
-        Flush env
-        Pool.reset env.Pool
+    let CreateEnv () =
+        let (viewProjectionUniform, texUniform, shader) = CreateShader ()
+        let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolPrealloc
+        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = State.defaultState }
 
     let DestroyEnv env =
         env.SpriteIndex <- 0
