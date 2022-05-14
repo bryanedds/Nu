@@ -151,36 +151,6 @@ module Hl =
         // fin
         (texture, framebuffer)
 
-    /// Create a sprite quad.
-    let CreateSpriteQuad () =
-
-        // build vertex data
-        let vertexData =
-            [|-1.0f; -1.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f
-              +1.0f; -1.0f; 1.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f
-              +1.0f; +1.0f; 1.0f; 1.0f; 1.0f; 1.0f; 1.0f; 1.0f
-              -1.0f; +1.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f; 1.0f|]
-
-        // create vertex buffer
-        let vertexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-        let vertexDataSize = 8u * 4u * uint sizeof<single>
-        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
-        Assert ()
-
-        // create index buffer
-        let indexData = [|0u; 1u; 2u; 3u|]
-        let indexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
-        let indexDataSize = 4u * uint sizeof<uint>
-        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
-        Assert ()
-
-        // fin
-        (vertexBuffer, indexBuffer)
-
     /// Create a shader from vertex and fragment code strings.
     let CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr) =
 
@@ -208,3 +178,120 @@ module Hl =
 
         // fin
         program
+
+    /// Create a sprite shader with uniforms:
+    ///     0: sampler2D tex
+    ///     1: vec4 color
+    ///     2: mat4 modelViewProjection
+    /// and attributes:
+    ///     0: vec2 position
+    ///     1: vec2 texCoordsIn
+    /// TODO: consider making texCoords a uniform as well for more flexible one-off rendering.
+    let CreateSpriteShader () =
+
+        // vertex shader code
+        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
+        let samplerVertexShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "layout(location = 0) in vec2 position;"
+             "layout(location = 1) in vec2 texCoordsIn;"
+             "uniform mat4 modelViewProjection;"
+             "out vec2 texCoords;"
+             "void main()"
+             "{"
+             "  gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
+             "  texCoords = texCoordsIn;"
+             "}"] |> String.join "\n"
+
+        // fragment shader code
+        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
+        let samplerFragmentShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "uniform sampler2D tex;"
+             "uniform vec4 color;"
+             "in vec2 texCoords;"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "  frag = color * texture(tex, texCoords);"
+             "}"] |> String.join "\n"
+
+        // create shader
+        let shader = CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
+        let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
+        let modelViewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "modelViewProjection")
+        let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
+        (colorUniform, modelViewProjectionUniform, texUniform, shader)
+
+    /// Create a sprite quad.
+    let CreateSpriteQuad () =
+
+        // build vertex data
+        let vertexData =
+            [|-1.0f; -1.0f; 0.0f; 0.0f
+              +1.0f; -1.0f; 1.0f; 0.0f
+              +1.0f; +1.0f; 1.0f; 1.0f
+              -1.0f; +1.0f; 0.0f; 1.0f|]
+
+        // create vertex buffer
+        let vertexBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexDataSize = 8u * 4u * uint sizeof<single>
+        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        Assert ()
+
+        // create index buffer
+        let indexData = [|0u; 1u; 2u; 3u|]
+        let indexBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
+        let indexDataSize = 4u * uint sizeof<uint>
+        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        Assert ()
+
+        // fin
+        (indexBuffer, vertexBuffer)
+
+    /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
+    let DrawSprite (indices, vertices, color : Color, modelViewProjection : _ inref, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
+
+        // setup state
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+        Assert ()
+
+        // setup shader
+        OpenGL.Gl.UseProgram shader
+        OpenGL.Gl.Uniform4f (colorUniform, 1, color)
+        OpenGL.Gl.UniformMatrix4f (modelViewProjectionUniform, 1, false, modelViewProjection)
+        OpenGL.Gl.Uniform1i (texUniform, 1, 0)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+        Assert ()
+
+        // setup geometry
+        OpenGL.Gl.BindVertexArray vertices
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indices)
+        Assert ()
+
+        // draw geometry
+        OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6)
+        Assert ()
+
+        // teardown geometry
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+        OpenGL.Gl.BindVertexArray 0u
+                    
+        // teardown shader
+        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.UseProgram 0u
+        Assert ()
+
+        // teardown state
+        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
