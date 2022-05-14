@@ -220,7 +220,7 @@ module SpriteBatch =
 
     let CreateEnv () =
         let (viewProjectionUniform, texUniform, shader) = CreateShader ()
-        let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolSize
+        let pool = Pool.create Constants.Render.SpriteBatchSize Constants.Render.SpriteBatchPoolPrealloc
         let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
 
