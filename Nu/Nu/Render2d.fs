@@ -716,7 +716,7 @@ type RenderInline2d (createRenderer2d) =
 /// A threaded 2d render process.
 type RenderThread2d (createRenderer2d) =
 
-    let mutable threadOpt = None
+    let mutable taskOpt = None
     let startedLock = obj ()
     let mutable started = false
     let terminatedLock = obj ()
@@ -794,9 +794,9 @@ type RenderThread2d (createRenderer2d) =
             lock terminatedLock (fun () -> terminated)
 
         member this.Start () =
-            let thread = Thread this.Run
-            threadOpt <- Some thread
-            thread.Start ()
+            let task = new Task ((fun () -> this.Run ()), TaskCreationOptions.LongRunning)
+            taskOpt <- Some task
+            task.Start ()
             while not this.Started do Thread.Yield () |> ignore<bool>
 
         member this.EnqueueMessage message =
@@ -821,11 +821,11 @@ type RenderThread2d (createRenderer2d) =
             | None -> () // ignore invalid swap order
 
         member this.Terminate () =
-            match threadOpt with
-            | Some thread ->
+            match taskOpt with
+            | Some task ->
                 match this.Started with false -> failwithumf () | true -> ()
                 lock terminatedLock (fun () ->
                     if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
                     terminated <- true)
-                thread.Join ()
+                task.Wait ()
             | None -> raise (InvalidOperationException "Cannot terminate before starting.")
