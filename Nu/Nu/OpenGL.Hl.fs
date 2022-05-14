@@ -223,7 +223,7 @@ module Hl =
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         (colorUniform, modelViewProjectionUniform, texUniform, shader)
 
-    /// Create a sprite quad.
+    /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
     let CreateSpriteQuad () =
 
         // build vertex data
@@ -233,9 +233,19 @@ module Hl =
               +1.0f; +1.0f; 1.0f; 1.0f
               -1.0f; +1.0f; 0.0f; 1.0f|]
 
+        // setup vao
+        let vao = OpenGL.Gl.GenVertexArray ()
+        OpenGL.Gl.BindVertexArray vao
+        Assert ()
+
         // create vertex buffer
         let vertexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexSize = sizeof<single> * 4
+        OpenGL.Gl.EnableVertexAttribArray 0u
+        OpenGL.Gl.EnableVertexAttribArray 1u
+        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, 0)
+        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, sizeof<single> * 2)
         let vertexDataSize = 8u * 4u * uint sizeof<single>
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
@@ -244,17 +254,21 @@ module Hl =
         // create index buffer
         let indexData = [|0u; 1u; 2u; 3u|]
         let indexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
         let indexDataSize = 4u * uint sizeof<uint>
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         Assert ()
 
+        // teardown vao
+        OpenGL.Gl.BindVertexArray 0u
+
         // fin
-        (indexBuffer, vertexBuffer)
+        (indexBuffer, vertexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
-    let DrawSprite (indices, vertices, color : Color, modelViewProjection : _ inref, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
+    let DrawSprite (indices, vertices, vao, color : Color, modelViewProjection : _ inref, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -273,8 +287,9 @@ module Hl =
         Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray vertices
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indices)
+        OpenGL.Gl.BindVertexArray vao
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertices)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indices)
         Assert ()
 
         // draw geometry
@@ -282,9 +297,10 @@ module Hl =
         Assert ()
 
         // teardown geometry
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
-                    
+
         // teardown shader
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd

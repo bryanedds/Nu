@@ -100,7 +100,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderWindow : Window
           RenderSpriteShader : int * int * int * uint
-          RenderSpriteQuad : uint * uint
+          RenderSpriteQuad : uint * uint * uint
           mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.Env
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -492,9 +492,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.Assert ()
 
                         // draw text sprite
-                        let (indices, vertices) = renderer.RenderSpriteQuad
+                        let (indices, vertices, vao) = renderer.RenderSpriteQuad
                         let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
+                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, &modelViewProjection, 1u(*textTexture*), colorUniform, modelViewProjectionUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture

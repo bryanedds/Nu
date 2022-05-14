@@ -18,16 +18,16 @@ module SpriteBatch =
     type [<NoEquality; NoComparison>] private Context =
         { mutable CpuBufferOpt : nativeint ValueOption
           GpuBuffer : uint
-          GpuVao : uint }
+          Vao : uint }
 
         static member create spriteMax =
 
-            // setup gpu vao
-            let gpuVao = OpenGL.Gl.GenVertexArray ()
-            OpenGL.Gl.BindVertexArray gpuVao
+            // setup vao
+            let vao = OpenGL.Gl.GenVertexArray ()
+            OpenGL.Gl.BindVertexArray vao
             OpenGL.Hl.Assert ()
 
-            // setup gpu buffer
+            // create gpu buffer
             let gpuBuffer = OpenGL.Gl.GenBuffer ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, gpuBuffer)
             OpenGL.Gl.EnableVertexAttribArray 0u
@@ -37,25 +37,22 @@ module SpriteBatch =
             OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "TexCoords"))
             OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribType.Float, false, sizeof<Vertex>, Marshal.OffsetOf (typeof<Vertex>, "Color"))
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint sizeof<Vertex> * 6u * uint spriteMax, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
-            OpenGL.Hl.Assert ()
-
-            // teardown gpu buffer
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
             OpenGL.Hl.Assert ()
 
-            // tardown gpu vao
+            // teardown vao
             OpenGL.Gl.BindVertexArray 0u
             OpenGL.Hl.Assert ()
 
             // make context value
-            { CpuBufferOpt = ValueNone; GpuBuffer = gpuBuffer; GpuVao = gpuVao }
+            { CpuBufferOpt = ValueNone; GpuBuffer = gpuBuffer; Vao = vao }
 
         static member destroy context =
             OpenGL.Gl.DeleteBuffers context.GpuBuffer
-            OpenGL.Gl.DeleteVertexArrays context.GpuVao
+            OpenGL.Gl.DeleteVertexArrays context.Vao
 
         static member bind context =
-            OpenGL.Gl.BindVertexArray context.GpuVao
+            OpenGL.Gl.BindVertexArray context.Vao
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, context.GpuBuffer)
 
         static member unbind (_ : Context) =
