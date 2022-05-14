@@ -485,9 +485,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // setup texture
                         let textTexture = OpenGL.Gl.GenTexture ()
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                        OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, OpenGL.TextureMinFilter.Linear)
-                        OpenGL.Gl.TexParameterf (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, OpenGL.TextureMinFilter.Linear)
-                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
+                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
+                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                         OpenGL.Hl.Assert ()
 
                         // draw text sprite
@@ -502,6 +502,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.Assert ()
 
                     SDL.SDL_FreeSurface textSurface
+
                 | _ -> Log.debug "Cannot render text with a non-font asset."
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
