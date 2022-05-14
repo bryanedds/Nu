@@ -165,9 +165,6 @@ module SpriteBatch =
         let shader = OpenGL.Hl.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
         let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
-        OpenGL.Hl.Assert ()
-
-        // fin
         (viewProjectionUniform, texUniform, shader)
 
     let private Flush env =
@@ -184,8 +181,8 @@ module SpriteBatch =
 
         // setup shader
         OpenGL.Gl.UseProgram env.Shader
-        OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
         OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
+        OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
         OpenGL.Gl.BlendEquation env.State.BlendingEquation
@@ -196,7 +193,6 @@ module SpriteBatch =
         if Context.unmap context then
             OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
             OpenGL.Hl.Assert ()
-        else Log.debug "Failed to draw sprite batch arrays due to inability to unmap cpu buffer."
 
         // teardown shader
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
@@ -224,16 +220,9 @@ module SpriteBatch =
         let state = State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = state }
 
-    let BeginFrame (viewport : Box2i, viewAbsolute, viewRelative, env) =
-        let projection =
-            Matrix4x4.CreateOrthographicOffCenter
-                (single (viewport.Position.X),
-                 single (viewport.Position.X + viewport.Size.X),
-                 single (viewport.Position.Y),
-                 single (viewport.Position.Y + viewport.Size.Y),
-                 -1.0f, 1.0f)
-        env.ViewProjectionAbsolute <- viewAbsolute * projection
-        env.ViewProjectionRelative <- viewRelative * projection
+    let BeginFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+        env.ViewProjectionAbsolute <- viewProjectionAbsolute
+        env.ViewProjectionRelative <- viewProjectionRelative
 
     let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
 
@@ -307,8 +296,13 @@ module SpriteBatch =
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
 
+    let EndBatch env =
+        if env.SpriteIndex > 0 then
+            Flush env
+            Pool.next env.Pool
+
     let EndFrame env =
-        if env.SpriteIndex > 0 then Flush env
+        Flush env
         Pool.reset env.Pool
 
     let DestroyEnv env =
