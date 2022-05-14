@@ -255,6 +255,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
+            let (bfs, bfd, beq) = (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
             OpenGL.SpriteBatch.NextSprite
                 (absolute, position, size, pivot, rotation, coords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
