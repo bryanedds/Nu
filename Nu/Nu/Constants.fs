@@ -73,8 +73,8 @@ module Render =
     let (*Literal*) ScreenClearing = ColorClear Color.One // TODO: move this to ViewConfig or WorldConfig?
     let GlslVersion = 410
     let GlslVersionPragma = "#version " + string GlslVersion
-    let SpriteBatchSize = 2048
-    let SpriteBatchPoolSize = 32
+    let SpriteBatchSize = 512 // NOTE: 2048 yields the highest through-put for a single sprite batch state.
+    let SpriteBatchPoolPrealloc = 64
     let SpriteTexelEpsilon = 0.0001f // TODO: 3D: test this with zooming camera on tile map and tile map far off origin to make sure it's high enough.
     let SpriteTexelEpsilonTimes2 = SpriteTexelEpsilon * 2.0f
 
