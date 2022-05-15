@@ -11,32 +11,32 @@ module WorldRender =
 
     type World with
 
-        static member internal getRenderProcess2d world =
-            world.Subsystems.RenderProcess2d
+        static member internal getRendererProcess2d world =
+            world.Subsystems.RendererProcess2d
 
-        static member internal withRenderProcess2d updater world =
-            updater (World.getRenderProcess2d world)
+        static member internal withRendererProcess2d updater world =
+            updater (World.getRendererProcess2d world)
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =
-            (World.getRenderProcess2d world).EnqueueMessage message
+            (World.getRendererProcess2d world).EnqueueMessage message
             world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages2d (messages : RenderMessage2d seq) world =
-            let renderProcess = World.getRenderProcess2d world
-            for message in messages do renderProcess.EnqueueMessage message
+            let rendererProcess = World.getRendererProcess2d world
+            for message in messages do rendererProcess.EnqueueMessage message
             world
             
         /// Enqueue a layered message for rendering, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessage2d (message : RenderLayeredMessage2d) world =
-            (World.getRenderProcess2d world).EnqueueMessage (RenderLayeredMessage2d message)
+            (World.getRendererProcess2d world).EnqueueMessage (RenderLayeredMessage2d message)
             world
 
         /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessages2d (messages : RenderLayeredMessage2d seq) world =
-            let renderer = World.getRenderProcess2d world
-            for message in messages do renderer.EnqueueMessage (RenderLayeredMessage2d message)
+            let rendererProcess = World.getRendererProcess2d world
+            for message in messages do rendererProcess.EnqueueMessage (RenderLayeredMessage2d message)
             world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be

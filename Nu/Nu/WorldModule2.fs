@@ -505,7 +505,7 @@ module WorldModule2 =
         /// Clear all messages in all subsystems.
         static member clearMessages world =
              let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             World.withRenderProcess2d (fun renderProcess -> renderProcess.ClearMessages ()) world
+             World.withRendererProcess2d (fun rendererProcess -> rendererProcess.ClearMessages ()) world
              World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
              world
 
@@ -959,9 +959,9 @@ module WorldModule2 =
                                                         AudioTimer.Stop ()
 
                                                         // process rendering
-                                                        let renderProcess2d = World.getRenderProcess2d world
-                                                        renderProcess2d.Swap ()
-                                                        renderProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
+                                                        let rendererProcess2d = World.getRendererProcess2d world
+                                                        rendererProcess2d.Swap ()
+                                                        rendererProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()
