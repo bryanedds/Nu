@@ -263,6 +263,7 @@ module Hl =
 
         // teardown vao
         OpenGL.Gl.BindVertexArray 0u
+        Assert ()
 
         // fin
         (indexBuffer, vertexBuffer, vao)
