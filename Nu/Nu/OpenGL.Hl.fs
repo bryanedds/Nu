@@ -64,6 +64,19 @@ module Hl =
         Assert ()
         glContext
 
+    /// Begin an OpenGL frame.
+    let BeginFrame (viewport : Box2i) =
+        OpenGL.Gl.Viewport (viewport.Position.X, viewport.Position.Y, viewport.Size.X, viewport.Size.Y)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
+        match Constants.Render.ScreenClearing with
+        | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
+        | NoClear -> ()
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+
+    /// End an OpenGL frame.
+    let EndFrame () =
+        () // nothing to do
+
     /// Attempt to create a 2d texture from a file.
     let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
 
