@@ -77,6 +77,21 @@ module Hl =
     let EndFrame () =
         () // nothing to do
 
+    /// Vertically flip an SDL surface.
+    /// TODO: 3D: consider flipping tex coord y instead.
+    let FlipSurface (surface : SDL.SDL_Surface inref) =
+        let rowTop = Array.zeroCreate<byte> surface.pitch
+        let rowBottom = Array.zeroCreate<byte> surface.pitch
+        for i in 0 .. dec (surface.h / 2) do
+            let offsetTop = i * surface.pitch
+            let pixelsTop = surface.pixels + nativeint offsetTop
+            let offsetBottom = (dec surface.h - i) * surface.pitch
+            let pixelsBottom = surface.pixels + nativeint offsetBottom
+            Marshal.Copy (pixelsTop, rowTop, 0, surface.pitch)
+            Marshal.Copy (pixelsBottom, rowBottom, 0, surface.pitch)
+            Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
+            Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
+
     /// Attempt to create a 2d texture from a file.
     let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
 
@@ -93,18 +108,8 @@ module Hl =
                 (convertedPtr, converted)
             else (unconvertedPtr, unconverted)
 
-        // vertically flip the rows of the texture
-        let rowTop = Array.zeroCreate<byte> surface.pitch
-        let rowBottom = Array.zeroCreate<byte> surface.pitch
-        for i in 0 .. dec (surface.h / 2) do
-            let offsetTop = i * surface.pitch
-            let pixelsTop = surface.pixels + nativeint offsetTop
-            let offsetBottom = (dec surface.h - i) * surface.pitch
-            let pixelsBottom = surface.pixels + nativeint offsetBottom
-            Marshal.Copy (pixelsTop, rowTop, 0, surface.pitch)
-            Marshal.Copy (pixelsBottom, rowBottom, 0, surface.pitch)
-            Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
-            Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
+        // flip the texture
+        FlipSurface &surface
 
         // upload the texture to gl
         let texture = OpenGL.Gl.GenTexture ()

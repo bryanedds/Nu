@@ -472,8 +472,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                     if textSurface <> IntPtr.Zero then
 
-                        // marshal surface
+                        // marshal surface and flip surface
                         let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurface
+                        OpenGL.Hl.FlipSurface &textSurface
 
                         // construct mvp matrix
                         let translation = position // + offset
