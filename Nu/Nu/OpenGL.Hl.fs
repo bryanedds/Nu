@@ -257,18 +257,18 @@ module Hl =
         let vertexSize = sizeof<single> * 4
         OpenGL.Gl.EnableVertexAttribArray 0u
         OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, 0)
-        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, sizeof<single> * 2)
-        let vertexDataSize = 8u * 4u * uint sizeof<single>
+        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint (sizeof<single> * 2))
+        let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
         Assert ()
 
         // create index buffer
-        let indexData = [|0u; 1u; 2u; 3u|]
+        let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         let indexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-        let indexDataSize = 4u * uint sizeof<uint>
+        let indexDataSize = 6u * uint sizeof<uint>
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
@@ -297,7 +297,7 @@ module Hl =
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
 
         // setup geometry
@@ -316,8 +316,6 @@ module Hl =
         OpenGL.Gl.BindVertexArray 0u
 
         // teardown shader
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
-        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
         Assert ()

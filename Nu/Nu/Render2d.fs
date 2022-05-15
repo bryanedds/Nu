@@ -478,7 +478,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // construct mvp matrix
                         let translation = position // + offset
                         let modelTranslation = Matrix4x4.CreateTranslation translation.V3
-                        let modelScale = Matrix4x4.CreateScale (v3 size.X size.Y 0.0f)
+                        let modelScale = Matrix4x4.CreateScale (v3 size.X size.Y 1.0f)
                         let modelMatrix = modelScale * modelTranslation
                         let modelViewProjection = modelMatrix * viewProjection
 
@@ -494,7 +494,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // draw text sprite
                         let (indices, vertices, vao) = renderer.RenderSpriteQuad
                         let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, &modelViewProjection, 1u(*textTexture*), colorUniform, modelViewProjectionUniform, texUniform, shader)
+                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture
