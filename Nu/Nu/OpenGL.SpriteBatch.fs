@@ -247,11 +247,11 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         OpenGL.Hl.Assert (BeginBatch state env)
 
-    let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
+    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
 
         // ensure frame has begun
         if not (InBatch env) then
-            raise (InvalidOperationException "Cannot advance a sprite in a SpriteBatch frame that is not begun.")
+            raise (InvalidOperationException "Cannot submit a sprite in a SpriteBatch frame that is not begun.")
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
