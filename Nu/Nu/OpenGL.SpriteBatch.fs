@@ -1,4 +1,5 @@
 ﻿namespace OpenGL
+open System
 open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
@@ -199,6 +200,7 @@ module SpriteBatch =
         if Context.unmap context then
             OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
             OpenGL.Hl.Assert ()
+        else raise (InvalidOperationException "Failed to unmap gpu buffer.")
 
         // teardown shader
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
@@ -222,30 +224,34 @@ module SpriteBatch =
 
     let private RestartBatch state env =
         EndBatch env
-        OpenGL.Hl.Assert ()
         BeginBatch state env
 
-    let private InterruptBatch fn env =
-        let state = env.State
-        EndBatch env
-        OpenGL.Hl.Assert ()
-        fn ()
-        OpenGL.Hl.Assert ()
-        BeginBatch state env
+    let private InBatch env =
+        ValueOption.isSome env.Pool.Current.CpuBufferOpt
 
     let BeginFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+        if InBatch env then raise (InvalidOperationException "Cannot begin a SpriteBatch frame that is already begun.")
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
         BeginBatch State.defaultState env
 
     let EndFrame env =
+        if not (InBatch env) then raise (InvalidOperationException "Cannot end a SpriteBatch frame that is not begun.")
         EndBatch env
         Pool.reset env.Pool
 
     let InterruptFrame fn env =
-        InterruptBatch fn env
+        if not (InBatch env) then raise (InvalidOperationException "Cannot interrupt a SpriteBatch frame that is not begun.")
+        let state = env.State
+        OpenGL.Hl.Assert (EndBatch env)
+        OpenGL.Hl.Assert (fn ())
+        OpenGL.Hl.Assert (BeginBatch state env)
 
     let NextSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color, flip, bfs, bfd, beq, texture, env) =
+
+        // ensure frame has begun
+        if not (InBatch env) then
+            raise (InvalidOperationException "Cannot advance a sprite in a SpriteBatch frame that is not begun.")
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
@@ -318,5 +324,6 @@ module SpriteBatch =
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; ViewProjectionUniform = viewProjectionUniform; TexUniform = texUniform; Shader = shader; Pool = pool; State = State.defaultState }
 
     let DestroyEnv env =
+        if InBatch env then raise (InvalidOperationException "Cannot destroy a SpriteBatch environemt that has not been ended.")
         env.SpriteIndex <- 0
         Pool.destroy env.Pool
