@@ -267,12 +267,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         box2i v2iZero (v2i Constants.Render.ResolutionX Constants.Render.ResolutionY)
 
     /// Compute the 2d absolute view matrix.
-    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) eyeMargin =
+    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) eyeMargin (_ : GlRenderer2d) =
         let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
         Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
     /// Compute the 2d relative view matrix.
-    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) eyeMargin =
+    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) eyeMargin (_ : GlRenderer2d) =
         let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
         Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
@@ -420,8 +420,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
             let viewport = GlRenderer2d.computeViewport renderer
-            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin
-            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin
+            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin renderer
+            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin renderer
             let projection = GlRenderer2d.computeProjection viewport renderer
             let viewProjection = if absolute then viewAbsolute * projection else viewRelative * projection
             let font = AssetTag.generalize font
@@ -430,16 +430,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 match renderAsset with
                 | FontAsset (_, font) ->
                 
-                    // construct sdl color
-                    let mutable colorSdl = SDL.SDL_Color ()
-                    colorSdl.r <- color.R8
-                    colorSdl.g <- color.G8
-                    colorSdl.b <- color.B8
-                    colorSdl.a <- color.A8
-
+                    // 
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood!
                     let (offset, textSurface) =
+                        let mutable colorSdl = SDL.SDL_Color ()
+                        colorSdl.r <- color.R8
+                        colorSdl.g <- color.G8
+                        colorSdl.b <- color.B8
+                        colorSdl.a <- color.A8
                         match justification with
                         | Unjustified wrapped ->
                             let textSurface =
@@ -452,16 +451,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let mutable width = 0
                             let mutable height = 0
                             SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+                            let width = single (width * Constants.Render.VirtualScalar)
+                            let height = single (height * Constants.Render.VirtualScalar)
                             let offsetX =
                                 match h with
-                                | JustifyLeft -> 0.0f
-                                | JustifyCenter -> (size.X - single width) * 0.5f
-                                | JustifyRight -> size.X - single width
+                                | JustifyLeft -> (width - size.X) * 0.5f
+                                | JustifyCenter -> 0.0f // (size.X - single width) * 0.5f
+                                | JustifyRight -> 0.0f // size.X - single width
                             let offsetY =
                                 match v with
-                                | JustifyTop -> 0.0f
-                                | JustifyMiddle -> (size.Y - single height) * 0.5f
-                                | JustifyBottom -> size.Y - single height
+                                | JustifyTop -> (height - size.Y) * 0.5f
+                                | JustifyMiddle -> 0.0f // (size.Y - single height) * 0.5f
+                                | JustifyBottom -> 0.0f // size.Y - single height
                             let offset = v2 offsetX offsetY
                             (offset, textSurface)
 
@@ -472,10 +473,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.FlipSurface &textSurface
 
                         // construct mvp matrix
-                        let positionOffset = position + v2 offset.X -offset.Y
-                        let sizeOffset = v2 (single textSurface.w) (single textSurface.h)
-                        let modelTranslation = Matrix4x4.CreateTranslation (position + size * 0.5f).V3
-                        let modelScale = Matrix4x4.CreateScale (v3 size.X size.Y 1.0f)
+                        let translation = (position + offset + size * 0.5f).V3
+                        let scale = v3 (single textSurface.w) (single textSurface.h) 1.0f
+                        let modelTranslation = Matrix4x4.CreateTranslation translation
+                        let modelScale = Matrix4x4.CreateScale scale
                         let modelMatrix = modelScale * modelTranslation
                         let modelViewProjection = modelMatrix * viewProjection
 
@@ -682,8 +683,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             // begin frame
             let viewport = GlRenderer2d.computeViewport renderer
             let projection = GlRenderer2d.computeProjection viewport renderer
-            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin * projection
-            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin * projection
+            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin renderer * projection
+            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin renderer * projection
             OpenGL.Hl.BeginFrame viewport
             OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
