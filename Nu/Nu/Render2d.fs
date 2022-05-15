@@ -412,17 +412,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeSize : Vector2,
          eyeMargin : Vector2,
          renderer : GlRenderer2d) =
-        ()
-        let transform = transform
-        let color = color
+        let (transform, color) = (transform, color) // make visible from lambda
         flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
             let mutable transform = transform
             let absolute = transform.Absolute
             let perimeter = transform.Perimeter
             let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-            let eyePosition = eyePosition * Constants.Render.VirtualScalar2
-            let eyeSize = eyeSize * Constants.Render.VirtualScalar2
             let viewport = GlRenderer2d.computeViewport renderer
             let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin
             let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin
@@ -442,8 +438,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     colorSdl.a <- color.A8
 
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                    // texture one or more times a frame must be understood! Although, maybe it all happens in software
-                    // and vram fragmentation would not be a concern in the first place... perf could still be, however.
+                    // texture one or more times a frame must be understood!
                     let (offset, textSurface) =
                         match justification with
                         | Unjustified wrapped ->
@@ -467,7 +462,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                                 | JustifyTop -> 0.0f
                                 | JustifyMiddle -> (size.Y - single height) * 0.5f
                                 | JustifyBottom -> size.Y - single height
-                            let offset = v2 offsetX offsetY * Constants.Render.VirtualScalar2
+                            let offset = v2 offsetX offsetY
                             (offset, textSurface)
 
                     if textSurface <> IntPtr.Zero then
@@ -477,8 +472,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.FlipSurface &textSurface
 
                         // construct mvp matrix
-                        let translation = position // + offset
-                        let modelTranslation = Matrix4x4.CreateTranslation translation.V3
+                        let positionOffset = position + v2 offset.X -offset.Y
+                        let sizeOffset = v2 (single textSurface.w) (single textSurface.h)
+                        let modelTranslation = Matrix4x4.CreateTranslation (position + size * 0.5f).V3
                         let modelScale = Matrix4x4.CreateScale (v3 size.X size.Y 1.0f)
                         let modelMatrix = modelScale * modelTranslation
                         let modelViewProjection = modelMatrix * viewProjection
