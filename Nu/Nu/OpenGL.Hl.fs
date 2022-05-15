@@ -246,7 +246,7 @@ module Hl =
               +1.0f; +1.0f; 1.0f; 1.0f
               -1.0f; +1.0f; 0.0f; 1.0f|]
 
-        // setup vao
+        // initialize vao
         let vao = OpenGL.Gl.GenVertexArray ()
         OpenGL.Gl.BindVertexArray vao
         Assert ()
@@ -255,10 +255,6 @@ module Hl =
         let vertexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexSize = sizeof<single> * 4
-        OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint (sizeof<single> * 2))
         let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
@@ -268,13 +264,18 @@ module Hl =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         let indexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-        let indexDataSize = 6u * uint sizeof<uint>
+        let indexDataSize = uint (indexData.Length * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
         OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         Assert ()
 
-        // teardown vao
+        // finalize vao
+        OpenGL.Gl.EnableVertexAttribArray 0u
+        OpenGL.Gl.EnableVertexAttribArray 1u
+        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint (sizeof<single> * 2))
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
 
@@ -307,7 +308,7 @@ module Hl =
         Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6)
+        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 6, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
         Assert ()
 
         // teardown geometry
