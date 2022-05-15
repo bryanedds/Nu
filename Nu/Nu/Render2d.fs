@@ -253,14 +253,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSprite
-                (absolute, position, size, pivot, rotation, texCoords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.Hl.Assert ()
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
             let (bfs, bfd, beq) = (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
-            OpenGL.SpriteBatch.SubmitSprite
-                (absolute, position, size, pivot, rotation, texCoords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.Hl.Assert ()
 
     /// Compute the 2d viewport.
     static member computeViewport (_ : GlRenderer2d) =
@@ -505,6 +505,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                 | _ -> Log.debug "Cannot render text with a non-font asset."
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
+        OpenGL.Hl.Assert ()
 
     /// Render particles.
     static member renderParticles
@@ -581,8 +582,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         //| _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
     static member inline private renderCallback callback eyePosition eyeSize eyeMargin renderer =
-        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
-            callback (eyePosition, eyeSize, eyeMargin, renderer)
+        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, eyeMargin, renderer)
+        OpenGL.Hl.Assert ()
 
     static member private renderDescriptor descriptor eyePosition eyeSize eyeMargin renderer =
         match descriptor with
@@ -681,20 +682,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
 
-            // compute view and projection variables
+            // begin frame
             let viewport = GlRenderer2d.computeViewport renderer
             let projection = GlRenderer2d.computeProjection viewport renderer
             let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin * projection
             let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin * projection
-
-            // prepare frame
-            OpenGL.Gl.Viewport (viewport.Position.X, viewport.Position.Y, viewport.Size.X, viewport.Size.Y)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
-            match Constants.Render.ScreenClearing with
-            | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
-            | NoClear -> ()
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Hl.BeginFrame viewport
             OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+            OpenGL.Hl.Assert ()
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
@@ -705,6 +700,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             // end frame
             OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+            OpenGL.Hl.EndFrame ()
+            OpenGL.Hl.Assert ()
 
         member renderer.Swap () =
             match renderer.RenderWindow with
@@ -713,6 +710,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.CleanUp () =
             OpenGL.SpriteBatch.DestroyEnv renderer.RenderSpriteBatchEnv
+            OpenGL.Hl.Assert ()
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
