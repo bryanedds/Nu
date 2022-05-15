@@ -1278,7 +1278,7 @@ module WorldTypes =
     /// The subsystems encapsulated by the engine.
     and [<ReferenceEquality; NoComparison>] internal Subsystems =
         { PhysicsEngine2d : PhysicsEngine
-          RenderProcess2d : RenderProcess2d
+          RendererProcess2d : RendererProcess2d
           AudioPlayer : AudioPlayer }
 
     /// Keeps the World from occupying more than two cache lines.

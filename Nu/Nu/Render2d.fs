@@ -716,8 +716,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
 
-/// A 2d render process that may or may not be threaded.
-type RenderProcess2d =
+/// A 2d renderer process that may or may not be threaded.
+type RendererProcess2d =
     interface
         abstract Started : bool
         abstract Terminated : bool
@@ -729,15 +729,15 @@ type RenderProcess2d =
         abstract Terminate : unit -> unit
         end
 
-/// A non-threaded 2d render process.
-type RenderInline2d (createRenderer2d) =
+/// A non-threaded 2d renderer.
+type RendererInline2d (createRenderer2d) =
 
     let mutable started = false
     let mutable terminated = false
     let mutable messages = List ()
     let mutable rendererOpt = Option<Renderer2d>.None
 
-    interface RenderProcess2d with
+    interface RendererProcess2d with
 
         member this.Started =
             started
@@ -780,8 +780,8 @@ type RenderInline2d (createRenderer2d) =
                 terminated <- true
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
-/// A threaded 2d render process.
-type RenderThread2d (createRenderer2d) =
+/// A threaded 2d renderer.
+type RendererThread2d (createRenderer2d) =
 
     let mutable taskOpt = None
     let startedLock = obj ()
@@ -796,10 +796,10 @@ type RenderThread2d (createRenderer2d) =
     let mutable swap = false
 
     member private this.Started =
-        (this :> RenderProcess2d).Started
+        (this :> RendererProcess2d).Started
 
     member private this.Terminated =
-        (this :> RenderProcess2d).Terminated
+        (this :> RendererProcess2d).Terminated
 
     member private this.SubmissionOpt =
         lock submissionLock (fun () -> submissionOpt)
@@ -852,7 +852,7 @@ type RenderThread2d (createRenderer2d) =
         // clean up
         renderer.CleanUp ()
 
-    interface RenderProcess2d with
+    interface RendererProcess2d with
 
         member this.Started =
             lock startedLock (fun () -> started)
@@ -861,24 +861,26 @@ type RenderThread2d (createRenderer2d) =
             lock terminatedLock (fun () -> terminated)
 
         member this.Start () =
+            if Option.isSome taskOpt then raise (InvalidOperationException "Render process already started.")
             let task = new Task ((fun () -> this.Run ()), TaskCreationOptions.LongRunning)
             taskOpt <- Some task
             task.Start ()
             while not this.Started do Thread.Yield () |> ignore<bool>
 
         member this.EnqueueMessage message =
-            lock messagesLock (fun () ->
-                messages.Add message)
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            lock messagesLock (fun () -> messages.Add message)
 
         member this.ClearMessages () =
-            lock messagesLock (fun () ->
-                messages <- List ())
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            lock messagesLock (fun () -> messages <- List ())
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
-            lock submissionLock (fun () ->
-                submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin)))
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            lock submissionLock (fun () -> submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin)))
 
         member this.Swap () =
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match this.SubmissionOpt with
             | Some _ ->
                 lock swapLock (fun () ->
@@ -888,11 +890,10 @@ type RenderThread2d (createRenderer2d) =
             | None -> () // ignore invalid swap order
 
         member this.Terminate () =
-            match taskOpt with
-            | Some task ->
-                match this.Started with false -> failwithumf () | true -> ()
-                lock terminatedLock (fun () ->
-                    if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
-                    terminated <- true)
-                task.Wait ()
-            | None -> raise (InvalidOperationException "Cannot terminate before starting.")
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let task = Option.get taskOpt
+            lock terminatedLock (fun () ->
+                if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
+                terminated <- true)
+            task.Wait ()
+            taskOpt <- None
