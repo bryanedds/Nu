@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.IO
+open System.Numerics
 open FSharpx.Collections
 open Prime
 open Nu
@@ -323,7 +324,8 @@ module WorldEntityModule =
         member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
 
         /// Apply physics changes to an entity.
-        member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
+        member this.ApplyPhysics (position : Vector3) rotation linearVelocity angularVelocity world =
+            //let position = v3 (floor position.X) (floor position.Y) (floor position.Z)
             let mutable oldTransform = this.GetTransform world
             let mutable newTransform = oldTransform
             let world =
