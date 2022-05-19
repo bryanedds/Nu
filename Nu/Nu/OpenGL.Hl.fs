@@ -242,14 +242,20 @@ module Hl =
         (colorUniform, modelViewProjectionUniform, texUniform, shader)
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
-    let CreateSpriteQuad () =
+    let CreateSpriteQuad onlyUpperRightQuadrant =
 
         // build vertex data
         let vertexData =
-            [|-1.0f; -1.0f; 0.0f; 0.0f
-              +1.0f; -1.0f; 1.0f; 0.0f
-              +1.0f; +1.0f; 1.0f; 1.0f
-              -1.0f; +1.0f; 0.0f; 1.0f|]
+            if onlyUpperRightQuadrant then
+                [|+0.0f; +0.0f; 0.0f; 0.0f
+                  +1.0f; +0.0f; 1.0f; 0.0f
+                  +1.0f; +1.0f; 1.0f; 1.0f
+                  +0.0f; +1.0f; 0.0f; 1.0f|]
+            else
+                [|-1.0f; -1.0f; 0.0f; 0.0f
+                  +1.0f; -1.0f; 1.0f; 0.0f
+                  +1.0f; +1.0f; 1.0f; 1.0f
+                  -1.0f; +1.0f; 0.0f; 1.0f|]
 
         // initialize vao
         let vao = OpenGL.Gl.GenVertexArray ()
