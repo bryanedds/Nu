@@ -76,7 +76,7 @@ module Render =
     let GlslVersionPragma = "#version " + string GlslVersion
     let SpriteBatchSize = 512 // NOTE: 2048 yields the highest through-put for a single sprite batch state.
     let SpriteBatchPoolPrealloc = 64
-    let SpriteTexelEpsilon = 0.0001f // TODO: 3D: test this with zooming camera on tile map and tile map far off origin to make sure it's high enough.
+    let SpriteTexelEpsilon = 0.000001f // TODO: 3D: implement texel epsilon based on the resolution of each texture rather than this constant!
     let SpriteTexelEpsilonTimes2 = SpriteTexelEpsilon * 2.0f
 
 [<RequireQualifiedAccess>]
