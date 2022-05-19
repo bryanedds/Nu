@@ -496,7 +496,7 @@ module BasicEmitter2dFacetModule =
                     ParticleSeed = entity.GetBasicParticleSeed world
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
-                Particles.BasicEmitter.makeEmpty
+                Particles.BasicEmitter2d.makeEmpty
                     (World.getUpdateTime world)
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
@@ -551,7 +551,7 @@ module BasicEmitter2dFacetModule =
 
         static let handleParticleMaxChanged evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter2d.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleBasicParticleSeedChanged evt world =
@@ -613,9 +613,9 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
-             define Entity.EmitterStyle "BasicEmitter"
+             define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
 
         override this.Register (entity, world) =

@@ -120,7 +120,7 @@ module Particles =
         /// The default body.
         static member defaultBody =
             { Position = v3Zero
-              Scale = v3Zero
+              Scale = v3One
               Angles = v3Zero
               LinearVelocity = v3Zero
               AngularVelocity = v3Zero
@@ -726,7 +726,7 @@ module Particles =
         Emitter<BasicParticle>
 
     [<RequireQualifiedAccess>]
-    module BasicEmitter =
+    module BasicEmitter2d =
 
         let private toParticlesDescriptor time (emitter : BasicEmitter) =
             let particles =
@@ -787,7 +787,7 @@ module Particles =
                 { Life = Life.make 0L 120L
                   Body = Body.defaultBody
                   Offset = v3Zero
-                  Size = Constants.Engine.ParticleSizeDefault
+                  Size = Constants.Engine.ParticleSize2dDefault
                   Inset = box2Zero
                   Color = Color.One
                   Glow = Color.Zero

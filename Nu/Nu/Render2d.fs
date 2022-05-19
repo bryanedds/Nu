@@ -19,9 +19,9 @@ open Nu
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
+    | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
     | TextDescriptor of TextDescriptor
-    | ParticlesDescriptor of ParticlesDescriptor
     | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
 
 /// A layered message to the 2d rendering system.
@@ -323,6 +323,32 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
+    /// Render particles.
+    static member renderParticles (blend : Blend, image : Image AssetTag, particles : Particle array, renderer) =
+        let image = AssetTag.generalize image
+        match GlRenderer2d.tryFindRenderAsset image renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | TextureAsset (textureMetadata, texture) ->
+                let mutable index = 0
+                while index < particles.Length do
+                    let particle = &particles.[index]
+                    let transform = &particle.Transform
+                    let absolute = transform.Absolute
+                    let perimeter = transform.Perimeter
+                    let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+                    let rotation = transform.Angles.X
+                    let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
+                    let pivot = transform.Offset.V2 * size
+                    let color = &particle.Color
+                    let glow = &particle.Glow
+                    let flip = particle.Flip
+                    let inset = &particle.Inset
+                    GlRenderer2d.batchSprite absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
+                    index <- inc index
+            | _ -> Log.trace "Cannot render particle with a non-texture asset."
+        | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
+
     /// Render tiles.
     static member renderTiles
         (transform : Transform byref,
@@ -521,80 +547,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
         OpenGL.Hl.Assert ()
 
-    /// Render particles.
-    static member renderParticles
-        (viewAbsolute : Matrix3x3 byref,
-         viewRelative : Matrix3x3 byref,
-         _ : Vector2,
-         eyeSize : Vector2,
-         eyeMargin : Vector2,
-         _ : single,
-         _ : single,
-         absolute : bool,
-         blend : Blend,
-         image : Image AssetTag,
-         particles : Particle array,
-         renderer) =
-        ()
-        //let view = if absolute then &viewAbsolute else &viewRelative
-        //let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        //let positionOffset = -(v2Zero * view) + v2 eyeMargin.X -eyeMargin.Y
-        //let blend = Blend.toSdlBlendMode blend
-        //let image = AssetTag.generalize image
-        //match GlRenderer2d.tryFindRenderAsset image renderer with
-        //| ValueSome renderAsset ->
-        //    match renderAsset with
-        //    | TextureAsset texture ->
-        //        let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
-        //        let mutable sourceRect = SDL.SDL_Rect ()
-        //        let mutable destRect = SDL.SDL_Rect ()
-        //        let mutable index = 0
-        //        while index < particles.Length do
-        //            let particle = &particles.[index]
-        //            let perimeter = particle.Transform.Perimeter
-        //            let position = perimeter.Position.V2
-        //            let positionView = position + positionOffset
-        //            let size = perimeter.Size.V2
-        //            let sizeView = Matrix3x3.Multiply (&size, &viewScale)
-        //            let rotation = particle.Transform.Angles.X
-        //            let color = &particle.Color
-        //            let glow = &particle.Glow
-        //            let flip = Flip.toSdlFlip particle.Flip
-        //            let inset = particle.Inset
-        //            if inset.IsEmpty then
-        //                sourceRect.x <- 0
-        //                sourceRect.y <- 0
-        //                sourceRect.w <- textureSizeX
-        //                sourceRect.h <- textureSizeY
-        //            else
-        //                sourceRect.x <- int inset.Position.X
-        //                sourceRect.y <- int inset.Position.Y
-        //                sourceRect.w <- int inset.Size.X
-        //                sourceRect.h <- int inset.Size.Y
-        //            destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-        //            destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-        //            destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
-        //            destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-        //            let rotation = double (Math.radiansToDegrees rotation) // negation for right-handedness
-        //            let mutable rotationCenter = SDL.SDL_Point ()
-        //            rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
-        //            rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-        //            if color.A <> 0.0f then
-        //                SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-        //                SDL.SDL_SetTextureColorMod (texture, color.R8, color.G8, color.B8) |> ignore
-        //                SDL.SDL_SetTextureAlphaMod (texture, color.A8) |> ignore
-        //                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-        //                if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-        //            if glow.A <> 0.0f then
-        //                SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-        //                SDL.SDL_SetTextureColorMod (texture, glow.R8, glow.G8, glow.B8) |> ignore
-        //                SDL.SDL_SetTextureAlphaMod (texture, glow.A8) |> ignore
-        //                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-        //                if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-        //            index <- inc index
-        //    | _ -> Log.trace "Cannot render particle with a non-texture asset."
-        //| _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
-
     static member inline private renderCallback callback eyePosition eyeSize eyeMargin renderer =
         flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, eyeMargin, renderer)
         OpenGL.Hl.Assert ()
@@ -609,6 +561,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+        | ParticlesDescriptor descriptor ->
+            GlRenderer2d.renderParticles
+                (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | TilesDescriptor descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
@@ -617,10 +572,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | TextDescriptor descriptor ->
             GlRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyePosition, eyeSize, v2Zero, renderer)
-        | ParticlesDescriptor descriptor ->
-            ()
-            //GlRenderer2d.renderParticles
-            //    (descriptor.Elevation, descriptor.Horizon, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCallbackDescriptor2d callback ->
             GlRenderer2d.renderCallback callback eyePosition eyeSize eyeMargin renderer
 
