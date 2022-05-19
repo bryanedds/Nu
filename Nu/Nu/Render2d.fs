@@ -803,7 +803,7 @@ type RendererThread2d (createRenderer2d) =
     let mutable started = false
     let mutable terminated = false
     let mutable messages = List ()
-    let mutable submissionOpt = Option<Vector2 * Vector2 * Vector2>.None
+    let mutable submissionOpt = Option<RenderMessage2d List * Vector2 * Vector2 * Vector2>.None
     let mutable swap = false
 
     member private this.Run () =
@@ -821,20 +821,12 @@ type RendererThread2d (createRenderer2d) =
             while Option.isNone submissionOpt && not terminated do
                 Thread.Yield () |> ignore<bool>
 
-            // receiving submission
-            let (eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
-
-            // receive messages
-            let messagesReceived =
-                let messagesReceived = messages
-                messages <- List ()
-                messagesReceived
-
-            // received submission
+            // receive submission
+            let (messages, eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
             submissionOpt <- None
 
             // render
-            renderer.Render eyePosition eyeSize eyeMargin messagesReceived
+            renderer.Render eyePosition eyeSize eyeMargin messages
 
             // loop until swap is requested
             while not swap && not terminated do
@@ -874,8 +866,9 @@ type RendererThread2d (createRenderer2d) =
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            submissionOpt <- Some (eyePosition, eyeSize, eyeMargin)
-            while Option.isSome submissionOpt do Thread.Yield () |> ignore<bool>
+            let messagesTemp = messages
+            messages <- List ()
+            submissionOpt <- Some (messagesTemp, eyePosition, eyeSize, eyeMargin)
 
         member this.Swap () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
