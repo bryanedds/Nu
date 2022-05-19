@@ -198,7 +198,7 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
-        let positions = // 19,663 entity positions (goal: 60FPS, current: 44FPS)
+        let positions = // 19,663 entity positions (goal: 60FPS, current: 51FPS)
             seq {
                 for i in 0 .. 52 do
                     for j in 0 .. 52 do
