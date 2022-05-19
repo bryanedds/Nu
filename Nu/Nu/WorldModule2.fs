@@ -961,8 +961,7 @@ module WorldModule2 =
                                                         // process rendering
                                                         let rendererProcess2d = World.getRendererProcess2d world
                                                         if not firstFrame then rendererProcess2d.Swap ()
-                                                        let (eyePosition, eyeSize, eyeMargin) = (World.getEyePosition2d world, World.getEyeSize2d world, World.getEyeMargin2d world)
-                                                        rendererProcess2d.SubmitMessages eyePosition eyeSize eyeMargin
+                                                        rendererProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) (World.getEyeMargin2d world)
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()

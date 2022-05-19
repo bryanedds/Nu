@@ -255,13 +255,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw normal sprite
         if color.A <> 0.0f then
             OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
-            OpenGL.Hl.Assert ()
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
             let (bfs, bfd, beq) = (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
             OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, glow, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
-            OpenGL.Hl.Assert ()
 
     /// Compute the 2d viewport.
     static member computeViewport (_ : GlRenderer2d) =
