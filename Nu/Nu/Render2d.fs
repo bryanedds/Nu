@@ -800,28 +800,11 @@ type RendererInline2d (createRenderer2d) =
 type RendererThread2d (createRenderer2d) =
 
     let mutable taskOpt = None
-    let startedLock = obj ()
     let mutable started = false
-    let terminatedLock = obj ()
     let mutable terminated = false
-    let messagesLock = obj ()
     let mutable messages = List ()
-    let submissionLock = obj ()
     let mutable submissionOpt = Option<Vector2 * Vector2 * Vector2>.None
-    let swapLock = obj ()
     let mutable swap = false
-
-    member private this.Started =
-        (this :> RendererProcess2d).Started
-
-    member private this.Terminated =
-        (this :> RendererProcess2d).Terminated
-
-    member private this.SubmissionOpt =
-        lock submissionLock (fun () -> submissionOpt)
-
-    member private this.Swapping =
-        lock swapLock (fun () -> swap)
 
     member private this.Run () =
 
@@ -829,41 +812,39 @@ type RendererThread2d (createRenderer2d) =
         let renderer = createRenderer2d () : Renderer2d
 
         // mark as started
-        lock startedLock (fun () -> started <- true)
+        started <- true
 
         // loop until terminated
-        while not this.Terminated do
+        while not terminated do
 
             // loop until submission exists
-            while Option.isNone this.SubmissionOpt && not this.Terminated do
+            while Option.isNone submissionOpt && not terminated do
                 Thread.Yield () |> ignore<bool>
 
-            // receive submission
-            let (eyePosition, eyeSize, eyeMargin) =
-                lock submissionLock (fun () ->
-                    let submission = Option.get submissionOpt
-                    submissionOpt <- None
-                    submission)
+            // receiving submission
+            let (eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
 
             // receive messages
             let messagesReceived =
-                lock messagesLock (fun () ->
-                    let messagesReceived = messages
-                    messages <- List ()
-                    messagesReceived)
+                let messagesReceived = messages
+                messages <- List ()
+                messagesReceived
+
+            // received submission
+            submissionOpt <- None
 
             // render
             renderer.Render eyePosition eyeSize eyeMargin messagesReceived
 
             // loop until swap is requested
-            while not this.Swapping && not this.Terminated do
+            while not swap && not terminated do
                 Thread.Yield () |> ignore<bool>
 
             // swap
             renderer.Swap ()
 
             // complete swap request
-            lock swapLock (fun () -> swap <- false)
+            swap <- false
 
         // clean up
         renderer.CleanUp ()
@@ -871,45 +852,41 @@ type RendererThread2d (createRenderer2d) =
     interface RendererProcess2d with
 
         member this.Started =
-            lock startedLock (fun () -> started)
+            started
 
         member this.Terminated =
-            lock terminatedLock (fun () -> terminated)
+            terminated
 
         member this.Start () =
             if Option.isSome taskOpt then raise (InvalidOperationException "Render process already started.")
             let task = new Task ((fun () -> this.Run ()), TaskCreationOptions.LongRunning)
             taskOpt <- Some task
             task.Start ()
-            while not this.Started do Thread.Yield () |> ignore<bool>
+            while not started do Thread.Yield () |> ignore<bool>
 
         member this.EnqueueMessage message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            lock messagesLock (fun () -> messages.Add message)
+            messages.Add message
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            lock messagesLock (fun () -> messages <- List ())
+            messages <- List ()
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            lock submissionLock (fun () -> submissionOpt <- Some ((eyePosition, eyeSize, eyeMargin)))
+            submissionOpt <- Some (eyePosition, eyeSize, eyeMargin)
+            while Option.isSome submissionOpt do Thread.Yield () |> ignore<bool>
 
         member this.Swap () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            match this.SubmissionOpt with
-            | Some _ ->
-                lock swapLock (fun () ->
-                    if swap then raise (InvalidOperationException "Redundant Swap calls.")
-                    swap <- true)
-                while this.Swapping do Thread.Yield () |> ignore<bool>
-            | None -> () // ignore invalid swap order
+            if swap then raise (InvalidOperationException "Redundant Swap calls.")
+            swap <- true
+            while swap do Thread.Yield () |> ignore<bool>
 
         member this.Terminate () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let task = Option.get taskOpt
-            lock terminatedLock (fun () ->
-                if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
-                terminated <- true)
+            if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
+            terminated <- true
             task.Wait ()
             taskOpt <- None
