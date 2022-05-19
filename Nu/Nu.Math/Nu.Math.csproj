@@ -31,6 +31,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <NoWarn>3001; 3003</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

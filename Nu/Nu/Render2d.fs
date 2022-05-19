@@ -49,9 +49,9 @@ and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
 /// A message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
-    | RenderUpdateMaterial2d of (Renderer -> unit)
-    | RenderPrePassDescriptor2d of RenderPassDescriptor2d
-    | RenderPostPassDescriptor2d of RenderPassDescriptor2d
+    //| RenderUpdateMaterial2d of (Renderer -> unit) // TODO: 3D: implement.
+    //| RenderPrePassDescriptor2d of RenderPassDescriptor2d // TODO: 3D: implement.
+    //| RenderPostPassDescriptor2d of RenderPassDescriptor2d // TODO: 3D: implement.
     | HintRenderPackageUseMessage2d of string
     | HintRenderPackageDisuseMessage2d of string
     | ReloadRenderAssetsMessage2d
