@@ -64,6 +64,7 @@ module Render =
         match ConfigurationManager.AppSettings.["VirtualScalar"] with
         | null -> 2
         | resolution -> scvalue<int> resolution
+    let (*Literal*) VirtualScalarF = single VirtualScalar
     let (*Literal*) VirtualScalar2i = Vector2i VirtualScalar
     let (*Literal*) VirtualScalar2 = Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar

@@ -101,6 +101,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         { RenderWindow : Window
           RenderSpriteShader : int * int * int * uint
           RenderSpriteQuad : uint * uint * uint
+          RenderTextQuad : uint * uint * uint
           mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.Env
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -285,13 +286,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
              single (viewport.Position.Y + viewport.Size.Y),
              -1.0f, 1.0f)
 
+    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
+    static member getSpriteShader renderer =
+        renderer.RenderSpriteShader
+
     /// Get the sprite quad created by OpenGL.Hl.CreateSpriteQuad.
     static member getSpriteQuad renderer =
         renderer.RenderSpriteQuad
 
-    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
-    static member getSpriteShader renderer =
-        renderer.RenderSpriteShader
+    /// Get the text quad created by OpenGL.Hl.CreateSpriteQuad.
+    static member getTextQuad renderer =
+        renderer.RenderTextQuad
 
     /// Render sprite.
     static member renderSprite
@@ -432,37 +437,43 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 
                     // 
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                    // texture one or more times a frame must be understood!
+                    // surface and texture one or more times a frame must be understood!
                     let (offset, textSurface) =
+
+                        // create sdl color
                         let mutable colorSdl = SDL.SDL_Color ()
                         colorSdl.r <- color.R8
                         colorSdl.g <- color.G8
                         colorSdl.b <- color.B8
                         colorSdl.a <- color.A8
+
+                        // get text metrics
+                        let mutable width = 0
+                        let mutable height = 0
+                        SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+                        let width = single (width * Constants.Render.VirtualScalar)
+                        let height = single (height * Constants.Render.VirtualScalar)
+
+                        // justify
                         match justification with
                         | Unjustified wrapped ->
                             let textSurface =
                                 if wrapped
                                 then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
                                 else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
-                            (Vector2.Zero, textSurface)
+                            (v2 0.0f (*size.Y - height*)0.0f, textSurface)
                         | Justified (h, v) ->
                             let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
-                            let mutable width = 0
-                            let mutable height = 0
-                            SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
-                            let width = single (width * Constants.Render.VirtualScalar)
-                            let height = single (height * Constants.Render.VirtualScalar)
                             let offsetX =
                                 match h with
-                                | JustifyLeft -> (width - size.X) * 0.5f
-                                | JustifyCenter -> 0.0f // (size.X - single width) * 0.5f
-                                | JustifyRight -> 0.0f // size.X - single width
+                                | JustifyLeft -> 0.0f
+                                | JustifyCenter -> (size.X - width) * 0.5f
+                                | JustifyRight -> size.X - width
                             let offsetY =
                                 match v with
-                                | JustifyTop -> (height - size.Y) * 0.5f
-                                | JustifyMiddle -> 0.0f // (size.Y - single height) * 0.5f
-                                | JustifyBottom -> 0.0f // size.Y - single height
+                                | JustifyTop -> 0.0f
+                                | JustifyMiddle -> (size.Y - height) * 0.5f
+                                | JustifyBottom -> size.Y - height
                             let offset = v2 offsetX offsetY
                             (offset, textSurface)
 
@@ -470,11 +481,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                         // marshal surface and flip surface
                         let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurface
+                        let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
+                        let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
                         OpenGL.Hl.FlipSurface &textSurface
 
                         // construct mvp matrix
-                        let translation = (position + offset + size * 0.5f).V3
-                        let scale = v3 (single textSurface.w) (single textSurface.h) 1.0f
+                        let translation = (position + offset).V3
+                        let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
                         let modelTranslation = Matrix4x4.CreateTranslation translation
                         let modelScale = Matrix4x4.CreateScale scale
                         let modelMatrix = modelScale * modelTranslation
@@ -483,14 +496,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // upload texture
                         let textTexture = OpenGL.Gl.GenTexture ()
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
-                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
+                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
+                        OpenGL.Gl.TexParameteri (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
                         OpenGL.Hl.Assert ()
 
                         // draw text sprite
-                        let (indices, vertices, vao) = renderer.RenderSpriteQuad
+                        let (indices, vertices, vao) = renderer.RenderTextQuad
                         let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
                         OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
@@ -650,9 +663,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
         OpenGL.Hl.Assert ()
 
-        // create one-off sprite resources
+        // create one-off sprite and text resources
         let spriteShader = OpenGL.Hl.CreateSpriteShader ()
-        let spriteQuad = OpenGL.Hl.CreateSpriteQuad ()
+        let spriteQuad = OpenGL.Hl.CreateSpriteQuad false
+        let textQuad = OpenGL.Hl.CreateSpriteQuad true
         OpenGL.Hl.Assert ()
 
         // create sprite batch env
@@ -664,6 +678,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             { RenderWindow = window
               RenderSpriteShader = spriteShader
               RenderSpriteQuad = spriteQuad
+              RenderTextQuad = textQuad
               RenderSpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
