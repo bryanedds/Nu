@@ -438,7 +438,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     // 
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
                     // surface and texture one or more times a frame must be understood!
-                    let (offset, textSurface) =
+                    let (offset, textSurface, textSurfacePtr) =
 
                         // create sdl color
                         let mutable colorSdl = SDL.SDL_Color ()
@@ -457,13 +457,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // justify
                         match justification with
                         | Unjustified wrapped ->
-                            let textSurface =
+                            let textSurfacePtr =
                                 if wrapped
                                 then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
                                 else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
-                            (v2 0.0f (*size.Y - height*)0.0f, textSurface)
+                            let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                            let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
+                            let offsetY = size.Y - textSurfaceHeight
+                            (v2 0.0f offsetY, textSurface, textSurfacePtr)
                         | Justified (h, v) ->
-                            let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                            let textSurfacePtr = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                            let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                             let offsetX =
                                 match h with
                                 | JustifyLeft -> 0.0f
@@ -475,17 +479,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                                 | JustifyMiddle -> (size.Y - height) * 0.5f
                                 | JustifyBottom -> size.Y - height
                             let offset = v2 offsetX offsetY
-                            (offset, textSurface)
+                            (offset, textSurface, textSurfacePtr)
 
-                    if textSurface <> IntPtr.Zero then
+                    if textSurfacePtr <> IntPtr.Zero then
 
-                        // marshal surface and flip surface
-                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurface
-                        let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
-                        let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
+                        // flip surface
                         OpenGL.Hl.FlipSurface &textSurface
 
                         // construct mvp matrix
+                        let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
+                        let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
                         let translation = (position + offset).V3
                         let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
                         let modelTranslation = Matrix4x4.CreateTranslation translation
@@ -512,7 +515,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Gl.DeleteTextures textTexture
                         OpenGL.Hl.Assert ()
 
-                    SDL.SDL_FreeSurface textSurface
+                    SDL.SDL_FreeSurface textSurfacePtr
 
                 | _ -> Log.debug "Cannot render text with a non-font asset."
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
