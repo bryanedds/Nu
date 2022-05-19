@@ -72,7 +72,7 @@ Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;
   </object>
   <object id="14" gid="1161" x="2016" y="3264" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [255 255 255 191] [Dialog &quot;Sealed...&quot;] [TombSealed]]"/>
+    <property name="I" value="[Seal [1 1 1 0.75] [Dialog &quot;Sealed...&quot;] [TombSealed]]"/>
    </properties>
   </object>
  </objectgroup>
