@@ -574,8 +574,8 @@ module WorldModule3 =
                             | None -> MockRenderer2d.make () :> Renderer2d
                     let rendererProcess2d =
                         if config.StandAlone
-                        then RendererThread2d (createRenderer2d) :> RendererProcess2d
-                        else RendererInline2d (createRenderer2d) :> RendererProcess2d
+                        then RendererThread2d createRenderer2d :> RendererProcess2d
+                        else RendererInline2d createRenderer2d :> RendererProcess2d
                     rendererProcess2d.Start ()
                     rendererProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
