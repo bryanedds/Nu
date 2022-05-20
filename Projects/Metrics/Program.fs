@@ -246,18 +246,16 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, Assets.Default.Image)
 
     override this.View (staticImage, entity, world) =
-        let transform = entity.GetTransform world
-        View.Render
+        let mutable transform = entity.GetTransform world
+        View.Render2d
             (transform.Elevation,
              transform.Position.Y,
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  Offset = Vector2.Zero
-                  Absolute = false
                   InsetOpt = None
                   Image = staticImage
                   Color = Color.One
@@ -300,10 +298,10 @@ type [<ReferenceEquality>] Intss =
     static member init n =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key % 2 = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
+        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 141) // 19,881 ints (goal: 60FPS, current: 30FPS, w/o rendering: 44FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 92) // 8100 ints (goal: 10K @ 60FPS, current: 8K @ 57FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -320,10 +318,10 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 6.85f - 480.0f) (single j * 3.85f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 8)) (single (int % 8))]]
+                             Entity.Position == v3 (single i * 10.0f - 480.0f) (single j * 5.0f - 272.0f) 0.0f
+                             Entity.Size <== int --> fun int -> v3 (single (int % 10)) (single (int % 10)) 0.0f]]
              Content.group Gen.name []
-                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+                [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
 #endif
 #endif
 
