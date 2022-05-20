@@ -373,7 +373,7 @@ module WorldModuleGame =
                 if absolute
                 then World.getViewAbsolute2d world
                 else World.getViewRelative2d world
-            let positionWorld = positionScreen * view
+            let positionWorld = (Vector3.Transform (positionScreen.V3, view)).V2
             positionWorld
 
         /// Transform the given mouse position to 2d entity space.

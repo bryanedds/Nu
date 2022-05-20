@@ -34,7 +34,7 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
 /// Describes a 2d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
     { RenderPassOrder : int64
-      RenderPass2d : Matrix3x3 * Renderer2d -> unit } // TODO: check if an M33 accounts for camera zoom.
+      RenderPass2d : Matrix4x4 * Renderer2d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with

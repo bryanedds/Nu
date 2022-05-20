@@ -6,7 +6,7 @@ namespace Nu
     /// <summary>
     /// A floating point color.
     /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Colors/Color4.cs
-    /// Heavily modified to directly encode RGBA format.
+    /// Modified to provide RGBA format.
     /// </summary>
     public struct Color : IEquatable<Color>
     {

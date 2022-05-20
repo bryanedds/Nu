@@ -893,14 +893,6 @@ type Box2iConverter () =
         | _ -> failconv "Invalid Box2iConverter conversion from source." None
 
 [<AutoOpen>]
-module Matrix3x3 =
-    let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
-    let inline m3Eq (x : Matrix3x3) (y : Matrix3x3) = x.Equals y
-    let inline m3Neq (x : Matrix3x3) (y : Matrix3x3) = not (x.Equals y)
-    let m3Identity = Matrix3x3.Identity
-    let m3Zero = Matrix3x3.Zero
-
-[<AutoOpen>]
 module Matrix4x4 =
 
     type Matrix4x4 with
@@ -1183,13 +1175,13 @@ module Math =
 
     /// Get the 2d view of the eye in absolute terms (world space).
     let getViewAbsolute2d (_ : Vector2) (_ : Vector2) =
-        Matrix3x3.Identity
+        Matrix4x4.Identity
 
     /// The relative 2d view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelative2d (eyePosition : Vector2) (_ : Vector2) =
-        Matrix3x3.CreateTranslation eyePosition
+        Matrix4x4.CreateTranslation eyePosition.V3
 
     /// Perform a 2d ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
