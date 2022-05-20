@@ -301,7 +301,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 90) // 8100 ints (goal: 10K @ 60FPS, current: 8.1K @ 57FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 95) // 8100 ints (goal: 10K @ 60FPS, current: 8.1K @ 57FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
