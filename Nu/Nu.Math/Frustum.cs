@@ -13,15 +13,9 @@ namespace Nu
     /// </summary>
     public class Frustum : IEquatable<Frustum>
     {
-        #region Private Fields
-
         private Matrix4x4 _matrix;
         private readonly Vector3[] _corners = new Vector3[CornerCount];
         private readonly Plane[] _planes = new Plane[PlaneCount];
-
-        #endregion
-
-        #region Public Fields
 
         /// <summary>
         /// The number of planes in the frustum.
@@ -32,10 +26,6 @@ namespace Nu
         /// The number of corner points in the frustum.
         /// </summary>
         public const int CornerCount = 8;
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// Gets or sets the <see cref="Matrix4x4"/> of the frustum.
@@ -99,10 +89,6 @@ namespace Nu
             get { return this._planes[5]; }
         }
 
-        #endregion
-
-        #region Constructors
-
         /// <summary>
         /// Constructs the frustum by extracting the view planes from a matrix.
         /// </summary>
@@ -113,10 +99,6 @@ namespace Nu
             this.CreatePlanes();
             this.CreateCorners();
         }
-
-        #endregion
-
-        #region Operators
 
         /// <summary>
         /// Compares whether two <see cref="Frustum"/> instances are equal.
@@ -145,12 +127,6 @@ namespace Nu
         {
             return !(a == b);
         }
-
-        #endregion
-
-        #region Public Methods
-
-        #region Contains
 
         /// <summary>
         /// Containment test between this <see cref="Frustum"/> and specified <see cref="Box3"/>.
@@ -285,8 +261,6 @@ namespace Nu
             }
             result = ContainmentType.Contains;
         }
-
-        #endregion
 
         /// <summary>
         /// Compares whether current instance is equal to specified <see cref="Frustum"/>.
@@ -477,10 +451,6 @@ namespace Nu
                    "}";
         }
 
-        #endregion
-
-        #region Private Methods
-
         private void CreateCorners()
         {
             IntersectionPoint(in this._planes[0], in this._planes[2], in this._planes[4], out this._corners[0]);
@@ -552,7 +522,5 @@ namespace Nu
             p.Normal.Z *= factor;
             p.D *= factor;
         }
-
-        #endregion
     }
 }

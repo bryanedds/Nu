@@ -117,8 +117,17 @@ module Particles =
           mutable AngularVelocity : Vector3
           mutable Restitution : single }
 
-        /// The default body.
-        static member defaultBody =
+        /// The default 2d body.
+        static member defaultBody2d =
+            { Position = v3Zero
+              Scale = v3One
+              Angles = v3Zero
+              LinearVelocity = v3Zero
+              AngularVelocity = v3Zero
+              Restitution = Constants.Particles.RestitutionDefault }
+
+        /// The default 3d body.
+        static member defaultBody3d =
             { Position = v3Zero
               Scale = v3One
               Angles = v3Zero
@@ -759,7 +768,7 @@ module Particles =
         let resize particleMax (emitter : BasicEmitter) =
             (emitter :> Emitter).Resize particleMax :?> BasicEmitter
 
-        /// Make a basic particle emitter.
+        /// Make a basic 2d particle emitter.
         let make
             time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
@@ -767,7 +776,7 @@ module Particles =
                 time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
-        /// Make an empty basic particle emitter.
+        /// Make an empty basic 2d particle emitter.
         let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
@@ -777,15 +786,15 @@ module Particles =
             let emitterBehavior = fun _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+                time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
-        /// Make the default basic particle emitter.
+        /// Make the default basic 2d particle emitter.
         let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
                 { Life = Life.make 0L 120L
-                  Body = Body.defaultBody
+                  Body = Body.defaultBody2d
                   Offset = v3Zero
                   Size = Constants.Engine.ParticleSize2dDefault
                   Inset = box2Zero
@@ -819,7 +828,7 @@ module Particles =
             let emitterBehaviors =
                 Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+                time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// A particle system.

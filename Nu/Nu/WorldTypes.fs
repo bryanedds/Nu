@@ -533,7 +533,6 @@ module WorldTypes =
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
           EyePosition2d : Vector2
-          //EyeRotation2d : single
           EyeSize2d : Vector2
           EyePosition3d : Vector3
           EyeRotation3d : Quaternion

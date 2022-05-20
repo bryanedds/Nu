@@ -14,8 +14,6 @@ namespace Nu
     /// </summary>
     public struct Sphere : IEquatable<Sphere>
     {
-        #region Public Fields
-
         /// <summary>
         /// The sphere center.
         /// </summary>
@@ -25,10 +23,6 @@ namespace Nu
         /// The sphere radius.
         /// </summary>
         public float Radius;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs a bounding sphere with the specified center and radius.  
@@ -40,12 +34,6 @@ namespace Nu
             this.Center = center;
             this.Radius = radius;
         }
-
-        #endregion
-
-        #region Public Methods
-
-        #region Contains
 
         /// <summary>
         /// Test if a bounding box is fully inside, outside, or just intersecting the sphere.
@@ -215,10 +203,6 @@ namespace Nu
                 result = ContainmentType.Intersects;
         }
 
-        #endregion
-
-        #region CreateFromBox3
-
         /// <summary>
         /// Creates the smallest <see cref="Sphere"/> that can contain a specified <see cref="Box3"/>.
         /// </summary>
@@ -249,8 +233,6 @@ namespace Nu
 
             result = new Sphere(center, radius);
         }
-
-        #endregion
 
         /// <summary>
         /// Creates the smallest <see cref="Sphere"/> that can contain a specified <see cref="Frustum"/>.
@@ -426,8 +408,6 @@ namespace Nu
             return this.Center.GetHashCode() + this.Radius.GetHashCode();
         }
 
-        #region Intersects
-
         /// <summary>
         /// Gets whether or not a specified <see cref="Box3"/> intersects with this sphere.
         /// </summary>
@@ -539,8 +519,6 @@ namespace Nu
             ray.Intersects(in this, out result);
         }
 
-        #endregion
-
         /// <summary>
         /// Returns a <see cref="String"/> representation of this <see cref="Sphere"/> in the format:
         /// {Center:[<see cref="Center"/>] Radius:[<see cref="Radius"/>]}
@@ -550,8 +528,6 @@ namespace Nu
         {
             return "{Center:" + this.Center + " Radius:" + this.Radius + "}";
         }
-
-        #region Transform
 
         /// <summary>
         /// Creates a new <see cref="Sphere"/> that contains a transformation of translation and scale from this sphere by the specified <see cref="Matrix"/>.
@@ -577,8 +553,6 @@ namespace Nu
             result.Radius = this.Radius * ((float)Math.Sqrt((double)Math.Max(((matrix.M11 * matrix.M11) + (matrix.M12 * matrix.M12)) + (matrix.M13 * matrix.M13), Math.Max(((matrix.M21 * matrix.M21) + (matrix.M22 * matrix.M22)) + (matrix.M23 * matrix.M23), ((matrix.M31 * matrix.M31) + (matrix.M32 * matrix.M32)) + (matrix.M33 * matrix.M33)))));
         }
 
-        #endregion
-
         /// <summary>
         /// Deconstruction method for <see cref="Sphere"/>.
         /// </summary>
@@ -589,10 +563,6 @@ namespace Nu
             center = Center;
             radius = Radius;
         }
-
-        #endregion
-
-        #region Operators
 
         /// <summary>
         /// Compares whether two <see cref="Sphere"/> instances are equal.
@@ -615,7 +585,5 @@ namespace Nu
         {
             return !a.Equals(b);
         }
-
-        #endregion
     }
 }

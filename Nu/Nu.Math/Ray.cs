@@ -13,8 +13,6 @@ namespace Nu
     /// </summary>
     public struct Ray : IEquatable<Ray>
     {
-        #region Public Fields
-
         /// <summary>
         /// The direction of this <see cref="Ray"/>.
         /// </summary>
@@ -24,11 +22,6 @@ namespace Nu
         /// The origin of this <see cref="Ray"/>.
         /// </summary>
         public Vector3 Position;
-
-        #endregion
-
-
-        #region Public Constructors
 
         /// <summary>
         /// Create a <see cref="Ray"/>.
@@ -40,11 +33,6 @@ namespace Nu
             this.Position = position;
             this.Direction = direction;
         }
-
-        #endregion
-
-
-        #region Public Methods
 
         /// <summary>
         /// Check if the specified <see cref="Object"/> is equal to this <see cref="Ray"/>.
@@ -187,8 +175,7 @@ namespace Nu
             result = Intersects(box);
         }
 
-        /*
-        public float? Intersects(BoundingFrustum frustum)
+        public float? Intersects(Frustum frustum)
         {
             if (frustum == null)
 			{
@@ -197,7 +184,6 @@ namespace Nu
 			
 			return frustum.Intersects(this);			
         }
-        */
 
         /// <summary>
         /// Check if this <see cref="Ray"/> intersects the specified <see cref="Sphere"/>.
@@ -343,7 +329,5 @@ namespace Nu
             position = Position;
             direction = Direction;
         }
-
-        #endregion
     }
 }
