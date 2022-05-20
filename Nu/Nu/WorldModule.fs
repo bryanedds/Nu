@@ -953,7 +953,7 @@ module WorldModule =
         static member internal getMemberProperties (state : SimulantState) =
             state |>
             getType |>
-            getProperties |>
+            (fun ty -> ty.GetProperties ()) |>
             Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
             Array.toList
 

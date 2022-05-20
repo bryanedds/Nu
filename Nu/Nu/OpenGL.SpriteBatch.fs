@@ -9,7 +9,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    let VertexBuffer = Array.zeroCreate<single> 8
+    let private VertexBuffer = Array.zeroCreate<single> 8
 
     type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
         struct
