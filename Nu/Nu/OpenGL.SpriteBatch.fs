@@ -9,12 +9,25 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
+    let VertexBuffer = Array.zeroCreate<single> 8
+
     type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
         struct
             val mutable Position : Vector2
             val mutable TexCoords : Vector2
             val mutable Color : Color
             end
+
+        static member inline copy (vertex : Vertex) (ptr : nativeint) =
+            VertexBuffer.[0] <- vertex.Position.X
+            VertexBuffer.[1] <- vertex.Position.Y
+            VertexBuffer.[2] <- vertex.TexCoords.X
+            VertexBuffer.[3] <- vertex.TexCoords.Y
+            VertexBuffer.[4] <- vertex.Color.R
+            VertexBuffer.[5] <- vertex.Color.G
+            VertexBuffer.[6] <- vertex.Color.B
+            VertexBuffer.[7] <- vertex.Color.A
+            Marshal.Copy (VertexBuffer, 0, ptr, 8)
 
     type [<NoEquality; NoComparison>] private Context =
         { mutable CpuBufferOpt : nativeint ValueOption
@@ -99,12 +112,19 @@ module SpriteBatch =
             while this.ContextIndex >= this.Contexts.Count do this.Contexts.Add (Context.create this.SpriteMax)
             this.Contexts.[this.ContextIndex]
 
-    type [<StructuralEquality; NoComparison>] private State =
+    type [<StructuralEquality; NoComparison; Struct>] private State =
         { Absolute : bool
           BlendingFactorSrc : OpenGL.BlendingFactor
           BlendingFactorDst : OpenGL.BlendingFactor
           BlendingEquation : OpenGL.BlendEquationMode
           Texture : uint }
+
+        static member inline changed state state2 =
+            state.Absolute <> state2.Absolute ||
+            state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
+            state.BlendingFactorDst <> state2.BlendingFactorDst ||
+            state.BlendingEquation <> state2.BlendingEquation ||
+            state.Texture <> state2.Texture
 
         static member create absolute bfs bfd beq texture =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
@@ -255,7 +275,7 @@ module SpriteBatch =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
-        if not (state.Equals env.State) || env.SpriteIndex = Constants.Render.SpriteBatchSize then
+        if State.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartBatch state env
             OpenGL.Hl.Assert ()
 
@@ -300,20 +320,19 @@ module SpriteBatch =
 
         // upload vertices
         // TODO: 3D: consider using a single static EBO for indices to reduce bus utilization.
-        // TODO: 3D: consider using a single pre-allocated SpriteVertex[6] to reduce marshaling calls.
         let vertexSize = nativeint sizeof<Vertex>
         let cpuOffset = cpuBuffer + nativeint env.SpriteIndex * vertexSize * nativeint 6
-        Marshal.StructureToPtr<Vertex> (vertex0, cpuOffset, false)
+        Vertex.copy vertex0 cpuOffset
         let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<Vertex> (vertex1, cpuOffset, false)
+        Vertex.copy vertex1 cpuOffset
         let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<Vertex> (vertex2, cpuOffset, false)
+        Vertex.copy vertex2 cpuOffset
         let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<Vertex> (vertex3, cpuOffset, false)
+        Vertex.copy vertex3 cpuOffset
         let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<Vertex> (vertex0, cpuOffset, false)
+        Vertex.copy vertex0 cpuOffset
         let cpuOffset = cpuOffset + vertexSize
-        Marshal.StructureToPtr<Vertex> (vertex2, cpuOffset, false)
+        Vertex.copy vertex2 cpuOffset
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
