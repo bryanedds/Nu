@@ -374,7 +374,7 @@ module WorldEntityModule =
             let world = dispatcher.Update (entity, world)
             let facets = entity.GetFacets world
             let world =
-                if Array.notEmpty facets
+                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
                 then Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
                 else world
             if World.getEntityPublishUpdates entity world then
@@ -388,7 +388,7 @@ module WorldEntityModule =
             let world = dispatcher.PostUpdate (entity, world)
             let facets = entity.GetFacets world
             let world =
-                if Array.notEmpty facets
+                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
                 then Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
                 else world
             if World.getEntityPublishPostUpdates entity world then
@@ -401,7 +401,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Actualize (entity, world)
             let facets = entity.GetFacets world
-            if Array.notEmpty facets
+            if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
             then Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
             else world
 
