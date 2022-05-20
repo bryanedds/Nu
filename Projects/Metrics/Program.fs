@@ -291,14 +291,14 @@ type [<ReferenceEquality>] Ints =
     static member init n =
         { Ints = Seq.init n (fun a -> (a, a)) |> Map.ofSeq }
     static member inc ints =
-        { Ints = ints.Ints |> Seq.map (fun kvp -> (kvp.Key, inc kvp.Value)) |> Map.ofSeq }
+        { Ints = ints.Ints |> Map.map (fun _ v -> inc v) }
 
 type [<ReferenceEquality>] Intss =
     { Intss : Map<int, Ints> }
     static member init n =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key % 1 = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
+        { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, int, unit> (Intss.init 90) // 8100 ints (goal: 60FPS, current: 57FPS)

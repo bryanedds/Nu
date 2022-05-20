@@ -373,7 +373,10 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Update (entity, world)
             let facets = entity.GetFacets world
-            let world = Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+            let world =
+                if Array.notEmpty facets
+                then Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+                else world
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
                 World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
@@ -384,7 +387,10 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.PostUpdate (entity, world)
             let facets = entity.GetFacets world
-            let world = Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+            let world =
+                if Array.notEmpty facets
+                then Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+                else world
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
                 World.publishPlus () entity.PostUpdateEvent eventTrace Simulants.Game false false world
@@ -395,7 +401,9 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Actualize (entity, world)
             let facets = entity.GetFacets world
-            Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+            if Array.notEmpty facets
+            then Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+            else world
 
         /// Get all the entities in a group.
         [<FunctionBinding>]
