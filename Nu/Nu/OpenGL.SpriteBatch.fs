@@ -36,13 +36,13 @@ module SpriteBatch =
               ViewProjectionUniform : int
               PerimetersUniform : int
               TexCoordsesUniform : int
-              CentersUniform : int
+              PivotsUniform : int
               RotationsUniform : int
               ColorsUniform : int
               TexUniform : int
               Shader : uint
               Perimeters : single array
-              Centers : single array
+              Pivots : single array
               Rotations : single array
               TexCoordses : single array
               Colors : single array
@@ -58,7 +58,7 @@ module SpriteBatch =
              "#define VERTS 6"
              "uniform mat4 viewProjection;"
              "uniform vec4 perimeters[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform vec2 centers[" + string Constants.Render.SpriteBatchSize + "];"
+             "uniform vec2 pivots[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform float rotations[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec4 texCoordses[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec4 colors[" + string Constants.Render.SpriteBatchSize + "];"
@@ -79,7 +79,7 @@ module SpriteBatch =
              "  int vertexId = gl_VertexID % VERTS;"
              "  vec2 position;"
              "  vec4 perimeter = perimeters[spriteId];"
-             "  vec2 center = centers[spriteId];"
+             "  vec2 pivot = pivots[spriteId];"
              "  float rotation = rotations[spriteId];"
              "  vec4 texCoords4 = texCoordses[spriteId];"
              "  switch (vertexId)"
@@ -101,6 +101,7 @@ module SpriteBatch =
              "          texCoords = vec2(texCoords4.x, texCoords4.y + texCoords4.w);"
              "          break;"
              "  }"
+             "  vec2 center = perimeter.xy + pivot;"
              "  vec2 positionRotated = center + rotate(position - center, rotation);"
              "  gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);"
              "  color = colors[spriteId];"
@@ -125,7 +126,7 @@ module SpriteBatch =
         // grab uniform locations
         let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let perimetersUniform = OpenGL.Gl.GetUniformLocation (shader, "perimeters")
-        let centersUniform = OpenGL.Gl.GetUniformLocation (shader, "centers")
+        let pivotsUniform = OpenGL.Gl.GetUniformLocation (shader, "pivots")
         let rotationsUniform = OpenGL.Gl.GetUniformLocation (shader, "rotations")
         let texCoordsesUniform = OpenGL.Gl.GetUniformLocation (shader, "texCoordses")
         let colorsUniform = OpenGL.Gl.GetUniformLocation (shader, "colors")
@@ -133,7 +134,7 @@ module SpriteBatch =
         OpenGL.Hl.Assert ()
 
         // fin
-        (viewProjectionUniform, perimetersUniform, centersUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader)
+        (viewProjectionUniform, perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader)
 
     let private BeginBatch state env =
         env.State <- state
@@ -157,7 +158,7 @@ module SpriteBatch =
             OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
             OpenGL.Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
             OpenGL.Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
-            OpenGL.Gl.Uniform2 (env.CentersUniform, env.Centers)
+            OpenGL.Gl.Uniform2 (env.PivotsUniform, env.Pivots)
             OpenGL.Gl.Uniform1 (env.RotationsUniform, env.Rotations)
             OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
             OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
@@ -207,15 +208,15 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         BeginBatch state env
 
-    let private PopulateVertex (position : Vector2) (size : Vector2) (center : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
+    let private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
-        env.Perimeters.[perimeterOffset] <- position.X
-        env.Perimeters.[perimeterOffset + 1] <- position.Y
-        env.Perimeters.[perimeterOffset + 2] <- size.X
-        env.Perimeters.[perimeterOffset + 3] <- size.Y
-        let centerOffset = env.SpriteIndex * 2
-        env.Centers.[centerOffset] <- center.X
-        env.Centers.[centerOffset + 1] <- center.Y
+        env.Perimeters.[perimeterOffset] <- perimeter.Position.X
+        env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y
+        env.Perimeters.[perimeterOffset + 2] <- perimeter.Size.X
+        env.Perimeters.[perimeterOffset + 3] <- perimeter.Size.Y
+        let pivotOffset = env.SpriteIndex * 2
+        env.Pivots.[pivotOffset] <- pivot.X
+        env.Pivots.[pivotOffset + 1] <- pivot.Y
         let rotationOffset = env.SpriteIndex
         env.Rotations.[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
@@ -237,9 +238,6 @@ module SpriteBatch =
             RestartBatch state env
             OpenGL.Hl.Assert ()
 
-        // compute center
-        let center = position + pivot
-
         // compute a coord flipping value
         let flipper =
             match flip with
@@ -249,7 +247,8 @@ module SpriteBatch =
             | FlipHV -> v2 -1.0f 1.0f
 
         // populate vertices
-        PopulateVertex position size center rotation texCoords color env
+        let perimeter = box2 position size
+        PopulateVertex perimeter pivot rotation texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
@@ -261,16 +260,16 @@ module SpriteBatch =
         OpenGL.Hl.Assert ()
 
         // create shader
-        let (viewProjectionUniform, perimetersUniform, centersUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader) = CreateShader ()
+        let (viewProjectionUniform, perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader) = CreateShader ()
         OpenGL.Hl.Assert ()
 
         // create env
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
           ViewProjectionUniform = viewProjectionUniform
-          PerimetersUniform = perimetersUniform; CentersUniform = centersUniform; RotationsUniform = rotationsUniform
+          PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; TexUniform = texUniform; Shader = shader
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
-          Centers = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
+          Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
           TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Colors = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
