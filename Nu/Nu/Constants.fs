@@ -78,6 +78,7 @@ module Render =
     let SpriteBatchPoolPrealloc = 64
     let SpriteTexelEpsilon = 0.000001f // TODO: 3D: implement texel epsilon based on the resolution of each texture rather than this constant!
     let SpriteTexelEpsilonTimes2 = SpriteTexelEpsilon * 2.0f
+    let SpriteMessagesPrealloc = 256
 
 [<RequireQualifiedAccess>]
 module Audio =
