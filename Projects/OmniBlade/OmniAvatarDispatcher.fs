@@ -178,7 +178,7 @@ module AvatarDispatcher =
                 Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                     SpriteDescriptor
                         { Transform = transform
-                          InsetOpt = Some (getSpriteInset entity world)
+                          InsetOpt = ValueSome (getSpriteInset entity world)
                           Image = avatar.AnimationSheet
                           Color = Color.One
                           Blend = Transparent

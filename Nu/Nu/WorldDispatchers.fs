@@ -270,7 +270,7 @@ module StaticSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              InsetOpt = entity.GetInsetOpt world
+                              InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                               Image = staticImage
                               Color = entity.GetColor world
                               Blend = entity.GetBlend world
@@ -344,7 +344,7 @@ module AnimatedSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              InsetOpt = getSpriteInsetOpt entity world
+                              InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
                               Image = animationSheet
                               Color = entity.GetColor world
                               Blend = entity.GetBlend world
@@ -792,7 +792,7 @@ module Effect2dFacetModule =
                       Effects.Elevation = transform.Elevation
                       Effects.Offset = entity.GetEffectOffset world
                       Effects.Size = transform.Size
-                      Effects.InsetOpt = None
+                      Effects.InsetOpt = ValueNone
                       Effects.Color = Color.One
                       Effects.Blend = Transparent
                       Effects.Glow = Color.Zero
@@ -1545,7 +1545,7 @@ module ButtonDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = spriteTransform
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = spriteImage
                               Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
@@ -1585,7 +1585,7 @@ module LabelDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = spriteTransform
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = spriteImage
                               Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
@@ -1630,7 +1630,7 @@ module TextDispatcherModule =
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = spriteTransform
-                                  InsetOpt = None
+                                  InsetOpt = ValueNone
                                   Image = spriteImage
                                   Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                                   Blend = Transparent
@@ -1763,7 +1763,7 @@ module ToggleButtonDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = spriteTransform
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = spriteImage
                               Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
@@ -1887,7 +1887,7 @@ module RadioButtonDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = spriteTransform
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = spriteImage
                               Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
@@ -2077,7 +2077,7 @@ module FillBarDispatcherModule =
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = borderTransform
-                                  InsetOpt = None
+                                  InsetOpt = ValueNone
                                   Image = borderImage
                                   Color = borderImageColor
                                   Blend = Transparent
@@ -2107,7 +2107,7 @@ module FillBarDispatcherModule =
                           RenderDescriptor =
                               SpriteDescriptor
                                   { Transform = fillTransform
-                                    InsetOpt = None
+                                    InsetOpt = ValueNone
                                     Image = fillImage
                                     Color = fillImageColor
                                     Blend = Transparent
@@ -2238,16 +2238,16 @@ module SideViewCharacterDispatcherModule =
                 let celRun = entity.GetCelRun world
                 let animationDelay = entity.GetAnimationDelay world
                 let mutable transform = entity.GetTransform world
-                let (insetOpt, image) =
+                let struct (insetOpt, image) =
                     if not (World.isBodyOnGround physicsId world) then
                         let image = entity.GetSideViewCharacterJumpImage world
-                        (None, image)
+                        struct (ValueNone, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
                         let image = entity.GetSideViewCharacterIdleImage world
-                        (None, image)
+                        struct (ValueNone, image)
                     else
                         let image = entity.GetSideViewCharacterWalkSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
+                        struct (ValueSome (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Perimeter.Position.Y

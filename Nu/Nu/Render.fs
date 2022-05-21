@@ -65,7 +65,7 @@ type [<StructuralEquality; NoComparison>] Justification =
 /// A mutable sprite value.
 type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
-      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; zero is full texture.
+      mutable InsetOpt : Box2 ValueOption
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
@@ -75,7 +75,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
 /// A mutable particle value.
 type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
-      mutable Inset : Box2 // OPTIMIZATION: elides optionality to avoid pointer indirection; zero is full texture.
+      mutable InsetOpt : Box2 ValueOption
       mutable Color : Color
       mutable Glow : Color
       mutable Flip : Flip }
@@ -83,7 +83,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { mutable Transform : Transform
-      InsetOpt : Box2 option
+      InsetOpt : Box2 ValueOption
       Image : Image AssetTag
       Color : Color
       Blend : Blend
