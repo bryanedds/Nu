@@ -108,55 +108,56 @@ module SpriteBatch =
 
     let private EndBatch env =
 
-        // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-        OpenGL.Hl.Assert ()
+        // ensure something to draw
+        if env.SpriteIndex > 0 then
+
+            // setup state
+            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+            OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+            OpenGL.Hl.Assert ()
         
-        // setup vao
-        OpenGL.Gl.BindVertexArray env.Vao
-        OpenGL.Hl.Assert ()
+            // setup vao
+            OpenGL.Gl.BindVertexArray env.Vao
+            OpenGL.Hl.Assert ()
 
-        // setup shader
-        OpenGL.Gl.UseProgram env.Shader
-        OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
-        OpenGL.Gl.Uniform2 (env.PositionsUniform, env.Positions)
-        OpenGL.Gl.Uniform2 (env.TexCoordsesUniform, env.TexCoordses)
-        OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
-        OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
-        OpenGL.Gl.BlendEquation env.State.BlendingEquation
-        OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
-        OpenGL.Hl.Assert ()
+            // setup shader
+            OpenGL.Gl.UseProgram env.Shader
+            OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
+            OpenGL.Gl.Uniform2 (env.PositionsUniform, env.Positions)
+            OpenGL.Gl.Uniform2 (env.TexCoordsesUniform, env.TexCoordses)
+            OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
+            OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
+            OpenGL.Gl.BlendEquation env.State.BlendingEquation
+            OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
+            OpenGL.Hl.Assert ()
 
-        // draw geometry
-        OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
-        OpenGL.Hl.Assert ()
+            // draw geometry
+            OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
+            OpenGL.Hl.Assert ()
 
-        // teardown shader
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
-        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.UseProgram 0u
-        OpenGL.Hl.Assert ()
+            // teardown shader
+            OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
+            OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+            OpenGL.Gl.UseProgram 0u
+            OpenGL.Hl.Assert ()
         
-        // teardown vao
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Hl.Assert ()
+            // teardown vao
+            OpenGL.Gl.BindVertexArray 0u
+            OpenGL.Hl.Assert ()
 
-        // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
-        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+            // teardown state
+            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+            OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
 
-        // next batch
-        env.SpriteIndex <- 0
+            // next batch
+            env.SpriteIndex <- 0
 
     let private RestartBatch state env =
-        if env.SpriteIndex > 0 then
-            EndBatch env
-            OpenGL.Hl.Assert ()
-            BeginBatch state env
+        OpenGL.Hl.Assert (EndBatch env)
+        BeginBatch state env
 
     let BeginFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
@@ -164,14 +165,13 @@ module SpriteBatch =
         BeginBatch State.defaultState env
 
     let EndFrame env =
-        if env.SpriteIndex > 0 then EndBatch env
+        EndBatch env
 
     let InterruptFrame fn env =
         let state = env.State
-        let midframe = env.SpriteIndex > 0
-        if midframe then OpenGL.Hl.Assert (EndBatch env)
+        OpenGL.Hl.Assert (EndBatch env)
         OpenGL.Hl.Assert (fn ())
-        if midframe then OpenGL.Hl.Assert (BeginBatch state env)
+        BeginBatch state env
 
     let private PopulateVertex vertexId (position : Vector2) (texCoords : Vector2) (color : Color) env =
         let positionOffset = env.SpriteIndex * 6 * 2 + vertexId * 2
