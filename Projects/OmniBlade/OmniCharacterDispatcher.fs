@@ -104,8 +104,9 @@ module CharacterDispatcher =
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView2d world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter
                 let characterView =
-                    Render2d (transform.Elevation, transform.Perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = ValueSome (getSpriteInset character world)
@@ -121,11 +122,11 @@ module CharacterDispatcher =
                         let afflictionPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize
                             | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
                             | BossStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
                         let mutable afflictionTransform = Transform.makeDefault v3Cartesian2d
                         afflictionTransform.Position <- afflictionPosition
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
@@ -147,18 +148,18 @@ module CharacterDispatcher =
                         let chargeOrbPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
                             | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
                             | BossStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
                         let mutable chargeOrbTransform = Transform.makeDefault v3Cartesian2d
                         chargeOrbTransform.Position <- chargeOrbPosition
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
                         Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Perimeter.Position.Y, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
-                                { Transform = transform
+                                { Transform = chargeOrbTransform
                                   InsetOpt = ValueSome chargeOrbInset
                                   Image = chargeOrbImage
                                   Color = Color.One
