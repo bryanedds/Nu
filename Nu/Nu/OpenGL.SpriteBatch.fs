@@ -54,16 +54,24 @@ module SpriteBatch =
              "#define VERTS 6"
              "uniform mat4 viewProjection;"
              "uniform vec2 positions[" + string Constants.Render.SpriteBatchSize + " * VERTS];"
-             "uniform vec2 texCoordses[" + string Constants.Render.SpriteBatchSize + " * VERTS];"
+             "uniform vec4 texCoordses[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec4 colors[" + string Constants.Render.SpriteBatchSize + "];"
              "out vec2 texCoords;"
              "out vec4 color;"
              "void main()"
              "{"
              "  int spriteId = gl_VertexID / VERTS;"
+             "  int vertexId = gl_VertexID % VERTS;"
              "  vec2 position = positions[gl_VertexID];"
              "  gl_Position = viewProjection * vec4(position.x, position.y, 0, 1);"
-             "  texCoords = texCoordses[gl_VertexID];"
+             "  vec4 texCoords4 = texCoordses[spriteId];"
+             "  switch (vertexId)"
+             "  {"
+             "      case 0: case 4: texCoords = vec2(texCoords4.x, texCoords4.y); break;"
+             "      case 1:         texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y); break;"
+             "      case 2: case 5: texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w); break;"
+             "      case 3:         texCoords = vec2(texCoords4.x, texCoords4.y + texCoords4.w); break;"
+             "  }"
              "  color = colors[spriteId];"
              "}"] |> String.join "\n"
 
@@ -113,14 +121,23 @@ module SpriteBatch =
 
             // setup shader
             OpenGL.Gl.UseProgram env.Shader
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.Uniform2 (env.PositionsUniform, env.Positions)
-            OpenGL.Gl.Uniform2 (env.TexCoordsesUniform, env.TexCoordses)
+            OpenGL.Hl.Assert ()
+            OpenGL.Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.BlendEquation env.State.BlendingEquation
+            OpenGL.Hl.Assert ()
             OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
             OpenGL.Hl.Assert ()
 
@@ -164,19 +181,22 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         BeginBatch state env
 
-    let inline private PopulateVertex vertexId (position : Vector2) (texCoords : Vector2) (color : Color) env =
+    let inline private PopulatePosition vertexId (position : Vector2) env =
         let positionOffset = env.SpriteIndex * 6 * 2 + vertexId * 2
         env.Positions.[positionOffset] <- position.X
         env.Positions.[positionOffset + 1] <- position.Y
-        let texCoordsOffset = positionOffset
-        env.TexCoordses.[texCoordsOffset] <- texCoords.X
-        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Y
-        if positionOffset % (6 * 2) = 0 then
-            let colorOffset = env.SpriteIndex * 4
-            env.Colors.[colorOffset] <- color.R
-            env.Colors.[colorOffset + 1] <- color.G
-            env.Colors.[colorOffset + 2] <- color.B
-            env.Colors.[colorOffset + 3] <- color.A
+
+    let inline private PopulateVertex (texCoords : Box2) (color : Color) env =
+        let texCoordsOffset = env.SpriteIndex * 4
+        env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
+        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Position.Y
+        env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
+        env.TexCoordses.[texCoordsOffset + 3] <- texCoords.Size.Y
+        let colorOffset = env.SpriteIndex * 4
+        env.Colors.[colorOffset] <- color.R
+        env.Colors.[colorOffset + 1] <- color.G
+        env.Colors.[colorOffset + 2] <- color.B
+        env.Colors.[colorOffset + 3] <- color.A
 
     let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color : Color, flip, bfs, bfd, beq, texture, env) =
 
@@ -197,24 +217,21 @@ module SpriteBatch =
         // compute vertex positions
         let center = position + pivot
         let position0 = (position - center).Rotate rotation + center
-        let texCoords0 = texCoords.BottomLeft * flipper
         let position1Unrotated = v2 (position.X + size.X) position.Y
         let position1 = (position1Unrotated - center).Rotate rotation + center
-        let texCoords1 = texCoords.BottomRight * flipper
         let position2Unrotated = v2 (position.X + size.X) (position.Y + size.Y)
         let position2 = (position2Unrotated - center).Rotate rotation + center
-        let texCoords2 = texCoords.TopRight * flipper
         let position3Unrotated = v2 position.X (position.Y + size.Y)
         let position3 = (position3Unrotated - center).Rotate rotation + center
-        let texCoords3 = texCoords.TopLeft * flipper
 
         // populate vertices
-        PopulateVertex 0 position0 texCoords0 color env
-        PopulateVertex 1 position1 texCoords1 color env
-        PopulateVertex 2 position2 texCoords2 color env
-        PopulateVertex 3 position3 texCoords3 color env
-        PopulateVertex 4 position0 texCoords0 color env
-        PopulateVertex 5 position2 texCoords2 color env
+        PopulatePosition 0 position0 env
+        PopulatePosition 1 position1 env
+        PopulatePosition 2 position2 env
+        PopulatePosition 3 position3 env
+        PopulatePosition 4 position0 env
+        PopulatePosition 5 position2 env
+        PopulateVertex texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
@@ -234,7 +251,7 @@ module SpriteBatch =
           ViewProjectionUniform = viewProjectionUniform; PositionsUniform = positionsUniform; TexCoordsesUniform = texCoordsesUniform
           ColorsUniform = colorsUniform; TexUniform = texUniform; Shader = shader
           Positions = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2 * 6)
-          TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2 * 6)
+          TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Colors = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Vao = vao
           State = State.defaultState }
