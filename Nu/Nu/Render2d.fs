@@ -874,8 +874,7 @@ type RendererThread2d (createRenderer2d) =
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
-            let messagesTemp = messages
-            messages <- List ()
+            let messagesTemp = Interlocked.Exchange (&messages, List ())
             submissionOpt <- Some (messagesTemp, eyePosition, eyeSize, eyeMargin)
 
         member this.Swap () =
