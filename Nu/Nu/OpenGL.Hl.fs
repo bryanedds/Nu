@@ -192,9 +192,6 @@ module Hl =
 
         // link program
         OpenGL.Gl.LinkProgram program
-        Assert ()
-
-        // fin
         program
 
     /// Create a sprite shader with uniforms:
@@ -204,7 +201,7 @@ module Hl =
     /// and attributes:
     ///     0: vec2 position
     ///     1: vec2 texCoordsIn
-    /// TODO: consider making texCoords a uniform as well for more flexible one-off rendering.
+    /// TODO: consider making texCoordsIn a uniform as well for more flexible one-off rendering.
     let CreateSpriteShader () =
 
         // vertex shader code
