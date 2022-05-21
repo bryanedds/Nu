@@ -57,7 +57,7 @@
     [Dialog &quot;Qu'est-ce qu'etre libre...?&quot;]
     [Dialog &quot;Surement de n'avoir plus de fin...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
-    [Dialog &quot;Je suis nee servante d'une servante...&quot;]
+    [Dialog &quot;Je suis nee pour etre la servante d'une servante...&quot;]
     [Dialog &quot;Ma maitresse est cruelle, mais sa cruaute est previsible, contrairement a celle du monde.&quot;]
     [Dialog &quot;C'est ma tutrice depuis que ma mere est partie, mais je pense qu'elle m'a toujours detestee.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
