@@ -6,7 +6,6 @@ open Prime
 open Nu
 open Nu.Declarative
 
-#if ECS_HYBRID
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable Active : bool
       mutable Entity : Entity
@@ -14,9 +13,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     interface StaticSpriteComponent Component with
         member this.TypeName = nameof StaticSpriteComponent
         member this.Active with get () = this.Active and set value = this.Active <- value
-#endif
 
-#if ECS
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
@@ -38,7 +35,6 @@ type [<NoEquality; NoComparison; Struct>] Shake =
     interface Shake Component with
         member this.TypeName = nameof Shake
         member this.Active with get () = this.Active and set value = this.Active <- value
-#endif
 
 #if FACETED
 type MetricsEntityDispatcher () =
@@ -322,6 +318,60 @@ type ElmishGameDispatcher () =
                              Entity.Size <== int --> fun int -> v3 (single (int % 10)) (single (int % 10)) 0.0f]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
+
+#if ELMISH_AND_ECS
+    override this.Register (game, world) =
+
+        // call base
+        let world = base.Register (game, world)
+
+        // get ecs
+        let screen = Simulants.DefaultScreen
+        let ecs = screen.GetEcs world
+
+        // create component stores
+        let _ = ecs.RegisterStore (CorrelatedStore<EntityId, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Position, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Velocity, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Shake, World> ecs)
+
+        // create movers system
+        let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
+
+        // create shakers system
+        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
+
+        // create 4M movers (goal: 60FPS, current: 60FPS)
+        let world =
+            Seq.fold (fun world _ ->
+                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                world (Seq.init 1000000 id)
+
+        // create 4000 shakers
+        let world =
+            Seq.fold (fun world _ ->
+                let struct (entityId, world) = movers.NextEntityId world
+                shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                world (Seq.init 4000 id)
+
+        // define update for movers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            movers.Iterate $
+                new Statement<_, _, _> (fun position velocity world ->
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+                    world)
+
+        // define update for shakers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            shakers.Iterate $
+                new Statement<_, _, _, _> (fun _ position shake world ->
+                    position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                    position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+                    world)
+
+        world
+#endif
 #endif
 #endif
 
