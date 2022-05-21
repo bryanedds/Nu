@@ -164,7 +164,7 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         BeginBatch state env
 
-    let private PopulateVertex vertexId (position : Vector2) (texCoords : Vector2) (color : Color) env =
+    let inline private PopulateVertex vertexId (position : Vector2) (texCoords : Vector2) (color : Color) env =
         let positionOffset = env.SpriteIndex * 6 * 2 + vertexId * 2
         env.Positions.[positionOffset] <- position.X
         env.Positions.[positionOffset + 1] <- position.Y
