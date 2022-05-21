@@ -186,7 +186,7 @@ module SpriteBatch =
         env.Positions.[positionOffset] <- position.X
         env.Positions.[positionOffset + 1] <- position.Y
 
-    let inline private PopulateVertex (texCoords : Box2) (color : Color) env =
+    let inline private PopulateTexCoordsAndColor (texCoords : Box2) (color : Color) env =
         let texCoordsOffset = env.SpriteIndex * 4
         env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
         env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Position.Y
@@ -231,7 +231,7 @@ module SpriteBatch =
         PopulatePosition 3 position3 env
         PopulatePosition 4 position0 env
         PopulatePosition 5 position2 env
-        PopulateVertex texCoords color env
+        PopulateTexCoordsAndColor texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
