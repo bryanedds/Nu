@@ -79,7 +79,7 @@ type MetricsEntityDispatcher () =
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  InsetOpt = None
+                  InsetOpt = ValueNone
                   Image = staticImage
                   Color = Color.One
                   Blend = Transparent
@@ -252,7 +252,7 @@ type ElmishEntityDispatcher () =
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  InsetOpt = None
+                  InsetOpt = ValueNone
                   Image = staticImage
                   Color = Color.One
                   Blend = Transparent

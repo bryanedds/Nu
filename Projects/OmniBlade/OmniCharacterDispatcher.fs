@@ -108,7 +108,7 @@ module CharacterDispatcher =
                     Render2d (transform.Elevation, transform.Perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
-                              InsetOpt = Some (getSpriteInset character world)
+                              InsetOpt = ValueSome (getSpriteInset character world)
                               Image = character.AnimationSheet
                               Color = getSpriteColor character world
                               Blend = Transparent
@@ -116,7 +116,7 @@ module CharacterDispatcher =
                               Flip = FlipNone })
                 let afflictionView =
                     match getAfflictionInsetOpt character world with
-                    | Some _ as afflictionInsetOpt ->
+                    | Some afflictionInset ->
                         let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
                         let afflictionPosition =
                             match character.Stature with
@@ -133,7 +133,7 @@ module CharacterDispatcher =
                         Render2d (afflictionTransform.Elevation, afflictionTransform.Perimeter.Position.Y, AssetTag.generalize afflictionImage,
                             SpriteDescriptor
                                 { Transform = afflictionTransform
-                                  InsetOpt = afflictionInsetOpt
+                                  InsetOpt = ValueSome afflictionInset
                                   Image = afflictionImage
                                   Color = Color.One
                                   Blend = Transparent
@@ -142,7 +142,7 @@ module CharacterDispatcher =
                     | None -> View.empty
                 let chargeOrbView =
                     match getChargeOrbInsetOpt character world with
-                    | Some _ as chargeOrbInsetOpt ->
+                    | Some chargeOrbInset ->
                         let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
                         let chargeOrbPosition =
                             match character.Stature with
@@ -159,7 +159,7 @@ module CharacterDispatcher =
                         Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Perimeter.Position.Y, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
                                 { Transform = transform
-                                  InsetOpt = chargeOrbInsetOpt
+                                  InsetOpt = ValueSome chargeOrbInset
                                   Image = chargeOrbImage
                                   Color = Color.One
                                   Blend = Transparent

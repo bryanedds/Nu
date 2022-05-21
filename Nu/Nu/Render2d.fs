@@ -298,7 +298,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     /// Render sprite.
     static member renderSprite
         (transform : Transform byref,
-         inset : Box2 inref,
+         insetOpt : Box2 ValueOption inref,
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
@@ -311,6 +311,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let rotation = transform.Angles.X
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let pivot = transform.Offset.V2 * size
+        let inset = match insetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
         let image = AssetTag.generalize image
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
@@ -340,7 +341,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = particle.Flip
-                    let inset = &particle.Inset
+                    let inset = match particle.InsetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
                     GlRenderer2d.batchSprite absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
@@ -551,13 +552,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private renderDescriptor descriptor eyePosition eyeSize eyeMargin renderer =
         match descriptor with
         | SpriteDescriptor descriptor ->
-            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> box2Zero
-            GlRenderer2d.renderSprite (&descriptor.Transform, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
+            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
-                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
         | ParticlesDescriptor descriptor ->
             GlRenderer2d.renderParticles
                 (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
@@ -583,7 +583,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             if eyeMargin <> v2Zero then
                 let mutable transform = Transform.makeDefault v3Cartesian2d
                 transform.Absolute <- true
-                let sprite = { Transform = transform; Inset = box2Zero; Image = image; Color = Color.Black; Blend = Overwrite; Glow = Color.Zero; Flip = FlipNone }
+                let sprite = { Sprite.Transform = transform; InsetOpt = ValueNone; Image = image; Color = Color.Black; Blend = Overwrite; Glow = Color.Zero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform
                 bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
                 bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f

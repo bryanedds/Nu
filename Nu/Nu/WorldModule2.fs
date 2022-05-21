@@ -818,7 +818,7 @@ module WorldModule2 =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = dissolveImage
                               Color = color
                               Blend = Transparent

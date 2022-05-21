@@ -755,7 +755,7 @@ module Particles =
                     particle'.Transform.Size <- particle.Size
                     particle'.Color <- particle.Color
                     particle'.Glow <- particle.Glow
-                    particle'.Inset <- particle.Inset
+                    particle'.InsetOpt <- ValueSome particle.Inset // TODO: 3D: see if we can utilize opt-ness of inset in particle operators.
                     particle'.Flip <- particle.Flip
             { Elevation = emitter.Elevation
               Horizon = emitter.Body.Position.Y
