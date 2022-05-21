@@ -8,15 +8,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    let private VertexBuffer = Array.zeroCreate<single> 8
-
-    type [<StructuralEquality; NoComparison; StructLayout (LayoutKind.Sequential)>] private Vertex =
-        struct
-            val mutable Position : Vector2
-            val mutable TexCoords : Vector2
-            val mutable Color : Color
-            end
-
     type [<StructuralEquality; NoComparison; Struct>] private State =
         { Absolute : bool
           BlendingFactorSrc : OpenGL.BlendingFactor
