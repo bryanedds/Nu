@@ -221,9 +221,9 @@ module SpriteBatch =
         env.Rotations.[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
         env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
-        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Position.Y
+        env.TexCoordses.[texCoordsOffset + 1] <- 1.0f - texCoords.Position.Y
         env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
-        env.TexCoordses.[texCoordsOffset + 3] <- texCoords.Size.Y
+        env.TexCoordses.[texCoordsOffset + 3] <- -texCoords.Size.Y
         let colorOffset = env.SpriteIndex * 4
         env.Colors.[colorOffset] <- color.R
         env.Colors.[colorOffset + 1] <- color.G
