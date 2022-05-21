@@ -96,7 +96,7 @@ module SpriteBatch =
              "          position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);"
              "          texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);"
              "          break;"
-             "      case 3:"
+             "      default:"
              "          position = vec2(perimeter.x, perimeter.y + perimeter.w);"
              "          texCoords = vec2(texCoords4.x, texCoords4.y + texCoords4.w);"
              "          break;"
