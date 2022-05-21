@@ -757,7 +757,29 @@ type RendererThread2d (createRenderer2d) =
     let mutable messages = List ()
     let mutable submissionOpt = Option<RenderMessage2d List * Vector2 * Vector2 * Vector2>.None
     let mutable swap = false
-    let cachedSpriteMessages = ConcurrentStack ()
+    let cachedSpriteMessages = Queue ()
+    let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+
+    let allocSpriteMessage () =
+        lock cachedSpriteMessages (fun () ->
+            if cachedSpriteMessages.Count = 0 then
+                for _ in 0 .. dec cachedSpriteMessagesCapacity do
+                    let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
+                    let cachedSpriteMessage = RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor = spriteDescriptor }
+                    cachedSpriteMessages.Enqueue cachedSpriteMessage
+                cachedSpriteMessagesCapacity <- cachedSpriteMessagesCapacity * 2
+                cachedSpriteMessages.Dequeue ()
+            else cachedSpriteMessages.Dequeue ())
+
+    let freeSpriteMessages messages =
+        lock cachedSpriteMessages (fun () ->
+            for message in messages do
+                match message with
+                | RenderLayeredMessage2d layeredMessage ->
+                    match layeredMessage.RenderDescriptor with
+                    | CachedSpriteDescriptor _ -> cachedSpriteMessages.Enqueue message
+                    | _ -> ()
+                | _ -> ())
 
     member private this.Run () =
 
@@ -781,14 +803,8 @@ type RendererThread2d (createRenderer2d) =
             // render
             renderer.Render eyePosition eyeSize eyeMargin messages
             
-            // free cached sprite messages
-            for message in messages do
-                match message with
-                | RenderLayeredMessage2d layeredMessage ->
-                    match layeredMessage.RenderDescriptor with
-                    | CachedSpriteDescriptor _ -> cachedSpriteMessages.Push message
-                    | _ -> ()
-                | _ -> ()
+            // recover cached sprite messages
+            freeSpriteMessages messages
 
             // loop until swap is requested
             while not swap && not terminated do
@@ -830,12 +846,7 @@ type RendererThread2d (createRenderer2d) =
             | RenderLayeredMessage2d layeredMessage ->
                 match layeredMessage.RenderDescriptor with
                 | SpriteDescriptor sprite ->
-                    let cachedSpriteMessage =
-                        match cachedSpriteMessages.TryPop () with
-                        | (true, cachedSpriteMessage) -> cachedSpriteMessage
-                        | (false, _) ->
-                            let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
-                            RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor = spriteDescriptor }
+                    let cachedSpriteMessage = allocSpriteMessage ()
                     match cachedSpriteMessage with
                     | RenderLayeredMessage2d cachedLayeredMessage ->
                         match cachedLayeredMessage.RenderDescriptor with
