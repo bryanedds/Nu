@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -19,17 +20,19 @@ open Nu
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
+    | CachedSpriteDescriptor of CachedSpriteDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
     | TextDescriptor of TextDescriptor
     | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
 
 /// A layered message to the 2d rendering system.
+/// NOTE: mutation is used only for internal sprite descriptor caching.
 and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
-    { Elevation : single
-      Horizon : single
-      AssetTag : obj AssetTag
-      RenderDescriptor : RenderDescriptor }
+    { mutable Elevation : single
+      mutable Horizon : single
+      mutable AssetTag : obj AssetTag
+      mutable RenderDescriptor : RenderDescriptor }
 
 /// Describes a 2d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
@@ -459,7 +462,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 match renderAsset with
                 | FontAsset (_, font) ->
                 
-                    // 
+                    // gather rendering resources
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
                     // surface and texture one or more times a frame must be understood!
                     let (offset, textSurface, textSurfacePtr) =
@@ -558,9 +561,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+        | CachedSpriteDescriptor descriptor ->
+            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
         | ParticlesDescriptor descriptor ->
-            GlRenderer2d.renderParticles
-                (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+            GlRenderer2d.renderParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | TilesDescriptor descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
@@ -753,6 +757,7 @@ type RendererThread2d (createRenderer2d) =
     let mutable messages = List ()
     let mutable submissionOpt = Option<RenderMessage2d List * Vector2 * Vector2 * Vector2>.None
     let mutable swap = false
+    let cachedSpriteMessages = ConcurrentStack ()
 
     member private this.Run () =
 
@@ -775,6 +780,15 @@ type RendererThread2d (createRenderer2d) =
 
             // render
             renderer.Render eyePosition eyeSize eyeMargin messages
+            
+            // free cached sprite messages
+            for message in messages do
+                match message with
+                | RenderLayeredMessage2d layeredMessage ->
+                    match layeredMessage.RenderDescriptor with
+                    | CachedSpriteDescriptor _ -> cachedSpriteMessages.Push message
+                    | _ -> ()
+                | _ -> ()
 
             // loop until swap is requested
             while not swap && not terminated do
@@ -798,15 +812,49 @@ type RendererThread2d (createRenderer2d) =
             terminated
 
         member this.Start () =
+
+            // validate state
             if Option.isSome taskOpt then raise (InvalidOperationException "Render process already started.")
+
+            // start task
             let task = new Task ((fun () -> this.Run ()), TaskCreationOptions.LongRunning)
             taskOpt <- Some task
             task.Start ()
+
+            // wait for task to finish starting
             while not started do Thread.Yield () |> ignore<bool>
 
         member this.EnqueueMessage message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messages.Add message
+            match message with
+            | RenderLayeredMessage2d layeredMessage ->
+                match layeredMessage.RenderDescriptor with
+                | SpriteDescriptor sprite ->
+                    let cachedSpriteMessage =
+                        match cachedSpriteMessages.TryPop () with
+                        | (true, cachedSpriteMessage) -> cachedSpriteMessage
+                        | (false, _) ->
+                            let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
+                            RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor = spriteDescriptor }
+                    match cachedSpriteMessage with
+                    | RenderLayeredMessage2d cachedLayeredMessage ->
+                        match cachedLayeredMessage.RenderDescriptor with
+                        | CachedSpriteDescriptor descriptor ->
+                            cachedLayeredMessage.Elevation <- layeredMessage.Elevation
+                            cachedLayeredMessage.Horizon <- layeredMessage.Horizon
+                            cachedLayeredMessage.AssetTag <- layeredMessage.AssetTag
+                            descriptor.CachedSprite.Transform <- sprite.Transform
+                            descriptor.CachedSprite.InsetOpt <- sprite.InsetOpt
+                            descriptor.CachedSprite.Image <- sprite.Image
+                            descriptor.CachedSprite.Color <- sprite.Color
+                            descriptor.CachedSprite.Blend <- sprite.Blend
+                            descriptor.CachedSprite.Glow <- sprite.Glow
+                            descriptor.CachedSprite.Flip <- sprite.Flip
+                            messages.Add cachedSpriteMessage
+                        | _ -> failwithumf ()
+                    | _ -> failwithumf ()
+                | _ -> messages.Add message
+            | _ -> messages.Add message
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

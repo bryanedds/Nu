@@ -94,6 +94,10 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : Sprite array }
 
+/// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
+type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
+    { mutable CachedSprite : Sprite }
+
 /// Describes how to render tile map tiles to the rendering system.
 type [<NoEquality; NoComparison>] TilesDescriptor =
     { mutable Transform : Transform
