@@ -313,7 +313,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
         let rotation = transform.Angles.Z
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-        let pivot = transform.Offset.V2 * size
+        let pivot = (v3Cartesian2d.V2 - transform.Offset.V2) * size
         let inset = match insetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
         let image = AssetTag.generalize image
         match GlRenderer2d.tryFindRenderAsset image renderer with
@@ -340,7 +340,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
                     let rotation = transform.Angles.Z
                     let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-                    let pivot = transform.Offset.V2 * size
+                    let pivot = (v3Cartesian2d.V2 - transform.Offset.V2) * size
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = particle.Flip
