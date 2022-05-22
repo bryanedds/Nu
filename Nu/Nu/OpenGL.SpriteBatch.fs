@@ -208,7 +208,7 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         BeginBatch state env
 
-    let private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
+    let inline private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) flipH flipV (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
         env.Perimeters.[perimeterOffset] <- perimeter.Position.X
         env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y
@@ -220,10 +220,10 @@ module SpriteBatch =
         let rotationOffset = env.SpriteIndex
         env.Rotations.[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
-        env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
-        env.TexCoordses.[texCoordsOffset + 1] <- 1.0f - texCoords.Position.Y
-        env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
-        env.TexCoordses.[texCoordsOffset + 3] <- -texCoords.Size.Y
+        env.TexCoordses.[texCoordsOffset] <- if flipH then texCoords.Position.X + texCoords.Size.X else texCoords.Position.X
+        env.TexCoordses.[texCoordsOffset + 1] <- if flipV then 1.0f - texCoords.Position.Y + texCoords.Size.Y else 1.0f - texCoords.Position.Y
+        env.TexCoordses.[texCoordsOffset + 2] <- if flipH then -texCoords.Size.X else texCoords.Size.X
+        env.TexCoordses.[texCoordsOffset + 3] <- if flipV then texCoords.Size.Y else -texCoords.Size.Y
         let colorOffset = env.SpriteIndex * 4
         env.Colors.[colorOffset] <- color.R
         env.Colors.[colorOffset + 1] <- color.G
@@ -238,17 +238,17 @@ module SpriteBatch =
             RestartBatch state env
             OpenGL.Hl.Assert ()
 
-        // compute a coord flipping value
-        let flipper =
+        // compute a flipping flags
+        let struct (flipH, flipV) =
             match flip with
-            | FlipNone -> v2 1.0f -1.0f
-            | FlipH -> v2 -1.0f -1.0f
-            | FlipV -> v2 1.0f 1.0f
-            | FlipHV -> v2 -1.0f 1.0f
+            | FlipNone -> struct (false, false)
+            | FlipH -> struct (true, false)
+            | FlipV -> struct (false, true)
+            | FlipHV -> struct (true, true)
 
         // populate vertices
         let perimeter = box2 position size
-        PopulateVertex perimeter pivot rotation texCoords color env
+        PopulateVertex perimeter pivot rotation texCoords flipH flipV color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
