@@ -288,7 +288,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
                 let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                joint.TargetAngle <- jointAngle.TargetAngle
+                joint.TargetAngle <- -jointAngle.TargetAngle
                 joint.Softness <- jointAngle.Softness
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | JointDistance jointDistance ->
