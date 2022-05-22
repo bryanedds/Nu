@@ -10,7 +10,7 @@ open BlazeVector
 module Bullet =
 
     type BulletDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static let [<Literal>] BulletLifeTime =
             27L
@@ -57,7 +57,7 @@ module Enemy =
             Math.isPointInBounds2d center.V2 viewBounds
 
     type EnemyDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
         
         static let move (enemy : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
@@ -123,7 +123,7 @@ module Player =
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static let [<Literal>] WalkForce = 1750.0f
         static let [<Literal>] FallForce = -5000.0f

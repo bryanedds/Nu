@@ -613,7 +613,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3 0.5f 0.5f 0.0f; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -1247,16 +1247,16 @@ module TmxMapFacetModule =
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (isPhysical) =
-        inherit EntityDispatcher (isPhysical, true, true)
+    type EntityDispatcher2d (isPhysical, isCartesian) =
+        inherit EntityDispatcher (isPhysical, isCartesian, true)
 
         static member Properties =
             [define Entity.Offset v3Cartesian2d
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d (isPhysical) =
-        inherit EntityDispatcher (isPhysical, false, false)
+    type EntityDispatcher3d (isPhysical, isCartesian) =
+        inherit EntityDispatcher (isPhysical, isCartesian, false)
 
         static member Properties =
             [define Entity.Offset v3Zero
@@ -1386,7 +1386,7 @@ module EntityDispatcherModule =
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1402,7 +1402,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1426,7 +1426,7 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Properties =
             [define Entity.Offset v3Cartesian2d
@@ -2128,7 +2128,7 @@ module FillBarDispatcherModule =
 module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2140,7 +2140,7 @@ module BasicEmitter2dDispatcherModule =
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2153,7 +2153,7 @@ module Effect2dDispatcherModule =
 module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2167,7 +2167,7 @@ module Block2dDispatcherModule =
 module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2194,7 +2194,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2268,7 +2268,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2291,7 +2291,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d (true, true)
 
         static member Facets =
             [typeof<TmxMapFacet>]
@@ -2312,7 +2312,7 @@ module TmxMapDispatcherModule =
 module SceneryModule =
 
     type [<AbstractClass>] SceneryDispatcher () =
-        inherit EntityDispatcher3d (false)
+        inherit EntityDispatcher3d (false, true)
 
 [<AutoOpen>]
 module ConcatenatedSceneryModule =
@@ -2323,7 +2323,7 @@ module ConcatenatedSceneryModule =
         member this.EntityStates = lens Property? EntityStates this.GetEntityStates this.SetEntityStates this
 
     type ConcatenatedSceneryDispatcher () =
-        inherit EntityDispatcher3d (false)
+        inherit EntityDispatcher3d (false, true)
 
         static member Properties =
             [nonPersistent Entity.EntityStates [||]]
