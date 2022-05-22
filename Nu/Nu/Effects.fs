@@ -394,7 +394,7 @@ module EffectSystem =
         | PositionAbsolute position -> { slice with Position = position }
         | PositionRelative position -> { slice with Position = slice.Position + position }
         | Translation translation ->
-            let oriented = Vector3.Transform (translation, Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z))
+            let oriented = Vector3.Transform (translation, slice.Angles.RollPitchYaw)
             let translated = slice.Position + oriented
             { slice with Position = translated }
         | Scale scale -> { slice with Scale = scale }
@@ -428,7 +428,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let oriented = Vector3.Transform (tweened, Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z))
+                let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position oriented applicator
                 { slice with Position = applied }
             else slice
