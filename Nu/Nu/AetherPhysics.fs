@@ -103,12 +103,12 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.Awake <- bodyProperties.Awake
         body.Enabled <- bodyProperties.Enabled
-        body.Rotation <- -bodyProperties.Rotation.RollPitchYaw.X
+        body.Rotation <- -bodyProperties.Rotation.RollPitchYaw.Z
         body.SetFriction bodyProperties.Friction
         body.SetRestitution bodyProperties.Restitution
         body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
-        body.AngularVelocity <- bodyProperties.AngularVelocity.X
+        body.AngularVelocity <- bodyProperties.AngularVelocity.Z
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.FixedRotation
         body.Inertia <- bodyProperties.Inertia
@@ -231,7 +231,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         // get fields
         let sourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
-        let bodyRotation = -bodyProperties.Rotation.RollPitchYaw.X
+        let bodyRotation = -bodyProperties.Rotation.RollPitchYaw.Z
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
 
         // make the body
@@ -338,7 +338,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
-        | (true, (_, body)) -> body.Rotation <- -setBodyRotationMessage.Rotation.RollPitchYaw.X
+        | (true, (_, body)) -> body.Rotation <- -setBodyRotationMessage.Rotation.RollPitchYaw.Z
         | (false, _) -> Log.debug ("Could not set rotation of non-existent body with PhysicsId = " + scstring setBodyRotationMessage.PhysicsId + "'.")
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
@@ -407,7 +407,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                     BodyTransformMessage
                         { BodySource = body.Tag :?> BodySourceInternal
                           Position = AetherPhysicsEngine.toPixelV3 body.Position
-                          Rotation = (v3 -body.Rotation 0.0f 0.0f).RollPitchYaw
+                          Rotation = (v3 0.0f 0.0f -body.Rotation).RollPitchYaw
                           LinearVelocity = AetherPhysicsEngine.toPixelV3 body.LinearVelocity
                           AngularVelocity = v3 body.AngularVelocity 0.0f 0.0f }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage

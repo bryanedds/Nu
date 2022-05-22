@@ -72,7 +72,7 @@ module Effects =
                 (Resource (AssetTag.toPair Assets.Battle.CancelImage),
                  [|Angleses
                     (Sum, Linear, Bounce,
-                     [|{ TweenValue = v3 (single Math.PI * -2.0f) 0.0f 0.0f; TweenLength = 10L }
+                     [|{ TweenValue = v3 0.0f 0.0f (single Math.PI * -2.0f); TweenLength = 10L }
                        { TweenValue = v3Zero; TweenLength = 30L }
                        { TweenValue = v3Zero; TweenLength = 0L }|])
                    Sizes
@@ -196,9 +196,9 @@ module Effects =
                  [|candle (PositionRelative (v3 0.0f altitude 0.0f))
                    candle (PositionRelative (v3 -halfWidth 0.0f 0.0f))
                    candle (PositionRelative (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 90.0f 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 30.0f 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 -30.0f 0.0f 0.0f))|]) }
+                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f 90.0f))
+                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))
+                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))|]) }
 
     let makeFireEffect position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
@@ -238,7 +238,7 @@ module Effects =
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 64L }; { LogicValue = false; LogicLength = 0L }|])|],
                  [|Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
                    Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
-                   Degrees (v3 -90.0f 0.0f 0.0f)
+                   Degrees (v3 0.0f 0.0f -90.0f)
                    Color (Color.One.WithA8 (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
@@ -275,9 +275,9 @@ module Effects =
         let rotate =
             Degreeses (Set, Constant, Loop,
                 [|{ TweenValue = v3Zero; TweenLength = 5L }
-                  { TweenValue = v3 90.0f 0.0f 0.0f; TweenLength = 5L }
-                  { TweenValue = v3 180.0f 0.0f 0.0f; TweenLength = 5L }
-                  { TweenValue = v3 270.0f 0.0f 0.0f; TweenLength = 5L }|])
+                  { TweenValue = v3 0.0f 0.0f 90.0f; TweenLength = 5L }
+                  { TweenValue = v3 0.0f 0.0f 180.0f; TweenLength = 5L }
+                  { TweenValue = v3 0.0f 0.0f 270.0f; TweenLength = 5L }|])
         { EffectName = "Snowball"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
