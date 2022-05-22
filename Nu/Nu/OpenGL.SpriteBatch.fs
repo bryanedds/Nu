@@ -33,12 +33,12 @@ module SpriteBatch =
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
-              ViewProjectionUniform : int
               PerimetersUniform : int
               TexCoordsesUniform : int
               PivotsUniform : int
               RotationsUniform : int
               ColorsUniform : int
+              ViewProjectionUniform : int
               TexUniform : int
               Shader : uint
               Perimeters : single array
@@ -56,12 +56,12 @@ module SpriteBatch =
         let samplerVertexShaderStr =
             [Constants.Render.GlslVersionPragma
              "#define VERTS 6"
-             "uniform mat4 viewProjection;"
              "uniform vec4 perimeters[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec2 pivots[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform float rotations[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec4 texCoordses[" + string Constants.Render.SpriteBatchSize + "];"
              "uniform vec4 colors[" + string Constants.Render.SpriteBatchSize + "];"
+             "uniform mat4 viewProjection;"
              "out vec2 texCoords;"
              "out vec4 color;"
              ""
@@ -124,17 +124,17 @@ module SpriteBatch =
         OpenGL.Hl.Assert ()
 
         // grab uniform locations
-        let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let perimetersUniform = OpenGL.Gl.GetUniformLocation (shader, "perimeters")
         let pivotsUniform = OpenGL.Gl.GetUniformLocation (shader, "pivots")
         let rotationsUniform = OpenGL.Gl.GetUniformLocation (shader, "rotations")
         let texCoordsesUniform = OpenGL.Gl.GetUniformLocation (shader, "texCoordses")
         let colorsUniform = OpenGL.Gl.GetUniformLocation (shader, "colors")
+        let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         OpenGL.Hl.Assert ()
 
         // fin
-        (viewProjectionUniform, perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader)
+        (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
 
     let private BeginBatch state env =
         env.State <- state
@@ -155,12 +155,12 @@ module SpriteBatch =
 
             // setup shader
             OpenGL.Gl.UseProgram env.Shader
-            OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
             OpenGL.Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
             OpenGL.Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
             OpenGL.Gl.Uniform2 (env.PivotsUniform, env.Pivots)
             OpenGL.Gl.Uniform1 (env.RotationsUniform, env.Rotations)
             OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
+            OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
             OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
             OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
@@ -260,14 +260,14 @@ module SpriteBatch =
         OpenGL.Hl.Assert ()
 
         // create shader
-        let (viewProjectionUniform, perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, texUniform, shader) = CreateShader ()
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateShader ()
         OpenGL.Hl.Assert ()
 
         // create env
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
-          ViewProjectionUniform = viewProjectionUniform
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
-          TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; TexUniform = texUniform; Shader = shader
+          TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
+          TexUniform = texUniform; Shader = shader
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
