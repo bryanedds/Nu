@@ -17,7 +17,7 @@ open Nu
 module WorldBindings =
 
     let [<Literal>] BindingKeywords =
-        "v2 v3 v4 v2i v3i v4i quat box2 box3 color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
+        "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
         "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
         "transitionScreen setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
