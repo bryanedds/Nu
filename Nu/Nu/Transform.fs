@@ -88,10 +88,10 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Rotation_
         and set value =
             this.Rotation_ <- value
-            let pitchYawRoll = value.PitchYawRoll
-            this.Angles_.X <- pitchYawRoll.X
-            this.Angles_.Y <- pitchYawRoll.Y
-            this.Angles_.Z <- pitchYawRoll.Z
+            let rollPitchYaw = value.RollPitchYaw
+            this.Angles_.X <- rollPitchYaw.X
+            this.Angles_.Y <- rollPitchYaw.Y
+            this.Angles_.Z <- rollPitchYaw.Z
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
 
@@ -99,7 +99,7 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Angles_
         and set value =
             this.Angles_ <- value
-            this.Rotation_ <- Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
+            this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
 
@@ -174,7 +174,28 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.PerimeterOriented =
         let perimeter = this.Perimeter
-        perimeter.Orient this.Rotation_
+        let rotation = this.Rotation
+        if not rotation.IsIdentity then
+            let center = perimeter.Center
+            let corners = perimeter.Corners
+            let mutable minX = Single.MaxValue
+            let mutable minY = Single.MaxValue
+            let mutable minZ = Single.MaxValue
+            let mutable maxX = Single.MinValue
+            let mutable maxY = Single.MinValue
+            let mutable maxZ = Single.MinValue
+            for i in 0 .. corners.Length - 1 do
+                let corner = &corners.[i]
+                corner <- corner - center
+                corner <- Vector3.Transform (corner, rotation) + center
+                minX <- min minX corner.X
+                minY <- min minY corner.Y
+                minZ <- min minZ corner.Z
+                maxX <- max maxX corner.X
+                maxY <- max maxY corner.Y
+                maxZ <- max maxZ corner.Z
+            Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
+        else perimeter
 
     member this.Bounds =
         let perimeterOriented = this.PerimeterOriented

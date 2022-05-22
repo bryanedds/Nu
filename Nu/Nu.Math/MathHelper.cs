@@ -470,31 +470,60 @@ namespace Nu
         }
 
         /// <summary>
-        /// Convert a quaternion to euler angles.
-        /// Taken from https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles.
+        /// Convert euler angles in [roll, pitch, yaw] to a quaternion.
+        /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
         /// NOTE: because this use double-precision calculation, this is slower than it need be.
         /// TODO: Use MathF instead once we upgrade to .NET 5.
         /// </summary>
-        public static Vector3 PitchYawRoll(in this Quaternion rotation)
+        public static Quaternion RollPitchYaw(in this Vector3 angles)
+		{
+            var roll = angles.X;
+            var pitch = angles.Y;
+            var yaw = angles.Z;
+
+            // Abbreviations for the various angular functions
+            double cy = Math.Cos(yaw * 0.5);
+            double sy = Math.Sin(yaw * 0.5);
+            double cp = Math.Cos(pitch * 0.5);
+            double sp = Math.Sin(pitch * 0.5);
+            double cr = Math.Cos(roll * 0.5);
+            double sr = Math.Sin(roll * 0.5);
+
+            Quaternion q;
+            q.W = (float)(cr * cp * cy + sr * sp * sy);
+            q.X = (float)(sr * cp * cy - cr * sp * sy);
+            q.Y = (float)(cr * sp * cy + sr * cp * sy);
+            q.Z = (float)(cr * cp * sy - sr * sp * cy);
+
+            return q;
+        }
+
+        /// <summary>
+        /// Convert a quaternion to euler angles in [roll, pitch, yaw].
+        /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+        /// NOTE: because this use double-precision calculation, this is slower than it need be.
+        /// TODO: Use MathF instead once we upgrade to .NET 5.
+        /// </summary>
+        public static Vector3 RollPitchYaw(in this Quaternion rotation)
         {
             Vector3 angles;
-
-            // yaw (z-axis rotation)
-            double siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y);
-            double cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z);
-            angles.Y = (float)Math.Atan2(siny_cosp, cosy_cosp);
-
-            // pitch (y-axis rotation)
-            double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
-            if (Math.Abs(sinp) >= 1.0f)
-                angles.X = (float)CopySign(Math.PI / 2.0f, sinp); // use 90 degrees if out of range
-            else
-                angles.X = (float)Math.Asin(sinp);
 
             // roll (x-axis rotation)
             var sinr_cosp = 2.0f * (rotation.W * rotation.X + rotation.Y * rotation.Z);
             var cosr_cosp = 1.0f - 2.0f * (rotation.X * rotation.X + rotation.Y * rotation.Y);
-            angles.Z = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+            angles.X = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+
+            // pitch (y-axis rotation)
+            double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
+            if (Math.Abs(sinp) >= 1.0f)
+                angles.Y = (float)CopySign(Math.PI / 2.0f, sinp); // use 90 degrees if out of range
+            else
+                angles.Y = (float)Math.Asin(sinp);
+
+            // yaw (z-axis rotation)
+            double siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y);
+            double cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z);
+            angles.Z = (float)Math.Atan2(siny_cosp, cosy_cosp);
 
             return angles;
         }

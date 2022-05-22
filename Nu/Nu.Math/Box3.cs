@@ -60,16 +60,6 @@ namespace Nu
         public static readonly Box2 Unit = new Box2(new Vector2(0, 0), new Vector2(1, 1));
 
         /// <summary>
-        /// Create an oriented bounding box.
-        /// </summary>
-        public Box3 Orient(Quaternion rotation)
-		{
-            var positionOriented = Vector3.Transform(Position, rotation);
-            var positionOriented2 = Vector3.Transform(Position + Size, rotation);
-            return Enclose(positionOriented, positionOriented2);
-        }
-
-        /// <summary>
         /// Create a bounding box by enclosing two points.
         /// </summary>
         public static Box3 Enclose(Vector3 point, Vector3 point2)

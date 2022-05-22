@@ -121,6 +121,7 @@ module Vector3 =
         member this.WithX x = Vector3 (x, this.Y, this.Z)
         member this.WithY y = Vector3 (this.X, y, this.Z)
         member this.WithZ z = Vector3 (this.X, this.Y, z)
+        member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -622,7 +623,7 @@ type Vector4iConverter () =
 [<AutoOpen>]
 module Quaternion =
     type Quaternion with
-        member this.PitchYawRoll = MathHelper.PitchYawRoll &this
+        member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
     let quatId = Quaternion.Identity
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2

@@ -727,7 +727,7 @@ module WorldModuleEntity =
             if quatNeq value entityState.RotationLocal then
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
-                let anglesLocal = value.PitchYawRoll
+                let anglesLocal = value.RollPitchYaw
                 if entityState.Optimized then
                     entityState.RotationLocal <- value
                     entityState.AnglesLocal <- anglesLocal
@@ -892,7 +892,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.AnglesLocal then
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
-                let rotationLocal = Quaternion.CreateFromYawPitchRoll (value.Y, value.X, value.Z)
+                let rotationLocal = value.RollPitchYaw
                 if entityState.Optimized then
                     entityState.RotationLocal <- rotationLocal
                     entityState.AnglesLocal <- value
