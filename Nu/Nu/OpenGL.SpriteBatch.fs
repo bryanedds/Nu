@@ -94,7 +94,7 @@ module SpriteBatch =
              "  vec4 perimeter = perimeters[spriteId] * filter;"
              "  vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);"
              "  vec2 center = perimeter.xy + pivots[spriteId];"
-             "  vec2 positionRotated = center + rotate(position - center, rotations[spriteId]);"
+             "  vec2 positionRotated = rotate(position - center, rotations[spriteId]) + center;"
              "  gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);"
              ""
              "  // compute tex coords"
