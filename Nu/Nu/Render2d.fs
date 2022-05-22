@@ -796,25 +796,31 @@ type RendererThread2d (createRenderer2d) =
             while Option.isNone submissionOpt && not terminated do
                 Thread.Yield () |> ignore<bool>
 
-            // receive submission
-            let (messages, eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
-            submissionOpt <- None
+            // guard against early termination
+            if not terminated then
 
-            // render
-            renderer.Render eyePosition eyeSize eyeMargin messages
+                // receive submission
+                let (messages, eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
+                submissionOpt <- None
+
+                // render
+                renderer.Render eyePosition eyeSize eyeMargin messages
             
-            // recover cached sprite messages
-            freeSpriteMessages messages
+                // recover cached sprite messages
+                freeSpriteMessages messages
 
-            // loop until swap is requested
-            while not swap && not terminated do
-                Thread.Yield () |> ignore<bool>
+                // loop until swap is requested
+                while not swap && not terminated do
+                    Thread.Yield () |> ignore<bool>
 
-            // swap
-            renderer.Swap ()
+                // guard against early termination
+                if not terminated then
 
-            // complete swap request
-            swap <- false
+                    // swap
+                    renderer.Swap ()
+
+                    // complete swap request
+                    swap <- false
 
         // clean up
         renderer.CleanUp ()
