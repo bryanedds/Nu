@@ -30,8 +30,7 @@ module SegmentedArray =
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException ("Invalid argument.", nameof length))
         let size = sizeof<'a>
-        let lohSizeAllowingForPadding = 85000 / 4 * 3
-        let segmentSize = lohSizeAllowingForPadding / size
+        let segmentSize = Constants.Engine.LohSizeMinusArraySlop / size
         let segmentCount = length / segmentSize
         let segmentRemainder = length % segmentSize
         let segments =
