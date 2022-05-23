@@ -311,9 +311,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
         let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
-        let rotation = transform.Angles.Z
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-        let pivot = (v3Cartesian2d.V2 - transform.Offset.V2) * size
+        let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
+        let rotation = transform.Angles.Z
         let inset = match insetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
         let image = AssetTag.generalize image
         match GlRenderer2d.tryFindRenderAsset image renderer with
