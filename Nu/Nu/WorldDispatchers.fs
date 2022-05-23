@@ -27,6 +27,7 @@ module DeclarativeOperators2 =
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.actualizeView view world) world views
+            | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.actualizeView view world) world views
 
 [<AutoOpen>]
 module FacetModule =

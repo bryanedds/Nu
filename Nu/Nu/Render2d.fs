@@ -19,7 +19,7 @@ open Nu
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
-    | SpritesSegmentedDescriptor of SpritesSegmentedDescriptor
+    | SpritesSegmentedDescriptor of SegmentedSpritesDescriptor
     | CachedSpriteDescriptor of CachedSpriteDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
@@ -562,7 +562,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
         | SpritesSegmentedDescriptor descriptor ->
-            let sprites = descriptor.SpritesSegmented
+            let sprites = descriptor.SegmentedSprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
