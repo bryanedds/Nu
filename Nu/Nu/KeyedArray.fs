@@ -3,6 +3,7 @@
 
 namespace Nu
 open Prime
+open System
 open System.Collections.Generic
 
 [<RequireQualifiedAccess>]

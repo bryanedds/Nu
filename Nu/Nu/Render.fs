@@ -124,7 +124,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Absolute : bool
       Blend : Blend
       Image : Image AssetTag
-      Particles : Particle array }
+      Particles : Particle SegmentedArray }
 
 /// A renderer tag interface.
 and Renderer = interface end

@@ -73,6 +73,7 @@
     <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
     <Compile Include="KeyedArray.fs" />
+    <Compile Include="SegmentedArray.fs" />
     <Compile Include="Ecs.fs" />
     <Compile Include="Systems.fs" />
     <Compile Include="Math.fs" />
