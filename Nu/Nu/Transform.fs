@@ -174,9 +174,9 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.PerimeterOriented =
         let perimeter = this.Perimeter
-        let rotation = this.Rotation
+        let rotation = this.Rotation_
         if not rotation.IsIdentity then
-            let center = perimeter.Center
+            let pivot = this.Pivot
             let corners = perimeter.Corners
             let mutable minX = Single.MaxValue
             let mutable minY = Single.MaxValue
@@ -186,8 +186,7 @@ type [<NoEquality; NoComparison>] Transform =
             let mutable maxZ = Single.MinValue
             for i in 0 .. corners.Length - 1 do
                 let corner = &corners.[i]
-                corner <- corner - center
-                corner <- Vector3.Transform (corner, rotation) + center
+                corner <- Vector3.Transform (corner - pivot, rotation) + pivot
                 minX <- min minX corner.X
                 minY <- min minY corner.Y
                 minZ <- min minZ corner.Z
@@ -203,6 +202,9 @@ type [<NoEquality; NoComparison>] Transform =
         let center = perimeterOriented.Center
         let positionOverflowed = center - sizeOverflowed * 0.5f
         Box3 (positionOverflowed, sizeOverflowed)
+
+    member this.Pivot =
+        this.Position_ + this.Offset_ * this.Size_
 
     // TODO: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
