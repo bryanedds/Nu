@@ -483,7 +483,7 @@ module Particles =
         static member ofSeq scope transformers =
             { Scope = scope; Transformers = FStack.ofSeq transformers }
 
-        /// Run the behavior over an array of targets.
+        /// Run the behavior over targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
             let targets2 = behavior.Scope.In targets
@@ -544,7 +544,7 @@ module Particles =
                     behaviors.Behaviors
             (outputs, targets :?> 'a)
 
-        /// Run the behaviors over an array of targets.
+        /// Run the behaviors over targets.
         static member runMany time behaviors constrain (targets : 'a SegmentedArray) =
             let (outputs, targets) =
                 FStack.fold (fun (output, targets) (behavior : Behavior) ->
