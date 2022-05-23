@@ -1247,16 +1247,16 @@ module TmxMapFacetModule =
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (isPhysical, isCartesian) =
-        inherit EntityDispatcher (isPhysical, isCartesian, true)
+    type EntityDispatcher2d (isPhysical, isCentered) =
+        inherit EntityDispatcher (isPhysical, isCentered, true)
 
         static member Properties =
-            [define Entity.Offset v3Cartesian2d
+            [define Entity.Offset v3CenteredOffset2d
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d (isPhysical, isCartesian) =
-        inherit EntityDispatcher (isPhysical, isCartesian, false)
+    type EntityDispatcher3d (isPhysical, isCentered) =
+        inherit EntityDispatcher (isPhysical, isCentered, false)
 
         static member Properties =
             [define Entity.Offset v3Zero
@@ -1280,8 +1280,8 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isPhysical, isCartesian, is2d, initial : 'model) =
-        inherit EntityDispatcher (isPhysical, isCartesian, is2d)
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, is2d, initial : 'model) =
+        inherit EntityDispatcher (isPhysical, isCentered, is2d)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1368,15 +1368,15 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (isPhysical, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, true, true, initial)
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (isPhysical, isCentered, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, true, initial)
 
         static member Properties =
-            [define Entity.Offset v3Cartesian2d
+            [define Entity.Offset v3CenteredOffset2d
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (isPhysical, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, false, false, initial)
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (isPhysical, isCentered, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, false, initial)
 
         static member Properties =
             [define Entity.Offset v3Zero
@@ -1386,7 +1386,7 @@ module EntityDispatcherModule =
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1402,7 +1402,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1426,10 +1426,10 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (false, false)
 
         static member Properties =
-            [define Entity.Offset v3Cartesian2d
+            [define Entity.Offset v3CenteredOffset2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
@@ -1437,10 +1437,10 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (false, model)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
 
         static member Properties =
-            [define Entity.Offset v3Cartesian2d
+            [define Entity.Offset v3CenteredOffset2d
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
@@ -2128,7 +2128,7 @@ module FillBarDispatcherModule =
 module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2140,7 +2140,7 @@ module BasicEmitter2dDispatcherModule =
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2153,7 +2153,7 @@ module Effect2dDispatcherModule =
 module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher2d (true, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2167,7 +2167,7 @@ module Block2dDispatcherModule =
 module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher2d (true, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<RigidBody2dFacet>
@@ -2194,7 +2194,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d (true, true)
+        inherit EntityDispatcher2d (true, false)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2268,7 +2268,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d (true, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2291,7 +2291,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d (true, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<TmxMapFacet>]

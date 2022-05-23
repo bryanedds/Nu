@@ -385,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher (isPhysical, isCartesian, is2d) =
+    and EntityDispatcher (isPhysical, isCentered, is2d) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -464,8 +464,8 @@ module WorldTypes =
         /// Whether the dispatcher participates in a physics system.
         member this.IsPhysical = isPhysical
 
-        /// Whether the dispatcher uses a cartesian (non-centered) offset by default.
-        member this.IsCartesian = isCartesian
+        /// Whether the dispatcher uses a centered transform.
+        member this.IsCentered = isCentered
 
         /// Whether the dispatcher has a 2-dimensional transform interpretation.
         member this.Is2d = is2d
@@ -754,10 +754,10 @@ module WorldTypes =
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform =
                 if dispatcher.Is2d then
-                    let offset = if dispatcher.IsCartesian then v3Cartesian2d else v3Zero
+                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset2d
                     Transform.makeDefault offset
                 else
-                    let offset = if dispatcher.IsCartesian then v3Cartesian3d else v3Zero
+                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset3d
                     Transform.makeDefault offset
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
@@ -865,7 +865,7 @@ module WorldTypes =
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
-        member this.IsCartesian with get () = this.Dispatcher.IsCartesian
+        member this.IsCentered with get () = this.Dispatcher.IsCentered
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix

@@ -806,7 +806,7 @@ module WorldModule2 =
                 let color = Color.One.WithA alpha
                 let position = -eyeSize.V3 * 0.5f
                 let size = eyeSize.V3
-                let mutable transform = Transform.makeDefault v3Cartesian2d
+                let mutable transform = Transform.makeDefault v3CenteredOffset2d
                 transform.Position <- position
                 transform.Size <- size
                 transform.Elevation <- Single.MaxValue
