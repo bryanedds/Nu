@@ -15,6 +15,7 @@ namespace System.Collections.Generic
     /// It can be costly to find the index of a key because it must be searched for linearly.
     /// It can be costly to insert a key/value pair because other key's indexes must be adjusted.
     /// It can be costly to remove a key/value pair because other keys' indexes must be adjusted.
+    /// Copied from - https://github.com/jehugaleahsa/truncon.collections.OrderedDictionary/blob/master/Truncon.Collections/OrderedDictionary.cs
     /// </remarks>
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof(OrderedDictionaryDebugView<,>))]

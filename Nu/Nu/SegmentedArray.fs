@@ -116,6 +116,16 @@ module SegmentedArray =
                     resultSegment.[j] <- transformer leftSegment.[j] rightSegment.[j]
         result
 
+    let mutate mutator sarray =
+        for i in 0 .. dec sarray.Segments.Length do
+            let segment = sarray.Segments.[i]
+            if i = dec sarray.Segments.Length then
+                for j in 0 .. dec sarray.SegmentRemainder do
+                    segment.[j] <- mutator segment.[j]
+            else
+                for j in 0 .. dec segment.Length do
+                    segment.[j] <- mutator segment.[j]
+
     let filter predicate sarray =
         let mutable count = 0
         for i in 0 .. dec sarray.TotalLength do
