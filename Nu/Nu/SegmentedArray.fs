@@ -89,6 +89,34 @@ module SegmentedArray =
             result.[i] <- mapper left.[i] right.[i]
         result
 
+    let transform transformer sarray =
+        let result = zeroCreate sarray.TotalLength
+        for i in 0 .. dec sarray.Segments.Length do
+            let sourceSegment = sarray.Segments.[i]
+            let resultSegment = result.Segments.[i]
+            if i = dec sarray.Segments.Length then
+                for j in 0 .. dec sarray.SegmentRemainder do
+                    resultSegment.[j] <- transformer sourceSegment.[j]
+            else
+                for j in 0 .. dec sourceSegment.Length do
+                    resultSegment.[j] <- transformer sourceSegment.[j]
+        result
+
+    let transform2 transformer left right =
+        if left.TotalLength <> right.TotalLength then raise (ArgumentException "")
+        let result = zeroCreate left.TotalLength
+        for i in 0 .. dec left.Segments.Length do
+            let leftSegment = left.Segments.[i]
+            let rightSegment = right.Segments.[i]
+            let resultSegment = result.Segments.[i]
+            if i = dec left.Segments.Length then
+                for j in 0 .. dec left.SegmentRemainder do
+                    resultSegment.[j] <- transformer leftSegment.[j] rightSegment.[j]
+            else
+                for j in 0 .. dec leftSegment.Length do
+                    resultSegment.[j] <- transformer leftSegment.[j] rightSegment.[j]
+        result
+
     let filter predicate sarray =
         let mutable count = 0
         for i in 0 .. dec sarray.TotalLength do
