@@ -325,7 +325,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
     /// Render particles.
-    static member renderParticles (blend : Blend, image : Image AssetTag, particles : Particle array, renderer) =
+    static member renderParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
         let image = AssetTag.generalize image
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->

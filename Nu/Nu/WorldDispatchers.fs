@@ -522,7 +522,7 @@ module BasicEmitter2dFacetModule =
             match output with
             | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
+            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterBlendChanged evt world =
             let emitterBlend = evt.Data.Value :?> Blend
@@ -721,7 +721,7 @@ module Effect2dFacetModule =
             match output with
             | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
+            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let setEffect effectSymbolOpt (entity : Entity) world =
             match effectSymbolOpt with

@@ -19,9 +19,10 @@ module SegmentedArray =
 
         member this.Item i =
             if i < this.TotalLength then
-                let segmentIndex = this.SegmentSize * i
+                let segmentIndex = i / this.SegmentSize
+                let segmentOffset = i % this.SegmentSize
                 let segment = this.Segments.[segmentIndex]
-                &segment.[i]
+                &segment.[segmentOffset]
             else
                 raise (IndexOutOfRangeException "")
                 &this.Segments.[-1].[-1] // fool compiler
@@ -29,14 +30,14 @@ module SegmentedArray =
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException "")
         let size = sizeof<'a>
-        let segmentSize = 85000 / size
+        let segmentSize = 42500 / size
         let segmentCount = length / segmentSize
         let segmentRemainder = length % segmentSize
         let segments =
             Array.init
                 (if segmentRemainder = 0 then segmentCount else inc segmentCount)
                 (fun i ->
-                    if i < dec segmentCount
+                    if i < segmentCount
                     then Array.zeroCreate<'a> segmentSize
                     else Array.zeroCreate<'a> segmentRemainder)
         { TotalLength = length; SegmentSize = segmentSize; Segments = segments }
@@ -54,14 +55,14 @@ module SegmentedArray =
         if count > sarray.TotalLength then raise (ArgumentException "")
         let result = zeroCreate (sarray.TotalLength - count)
         for i in count .. dec sarray.TotalLength do
-            result.[i + count] <- sarray.[i]
+            result.[i - count] <- sarray.[i]
         result
 
     let take count sarray =
         if count > sarray.TotalLength then raise (ArgumentException "")
-        let result = zeroCreate (sarray.TotalLength - count)
+        let result = zeroCreate count
         for i in 0 .. dec count do
-            result.[i] <- sarray.[i + count]
+            result.[i] <- sarray.[i]
         result
 
     let append left right =
@@ -69,8 +70,9 @@ module SegmentedArray =
         let result = zeroCreate count
         for i in 0 .. dec left.TotalLength do
             result.[i] <- left.[i]
-        for i in left.TotalLength .. left.TotalLength + dec right.TotalLength do
-            result.[i] <- left.[i]
+        let floor = left.TotalLength
+        for i in floor .. floor + dec right.TotalLength do
+            result.[i] <- right.[i - floor]
         result
 
     let map mapper sarray =
