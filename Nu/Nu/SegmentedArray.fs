@@ -30,7 +30,8 @@ module SegmentedArray =
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException "")
         let size = sizeof<'a>
-        let segmentSize = 85000 / size
+        let lohSizeAllowingForPadding = 85000 / 4 * 3
+        let segmentSize = lohSizeAllowingForPadding / size
         let segmentCount = length / segmentSize
         let segmentRemainder = length % segmentSize
         let segments =
