@@ -126,6 +126,16 @@ module SegmentedArray =
                 for j in 0 .. dec segment.Length do
                     segment.[j] <- mutator segment.[j]
 
+    let foreach op sarray =
+        for i in 0 .. dec sarray.Segments.Length do
+            let segment = sarray.Segments.[i]
+            if i = dec sarray.Segments.Length then
+                for j in 0 .. dec sarray.SegmentRemainder do
+                    op segment.[j]
+            else
+                for j in 0 .. dec segment.Length do
+                    op segment.[j]
+
     let filter predicate sarray =
         let mutable count = 0
         for i in 0 .. dec sarray.TotalLength do

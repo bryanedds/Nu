@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -20,6 +19,7 @@ open Nu
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
+    | SpritesSegmentedDescriptor of SpritesSegmentedDescriptor
     | CachedSpriteDescriptor of CachedSpriteDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
@@ -558,6 +558,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = &sprites.[index]
+                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+        | SpritesSegmentedDescriptor descriptor ->
+            let sprites = descriptor.SpritesSegmented
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
