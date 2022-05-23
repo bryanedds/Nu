@@ -12,6 +12,7 @@ module SegmentedArray =
         private
             { TotalLength : int
               SegmentSize : int
+              SegmentRemainder : int
               Segments : 'a array array }
 
         member this.Length =
@@ -19,8 +20,7 @@ module SegmentedArray =
 
         member this.Item i =
             if i < this.TotalLength then
-                let segmentIndex = i / this.SegmentSize
-                let segmentOffset = i % this.SegmentSize
+                let (segmentIndex, segmentOffset) = Math.DivRem (i, this.SegmentSize)
                 let segment = this.Segments.[segmentIndex]
                 &segment.[segmentOffset]
             else
@@ -41,7 +41,7 @@ module SegmentedArray =
                     if i < segmentCount
                     then Array.zeroCreate<'a> segmentSize
                     else Array.zeroCreate<'a> segmentRemainder)
-        { TotalLength = length; SegmentSize = segmentSize; Segments = segments }
+        { TotalLength = length; SegmentSize = segmentSize; SegmentRemainder = segmentRemainder; Segments = segments }
 
     let isEmpty sarray =
         sarray.TotalLength = 0
@@ -128,6 +128,6 @@ module SegmentedArray =
         ofList list
 
     let empty =
-        { TotalLength = 0; SegmentSize = 0; Segments = [||] }
+        { TotalLength = 0; SegmentSize = 0; SegmentRemainder = 0; Segments = [||] }
 
 type SegmentedArray<'a> = SegmentedArray.SegmentedArray<'a>
