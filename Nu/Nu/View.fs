@@ -19,5 +19,12 @@ type [<NoEquality; NoComparison>] View =
 [<RequireQualifiedAccess>]
 module View =
 
+    /// Convert a view to an seq of zero or more views.
+    let rec toSeq view =
+        seq {
+            match view with
+            | Views views -> for view in views do yield! toSeq view
+            | _ -> yield view }
+
     /// The empty view.
     let empty = Views [||]
