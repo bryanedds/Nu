@@ -95,8 +95,8 @@ type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : Sprite array }
 
 /// Describes how to render multiple sprites to the rendering system without potentially allocating from the LOH.
-type [<NoEquality; NoComparison>] SpritesSegmentedDescriptor =
-    { SpritesSegmented : Sprite SegmentedArray }
+type [<NoEquality; NoComparison>] SegmentedSpritesDescriptor =
+    { SegmentedSprites : Sprite SegmentedArray }
 
 /// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
 type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
