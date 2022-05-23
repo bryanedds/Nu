@@ -202,7 +202,7 @@ module Particles =
 
         /// Accelerate bodies both linearly and angularly.
         let accelerate bodies =
-            SegmentedArray.map (fun (body : Body) ->
+            SegmentedArray.transform (fun (body : Body) ->
                 { body with Position = body.Position + body.LinearVelocity; Angles = body.Angles + body.AngularVelocity })
                 bodies
 
@@ -210,7 +210,7 @@ module Particles =
         let rec constrain c bodies =
             match c with
             | Sphere (radius, center) ->
-                SegmentedArray.map (fun (body : Body) ->
+                SegmentedArray.transform (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - center
                     let distanceSquared = delta.MagnitudeSquared
@@ -224,7 +224,7 @@ module Particles =
                     bodies
             | Box box ->
                 // TODO: implement property bouncing angles.
-                SegmentedArray.map (fun (body : Body) ->
+                SegmentedArray.transform (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
                     if Math.isPointInBounds3d positionNext box then
@@ -242,11 +242,11 @@ module Particles =
             fun _ c bodies ->
                 match force with
                 | Gravity gravity ->
-                    let bodies = SegmentedArray.map (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
+                    let bodies = SegmentedArray.transform (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
                     (Output.empty, bodies)
                 | Attractor (position, radius, force) ->
                     let bodies =
-                        SegmentedArray.map (fun (body : Body) ->
+                        SegmentedArray.transform (fun (body : Body) ->
                             let direction = position - body.Position
                             let distance = direction.Magnitude
                             let normal = direction / distance
@@ -259,7 +259,7 @@ module Particles =
                     (Output.empty, bodies)
                 | Drag (linearDrag, angularDrag) ->
                     let bodies =
-                        SegmentedArray.map (fun (body : Body) ->
+                        SegmentedArray.transform (fun (body : Body) ->
                             let linearDrag = body.LinearVelocity * linearDrag
                             let angularDrag = body.AngularVelocity * angularDrag
                             { body with
@@ -278,27 +278,27 @@ module Particles =
             match logic.LogicType with
             | Or value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
                     (Output.empty, targets)
             | Nor value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
                     (Output.empty, targets)
             | Xor value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
                     (Output.empty, targets)
             | And value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
                     (Output.empty, targets)
             | Nand value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
                     (Output.empty, targets)
             | Equal value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.map (fun struct (targetLife, _) -> struct (targetLife, value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, _) -> struct (targetLife, value)) targets
                     (Output.empty, targets)
 
         /// Make a generic range transformer.
@@ -314,14 +314,14 @@ module Particles =
             | Constant value ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let result = applyRange targetValue value
                             struct (targetLife, result)) targets
                     (Output.empty, targets)
             | Linear (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let result = applyRange targetValue (value + scale (value2 - value, progress))
                             struct (targetLife, result))
@@ -330,7 +330,7 @@ module Particles =
             | Random (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
                             let randValue = fst (Rand.nextSingle rand)
@@ -341,7 +341,7 @@ module Particles =
             | Chaos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let chaosValue = Gen.randomf
                             let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
                             struct (targetLife, result))
@@ -350,7 +350,7 @@ module Particles =
             | Ease (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
                             let result = applyRange targetValue (value + scale (value2 - value, progressEase))
@@ -360,7 +360,7 @@ module Particles =
             | EaseIn (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
@@ -371,7 +371,7 @@ module Particles =
             | EaseOut (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseOut = Math.Sin progressScaled
@@ -382,7 +382,7 @@ module Particles =
             | Sin (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressSin = Math.Sin progressScaled
@@ -393,7 +393,7 @@ module Particles =
             | SinScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressSin = Math.Sin progressScaled
@@ -404,7 +404,7 @@ module Particles =
             | Cos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressCos = Math.Cos progressScaled
@@ -415,7 +415,7 @@ module Particles =
             | CosScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        SegmentedArray.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressCos = Math.Cos progressScaled
