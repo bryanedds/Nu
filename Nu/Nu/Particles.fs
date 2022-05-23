@@ -223,7 +223,7 @@ module Particles =
                     else body)
                     bodies
             | Box box ->
-                // TODO: implement property bouncing angles.
+                // TODO: implement properly bouncing angles.
                 SegmentedArray.transform (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
