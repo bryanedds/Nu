@@ -338,9 +338,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
                     let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
-                    let rotation = transform.Angles.Z
                     let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-                    let pivot = (v3Cartesian2d.V2 - transform.Offset.V2) * size
+                    let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
+                    let rotation = transform.Angles.Z
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = particle.Flip
@@ -585,7 +585,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let image = asset Assets.Default.PackageName Assets.Default.Image8Name
         let sprites =
             if eyeMargin <> v2Zero then
-                let mutable transform = Transform.makeDefault v3Cartesian2d
+                let mutable transform = Transform.makeDefault v3CenteredOffset2d
                 transform.Absolute <- true
                 let sprite = { Sprite.Transform = transform; InsetOpt = ValueNone; Image = image; Color = Color.Black; Blend = Overwrite; Glow = Color.Zero; Flip = FlipNone }
                 let mutable bottomMarginTransform = transform

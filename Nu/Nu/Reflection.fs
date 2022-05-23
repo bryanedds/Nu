@@ -55,7 +55,7 @@ module Reflection =
              ("IgnorePropertyBindings", true)
              ("Mounted", true)
              ("IsPhysical", true)
-             ("IsCartesian", true)
+             ("IsCentered", true)
              ("Is2d", true)
              ("Optimized", true)]
 

@@ -434,7 +434,7 @@ module WorldModuleEntity =
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIsPhysical entity world = (World.getEntityState entity world).IsPhysical
-        static member internal getEntityIsCartesian entity world = (World.getEntityState entity world).IsCartesian
+        static member internal getEntityIsCentered entity world = (World.getEntityState entity world).IsCentered
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
@@ -2208,7 +2208,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("IsPhysical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsPhysical entity world })
-        EntityGetters.Assign ("IsCartesian", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsCartesian entity world })
+        EntityGetters.Assign ("IsCentered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsCentered entity world })
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })

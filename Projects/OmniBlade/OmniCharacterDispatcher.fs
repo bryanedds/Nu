@@ -19,7 +19,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher2d<Character, unit, unit> (true, Character.empty)
+        inherit EntityDispatcher2d<Character, unit, unit> (true, false, Character.empty)
 
         static let getSpriteInset (character : Character) world =
             Character.getAnimationInset (World.getUpdateTime world) character
@@ -127,7 +127,7 @@ module CharacterDispatcher =
                                 perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
                             | BossStature ->
                                 perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
-                        let mutable afflictionTransform = Transform.makeDefault v3Cartesian2d
+                        let mutable afflictionTransform = Transform.makeDefault v3CenteredOffset2d
                         afflictionTransform.Position <- afflictionPosition
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
                         afflictionTransform.Elevation <- transform.Elevation + 0.1f
@@ -153,7 +153,7 @@ module CharacterDispatcher =
                                 perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
                             | BossStature ->
                                 perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
-                        let mutable chargeOrbTransform = Transform.makeDefault v3Cartesian2d
+                        let mutable chargeOrbTransform = Transform.makeDefault v3CenteredOffset2d
                         chargeOrbTransform.Position <- chargeOrbPosition
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
