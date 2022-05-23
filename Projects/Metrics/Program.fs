@@ -64,12 +64,12 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     inherit EntityDispatcher ()
   #else
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
   #endif
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetAngles (v3 ((entity.GetAngles world).X + 0.01f) 0.0f 0.0f) world
+        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).X + 0.01f)) world
 
     override this.View (staticImage, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -242,7 +242,7 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
 
     override this.View (staticImage, entity, world) =
         let mutable transform = entity.GetTransform world
