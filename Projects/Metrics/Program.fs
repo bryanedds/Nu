@@ -69,7 +69,7 @@ type MetricsEntityDispatcher () =
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).X + 0.01f)) world
+        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.01f)) world
 
     override this.View (staticImage, entity, world) =
         let mutable transform = entity.GetTransform world
