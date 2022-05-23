@@ -811,20 +811,20 @@ module Effect2dFacetModule =
                 let world = World.actualizeView view world
 
                 // convert view to array for storing tags and spawning emitters
-                let views = View.toArray view
+                let views = View.toSeq view
 
                 // store tags
                 let tags =
                     views |>
-                    Array.choose (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
-                    Map.ofArray
+                    Seq.choose (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
+                    Map.ofSeq
                 let world = entity.SetEffectTags tags world
 
                 // spawn emitters
                 let particleSystem =
                     views |>
-                    Array.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
-                    Array.choose (fun (name : string, descriptor : Particles.BasicEmitterDescriptor) ->
+                    Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
+                    Seq.choose (fun (name : string, descriptor : Particles.BasicEmitterDescriptor) ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? Particles.BasicEmitter as emitter) ->
                             let emitter =
@@ -836,7 +836,7 @@ module Effect2dFacetModule =
                                     Constraint = descriptor.Constraint }
                             Some (name, emitter)
                         | _ -> None) |>
-                    Array.fold (fun particleSystem (name, emitter) ->
+                    Seq.fold (fun particleSystem (name, emitter) ->
                         ParticleSystem.add name emitter particleSystem)
                         (entity.GetParticleSystem world)
 
