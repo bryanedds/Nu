@@ -27,15 +27,4 @@
     [Size [200 200 0]]]]
   [Block2dDispatcher
    [[Position [376 -192 0]]
-    [Size [200 200 0]]]]
-  [FpsDispatcher
-   [[Name Fps-0001]
-    [Position [312 -240 0]]
-    [StartDateTime "05/22/2022 23:28:30"]
-    [StartTime 1728]
-    [Text "FPS: 39.01"]]]
-  [BasicEmitter2dDispatcher
-   [[Name BasicEmitter2d-0001]
-    [ParticleMax 24000]
-    [ParticleRate 400]
-    [Position [0 0 0]]]]]]
+    [Size [200 200 0]]]]]]
