@@ -126,10 +126,10 @@
       <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.10.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.11.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.7.11.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
