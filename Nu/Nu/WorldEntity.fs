@@ -436,9 +436,7 @@ module WorldEntityModule =
         [<FunctionBinding>]
         static member getEntitiesSovereign group world =
             World.getEntitiesFlattened group world |>
-            Array.ofSeq |>
-            Array.filter (fun entity -> Option.isNone (entity.GetMountOpt world)) |>
-            seq
+            Seq.filter (fun entity -> Option.isNone (entity.GetMountOpt world))
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]

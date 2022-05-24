@@ -407,7 +407,7 @@ type MapRand =
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
-                        for objectRef in Seq.toArray segment.ObjectGroups.[0].Objects do
+                        for objectRef in segment.ObjectGroups.[0].Objects do
                             let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
