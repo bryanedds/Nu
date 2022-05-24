@@ -73,10 +73,10 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
             getType this.Vector2
 
         member this.ToSymbol () =
-            let v2 = Symbol.Atom ("v2", None)
-            let x = Symbol.Number (scstring this.Vector2.X, None)
-            let y = Symbol.Number (scstring this.Vector2.Y, None)
-            Symbol.Symbols ([v2; x; y], None)
+            let v2 = Symbol.Atom ("v2", ValueNone)
+            let x = Symbol.Number (scstring this.Vector2.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector2.Y, ValueNone)
+            Symbol.Symbols ([v2; x; y], ValueNone)
 
 /// Converts Vector2 types.
 type Vector2Converter () =
@@ -90,8 +90,8 @@ type Vector2Converter () =
         if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
             Symbols
-                ([Number (scstring v2.X, None)
-                  Number (scstring v2.Y, None)], None) :> obj
+                ([Number (scstring v2.X, ValueNone)
+                  Number (scstring v2.Y, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector2> then source
         else failconv "Invalid Vector2Converter conversion to source." None
 
@@ -179,11 +179,11 @@ type [<CustomEquality; CustomComparison>] Vector3Pluggable =
             getType this.Vector3
 
         member this.ToSymbol () =
-            let v3 = Symbol.Atom ("v3", None)
-            let x = Symbol.Number (scstring this.Vector3.X, None)
-            let y = Symbol.Number (scstring this.Vector3.Y, None)
-            let z = Symbol.Number (scstring this.Vector3.Z, None)
-            Symbol.Symbols ([v3; x; y; z], None)
+            let v3 = Symbol.Atom ("v3", ValueNone)
+            let x = Symbol.Number (scstring this.Vector3.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector3.Y, ValueNone)
+            let z = Symbol.Number (scstring this.Vector3.Z, ValueNone)
+            Symbol.Symbols ([v3; x; y; z], ValueNone)
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -197,9 +197,9 @@ type Vector3Converter () =
         if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
             Symbols
-                ([Number (scstring v3.X, None)
-                  Number (scstring v3.Y, None)
-                  Number (scstring v3.Z, None)], None) :> obj
+                ([Number (scstring v3.X, ValueNone)
+                  Number (scstring v3.Y, ValueNone)
+                  Number (scstring v3.Z, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector3> then source
         else failconv "Invalid Vector3Converter conversion to source." None
 
@@ -283,12 +283,12 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
             getType this.Vector4
 
         member this.ToSymbol () =
-            let v4 = Symbol.Atom ("v4", None)
-            let x = Symbol.Number (scstring this.Vector4.X, None)
-            let y = Symbol.Number (scstring this.Vector4.Y, None)
-            let z = Symbol.Number (scstring this.Vector4.Z, None)
-            let w = Symbol.Number (scstring this.Vector4.W, None)
-            Symbol.Symbols ([v4; x; y; z; w], None)
+            let v4 = Symbol.Atom ("v4", ValueNone)
+            let x = Symbol.Number (scstring this.Vector4.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector4.Y, ValueNone)
+            let z = Symbol.Number (scstring this.Vector4.Z, ValueNone)
+            let w = Symbol.Number (scstring this.Vector4.W, ValueNone)
+            Symbol.Symbols ([v4; x; y; z; w], ValueNone)
 
 /// Converts Vector4 types.
 type Vector4Converter () =
@@ -302,10 +302,10 @@ type Vector4Converter () =
         if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
             Symbols
-                ([Number (scstring v4.X, None)
-                  Number (scstring v4.Y, None)
-                  Number (scstring v4.Z, None)
-                  Number (scstring v4.W, None)], None) :> obj
+                ([Number (scstring v4.X, ValueNone)
+                  Number (scstring v4.Y, ValueNone)
+                  Number (scstring v4.Z, ValueNone)
+                  Number (scstring v4.W, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector4> then source
         else failconv "Invalid Vector4Converter conversion to source." None
 
@@ -385,10 +385,10 @@ type [<CustomEquality; CustomComparison>] Vector2iPluggable =
             getType this.Vector2i
 
         member this.ToSymbol () =
-            let v2i = Symbol.Atom ("v2i", None)
-            let x = Symbol.Number (scstring this.Vector2i.X, None)
-            let y = Symbol.Number (scstring this.Vector2i.Y, None)
-            Symbol.Symbols ([v2i; x; y], None)
+            let v2i = Symbol.Atom ("v2i", ValueNone)
+            let x = Symbol.Number (scstring this.Vector2i.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector2i.Y, ValueNone)
+            Symbol.Symbols ([v2i; x; y], ValueNone)
 
 /// Converts Vector2i types.
 type Vector2iConverter () =
@@ -401,7 +401,7 @@ type Vector2iConverter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2i = source :?> Vector2i
-            Symbols ([Number (scstring v2i.X, None); Number (scstring v2i.Y, None)], None) :> obj
+            Symbols ([Number (scstring v2i.X, ValueNone); Number (scstring v2i.Y, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector2i> then source
         else failconv "Invalid Vector2iConverter conversion to source." None
 
@@ -478,11 +478,11 @@ type [<CustomEquality; CustomComparison>] Vector3iPluggable =
             getType this.Vector3i
 
         member this.ToSymbol () =
-            let v3i = Symbol.Atom ("v3i", None)
-            let x = Symbol.Number (scstring this.Vector3i.X, None)
-            let y = Symbol.Number (scstring this.Vector3i.Y, None)
-            let z = Symbol.Number (scstring this.Vector3i.Z, None)
-            Symbol.Symbols ([v3i; x; y; z], None)
+            let v3i = Symbol.Atom ("v3i", ValueNone)
+            let x = Symbol.Number (scstring this.Vector3i.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector3i.Y, ValueNone)
+            let z = Symbol.Number (scstring this.Vector3i.Z, ValueNone)
+            Symbol.Symbols ([v3i; x; y; z], ValueNone)
 
 /// Converts Vector3i types.
 type Vector3iConverter () =
@@ -496,9 +496,9 @@ type Vector3iConverter () =
         if destType = typeof<Symbol> then
             let v3i = source :?> Vector3i
             Symbols
-                ([Number (scstring v3i.X, None)
-                  Number (scstring v3i.Y, None)
-                  Number (scstring v3i.Z, None)], None) :> obj
+                ([Number (scstring v3i.X, ValueNone)
+                  Number (scstring v3i.Y, ValueNone)
+                  Number (scstring v3i.Z, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector3i> then source
         else failconv "Invalid Vector3iConverter conversion to source." None
 
@@ -579,12 +579,12 @@ type [<CustomEquality; CustomComparison>] Vector4iPluggable =
             getType this.Vector4i
 
         member this.ToSymbol () =
-            let v4i = Symbol.Atom ("v4i", None)
-            let x = Symbol.Number (scstring this.Vector4i.X, None)
-            let y = Symbol.Number (scstring this.Vector4i.Y, None)
-            let z = Symbol.Number (scstring this.Vector4i.Z, None)
-            let w = Symbol.Number (scstring this.Vector4i.W, None)
-            Symbol.Symbols ([v4i; x; y; z; w], None)
+            let v4i = Symbol.Atom ("v4i", ValueNone)
+            let x = Symbol.Number (scstring this.Vector4i.X, ValueNone)
+            let y = Symbol.Number (scstring this.Vector4i.Y, ValueNone)
+            let z = Symbol.Number (scstring this.Vector4i.Z, ValueNone)
+            let w = Symbol.Number (scstring this.Vector4i.W, ValueNone)
+            Symbol.Symbols ([v4i; x; y; z; w], ValueNone)
 
 /// Converts Vector4i types.
 type Vector4iConverter () =
@@ -598,10 +598,10 @@ type Vector4iConverter () =
         if destType = typeof<Symbol> then
             let v4i = source :?> Vector4i
             Symbols
-                ([Number (scstring v4i.X, None)
-                  Number (scstring v4i.Y, None)
-                  Number (scstring v4i.Z, None)
-                  Number (scstring v4i.W, None)], None) :> obj
+                ([Number (scstring v4i.X, ValueNone)
+                  Number (scstring v4i.Y, ValueNone)
+                  Number (scstring v4i.Z, ValueNone)
+                  Number (scstring v4i.W, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Vector4i> then source
         else failconv "Invalid Vector4iConverter conversion to source." None
 
@@ -667,12 +667,12 @@ type [<CustomEquality; CustomComparison>] QuaternionPluggable =
             getType this.Quaternion
 
         member this.ToSymbol () =
-            let quat = Symbol.Atom ("quat", None)
-            let x = Symbol.Number (scstring this.Quaternion.X, None)
-            let y = Symbol.Number (scstring this.Quaternion.Y, None)
-            let z = Symbol.Number (scstring this.Quaternion.Z, None)
-            let w = Symbol.Number (scstring this.Quaternion.W, None)
-            Symbol.Symbols ([quat; x; y; z; w], None)
+            let quat = Symbol.Atom ("quat", ValueNone)
+            let x = Symbol.Number (scstring this.Quaternion.X, ValueNone)
+            let y = Symbol.Number (scstring this.Quaternion.Y, ValueNone)
+            let z = Symbol.Number (scstring this.Quaternion.Z, ValueNone)
+            let w = Symbol.Number (scstring this.Quaternion.W, ValueNone)
+            Symbol.Symbols ([quat; x; y; z; w], ValueNone)
 
 /// Converts Quaternion types.
 type QuaternionConverter () =
@@ -686,10 +686,10 @@ type QuaternionConverter () =
         if destType = typeof<Symbol> then
             let quat = source :?> Quaternion
             Symbols
-                ([Number (scstring quat.X, None)
-                  Number (scstring quat.Y, None)
-                  Number (scstring quat.Z, None)
-                  Number (scstring quat.W, None)], None) :> obj
+                ([Number (scstring quat.X, ValueNone)
+                  Number (scstring quat.Y, ValueNone)
+                  Number (scstring quat.Z, ValueNone)
+                  Number (scstring quat.W, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Quaternion> then source
         else failconv "Invalid QuaternionConverter conversion to source." None
 
@@ -748,8 +748,8 @@ type Box2Converter () =
         if destType = typeof<Symbol> then
             let box2 = source :?> Box2
             Symbols
-                ([Symbols ([Number (scstring box2.Position.X, None); Number (scstring box2.Position.Y, None)], None)
-                  Symbols ([Number (scstring box2.Size.X, None); Number (scstring box2.Size.Y, None)], None)], None) :> obj
+                ([Symbols ([Number (scstring box2.Position.X, ValueNone); Number (scstring box2.Position.Y, ValueNone)], ValueNone)
+                  Symbols ([Number (scstring box2.Size.X, ValueNone); Number (scstring box2.Size.Y, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box2> then source
         else failconv "Invalid Box2Converter conversion to source." None
 
@@ -809,8 +809,8 @@ type Box3Converter () =
         if destType = typeof<Symbol> then
             let box3 = source :?> Box3
             Symbols
-                ([Symbols ([Number (scstring box3.Position.X, None); Number (scstring box3.Position.Y, None); Number (scstring box3.Position.Z, None)], None)
-                  Symbols ([Number (scstring box3.Size.X, None); Number (scstring box3.Size.Y, None); Number (scstring box3.Size.Z, None)], None)], None) :> obj
+                ([Symbols ([Number (scstring box3.Position.X, ValueNone); Number (scstring box3.Position.Y, ValueNone); Number (scstring box3.Position.Z, ValueNone)], ValueNone)
+                  Symbols ([Number (scstring box3.Size.X, ValueNone); Number (scstring box3.Size.Y, ValueNone); Number (scstring box3.Size.Z, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box3> then source
         else failconv "Invalid Box3Converter conversion to source." None
 
@@ -869,8 +869,8 @@ type Box2iConverter () =
         if destType = typeof<Symbol> then
             let box2i = source :?> Box2i
             Symbols
-                ([Symbols ([Number (scstring box2i.Position.X, None); Number (scstring box2i.Position.Y, None)], None)
-                  Symbols ([Number (scstring box2i.Size.X, None); Number (scstring box2i.Size.Y, None)], None)], None) :> obj
+                ([Symbols ([Number (scstring box2i.Position.X, ValueNone); Number (scstring box2i.Position.Y, ValueNone)], ValueNone)
+                  Symbols ([Number (scstring box2i.Size.X, ValueNone); Number (scstring box2i.Size.Y, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box2i> then source
         else failconv "Invalid Box2iConverter conversion to source." None
 
@@ -992,12 +992,12 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
             getType this.Color
 
         member this.ToSymbol () =
-            let col = Symbol.Atom ("col", None)
-            let r = Symbol.Number (scstring this.Color.R, None)
-            let g = Symbol.Number (scstring this.Color.G, None)
-            let b = Symbol.Number (scstring this.Color.B, None)
-            let a = Symbol.Number (scstring this.Color.A, None)
-            Symbol.Symbols ([col; r; g; b; a], None)
+            let col = Symbol.Atom ("col", ValueNone)
+            let r = Symbol.Number (scstring this.Color.R, ValueNone)
+            let g = Symbol.Number (scstring this.Color.G, ValueNone)
+            let b = Symbol.Number (scstring this.Color.B, ValueNone)
+            let a = Symbol.Number (scstring this.Color.A, ValueNone)
+            Symbol.Symbols ([col; r; g; b; a], ValueNone)
 
 /// Converts Color types.
 type ColorConverter () =
@@ -1011,10 +1011,10 @@ type ColorConverter () =
         if destType = typeof<Symbol> then
             let col = source :?> Color
             Symbols
-                ([Number (scstring col.R, None)
-                  Number (scstring col.G, None)
-                  Number (scstring col.B, None)
-                  Number (scstring col.A, None)], None) :> obj
+                ([Number (scstring col.R, ValueNone)
+                  Number (scstring col.G, ValueNone)
+                  Number (scstring col.B, ValueNone)
+                  Number (scstring col.A, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Color> then source
         else failconv "Invalid ColorConverter conversion to source." None
 

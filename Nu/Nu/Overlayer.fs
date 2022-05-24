@@ -77,7 +77,7 @@ type Overlay =
                             Map.empty
                     let overlayProperties =
                         if requiresFacetNames
-                        then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
+                        then Map.add Property? FacetNames (Symbols ([], ValueNone)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
                       OverlaysInherited = includeNames

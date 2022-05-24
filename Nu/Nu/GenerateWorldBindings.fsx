@@ -268,7 +268,7 @@ let generateBindingFunction binding =
     
     let exceptionHandler =
         "        with exn ->\n" +
-        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, None)\n" +
+        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, ValueNone)\n" +
         "            struct (violation, World.choose oldWorld)\n"
     
     functionAndExceptionHeader +
@@ -296,7 +296,7 @@ let generateBindingFunction' binding =
     "            match evaleds with\n" +
     "            | " + argArray + " -> " + binding.FunctionBindingName + " " + argsStr + "world\n" +
     "            | _ ->\n" +
-    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, ValueNone)\n" +
     "                struct (violation, world)\n" +
     "        | Some violation -> struct (violation, world)\n"
 
