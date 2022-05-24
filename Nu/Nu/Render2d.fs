@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 open SDL2
@@ -614,6 +615,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Horizon = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
         renderer.RenderLayeredMessages.Add message
 
+    static member GLDebugProc (source : OpenGL.DebugSource, debugType : OpenGL.DebugType, id : uint, severity : OpenGL.DebugSeverity, length : int, message : IntPtr, userParam : IntPtr) =
+        let messageBytes = Array.zeroCreate<byte> length
+        Marshal.Copy (message, messageBytes, 0, length)
+        let messageStr = Encoding.ASCII.GetString (messageBytes, length)
+        Log.debug messageStr
+
     /// Make a Renderer.
     static member make window =
 
@@ -622,6 +629,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
         | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
         OpenGL.Hl.Assert ()
+
+        OpenGL.Gl.DebugMessageCallback (GlRenderer2d.GLDebugProc, nativeint 0)
 
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Hl.CreateSpriteShader ()
