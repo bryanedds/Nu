@@ -173,7 +173,7 @@ type [<CustomEquality; NoComparison>] MapGeneralized =
             map
           Keys =
             let list = List ()
-            for key in Map.keys map do list.Add (key :> IComparable)
+            for entry in map do list.Add (entry.Key :> IComparable)
             list
           Equality = fun this (that : obj) ->
             match that with

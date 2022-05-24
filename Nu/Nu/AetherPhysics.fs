@@ -210,7 +210,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =
-        let list = List () // NOTE: was too lazy to write a fold, so used mutation and left this comment...
+        let list = List ()
         for bodyShape in bodyShapes do
             let bodyShapes = AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape body
             list.AddRange bodyShapes

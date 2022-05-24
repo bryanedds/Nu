@@ -44,7 +44,7 @@ type [<CustomEquality; CustomComparison>] StreamPluggable =
             getType this.Stream
 
         member this.ToSymbol () =
-            Symbols ([], None)
+            Symbols ([], ValueNone)
 
 [<AutoOpen>]
 module WorldScripting =
@@ -333,7 +333,7 @@ module WorldScripting =
                     match World.tryImportEvent evt world with
                     | Some evtImported ->
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                        let application = Apply ([|subscription; evtImported|], breakpoint, None)
+                        let application = Apply ([|subscription; evtImported|], breakpoint, ValueNone)
                         let world = World.evalWithLogging application scriptFrame subscriber world |> snd'
                         (Cascade, world)
                     | None ->
