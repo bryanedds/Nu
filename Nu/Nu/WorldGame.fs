@@ -217,18 +217,14 @@ module WorldGameModule =
         static member getEntities1 world =
             World.getGroups1 world |>
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
-            Seq.concat |>
-            Seq.toArray |>
-            seq
+            Seq.concat
 
         /// Get all the groups in the world.
         [<FunctionBinding "getGroups0">]
         static member getGroups1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
-            Seq.concat |>
-            Seq.toArray |>
-            seq
+            Seq.concat
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =

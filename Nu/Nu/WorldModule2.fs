@@ -63,13 +63,13 @@ module WorldModule2 =
         static member internal rebuildQuadtree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                | None -> Array.empty
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                | None -> Array.empty
-            let entities = Array.append omniEntities selectedEntities
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let entities = Seq.append omniEntities selectedEntities
             let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
@@ -80,13 +80,13 @@ module WorldModule2 =
         static member internal rebuildOctree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                | None -> Array.empty
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                | None -> Array.empty
-            let entities = Array.append omniEntities selectedEntities
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let entities = Seq.append omniEntities selectedEntities
             let octree = World.makeOctree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
