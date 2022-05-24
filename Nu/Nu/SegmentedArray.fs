@@ -10,33 +10,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedArray =
 
-    type 'a SegmentedArray =
-        private
-            { TotalLength : int
-              SegmentSize : int
-              SegmentRemainder : int
-              Segments : 'a array array }
-
-        member this.Length =
-            this.TotalLength
-
-        member this.Item i =
-            if i < this.TotalLength then
-                let (segmentIndex, segmentOffset) = Math.DivRem (i, this.SegmentSize)
-                let segment = this.Segments.[segmentIndex]
-                &segment.[segmentOffset]
-            else
-                raise (IndexOutOfRangeException "Index out of range.")
-                &this.Segments.[-1].[-1] // fool compiler
-
-        member this.GetEnumerator () =
-            new SegmentedArrayEnumerator<'a> (this)
-
-        interface 'a IEnumerable with
-            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> 'a IEnumerator
-            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> IEnumerator
-
-    and SegmentedArrayEnumerator<'a> (sarray : 'a SegmentedArray) =
+    type SegmentedArrayEnumerator<'a> (sarray : 'a SegmentedArray) =
 
         let mutable i = -1
         let mutable j = -1
@@ -68,12 +42,42 @@ module SegmentedArray =
                 else raise (InvalidOperationException "Current SegmentedArray item out of range.")
             else raise (InvalidOperationException "Current SegmentedArray item out of range.")
 
+        member this.Reset () =
+            i <- -1
+            j <- -1
+
         interface 'a IEnumerator with
             member this.MoveNext () = this.MoveNext ()
             member this.Current = this.Current
             member this.Current = (this :> 'a IEnumerator).Current :> obj
-            member this.Reset () = i <- -1; j <- -1
+            member this.Reset () = this.Reset ()
             member this.Dispose () = ()
+
+    and [<ReferenceEquality; NoComparison>] 'a SegmentedArray =
+        private
+            { TotalLength : int
+              SegmentSize : int
+              SegmentRemainder : int
+              Segments : 'a array array }
+
+        member this.Length =
+            this.TotalLength
+
+        member this.Item (i : int) : 'a byref =
+            if i < this.TotalLength then
+                let (segmentIndex, segmentOffset) = Math.DivRem (i, this.SegmentSize)
+                let segment = this.Segments.[segmentIndex]
+                &segment.[segmentOffset]
+            else
+                raise (IndexOutOfRangeException "Index out of range.")
+                &this.Segments.[-1].[-1] // fool compiler
+
+        member this.GetEnumerator () =
+            new SegmentedArrayEnumerator<'a> (this)
+
+        interface 'a IEnumerable with
+            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> 'a IEnumerator
+            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> IEnumerator
 
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException ("Invalid argument.", nameof length))
@@ -242,5 +246,7 @@ module SegmentedArray =
 
     let empty =
         { TotalLength = 0; SegmentSize = 0; SegmentRemainder = 0; Segments = [||] }
+
+type SegmentedArrayEnumerator<'a> = SegmentedArray.SegmentedArrayEnumerator<'a>
 
 type SegmentedArray<'a> = SegmentedArray.SegmentedArray<'a>
