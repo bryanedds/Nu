@@ -109,7 +109,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.AffineMatrix =
         if this.AffineMatrixDirty then
-            // TODO: 3D:  optimize this hella!
+            // TODO: 3D: optimize this hella!
             let positionMatrix = Matrix4x4.CreateTranslation this.Position_
             let rotationMatrix = this.RotationMatrix
             let scaleMatrix = Matrix4x4.CreateScale this.Scale_

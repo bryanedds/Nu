@@ -250,8 +250,8 @@ module Nu =
 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                let (entities2d, entities3d) = Array.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
@@ -282,8 +282,8 @@ module Nu =
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
-                let (entities2d, entities3d) = Array.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
@@ -318,8 +318,8 @@ module Nu =
                     World.getGroups screen world |>
                     Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
-                    Seq.toArray
-                Array.fold (fun world (entity : Entity) ->
+                    SegmentedArray.ofSeq
+                SegmentedArray.fold (fun world (entity : Entity) ->
                     World.registerEntityPhysics entity world)
                     world entities
 
@@ -329,8 +329,8 @@ module Nu =
                     World.getGroups screen world |>
                     Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
-                    Seq.toArray
-                Array.fold (fun world (entity : Entity) ->
+                    SegmentedArray.ofSeq
+                SegmentedArray.fold (fun world (entity : Entity) ->
                     World.unregisterEntityPhysics entity world)
                     world entities
 

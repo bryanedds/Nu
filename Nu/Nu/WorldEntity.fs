@@ -419,7 +419,7 @@ module WorldEntityModule =
                                 yield! getEntitiesRec entity world }
                     | None -> Seq.empty
                 | (false, _) -> Seq.empty
-            getEntitiesRec (group :> Simulant) world |> Seq.toArray |> seq
+            getEntitiesRec (group :> Simulant) world |> SegmentedArray.ofSeq |> seq
 
         /// Get all the entities directly parented by the group.
         [<FunctionBinding>]
@@ -457,8 +457,8 @@ module WorldEntityModule =
             World.frame (World.destroyEntitiesImmediate entities) Simulants.Game world
 
         /// Sort the given entities.
+        /// If there are a lot of entities, this may allocate in the LOH.
         static member sortEntities entities world =
-            /// OPTIMIZATION: using arrays for speed
             entities |>
             Array.ofSeq |>
             Array.rev |>

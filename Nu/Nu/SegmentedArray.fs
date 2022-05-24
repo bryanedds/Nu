@@ -4,11 +4,13 @@
 namespace Nu
 open Prime
 open System
+open System.Collections
+open System.Collections.Generic
 
 [<RequireQualifiedAccess>]
 module SegmentedArray =
 
-    type SegmentedArray<'a> =
+    type 'a SegmentedArray =
         private
             { TotalLength : int
               SegmentSize : int
@@ -26,6 +28,52 @@ module SegmentedArray =
             else
                 raise (IndexOutOfRangeException "Index out of range.")
                 &this.Segments.[-1].[-1] // fool compiler
+
+        member this.GetEnumerator () =
+            new SegmentedArrayEnumerator<'a> (this)
+
+        interface 'a IEnumerable with
+            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> 'a IEnumerator
+            member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> IEnumerator
+
+    and SegmentedArrayEnumerator<'a> (sarray : 'a SegmentedArray) =
+
+        let mutable i = -1
+        let mutable j = -1
+
+        member this.MoveNext () =
+            if i = -1 then
+                if sarray.Segments.Length = 0 then false
+                else
+                    i <- inc i
+                    j <- inc j // guaranteed no empty segments in SegementedArray.
+                    true
+            elif i < sarray.Segments.Length then
+                let segment = sarray.Segments.[i]
+                if j < dec segment.Length then
+                    j <- inc j
+                    true
+                elif i < dec sarray.Segments.Length then
+                    i <- inc i
+                    j <- 0
+                    true
+                else false
+            else false
+
+        member this.Current =
+            if i < sarray.Segments.Length then
+                let segment = sarray.Segments.[i]
+                if j < segment.Length
+                then segment.[j]
+                else raise (InvalidOperationException "Current SegmentedArray item out of range.")
+            else raise (InvalidOperationException "Current SegmentedArray item out of range.")
+
+        interface 'a IEnumerator with
+            member this.MoveNext () = this.MoveNext ()
+            member this.Current = this.Current
+            member this.Current = (this :> 'a IEnumerator).Current :> obj
+            member this.Reset () = i <- -1; j <- -1
+            member this.Dispose () = ()
 
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException ("Invalid argument.", nameof length))
@@ -148,6 +196,24 @@ module SegmentedArray =
                 result.[j] <- item
                 j <- inc j
         result
+
+    let partition discriminator sarray =
+        let mutable count = 0
+        for i in 0 .. dec sarray.TotalLength do
+            if discriminator sarray.[i] then count <- inc count
+        let pass = zeroCreate count
+        let fail = zeroCreate (sarray.Length - count)
+        let mutable p = 0
+        let mutable f = 0
+        for i in 0 .. dec sarray.TotalLength do
+            let item = &sarray.[i]
+            if discriminator item then
+                pass.[p] <- item
+                p <- inc p
+            else
+                fail.[f] <- item
+                f <- inc f
+        (pass, fail)
 
     let fold folder state sarray =
         let mutable state = state

@@ -156,8 +156,8 @@ module Octree =
     /// Provides an enumerator interface to the octree queries.
     type internal OctreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e Octelement seq, localElements : 'e Octelement seq) =
 
-        let omnipresentList = List omnipresentElements // eagerly convert to list to keep iteration valid
-        let localList = List localElements // eagerly convert to list to keep iteration valid
+        let omnipresentArray = SegmentedArray.ofSeq omnipresentElements // eagerly convert to segmented array to keep iteration valid
+        let localArray = SegmentedArray.ofSeq localElements // eagerly convert to segmented array to keep iteration valid
         let mutable localEnrValid = false
         let mutable omnipresentEnrValid = false
         let mutable localEnr = Unchecked.defaultof<_>
@@ -166,17 +166,17 @@ module Octree =
         interface Octelement<'e> IEnumerator with
             member this.MoveNext () =
                 if not localEnrValid then
-                    localEnr <- localList.GetEnumerator ()
+                    localEnr <- localArray.GetEnumerator ()
                     localEnrValid <- true
                     if not (localEnr.MoveNext ()) then
-                        omnipresentEnr <- omnipresentList.GetEnumerator ()
+                        omnipresentEnr <- omnipresentArray.GetEnumerator ()
                         omnipresentEnrValid <- true
                         omnipresentEnr.MoveNext ()
                     else true
                 else
                     if not (localEnr.MoveNext ()) then
                         if not omnipresentEnrValid then
-                            omnipresentEnr <- omnipresentList.GetEnumerator ()
+                            omnipresentEnr <- omnipresentArray.GetEnumerator ()
                             omnipresentEnrValid <- true
                             omnipresentEnr.MoveNext ()
                         else omnipresentEnr.MoveNext ()
