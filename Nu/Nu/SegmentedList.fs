@@ -17,7 +17,7 @@ module SegmentedList =
         let mutable k = -1
 
         member this.MoveNext () =
-            if k < slist.TotalLength then
+            if k < dec slist.TotalLength then
                 if i = -1 then
                     if slist.Segments.Count = 0 then false
                     else
