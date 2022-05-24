@@ -159,7 +159,7 @@ module SpriteBatch =
             OpenGL.Gl.Uniform1 (env.RotationsUniform, env.Rotations)
             OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
             OpenGL.Gl.UniformMatrix4f (env.ViewProjectionUniform, 1, false, if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative)
-            OpenGL.Gl.Uniform1i (env.TexUniform, 1, 0)
+            OpenGL.Gl.Uniform1 (env.TexUniform, 0)
             OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
             OpenGL.Gl.BlendEquation env.State.BlendingEquation
