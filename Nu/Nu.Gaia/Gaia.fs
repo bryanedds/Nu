@@ -570,10 +570,10 @@ module Gaia =
                         match exn.SymbolOpt with
                         | Some symbol ->
                             match Symbol.getOriginOpt symbol with
-                            | Some origin ->
+                            | ValueSome origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | None -> ()
+                            | ValueNone -> ()
                         | None -> ()
                         Log.info ("Invalid apply property operation due to: " + scstring exn)
                     | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
@@ -596,10 +596,10 @@ module Gaia =
                         match exn.SymbolOpt with
                         | Some symbol ->
                             match Symbol.getOriginOpt symbol with
-                            | Some origin ->
+                            | ValueSome origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | None -> ()
+                            | ValueNone -> ()
                         | None -> ()
                         Log.info ("Invalid apply property operation due to: " + scstring exn)
                     | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
