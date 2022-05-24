@@ -65,7 +65,7 @@ and Renderer2d =
     /// The sprite batch operational environment if it exists for this implementation.
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.Env option
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d List -> unit
+    abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d SegmentedList -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -707,7 +707,7 @@ type RendererInline2d (createRenderer2d) =
 
     let mutable started = false
     let mutable terminated = false
-    let mutable messages = List ()
+    let mutable messages = SegmentedList.make ()
     let mutable rendererOpt = Option<Renderer2d>.None
 
     interface RendererProcess2d with
@@ -727,17 +727,17 @@ type RendererInline2d (createRenderer2d) =
 
         member this.EnqueueMessage message =
             match rendererOpt with
-            | Some _ -> messages.Add message
+            | Some _ -> SegmentedList.add message messages
             | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
 
         member this.ClearMessages () =
-            messages <- List ()
+            messages <- SegmentedList.make ()
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             match rendererOpt with
             | Some renderer ->
                 renderer.Render eyePosition eyeSize eyeMargin messages
-                messages.Clear ()
+                SegmentedList.clear messages
             | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
 
         member this.Swap () =
@@ -759,8 +759,8 @@ type RendererThread2d (createRenderer2d) =
     let mutable taskOpt = None
     let mutable started = false
     let mutable terminated = false
-    let mutable messages = List ()
-    let mutable submissionOpt = Option<RenderMessage2d List * Vector2 * Vector2 * Vector2>.None
+    let mutable messages = SegmentedList.make ()
+    let mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2>.None
     let mutable swap = false
     let cachedSpriteMessages = Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
@@ -872,20 +872,20 @@ type RendererThread2d (createRenderer2d) =
                             descriptor.CachedSprite.Blend <- sprite.Blend
                             descriptor.CachedSprite.Glow <- sprite.Glow
                             descriptor.CachedSprite.Flip <- sprite.Flip
-                            messages.Add cachedSpriteMessage
+                            SegmentedList.add cachedSpriteMessage messages
                         | _ -> failwithumf ()
                     | _ -> failwithumf ()
-                | _ -> messages.Add message
-            | _ -> messages.Add message
+                | _ -> SegmentedList.add message messages
+            | _ -> SegmentedList.add message messages
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messages <- List ()
+            messages <- SegmentedList.make ()
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
-            let messagesTemp = Interlocked.Exchange (&messages, List ())
+            let messagesTemp = Interlocked.Exchange (&messages, SegmentedList.make ())
             submissionOpt <- Some (messagesTemp, eyePosition, eyeSize, eyeMargin)
 
         member this.Swap () =

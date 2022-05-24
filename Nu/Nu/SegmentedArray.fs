@@ -10,7 +10,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedArray =
 
-    type SegmentedArrayEnumerator<'a> (sarray : 'a SegmentedArray) =
+    type 'a SegmentedArrayEnumerator (sarray : 'a SegmentedArray) =
 
         let mutable i = -1
         let mutable j = -1
@@ -79,12 +79,14 @@ module SegmentedArray =
             member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> 'a IEnumerator
             member this.GetEnumerator () = new SegmentedArrayEnumerator<'a> (this) :> IEnumerator
 
+    let empty =
+        { TotalLength = 0; SegmentSize = 0; SegmentRemainder = 0; Segments = [||] }
+
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException ("Invalid argument.", nameof length))
         let size = sizeof<'a>
         let segmentSize = Constants.Engine.LohSizeMinusArraySlop / size
-        let segmentCount = length / segmentSize
-        let segmentRemainder = length % segmentSize
+        let (segmentCount, segmentRemainder) = Math.DivRem (length, segmentSize)
         let segments =
             Array.init
                 (if segmentRemainder = 0 then segmentCount else inc segmentCount)
@@ -103,6 +105,16 @@ module SegmentedArray =
     let item index (sarray : 'a SegmentedArray) =
         sarray.[index]
 
+    let mutate mutator sarray =
+        for i in 0 .. dec sarray.Segments.Length do
+            let segment = sarray.Segments.[i]
+            if i = dec sarray.Segments.Length then
+                for j in 0 .. dec sarray.SegmentRemainder do
+                    segment.[j] <- mutator segment.[j]
+            else
+                for j in 0 .. dec segment.Length do
+                    segment.[j] <- mutator segment.[j]
+
     let skip count sarray =
         if count > sarray.TotalLength then raise (ArgumentException ("Invalid argument.", nameof count))
         let result = zeroCreate (sarray.TotalLength - count)
@@ -118,8 +130,8 @@ module SegmentedArray =
         result
 
     let append left right =
-        let count = left.TotalLength + right.TotalLength
-        let result = zeroCreate count
+        let length = left.TotalLength + right.TotalLength
+        let result = zeroCreate length
         for i in 0 .. dec left.TotalLength do
             result.[i] <- left.[i]
         let floor = left.TotalLength
@@ -140,7 +152,7 @@ module SegmentedArray =
             result.[i] <- mapper left.[i] right.[i]
         result
 
-    let transform transformer sarray =
+    let transform (transformer : 'a -> 'a) sarray =
         let result = zeroCreate sarray.TotalLength
         for i in 0 .. dec sarray.Segments.Length do
             let sourceSegment = sarray.Segments.[i]
@@ -153,7 +165,7 @@ module SegmentedArray =
                     resultSegment.[j] <- transformer sourceSegment.[j]
         result
 
-    let transform2 transformer left right =
+    let transform2 (transformer : 'a -> 'a -> 'a) left right =
         if left.TotalLength <> right.TotalLength then raise (ArgumentException "")
         let result = zeroCreate left.TotalLength
         for i in 0 .. dec left.Segments.Length do
@@ -167,16 +179,6 @@ module SegmentedArray =
                 for j in 0 .. dec leftSegment.Length do
                     resultSegment.[j] <- transformer leftSegment.[j] rightSegment.[j]
         result
-
-    let mutate mutator sarray =
-        for i in 0 .. dec sarray.Segments.Length do
-            let segment = sarray.Segments.[i]
-            if i = dec sarray.Segments.Length then
-                for j in 0 .. dec sarray.SegmentRemainder do
-                    segment.[j] <- mutator segment.[j]
-            else
-                for j in 0 .. dec segment.Length do
-                    segment.[j] <- mutator segment.[j]
 
     let foreach op sarray =
         for i in 0 .. dec sarray.Segments.Length do
@@ -221,9 +223,14 @@ module SegmentedArray =
 
     let fold folder state sarray =
         let mutable state = state
-        for i in 0 .. dec sarray.TotalLength do
-            let item = &sarray.[i]
-            state <- folder state item
+        for i in 0 .. dec sarray.Segments.Length do
+            let segment = sarray.Segments.[i]
+            if i = dec sarray.Segments.Length then
+                for j in 0 .. dec sarray.SegmentRemainder do
+                    state <- folder state segment.[j]
+            else
+                for j in 0 .. dec segment.Length do
+                    state <- folder state segment.[j]
         state
 
     let singleton item =
@@ -244,9 +251,6 @@ module SegmentedArray =
         let list = List.ofSeq seq
         ofList list
 
-    let empty =
-        { TotalLength = 0; SegmentSize = 0; SegmentRemainder = 0; Segments = [||] }
+type 'a SegmentedArrayEnumerator = 'a SegmentedArray.SegmentedArrayEnumerator
 
-type SegmentedArrayEnumerator<'a> = SegmentedArray.SegmentedArrayEnumerator<'a>
-
-type SegmentedArray<'a> = SegmentedArray.SegmentedArray<'a>
+type 'a SegmentedArray = 'a SegmentedArray.SegmentedArray
