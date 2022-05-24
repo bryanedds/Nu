@@ -431,7 +431,7 @@ type PhysicsEngine =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
     /// Integrate the physics system one frame.
-    abstract Integrate : int64 -> PhysicsMessage UList -> IntegrationMessage List
+    abstract Integrate : int64 -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
 
 /// The mock implementation of PhysicsEngine.
 type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =
@@ -448,7 +448,7 @@ type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
-        member physicsEngine.Integrate _ _ = List<IntegrationMessage> ()
+        member physicsEngine.Integrate _ _ = SegmentedArray.empty
 
 [<RequireQualifiedAccess>]
 module Physics =

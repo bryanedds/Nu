@@ -488,6 +488,6 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
             AetherPhysicsEngine.createIntegrationMessages physicsEngine
-            let integrationMessages = List<IntegrationMessage> physicsEngine.IntegrationMessages
+            let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
