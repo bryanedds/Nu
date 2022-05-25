@@ -619,7 +619,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // create SDL-OpenGL context if needed
         match window with
-        | SglWindow window -> OpenGL.Hl.CreateSgl410Context window.SglWindow |> ignore<nativeint>
+        | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
         | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
         OpenGL.Hl.Assert ()
 
@@ -678,6 +678,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
 
             // test sprite for linux
+            GlRenderer2d.tryLoadRenderPackage "Default" renderer
             let (a, b, c) = renderer.RenderSpriteQuad
             let (x,y,z,w) = renderer.RenderSpriteShader
             let mvp =
