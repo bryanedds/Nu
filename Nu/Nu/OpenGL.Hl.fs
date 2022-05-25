@@ -334,10 +334,10 @@ module Hl =
 
         // setup shader
         OpenGL.Gl.UseProgram shader
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.Uniform4f (colorUniform, 1, color)
         OpenGL.Gl.UniformMatrix4f (modelViewProjectionUniform, 1, false, modelViewProjection)
         OpenGL.Gl.Uniform1 (texUniform, 0)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
