@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE; DEBUG_RENDERING</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE; DEBUG_RENDERING_MESSAGE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
