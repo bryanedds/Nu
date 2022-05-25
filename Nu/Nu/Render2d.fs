@@ -678,7 +678,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
 
             // test sprite for linux
-            GlRenderer2d.tryLoadRenderPackage "Default" renderer
             let (a, b, c) = renderer.RenderSpriteQuad
             let (x,y,z,w) = renderer.RenderSpriteShader
             let mvp =
