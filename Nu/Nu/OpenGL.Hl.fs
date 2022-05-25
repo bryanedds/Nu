@@ -357,6 +357,7 @@ module Hl =
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
+        Assert ()
 
         // teardown shader
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
