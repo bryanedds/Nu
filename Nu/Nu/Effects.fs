@@ -43,7 +43,7 @@ module Effects =
           Size : Vector3
           Angles : Vector3
           Elevation : single
-          InsetOpt : Box2 ValueOption
+          Inset : Box2
           Color : Color
           Blend : Blend
           Glow : Color
@@ -403,7 +403,7 @@ module EffectSystem =
         | Degrees degrees -> { slice with Angles = Math.degreesToRadians3d degrees }
         | Size size -> { slice with Size = size }
         | Elevation elevation -> { slice with Elevation = elevation }
-        | Inset inset -> { slice with InsetOpt = ValueSome inset } // TODO: 3D: see if we can utilize opt-ness in effect operators.
+        | Inset inset -> { slice with Inset = inset }
         | Color color -> { slice with Color = color }
         | Blend blend -> { slice with Blend = blend }
         | Glow glow -> { slice with Glow = glow }
@@ -485,7 +485,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let applied = if progress < 0.5f then keyFrame.TweenValue else keyFrame2.TweenValue
-                { slice with InsetOpt = ValueSome applied }
+                { slice with Inset = applied }
             else slice
         | Colors (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -554,7 +554,7 @@ module EffectSystem =
                     Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
-                              InsetOpt = slice.InsetOpt
+                              InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
                               Blend = slice.Blend
