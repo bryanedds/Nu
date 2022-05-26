@@ -300,7 +300,8 @@ module Hl =
         let vertexSize = sizeof<single> * 4
         let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        finally vertexDataPtr.Free ()
         Assert ()
 
         // create index buffer
@@ -309,7 +310,8 @@ module Hl =
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
         let indexDataSize = uint (indexData.Length * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        finally indexDataPtr.Free ()
         Assert ()
 
         // finalize vao
