@@ -207,27 +207,27 @@ module Hl =
     /// Create a shader from vertex and fragment code strings.
     let CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr) =
 
-        // construct gl program
-        let program = OpenGL.Gl.CreateProgram ()
+        // construct gl shader
+        let shader = OpenGL.Gl.CreateProgram ()
         Assert ()
 
         // add vertex shader
         let vertexShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.VertexShader
         OpenGL.Gl.ShaderSource (vertexShader, [|vertexShaderStr|], null)
         OpenGL.Gl.CompileShader vertexShader
-        OpenGL.Gl.AttachShader (program, vertexShader)
+        OpenGL.Gl.AttachShader (shader, vertexShader)
         Assert ()
 
         // add fragement shader to program
         let fragmentShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.FragmentShader
         OpenGL.Gl.ShaderSource (fragmentShader, [|fragmentShaderStr|], null)
         OpenGL.Gl.CompileShader fragmentShader
-        OpenGL.Gl.AttachShader (program, fragmentShader)
+        OpenGL.Gl.AttachShader (shader, fragmentShader)
         Assert ()
 
-        // link program
-        OpenGL.Gl.LinkProgram program
-        program
+        // link shader
+        OpenGL.Gl.LinkProgram shader
+        shader
 
     /// Create a sprite shader with uniforms:
     ///     0: sampler2D tex
@@ -241,7 +241,7 @@ module Hl =
 
         // vertex shader code
         // TODO: 3D: figure out how to apply layout(location ...) to uniform.
-        let samplerVertexShaderStr =
+        let vertexShaderStr =
             [Constants.Render.GlslVersionPragma
              "layout(location = 0) in vec2 position;"
              "layout(location = 1) in vec2 texCoordsIn;"
@@ -255,7 +255,7 @@ module Hl =
 
         // fragment shader code
         // TODO: 3D: figure out how to apply layout(location ...) to uniform.
-        let samplerFragmentShaderStr =
+        let fragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "uniform sampler2D tex;"
              "uniform vec4 color;"
@@ -267,7 +267,7 @@ module Hl =
              "}"] |> String.join "\n"
 
         // create shader
-        let shader = CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
+        let shader = CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr)
         let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
         let modelViewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "modelViewProjection")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
