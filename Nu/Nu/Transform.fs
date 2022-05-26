@@ -46,7 +46,7 @@ type [<NoEquality; NoComparison>] Transform =
         // cache line 2
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixOpt_ : Matrix4x4 ref // TODO: 3D:  consider making this 3x3 for speed.
+        val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
         val mutable private Angles_ : Vector3
@@ -173,6 +173,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterUnscaled <- perimeterBottom
 
     member this.PerimeterOriented =
+        // TODO: 3D: consider caching this to elide allocation and computation!
         let perimeter = this.Perimeter
         let rotation = this.Rotation_
         if not rotation.IsIdentity then

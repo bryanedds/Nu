@@ -273,7 +273,7 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                let element = Octelement.make false false entity // TODO: 3D:  populate flags correctly.
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
                                 Octree.addElement entityOmnipresent entityBounds element octree
                             octree)
                         (World.getOctree world)
@@ -305,7 +305,7 @@ module Nu =
                                 let entityState = World.getEntityState entity world
                                 let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                let element = Octelement.make false false entity // TODO: 3D:  populate flags correctly.
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
                                 Octree.removeElement entityOmnipresent entityBounds element octree
                             octree)
                         (World.getOctree world)
