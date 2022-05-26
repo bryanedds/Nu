@@ -233,7 +233,7 @@ module Hl =
     ///     0: vec2 position
     /// and uniforms:
     ///     a: mat4 modelViewProjection
-    ///     b: vec2 texCoordsIn
+    ///     b: vec2 texCoords4
     ///     c: vec4 color
     ///     d: sampler2D tex
     let CreateSpriteShader () =
