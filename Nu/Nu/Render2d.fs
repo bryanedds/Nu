@@ -801,8 +801,7 @@ type RendererThread2d (createRenderer2d) =
         while not terminated do
 
             // loop until submission exists
-            while Option.isNone submissionOpt && not terminated do
-                Thread.Yield () |> ignore<bool>
+            SpinWait.SpinUntil (fun () -> Option.isSome submissionOpt || terminated)
 
             // guard against early termination
             if not terminated then
@@ -818,8 +817,7 @@ type RendererThread2d (createRenderer2d) =
                 freeSpriteMessages messages
 
                 // loop until swap is requested
-                while not swap && not terminated do
-                    Thread.Yield () |> ignore<bool>
+                SpinWait.SpinUntil (fun () -> swap || terminated)
 
                 // guard against early termination
                 if not terminated then
@@ -852,7 +850,7 @@ type RendererThread2d (createRenderer2d) =
             task.Start ()
 
             // wait for task to finish starting
-            while not started do Thread.Yield () |> ignore<bool>
+            SpinWait.SpinUntil (fun () -> started)
 
         member this.EnqueueMessage message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
@@ -887,7 +885,7 @@ type RendererThread2d (createRenderer2d) =
 
         member this.SubmitMessages eyePosition eyeSize eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            while swap do Thread.Yield () |> ignore<bool>
+            SpinWait.SpinUntil (fun () -> not swap)
             let messagesTemp = Interlocked.Exchange (&messages, SegmentedList.make ())
             submissionOpt <- Some (messagesTemp, eyePosition, eyeSize, eyeMargin)
 
