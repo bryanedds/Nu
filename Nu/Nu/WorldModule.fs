@@ -431,26 +431,37 @@ module WorldModule =
             World.addTasklet simulant tasklet world
 
         /// Attempt to get the window flags.
+        [<FunctionBinding>]
         static member tryGetWindowFlags world =
             World.getAmbientStateBy AmbientState.tryGetWindowFlags world
 
         /// Attempt to check that the window is minimized.
+        [<FunctionBinding>]
         static member tryGetWindowMinimized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
 
         /// Attempt to check that the window is maximized.
+        [<FunctionBinding>]
         static member tryGetWindowMaximized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
             
         /// Attempt to check that the window is in a full screen state.
+        [<FunctionBinding>]
         static member tryGetWindowFullScreen world =
             World.getAmbientStateBy AmbientState.tryGetWindowFullScreen world
 
         /// Attempt to set the window's full screen state.
+        [<FunctionBinding>]
         static member trySetWindowFullScreen fullScreen world =
             World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
+        /// Attempt to get the window size.
+        [<FunctionBinding>]
+        static member tryGetWindowSize world =
+            World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
+
         /// Check whether the world should sleep rather than run.
+        [<FunctionBinding>]
         static member shouldSleep world =
             World.getAmbientStateBy AmbientState.shouldSleep world
 

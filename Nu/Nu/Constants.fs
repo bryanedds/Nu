@@ -74,14 +74,23 @@ module Render =
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
+    let (*Literal*) ViewportMargin (windowSize : Vector2i) =
+        let size = Vector2i (ResolutionX, ResolutionY)
+        Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
+    let (*Literal*) ViewportLocal =
+        let size = Vector2i (ResolutionX, ResolutionY)
+        Box2i (Vector2i.Zero, size)
+    let (*Literal*) ViewportWindow windowSize =
+        let margin = ViewportMargin windowSize
+        Box2i (margin, Resolution)
     let (*Literal*) ScreenClearing = ColorClear Color.White // TODO: move this to ViewConfig or WorldConfig?
-    let OpenGlVersionMajor = 4
-    let OpenGlVersionMinor = 1
-    let OpenGlCore = true
-    let GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
-    let SpriteBatchSize = 192
-    let SpriteBorderTexelScalar = 0.02f // NOTE: miiiiight be safer as 0.01f.
-    let SpriteMessagesPrealloc = 256
+    let [<Literal>] OpenGlVersionMajor = 4
+    let [<Literal>] OpenGlVersionMinor = 1
+    let [<Literal>] OpenGlCore = true
+    let (*Literal*) GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
+    let [<Literal>] SpriteBatchSize = 192
+    let [<Literal>] SpriteBorderTexelScalar = 0.02f // NOTE: miiiiight be safer as 0.01f.
+    let [<Literal>] SpriteMessagesPrealloc = 256
 
 [<RequireQualifiedAccess>]
 module Audio =

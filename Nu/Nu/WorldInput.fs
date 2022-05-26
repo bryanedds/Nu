@@ -28,8 +28,12 @@ module WorldInputModule =
         /// Get the position of the mouse.
         [<FunctionBinding>]
         static member getMousePosition2d world =
-            let eyeMargin = World.getEyeMargin2d world
-            MouseState.getPosition () - eyeMargin
+            match World.tryGetWindowSize world with
+            | Some windowSize ->
+                let marginI = Constants.Render.ViewportMargin windowSize
+                let margin = v2 (single marginI.X) (single marginI.Y)
+                MouseState.getPosition () - margin
+            | None -> MouseState.getPosition ()
 
         /// Check that the given keyboard key is down.
         [<FunctionBinding>]

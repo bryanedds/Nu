@@ -99,11 +99,6 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getEyeSize2d world =
             (World.getGameState world).EyeSize2d
-            
-        /// Get the margin around the camera eye given the display mode's full screen state and resolution.
-        [<FunctionBinding>]
-        static member getEyeMargin2d world =
-            World.getAmbientStateBy (AmbientState.getEyeMargin (World.getEyeSize2d world)) world
 
         /// Set the current 2d eye size.
         static member internal setEyeSize2dPlus value world =
