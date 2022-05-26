@@ -184,6 +184,15 @@ module AmbientState =
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
 
+    /// Attempt to get the window size.
+    let tryGetWindowSize state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->
+            let (width, height) = (ref 0, ref 0)
+            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
+            Some (v2i !width !height)
+        | _ -> None
+
     /// Check whether we should sleep rather than run.
     let shouldSleep state =
         match tryGetWindowFlags state with
@@ -193,21 +202,6 @@ module AmbientState =
             let fullScreen = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u
             minimized || not focused && fullScreen
         | None -> false
-
-    /// Get the margin around the camera eye given the display mode's full screen state and resolution.
-    let getEyeMargin (eyeSize : Vector2) state =
-        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            let eyeMargin =
-                v2
-                    (single width.Value - eyeSize.X * single Constants.Render.VirtualScalar)
-                    (single height.Value - eyeSize.Y * single Constants.Render.VirtualScalar)
-            let eyeMargin = eyeMargin / 2.0f
-            let eyeMargin = v2 (max eyeMargin.X 0.0f) (max eyeMargin.Y 0.0f) // avoid negative margins
-            eyeMargin
-        | _ -> v2Zero
 
     /// Get the symbol store with the by map.
     let getSymbolStoreBy by state =

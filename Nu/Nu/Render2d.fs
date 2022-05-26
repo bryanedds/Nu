@@ -23,7 +23,7 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
     | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
     | TextDescriptor of TextDescriptor
-    | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Vector2 * Renderer2d -> unit)
+    | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
 /// A layered message to the 2d rendering system.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
@@ -64,7 +64,7 @@ and Renderer2d =
     /// The sprite batch operational environment if it exists for this implementation.
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.Env option
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2 -> RenderMessage2d SegmentedList -> unit
+    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d SegmentedList -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -262,18 +262,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         if glow.A <> 0.0f then
             OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, glow, flip, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
-    /// Compute the 2d viewport.
-    static member computeViewport (_ : GlRenderer2d) =
-        box2i v2iZero (v2i Constants.Render.ResolutionX Constants.Render.ResolutionY)
-
     /// Compute the 2d absolute view matrix.
-    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) eyeMargin (_ : GlRenderer2d) =
-        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
+    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
+        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
         Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
     /// Compute the 2d relative view matrix.
-    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) eyeMargin (_ : GlRenderer2d) =
-        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2 - eyeMargin * Constants.Render.VirtualScalar2
+    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
+        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
         Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
     /// Compute the 2d projection matrix.
@@ -441,7 +437,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          justification : Justification,
          eyePosition : Vector2,
          eyeSize : Vector2,
-         eyeMargin : Vector2,
          renderer : GlRenderer2d) =
         let (transform, color) = (transform, color) // make visible from lambda
         flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
@@ -450,9 +445,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let perimeter = transform.Perimeter
             let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-            let viewport = GlRenderer2d.computeViewport renderer
-            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin renderer
-            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin renderer
+            let viewport = Constants.Render.ViewportLocal
+            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer
+            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer
             let projection = GlRenderer2d.computeProjection viewport renderer
             let viewProjection = if absolute then viewAbsolute * projection else viewRelative * projection
             let font = AssetTag.generalize font
@@ -548,11 +543,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
         OpenGL.Hl.Assert ()
 
-    static member inline private renderCallback callback eyePosition eyeSize eyeMargin renderer =
-        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, eyeMargin, renderer)
+    static member inline private renderCallback callback eyePosition eyeSize renderer =
+        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, renderer)
         OpenGL.Hl.Assert ()
 
-    static member private renderDescriptor descriptor eyePosition eyeSize eyeMargin renderer =
+    static member private renderDescriptor descriptor eyePosition eyeSize renderer =
         match descriptor with
         | SpriteDescriptor descriptor ->
             GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
@@ -577,42 +572,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                  eyePosition, eyeSize, renderer)
         | TextDescriptor descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyePosition, eyeSize, v2Zero, renderer)
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyePosition, eyeSize, renderer)
         | RenderCallbackDescriptor2d callback ->
-            GlRenderer2d.renderCallback callback eyePosition eyeSize eyeMargin renderer
+            GlRenderer2d.renderCallback callback eyePosition eyeSize renderer
 
-    static member private renderLayeredMessages eyePosition eyeSize eyeMargin renderer =
+    static member private renderLayeredMessages eyePosition eyeSize renderer =
         for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize eyeMargin renderer
-
-    static member addEyeMarginMessage (_ : Vector2) eyeSize eyeMargin renderer =
-        let eyeMarginBounds = box2 (eyeSize * -0.5f - eyeMargin) (eyeSize + eyeMargin * 2.0f)
-        let image = asset Assets.Default.PackageName Assets.Default.Image8Name
-        let sprites =
-            if eyeMargin <> v2Zero then
-                let mutable transform = Transform.makeDefault v3CenteredOffset2d
-                transform.Absolute <- true
-                let sprite = { Sprite.Transform = transform; InsetOpt = ValueNone; Image = image; Color = Color.Black; Blend = Overwrite; Glow = Color.Zero; Flip = FlipNone }
-                let mutable bottomMarginTransform = transform
-                bottomMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
-                bottomMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
-                let bottomMargin = { sprite with Transform = bottomMarginTransform }
-                let mutable leftMarginTransform = transform
-                leftMarginTransform.Position <- eyeMarginBounds.BottomLeft.V3
-                leftMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
-                let leftMargin = { sprite with Transform = leftMarginTransform }
-                let mutable topMarginTransform = transform
-                topMarginTransform.Position <- eyeMarginBounds.TopLeft.V3 - v3 0.0f eyeMargin.Y 0.0f
-                topMarginTransform.Size <- v3 eyeMarginBounds.Size.X eyeMargin.Y 0.0f
-                let topMargin = { sprite with Transform = topMarginTransform }
-                let mutable rightMarginTransform = transform
-                rightMarginTransform.Position <- eyeMarginBounds.BottomRight.V3 - v3 eyeMargin.X 0.0f 0.0f
-                rightMarginTransform.Size <- v3 eyeMargin.X eyeMarginBounds.Size.Y 0.0f
-                let rightMargin = { sprite with Transform = rightMarginTransform }
-                [|bottomMargin; leftMargin; topMargin; rightMargin|]
-            else [||]
-        let message = { Elevation = Single.MaxValue; AssetTag = AssetTag.generalize image; Horizon = 0.0f; RenderDescriptor = SpritesDescriptor { Sprites = sprites }}
-        renderer.RenderLayeredMessages.Add message
+            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
 
     /// Make a Renderer.
     static member make window =
@@ -656,22 +622,22 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.SpriteBatchEnvOpt =
             Some renderer.RenderSpriteBatchEnv
 
-        member renderer.Render eyePosition eyeSize eyeMargin renderMessages =
+        member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
 
             // begin frame
-            let viewport = GlRenderer2d.computeViewport renderer
-            let projection = GlRenderer2d.computeProjection viewport renderer
-            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize eyeMargin renderer * projection
-            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize eyeMargin renderer * projection
-            OpenGL.Hl.BeginFrame viewport
+            let viewportLocal = Constants.Render.ViewportLocal
+            let viewportWindow = Constants.Render.ViewportWindow windowSize
+            let projection = GlRenderer2d.computeProjection viewportLocal renderer
+            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
+            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
+            OpenGL.Hl.BeginFrame viewportWindow
             OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
-            GlRenderer2d.addEyeMarginMessage eyePosition eyeSize eyeMargin renderer // TODO: 3D: make sure margins are being rendered correctly.
             GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyePosition eyeSize eyeMargin renderer
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
             renderer.RenderLayeredMessages.Clear ()
 
             // end frame
@@ -700,7 +666,7 @@ type RendererProcess2d =
         abstract Start : unit -> unit
         abstract EnqueueMessage : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
-        abstract SubmitMessages : Vector2 -> Vector2 -> Vector2 -> unit
+        abstract SubmitMessages : Vector2 -> Vector2 -> Vector2i -> unit
         abstract Swap : unit -> unit
         abstract Terminate : unit -> unit
         end
@@ -736,10 +702,10 @@ type RendererInline2d (createRenderer2d) =
         member this.ClearMessages () =
             messages <- SegmentedList.make ()
 
-        member this.SubmitMessages eyePosition eyeSize eyeMargin =
+        member this.SubmitMessages eyePosition eyeSize windowSize =
             match rendererOpt with
             | Some renderer ->
-                renderer.Render eyePosition eyeSize eyeMargin messages
+                renderer.Render eyePosition eyeSize windowSize messages
                 SegmentedList.clear messages
             | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
 
@@ -763,7 +729,7 @@ type RendererThread2d (createRenderer2d) =
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable messages = SegmentedList.make ()
-    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2>.None
+    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2i>.None
     let [<VolatileField>] mutable swap = false
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()
@@ -808,11 +774,11 @@ type RendererThread2d (createRenderer2d) =
             if not terminated then
 
                 // receive submission
-                let (messages, eyePosition, eyeSize, eyeMargin) = Option.get submissionOpt
+                let (messages, eyePosition, eyeSize, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
                 // render
-                renderer.Render eyePosition eyeSize eyeMargin messages
+                renderer.Render eyePosition eyeSize windowSize messages
             
                 // recover cached sprite messages
                 freeSpriteMessages messages
