@@ -77,12 +77,14 @@ module Render =
     let (*Literal*) ViewportMargin (windowSize : Vector2i) =
         let size = Vector2i (ResolutionX, ResolutionY)
         Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
-    let (*Literal*) ViewportLocal =
-        let size = Vector2i (ResolutionX, ResolutionY)
-        Box2i (Vector2i.Zero, size)
+    let (*Literal*) ViewportFull windowSize =
+        Box2i (Vector2i.Zero, windowSize)
     let (*Literal*) ViewportWindow windowSize =
         let margin = ViewportMargin windowSize
         Box2i (margin, Resolution)
+    let (*Literal*) ViewportLocal =
+        let size = Vector2i (ResolutionX, ResolutionY)
+        Box2i (Vector2i.Zero, size)
     let (*Literal*) ScreenClearing = ColorClear Color.White // TODO: move this to ViewConfig or WorldConfig?
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1

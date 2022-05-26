@@ -625,12 +625,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
 
             // begin frame
-            let viewportLocal = Constants.Render.ViewportLocal
             let viewportWindow = Constants.Render.ViewportWindow windowSize
+            OpenGL.Hl.BeginFrame viewportWindow
+            let viewportLocal = Constants.Render.ViewportLocal
             let projection = GlRenderer2d.computeProjection viewportLocal renderer
             let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
             let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
-            OpenGL.Hl.BeginFrame viewportWindow
             OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
 

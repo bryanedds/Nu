@@ -100,13 +100,25 @@ module Hl =
         glContext
 
     /// Begin an OpenGL frame.
-    let BeginFrame (viewport : Box2i) =
-        OpenGL.Gl.Viewport (viewport.Position.X, viewport.Position.Y, viewport.Size.X, viewport.Size.Y)
+    let BeginFrame (viewportWindow : Box2i) =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
         match Constants.Render.ScreenClearing with
-        | ColorClear color -> OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
+        | ColorClear color ->
+
+            // clear window target
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+
+            // clear drawing target
+            OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
+            OpenGL.Gl.Scissor (viewportWindow.Position.X, viewportWindow.Position.Y, viewportWindow.Size.X, viewportWindow.Size.Y)
+            OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
+            OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+
+            // set viewport
+            OpenGL.Gl.Viewport (viewportWindow.Position.X, viewportWindow.Position.Y, viewportWindow.Size.X, viewportWindow.Size.Y)
+
         | NoClear -> ()
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
 
     /// End an OpenGL frame.
     let EndFrame () =
