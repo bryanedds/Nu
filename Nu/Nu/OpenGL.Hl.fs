@@ -231,25 +231,35 @@ module Hl =
 
     /// Create a sprite shader with attributes:
     ///     0: vec2 position
-    ///     1: vec2 texCoordsIn
     /// and uniforms:
-    ///     a: sampler2D tex
-    ///     b: vec4 color
-    ///     c: mat4 modelViewProjection
-    /// TODO: consider making texCoordsIn a uniform as well for more flexible one-off rendering.
+    ///     a: mat4 modelViewProjection
+    ///     b: vec2 texCoordsIn
+    ///     c: vec4 color
+    ///     d: sampler2D tex
     let CreateSpriteShader () =
 
         // vertex shader code
         let vertexShaderStr =
             [Constants.Render.GlslVersionPragma
+             "#define VERTS 4"
+             ""
+             "const vec4 filters[VERTS] ="
+             "  vec4[4]("
+             "      vec4(1,1,0,0),"
+             "      vec4(1,1,1,0),"
+             "      vec4(1,1,1,1),"
+             "      vec4(1,1,0,1));"
+             ""
              "in vec2 position;"
-             "in vec2 texCoordsIn;"
              "uniform mat4 modelViewProjection;"
+             "uniform vec4 texCoords4;"
              "out vec2 texCoords;"
              "void main()"
              "{"
+             "  int vertexId = gl_VertexID % VERTS;"
+             "  vec4 filt = filters[vertexId];"
              "  gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
-             "  texCoords = texCoordsIn;"
+             "  texCoords = vec2(texCoords4.x * filt.x + texCoords4.z * filt.z, texCoords4.y * filt.y + texCoords4.w * filt.w);"
              "}"] |> String.join "\n"
 
         // fragment shader code
@@ -266,10 +276,11 @@ module Hl =
 
         // create shader
         let shader = CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr)
-        let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
         let modelViewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "modelViewProjection")
+        let texCoords4Uniform = OpenGL.Gl.GetUniformLocation (shader, "texCoords4")
+        let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
-        (colorUniform, modelViewProjectionUniform, texUniform, shader)
+        (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
@@ -277,15 +288,15 @@ module Hl =
         // build vertex data
         let vertexData =
             if onlyUpperRightQuadrant then
-                [|+0.0f; +0.0f; 0.0f; 0.0f
-                  +1.0f; +0.0f; 1.0f; 0.0f
-                  +1.0f; +1.0f; 1.0f; 1.0f
-                  +0.0f; +1.0f; 0.0f; 1.0f|]
+                [|+0.0f; +0.0f
+                  +1.0f; +0.0f
+                  +1.0f; +1.0f
+                  +0.0f; +1.0f|]
             else
-                [|-1.0f; -1.0f; 0.0f; 0.0f
-                  +1.0f; -1.0f; 1.0f; 0.0f
-                  +1.0f; +1.0f; 1.0f; 1.0f
-                  -1.0f; +1.0f; 0.0f; 1.0f|]
+                [|-1.0f; -1.0f
+                  +1.0f; -1.0f
+                  +1.0f; +1.0f
+                  -1.0f; +1.0f|]
 
         // initialize vao
         let vao = OpenGL.Gl.GenVertexArray ()
@@ -295,7 +306,7 @@ module Hl =
         // create vertex buffer
         let vertexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-        let vertexSize = sizeof<single> * 4
+        let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
@@ -314,9 +325,7 @@ module Hl =
 
         // finalize vao
         OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.EnableVertexAttribArray 1u
         OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-        OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint (sizeof<single> * 2))
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
@@ -326,7 +335,7 @@ module Hl =
         (indexBuffer, vertexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
-    let DrawSprite (indices, vertices, vao, color : Color, modelViewProjection : single array, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
+    let DrawSprite (indices, vertices, vao, modelViewProjection : single array, texCoords4 : Box2, color : Color, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -336,8 +345,9 @@ module Hl =
         // setup shader
         OpenGL.Gl.UseProgram shader
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
+        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords4.Position.X, texCoords4.Position.Y, texCoords4.Size.X, texCoords4.Size.Y)
+        OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         OpenGL.Gl.Uniform1 (texUniform, 0)
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd

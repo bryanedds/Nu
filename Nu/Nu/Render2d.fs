@@ -101,7 +101,7 @@ type RenderLayeredMessage2dComparer () =
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderWindow : Window
-          RenderSpriteShader : int * int * int * uint
+          RenderSpriteShader : int * int * int * int * uint
           RenderSpriteQuad : uint * uint * uint
           RenderTextQuad : uint * uint * uint
           mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.Env
@@ -534,8 +534,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // draw text sprite
                         // NOTE: we allocate an array here, too.
                         let (indices, vertices, vao) = renderer.RenderTextQuad
-                        let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, modelViewProjection.ToArray (), textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
+                        let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
+                        OpenGL.Hl.DrawSprite (indices, vertices, vao, modelViewProjection.ToArray (), Box2.Unit, Color.White, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture

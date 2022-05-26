@@ -57,7 +57,7 @@ module SpriteBatch =
             [Constants.Render.GlslVersionPragma
              "#define VERTS 6"
              ""
-             "const vec4 filters[6] ="
+             "const vec4 filters[VERTS] ="
              "  vec4[6]("
              "      vec4(1,1,0,0),"
              "      vec4(1,1,1,0),"
