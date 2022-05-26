@@ -229,22 +229,21 @@ module Hl =
         OpenGL.Gl.LinkProgram shader
         shader
 
-    /// Create a sprite shader with uniforms:
-    ///     0: sampler2D tex
-    ///     1: vec4 color
-    ///     2: mat4 modelViewProjection
-    /// and attributes:
+    /// Create a sprite shader with attributes:
     ///     0: vec2 position
     ///     1: vec2 texCoordsIn
+    /// and uniforms:
+    ///     a: sampler2D tex
+    ///     b: vec4 color
+    ///     c: mat4 modelViewProjection
     /// TODO: consider making texCoordsIn a uniform as well for more flexible one-off rendering.
     let CreateSpriteShader () =
 
         // vertex shader code
-        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
         let vertexShaderStr =
             [Constants.Render.GlslVersionPragma
-             "layout(location = 0) in vec2 position;"
-             "layout(location = 1) in vec2 texCoordsIn;"
+             "in vec2 position;"
+             "in vec2 texCoordsIn;"
              "uniform mat4 modelViewProjection;"
              "out vec2 texCoords;"
              "void main()"
@@ -254,7 +253,6 @@ module Hl =
              "}"] |> String.join "\n"
 
         // fragment shader code
-        // TODO: 3D: figure out how to apply layout(location ...) to uniform.
         let fragmentShaderStr =
             [Constants.Render.GlslVersionPragma
              "uniform sampler2D tex;"

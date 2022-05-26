@@ -80,8 +80,7 @@ module Render =
     let OpenGlCore = true
     let GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
     let SpriteBatchSize = 192
-    let SpriteTexelEpsilon = 0.000001f // TODO: 3D: implement texel epsilon based on the resolution of each texture rather than this constant!
-    let SpriteTexelEpsilonTimes2 = SpriteTexelEpsilon * 2.0f
+    let SpriteBorderTexelScalar = 0.02f // NOTE: miiiiight be safer as 0.01f.
     let SpriteMessagesPrealloc = 256
 
 [<RequireQualifiedAccess>]

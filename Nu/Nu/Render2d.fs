@@ -15,7 +15,6 @@ open Prime
 open Nu
 
 /// Describes what to render.
-/// TODO: 3D: make sure RenderCallbackDescriptor2d has all the parameters it needs, in a struct if necessary.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
@@ -238,13 +237,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let texCoords =
             let texelWidth = textureMetadata.TextureTexelWidth
             let texelHeight = textureMetadata.TextureTexelHeight
-            let texelBorderInset = Constants.Render.SpriteTexelEpsilon
-            let texelBorderInsetTimes2 = Constants.Render.SpriteTexelEpsilonTimes2
+            let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+            let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
             if not (inset.Equals box2Zero) then
-                let px = single inset.Position.X * texelWidth + texelBorderInset
-                let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - texelBorderInset
-                let sx = single inset.Size.X * texelWidth - texelBorderInsetTimes2
-                let sy = single -inset.Size.Y * texelHeight + texelBorderInsetTimes2
+                let px = single inset.Position.X * texelWidth + borderWidth
+                let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let sx = single inset.Size.X * texelWidth - borderWidth * 2.0f
+                let sy = single -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
             else Box2 (0.0f, 1.0f, 1.0f, -1.0f)
 
