@@ -327,14 +327,8 @@ module Hl =
         // fin
         (indexBuffer, vertexBuffer, vao)
 
-    let mtoa (m : Matrix4x4) =
-        [|m.M11; m.M12; m.M13; m.M14
-          m.M21; m.M22; m.M23; m.M24
-          m.M31; m.M32; m.M33; m.M34
-          m.M41; m.M42; m.M43; m.M44|]
-
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
-    let DrawSprite (indices, vertices, vao, color : Color, modelViewProjection : _ inref, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
+    let DrawSprite (indices, vertices, vao, color : Color, modelViewProjection : single array, texture, colorUniform, modelViewProjectionUniform, texUniform, shader) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -345,7 +339,7 @@ module Hl =
         OpenGL.Gl.UseProgram shader
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
-        OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, mtoa modelViewProjection)
+        OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
         OpenGL.Gl.Uniform1 (texUniform, 0)
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd

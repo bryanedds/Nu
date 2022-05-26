@@ -533,9 +533,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         OpenGL.Hl.Assert ()
 
                         // draw text sprite
+                        // NOTE: we allocate an array here, too.
                         let (indices, vertices, vao) = renderer.RenderTextQuad
                         let (colorUniform, modelViewProjectionUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, &modelViewProjection, textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
+                        OpenGL.Hl.DrawSprite (indices, vertices, vao, Color.White, modelViewProjection.ToArray (), textTexture, colorUniform, modelViewProjectionUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture

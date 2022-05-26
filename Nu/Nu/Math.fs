@@ -898,11 +898,12 @@ module Matrix4x4 =
 
     type Matrix4x4 with
 
-        /// Computes the matrix determinant.
-        /// NOTE: this copies the matrix to a local variable to elide the FS0052 warning.
-        member this.Determinant =
-            let copy = this
-            copy.GetDeterminant ()
+        /// Convert a Matrix4x4 to an array.
+        member this.ToArray () =
+            [|this.M11; this.M12; this.M13; this.M14
+              this.M21; this.M22; this.M23; this.M24
+              this.M31; this.M32; this.M33; this.M34
+              this.M41; this.M42; this.M43; this.M44|]
 
     let inline m4 (r0 : Vector4) (r1 : Vector4) (r2 : Vector4) (r3 : Vector4) =
         Matrix4x4
