@@ -40,14 +40,8 @@ module Engine =
     let (*Literal*) OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
     let (*Literal*) InvalidId = Guid.Empty
     let (*Literal*) GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let (*Literal*) EventTracing =
-        match ConfigurationManager.AppSettings.["EventTracing"] with
-        | null -> false
-        | eventTracing -> scvalue<bool> eventTracing
-    let (*Literal*) EventFilter =
-        match ConfigurationManager.AppSettings.["EventFilter"] with
-        | null -> EventFilter.Empty
-        | eventFilter -> scvalue<EventFilter.Filter> eventFilter
+    let (*Literal*) EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | eventTracing -> scvalue<bool> eventTracing
+    let (*Literal*) EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 
 [<RequireQualifiedAccess>]
 module Associations =
@@ -63,10 +57,7 @@ module Render =
     let [<Literal>] VirtualResolutionY = 540
     let (*Literal*) VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
     let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
-    let (*Literal*) VirtualScalar =
-        match ConfigurationManager.AppSettings.["VirtualScalar"] with
-        | null -> 2
-        | resolution -> scvalue<int> resolution
+    let (*Literal*) VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 2 | resolution -> scvalue<int> resolution
     let (*Literal*) VirtualScalarF = single VirtualScalar
     let (*Literal*) VirtualScalar2i = Vector2i VirtualScalar
     let (*Literal*) VirtualScalar2 = Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
@@ -74,18 +65,11 @@ module Render =
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
-    let (*Literal*) ViewportMargin (windowSize : Vector2i) =
-        let size = Vector2i (ResolutionX, ResolutionY)
-        Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
-    let (*Literal*) ViewportFull windowSize =
-        Box2i (Vector2i.Zero, windowSize)
-    let (*Literal*) ViewportWindow windowSize =
-        let margin = ViewportMargin windowSize
-        Box2i (margin, Resolution)
-    let (*Literal*) ViewportLocal =
-        let size = Vector2i (ResolutionX, ResolutionY)
-        Box2i (Vector2i.Zero, size)
-    let (*Literal*) ScreenClearing = ColorClear Color.White // TODO: move this to ViewConfig or WorldConfig?
+    let (*Literal*) ViewportFull windowSize = Box2i (Vector2i.Zero, windowSize)
+    let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
+    let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
+    let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
+    let (*Literal*) ScreenClearing = ColorClear Color.White
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1
     let [<Literal>] OpenGlCore = true

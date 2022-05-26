@@ -100,24 +100,30 @@ module Hl =
         glContext
 
     /// Begin an OpenGL frame.
-    let BeginFrame (viewportWindow : Box2i) =
+    let BeginFrame (viewportOffset : Box2i) =
+    
+        // set viewport
+        OpenGL.Gl.Viewport (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
+
+        // bind buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
+
+        // clear inner viewport
+        OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+
+        // attempt to clear render viewport
         match Constants.Render.ScreenClearing with
         | ColorClear color ->
 
-            // clear window target
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
-
             // clear drawing target
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-            OpenGL.Gl.Scissor (viewportWindow.Position.X, viewportWindow.Position.Y, viewportWindow.Size.X, viewportWindow.Size.Y)
+            OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
             OpenGL.Gl.ClearColor (color.R, color.G, color.B, color.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
 
-            // set viewport
-            OpenGL.Gl.Viewport (viewportWindow.Position.X, viewportWindow.Position.Y, viewportWindow.Size.X, viewportWindow.Size.Y)
-
+        // nothing to clear
         | NoClear -> ()
 
     /// End an OpenGL frame.
