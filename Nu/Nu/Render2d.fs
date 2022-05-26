@@ -760,16 +760,17 @@ type RendererInline2d (createRenderer2d) =
 type RendererThread2d (createRenderer2d) =
 
     let mutable taskOpt = None
-    let mutable started = false
-    let mutable terminated = false
-    let mutable messages = SegmentedList.make ()
-    let mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2>.None
-    let mutable swap = false
+    let [<VolatileField>] mutable started = false
+    let [<VolatileField>] mutable terminated = false
+    let [<VolatileField>] mutable messages = SegmentedList.make ()
+    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2>.None
+    let [<VolatileField>] mutable swap = false
+    let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
 
     let allocSpriteMessage () =
-        lock cachedSpriteMessages (fun () ->
+        lock cachedSpriteMessagesLock (fun () ->
             if cachedSpriteMessages.Count = 0 then
                 for _ in 0 .. dec cachedSpriteMessagesCapacity do
                     let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
@@ -780,7 +781,7 @@ type RendererThread2d (createRenderer2d) =
             else cachedSpriteMessages.Dequeue ())
 
     let freeSpriteMessages messages =
-        lock cachedSpriteMessages (fun () ->
+        lock cachedSpriteMessagesLock (fun () ->
             for message in messages do
                 match message with
                 | RenderLayeredMessage2d layeredMessage ->
