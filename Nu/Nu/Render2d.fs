@@ -461,7 +461,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | ValueSome renderAsset ->
                 match renderAsset with
                 | FontAsset (_, font) ->
-                
+
                     // gather rendering resources
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
                     // surface and texture one or more times a frame must be understood!
@@ -676,18 +676,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             // end frame
             OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
-
-            // test sprite for linux
-            let (a, b, c) = renderer.RenderSpriteQuad
-            let (x,y,z,w) = renderer.RenderSpriteShader
-            let mvp =
-                Matrix4x4
-                    (0.3f, 0f, 0f, 0f,
-                     0f, 0.08888888f, 0f, 0f,
-                     0f, 0f, -0.5f, 0f,
-                     -0.15f, 0.4333333f, 0f, 1f)
-            OpenGL.Hl.DrawSprite (a, b, c, Color.Gray, &mvp, 1u, x, y, z, w)
-
             OpenGL.Hl.EndFrame ()
             OpenGL.Hl.Assert ()
 
