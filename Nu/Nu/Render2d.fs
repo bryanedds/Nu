@@ -445,7 +445,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let perimeter = transform.Perimeter
             let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-            let viewport = Constants.Render.ViewportLocal
+            let viewport = Constants.Render.Viewport
             let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer
             let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer
             let projection = GlRenderer2d.computeProjection viewport renderer
@@ -625,10 +625,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
 
             // begin frame
-            let viewportWindow = Constants.Render.ViewportWindow windowSize
-            OpenGL.Hl.BeginFrame viewportWindow
-            let viewportLocal = Constants.Render.ViewportLocal
-            let projection = GlRenderer2d.computeProjection viewportLocal renderer
+            OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+            let viewport = Constants.Render.Viewport
+            let projection = GlRenderer2d.computeProjection viewport renderer
             let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
             let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
             OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
