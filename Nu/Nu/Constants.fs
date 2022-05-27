@@ -75,7 +75,7 @@ module Render =
     let [<Literal>] OpenGlCore = true
     let (*Literal*) GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
     let [<Literal>] SpriteBatchSize = 192
-    let [<Literal>] SpriteBorderTexelScalar = 0.01f
+    let [<Literal>] SpriteBorderTexelScalar = 0.005f
     let [<Literal>] SpriteMessagesPrealloc = 256
 
 [<RequireQualifiedAccess>]
