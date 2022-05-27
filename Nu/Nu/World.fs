@@ -410,8 +410,8 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher2d (false, true) :> EntityDispatcher
-                 EntityDispatcher3d (false, false) :> EntityDispatcher
+                [EntityDispatcher2d (false, false) :> EntityDispatcher
+                 EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -429,8 +429,7 @@ module WorldModule3 =
                  Box2dDispatcher () :> EntityDispatcher
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
-                 TmxMapDispatcher () :> EntityDispatcher
-                 ConcatenatedSceneryDispatcher () :> EntityDispatcher]
+                 TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these
@@ -441,8 +440,8 @@ module WorldModule3 =
                  TextFacet () :> Facet
                  BasicEmitter2dFacet () :> Facet
                  Effect2dFacet () :> Facet
-                 RigidBody2dFacet () :> Facet
-                 Joint2dFacet () :> Facet
+                 RigidBodyFacet () :> Facet
+                 JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet]
 

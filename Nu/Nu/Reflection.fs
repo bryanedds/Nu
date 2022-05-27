@@ -54,9 +54,8 @@ module Reflection =
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
              ("Mounted", true)
-             ("IsPhysical", true)
-             ("IsCentered", true)
              ("Is2d", true)
+             ("Physical", true)
              ("Optimized", true)]
 
     /// A dictionary of all loaded assemblies.

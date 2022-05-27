@@ -29,9 +29,10 @@ module TransformMasks =
     let [<Literal>] MountedMask =                   0b000001000000000000000u
     let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
     let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000u
-    let [<Literal>] AffineMatrixDirtyMask =         0b010000000000000000000u
-    let [<Literal>] DefaultFlags =                  0b000110010001100100001u
+    let [<Literal>] CenteredMask =                  0b001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b010000000000000000000u
+    let [<Literal>] AffineMatrixDirtyMask =         0b100000000000000000000u
+    let [<Literal>] DefaultFlags =                  0b001110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -73,6 +74,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
     member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
+    member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
     member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
@@ -125,29 +127,19 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.PerimeterUnscaled
         with get () =
-            let size = this.Size_
-            let extent = size * 0.5f
-            let alpha = this.Position_ - extent
-            let offset = this.Offset_ * size
-            let position = alpha + offset
-            Box3 (position, size)
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            Box3 (this.Position_ - perimeterUnscaledOffset * this.Size_, this.Size_)
         and set (value : Box3) =
-            let size = value.Size
-            let extent = size * 0.5f
-            let offset = this.Offset_ * size
-            let position = value.Position + extent - offset
-            this.Position_ <- position
-            this.Size <- size
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            this.Position <- value.Position - perimeterUnscaledOffset * value.Size
+            this.Size <- value.Size
 
     member this.Perimeter
         with get () =
             let scale = this.Scale_
             let sizeScaled = this.Size_ * scale
-            let extentScaled = sizeScaled * 0.5f
-            let alphaScaled = this.Position_ - extentScaled
-            let offsetScaled = this.Offset_ * sizeScaled
-            let position = alphaScaled + offsetScaled
-            Box3 (position, sizeScaled)
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
         and set (value : Box3) =
             this.Scale_ <- Vector3.One
             this.PerimeterUnscaled <- value
@@ -205,9 +197,11 @@ type [<NoEquality; NoComparison>] Transform =
         Box3 (positionOverflowed, sizeOverflowed)
 
     member this.Pivot =
-        this.Position_ + this.Offset_ * this.Size_
+        let perimeter = this.Perimeter
+        let offsetScaled = this.Offset_ * this.Scale_
+        perimeter.Center + offsetScaled
 
-    // TODO: scale snapping.
+    // TODO: 3D: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
         this.Position <- Math.snapF3d positionSnap this.Position
         this.Angles <- Math.snapR3d rotationSnap this.Angles
@@ -254,20 +248,20 @@ type [<NoEquality; NoComparison>] Transform =
         Unchecked.defaultof<Transform>
 
     /// Make a transform with default values.
-    static member makeDefault offset =
+    static member makeDefault centered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- DefaultFlags
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
-        transform.Offset_ <- offset
         transform.Size_ <- Vector3.One
         transform.Overflow_ <- 1.0f
+        transform.Centered <- centered
         transform
 
     /// Make a transform based on a perimeter.
     static member makePerimeter (perimeter : Box3) offset elevation absolute =
         let mutable transform = Unchecked.defaultof<Transform>
-        transform.Flags_ <- DefaultFlags
+        transform.Flags_ <- DefaultFlags ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Position
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
@@ -275,19 +269,19 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
-        transform.Absolute <- absolute
+        transform.Centered <- false
         transform
 
     /// Make a transform based human-intuited values.
-    static member makeIntuitive position scale offset size angles elevation absolute =
-        let mutable transform = Transform.makeDefault offset
-        transform.Flags_ <- DefaultFlags
+    static member makeIntuitive position scale offset size angles elevation absolute centered =
+        let mutable transform = Transform.makeDefault centered
+        transform.Flags_ <- DefaultFlags ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
         transform.Scale_ <- scale
+        transform.Offset_ <- offset
         transform.Size_ <- size
         transform.Elevation_ <- elevation
         transform.Angles <- angles
-        transform.Absolute <- absolute
         transform
 
     interface Transform Component with

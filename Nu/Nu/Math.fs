@@ -127,8 +127,7 @@ module Vector3 =
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
     let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let inline v3Dup (a : single) = v3 a a a
-    let v3CenteredOffset2d = v3 0.5f 0.5f 0.0f
-    let v3CenteredOffset3d = v3 0.5f 0.5f 0.5f
+    let v3UncenteredOffset = v3Dup 0.5f
     let v3One = Vector3.One
     let v3Zero = Vector3.Zero
     let v3UnitX = Vector3.UnitX

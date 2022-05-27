@@ -71,8 +71,8 @@ module FacetModule =
         member this.SignalEntityFacet<'model, 'message, 'command> signal facetName world =
             World.signalEntityFacet<'model, 'message, 'command> signal facetName this world
 
-    and [<AbstractClass>] Facet<'model, 'message, 'command> (isPhysical, initial : 'model) =
-        inherit Facet (isPhysical)
+    and [<AbstractClass>] Facet<'model, 'message, 'command> (physical, initial : 'model) =
+        inherit Facet (physical)
 
         let mutable modelNameOpt =
             Unchecked.defaultof<string>
@@ -401,9 +401,10 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
                 let horizon = perimeterUnscaled.Position.Y
-                let mutable textTransform = Transform.makeDefault transform.Offset
+                let mutable textTransform = Transform.makeDefault transform.Centered
                 textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
+                textTransform.Offset <- transform.Offset
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
@@ -481,10 +482,9 @@ module BasicEmitter2dFacetModule =
             match tryMakeEmitter entity world with
             | Some emitter ->
                 let mutable transform = entity.GetTransform world
-                let perimeterOriented = transform.PerimeterOriented
                 { emitter with
                     Body =
-                        { Position = perimeterOriented.Center
+                        { Position = transform.Position
                           Scale = transform.Scale
                           Angles = transform.Angles
                           LinearVelocity = v3Zero
@@ -577,8 +577,7 @@ module BasicEmitter2dFacetModule =
             let particleSystem =
                 match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicEmitter as emitter) ->
-                    let perimeterOriented = entity.GetPerimeterOriented world
-                    let position = perimeterOriented.Center
+                    let position = entity.GetPosition world
                     let emitter =
                         if v3Neq emitter.Body.Position position
                         then { emitter with Body = { emitter.Body with Position = position }}
@@ -605,9 +604,7 @@ module BasicEmitter2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset v3Zero
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.SelfDestruct false
+            [define Entity.SelfDestruct false
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 0L
@@ -687,6 +684,9 @@ module Effect2dFacetModule =
         member this.GetEffectOffset world : Vector3 = this.Get Property? EffectOffset world
         member this.SetEffectOffset (value : Vector3) world = this.Set Property? EffectOffset value world
         member this.EffectOffset = lens Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
+        member this.GetEffectCentered world : bool = this.Get Property? EffectCentered world
+        member this.SetEffectCentered (value : bool) world = this.Set Property? EffectCentered value world
+        member this.EffectCentered = lens Property? EffectCentered this.GetEffectCentered this.SetEffectCentered this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.Set Property? EffectTags value world
         member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
@@ -744,14 +744,13 @@ module Effect2dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Offset v3Zero
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.SelfDestruct false
+            [define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
              define Entity.EffectOffset v3Zero
+             define Entity.EffectCentered true
              nonPersistent Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              define Entity.ParticleSystem ParticleSystem.empty
@@ -782,12 +781,11 @@ module Effect2dFacetModule =
                 let time = World.getUpdateTime world
                 let world = entity.SetEffectTags Map.empty world
                 let mutable transform = entity.GetTransform world
-                let perimeterOriented = transform.PerimeterOriented
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
                 let effectAbsolute = entity.GetAbsolute world
                 let effectSlice =
-                    { Effects.Position = perimeterOriented.Center
+                    { Effects.Position = transform.Position
                       Effects.Scale = transform.Scale
                       Effects.Angles = transform.Angles
                       Effects.Elevation = transform.Elevation
@@ -798,8 +796,9 @@ module Effect2dFacetModule =
                       Effects.Blend = Transparent
                       Effects.Glow = Color.Zero
                       Effects.Flip = FlipNone
+                      Effects.Volume = Constants.Audio.SoundVolumeDefault
                       Effects.Enabled = true
-                      Effects.Volume = Constants.Audio.SoundVolumeDefault }
+                      Effects.Centered = entity.GetEffectCentered world }
                 let effectHistory = entity.GetEffectHistory world
                 let effectDefinitions = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectAbsolute effectTime effectDefinitions
@@ -866,7 +865,7 @@ module Effect2dFacetModule =
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
-module RigidBody2dFacetModule =
+module RigidBodyFacetModule =
 
     type Entity with
         member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
@@ -931,7 +930,7 @@ module RigidBody2dFacetModule =
         member this.BodyCollisionEvent = Events.BodyCollision --> this
         member this.BodySeparationEvent = Events.BodySeparation --> this
 
-    type RigidBody2dFacet () =
+    type RigidBodyFacet () =
         inherit Facet (true)
 
         static let getBodyShape (entity : Entity) world =
@@ -1014,20 +1013,18 @@ module RigidBody2dFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module Joint2dFacetModule =
+module JointFacetModule =
 
     type Entity with
         member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
         member this.SetJointDevice (value : JointDevice) world = this.Set Property? JointDevice value world
         member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
 
-    type Joint2dFacet () =
+    type JointFacet () =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Offset v3Zero
-             define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.JointDevice JointEmpty
+            [define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -1248,20 +1245,19 @@ module TmxMapFacetModule =
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (isPhysical, isCentered) =
-        inherit EntityDispatcher (isPhysical, isCentered, true)
+    type EntityDispatcher2d (centered, physical) =
+        inherit EntityDispatcher (true, centered, physical)
 
         static member Properties =
-            [define Entity.Offset v3CenteredOffset2d
+            [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d (isPhysical, isCentered) =
-        inherit EntityDispatcher (isPhysical, isCentered, false)
+    type EntityDispatcher3d (centered, physical) =
+        inherit EntityDispatcher (false, centered, physical)
 
         static member Properties =
-            [define Entity.Offset v3Zero
-             define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
     type World with
 
@@ -1281,8 +1277,8 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, is2d, initial : 'model) =
-        inherit EntityDispatcher (isPhysical, isCentered, is2d)
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, initial : 'model) =
+        inherit EntityDispatcher (is2d, centered, physical)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1369,19 +1365,18 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (isPhysical, isCentered, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, true, initial)
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, initial)
 
         static member Properties =
-            [define Entity.Offset v3CenteredOffset2d
+            [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (isPhysical, isCentered, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (isPhysical, isCentered, false, initial)
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, initial) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
 
         static member Properties =
-            [define Entity.Offset v3Zero
-             define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -1430,8 +1425,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d (false, false)
 
         static member Properties =
-            [define Entity.Offset v3CenteredOffset2d
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -1441,8 +1435,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
 
         static member Properties =
-            [define Entity.Offset v3CenteredOffset2d
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.Omnipresent true
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -2062,9 +2055,10 @@ module FillBarDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter // gui currently ignores rotation
                 let horizon = perimeter.Position.Y
-                let mutable borderTransform = Transform.makeDefault transform.Offset
+                let mutable borderTransform = Transform.makeDefault transform.Centered
                 borderTransform.Position <- perimeter.Position
                 borderTransform.Size <- perimeter.Size
+                borderTransform.Offset <- transform.Offset
                 borderTransform.Elevation <- transform.Elevation + 0.5f
                 borderTransform.Absolute <- transform.Absolute
                 let disabledColor = entity.GetDisabledColor world
@@ -2093,9 +2087,10 @@ module FillBarDispatcherModule =
                 let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
                 let fillHeight = fillSize.Y - fillInset.Y * 2.0f
                 let fillSize = v3 fillWidth fillHeight 0.0f
-                let mutable fillTransform = Transform.makeDefault transform.Offset
+                let mutable fillTransform = Transform.makeDefault transform.Centered
                 fillTransform.Position <- fillPosition
                 fillTransform.Size <- fillSize
+                fillTransform.Offset <- transform.Offset
                 fillTransform.Elevation <- transform.Elevation
                 fillTransform.Absolute <- transform.Absolute
                 let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
@@ -2129,35 +2124,35 @@ module FillBarDispatcherModule =
 module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
 
         static member Properties =
-            [define Entity.Offset v3Zero]
+            [define Entity.Centered true]
 
 [<AutoOpen>]
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<Effect2dFacet>]
 
         static member Properties =
-            [define Entity.Offset v3Zero
+            [define Entity.Centered true
              define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
-            [typeof<RigidBody2dFacet>
+            [typeof<RigidBodyFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
@@ -2168,10 +2163,10 @@ module Block2dDispatcherModule =
 module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
-            [typeof<RigidBody2dFacet>
+            [typeof<RigidBodyFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
@@ -2195,7 +2190,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2206,7 +2201,7 @@ module SideViewCharacterDispatcherModule =
             box2 offset celSize
 
         static member Facets =
-            [typeof<RigidBody2dFacet>]
+            [typeof<RigidBodyFacet>]
 
         static member Properties =
             [define Entity.CelSize (v2 28.0f 28.0f)
@@ -2269,7 +2264,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2292,7 +2287,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<TmxMapFacet>]
@@ -2308,28 +2303,6 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
-
-[<AutoOpen>]
-module SceneryModule =
-
-    type [<AbstractClass>] SceneryDispatcher () =
-        inherit EntityDispatcher3d (false, true)
-
-[<AutoOpen>]
-module ConcatenatedSceneryModule =
-
-    type Entity with
-        member this.GetEntityStates world : (Group * EntityState) array = this.Get Property? EntityStates world
-        member this.SetEntityStates (value : (Group * EntityState) array) world = this.Set Property? EntityStates value world
-        member this.EntityStates = lens Property? EntityStates this.GetEntityStates this.SetEntityStates this
-
-    type ConcatenatedSceneryDispatcher () =
-        inherit EntityDispatcher3d (false, true)
-
-        static member Properties =
-            [nonPersistent Entity.EntityStates [||]]
-
-        // TODO: on register, create indirect draw arrays, and on unregister, destroy indirect arrays
 
 [<AutoOpen>]
 module GroupDispatcherModule =

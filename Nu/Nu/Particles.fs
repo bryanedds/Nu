@@ -775,6 +775,7 @@ module Particles =
                     particle'.Transform.Angles <- particle.Body.Angles
                     particle'.Transform.Offset <- particle.Offset
                     particle'.Transform.Size <- particle.Size
+                    particle'.Transform.Centered <- true
                     particle'.Color <- particle.Color
                     particle'.Glow <- particle.Glow
                     particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
