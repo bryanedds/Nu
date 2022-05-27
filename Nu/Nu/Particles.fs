@@ -828,8 +828,8 @@ module Particles =
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
                 particle.Body.Angles <- emitter.Body.Angles
-                particle.Body.LinearVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf * 10.0f
-                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf
+                particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 6.0f
+                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 0.5f
                 particle
             let particleBehavior = fun time emitter ->
                 let watermark = emitter.ParticleWatermark
@@ -846,7 +846,7 @@ module Particles =
                         [Transformer.force (Gravity (Constants.Engine.GravityDefault / single Constants.Engine.DesiredFps))
                          Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
-                emitter.Body.Angles <- emitter.Body.Angles + v3 0.03f 0.2f 0.1f
+                emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f
                 Output.empty
             let emitterBehaviors =
                 Behaviors.empty
