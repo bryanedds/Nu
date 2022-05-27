@@ -161,9 +161,6 @@ module Hl =
                 (convertedPtr, converted)
             else (unconvertedPtr, unconverted)
 
-        // flip the texture
-        FlipSurface &surface
-
         // upload the texture to gl
         let texture = OpenGL.Gl.GenTexture ()
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
@@ -353,7 +350,40 @@ module Hl =
         (indexBuffer, vertexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
-    let DrawSprite (indices, vertices, vao, modelViewProjection : single array, texCoords4 : Box2, color : Color, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+    let DrawSprite (indices, vertices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+
+        // compute unflipped tex coords
+        let texCoordsUnflipped =
+            match insetOpt with
+            | ValueSome inset ->
+                let texelWidth = 1.0f / single textureWidth
+                let texelHeight = 1.0f / single textureHeight
+                let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+                let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
+                let px = inset.Position.X * texelWidth + borderWidth
+                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
+                let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                Box2 (px, py, sx, sy)
+            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f)
+            
+        // compute a flipping flags
+        let struct (flipH, flipV) =
+            match flip with
+            | FlipNone -> struct (false, false)
+            | FlipH -> struct (true, false)
+            | FlipV -> struct (false, true)
+            | FlipHV -> struct (true, true)
+
+        // compute tex coords
+        let texCoords =
+            box2
+                (v2
+                    (if flipH then texCoordsUnflipped.Position.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Position.X)
+                    (if flipV then texCoordsUnflipped.Position.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Position.Y))
+                (v2
+                    (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
+                    (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -364,7 +394,7 @@ module Hl =
         OpenGL.Gl.UseProgram shader
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
-        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords4.Position.X, texCoords4.Position.Y, texCoords4.Size.X, texCoords4.Size.Y)
+        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
         OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         OpenGL.Gl.Uniform1 (texUniform, 0)
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)

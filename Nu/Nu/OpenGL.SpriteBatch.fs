@@ -206,7 +206,7 @@ module SpriteBatch =
         OpenGL.Hl.Assert (fn ())
         BeginBatch state env
 
-    let inline private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) flipH flipV (color : Color) env =
+    let inline private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
         env.Perimeters.[perimeterOffset] <- perimeter.Position.X
         env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y
@@ -218,17 +218,17 @@ module SpriteBatch =
         let rotationOffset = env.SpriteIndex
         env.Rotations.[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
-        env.TexCoordses.[texCoordsOffset] <- if flipH then texCoords.Position.X + texCoords.Size.X else texCoords.Position.X
-        env.TexCoordses.[texCoordsOffset + 1] <- if flipV then 1.0f - texCoords.Position.Y + texCoords.Size.Y else 1.0f - texCoords.Position.Y
-        env.TexCoordses.[texCoordsOffset + 2] <- if flipH then -texCoords.Size.X else texCoords.Size.X
-        env.TexCoordses.[texCoordsOffset + 3] <- if flipV then texCoords.Size.Y else -texCoords.Size.Y
+        env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
+        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Position.Y
+        env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
+        env.TexCoordses.[texCoordsOffset + 3] <- texCoords.Size.Y
         let colorOffset = env.SpriteIndex * 4
         env.Colors.[colorOffset] <- color.R
         env.Colors.[colorOffset + 1] <- color.G
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
-    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color : Color, flip, bfs, bfd, beq, texture, env) =
+    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color : Color, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
@@ -236,17 +236,9 @@ module SpriteBatch =
             RestartBatch state env
             OpenGL.Hl.Assert ()
 
-        // compute a flipping flags
-        let struct (flipH, flipV) =
-            match flip with
-            | FlipNone -> struct (false, false)
-            | FlipH -> struct (true, false)
-            | FlipV -> struct (false, true)
-            | FlipHV -> struct (true, true)
-
         // populate vertices
         let perimeter = box2 position size
-        PopulateVertex perimeter pivot rotation texCoords flipH flipV color env
+        PopulateVertex perimeter pivot rotation texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
