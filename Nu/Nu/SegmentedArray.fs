@@ -247,9 +247,17 @@ module SegmentedArray =
             i <- inc i
         result
 
-    let ofSeq seq =
-        let list = List.ofSeq seq
-        ofList list
+    let ofSeq (seq : 'a seq) =
+        let count =
+            match seq with
+            | :? ('a ICollection) as collection -> collection.Count
+            | _ -> Seq.length seq
+        let result = zeroCreate count
+        let mutable i = 0
+        for item in seq do
+            result.[i] <- item
+            i <- inc i
+        result
 
 type 'a SegmentedArrayEnumerator = 'a SegmentedArray.SegmentedArrayEnumerator
 
