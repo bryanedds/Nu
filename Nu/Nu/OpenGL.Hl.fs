@@ -131,7 +131,6 @@ module Hl =
         () // nothing to do
 
     /// Vertically flip an SDL surface.
-    /// TODO: 3D: consider flipping tex coord y instead.
     let FlipSurface (surface : SDL.SDL_Surface inref) =
         let rowTop = Array.zeroCreate<byte> surface.pitch
         let rowBottom = Array.zeroCreate<byte> surface.pitch
