@@ -230,22 +230,40 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
     static member inline private batchSprite
-        absolute position size pivot rotation (inset : Box2) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
+        absolute position size pivot rotation (insetOpt : Box2 voption) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
+
+        // compute unflipped tex coords
+        let texCoordsUnflipped =
+            match insetOpt with
+            | ValueSome inset ->
+                let texelWidth = textureMetadata.TextureTexelWidth
+                let texelHeight = textureMetadata.TextureTexelHeight
+                let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+                let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
+                let px = inset.Position.X * texelWidth + borderWidth
+                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
+                let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                Box2 (px, py, sx, sy)
+            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f)
+            
+        // compute a flipping flags
+        let struct (flipH, flipV) =
+            match flip with
+            | FlipNone -> struct (false, false)
+            | FlipH -> struct (true, false)
+            | FlipV -> struct (false, true)
+            | FlipHV -> struct (true, true)
 
         // compute tex coords
-        // TODO: 3D: consider putting the texel multiplies in the shader.
         let texCoords =
-            let texelWidth = textureMetadata.TextureTexelWidth
-            let texelHeight = textureMetadata.TextureTexelHeight
-            let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
-            let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
-            if not (inset.Equals box2Zero) then
-                let px = single inset.Position.X * texelWidth + borderWidth
-                let py = single (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
-                let sx = single inset.Size.X * texelWidth - borderWidth * 2.0f
-                let sy = single -inset.Size.Y * texelHeight + borderHeight * 2.0f
-                Box2 (px, py, sx, sy)
-            else Box2 (0.0f, 1.0f, 1.0f, -1.0f)
+            box2
+                (v2
+                    (if flipH then texCoordsUnflipped.Position.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Position.X)
+                    (if flipV then texCoordsUnflipped.Position.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Position.Y))
+                (v2
+                    (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
+                    (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // compute blending instructions
         let struct (bfs, bfd, beq) =
@@ -256,11 +274,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, color, flip, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, glow, flip, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, texCoords, glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
     /// Compute the 2d absolute view matrix.
     static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
@@ -309,13 +327,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
         let rotation = transform.Angles.Z
-        let inset = match insetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
         let image = AssetTag.generalize image
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (textureMetadata, texture) ->
-                GlRenderer2d.batchSprite absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
+                GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
@@ -339,8 +356,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = particle.Flip
-                    let inset = match particle.InsetOpt with ValueSome inset -> inset | ValueNone -> box2Zero
-                    GlRenderer2d.batchSprite absolute position size pivot rotation inset textureMetadata texture color blend glow flip renderer
+                    let insetOpt = &particle.InsetOpt
+                    GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -422,9 +439,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f inset textureMetadata texture color Transparent glow flip renderer
+                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent glow flip renderer
                         | None -> ()
-        
+
                 tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
@@ -504,9 +521,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                     if textSurfacePtr <> IntPtr.Zero then
 
-                        // flip surface
-                        OpenGL.Hl.FlipSurface &textSurface
-
                         // construct mvp matrix
                         let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
                         let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
@@ -530,7 +544,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // NOTE: we allocate an array here, too.
                         let (indices, vertices, vao) = renderer.RenderTextQuad
                         let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, vao, modelViewProjection.ToArray (), Box2.Unit, Color.White, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                        OpenGL.Hl.DrawSprite (indices, vertices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture
