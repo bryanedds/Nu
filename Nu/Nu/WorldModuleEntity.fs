@@ -296,17 +296,19 @@ module WorldModuleEntity =
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
                 let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
+                let centeredChanged = newTransform.Centered <> oldTransform.Centered
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
-                        // OPTIMIZATION: eliding Bounds, PerimeterOriented, PerimenterCenter, and PerimeterBottom change events for speed.
+                        // OPTIMIZATION: eliding PerimenterCenter, PerimeterBottom, PerimeterOriented, and Bounds, change events for speed.
                         let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? PerimeterUnscaled newTransform.PerimeterUnscaled publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
                         let world = if offsetChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
                         let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
+                        let world = if centeredChanged then World.publishEntityChange Property? Centered newTransform.Centered publishChangeBindings publishChangeEvents entity world else world
                         world
                     else world
                 let world =
@@ -433,9 +435,9 @@ module WorldModuleEntity =
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
-        static member internal getEntityIsPhysical entity world = (World.getEntityState entity world).IsPhysical
-        static member internal getEntityIsCentered entity world = (World.getEntityState entity world).IsCentered
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
+        static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
+        static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
@@ -525,7 +527,7 @@ module WorldModuleEntity =
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
             let mounterState = World.getEntityState mounter world
-            if World.isHalted world || not mounterState.IsPhysical then
+            if World.isHalted world || not mounterState.Physical then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixWorld * affineMatrixLocal
@@ -1110,6 +1112,19 @@ module WorldModuleEntity =
                 else
                     let mutable transform = entityState.Transform
                     transform.Overflow <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityCentered value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Centered then
+                if entityState.Optimized then
+                    entityState.Centered <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Centered <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
                     struct (true, world)
             else struct (false, world)
@@ -2203,9 +2218,9 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
-        EntityGetters.Assign ("IsPhysical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsPhysical entity world })
-        EntityGetters.Assign ("IsCentered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsCentered entity world })
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
+        EntityGetters.Assign ("Centered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world })
+        EntityGetters.Assign ("Physical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPhysical entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
@@ -2246,6 +2261,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("Centered", fun property entity world -> World.setEntityCentered (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("IgnorePropertyBindings", fun property entity world -> World.setEntityIgnorePropertyBindings (property.PropertyValue :?> bool) entity world)

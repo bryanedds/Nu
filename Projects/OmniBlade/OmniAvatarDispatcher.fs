@@ -31,7 +31,7 @@ module AvatarDispatcher =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
-            (true, false, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
+            (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id
@@ -61,7 +61,7 @@ module AvatarDispatcher =
             else false
 
         static member Facets =
-            [typeof<RigidBody2dFacet>]
+            [typeof<RigidBodyFacet>]
 
         override this.Initializers (avatar, entity) =
             let bodyCenter = v3 -0.015f -0.36f 0.0f

@@ -49,7 +49,8 @@ module Effects =
           Glow : Color
           Flip : Flip
           Volume : single
-          Enabled : bool }
+          Enabled : bool
+          Centered : bool }
 
     type KeyFrame =
         abstract KeyFrameLength : int64
@@ -549,7 +550,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                 let spriteView =
                     Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
@@ -587,7 +588,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
@@ -618,7 +619,7 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                 let textView =
                     Render2d (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 

@@ -38,7 +38,7 @@ type [<NoEquality; NoComparison; Struct>] Shake =
 
 #if FACETED
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher ()
+    inherit EntityDispatcher2d (false, false)
 
   #if !ECS_HYBRID && !ECS
     static member Facets =
@@ -62,7 +62,7 @@ type MetricsEntityDispatcher () =
 #else
 type MetricsEntityDispatcher () =
   #if ECS_HYBRID
-    inherit EntityDispatcher ()
+    inherit EntityDispatcher2d (false, false)
   #else
     inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
   #endif
@@ -242,7 +242,7 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (true, false, Assets.Default.Image)
 
     override this.View (staticImage, entity, world) =
         let mutable transform = entity.GetTransform world

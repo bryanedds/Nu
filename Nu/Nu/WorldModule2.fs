@@ -679,9 +679,8 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let offset = entity.GetOffset world
                     let size = entity.GetSize world
-                    let position = bodyTransformMessage.Position - size * offset
+                    let position = bodyTransformMessage.Position - size * v3UncenteredOffset
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
@@ -806,7 +805,7 @@ module WorldModule2 =
                 let color = Color.One.WithA alpha
                 let position = -eyeSize.V3 * 0.5f
                 let size = eyeSize.V3
-                let mutable transform = Transform.makeDefault v3CenteredOffset2d
+                let mutable transform = Transform.makeDefault false
                 transform.Position <- position
                 transform.Size <- size
                 transform.Elevation <- Single.MaxValue

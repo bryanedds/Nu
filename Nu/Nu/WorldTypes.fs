@@ -385,7 +385,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher (isPhysical, isCentered, is2d) =
+    and EntityDispatcher (is2d, centered, physical) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -414,6 +414,7 @@ module WorldTypes =
              Define? EnabledLocal true
              Define? Visible true
              Define? VisibleLocal true
+             Define? Centered true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
@@ -462,16 +463,16 @@ module WorldTypes =
             else Constants.Engine.EntitySize3dDefault
 
         /// Whether the dispatcher participates in a physics system.
-        member this.IsPhysical = isPhysical
+        member this.Physical = physical
 
-        /// Whether the dispatcher uses a centered transform.
-        member this.IsCentered = isCentered
+        /// Whether the dispatcher uses a centered transform by default.
+        member this.Centered = centered
 
         /// Whether the dispatcher has a 2-dimensional transform interpretation.
         member this.Is2d = is2d
 
     /// Dynamically augments an entity's behavior in a composable way.
-    and Facet (isPhysical) =
+    and Facet (physical) =
 
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
@@ -515,7 +516,7 @@ module WorldTypes =
             else Constants.Engine.EntitySize3dDefault
 
         /// Whether a facet participates in a physics system.
-        member this.IsPhysical = isPhysical
+        member this.Physical = physical
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -752,13 +753,7 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let mutable transform =
-                if dispatcher.Is2d then
-                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset2d
-                    Transform.makeDefault offset
-                else
-                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset3d
-                    Transform.makeDefault offset
+            let mutable transform = Transform.makeDefault dispatcher.Centered
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
@@ -864,9 +859,9 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
-        member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
-        member this.IsCentered with get () = this.Dispatcher.IsCentered
         member this.Is2d with get () = this.Dispatcher.Is2d
+        member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
+        member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
