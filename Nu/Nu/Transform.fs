@@ -33,7 +33,7 @@ module TransformMasks =
     let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000u
     let [<Literal>] AffineMatrixDirtyMask =         0b0100000000000000000000u
     let [<Literal>] PerimeterOrientedDirtyMask =    0b1000000000000000000000u
-    let [<Literal>] DefaultFlags =                  0b1111110010001100100001u
+    let [<Literal>] FlagsDefault =                  0b1111110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -264,7 +264,7 @@ type [<NoEquality; NoComparison>] Transform =
     /// Make a transform with default values.
     static member makeDefault centered =
         let mutable transform = Unchecked.defaultof<Transform>
-        transform.Flags_ <- DefaultFlags
+        transform.Flags_ <- FlagsDefault
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
         transform.Size_ <- Vector3.One
@@ -275,7 +275,7 @@ type [<NoEquality; NoComparison>] Transform =
     /// Make a transform based on a perimeter.
     static member makePerimeter (perimeter : Box3) offset elevation absolute =
         let mutable transform = Unchecked.defaultof<Transform>
-        transform.Flags_ <- DefaultFlags ||| if absolute then AbsoluteMask else 0u
+        transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Position
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
@@ -289,7 +289,7 @@ type [<NoEquality; NoComparison>] Transform =
     /// Make a transform based human-intuited values.
     static member makeIntuitive position scale offset size angles elevation absolute centered =
         let mutable transform = Transform.makeDefault centered
-        transform.Flags_ <- DefaultFlags ||| if absolute then AbsoluteMask else 0u
+        transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
         transform.Scale_ <- scale
         transform.Offset_ <- offset
