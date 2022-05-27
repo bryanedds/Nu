@@ -104,11 +104,11 @@ type MetricsEntityDispatcher () =
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
-    let Fps = Simulants.DefaultGroup / "Fps"
+    let Fps = Simulants.Default.Group / "Fps"
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        let (screen, world) = World.createScreen (Some Simulants.DefaultScreen.Name) world
+        let (screen, world) = World.createScreen (Some Simulants.Default.Screen.Name) world
 #if ECS_HYBRID
         // grab ecs from current screen
         let ecs = screen.GetEcs world
@@ -190,8 +190,8 @@ type MyGameDispatcher () =
         // compute shaders                                      1,000,000's
 
 #endif
-        let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createGroup (Some Simulants.Default.Group.Name) Simulants.Default.Screen world |> snd
+        let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
         let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
         let positions = // 19,663 entity positions (goal: 60FPS, current: 60FPS)
@@ -202,14 +202,14 @@ type MyGameDispatcher () =
                             yield v3 (single i * 12.0f + single k) (single j * 12.0f + single k) 0.0f }
         let world =
             Seq.foldi (fun i world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.DefaultGroup world
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.Default.Group world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v3 -450.0f -265.0f 0.0f) world
                 let world = entity.SetSize (v3One * 8.0f) world
                 world)
                 world positions
 #endif
-        let world = World.selectScreen IdlingState Simulants.DefaultScreen world
+        let world = World.selectScreen IdlingState Simulants.Default.Screen world
 #if ECS_HYBRID
         // define update for static sprites
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ world ->
@@ -308,7 +308,7 @@ type ElmishGameDispatcher () =
         | _ -> just intss
 
     override this.Content (intss, _) =
-        [Content.screen Simulants.DefaultScreen.Name Vanilla []
+        [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
                 Content.group (string i) []
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
@@ -326,7 +326,7 @@ type ElmishGameDispatcher () =
         let world = base.Register (game, world)
 
         // get ecs
-        let screen = Simulants.DefaultScreen
+        let screen = Simulants.Default.Screen
         let ecs = screen.GetEcs world
 
         // create component stores

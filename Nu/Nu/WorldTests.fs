@@ -11,8 +11,8 @@ module WorldTests =
     let TestValueKey = Gen.id
     let TestFilePath = "TestFile.nugame"
     let StringEvent = stoa<string> "String/Event"
-    let Jim = Simulants.DefaultGroup / "Jim"
-    let Bob = Simulants.DefaultGroup / "Bob"
+    let Jim = Simulants.Default.Group / "Jim"
+    let Bob = Simulants.Default.Group / "Bob"
 
     let [<Fact>] runOneFrameThenCleanUp () =
         let worldConfig = WorldConfig.defaultConfig
@@ -22,14 +22,14 @@ module WorldTests =
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeDefault ()
         let handleEvent = fun evt world -> (Cascade, World.addKeyedValue TestValueKey evt.Subscriber world)
-        let world = World.subscribe handleEvent StringEvent Simulants.DefaultEntity world
+        let world = World.subscribe handleEvent StringEvent Simulants.Default.Entity world
         let world = World.publish String.Empty StringEvent EventTrace.empty Simulants.Game world
-        Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getKeyedValue TestValueKey world)
+        Assert.Equal<Simulant> (Simulants.Default.Entity :> Simulant, World.getKeyedValue TestValueKey world)
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
+        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
         let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
@@ -37,8 +37,8 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+        let world = World.createEntity (Some Jim.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
+        let world = World.createEntity (Some Bob.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
         let world = !-- Bob.Visible -/> Jim.Visible $ world
         let world = !-- Jim.Visible -|> Bob.Visible $ world
         let world = Bob.SetVisible false world

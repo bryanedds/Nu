@@ -14,17 +14,20 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    /// The default game. Always exists.
+    /// The game. Always exists.
     let Game = Game ()
+    
+    [<RequireQualifiedAccess>]
+    module Default =
 
-    /// The default screen - may or may not exist.
-    let DefaultScreen = Screen "Screen"
+        /// The default screen - may or may not exist.
+        let Screen = Screen "Screen"
 
-    /// The default group - may or may not exist.
-    let DefaultGroup = DefaultScreen / "Group"
+        /// The default group - may or may not exist.
+        let Group = Screen / "Group"
 
-    /// The default entity - may or may not exist.
-    let DefaultEntity = DefaultGroup / "Entity"
+        /// The default entity - may or may not exist.
+        let Entity = Group / "Entity"
 
 [<AutoOpen>]
 module WorldModuleOperators =

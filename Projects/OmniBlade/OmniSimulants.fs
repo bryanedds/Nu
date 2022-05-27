@@ -70,7 +70,7 @@ module Simulants =
     [<RequireQualifiedAccess>]
     module Field =
 
-        let Screen = Simulants.DefaultScreen
+        let Screen = Simulants.Default.Screen
 
         [<RequireQualifiedAccess>]
         module Scene =

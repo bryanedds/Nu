@@ -510,9 +510,9 @@ module WorldModule3 =
         static member makeDefault () =
             let worldConfig = WorldConfig.defaultConfig
             let world = World.makeEmpty worldConfig
-            let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
-            let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity (Some Simulants.DefaultEntity.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
+            let world = World.createScreen (Some Simulants.Default.Screen.Name) world |> snd
+            let world = World.createGroup (Some Simulants.Default.Group.Name) Simulants.Default.Screen world |> snd
+            let world = World.createEntity (Some Simulants.Default.Entity.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
@@ -573,7 +573,7 @@ module WorldModule3 =
                             | None -> MockRenderer2d.make () :> Renderer2d
                     let rendererProcess2d =
                         if config.StandAlone
-                        then RendererThread2d createRenderer2d :> RendererProcess2d
+                        then RendererInline2d createRenderer2d :> RendererProcess2d
                         else RendererInline2d createRenderer2d :> RendererProcess2d
                     rendererProcess2d.Start ()
                     rendererProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
