@@ -11,28 +11,29 @@ open Nu
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] OmnipresentMask =               0b000000000000000001000u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000010000u
-    let [<Literal>] ImperativeMask =                0b000000000000000100000u
-    let [<Literal>] PublishChangeBindingsMask =     0b000000000000001000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000000010000000u
-    let [<Literal>] EnabledMask =                   0b000000000000100000000u
-    let [<Literal>] VisibleMask =                   0b000000000001000000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b000000100000000000000u
-    let [<Literal>] MountedMask =                   0b000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000100000000000000000u
-    let [<Literal>] CenteredMask =                  0b001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b010000000000000000000u
-    let [<Literal>] AffineMatrixDirtyMask =         0b100000000000000000000u
-    let [<Literal>] DefaultFlags =                  0b001110010001100100001u
+    let [<Literal>] ActiveMask =                    0b0000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b0000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
+    let [<Literal>] OmnipresentMask =               0b0000000000000000001000u
+    let [<Literal>] AbsoluteMask =                  0b0000000000000000010000u
+    let [<Literal>] ImperativeMask =                0b0000000000000000100000u
+    let [<Literal>] PublishChangeBindingsMask =     0b0000000000000001000000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000000000010000000u
+    let [<Literal>] EnabledMask =                   0b0000000000000100000000u
+    let [<Literal>] VisibleMask =                   0b0000000000001000000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000000000100000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b0000000001000000000000u
+    let [<Literal>] PersistentMask =                0b0000000010000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b0000000100000000000000u
+    let [<Literal>] MountedMask =                   0b0000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b0000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b0000100000000000000000u
+    let [<Literal>] CenteredMask =                  0b0001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000u
+    let [<Literal>] AffineMatrixDirtyMask =         0b0100000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b1000000000000000000000u
+    let [<Literal>] DefaultFlags =                  0b1111110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -50,9 +51,11 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private AffineMatrixOpt_ : Matrix4x4 ref
         // cache line 3
+        val mutable private PerimeterOrientedOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Overflow_ : single
+        // cache line 4
         val mutable private Elevation_ : single
         end
 
@@ -77,13 +80,14 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
+    member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
 
-    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true
-    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true
-    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true
-    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true
-    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.AffineMatrixDirty <- true
+    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
+    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
+    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
+    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
+    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
     member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
 
     member this.Rotation
@@ -96,6 +100,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_.Z <- rollPitchYaw.Z
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
+            this.PerimeterOrientedDirty <- true
 
     member this.Angles
         with get () = this.Angles_
@@ -104,9 +109,12 @@ type [<NoEquality; NoComparison>] Transform =
             this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
+            this.PerimeterOrientedDirty <- true
 
     member this.RotationMatrix =
-        if this.RotationMatrixDirty then this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+        if this.RotationMatrixDirty then
+            this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+            this.RotationMatrixDirty <- false
         this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
@@ -116,6 +124,7 @@ type [<NoEquality; NoComparison>] Transform =
             let rotationMatrix = this.RotationMatrix
             let scaleMatrix = Matrix4x4.CreateScale this.Scale_
             this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
+            this.AffineMatrixDirty <- false
         this.AffineMatrixOpt_.Value
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
@@ -165,29 +174,33 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterUnscaled <- perimeterBottom
 
     member this.PerimeterOriented =
-        // TODO: 3D: consider caching this to elide allocation and computation!
-        let perimeter = this.Perimeter
-        let rotation = this.Rotation_
-        if not rotation.IsIdentity then
-            let pivot = this.Pivot
-            let corners = perimeter.Corners
-            let mutable minX = Single.MaxValue
-            let mutable minY = Single.MaxValue
-            let mutable minZ = Single.MaxValue
-            let mutable maxX = Single.MinValue
-            let mutable maxY = Single.MinValue
-            let mutable maxZ = Single.MinValue
-            for i in 0 .. corners.Length - 1 do
-                let corner = &corners.[i]
-                corner <- Vector3.Transform (corner - pivot, rotation) + pivot
-                minX <- min minX corner.X
-                minY <- min minY corner.Y
-                minZ <- min minZ corner.Z
-                maxX <- max maxX corner.X
-                maxY <- max maxY corner.Y
-                maxZ <- max maxZ corner.Z
-            Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
-        else perimeter
+        if this.PerimeterOrientedDirty then
+            let perimeterOriented =
+                let perimeter = this.Perimeter
+                let rotation = this.Rotation_
+                if not rotation.IsIdentity then
+                    let pivot = this.Pivot
+                    let corners = perimeter.Corners
+                    let mutable minX = Single.MaxValue
+                    let mutable minY = Single.MaxValue
+                    let mutable minZ = Single.MaxValue
+                    let mutable maxX = Single.MinValue
+                    let mutable maxY = Single.MinValue
+                    let mutable maxZ = Single.MinValue
+                    for i in 0 .. corners.Length - 1 do
+                        let corner = &corners.[i]
+                        corner <- Vector3.Transform (corner - pivot, rotation) + pivot
+                        minX <- min minX corner.X
+                        minY <- min minY corner.Y
+                        minZ <- min minZ corner.Z
+                        maxX <- max maxX corner.X
+                        maxY <- max maxY corner.Y
+                        maxZ <- max maxZ corner.Z
+                    Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
+                else perimeter
+            this.PerimeterOrientedOpt_ <- ref perimeterOriented
+            this.PerimeterOrientedDirty <- false
+        this.PerimeterOrientedOpt_.Value
 
     member this.Bounds =
         let perimeterOriented = this.PerimeterOriented
@@ -232,15 +245,16 @@ type [<NoEquality; NoComparison>] Transform =
         target.Rotation_ <- source.Rotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
-        if notNull (source.RotationMatrixOpt_ :> obj) then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value
-        if notNull (source.AffineMatrixOpt_ :> obj) then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value
+        if source.Flags_ &&& RotationMatrixDirtyMask <> 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
+        if source.Flags_ &&& AffineMatrixDirtyMask <> 0u then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value; target.AffineMatrixDirty <- false
+        if source.Flags_ &&& PerimeterOrientedDirtyMask <> 0u then target.PerimeterOrientedOpt_ <- ref source.PerimeterOrientedOpt_.Value; target.PerimeterOrientedDirty <- false
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
         target.Overflow_ <- source.Overflow_
 
     /// Assign the value of the left transform to the right.
-    static member inline assign (source : Transform, target : Transform byref) =
+    static member inline assign (source : Transform byref, target : Transform byref) =
         Transform.assignByRef (&source, &target)
 
     /// Make an empty transform.

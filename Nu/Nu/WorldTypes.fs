@@ -827,9 +827,9 @@ module WorldTypes =
             entityState
 
         /// Set an entity state's transform.
-        static member setTransformByRef (value : Transform inref, entityState : EntityState) =
+        static member setTransformByRef (valueInRef : Transform inref, entityState : EntityState) =
             let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-            Transform.assignByRef (&value, &entityState.Transform)
+            Transform.assignByRef (&valueInRef, &entityState.Transform)
             entityState
 
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
