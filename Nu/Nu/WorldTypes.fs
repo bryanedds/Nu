@@ -123,7 +123,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
-type [<StructuralEquality; NoComparison>] NuConfig =
+type [<NoEquality; NoComparison>] NuConfig =
     { RunSynchronously : bool }
 
     /// The default configuration for Nu.
@@ -137,7 +137,7 @@ type [<StructuralEquality; NoComparison>] NuConfig =
         { RunSynchronously = runSynchronously }
 
 /// Configuration parameters for the world.
-type [<StructuralEquality; NoComparison>] WorldConfig =
+type [<NoEquality; NoComparison>] WorldConfig =
     { Imperative : bool
       StandAlone : bool
       UpdateRate : int64
@@ -173,7 +173,7 @@ type [<CustomEquality; NoComparison>] MapGeneralized =
             map
           Keys =
             let list = List ()
-            for key in Map.keys map do list.Add (key :> IComparable)
+            for entry in map do list.Add (entry.Key :> IComparable)
             list
           Equality = fun this (that : obj) ->
             match that with
@@ -224,6 +224,9 @@ module WorldTypes =
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
+    // Entity reach-arounds.
+    let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
+
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
 
@@ -259,7 +262,7 @@ module WorldTypes =
     /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortElevation : single
-          SortPositionY : single
+          SortHorizon : single
           SortTarget : Simulant }
 
         static member equals left right =
@@ -269,8 +272,8 @@ module WorldTypes =
         static member compare left right =
             if left.SortElevation < right.SortElevation then 1
             elif left.SortElevation > right.SortElevation then -1
-            elif left.SortPositionY < right.SortPositionY then -1
-            elif left.SortPositionY > right.SortPositionY then 1
+            elif left.SortHorizon < right.SortHorizon then -1
+            elif left.SortHorizon > right.SortHorizon then 1
             else 0
 
         override this.GetHashCode () =
@@ -382,21 +385,28 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher () =
+    and EntityDispatcher (isPhysical, isCentered, is2d) =
         inherit SimulantDispatcher ()
 
         static member Properties =
-            [Define? Position Vector2.Zero
-             Define? PositionLocal Vector2.Zero
-             Define? Size Constants.Engine.EntitySizeDefault
-             Define? Angle 0.0f
-             Define? Rotation 0.0f
+            [Define? Position Vector3.Zero
+             Define? PositionLocal Vector3.Zero
+             Define? Rotation Quaternion.Identity
+             Define? RotationLocal Quaternion.Identity
+             Define? Scale Vector3.One
+             Define? ScaleLocal Vector3.One
+             Define? Offset Vector3.Zero
+             Define? Angles Vector3.Zero
+             Define? AnglesLocal Vector3.Zero
+             Define? Degrees Vector3.Zero
+             Define? DegreesLocal Vector3.Zero
+             Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
+             Define? Overflow 1.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-             Define? Overflow Vector2.Zero
              Define? MountOpt Option<Entity Relation>.None
              Define? PublishChangeBindings false
              Define? PublishChangeEvents false
@@ -432,12 +442,8 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
 
-        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
-
         /// Apply physics changes to an entity.
-        abstract ApplyPhysics : Vector2 * single * Vector2 * single * Entity * World -> World
+        abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
         default this.ApplyPhysics (_, _, _, _, _, world) = world
 
         /// Try to send a signal to an entity's facet.
@@ -448,8 +454,24 @@ module WorldTypes =
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
 
+        /// Participate in getting the priority with which an entity is picked in the editor.
+        abstract GetQuickSize : Entity * World -> Vector3
+        default this.GetQuickSize (_, _) =
+            if this.Is2d
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
+
+        /// Whether the dispatcher participates in a physics system.
+        member this.IsPhysical = isPhysical
+
+        /// Whether the dispatcher uses a centered transform.
+        member this.IsCentered = isCentered
+
+        /// Whether the dispatcher has a 2-dimensional transform interpretation.
+        member this.Is2d = is2d
+
     /// Dynamically augments an entity's behavior in a composable way.
-    and Facet () =
+    and Facet (isPhysical) =
 
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
@@ -481,13 +503,19 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
 
-        /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
-
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Participate in getting the priority with which an entity is picked in the editor.
+        abstract GetQuickSize : Entity * World -> Vector3
+        default this.GetQuickSize (entity, world) =
+            if getEntityIs2d entity world
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
+
+        /// Whether a facet participates in a physics system.
+        member this.IsPhysical = isPhysical
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -504,8 +532,11 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          EyeCenter : Vector2
-          EyeSize : Vector2
+          EyePosition2d : Vector2
+          EyeSize2d : Vector2
+          EyePosition3d : Vector3
+          EyeRotation3d : Quaternion
+          EyeProjection3dRef : Matrix4x4 ref
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -515,11 +546,6 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyeCenter = Vector2.Zero
-            let eyeSize =
-                v2
-                    (single Constants.Render.VirtualResolutionX)
-                    (single Constants.Render.VirtualResolutionY)
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -527,8 +553,11 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreenOpt = None
-              EyeCenter = eyeCenter
-              EyeSize = eyeSize
+              EyePosition2d = v2Zero
+              EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
+              EyePosition3d = v3Zero
+              EyeRotation3d = quatId
+              EyeProjection3dRef = ref Matrix4x4.Identity
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
@@ -695,24 +724,27 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line 1 (assuming 16 byte header)
+        { // cache lines 1-3 (assuming 16 byte header)
           mutable Transform : Transform
+          // cache line 4
           Dispatcher : EntityDispatcher
-          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
-          mutable Overflow : Vector2
-          mutable PositionLocal : Vector2
+          mutable PositionLocal : Vector3
+          // cache line 5 (-1)
+          mutable RotationLocal : Quaternion
+          mutable ScaleLocal : Vector3
+          mutable AnglesLocal : Vector3
+          // cache line 6 (+1)
           mutable ElevationLocal : single
-          // cache line 3
           mutable MountOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          // cache line 4 (3/4-way through Id)
-          Id : Guid
+          // cache line 7
+          IdRef : Guid ref
           Surnames : string array }
 
         interface SimulantState with
@@ -720,7 +752,13 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let mutable transform = Transform.makeDefault ()
+            let mutable transform =
+                if dispatcher.Is2d then
+                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset2d
+                    Transform.makeDefault offset
+                else
+                    let offset = if dispatcher.IsCentered then v3Zero else v3CenteredOffset3d
+                    Transform.makeDefault offset
             transform.Imperative <- imperative
             let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
             { Transform = transform
@@ -728,15 +766,17 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Overflow = Vector2.Zero
-              PositionLocal = Vector2.Zero
+              PositionLocal = Vector3.Zero
+              RotationLocal = Quaternion.Identity
+              ScaleLocal = Vector3.One
+              AnglesLocal = Vector3.Zero
               ElevationLocal = 0.0f
               MountOpt = None
               ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               Order = Core.getUniqueTimeStamp ()
-              Id = id
+              IdRef = ref id
               Surnames = surnames }
 
         /// Copy an entity state.
@@ -746,8 +786,7 @@ module WorldTypes =
         /// Copy an entity state, invalidating the incoming reference.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
-            /// OPTIMIZATION: inlined invalidation masking for speed.
-            entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
+            entityState.Transform.InvalidateFast () /// OPTIMIZATION: invalidate fast.
             entityState'
 
         /// Check that there exists an xtenstion proprty that is a runtime property.
@@ -792,21 +831,20 @@ module WorldTypes =
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
 
-        /// Get an entity state's transform.
-        static member getTransform entityState =
-            entityState.Transform
-
         /// Set an entity state's transform.
         static member setTransformByRef (value : Transform inref, entityState : EntityState) =
             let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             Transform.assignByRef (&value, &entityState.Transform)
             entityState
 
-        // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
-        member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
-        member this.Angle with get () = Math.radiansToDegrees this.Transform.Rotation and set value = this.Transform.Rotation <- Math.degreesToRadians value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
+        member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
+        member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
+        member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
+        member this.Degrees with get () = Math.radiansToDegrees3d this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3d value
+        member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
+        member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
         member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
@@ -826,10 +864,18 @@ module WorldTypes =
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
+        member this.IsPhysical with get () = this.Dispatcher.IsPhysical || Array.exists (fun (facet : Facet) -> facet.IsPhysical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
+        member this.IsCentered with get () = this.Dispatcher.IsCentered
+        member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Optimized with get () = this.Transform.Optimized
+        member this.RotationMatrix with get () = this.Transform.RotationMatrix
+        member this.AffineMatrix with get () = this.Transform.AffineMatrix
+        member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
+        member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
+        member this.PerimeterCenter with get () = this.Transform.PerimeterCenter and set value = this.Transform.PerimeterCenter <- value
+        member this.PerimeterBottom with get () = this.Transform.PerimeterBottom and set value = this.Transform.PerimeterBottom <- value
+        member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
         member this.Bounds with get () = this.Transform.Bounds
-        member this.Center with get () = this.Transform.Center
-        member this.Bottom with get () = this.Transform.Bottom
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1224,13 +1270,14 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> bool -> Vector4 -> Entity -> World -> World -> World
-          RebuildEntityTree : World -> Entity SpatialTree }
+          UpdateEntityInEntityTree : bool -> bool -> Box3 -> Entity -> World -> World -> World
+          RebuildQuadtree : World -> Entity Quadtree
+          RebuildOctree : World -> Entity Octree }
 
     /// The subsystems encapsulated by the engine.
     and [<ReferenceEquality; NoComparison>] internal Subsystems =
-        { PhysicsEngine : PhysicsEngine
-          Renderer : Renderer
+        { PhysicsEngine2d : PhysicsEngine
+          RendererProcess2d : RendererProcess2d
           AudioPlayer : AudioPlayer }
 
     /// Keeps the World from occupying more than two cache lines.
@@ -1258,7 +1305,8 @@ module WorldTypes =
               GameState : GameState
               // cache line 2
               EntityMounts : UMap<Entity, Entity USet>
-              mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
+              mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
+              mutable Octree : Entity Octree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
@@ -1338,9 +1386,12 @@ module WorldTypes =
             member this.TryImport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector3", (:? Vector3 as v3)) -> let v3p = { Vector3 = v3 } in v3p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector3i", (:? Vector3i as v3i)) -> let v3ip = { Vector3i = v3i } in v3ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4i", (:? Vector4i as v4i)) -> let v4ip = { Vector4i = v4i } in v4ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Quaternion", (:? Quaternion as quat)) -> let quatp = { Quaternion = quat } in quatp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Color", (:? Color as color)) -> let colorp = { Color = color } in colorp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Game", (:? Game as game)) -> game.GameAddress |> atos |> Scripting.Keyword |> Some
                 | ("Screen", (:? Screen as screen)) -> screen.ScreenAddress |> atos |> Scripting.Keyword |> Some
@@ -1352,9 +1403,12 @@ module WorldTypes =
             member this.TryExport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
+                | ("Vector3", Scripting.Pluggable pluggable) -> let v3 = pluggable :?> Vector3Pluggable in v3.Vector3 :> obj |> Some
                 | ("Vector4", Scripting.Pluggable pluggable) -> let v4 = pluggable :?> Vector4Pluggable in v4.Vector4 :> obj |> Some
                 | ("Vector2i", Scripting.Pluggable pluggable) -> let v2i = pluggable :?> Vector2iPluggable in v2i.Vector2i :> obj |> Some
+                | ("Vector3i", Scripting.Pluggable pluggable) -> let v3i = pluggable :?> Vector3iPluggable in v3i.Vector3i :> obj |> Some
                 | ("Vector4i", Scripting.Pluggable pluggable) -> let v4i = pluggable :?> Vector4iPluggable in v4i.Vector4i :> obj |> Some
+                | ("Quaternion", Scripting.Pluggable pluggable) -> let quat = pluggable :?> QuaternionPluggable in quat.Quaternion :> obj |> Some
                 | ("Color", Scripting.Pluggable pluggable) -> let color = pluggable :?> ColorPluggable in color.Color :> obj |> Some
                 | ("Game", Scripting.String str) | ("Game", Scripting.Keyword str) -> str |> stoa |> Game :> obj |> Some
                 | ("Screen", Scripting.String str) | ("Screen", Scripting.Keyword str) -> str |> stoa |> Screen :> obj |> Some
@@ -1390,7 +1444,7 @@ module WorldTypes =
         abstract TryMakeEmitter : int64 -> int64 -> int64 -> single -> int -> string -> Particles.Emitter option
         default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
             match emitterName with
-            | "BasicEmitter" -> Particles.BasicEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
+            | "BasicEmitter2d" -> Particles.BasicEmitter2d.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
             | _ -> None
 
         /// A call-back at the beginning of each frame.
@@ -1405,10 +1459,24 @@ module WorldTypes =
         abstract PostFrame : World -> World
         default this.PostFrame world = world
 
+        /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
+        /// successfully converted.
+        abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
+        default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
+
+        /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
+        /// successfully converted.
+        abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
+        default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
+
         /// Birth facets / dispatchers of type 'a from plugin.
         member internal this.Birth<'a> () =
             let assembly = (this.GetType ()).Assembly;
-            let types = (assembly.GetTypes ()) |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |> Array.filter (fun ty -> not ty.IsAbstract)
+            let types =
+                assembly.GetTypes () |>
+                Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
+                Array.filter (fun ty -> not ty.IsAbstract) |>
+                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
             let instances = types |> Array.map (fun ty -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
             Array.toList instances
 

@@ -38,11 +38,11 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gameplay =
 
-        let TileSize = v2 48.0f 48.0f
+        let TileSize = v3 48.0f 48.0f 0.0f
         let TileCelSize = v2 16.0f 16.0f
-        let CharacterSize = v2 144.0f 144.0f
+        let CharacterSize = v3 144.0f 144.0f 0.0f
         let CharacterCelSize = v2 48.0f 48.0f
-        let BossSize = v2 324.0f 276.0f
+        let BossSize = v3 324.0f 276.0f 0.0f
         let BossCelSize = v2 108.0f 92.0f
         let DialogSplit = '^'
         let ArmorStatBaseDisplayDivisor = 4
@@ -59,21 +59,21 @@ module Constants =
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
 #if DEV
-        let AvatarWalkForce = 30000.0f
-        let AvatarWalkForceMouse = 33000.0f
+        let AvatarWalkForce = 60000.0f
+        let AvatarWalkForceMouse = 66000.0f
 #else
-        let AvatarWalkForce = 10100.0f
-        let AvatarWalkForceMouse = 11100.0f
+        let AvatarWalkForce = 20000.0f
+        let AvatarWalkForceMouse = 22000.0f
 #endif
         let AvatarIdleSpeedMax = 5.0f
-        let CharacterBottomOffset = v2 0.0f 24.0f
+        let CharacterBottomOffset = v3 0.0f 24.0f 0.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f
         let SpiritRunSpeed = 5.5f
-        let SpiritOrbSize = v2Dup 192.0f
+        let SpiritOrbSize = v3 192.0f 192.0f 0.0f
         let SpiritOrbRatio = 0.075f
-        let SpiritOrbBlipSize = v2Dup 21.0f
-#if DEV
+        let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
+#if DEV && FIELD
         let SpiritActivityMinimum = 1440L
 #else
         let SpiritActivityMinimum = 360L
@@ -115,21 +115,21 @@ module Constants =
         let ItemDropRate = 0.02f
         let EnemySplitScalar = 0.5f
         let ChargeMax = 12
-        let CancelPosition = v2 -444.0f -237.0f
+        let CancelPosition = v3 -444.0f -237.0f 0.0f
         let StrikingDistance = 48.0f
-        let AfflictionSize = v2 96.0f 96.0f
+        let AfflictionSize = v3 96.0f 96.0f 0.0f
         let AfflictionCelSize = v2 32.0f 32.0f
-        let ChargeOrbSize = v2 96.0f 96.0f
+        let ChargeOrbSize = v3 96.0f 96.0f 0.0f
         let ChargeOrbCelSize = v2 32.0f 32.0f
-        let CharacterCenterOffset = v2 0.0f -30.0f
-        let CharacterCenterOffset2 = v2 0.0f -96.0f
-        let CharacterCenterOffset3 = v2 0.0f -36.0f
-        let CharacterCenterOffset4 = v2 0.0f 36.0f
-        let CharacterBottomOffset = v2 0.0f -6.0f
-        let CharacterBottomOffset2 = v2 0.0f -12.0f
-        let CharacterBottomOffset3 = v2 0.0f -48.0f
-        let CharacterBottomOffset4 = v2 0.0f 48.0f
-        let CharacterOffset = v2 -96.0f 0.0f
+        let CharacterCenterOffset = v3 0.0f -30.0f 0.0f
+        let CharacterCenterOffset2 = v3 0.0f -96.0f 0.0f
+        let CharacterCenterOffset3 = v3 0.0f -36.0f 0.0f
+        let CharacterCenterOffset4 = v3 0.0f 36.0f 0.0f
+        let CharacterBottomOffset = v3 0.0f -6.0f 0.0f
+        let CharacterBottomOffset2 = v3 0.0f -12.0f 0.0f
+        let CharacterBottomOffset3 = v3 0.0f -48.0f 0.0f
+        let CharacterBottomOffset4 = v3 0.0f 48.0f 0.0f
+        let CharacterOffset = v3 -96.0f 0.0f 0.0f
         let CharacterPulseLength = 60L
         let RingMenuRadius = 84.0f
         let BackgroundElevation = -30.0f

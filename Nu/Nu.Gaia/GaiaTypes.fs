@@ -5,6 +5,7 @@ namespace Nu.Gaia
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 open Nu
 open Nu.Gaia.Design

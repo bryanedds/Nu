@@ -76,6 +76,7 @@ module Gen =
             lock Lock (fun () -> Random.Next (minValue, ceiling))
 
         /// Get a random element from a sequence if there are any elements or None.
+        /// If seq is large, this may allocate to the LOH.
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
@@ -102,6 +103,7 @@ module Gen =
             Gen.randomItemOpt dict.Values
 
         /// Randomly shuffle a sequence.
+        /// If seq is large, this may allocate to the LOH.
         static member shuffle (seq : 'a seq) =
             seq |>
             Array.ofSeq |>

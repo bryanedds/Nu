@@ -21,6 +21,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <NoWarn>3001; 3003</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -31,6 +32,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <NoWarn>3001; 3003</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -39,10 +41,17 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Box2i.cs" />
+    <Compile Include="Box2.cs" />
+    <Compile Include="Box3.cs" />
+    <Compile Include="ContainmentType.cs" />
+    <Compile Include="Frustum.cs" />
+    <Compile Include="PlaneIntersectionType.cs" />
+    <Compile Include="Ray.cs" />
     <Compile Include="ReadOnlySet.cs" />
+    <Compile Include="Sphere.cs" />
     <Compile Include="ValueSort.cs" />
     <Compile Include="MathHelper.cs" />
-    <Compile Include="Matrix3x3.cs" />
     <Compile Include="OrderedDictionary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Vector2i.cs" />

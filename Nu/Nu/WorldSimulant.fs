@@ -303,7 +303,7 @@ module PropertyDescriptor =
 
     /// Check that an entity contains the given property.
     let containsProperty<'s when 's :> Simulant> (property : PropertyInfo) =
-        let properties = typeof<'s>.GetProperties property.Name
+        let properties = typeof<'s>.GetProperties ()
         Seq.exists (fun item -> item = property) properties
 
     /// Attempt to get the simulant's property value.

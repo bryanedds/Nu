@@ -20,25 +20,28 @@ module Engine =
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "refinement"
     let [<Literal>] GameSortPriority = Single.MaxValue
+    let [<Literal>] LohSize = 85000
+    let (*Literal*) LohArraySlop = sizeof<int array> * sizeof<int array>
+    let (*Literal*) LohSizeMinusArraySlop = LohSize - LohArraySlop
     let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
-    let (*Literal*) EntitySizeDefault = Vector2 48.0f
-    let (*Literal*) EntityTreeGranularity = 4
-    let (*Literal*) EntityTreeDepth = 3
-    let (*Literal*) EntityTreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
-    let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X, EntityTreeSize.Y)
-    let (*Literal*) ParticleSizeDefault = Vector2 12.0f
+    let (*Literal*) EntitySize2dDefault = Vector3 (48.0f, 48.0f, 0.0f)
+    let (*Literal*) EntitySizeGuiDefault = Vector3 (192.0f, 48.0f, 0.0f)
+    let (*Literal*) EntitySize3dDefault = Vector3 1.0f
+    let (*Literal*) ParticleSize2dDefault = Vector3 (12.0f, 12.0f, 0.0f)
+    let (*Literal*) QuadtreeGranularity = 4
+    let (*Literal*) QuadtreeDepth = 3
+    let (*Literal*) QuadtreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
+    let (*Literal*) QuadtreeBounds = Box2 (-QuadtreeSize * 0.5f, QuadtreeSize)
+    let (*Literal*) OctreeGranularity = 4
+    let (*Literal*) OctreeDepth = 3
+    let (*Literal*) OctreeSize = Vector3 (single (Math.Pow (2.0, 12.0))) // TODO: 3D: make sure this is a sensible size.
+    let (*Literal*) OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
     let (*Literal*) InvalidId = Guid.Empty
-    let (*Literal*) GravityDefault = Vector2 (0.0f, -9.80665f)
-    let (*Literal*) EventTracing =
-        match ConfigurationManager.AppSettings.["EventTracing"] with
-        | null -> false
-        | eventTracing -> scvalue<bool> eventTracing
-    let (*Literal*) EventFilter =
-        match ConfigurationManager.AppSettings.["EventFilter"] with
-        | null -> EventFilter.Empty
-        | eventFilter -> scvalue<EventFilter.Filter> eventFilter
+    let (*Literal*) GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
+    let (*Literal*) EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | eventTracing -> scvalue<bool> eventTracing
+    let (*Literal*) EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 
 [<RequireQualifiedAccess>]
 module Associations =
@@ -52,20 +55,28 @@ module Render =
 
     let [<Literal>] VirtualResolutionX = 960
     let [<Literal>] VirtualResolutionY = 540
-    let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
     let (*Literal*) VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
-    let (*Literal*) VirtualScalar =
-        match ConfigurationManager.AppSettings.["VirtualScalar"] with
-        | null -> 2
-        | resolution -> scvalue<int> resolution
+    let (*Literal*) VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
+    let (*Literal*) VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 2 | resolution -> scvalue<int> resolution
+    let (*Literal*) VirtualScalarF = single VirtualScalar
+    let (*Literal*) VirtualScalar2i = Vector2i VirtualScalar
+    let (*Literal*) VirtualScalar2 = Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
-    let (*Literal*) RendererFlagsDefault =
-        SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
-        SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
-    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
+    let (*Literal*) ViewportFull windowSize = Box2i (Vector2i.Zero, windowSize)
+    let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
+    let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
+    let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
+    let (*Literal*) ScreenClearing = ColorClear Color.White
+    let [<Literal>] OpenGlVersionMajor = 4
+    let [<Literal>] OpenGlVersionMinor = 1
+    let [<Literal>] OpenGlCore = true
+    let (*Literal*) GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
+    let [<Literal>] SpriteBatchSize = 192
+    let [<Literal>] SpriteBorderTexelScalar = 0.02f // NOTE: miiiiight be safer as 0.01f.
+    let [<Literal>] SpriteMessagesPrealloc = 256
 
 [<RequireQualifiedAccess>]
 module Audio =
@@ -82,7 +93,7 @@ module Audio =
 module Physics =
 
     let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
-    let [<Literal>] PhysicsToPixelRatio = 64.0f // 64 pixels = 1 meter
+    let [<Literal>] PhysicsToPixelRatio = 48.0f // 48 pixels = 1 meter
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f
     let (*Literal*) GravityDefault = Engine.GravityDefault * PhysicsToPixelRatio

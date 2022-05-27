@@ -5,21 +5,21 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Play]
-    [Position [-96 -48]]
+    [Position [-96 -48 0]]
     [Text Play]]]
   [ButtonDispatcher
    [[Name Credits]
-    [Position [-96 -114]]
+    [Position [-96 -114 0]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-96 -180]]
+    [Position [-96 -180 0]]
     [Text Exit]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" OmniBlade]]
-    [Position [-432 84]]
-    [Size [864 90]]
+    [Position [-432 84 0]]
+    [Size [864 90 0]]
     [Text OmniBlade]]]]]

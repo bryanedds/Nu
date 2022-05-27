@@ -15,14 +15,14 @@ module AvatarDispatcher =
     type [<StructuralEquality; NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
-        | Collision of CollisionData
-        | Separation of SeparationData
+        | BodyCollision of BodyCollisionData
+        | BodySeparation of BodySeparationData
         | BodyRemoving of PhysicsId
         | TryFace of Direction
         | Nil
 
     type [<StructuralEquality; NoComparison>] AvatarCommand =
-        | TryTravel of Vector2
+        | TryTravel of Vector3
 
     type Entity with
         member this.GetAvatar world = this.GetModelGeneric<Avatar> world
@@ -30,8 +30,8 @@ module AvatarDispatcher =
         member this.Avatar = this.ModelGeneric<Avatar> ()
 
     type AvatarDispatcher () =
-        inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
-            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
+        inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
+            (true, false, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id
@@ -61,15 +61,15 @@ module AvatarDispatcher =
             else false
 
         static member Facets =
-            [typeof<RigidBodyFacet>]
+            [typeof<RigidBody2dFacet>]
 
         override this.Initializers (avatar, entity) =
-            let bodyCenter = v2 -0.015f -0.36f
+            let bodyCenter = v3 -0.015f -0.36f 0.0f
             let bodyShapes =
                 BodyShapes
-                    [BodyCircle { Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodyCircle { Radius = 0.325f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
-            [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
+                    [BodySphere { Radius = 0.16f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                     BodySphere { Radius = 0.325f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
+            [entity.Perimeter <== avatar --> fun avatar -> avatar.Perimeter
              Entity.Omnipresent == true
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
@@ -78,8 +78,8 @@ module AvatarDispatcher =
         override this.Channel (_, entity) =
             [entity.UpdateEvent => msg Update
              entity.Group.PostUpdateEvent => msg PostUpdate
-             entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
-             entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)
+             entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
+             entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
              Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
@@ -89,8 +89,8 @@ module AvatarDispatcher =
 
                 // update animation generally
                 let velocity = entity.GetLinearVelocity world
-                let speed = velocity.Length ()
-                let direction = Direction.ofVector2Biased velocity
+                let speed = velocity.Magnitude
+                let direction = Direction.ofVector3Biased velocity
                 let avatar =
                     if speed > Constants.Field.AvatarIdleSpeedMax then
                         if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
@@ -114,31 +114,31 @@ module AvatarDispatcher =
                     if  not (World.isSelectedScreenTransitioning world) &&
                         entity.GetEnabled world then
                         let velocity = entity.GetLinearVelocity world
-                        let speed = velocity.Length ()
+                        let speed = velocity.Magnitude
                         if speed <= Constants.Field.AvatarIdleSpeedMax
                         then Avatar.updateDirection (constant direction) avatar
                         else avatar
                     else avatar
                 just avatar
 
-            | Separation separation ->
+            | BodySeparation separation ->
 
                 // add separated body shape
                 let avatar =
-                    if isIntersectedBodyShape separation.Separator separation.Separatee world then
-                        let avatar = Avatar.updateSeparatedBodyShapes (fun shapes -> separation.Separatee :: shapes) avatar
-                        let avatar = Avatar.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) avatar
+                    if isIntersectedBodyShape separation.BodySeparator separation.BodySeparatee world then
+                        let avatar = Avatar.updateSeparatedBodyShapes (fun shapes -> separation.BodySeparatee :: shapes) avatar
+                        let avatar = Avatar.updateIntersectedBodyShapes (List.remove ((=) separation.BodySeparatee)) avatar
                         avatar
                     else avatar
                 just avatar
 
-            | Collision collision ->
+            | BodyCollision collision ->
 
                 // add collided body shape
                 let avatar =
-                    if isIntersectedBodyShape collision.Collider collision.Collidee world then
-                        let avatar = Avatar.updateCollidedBodyShapes (fun shapes -> collision.Collidee :: shapes) avatar
-                        let avatar = Avatar.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) avatar
+                    if isIntersectedBodyShape collision.BodyCollider collision.BodyCollidee world then
+                        let avatar = Avatar.updateCollidedBodyShapes (fun shapes -> collision.BodyCollidee :: shapes) avatar
+                        let avatar = Avatar.updateIntersectedBodyShapes (fun shapes -> collision.BodyCollidee :: shapes) avatar
                         avatar
                     else avatar
                 just avatar
@@ -161,7 +161,7 @@ module AvatarDispatcher =
             match command with
             | TryTravel force ->
                 if  not (World.isSelectedScreenTransitioning world) &&
-                    force <> v2Zero &&
+                    force <> v3Zero &&
                     entity.GetEnabled world then
                     let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
                     let world = World.applyBodyForce force physicsId world
@@ -173,16 +173,14 @@ module AvatarDispatcher =
             just avatar
 
         override this.View (avatar, entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
-                let transform = entity.GetTransform world
-                Render (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                     SpriteDescriptor
                         { Transform = transform
-                          Absolute = entity.GetAbsolute world
-                          Offset = Vector2.Zero
-                          InsetOpt = Some (getSpriteInset entity world)
+                          InsetOpt = ValueSome (getSpriteInset entity world)
                           Image = avatar.AnimationSheet
-                          Color = Color.White
+                          Color = Color.One
                           Blend = Transparent
                           Glow = Color.Zero
                           Flip = FlipNone })

@@ -35,7 +35,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedGroup = (getEditorState world).SelectedGroup
-        let (entities, world) = World.getEntitiesInView world
+        let (entities, world) = World.getEntitiesInView2d world
         let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
@@ -217,8 +217,8 @@ module Gaia =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
-            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
-            if Math.isPointInBounds mousePositionWorld (entity.GetBounds world)
+            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
+            if Math.isPointInBounds2d mousePositionWorld (entity.GetPerimeterOriented world).Box2
             then (Some entity, world)
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
@@ -255,7 +255,7 @@ module Gaia =
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isAdvancing world then Cascade else Resolve
-        let mousePosition = World.getMousePosition world
+        let mousePosition = World.getMousePosition2d world
         let (_, world) = tryMousePick mousePosition form world
         let world = updateEditorState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
@@ -263,18 +263,18 @@ module Gaia =
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if not (canEditWithMouse form world) then
             let handled = if World.isAdvancing world then Cascade else Resolve
-            let mousePosition = World.getMousePosition world
+            let mousePosition = World.getMousePosition2d world
             match tryMousePick mousePosition form world with
             | (Some entity, world) ->
                 Globals.pushPastWorld world
                 let world =
                     updateEditorState (fun editorState ->
-                        let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
+                        let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
                         let entityPosition =
                             if entity.MountExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
-                        { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
+                        { editorState with DragEntityState = DragEntityPosition (entityPosition.V2 + mousePositionWorld, mousePositionWorld, entity) })
                         world
                 (handled, world)
             | (None, world) -> (handled, world)
@@ -293,9 +293,9 @@ module Gaia =
             | DragEntityNone -> (Resolve, world)
 
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let mousePosition = World.getMousePosition world
-        let mousePositionScreen = World.mouseToScreen mousePosition world
-        let dragState = DragCameraPosition (World.getEyeCenter world + mousePositionScreen, mousePositionScreen)
+        let mousePosition = World.getMousePosition2d world
+        let mousePositionScreen = World.mouseToScreen2d mousePosition world
+        let dragState = DragCameraPosition (World.getEyePosition2d world + mousePositionScreen, mousePositionScreen)
         let world = updateEditorState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
@@ -570,10 +570,10 @@ module Gaia =
                         match exn.SymbolOpt with
                         | Some symbol ->
                             match Symbol.getOriginOpt symbol with
-                            | Some origin ->
+                            | ValueSome origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | None -> ()
+                            | ValueNone -> ()
                         | None -> ()
                         Log.info ("Invalid apply property operation due to: " + scstring exn)
                     | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
@@ -596,10 +596,10 @@ module Gaia =
                         match exn.SymbolOpt with
                         | Some symbol ->
                             match Symbol.getOriginOpt symbol with
-                            | Some origin ->
+                            | ValueSome origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | None -> ()
+                            | ValueNone -> ()
                         | None -> ()
                         Log.info ("Invalid apply property operation due to: " + scstring exn)
                     | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
@@ -789,17 +789,15 @@ module Gaia =
                 let name = generateEntityName dispatcherName world
                 let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
-                let mousePosition = World.getMousePosition world
+                let mousePosition = World.getMousePosition2d world
                 let entityPosition =
                     if atMouse
-                    then World.mouseToWorld (entity.GetAbsolute world) mousePosition world
-                    else World.mouseToWorld (entity.GetAbsolute world) (World.getEyeSize world * 0.5f) world
-                let entityTransform =
-                    { Position = entityPosition
-                      Size = entity.GetQuickSize world
-                      Rotation = entity.GetRotation world
-                      Elevation = getCreationElevation form
-                      Flags = entity.GetFlags world }
+                    then World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
+                    else World.mouseToWorld2d (entity.GetAbsolute world) (World.getEyeSize2d world * 0.5f) world
+                let mutable entityTransform = entity.GetTransform world
+                entityTransform.Position <- entityPosition.V3
+                entityTransform.Size <- entity.GetQuickSize world
+                entityTransform.Elevation <- getCreationElevation form
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 selectEntity entity form world
                 world
@@ -991,7 +989,7 @@ module Gaia =
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            World.setEyeCenter Vector2.Zero world
+            World.setEyePosition2d v2Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1274,10 +1272,10 @@ module Gaia =
                 // is held during selection
                 if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
-                    let mousePosition = World.getMousePosition world
-                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
+                    let mousePosition = World.getMousePosition2d world
+                    let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
-                    let entityPositionSnapped = Math.snap2F positionSnap entityPosition
+                    let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
                         if entity.MountExists world
                         then entity.SetPositionLocal entityPositionSnapped world
@@ -1297,10 +1295,10 @@ module Gaia =
     let private updateCameraDrag (_ : GaiaForm) world =
         match (getEditorState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
-            let mousePosition = World.getMousePosition world
-            let mousePositionScreen = World.mouseToScreen mousePosition world
-            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let world = World.setEyeCenter eyeCenter world
+            let mousePosition = World.getMousePosition2d world
+            let mousePositionScreen = World.mouseToScreen2d mousePosition world
+            let eyePosition = (pickOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let world = World.setEyePosition2d eyePosition world
             updateEditorState (fun editorState ->
                 { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) })
                 world
@@ -1381,7 +1379,7 @@ module Gaia =
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> Application.DoEvents (); world)
-                sdlDeps Live None None Globals.World |>
+                sdlDeps Live true Globals.World |>
                 ignore
         with exn ->
             match MessageBox.Show
@@ -1601,6 +1599,7 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4i 0 0 0 0] : Vector4i") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[quat 0 0 0 1] : Quaternion") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[right 0] : Either<int, obj>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore
@@ -1629,8 +1628,7 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let tryMakeWorld useGameplayScreen sdlDeps worldConfig (plugin : NuPlugin) =
-        let worldEir = World.tryMake sdlDeps worldConfig plugin
-        match worldEir with
+        match World.tryMake sdlDeps worldConfig plugin with
         | Right world ->
             let world =
                 World.setEventFilter
@@ -1655,11 +1653,13 @@ module Gaia =
 
     /// Attempt to make Gaia's SDL dependencies.
     let tryMakeSdlDeps (form : GaiaForm) =
+        let wfglWindow =
+            { WfglSwapWindow = fun () -> form.displayPanel.Invalidate ()
+              WfglWindow = form.displayPanel.Handle }
         let sdlConfig =
-            { ViewConfig = ExistingWindow form.displayPanel.Handle
+            { ViewConfig = ExistingWindow wfglWindow
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
-              RendererFlags = Constants.Render.RendererFlagsDefault
               AudioChunkSize = Constants.Audio.BufferSizeDefault }
         match SdlDeps.tryMake sdlConfig with
         | Left msg -> Left msg

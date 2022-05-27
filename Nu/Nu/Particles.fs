@@ -44,20 +44,30 @@ module Particles =
 
     /// A spatial constraint.
     type [<StructuralEquality; NoComparison>] Constraint =
-        | Rectangle of Vector4
-        | Circle of single * Vector2
-        | Constraints of Constraint array
+        | Box of Box3
+        | Sphere of single * Vector3
+        | Constraints of Constraint SegmentedArray
 
         /// Combine two constraints.
         static member (+) (constrain, constrain2) =
-            match (constrain, constrain2) with
-            | (Constraints [||], Constraints [||]) -> constrain // OPTIMIZATION: elide Constraint ctor
-            | (_, Constraints [||]) -> constrain
-            | (Constraints [||], _) -> constrain2
-            | (_, _) -> Constraints [|constrain; constrain2|]
+            match (Constraint.isEmpty constrain, Constraint.isEmpty constrain2) with
+            | (true, true) -> constrain // OPTIMIZATION: elide ctor
+            | (_, true) -> constrain
+            | (true, _) -> constrain2
+            | (_, _) -> Constraints (SegmentedArray.ofList [constrain; constrain2])
 
         /// The empty constraint.
-        static member empty = Constraints [||]
+        static member empty = Constraints SegmentedArray.empty
+
+        /// Checks that constraint is the empty constraint constant.
+        static member isEmpty constrain =
+             match constrain with
+             | Constraints constraints -> constraints.Length = 0
+             | _ -> false
+
+        /// Checks that constraint is not the empty constraint constant.
+        static member notEmpty constrain =
+            not (Constraint.isEmpty constrain)
 
     /// How a logic is to be applied.
     type [<StructuralEquality; StructuralComparison>] LogicType =
@@ -103,25 +113,36 @@ module Particles =
 
     /// The forces that may operate on a target.
     type [<StructuralEquality; NoComparison>] Force =
-        | Gravity of Vector2
-        | Attractor of Vector2 * single * single
+        | Gravity of Vector3
+        | Attractor of Vector3 * single * single
         | Drag of single * single
         | Velocity of Constraint
 
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
-        { mutable Position : Vector2
-          mutable Rotation : single
-          mutable LinearVelocity : Vector2
-          mutable AngularVelocity : single
+        { mutable Position : Vector3
+          mutable Scale : Vector3
+          mutable Angles : Vector3
+          mutable LinearVelocity : Vector3
+          mutable AngularVelocity : Vector3
           mutable Restitution : single }
 
-        /// The default body.
-        static member defaultBody =
-            { Position = v2Zero
-              Rotation = 0.0f
-              LinearVelocity = v2Zero
-              AngularVelocity = 0.0f
+        /// The default 2d body.
+        static member defaultBody2d =
+            { Position = v3Zero
+              Scale = v3One
+              Angles = v3Zero
+              LinearVelocity = v3Zero
+              AngularVelocity = v3Zero
+              Restitution = Constants.Particles.RestitutionDefault }
+
+        /// The default 3d body.
+        static member defaultBody3d =
+            { Position = v3Zero
+              Scale = v3One
+              Angles = v3Zero
+              LinearVelocity = v3Zero
+              AngularVelocity = v3Zero
               Restitution = Constants.Particles.RestitutionDefault }
 
     /// The base particle type.
@@ -134,18 +155,28 @@ module Particles =
     type [<NoEquality; NoComparison>] Output =
         | OutputEmitter of string * Emitter
         | OutputSound of single * Sound AssetTag
-        | Outputs of Output array
+        | Outputs of Output SegmentedArray
 
         /// Combine two outputs.
         static member (+) (output, output2) =
-            match (output, output2) with
-            | (Outputs [||], Outputs [||]) -> output // OPTIMIZATION: elide Output ctor
-            | (_, Outputs [||]) -> output
-            | (Outputs [||], _) -> output2
-            | (_, _) -> Outputs [|output; output2|]
+            match (Output.isEmpty output, Output.isEmpty output2) with
+            | (true, true) -> output // OPTIMIZATION: elide ctor
+            | (_, true) -> output
+            | (true, _) -> output2
+            | (_, _) -> Outputs (SegmentedArray.ofList [output; output2])
 
         /// The empty output.
-        static member empty = Outputs [||]
+        static member empty = Outputs SegmentedArray.empty
+
+        /// Checks that output is the empty output constant.
+        static member isEmpty output =
+             match output with
+             | Outputs outputs -> outputs.Length = 0
+             | _ -> false
+
+        /// Checks that output is not the empty output constant.
+        static member notEmpty output =
+            not (Output.isEmpty output)
 
     /// The base particle emitter type.
     and Emitter =
@@ -164,67 +195,60 @@ module Particles =
 
     /// Transforms a constrained value.
     type 'a Transformer =
-        int64 -> Constraint -> 'a array -> (Output * 'a array)
+        int64 -> Constraint -> 'a SegmentedArray -> (Output * 'a SegmentedArray)
 
     [<RequireQualifiedAccess>]
     module Transformer =
 
         /// Accelerate bodies both linearly and angularly.
         let accelerate bodies =
-            Array.map (fun (body : Body) ->
-                { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
+            SegmentedArray.transform (fun (body : Body) ->
+                { body with Position = body.Position + body.LinearVelocity; Angles = body.Angles + body.AngularVelocity })
                 bodies
 
         /// Constrain bodies.
         let rec constrain c bodies =
             match c with
-            | Circle (radius, center) ->
-                Array.map (fun (body : Body) ->
+            | Sphere (radius, center) ->
+                SegmentedArray.transform (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - center
-                    let distanceSquared = delta.LengthSquared ()
+                    let distanceSquared = delta.MagnitudeSquared
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
-                        let normal = Vector2.Normalize (center - positionNext)
-                        let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, normal)
+                        let normal = Vector3.Normalize (center - positionNext)
+                        let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
                         let linearVelocity = reflectedVelocity * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
-            | Rectangle bounds ->
-                Array.map (fun (body : Body) ->
+            | Box box ->
+                // TODO: implement properly bouncing angles.
+                SegmentedArray.transform (fun (body : Body) ->
                     let positionNext = body.Position + body.LinearVelocity
-                    let delta = positionNext - bounds.Center
-                    if Math.isPointInBounds positionNext bounds then
-                        let speed = body.LinearVelocity.Length ()
-                        let distanceNormalized = Vector2.Normalize delta
+                    let delta = positionNext - box.Center
+                    if Math.isPointInBounds3d positionNext box then
+                        let speed = body.LinearVelocity.Magnitude
+                        let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
-                    // TODO: retore this code when the AABB.RayCast bug is fixed or Math.rayCastRectangle is implemented from scratch.
-                    //let rayCastInput = { RayBegin = positionNext; RayEnd = positionNext + body.LinearVelocity }
-                    //let mutable rayCastOutput = RayCastOutput.defaultOutput
-                    //if Math.rayCastRectangle bounds &rayCastInput &rayCastOutput then
-                    //    let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, rayCastOutput.Normal)
-                    //    let linearVelocity = reflectedVelocity * body.Restitution
-                    //    { body with LinearVelocity = linearVelocity }
-                    //else body)
                     bodies
             | Constraints constraints ->
-                Array.fold (flip constrain) bodies constraints
+                SegmentedArray.fold (flip constrain) bodies constraints
 
         /// Make a force transformer.
         let force force : Body Transformer =
             fun _ c bodies ->
                 match force with
                 | Gravity gravity ->
-                    let bodies = Array.map (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
+                    let bodies = SegmentedArray.transform (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
                     (Output.empty, bodies)
                 | Attractor (position, radius, force) ->
                     let bodies =
-                        Array.map (fun (body : Body) ->
+                        SegmentedArray.transform (fun (body : Body) ->
                             let direction = position - body.Position
-                            let distance = direction.Length ()
+                            let distance = direction.Magnitude
                             let normal = direction / distance
                             if distance < radius then
                                 let pull = (radius - distance) / radius
@@ -235,7 +259,7 @@ module Particles =
                     (Output.empty, bodies)
                 | Drag (linearDrag, angularDrag) ->
                     let bodies =
-                        Array.map (fun (body : Body) ->
+                        SegmentedArray.transform (fun (body : Body) ->
                             let linearDrag = body.LinearVelocity * linearDrag
                             let angularDrag = body.AngularVelocity * angularDrag
                             { body with
@@ -254,27 +278,27 @@ module Particles =
             match logic.LogicType with
             | Or value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
                     (Output.empty, targets)
             | Nor value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
                     (Output.empty, targets)
             | Xor value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
                     (Output.empty, targets)
             | And value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
                     (Output.empty, targets)
             | Nand value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
                     (Output.empty, targets)
             | Equal value ->
                 fun _ _ targets ->
-                    let targets = Array.map (fun struct (targetLife, _) -> struct (targetLife, value)) targets
+                    let targets = SegmentedArray.transform (fun struct (targetLife, _) -> struct (targetLife, value)) targets
                     (Output.empty, targets)
 
         /// Make a generic range transformer.
@@ -290,14 +314,14 @@ module Particles =
             | Constant value ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let result = applyRange targetValue value
                             struct (targetLife, result)) targets
                     (Output.empty, targets)
             | Linear (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let result = applyRange targetValue (value + scale (value2 - value, progress))
                             struct (targetLife, result))
@@ -306,7 +330,7 @@ module Particles =
             | Random (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
                             let randValue = fst (Rand.nextSingle rand)
@@ -317,7 +341,7 @@ module Particles =
             | Chaos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let chaosValue = Gen.randomf
                             let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
                             struct (targetLife, result))
@@ -326,7 +350,7 @@ module Particles =
             | Ease (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
                             let result = applyRange targetValue (value + scale (value2 - value, progressEase))
@@ -336,7 +360,7 @@ module Particles =
             | EaseIn (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
@@ -347,7 +371,7 @@ module Particles =
             | EaseOut (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseOut = Math.Sin progressScaled
@@ -358,7 +382,7 @@ module Particles =
             | Sin (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressSin = Math.Sin progressScaled
@@ -369,7 +393,7 @@ module Particles =
             | SinScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressSin = Math.Sin progressScaled
@@ -380,7 +404,7 @@ module Particles =
             | Cos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressCos = Math.Cos progressScaled
@@ -391,7 +415,7 @@ module Particles =
             | CosScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
-                        Array.map (fun struct (targetLife, targetValue) ->
+                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressCos = Math.Cos progressScaled
@@ -426,16 +450,16 @@ module Particles =
 
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
-        { In : 'a array -> 'b array
-          Out : (Output * 'b array) -> 'a array -> (Output * 'a array) }
+        { In : 'a SegmentedArray -> 'b SegmentedArray
+          Out : (Output * 'b SegmentedArray) -> 'a SegmentedArray -> (Output * 'a SegmentedArray) }
 
     [<RequireQualifiedAccess>]
     module Scope =
 
         /// Make a scope.
         let inline make<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
-            { In = Array.map getField
-              Out = fun (output, fields) (targets : 'a array) -> (output, Array.map2 setField fields targets) }
+            { In = SegmentedArray.map getField
+              Out = fun (output, fields) (targets : 'a SegmentedArray) -> (output, SegmentedArray.map2 setField fields targets) }
 
     /// The base behavior type.
     type Behavior =
@@ -459,9 +483,9 @@ module Particles =
         static member ofSeq scope transformers =
             { Scope = scope; Transformers = FStack.ofSeq transformers }
 
-        /// Run the behavior over an array of targets.
+        /// Run the behavior over targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
-        static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
+        static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
             let targets2 = behavior.Scope.In targets
             let (output, targets3) =
                 FStack.fold (fun (output, targets) transformer ->
@@ -474,8 +498,8 @@ module Particles =
 
         /// Run the behavior over a single target.
         static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
-            let (output, targets) = Behavior<'a, 'b>.runMany time constrain behavior [|target|]
-            let target = Array.item 0 targets
+            let (output, targets) = Behavior<'a, 'b>.runMany time constrain behavior (SegmentedArray.singleton target)
+            let target = SegmentedArray.item 0 targets
             (output, target)
 
         interface Behavior with
@@ -483,7 +507,7 @@ module Particles =
                 let (outputs, target) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
                 (outputs, target :> obj)
             member this.RunMany time constrain targetsObj =
-                let (outputs, targets) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a array)
+                let (outputs, targets) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a SegmentedArray)
                 (outputs, targets :> obj)
 
     /// A composition of behaviors.
@@ -520,15 +544,15 @@ module Particles =
                     behaviors.Behaviors
             (outputs, targets :?> 'a)
 
-        /// Run the behaviors over an array of targets.
-        static member runMany time behaviors constrain (targets : 'a array) =
+        /// Run the behaviors over targets.
+        static member runMany time behaviors constrain (targets : 'a SegmentedArray) =
             let (outputs, targets) =
                 FStack.fold (fun (output, targets) (behavior : Behavior) ->
                     let (output2, targets2) = behavior.RunMany time constrain targets
                     (output + output2, targets2))
                     (Output.empty, targets :> obj)
                     behaviors.Behaviors
-            (outputs, targets :?> 'a array)
+            (outputs, targets :?> 'a SegmentedArray)
 
     /// Describes an emitter.
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
@@ -562,7 +586,7 @@ module Particles =
           ParticleRate : single
           mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-          ParticleRing : 'a array // operates as a ring-buffer
+          ParticleRing : 'a SegmentedArray // operates as a ring-buffer
           ParticleSeed : 'a
           Constraint : Constraint
           ParticleInitializer : int64 -> 'a Emitter -> 'a
@@ -634,7 +658,7 @@ module Particles =
               ParticleRate = particleRate
               ParticleIndex = 0
               ParticleWatermark = 0
-              ParticleRing = Array.zeroCreate particleMax
+              ParticleRing = SegmentedArray.zeroCreate particleMax
               ParticleSeed = particleSeed
               Constraint = constrain
               ParticleInitializer = particleInitializer
@@ -656,7 +680,7 @@ module Particles =
                 if  this.ParticleRing.Length <> particleMax then
                     this.ParticleIndex <- 0
                     this.ParticleWatermark <- 0
-                    { this with ParticleRing = Array.zeroCreate<'a> particleMax } :> Emitter
+                    { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
                 else this :> Emitter
             end
 
@@ -664,9 +688,9 @@ module Particles =
     type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
           mutable Body : Body
-          mutable Size : Vector2
-          mutable Offset : Vector2
-          mutable Inset : Vector4
+          mutable Offset : Vector3
+          mutable Size : Vector3
+          mutable Inset : Box2
           mutable Color : Color
           mutable Glow : Color
           mutable Flip : Flip }
@@ -676,9 +700,10 @@ module Particles =
     module BasicParticle =
         let body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
         let position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
-        let rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
-        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
+        let scale = Scope.make (fun p -> struct (p.Life, p.Body.Scale)) (fun struct (_, v) p -> { p with Body = { p.Body with Scale = v }})
+        let angles = Scope.make (fun p -> struct (p.Life, p.Body.Angles)) (fun struct (_, v) p -> { p with Body = { p.Body with Angles = v }})
         let offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
+        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
         let inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
         let color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
         let glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
@@ -730,29 +755,32 @@ module Particles =
         Emitter<BasicParticle>
 
     [<RequireQualifiedAccess>]
-    module BasicEmitter =
+    module BasicEmitter2d =
 
         let private toParticlesDescriptor time (emitter : BasicEmitter) =
             let particles =
-                Array.append
-                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleRing else [||])
-                    (Array.take emitter.ParticleIndex emitter.ParticleRing)
+                SegmentedArray.append
+                    (if emitter.ParticleWatermark > emitter.ParticleIndex
+                     then SegmentedArray.skip emitter.ParticleIndex emitter.ParticleRing
+                     else SegmentedArray.empty)
+                    (SegmentedArray.take emitter.ParticleIndex emitter.ParticleRing)
             let particles' =
-                Array.zeroCreate<Nu.Particle> particles.Length
+                SegmentedArray.zeroCreate<Nu.Particle> particles.Length
             for index in 0 .. particles.Length - 1 do
                 let particle = &particles.[index]
                 if Life.getLiveness time particle.Life then
                     let particle' = &particles'.[index]
                     particle'.Transform.Position <- particle.Body.Position
-                    particle'.Transform.Rotation <- particle.Body.Rotation
+                    particle'.Transform.Scale <- particle.Body.Scale
+                    particle'.Transform.Angles <- particle.Body.Angles
+                    particle'.Transform.Offset <- particle.Offset
                     particle'.Transform.Size <- particle.Size
                     particle'.Color <- particle.Color
                     particle'.Glow <- particle.Glow
-                    particle'.Offset <- particle.Offset
-                    particle'.Inset <- particle.Inset
+                    particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                     particle'.Flip <- particle.Flip
             { Elevation = emitter.Elevation
-              PositionY = emitter.Body.Position.Y
+              Horizon = emitter.Body.Position.Y
               Absolute = emitter.Absolute
               Blend = emitter.Blend
               Image = emitter.Image
@@ -762,7 +790,7 @@ module Particles =
         let resize particleMax (emitter : BasicEmitter) =
             (emitter :> Emitter).Resize particleMax :?> BasicEmitter
 
-        /// Make a basic particle emitter.
+        /// Make a basic 2d particle emitter.
         let make
             time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
@@ -770,7 +798,7 @@ module Particles =
                 time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
-        /// Make an empty basic particle emitter.
+        /// Make an empty basic 2d particle emitter.
         let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
@@ -780,27 +808,27 @@ module Particles =
             let emitterBehavior = fun _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+                time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
-        /// Make the default basic particle emitter.
+        /// Make the default basic 2d particle emitter.
         let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
                 { Life = Life.make 0L 120L
-                  Body = Body.defaultBody
-                  Size = Constants.Engine.ParticleSizeDefault
-                  Offset = v2Dup 0.5f
-                  Inset = v4Zero
-                  Color = Color.White
+                  Body = Body.defaultBody2d
+                  Offset = v3Zero
+                  Size = Constants.Engine.ParticleSize2dDefault
+                  Inset = box2Zero
+                  Color = Color.One
                   Glow = Color.Zero
                   Flip = FlipNone }
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
-                particle.Body.Rotation <- emitter.Body.Rotation
-                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 10.0f).Rotate emitter.Body.Rotation
-                particle.Body.AngularVelocity <- Gen.randomf
+                particle.Body.Angles <- emitter.Body.Angles
+                particle.Body.LinearVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf * 10.0f
+                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf
                 particle
             let particleBehavior = fun time emitter ->
                 let watermark = emitter.ParticleWatermark
@@ -808,7 +836,7 @@ module Particles =
                 while index <= watermark do
                     let particle = &emitter.ParticleRing.[index]
                     let progress = Life.getProgress time particle.Life
-                    particle.Color.A <- byte ((1.0f - progress) * 255.0f)
+                    particle.Color.A <- 1.0f - progress
                     index <- inc index
                 Output.empty
             let particleBehaviors =
@@ -817,12 +845,12 @@ module Particles =
                         [Transformer.force (Gravity (Constants.Engine.GravityDefault / single Constants.Engine.DesiredFps))
                          Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
-                emitter.Body.Rotation <- emitter.Body.Rotation + 0.05f
+                emitter.Body.Angles <- emitter.Body.Angles + v3 0.03f 0.2f 0.1f
                 Output.empty
             let emitterBehaviors =
                 Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+                time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// A particle system.

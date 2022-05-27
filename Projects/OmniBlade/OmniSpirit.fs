@@ -47,9 +47,9 @@ type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
       SpiritMovementIndex : int
       SpiritMovementStart : int64
-      SpiritMovementCachedOpt : Vector2 option }
+      SpiritMovementCachedOpt : Vector3 option }
 
-    static member advance time (position : Vector2) (target : Vector2) spiritState =
+    static member advance time (position : Vector3) (target : Vector3) spiritState =
         let localTime = time - spiritState.SpiritMovementStart
         let spiritState =
             if localTime >= Constants.Field.SpiritMovementDuration then
@@ -62,19 +62,19 @@ type [<ReferenceEquality; NoComparison>] SpiritState =
         match spiritState.SpiritMovements.[spiritState.SpiritMovementIndex] with
         | Creep ->
             let v = target - position
-            let n = Vector2.Normalize v
+            let n = Vector3.Normalize v
             let m = n * Constants.Field.SpiritWalkSpeed
             (m, spiritState)
         | Chase ->
             let v = target - position
-            let n = Vector2.Normalize v
+            let n = Vector3.Normalize v
             let m = n * Constants.Field.SpiritRunSpeed
             (m, spiritState)
         | Scatter ->
             match spiritState.SpiritMovementCachedOpt with
             | None ->
                 let v = target - position
-                let n = Vector2.Normalize v
+                let n = Vector3.Normalize v
                 let m = n * Constants.Field.SpiritWalkSpeed
                 let spiritState = { spiritState with SpiritMovementCachedOpt = Some m }
                 (m, spiritState)
@@ -83,7 +83,7 @@ type [<ReferenceEquality; NoComparison>] SpiritState =
             match spiritState.SpiritMovementCachedOpt with
             | None ->
                 let r = Gen.randomd * Math.PI * 2.0
-                let n = v2 (single (cos r)) (single (sin r))
+                let n = v3 (single (cos r)) (single (sin r)) 0.0f
                 let m = n * Constants.Field.SpiritWalkSpeed
                 let spiritState = { spiritState with SpiritMovementCachedOpt = Some m }
                 (m, spiritState)
@@ -94,16 +94,16 @@ module Spirit =
 
     type [<ReferenceEquality; NoComparison>] Spirit =
         private
-            { Bounds_ : Vector4
+            { Perimeter_ : Box3
               SpiritType_ : SpiritType
               SpiritState_ : SpiritState }
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.Size = this.Bounds_.Size
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.Size = this.Perimeter_.Size
 
         (* Local Properties *)
         member this.SpiritType = this.SpiritType_
@@ -112,18 +112,18 @@ module Spirit =
         static member advance time target (spirit : Spirit) =
             let (movement, state) = SpiritState.advance time spirit.Center target spirit.SpiritState
             { spirit with
-                Bounds_ = spirit.Bounds_.Translate movement
+                Perimeter_ = spirit.Perimeter_.Translate movement
                 SpiritState_ = state }
 
         static member spawn time center spiritType spiritPattern =
             let r = Gen.randomd * Math.PI * 2.0
-            let n = v2 (single (cos r)) (single (sin r))
+            let n = v3 (single (cos r)) (single (sin r)) 0.0f
             let p = center + n * Constants.Field.SpiritRadius
             let spiritState = { SpiritMovements = spiritPattern; SpiritMovementIndex = 0; SpiritMovementStart = time; SpiritMovementCachedOpt = None }
-            { Bounds_ = v4Bounds p Constants.Field.SpiritOrbBlipSize; SpiritType_ = spiritType; SpiritState_ = spiritState }
+            { Perimeter_ = box3 p Constants.Field.SpiritOrbBlipSize; SpiritType_ = spiritType; SpiritState_ = spiritState }
 
         static member make bounds spiritType spiritState =
-            { Bounds_ = bounds
+            { Perimeter_ = bounds
               SpiritType_ = spiritType
               SpiritState_ = spiritState }
 

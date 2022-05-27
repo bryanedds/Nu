@@ -10,12 +10,12 @@ open BlazeVector
 module Bullet =
 
     type BulletDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d (true, false)
 
         static let [<Literal>] BulletLifeTime =
             27L
 
-        static let handleCollision evt world =
+        static let handleBodyCollision evt world =
             let bullet = evt.Subscriber : Entity
             let world =
                 if World.isAdvancing world
@@ -24,22 +24,22 @@ module Bullet =
             (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFastFacet>
+            [typeof<RigidBody2dFacet>
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (20.0f, 20.0f))
+            [define Entity.Size (v3 20.0f 20.0f 0.0f)
              define Entity.Omnipresent true
              define Entity.Density 0.1f
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
              define Entity.GravityScale 0.0f
              define Entity.IsBullet true
-             define Entity.BodyShape (BodyCircle { Radius = 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodySphere { Radius = 0.5f; Center = v3Zero; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
         override this.Register (bullet, world) =
-            let world = World.monitor handleCollision bullet.CollisionEvent bullet world
+            let world = World.monitor handleBodyCollision bullet.BodyCollisionEvent bullet world
             let world = World.delay (World.destroyEntity bullet) BulletLifeTime bullet world
             world
 
@@ -51,14 +51,16 @@ module Enemy =
         member this.SetHealth (value : int) world = this.Set Property? Health value world
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
         member this.IsOnScreen world =
-            let viewBounds = World.getViewBoundsRelative world
-            Math.isPointInBounds (this.GetCenter world) viewBounds
+            let viewBounds = World.getViewBoundsRelative2d world
+            let perimeter = this.GetBounds world
+            let center = perimeter.Center
+            Math.isPointInBounds2d center.V2 viewBounds
 
     type EnemyDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d (true, false)
         
         static let move (enemy : Entity) world =
-            let force = Vector2 (-500.0f, -2500.0f)
+            let force = v3 -750.0f -5000.0f 0.0f
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
@@ -71,11 +73,11 @@ module Enemy =
             let world = if enemy.GetHealth world <= 0 then die enemy world else world
             (Cascade, world)
 
-        static let handleCollision evt world =
+        static let handleBodyCollision evt world =
             let enemy = evt.Subscriber : Entity
             let world =
                 if World.isAdvancing world then
-                    let collidee = evt.Data.Collidee.Entity
+                    let collidee = evt.Data.BodyCollidee.Entity
                     let isBullet = collidee.Is<BulletDispatcher> world
                     if isBullet then
                         let world = enemy.SetHealth (enemy.GetHealth world - 1) world
@@ -86,26 +88,26 @@ module Enemy =
             (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBody2dFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.Size (v3 48.0f 96.0f 0.0f)
              define Entity.Friction 0.0f
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
              define Entity.CelCount 6
              define Entity.CelRun 4
-             define Entity.CelSize (Vector2 (48.0f, 96.0f))
+             define Entity.CelSize (v2 48.0f 96.0f)
              define Entity.AnimationDelay 8L
              define Entity.AnimationSheet Assets.Gameplay.EnemyImage
              define Entity.Health 7]
 
         override this.Register (enemy, world) =
             let world = World.monitor handleUpdate enemy.UpdateEvent enemy world
-            let world = World.monitor handleCollision enemy.CollisionEvent enemy world
+            let world = World.monitor handleBodyCollision enemy.BodyCollisionEvent enemy world
             world
 
 [<AutoOpen>]
@@ -121,26 +123,28 @@ module Player =
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher2d (true, false)
 
-        static let [<Literal>] WalkForce = 1100.0f
-        static let [<Literal>] FallForce = -4000.0f
-        static let [<Literal>] ClimbForce = 1500.0f
+        static let [<Literal>] WalkForce = 1750.0f
+        static let [<Literal>] FallForce = -5000.0f
+        static let [<Literal>] ClimbForce = 2000.0f
+        static let [<Literal>] JumpForce = 3000.0f
+        static let [<Literal>] BulletForce = 25.0f
 
-        static let createBullet (player : Entity) (playerTransform : Transform) world =
+        static let createBullet (player : Entity) world =
+            let mutable playerTransform = player.GetTransform world
             let (bullet, world) = World.createEntity<BulletDispatcher> None NoOverlay player.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
-            let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.95f, playerTransform.Size.Y * 0.4f)
+            let bulletPosition = playerTransform.Position + v3 (playerTransform.Size.X * 0.95f) (playerTransform.Size.Y * 0.4f) 0.0f
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetElevation playerTransform.Elevation world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            let world = World.applyBodyLinearImpulse (Vector2 (15.0f, 0.0f)) (bullet.GetPhysicsId world) world
+            let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) (bullet.GetPhysicsId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         static let shootBullet (player : Entity) world =
-            let playerTransform = player.GetTransform world
-            let (bullet, world) = createBullet player playerTransform world
+            let (bullet, world) = createBullet player world
             propelBullet bullet world
 
         static let handleSpawnBullet evt world =
@@ -170,8 +174,8 @@ module Player =
                 match groundTangentOpt with
                 | Some groundTangent ->
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
-                    Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
-                | None -> Vector2 (WalkForce, FallForce)
+                    Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
+                | None -> v3 WalkForce FallForce 0.0f
             let world = World.applyBodyForce force physicsId world
             (Cascade, world)
 
@@ -181,7 +185,7 @@ module Player =
             if  time >= player.GetLastTimeJump world + 12L &&
                 time <= player.GetLastTimeOnGround world + 10L then
                 let world = player.SetLastTimeJump time world
-                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
+                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) (player.GetPhysicsId world) world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 (Cascade, world)
             else (Cascade, world)
@@ -194,19 +198,19 @@ module Player =
             else (Cascade, world)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
+            [typeof<RigidBody2dFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.Size (v3 48.0f 96.0f 0.0f)
              define Entity.FixedRotation true
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
              define Entity.CelCount 16
              define Entity.CelRun 4
-             define Entity.CelSize (Vector2 (48.0f, 96.0f))
+             define Entity.CelSize (v2 48.0f 96.0f)
              define Entity.AnimationDelay 3L
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage
              nonPersistent Entity.LastTimeOnGround Int64.MinValue
@@ -247,7 +251,7 @@ module Gameplay =
 
         static let shiftEntities xShift entities world =
             Seq.fold
-                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
+                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + v3 xShift 0.0f 0.0f) world)
                 world
                 entities
 
@@ -298,10 +302,10 @@ module Gameplay =
                     if World.getUpdateRate world <> 0L then
                         let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
                         let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
-                        let eyeCenter = World.getEyeCenter world
-                        let eyeSize = World.getEyeSize world
-                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
-                        Game.SetEyeCenter eyeCenter world
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let eyePosition = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyePosition.Y
+                        Game.SetEyePosition2d eyePosition world
                     else world
 
                 // update player fall
@@ -318,7 +322,7 @@ module Gameplay =
              Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
                      [Entity.Text == "Quit"
-                      Entity.Position == v2 260.0f -260.0f
+                      Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent ==> msg Quit]]
 
@@ -326,5 +330,5 @@ module Gameplay =
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.group Simulants.Gameplay.Scene.Group.Name []
                     [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
-                        [Entity.Position == v2 -300.0f -175.6805f
+                        [Entity.Position == v3 -300.0f -175.6805f 0.0f
                          Entity.Elevation == 1.0f]]]

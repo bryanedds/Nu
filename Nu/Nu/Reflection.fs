@@ -19,44 +19,45 @@ module Reflection =
     let private NonPersistentPropertyNames =
         dictPlus
             StringComparer.Ordinal
-            [// misc properties
+            [// simulant properties
              ("Dispatcher", true)
-             ("Facets", true)
+             ("Order", true)
+             ("Id", true)
+             ("IdRef", true)
+             ("ScriptFrame", true)
+             ("ScriptFrameOpt", true)
+             ("ScriptUnsubscriptions", true)
+
+             // screen properties
              ("Ecs", true)
              ("TransitionState", true)
              ("TransitionUpdates", true)
              ("EntityTree", true)
+
+             // entity properties
+             ("Facets", true)
+             ("Surnames", true)
+             ("PerimeterUnscaled", true)
+             ("Perimeter", true)
+             ("PerimeterCenter", true)
+             ("PerimeterBottom", true)
+             ("PerimeterOriented", true)
+             ("Bounds", true)
+             ("RotationMatrix", true)
+             ("AffineMatrix", true)
+             ("Angles", true)
+             ("AnglesLocal", true)
              ("Imperative", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("IgnorePropertyBindings", true)
-             ("Order", true)
-             ("Surnames", true)
-             ("Optimized", true)
-             ("ScriptFrame", true)
-             ("ScriptFrameOpt", true)
-             ("ScriptUnsubscriptions", true)
-             ("TmxMap", true)
-             ("Bounds", true)
-             ("Bottom", true)
-             ("Center", true)
-             ("NodeUnsubscribe", true)
-             ("BodyPosition", true)
-             ("BodySize", true)
-             ("BodyAngle", true)
-             ("BodyRotation", true)
-             ("BodyBounds", true)
-             ("BodyCenter", true)
-             ("BodyBottom", true)
-
-             // emitter properties
-             ("ParticleSystem", true)
-
-             // effect properties
-             ("EffectTags", true)
-             ("EffectHistory", true)]
+             ("Mounted", true)
+             ("IsPhysical", true)
+             ("IsCentered", true)
+             ("Is2d", true)
+             ("Optimized", true)]
 
     /// A dictionary of all loaded assemblies.
     let internal AssembliesLoaded =
@@ -71,9 +72,7 @@ module Reflection =
         match NonPersistentPropertyNames.TryGetValue propertyName with
         | (true, result) -> result
         | (false, _) ->
-            let result =
-                propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ids", StringComparison.Ordinal)
+            let result = false
             NonPersistentPropertyNames.Add (propertyName, result)
             result
 
@@ -221,7 +220,7 @@ module Reflection =
                     let propertyValue = converter.ConvertFrom propertySymbol
                     property.SetValue (target, propertyValue)
             | None -> ()
-        
+
     /// Read one of a target's xtension properties.
     let private readXtensionProperty
         (xtension : Xtension)
@@ -249,7 +248,7 @@ module Reflection =
                     else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
                 | _ -> xtension
         else xtension
-        
+
     /// Read a target's xtension properties from property descriptors.
     let private readXtensionProperties xtension (propertyDescriptors : Map<string, Symbol>) (target : 'a) =
         let definitions = getReflectivePropertyDefinitions target
@@ -257,7 +256,7 @@ module Reflection =
             (fun xtension -> readXtensionProperty xtension definitions target)
             xtension
             propertyDescriptors
-        
+
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target

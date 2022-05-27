@@ -160,11 +160,11 @@ module Content =
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
         entityWithContent<'d> entityName initializers []
 
-    /// Describe a basic emitter with the given initializers.
-    let basicEmitter entityName initializers = entity<BasicEmitterDispatcher> entityName initializers
+    /// Describe a 2d basic emitter with the given initializers.
+    let basicEmitter2d entityName initializers = entity<BasicEmitter2dDispatcher> entityName initializers
 
-    /// Describe an effect with the given initializers.
-    let effect entityName initializers = entity<EffectDispatcher> entityName initializers
+    /// Describe a 2d effect with the given initializers.
+    let effect2d entityName initializers = entity<Effect2dDispatcher> entityName initializers
 
     /// Describe a static sprite with the given initializers.
     let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
@@ -202,20 +202,23 @@ module Content =
     /// Describe a fill bar with the given initializers.
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
 
-    /// Describe a block with the given initializers.
-    let block entityName initializers = entity<BlockDispatcher> entityName initializers
+    /// Describe a 2d block with the given initializers.
+    let block2d entityName initializers = entity<Block2dDispatcher> entityName initializers
 
-    /// Describe a box with the given initializers.
-    let box entityName initializers = entity<BoxDispatcher> entityName initializers
+    /// Describe a 2d box with the given initializers.
+    let box2d entityName initializers = entity<Box2dDispatcher> entityName initializers
 
-    /// Describe a character with the given initializers.
-    let character entityName initializers = entity<CharacterDispatcher> entityName initializers
+    /// Describe a side-view character with the given initializers.
+    let sideViewCharacter entityName initializers = entity<SideViewCharacterDispatcher> entityName initializers
 
     /// Describe a tile map with the given initializers.
     let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
 
     /// Describe a tmx map with the given initializers.
     let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
+
+    /// Describe static scenery with the given initializers.
+    let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
 [<AutoOpen>]
 module ContentOperators =

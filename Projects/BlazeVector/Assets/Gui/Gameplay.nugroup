@@ -7,5 +7,5 @@
  [[ButtonDispatcher
    [[Elevation 10]
     [Name Quit]
-    [Position [272 -256]]
+    [Position [272 -256 0]]
     [Text Quit]]]]]

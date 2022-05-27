@@ -6,7 +6,6 @@ open Prime
 open Nu
 open Nu.Declarative
 
-#if ECS_HYBRID
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable Active : bool
       mutable Entity : Entity
@@ -14,9 +13,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     interface StaticSpriteComponent Component with
         member this.TypeName = nameof StaticSpriteComponent
         member this.Active with get () = this.Active and set value = this.Active <- value
-#endif
 
-#if ECS
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
@@ -38,7 +35,6 @@ type [<NoEquality; NoComparison; Struct>] Shake =
     interface Shake Component with
         member this.TypeName = nameof Shake
         member this.Active with get () = this.Active and set value = this.Active <- value
-#endif
 
 #if FACETED
 type MetricsEntityDispatcher () =
@@ -68,28 +64,26 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     inherit EntityDispatcher ()
   #else
-    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
   #endif
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.01f) world
+        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 
     override this.View (staticImage, entity, world) =
-        let transform = entity.GetTransform world
-        View.Render
+        let mutable transform = entity.GetTransform world
+        View.Render2d
             (transform.Elevation,
              transform.Position.Y,
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  Offset = Vector2.Zero
-                  Absolute = false
-                  InsetOpt = None
+                  InsetOpt = ValueNone
                   Image = staticImage
-                  Color = colWhite
+                  Color = Color.One
                   Blend = Transparent
-                  Glow = colZero
+                  Glow = Color.Zero
                   Flip = FlipNone })
   #endif
 
@@ -198,20 +192,20 @@ type MyGameDispatcher () =
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.DefaultGroup world |> snd
-        let world = Fps.SetPosition (v2 200.0f -250.0f) world
+        let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
-        let positions = // 19,663 entity positions (goal: 60FPS, current: 50FPS)
+        let positions = // 25,281 entity positions (goal: 60FPS, current: 49FPS)
             seq {
                 for i in 0 .. 52 do
                     for j in 0 .. 52 do
-                        for k in 0 .. 6 do
-                            yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
+                        for k in 0 .. 8 do
+                            yield v3 (single i * 12.0f + single k) (single j * 12.0f + single k) 0.0f }
         let world =
             Seq.foldi (fun i world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
-                let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
-                let world = entity.SetSize (v2One * 8.0f) world
+                let world = entity.SetPosition (position + v3 -450.0f -265.0f 0.0f) world
+                let world = entity.SetSize (v3One * 8.0f) world
                 world)
                 world positions
 #endif
@@ -237,7 +231,7 @@ type MyGameDispatcher () =
                         if comp.Active then
                             let state = comp.Entity.State world
                             if state.Visible then
-                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
                                 let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                                 messages.Add layeredMessage
                 World.enqueueRenderLayeredMessages messages world
@@ -248,23 +242,21 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
 
     override this.View (staticImage, entity, world) =
-        let transform = entity.GetTransform world
-        View.Render
+        let mutable transform = entity.GetTransform world
+        View.Render2d
             (transform.Elevation,
              transform.Position.Y,
              AssetTag.generalize staticImage,
              SpriteDescriptor
                 { Transform = transform
-                  Offset = Vector2.Zero
-                  Absolute = false
-                  InsetOpt = None
+                  InsetOpt = ValueNone
                   Image = staticImage
-                  Color = colWhite
+                  Color = Color.One
                   Blend = Transparent
-                  Glow = colZero
+                  Glow = Color.Zero
                   Flip = FlipNone })
 
 #if PROPERTIES
@@ -295,17 +287,17 @@ type [<ReferenceEquality>] Ints =
     static member init n =
         { Ints = Seq.init n (fun a -> (a, a)) |> Map.ofSeq }
     static member inc ints =
-        { Ints = ints.Ints |> Seq.map (fun kvp -> (kvp.Key, inc kvp.Value)) |> Map.ofSeq }
+        { Ints = ints.Ints |> Map.map (fun _ v -> inc v) }
 
 type [<ReferenceEquality>] Intss =
     { Intss : Map<int, Ints> }
     static member init n =
         { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, if kvp.Key % 2 = 0 then Ints.inc kvp.Value else kvp.Value)) |> Map.ofSeq }
+        { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 141) // 19,881 ints (goal: 60FPS, current: 30FPS, w/o rendering: 44FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 72) // 5,184 elmish entities (goal: 60FPS w/o Stalls, current: 60FPS w/o Stalls)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -322,10 +314,64 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v2 (single i * 6.85f - 480.0f) (single j * 3.85f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 8)) (single (int % 8))]]
+                             Entity.Position == v3 (single i * 10.0f - 480.0f) (single j * 5.0f - 272.0f) 0.0f
+                             Entity.Size <== int --> fun int -> v3 (single (int % 10)) (single (int % 10)) 0.0f]]
              Content.group Gen.name []
-                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+                [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
+
+#if ELMISH_AND_ECS
+    override this.Register (game, world) =
+
+        // call base
+        let world = base.Register (game, world)
+
+        // get ecs
+        let screen = Simulants.DefaultScreen
+        let ecs = screen.GetEcs world
+
+        // create component stores
+        let _ = ecs.RegisterStore (CorrelatedStore<EntityId, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Position, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Velocity, World> ecs)
+        let _ = ecs.RegisterStore (CorrelatedStore<Shake, World> ecs)
+
+        // create movers system
+        let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
+
+        // create shakers system
+        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
+
+        // create 4M movers (goal: 60FPS, current: 60FPS)
+        let world =
+            Seq.fold (fun world _ ->
+                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                world (Seq.init 1000000 id)
+
+        // create 4000 shakers
+        let world =
+            Seq.fold (fun world _ ->
+                let struct (entityId, world) = movers.NextEntityId world
+                shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                world (Seq.init 4000 id)
+
+        // define update for movers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            movers.Iterate $
+                new Statement<_, _, _> (fun position velocity world ->
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+                    world)
+
+        // define update for shakers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            shakers.Iterate $
+                new Statement<_, _, _, _> (fun _ position shake world ->
+                    position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                    position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+                    world)
+
+        world
+#endif
 #endif
 #endif
 
@@ -414,7 +460,7 @@ type PhantomGameDispatcher () =
                     for phantom in phantoms.Phantoms do
                         SdlRenderer.renderSprite
                             viewAbsolute viewRelative eyeCenter eyeSize
-                            phantom.Value.PhantomTransform (v2Dup 0.5f) None phantom.Value.PhantomImage colWhite colZero FlipNone
+                            phantom.Value.PhantomTransform (v2Dup 0.5f) None phantom.Value.PhantomImage Color.One Color.Zero FlipNone
                             sdlRenderer))
 #endif
 

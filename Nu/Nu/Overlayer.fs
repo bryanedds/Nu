@@ -28,7 +28,7 @@ type Overlay =
       OverlaidTypeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
-    static member typeNameToOverlayName (typeName : string) =
+    static member dispatcherNameToOverlayName (typeName : string) =
         typeName
             .Replace("Dispatcher", "Overlay")
             .Replace("Facet", "FacetOverlay")
@@ -52,11 +52,11 @@ type Overlay =
                 (fun (sourceType : Type) ->
                     let includeNames =
                         if sourceType.BaseType <> typeof<obj>
-                        then [Overlay.typeNameToOverlayName sourceType.BaseType.Name]
+                        then [Overlay.dispatcherNameToOverlayName sourceType.BaseType.Name]
                         else []
                     let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (Overlay.typeNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
+                    (Overlay.dispatcherNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
                 decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
@@ -77,7 +77,7 @@ type Overlay =
                             Map.empty
                     let overlayProperties =
                         if requiresFacetNames
-                        then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
+                        then Map.add Property? FacetNames (Symbols ([], ValueNone)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
                       OverlaysInherited = includeNames
@@ -111,7 +111,7 @@ module Overlayer =
     let internal getOverlaySymbols overlayName facetNames overlayer =
         let overlaySymbols = getOverlaySymbols2 overlayName overlayer
         Seq.fold (fun overlaySymbols facetName ->
-            let facetOverlayName = Overlay.typeNameToOverlayName facetName
+            let facetOverlayName = Overlay.dispatcherNameToOverlayName facetName
             let overlaySymbols' = getOverlaySymbols2 facetOverlayName overlayer
             Map.concat overlaySymbols' overlaySymbols)
             overlaySymbols

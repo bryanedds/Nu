@@ -97,11 +97,11 @@ module TmxMap =
         let tileExtent = tileSize * 0.5f
         match shape with
         | BodyEmpty as be -> be
-        | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent; Center = box.Center * tileSize + tileOffset }
-        | BodyCircle circle -> BodyCircle { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize + tileOffset }
-        | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize + tileOffset }
-        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Extent = boxRounded.Extent * tileExtent; Radius = boxRounded.Radius; Center = boxRounded.Center * tileSize + tileOffset }
-        | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
+        | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent.V3; Center = box.Center * tileSize.V3 + tileOffset.V3 }
+        | BodySphere circle -> BodySphere { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Extent = boxRounded.Extent * tileExtent.V3; Radius = boxRounded.Radius; Center = boxRounded.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize.V3) polygon.Vertices; Center = polygon.Center * tileSize.V3 + tileOffset.V3 }
         | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
     let getDescriptor tileMapPosition (tileMap : TmxMap) =
@@ -176,7 +176,7 @@ module TmxMap =
         
         // construct a list of body shapes
         let bodyShapes = List<BodyShape> ()
-        let tileBoxes = dictPlus<single, Vector4 List> HashIdentity.Structural []
+        let tileBoxes = dictPlus<single, Box3 List> HashIdentity.Structural []
         for i in 0 .. dec tileLayer.Tiles.Length do
 
             // construct a dictionary of tile boxes, adding non boxes to the result list
@@ -194,39 +194,39 @@ module TmxMap =
                         | "" ->
                             match tileBoxes.TryGetValue tileCenter.Y with
                             | (true, l) ->
-                                l.Add (v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF)
+                                l.Add (box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f) tileMapDescriptor.TileSizeF.V3)
                             | (false, _) ->
-                                tileBoxes.Add (tileCenter.Y, List [v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF])
+                                tileBoxes.Add (tileCenter.Y, List [box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f) tileMapDescriptor.TileSizeF.V3])
                         | "Top" ->
-                            let tileShape = BodyBox { Extent = v2 1.0f 0.5f; Center = v2 0.0f 0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 1.0f 0.5f 0.0f; Center = v3 0.0f 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Bottom" ->
-                            let tileShape = BodyBox { Extent = v2 1.0f -0.5f; Center = v2 0.0f -0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 1.0f -0.5f 0.0f; Center = v3 0.0f -0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Left" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f 1.0f; Center = v2 -0.25f -0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 -0.5f 1.0f 0.0f; Center = v3 -0.25f -0.0f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Right" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f 1.0f; Center = v2 0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 0.5f 1.0f 0.0f; Center = v3 0.25f 0.0f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopLeft" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f 0.5f; Center = v2 -0.25f 0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 -0.5f 0.5f 0.0f; Center = v3 -0.25f 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopRight" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2 0.25f 0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 0.5f -0.5f 0.0f; Center = v3 0.25f 0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomLeft" ->
-                            let tileShape = BodyBox { Extent = v2 -0.5f -0.5f; Center = v2 -0.25f -0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 -0.5f -0.5f 0.0f; Center = v3 -0.25f -0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomRight" ->
-                            let tileShape = BodyBox { Extent = v2 0.5f -0.5f; Center = v2 0.25f -0.25f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Extent = v3 0.5f -0.5f 0.0f; Center = v3 0.25f -0.25f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | _ ->
@@ -246,7 +246,7 @@ module TmxMap =
                 let box2 = boxes.[i]
                 let distance = abs (box2.Left.X - box.Right.X)
                 if distance < epsilon then
-                    box <- box.WithSize (v2 (box.Size.X + box2.Size.X) box.Size.Y)
+                    box.Size <- v3 (box.Size.X + box2.Size.X) box.Size.Y 0.0f
                 else
                     strips.Add box
                     box <- box2
@@ -255,7 +255,7 @@ module TmxMap =
 
         // convert strips into BodyShapes and add to the resulting list
         for strip in strips do
-            strip |> BodyBox.fromBounds |> BodyBox |> bodyShapes.Add
+            strip |> BodyBox.fromBox |> BodyBox |> bodyShapes.Add
 
         // fin
         bodyShapes
@@ -272,8 +272,8 @@ module TmxMap =
     let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyId tileMapDescriptor =
         let bodyProperties =
             { BodyId = bodyId
-              Position = v2Zero
-              Rotation = 0.0f
+              Position = v3Zero
+              Rotation = quatId
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)
               BodyType = BodyType.Static
               Awake = false
@@ -281,9 +281,9 @@ module TmxMap =
               Density = Constants.Physics.DensityDefault
               Friction = friction
               Restitution = restitution
-              LinearVelocity = v2Zero
+              LinearVelocity = v3Zero
               LinearDamping = 0.0f
-              AngularVelocity = 0.0f
+              AngularVelocity = v3Zero
               AngularDamping = 0.0f
               FixedRotation = true
               Inertia = 0.0f
@@ -295,7 +295,7 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getLayeredMessages time absolute (viewBounds : Vector4) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
@@ -372,25 +372,23 @@ module TmxMap =
                                 xO <- xO + tileSize.X
 
                             // compute strip transform
-                            let transform =
-                                { Position = v2 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) + viewBounds.Position
-                                  Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
-                                  Rotation = 0.0f
-                                  Elevation = elevation
-                                  Flags = 0u }
+                            let mutable transform = Transform.makeDefault v3CenteredOffset2d
+                            transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Position.V3
+                            transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
+                            transform.Elevation <- elevation
+                            transform.Absolute <- absolute
 
                             // check if in view bounds
-                            if Math.isBoundsIntersectingBounds (v4Bounds transform.Position transform.Size) viewBounds then
+                            if Math.isBoundsIntersectingBounds2d (box2 transform.Position.V2 transform.Size.V2) viewBounds then
 
                                 // accumulate descriptor
                                 descriptors.Add
                                     { Elevation = transform.Elevation
-                                      PositionY = transform.Position.Y
+                                      Horizon = transform.PerimeterUnscaled.Position.Y // ignoring scale and orientation for tile map
                                       AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
                                       RenderDescriptor =
-                                        TileLayerDescriptor
+                                        TilesDescriptor
                                             { Transform = transform
-                                              Absolute = absolute
                                               Color = tileMapColor
                                               Glow = tileMapGlow
                                               MapSize = Vector2i (tileMap.Width, tileMap.Height)
@@ -408,6 +406,7 @@ module TmxMap =
         List.concat descriptorLists
 
     let getQuickSize (tileMap : TmxMap) =
-        v2
+        v3
             (single (tileMap.Width * tileMap.TileWidth))
             (single (tileMap.Height * tileMap.TileHeight))
+            0.0f

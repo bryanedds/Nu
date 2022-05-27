@@ -35,20 +35,20 @@ type [<StructuralEquality; NoComparison>] GamepadButtonData =
 /// The data of a body transform event.
 type [<StructuralEquality; NoComparison>] TransformData =
     { BodySource : BodySource
-      Position : Vector2
-      Rotation : single }
+      Position : Vector3
+      Rotation : Quaternion }
 
 /// The data for a collision event.
-type [<StructuralEquality; NoComparison>] CollisionData =
-    { Collider : BodyShapeSource
-      Collidee : BodyShapeSource
-      Normal : Vector2
+type [<StructuralEquality; NoComparison>] BodyCollisionData =
+    { BodyCollider : BodyShapeSource
+      BodyCollidee : BodyShapeSource
+      Normal : Vector3
       Speed : single }
 
 /// The data for a separation event.
-type [<StructuralEquality; NoComparison>] SeparationData =
-    { Separator : BodyShapeSource
-      Separatee : BodyShapeSource }
+type [<StructuralEquality; NoComparison>] BodySeparationData =
+    { BodySeparator : BodyShapeSource
+      BodySeparatee : BodyShapeSource }
 
 /// The data for a life cycle event.
 type [<StructuralEquality; NoComparison>] LifeCycleData =
@@ -70,8 +70,8 @@ module Events =
     let Deselecting = stoa<unit> "Deselecting/Event"
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
-    let Collision = stoa<CollisionData> "Collision/Event"
-    let Separation = stoa<SeparationData> "Separation/Event"
+    let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
+    let BodySeparation = stoa<BodySeparationData> "BodySeparation/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"

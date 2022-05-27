@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE; DEBUG_RENDERING_ASSERT; DEBUG_RENDERING_MESSAGE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -39,7 +39,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -73,16 +73,26 @@
     <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
     <Compile Include="KeyedArray.fs" />
+    <Compile Include="SegmentedArray.fs" />
+    <Compile Include="SegmentedList.fs" />
     <Compile Include="Ecs.fs" />
     <Compile Include="Systems.fs" />
     <Compile Include="Math.fs" />
-    <Compile Include="SpatialTree.fs" />
+    <Compile Include="Transform.fs" />
+    <Compile Include="Quadtree.fs" />
+    <Compile Include="Octree.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
+    <Compile Include="OpenGL.Hl.fs" />
+    <Compile Include="OpenGL.SpriteBatch.fs" />
     <Compile Include="Physics.fs" />
+    <Compile Include="AetherPhysics.fs" />
+    <Compile Include="BepuPhysics.fs" />
     <Compile Include="Render.fs" />
+    <Compile Include="Render2d.fs" />
+    <Compile Include="Render3d.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Particles.fs" />
@@ -123,8 +133,7 @@
     <Compile Include="WorldStream.fs" />
     <Compile Include="World.fs" />
     <Compile Include="ReflectionTests.fs" />
-    <Compile Include="SpatialTreeTests.fs" />
-    <Compile Include="EffectTests.fs" />
+    <Compile Include="QuadtreeTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
@@ -232,11 +241,14 @@
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
+    <Reference Include="OpenGL.Net">
+      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+    </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.10.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.11.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.7.11.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\Nu.Dependencies\SDL2-CS.dll\lib\net20\SDL2-CS.dll</HintPath>

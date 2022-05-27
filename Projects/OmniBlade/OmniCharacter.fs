@@ -197,7 +197,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member inset time (celSize : Vector2) state =
         let index = CharacterAnimationState.index time state
         let offset = v2 (single index.X) (single index.Y) * celSize
-        let inset = v4Bounds offset celSize
+        let inset = box2 offset celSize
         inset
 
     static member progressOpt time state =
@@ -245,8 +245,8 @@ module Character =
 
     type [<ReferenceEquality; NoComparison>] Character =
         private
-            { BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
+            { PerimeterOriginal_ : Box3
+              Perimeter_ : Box3
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState
@@ -257,19 +257,19 @@ module Character =
               InputState_ : CharacterInputState
               CelSize_ : Vector2 }
 
-        (* Bounds Original Properties *)
-        member this.BoundsOriginal = this.BoundsOriginal_
-        member this.PositionOriginal = this.BoundsOriginal_.Position
-        member this.CenterOriginal = this.BoundsOriginal_.Center
-        member this.BottomOriginal = this.BoundsOriginal_.Bottom
-        member this.SizeOriginal = this.BoundsOriginal_.Size
+        (* Perimeter Original Properties *)
+        member this.PerimeterOriginal = this.PerimeterOriginal_
+        member this.PositionOriginal = this.PerimeterOriginal_.Position
+        member this.CenterOriginal = this.PerimeterOriginal_.Center
+        member this.BottomOriginal = this.PerimeterOriginal_.Bottom
+        member this.SizeOriginal = this.PerimeterOriginal_.Size
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.Size = this.Bounds_.Size
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.Size = this.Perimeter_.Size
 
         (* Helper Properties *)
         member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
@@ -366,22 +366,22 @@ module Character =
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
-                v.Length () <= radius)
+                v.Magnitude <= radius)
         | RadialTarget (radius, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
-                v.Length () <= radius)
+                v.Magnitude <= radius)
         | LineTarget (offset, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
-                if Vector2.Dot (a, b) > 0.0f then
-                    let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
-                    let d = r.Length ()
+                if Vector3.Dot (a, b) > 0.0f then
+                    let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
+                    let d = r.Magnitude
                     d <= offset 
                 else false)
         | SegmentTarget (offset, aimType) ->
@@ -390,10 +390,10 @@ module Character =
             Map.filter (fun _ character ->
                 let a = character.Bottom - source.Bottom
                 let b = target.Bottom - source.Bottom
-                if a.Length () <= b.Length () then
-                    if Vector2.Dot (a, b) > 0.0f then
-                        let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
-                        let d = r.Length ()
+                if a.Magnitude <= b.Magnitude then
+                    if Vector3.Dot (a, b) > 0.0f then
+                        let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
+                        let d = r.Magnitude
                         d <= offset
                     else false
                 else false)
@@ -549,17 +549,14 @@ module Character =
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
-    let updateBounds updater (character : Character) =
-        { character with Bounds_ = updater character.Bounds_ }
+    let updatePerimeter updater (character : Character) =
+        { character with Perimeter_ = updater character.Perimeter_ }
 
     let updatePosition updater (character : Character) =
-        { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
-
-    let updateCenter updater (character : Character) =
-        { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
+        { character with Perimeter_ = character.Position |> updater |> character.Perimeter.WithPosition }
 
     let updateBottom updater (character : Character) =
-        { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+        { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.IsHealthy then
@@ -660,8 +657,8 @@ module Character =
     let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterIndex_ = characterIndex
           CharacterType_ = characterType
           CharacterState_ = characterState
@@ -683,7 +680,7 @@ module Character =
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
                     | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
                 let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
-                let bounds = v4Bounds position size
+                let bounds = box3 position size
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
@@ -701,10 +698,10 @@ module Character =
         | None -> None
 
     let empty =
-        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
         let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterType_ = Ally Jinn
           CharacterState_ = CharacterState.empty
@@ -713,7 +710,7 @@ module Character =
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
           InputState_ = NoInput
-          CelSize_ = Constants.Gameplay.CharacterSize }
+          CelSize_ = Constants.Gameplay.CharacterSize.V2 }
 
 type Character = Character.Character
 
