@@ -245,9 +245,9 @@ type [<NoEquality; NoComparison>] Transform =
         target.Rotation_ <- source.Rotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
-        if source.Flags_ &&& RotationMatrixDirtyMask <> 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
-        if source.Flags_ &&& AffineMatrixDirtyMask <> 0u then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value; target.AffineMatrixDirty <- false
-        if source.Flags_ &&& PerimeterOrientedDirtyMask <> 0u then target.PerimeterOrientedOpt_ <- ref source.PerimeterOrientedOpt_.Value; target.PerimeterOrientedDirty <- false
+        if source.Flags_ &&& RotationMatrixDirtyMask = 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
+        if source.Flags_ &&& AffineMatrixDirtyMask = 0u then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value; target.AffineMatrixDirty <- false
+        if source.Flags_ &&& PerimeterOrientedDirtyMask = 0u then target.PerimeterOrientedOpt_ <- ref source.PerimeterOrientedOpt_.Value; target.PerimeterOrientedDirty <- false
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
