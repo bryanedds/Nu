@@ -23,7 +23,7 @@ type FieldState =
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
-      FieldDestination : Vector2
+      FieldDestination : Vector3
       FieldDirection : Direction
       FieldTransitionTime : int64 }
 
@@ -91,7 +91,7 @@ module Field =
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
                   Direction = direction }
-            CharacterState (colWhite, characterAnimationState)
+            CharacterState (Color.One, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
     let private makeProps fieldType omniSeedState advents pointOfInterest world =
@@ -101,7 +101,7 @@ module Field =
             FieldData.getPropDescriptors omniSeedState fieldData world |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = makePropState time propDescriptor
-                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
+                let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
@@ -130,7 +130,7 @@ module Field =
         Map.toValueArray |>
         Array.choose (fun prop ->
             match prop.PropData with
-            | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Bounds (field.Advents.Contains (Opened id)))
+            | Chest (_, _, id, _, _, _) -> Some (Chest.make prop.Perimeter (field.Advents.Contains (Opened id)))
             | _ -> None)
 
     let getNonWarpPortals field =
@@ -138,7 +138,7 @@ module Field =
         Map.toValueArray |>
         Array.choose (fun prop ->
             match prop.PropData with
-            | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Bounds (field.Advents.IsSupersetOf requirements))
+            | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Perimeter (field.Advents.IsSupersetOf requirements))
             | _ -> None)
 
     let updateFieldType updater field world =
@@ -260,7 +260,7 @@ module Field =
                     Spirits_ =
                         Array.filter (fun (spirit : Spirit) ->
                             let delta = field.Avatar.Bottom - spirit.Center
-                            let distance = delta.Length ()
+                            let distance = delta.Magnitude
                             distance < Constants.Field.SpiritRadius * 1.25f)
                             field.Spirits }
             let field =
@@ -281,7 +281,7 @@ module Field =
                         Array.definitize
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            match Array.tryFind (fun (spirit : Spirit) -> Math.isPointInBounds spirit.Position field.Avatar.LowerBounds) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> Math.isPointInBounds3d spirit.Position field.Avatar.LowerPerimeter) field.Spirits_ with
             | Some spirit ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->

@@ -75,14 +75,14 @@ type [<ReferenceEquality; NoComparison>] Dialog =
 
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
         Content.entityWithContent<TextDispatcher> name
-            [Entity.Bounds <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
+            [Entity.Perimeter <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
                 match dialogOpt with
                 | Some dialog ->
                     match dialog.DialogForm with
-                    | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
-                    | DialogThick -> v4Bounds (v2 -432.0f 78.0f) (v2 864.0f 174.0f)
-                    | DialogNarration -> v4Bounds (v2 -432.0f 78.0f) (v2 864.0f 174.0f)
-                | None -> v4Zero
+                    | DialogThin -> box3 (v3 -432.0f 150.0f 0.0f) (v3 864.0f 90.0f 0.0f)
+                    | DialogThick -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
+                    | DialogNarration -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
+                | None -> box3Zero
              Entity.Elevation == elevation
              Entity.BackgroundImageOpt <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
                 let image =
@@ -105,9 +105,9 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | DialogThin | DialogThick -> Unjustified true
                     | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                 | None -> Unjustified true
-             Entity.Margins == v2 30.0f 30.0f]
+             Entity.Margins == v3 30.0f 30.0f 0.0f]
             [Content.button "Left"
-                [Entity.PositionLocal == v2 186.0f 18.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
@@ -118,7 +118,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | None -> ""
                  Entity.ClickEvent ==> msg promptLeft]
              Content.button "Right"
-                [Entity.PositionLocal == v2 486.0f 18.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog

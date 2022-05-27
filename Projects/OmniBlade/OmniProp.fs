@@ -22,21 +22,21 @@ module Prop =
                 Constants.PrettyPrinter.DetailedThresholdMax)>]
     type [<ReferenceEquality; NoComparison>] Prop =
         private
-            { Bounds_ : Vector4
+            { Perimeter_ : Box3
               Elevation_ : single
               Advents_ : Advent Set
-              PointOfInterest_ : Vector2
+              PointOfInterest_ : Vector3
               PropData_ : PropData
               PropState_ : PropState
               PropId_ : int }
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.BottomInset = this.Bounds_.Bottom + Constants.Field.CharacterBottomOffset
-        member this.Size = this.Bounds_.Size
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.BottomInset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
+        member this.Size = this.Perimeter_.Size
 
         (* Local Properties *)
         member this.Elevation = this.Elevation_
@@ -46,17 +46,17 @@ module Prop =
         member this.PropState = this.PropState_
         member this.PropId = this.PropId_
 
-    let updateBounds updater (prop : Prop) =
-        { prop with Bounds_ = updater prop.Bounds_ }
+    let updatePerimeter updater (prop : Prop) =
+        { prop with Perimeter_ = updater prop.Perimeter_ }
 
     let updatePosition updater (prop : Prop) =
-        { prop with Bounds_ = prop.Position |> updater |> prop.Bounds.WithPosition }
+        { prop with Perimeter_ = prop.Position |> updater |> prop.Perimeter.WithPosition }
 
     let updateCenter updater (prop : Prop) =
-        { prop with Bounds_ = prop.Center |> updater |> prop.Bounds.WithCenter }
+        { prop with Perimeter_ = prop.Center |> updater |> prop.Perimeter.WithCenter }
 
     let updateBottom updater (prop : Prop) =
-        { prop with Bounds_ = prop.Bottom |> updater |> prop.Bounds.WithBottom }
+        { prop with Perimeter_ = prop.Bottom |> updater |> prop.Perimeter.WithBottom }
 
     let updateAdvents updater (prop : Prop) =
         { prop with Advents_ = updater prop.Advents_ }
@@ -68,7 +68,7 @@ module Prop =
         { prop with PropState_ = updater prop.PropState_ }
 
     let make bounds elevation advents pointOfInterest propData propState propId =
-        { Bounds_ = bounds
+        { Perimeter_ = bounds
           Elevation_ = elevation
           Advents_ = advents
           PointOfInterest_ = pointOfInterest
@@ -77,10 +77,10 @@ module Prop =
           PropId_ = propId }
 
     let empty =
-        { Bounds_ = v4Bounds v2Zero Constants.Gameplay.TileSize
+        { Perimeter_ = box3 v3Zero Constants.Gameplay.TileSize
           Elevation_ = 0.0f
           Advents_ = Set.empty
-          PointOfInterest_ = v2Zero
+          PointOfInterest_ = v3Zero
           PropData_ = EmptyProp
           PropState_ = NilState
           PropId_ = 0 }

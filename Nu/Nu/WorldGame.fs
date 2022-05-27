@@ -25,12 +25,21 @@ module WorldGameModule =
         member this.GetDesiredScreenOpt world = World.getDesiredScreenOpt world
         member this.SetDesiredScreenOpt value world = World.setDesiredScreenOpt value world |> snd'
         member this.DesiredScreenOpt = lens Property? DesiredScreenOpt this.GetDesiredScreenOpt this.SetDesiredScreenOpt this
-        member this.GetEyeCenter world = World.getEyeCenter world
-        member this.SetEyeCenter value world = World.setEyeCenterPlus value world |> snd'
-        member this.EyeCenter = lens Property? EyeCenter this.GetEyeCenter this.SetEyeCenter this
-        member this.GetEyeSize world = World.getEyeSize world
-        member this.SetEyeSize value world = World.setEyeSizePlus value world |> snd'
-        member this.EyeSize = lens Property? EyeSize this.GetEyeSize this.SetEyeSize this
+        member this.GetEyePosition2d world = World.getEyePosition2d world
+        member this.SetEyePosition2d value world = World.setEyePosition2dPlus value world |> snd'
+        member this.EyePosition2d = lens Property? EyePosition2d this.GetEyePosition2d this.SetEyePosition2d this
+        member this.GetEyeSize2d world = World.getEyeSize2d world
+        member this.SetEyeSize2d value world = World.setEyeSize2dPlus value world |> snd'
+        member this.EyeSize2d = lens Property? EyeSize2d this.GetEyeSize2d this.SetEyeSize2d this
+        member this.GetEyePosition3d world = World.getEyePosition3d world
+        member this.SetEyePosition3d value world = World.setEyePosition3dPlus value world |> snd'
+        member this.EyePosition3d = lens Property? EyePosition3d this.GetEyePosition3d this.SetEyePosition3d this
+        member this.GetEyeRotation3d world = World.getEyeRotation3d world
+        member this.SetEyeRotation3d value world = World.setEyeRotation3dPlus value world |> snd'
+        member this.EyeRotation3d = lens Property? EyeRotation3d this.GetEyeRotation3d this.SetEyeRotation3d this
+        member this.GetEyeProjection3d world = World.getEyeProjection3d world
+        member this.SetEyeProjection3d value world = World.setEyeProjection3dPlus value world |> snd'
+        member this.EyeProjection3d = lens Property? EyeProjection3d this.GetEyeProjection3d this.SetEyeProjection3d this
         member this.GetScriptFrame world = World.getGameScriptFrame world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetOrder world = World.getGameOrder world
@@ -110,41 +119,34 @@ module WorldGameModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             World.setGameXtensionProperty propertyName property world
 
-        /// Get the view of the eye in absolute terms (world space).
-        member this.GetViewAbsolute (_ : World) = World.getViewAbsolute
+        /// Get the view of the 2d eye in absolute terms (world space).
+        member this.GetViewAbsolute2d (_ : World) = World.getViewAbsolute2d
         
-        /// Get the view of the eye in absolute terms (world space) with translation sliced on
-        /// integers.
-        member this.GetViewAbsoluteI (_ : World) = World.getViewAbsoluteI
-
-        /// The relative view of the eye with original single values. Due to the problems with
+        /// The relative view of the 2d eye with original single values. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
-        member this.GetViewRelative world = World.getViewRelative world
+        member this.GetViewRelative2d world = World.getViewRelative2d world
 
-        /// The relative view of the eye with translation sliced on integers. Good for rendering.
-        member this.GetViewRelativeI world = World.getViewRelativeI world
+        /// Get the bounds of the 2d eye's sight relative to its position.
+        member this.GetViewBoundsRelative2d world = World.getViewBoundsRelative2d world
 
-        /// Get the bounds of the eye's sight relative to its position.
-        member this.GetViewBoundsRelative world = World.getViewBoundsRelative world
+        /// Get the bounds of the 2d eye's sight not relative to its position.
+        member this.GetViewBoundsAbsolute2d world = World.getViewAbsolute2d world
 
-        /// Get the bounds of the eye's sight not relative to its position.
-        member this.GetViewBoundsAbsolute world = World.getViewAbsolute world
+        /// Get the bounds of the 2d eye's sight.
+        member this.GetViewBounds2d absolute world = World.getViewBounds2d absolute world
 
-        /// Get the bounds of the eye's sight.
-        member this.GetViewBounds absolute world = World.getViewBounds absolute world
+        /// Check that the given bounds is within the 2d eye's sight.
+        member this.GetInView2d absolute bounds world = World.isBoundsInView2d absolute bounds world
 
-        /// Check that the given bounds is within the eye's sight.
-        member this.GetInView absolute bounds world = World.isBoundsInView absolute bounds world
+        /// Transform the given mouse position to 2d screen space.
+        member this.MouseToScreen2d mousePosition world = World.mouseToScreen2d mousePosition world
 
-        /// Transform the given mouse position to screen space.
-        member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world
+        /// Transform the given mouse position to 2d world space.
+        member this.MouseToWorld2d absolute mousePosition world = World.mouseToWorld2d absolute mousePosition world
 
-        /// Transform the given mouse position to world space.
-        member this.MouseToWorld absolute mousePosition world = World.mouseToWorld absolute mousePosition world
-
-        /// Transform the given mouse position to entity space.
-        member this.MouseToEntity absolute entityPosition mousePosition world = World.mouseToEntity absolute entityPosition mousePosition world
+        /// Transform the given mouse position to 2d entity space.
+        member this.MouseToEntity2d absolute entityPosition mousePosition world = World.mouseToEntity2d absolute entityPosition mousePosition world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -215,18 +217,14 @@ module WorldGameModule =
         static member getEntities1 world =
             World.getGroups1 world |>
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
-            Seq.concat |>
-            Seq.toArray |>
-            seq
+            Seq.concat
 
         /// Get all the groups in the world.
         [<FunctionBinding "getGroups0">]
         static member getGroups1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getGroups screen world) |>
-            Seq.concat |>
-            Seq.toArray |>
-            seq
+            Seq.concat
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =

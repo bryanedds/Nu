@@ -11,31 +11,31 @@ module Avatar =
 
     type [<ReferenceEquality; NoComparison>] Avatar =
         private
-            { BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
+            { PerimeterOriginal_ : Box3
+              Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
               CollidedBodyShapes_ : BodyShapeSource list
               SeparatedBodyShapes_ : BodyShapeSource list
               IntersectedBodyShapes_ : BodyShapeSource list }
 
-        (* Bounds Original Properties *)
-        member this.BoundsOriginal = this.BoundsOriginal_
-        member this.LowerBoundsOriginal = v4Bounds this.BoundsOriginal_.Position (this.BoundsOriginal_.Size.MapY ((*) 0.5f))
-        member this.PositionOriginal = this.BoundsOriginal_.Position
-        member this.CenterOriginal = this.BoundsOriginal_.Center
-        member this.BottomOriginal = this.BoundsOriginal_.Bottom
-        member this.SizeOriginal = this.BoundsOriginal_.Size
+        (* Perimeter Original Properties *)
+        member this.PerimeterOriginal = this.PerimeterOriginal_
+        member this.LowerPerimeterOriginal = box3 this.PerimeterOriginal_.Position (this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
+        member this.PositionOriginal = this.PerimeterOriginal_.Position
+        member this.CenterOriginal = this.PerimeterOriginal_.Center
+        member this.BottomOriginal = this.PerimeterOriginal_.Bottom
+        member this.SizeOriginal = this.PerimeterOriginal_.Size
 
-        (* Bounds Properties *)
-        member this.Bounds = this.Bounds_
-        member this.Position = this.Bounds_.Position
-        member this.Center = this.Bounds_.Center
-        member this.Bottom = this.Bounds_.Bottom
-        member this.BottomOffset = this.Bounds_.Bottom + Constants.Field.CharacterBottomOffset
-        member this.Size = this.Bounds_.Size
-        member this.LowerBounds = v4Bounds (this.Bounds_.Position + v2 (this.Bounds_.Size.X * 0.25f) 0.0f) (this.Bounds_.Size * 0.5f)
-        member this.LowerCenter = this.LowerBounds.Center
+        (* Perimeter Properties *)
+        member this.Perimeter = this.Perimeter_
+        member this.Position = this.Perimeter_.Position
+        member this.Center = this.Perimeter_.Center
+        member this.Bottom = this.Perimeter_.Bottom
+        member this.BottomOffset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
+        member this.Size = this.Perimeter_.Size
+        member this.LowerPerimeter = box3 (this.Perimeter_.Position + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f) (this.Perimeter_.Size * 0.5f)
+        member this.LowerCenter = this.LowerPerimeter.Center
 
         (* Animation Properties *)
         member this.StartTime = this.CharacterAnimationState_.StartTime
@@ -76,20 +76,20 @@ module Avatar =
         then { avatar with IntersectedBodyShapes_ = bodyShapes }
         else avatar
 
-    let updateBounds updater (avatar : Avatar) =
-        let bounds = updater avatar.Bounds_
-        if bounds <> avatar.Bounds
-        then { avatar with Bounds_ = bounds }
+    let updatePerimeter updater (avatar : Avatar) =
+        let bounds = updater avatar.Perimeter_
+        if bounds <> avatar.Perimeter
+        then { avatar with Perimeter_ = bounds }
         else avatar
 
     let updatePosition updater (avatar : Avatar) =
-        updateBounds (fun bounds -> bounds.Position |> updater |> bounds.WithPosition) avatar
+        updatePerimeter (fun bounds -> bounds.Position |> updater |> bounds.WithPosition) avatar
 
     let updateCenter updater (avatar : Avatar) =
-        updateBounds (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
+        updatePerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
 
     let updateBottom updater (avatar : Avatar) =
-        updateBounds (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
+        updatePerimeter (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
 
     let updateCharacterAnimationState updater (avatar : Avatar) =
         let characterAnimationState = updater avatar.CharacterAnimationState_
@@ -102,7 +102,7 @@ module Avatar =
 
     let lookAt bottomOffset (avatar : Avatar) =
         let delta = bottomOffset - avatar.BottomOffset
-        let direction = Direction.ofVector2 delta
+        let direction = Direction.ofVector3 delta
         updateDirection (constant direction) avatar
 
     let animate time characterAnimationType avatar =
@@ -116,8 +116,8 @@ module Avatar =
 
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CollidedBodyShapes_ = []
@@ -125,9 +125,9 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let empty =
-        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        { BoundsOriginal_ = bounds
-          Bounds_ = bounds
+        let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
+        { PerimeterOriginal_ = bounds
+          Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CollidedBodyShapes_ = []
@@ -135,12 +135,12 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let initial =
-        let position = v2 2064.0f 48.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
-        let bounds = v4Bounds position Constants.Gameplay.CharacterSize
+        let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
+        let bounds = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
         { empty with
-            BoundsOriginal_ = bounds
-            Bounds_ = bounds
+            PerimeterOriginal_ = bounds
+            Perimeter_ = bounds
             CharacterAnimationState_ = characterAnimationState }
 
 type Avatar = Avatar.Avatar

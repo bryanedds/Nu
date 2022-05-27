@@ -6,7 +6,7 @@ open System
 
 /// IO artifacts passively produced and consumed by Nu.
 type [<NoEquality; NoComparison>] View =
-    | Render of single * single * obj AssetTag * RenderDescriptor
+    | Render2d of single * single * obj AssetTag * RenderDescriptor
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
@@ -14,6 +14,7 @@ type [<NoEquality; NoComparison>] View =
     | SpawnEmitter of string * Particles.BasicEmitterDescriptor
     | Tag of string * obj
     | Views of View array
+    | SegmentedViews of View SegmentedArray
 
 [<RequireQualifiedAccess>]
 module View =
@@ -24,10 +25,6 @@ module View =
             match view with
             | Views views -> for view in views do yield! toSeq view
             | _ -> yield view }
-
-    /// Convert a view to an array of zero or more views.
-    let rec toArray view =
-        view |> toSeq |> Seq.toArray
 
     /// The empty view.
     let empty = Views [||]

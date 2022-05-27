@@ -109,43 +109,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Vector4i"/> struct.
-        /// </summary>
-        /// <param name="v">The Vector2 to copy components from.</param>
-        public Vector4i(Vector2i v)
-        {
-            X = v.X;
-            Y = v.Y;
-            Z = 0;
-            W = 0;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Vector4i"/> struct.
-        /// </summary>
-        /// <param name="v">The <see cref="Vector3i"/> to copy components from.</param>
-        public Vector4i(Vector3i v)
-        {
-            X = v.X;
-            Y = v.Y;
-            Z = v.Z;
-            W = 0;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Vector4i"/> struct.
-        /// </summary>
-        /// <param name="v">The <see cref="Vector3i"/> to copy components from.</param>
-        /// <param name="w">The w component of the new Vector4.</param>
-        public Vector4i(Vector3i v, int w)
-        {
-            X = v.X;
-            Y = v.Y;
-            Z = v.Z;
-            W = w;
-        }
-
-        /// <summary>
         /// Gets or sets the value at the index of the vector.
         /// </summary>
         /// <param name="index">The index of the component from the vector.</param>
@@ -186,7 +149,7 @@ namespace Nu
         [Pure]
         public static Vector4i Add(Vector4i a, Vector4i b)
         {
-            Add(ref a, ref b, out a);
+            Add(in a, in b, out a);
             return a;
         }
 
@@ -196,7 +159,7 @@ namespace Nu
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <param name="result">Result of operation.</param>
-        public static void Add(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void Add(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X + b.X;
             result.Y = a.Y + b.Y;
@@ -213,7 +176,7 @@ namespace Nu
         [Pure]
         public static Vector4i Subtract(Vector4i a, Vector4i b)
         {
-            Subtract(ref a, ref b, out a);
+            Subtract(in a, in b, out a);
             return a;
         }
 
@@ -223,7 +186,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">Result of subtraction.</param>
-        public static void Subtract(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void Subtract(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X - b.X;
             result.Y = a.Y - b.Y;
@@ -240,7 +203,7 @@ namespace Nu
         [Pure]
         public static Vector4i Multiply(Vector4i vector, int scale)
         {
-            Multiply(ref vector, scale, out vector);
+            Multiply(in vector, scale, out vector);
             return vector;
         }
 
@@ -250,7 +213,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Vector4i vector, int scale, out Vector4i result)
+        public static void Multiply(in Vector4i vector, int scale, out Vector4i result)
         {
             result.X = vector.X * scale;
             result.Y = vector.Y * scale;
@@ -267,7 +230,7 @@ namespace Nu
         [Pure]
         public static Vector4i Multiply(Vector4i vector, Vector4i scale)
         {
-            Multiply(ref vector, ref scale, out vector);
+            Multiply(in vector, in scale, out vector);
             return vector;
         }
 
@@ -277,7 +240,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Vector4i vector, ref Vector4i scale, out Vector4i result)
+        public static void Multiply(in Vector4i vector, in Vector4i scale, out Vector4i result)
         {
             result.X = vector.X * scale.X;
             result.Y = vector.Y * scale.Y;
@@ -294,7 +257,7 @@ namespace Nu
         [Pure]
         public static Vector4i Divide(Vector4i vector, int scale)
         {
-            Divide(ref vector, scale, out vector);
+            Divide(in vector, scale, out vector);
             return vector;
         }
 
@@ -304,7 +267,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Vector4i vector, int scale, out Vector4i result)
+        public static void Divide(in Vector4i vector, int scale, out Vector4i result)
         {
             result.X = vector.X / scale;
             result.Y = vector.Y / scale;
@@ -321,7 +284,7 @@ namespace Nu
         [Pure]
         public static Vector4i Divide(Vector4i vector, Vector4i scale)
         {
-            Divide(ref vector, ref scale, out vector);
+            Divide(in vector, in scale, out vector);
             return vector;
         }
 
@@ -331,7 +294,7 @@ namespace Nu
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Vector4i vector, ref Vector4i scale, out Vector4i result)
+        public static void Divide(in Vector4i vector, in Vector4i scale, out Vector4i result)
         {
             result.X = vector.X / scale.X;
             result.Y = vector.Y / scale.Y;
@@ -361,7 +324,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise minimum.</param>
-        public static void ComponentMin(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void ComponentMin(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X < b.X ? a.X : b.X;
             result.Y = a.Y < b.Y ? a.Y : b.Y;
@@ -391,7 +354,7 @@ namespace Nu
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise maximum.</param>
-        public static void ComponentMax(ref Vector4i a, ref Vector4i b, out Vector4i result)
+        public static void ComponentMax(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X > b.X ? a.X : b.X;
             result.Y = a.Y > b.Y ? a.Y : b.Y;
@@ -423,931 +386,12 @@ namespace Nu
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <param name="result">The clamped vector.</param>
-        public static void Clamp(ref Vector4i vec, ref Vector4i min, ref Vector4i max, out Vector4i result)
+        public static void Clamp(in Vector4i vec, in Vector4i min, in Vector4i max, out Vector4i result)
         {
             result.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
             result.Y = vec.Y < min.Y ? min.Y : vec.Y > max.Y ? max.Y : vec.Y;
             result.Z = vec.Z < min.Z ? min.Z : vec.Z > max.Z ? max.Z : vec.Z;
             result.W = vec.W < min.W ? min.W : vec.W > max.W ? max.W : vec.W;
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the X and Y components of this instance.
-        /// </summary>
-        public Vector2i Xy
-        {
-            get => new Vector2i(X, Y);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the X and Z components of this instance.
-        /// </summary>
-        public Vector2i Xz
-        {
-            get => new Vector2i(X, Z);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the X and W components of this instance.
-        /// </summary>
-        public Vector2i Xw
-        {
-            get => new Vector2i(X, W);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Y and X components of this instance.
-        /// </summary>
-        public Vector2i Yx
-        {
-            get => new Vector2i(Y, X);
-            set
-            {
-                Y = value.X;
-                X = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Y and Z components of this instance.
-        /// </summary>
-        public Vector2i Yz
-        {
-            get => new Vector2i(Y, Z);
-            set
-            {
-                Y = value.X;
-                Z = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Y and W components of this instance.
-        /// </summary>
-        public Vector2i Yw
-        {
-            get => new Vector2i(Y, W);
-            set
-            {
-                Y = value.X;
-                W = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Z and X components of this instance.
-        /// </summary>
-        public Vector2i Zx
-        {
-            get => new Vector2i(Z, X);
-            set
-            {
-                Z = value.X;
-                X = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Z and Y components of this instance.
-        /// </summary>
-        public Vector2i Zy
-        {
-            get => new Vector2i(Z, Y);
-            set
-            {
-                Z = value.X;
-                Y = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the Z and W components of this instance.
-        /// </summary>
-        public Vector2i Zw
-        {
-            get => new Vector2i(Z, W);
-            set
-            {
-                Z = value.X;
-                W = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the W and X components of this instance.
-        /// </summary>
-        public Vector2i Wx
-        {
-            get => new Vector2i(W, X);
-            set
-            {
-                W = value.X;
-                X = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the W and Y components of this instance.
-        /// </summary>
-        public Vector2i Wy
-        {
-            get => new Vector2i(W, Y);
-            set
-            {
-                W = value.X;
-                Y = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector2i"/> with the W and Z components of this instance.
-        /// </summary>
-        public Vector2i Wz
-        {
-            get => new Vector2i(W, Z);
-            set
-            {
-                W = value.X;
-                Z = value.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, Y, and Z components of this instance.
-        /// </summary>
-        public Vector3i Xyz
-        {
-            get => new Vector3i(X, Y, Z);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, Y, and Z components of this instance.
-        /// </summary>
-        public Vector3i Xyw
-        {
-            get => new Vector3i(X, Y, W);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, Z, and Y components of this instance.
-        /// </summary>
-        public Vector3i Xzy
-        {
-            get => new Vector3i(X, Z, Y);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, Z, and W components of this instance.
-        /// </summary>
-        public Vector3i Xzw
-        {
-            get => new Vector3i(X, Z, W);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, W, and Y components of this instance.
-        /// </summary>
-        public Vector3i Xwy
-        {
-            get => new Vector3i(X, W, Y);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the X, W, and Z components of this instance.
-        /// </summary>
-        public Vector3i Xwz
-        {
-            get => new Vector3i(X, W, Z);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, X, and Z components of this instance.
-        /// </summary>
-        public Vector3i Yxz
-        {
-            get => new Vector3i(Y, X, Z);
-            set
-            {
-                Y = value.X;
-                X = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, X, and W components of this instance.
-        /// </summary>
-        public Vector3i Yxw
-        {
-            get => new Vector3i(Y, X, W);
-            set
-            {
-                Y = value.X;
-                X = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, Z, and X components of this instance.
-        /// </summary>
-        public Vector3i Yzx
-        {
-            get => new Vector3i(Y, Z, X);
-            set
-            {
-                Y = value.X;
-                Z = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, Z, and W components of this instance.
-        /// </summary>
-        public Vector3i Yzw
-        {
-            get => new Vector3i(Y, Z, W);
-            set
-            {
-                Y = value.X;
-                Z = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, W, and X components of this instance.
-        /// </summary>
-        public Vector3i Ywx
-        {
-            get => new Vector3i(Y, W, X);
-            set
-            {
-                Y = value.X;
-                W = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Y, W, and Z components of this instance.
-        /// </summary>
-        public Vector3i Ywz
-        {
-            get => new Vector3i(Y, W, Z);
-            set
-            {
-                Y = value.X;
-                W = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, X, and Y components of this instance.
-        /// </summary>
-        public Vector3i Zxy
-        {
-            get => new Vector3i(Z, X, Y);
-            set
-            {
-                Z = value.X;
-                X = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, X, and W components of this instance.
-        /// </summary>
-        public Vector3i Zxw
-        {
-            get => new Vector3i(Z, X, W);
-            set
-            {
-                Z = value.X;
-                X = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, Y, and X components of this instance.
-        /// </summary>
-        public Vector3i Zyx
-        {
-            get => new Vector3i(Z, Y, X);
-            set
-            {
-                Z = value.X;
-                Y = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, Y, and W components of this instance.
-        /// </summary>
-        public Vector3i Zyw
-        {
-            get => new Vector3i(Z, Y, W);
-            set
-            {
-                Z = value.X;
-                Y = value.Y;
-                W = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, W, and X components of this instance.
-        /// </summary>
-        public Vector3i Zwx
-        {
-            get => new Vector3i(Z, W, X);
-            set
-            {
-                Z = value.X;
-                W = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the Z, W, and Y components of this instance.
-        /// </summary>
-        public Vector3i Zwy
-        {
-            get => new Vector3i(Z, W, Y);
-            set
-            {
-                Z = value.X;
-                W = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, X, and Y components of this instance.
-        /// </summary>
-        public Vector3i Wxy
-        {
-            get => new Vector3i(W, X, Y);
-            set
-            {
-                W = value.X;
-                X = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, X, and Z components of this instance.
-        /// </summary>
-        public Vector3i Wxz
-        {
-            get => new Vector3i(W, X, Z);
-            set
-            {
-                W = value.X;
-                X = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, Y, and X components of this instance.
-        /// </summary>
-        public Vector3i Wyx
-        {
-            get => new Vector3i(W, Y, X);
-            set
-            {
-                W = value.X;
-                Y = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, Y, and Z components of this instance.
-        /// </summary>
-        public Vector3i Wyz
-        {
-            get => new Vector3i(W, Y, Z);
-            set
-            {
-                W = value.X;
-                Y = value.Y;
-                Z = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, Z, and X components of this instance.
-        /// </summary>
-        public Vector3i Wzx
-        {
-            get => new Vector3i(W, Z, X);
-            set
-            {
-                W = value.X;
-                Z = value.Y;
-                X = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector3i"/> with the W, Z, and Y components of this instance.
-        /// </summary>
-        public Vector3i Wzy
-        {
-            get => new Vector3i(W, Z, Y);
-            set
-            {
-                W = value.X;
-                Z = value.Y;
-                Y = value.Z;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the X, Y, W, and Z components of this instance.
-        /// </summary>
-        public Vector4i Xywz
-        {
-            get => new Vector4i(X, Y, W, Z);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-                W = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the X, Z, Y, and W components of this instance.
-        /// </summary>
-        public Vector4i Xzyw
-        {
-            get => new Vector4i(X, Z, Y, W);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-                Y = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the X, Z, W, and Y components of this instance.
-        /// </summary>
-        public Vector4i Xzwy
-        {
-            get => new Vector4i(X, Z, W, Y);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-                W = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the X, W, Y, and Z components of this instance.
-        /// </summary>
-        public Vector4i Xwyz
-        {
-            get => new Vector4i(X, W, Y, Z);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-                Y = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the X, W, Z, and Y components of this instance.
-        /// </summary>
-        public Vector4i Xwzy
-        {
-            get => new Vector4i(X, W, Z, Y);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-                Z = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, X, Z, and W components of this instance.
-        /// </summary>
-        public Vector4i Yxzw
-        {
-            get => new Vector4i(Y, X, Z, W);
-            set
-            {
-                Y = value.X;
-                X = value.Y;
-                Z = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, X, W, and Z components of this instance.
-        /// </summary>
-        public Vector4i Yxwz
-        {
-            get => new Vector4i(Y, X, W, Z);
-            set
-            {
-                Y = value.X;
-                X = value.Y;
-                W = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, Y, Z, and W components of this instance.
-        /// </summary>
-        public Vector4i Yyzw
-        {
-            get => new Vector4i(Y, Y, Z, W);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-                Z = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, Y, W, and Z components of this instance.
-        /// </summary>
-        public Vector4i Yywz
-        {
-            get => new Vector4i(Y, Y, W, Z);
-            set
-            {
-                X = value.X;
-                Y = value.Y;
-                W = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, Z, X, and W components of this instance.
-        /// </summary>
-        public Vector4i Yzxw
-        {
-            get => new Vector4i(Y, Z, X, W);
-            set
-            {
-                Y = value.X;
-                Z = value.Y;
-                X = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, Z, W, and X components of this instance.
-        /// </summary>
-        public Vector4i Yzwx
-        {
-            get => new Vector4i(Y, Z, W, X);
-            set
-            {
-                Y = value.X;
-                Z = value.Y;
-                W = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, W, X, and Z components of this instance.
-        /// </summary>
-        public Vector4i Ywxz
-        {
-            get => new Vector4i(Y, W, X, Z);
-            set
-            {
-                Y = value.X;
-                W = value.Y;
-                X = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Y, W, Z, and X components of this instance.
-        /// </summary>
-        public Vector4i Ywzx
-        {
-            get => new Vector4i(Y, W, Z, X);
-            set
-            {
-                Y = value.X;
-                W = value.Y;
-                Z = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, X, Y, and Z components of this instance.
-        /// </summary>
-        public Vector4i Zxyw
-        {
-            get => new Vector4i(Z, X, Y, W);
-            set
-            {
-                Z = value.X;
-                X = value.Y;
-                Y = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, X, W, and Y components of this instance.
-        /// </summary>
-        public Vector4i Zxwy
-        {
-            get => new Vector4i(Z, X, W, Y);
-            set
-            {
-                Z = value.X;
-                X = value.Y;
-                W = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, Y, X, and W components of this instance.
-        /// </summary>
-        public Vector4i Zyxw
-        {
-            get => new Vector4i(Z, Y, X, W);
-            set
-            {
-                Z = value.X;
-                Y = value.Y;
-                X = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, Y, W, and X components of this instance.
-        /// </summary>
-        public Vector4i Zywx
-        {
-            get => new Vector4i(Z, Y, W, X);
-            set
-            {
-                Z = value.X;
-                Y = value.Y;
-                W = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, W, X, and Y components of this instance.
-        /// </summary>
-        public Vector4i Zwxy
-        {
-            get => new Vector4i(Z, W, X, Y);
-            set
-            {
-                Z = value.X;
-                W = value.Y;
-                X = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, W, Y, and X components of this instance.
-        /// </summary>
-        public Vector4i Zwyx
-        {
-            get => new Vector4i(Z, W, Y, X);
-            set
-            {
-                Z = value.X;
-                W = value.Y;
-                Y = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the Z, W, Z, and Y components of this instance.
-        /// </summary>
-        public Vector4i Zwzy
-        {
-            get => new Vector4i(Z, W, Z, Y);
-            set
-            {
-                X = value.X;
-                W = value.Y;
-                Z = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, X, Y, and Z components of this instance.
-        /// </summary>
-        public Vector4i Wxyz
-        {
-            get => new Vector4i(W, X, Y, Z);
-            set
-            {
-                W = value.X;
-                X = value.Y;
-                Y = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, X, Z, and Y components of this instance.
-        /// </summary>
-        public Vector4i Wxzy
-        {
-            get => new Vector4i(W, X, Z, Y);
-            set
-            {
-                W = value.X;
-                X = value.Y;
-                Z = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, Y, X, and Z components of this instance.
-        /// </summary>
-        public Vector4i Wyxz
-        {
-            get => new Vector4i(W, Y, X, Z);
-            set
-            {
-                W = value.X;
-                Y = value.Y;
-                X = value.Z;
-                Z = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, Y, Z, and X components of this instance.
-        /// </summary>
-        public Vector4i Wyzx
-        {
-            get => new Vector4i(W, Y, Z, X);
-            set
-            {
-                W = value.X;
-                Y = value.Y;
-                Z = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, Z, X, and Y components of this instance.
-        /// </summary>
-        public Vector4i Wzxy
-        {
-            get => new Vector4i(W, Z, X, Y);
-            set
-            {
-                W = value.X;
-                Z = value.Y;
-                X = value.Z;
-                Y = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, Z, Y, and X components of this instance.
-        /// </summary>
-        public Vector4i Wzyx
-        {
-            get => new Vector4i(W, Z, Y, X);
-            set
-            {
-                W = value.X;
-                Z = value.Y;
-                Y = value.Z;
-                X = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a <see cref="Vector4i"/> with the W, Z, Y, and W components of this instance.
-        /// </summary>
-        public Vector4i Wzyw
-        {
-            get => new Vector4i(W, Z, Y, W);
-            set
-            {
-                X = value.X;
-                Z = value.Y;
-                Y = value.Z;
-                W = value.W;
-            }
-        }
-
-        /// <summary>
-        /// Gets a <see cref="Vector4"/> object with the same component values as the <see cref="Vector4i"/> instance.
-        /// </summary>
-        /// <returns>The resulting <see cref="Vector4"/> instance.</returns>
-        public Vector4 ToVector4()
-        {
-            return new Vector4(X, Y, Z, W);
-        }
-
-        /// <summary>
-        /// Gets a <see cref="Vector4"/> object with the same component values as the <see cref="Vector4i"/> instance.
-        /// </summary>
-        /// <param name="input">The given <see cref="Vector4i"/> to convert.</param>
-        /// <param name="result">The resulting <see cref="Vector4"/>.</param>
-        public static void ToVector4(ref Vector4i input, out Vector4 result)
-        {
-            result.X = input.X;
-            result.Y = input.Y;
-            result.Z = input.Z;
-            result.W = input.W;
         }
 
         /// <summary>
@@ -1485,63 +529,11 @@ namespace Nu
             return !left.Equals(right);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Vector4i"/> struct using a tuple containing the component
-        /// values.
-        /// </summary>
-        /// <param name="values">A tuple containing the component values.</param>
-        /// <returns>A new instance of the <see cref="Vector4i"/> struct with the given component values.</returns>
-        [Pure]
-        public static implicit operator Vector4i((int X, int Y, int Z, int W) values)
-        {
-            return new Vector4i(values.X, values.Y, values.Z, values.W);
-        }
-
-        private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("({0}{4} {1}{4} {2}{4} {3})", X, Y, Z, W, ListSeparator);
+            return string.Format("({0}, {1}, {2}, {3})", X, Y, Z, W);
         }
-
-        /// <summary>
-        /// Deconstructs the vector into it's individual components.
-        /// </summary>
-        /// <param name="x">The X component of the vector.</param>
-        /// <param name="y">The Y component of the vector.</param>
-        /// <param name="z">The Z component of the vector.</param>
-        /// <param name="w">The W component of the vector.</param>
-        [Pure]
-        public void Deconstruct(out int x, out int y, out int z, out int w)
-        {
-            x = X;
-            y = Y;
-            z = Z;
-            w = W;
-        }
-
-        public Vector2i Position { get { return new Vector2i(X, Y); } }
-
-        public Vector2i Size { get { return new Vector2i(Z - X, W - Y); } }
-
-        public Vector2i Center { get { return new Vector2i(X + Size.X / 2, Y + Size.Y / 2); } }
-
-        public Vector2i Bottom { get { return new Vector2i(X + Size.X / 2, Y); } }
-
-        public Vector2i BottomLeft { get { return new Vector2i(X, Y); } }
-
-        public Vector2i BottomRight { get { return new Vector2i(X + Z, Y); } }
-
-        public Vector2i Top { get { return new Vector2i(X + Size.X / 2, Y + Size.Y); } }
-
-        public Vector2i TopLeft { get { return new Vector2i(X, Y + W); } }
-
-        public Vector2i TopRight { get { return new Vector2i(X + Z, Y + W); } }
-
-        public Vector2i Left { get { return new Vector2i(X, Y + Size.Y / 2); } }
-
-        public Vector2i Right { get { return new Vector2i(X + Size.X, Y + Size.Y / 2); } }
 
         /// <summary>
         /// Returns the hashcode for this instance.

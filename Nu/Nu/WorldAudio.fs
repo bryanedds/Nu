@@ -14,11 +14,8 @@ module WorldAudio =
         static member internal getAudioPlayer world =
             world.Subsystems.AudioPlayer
 
-        static member internal setAudioPlayer audioPlayer world =
-            World.updateSubsystems (fun subsystems -> { subsystems with AudioPlayer = audioPlayer }) world
-
-        static member internal updateAudioPlayer updater world =
-            World.setAudioPlayer (updater (World.getAudioPlayer world)) world
+        static member internal withAudioPlayer updater world =
+            updater (World.getAudioPlayer world)
 
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =

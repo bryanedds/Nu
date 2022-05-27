@@ -192,11 +192,11 @@ module Battle =
     let isCharacterWounded characterIndex battle =
         (getCharacter characterIndex battle).IsWounded
 
-    let getCharacterBoundsOriginal characterIndex battle =
-        (getCharacter characterIndex battle).BoundsOriginal
+    let getCharacterPerimeterOriginal characterIndex battle =
+        (getCharacter characterIndex battle).PerimeterOriginal
 
-    let getCharacterBounds characterIndex battle =
-        (getCharacter characterIndex battle).Bounds
+    let getCharacterPerimeter characterIndex battle =
+        (getCharacter characterIndex battle).Perimeter
 
     let getCharacterAnimationFinished time characterIndex battle =
         getCharacterBy (Character.getAnimationFinished time) characterIndex battle
@@ -461,7 +461,7 @@ module Battle =
                     | Left () -> None
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
-                        let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
+                        let position = v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
                         Character.tryMakeEnemy allyCount enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
@@ -509,12 +509,12 @@ module Battle =
                         let size = Constants.Gameplay.CharacterSize
                         let celSize = Constants.Gameplay.CharacterCelSize
                         let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
-                        let bounds = v4Bounds position size
+                        let bounds = box3 position size
                         let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
                         let animationSheet = characterData.AnimationSheet
-                        let direction = Direction.ofVector2 -bounds.Bottom
+                        let direction = Direction.ofVector3 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
                         let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
                         character

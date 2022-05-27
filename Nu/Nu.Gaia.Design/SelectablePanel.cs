@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
-    public class SelectablePanel : Panel
+    public class SelectablePanel : OpenGL.GlControl
     {
         public SelectablePanel()
         {

@@ -255,11 +255,11 @@ module WorldModuleEntity =
                 if not oldOmnipresent then
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let struct (changed, world) = World.updateEntityStateInternal updater oldEntityState entity world
                     let world =
                         if changed
-                        then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                        then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                         else world
                     struct (changed, world)
                 else World.updateEntityStateInternal updater oldEntityState entity world
@@ -287,53 +287,48 @@ module WorldModuleEntity =
                     world properties
             else world
 
-        static member inline internal publishTransformEvents (oldTransform : Transform inref, newTransform : Transform inref, publishChangeBindings, publishChangeEvents, entity, world) =
+        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeBindings, publishChangeEvents, entity, world) =
             if publishChangeEvents || publishChangeBindings then
-                let positionChanged = v2Neq newTransform.Position oldTransform.Position
-                let sizeChanged = v2Neq newTransform.Size oldTransform.Size
-                let rotationChanged = newTransform.Rotation <> oldTransform.Rotation
+                let positionChanged = v3Neq newTransform.Position oldTransform.Position
+                let scaleChanged = v3Neq newTransform.Scale oldTransform.Scale
+                let offsetChanged = v3Neq newTransform.Offset oldTransform.Offset
+                let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
+                let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
+                let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
+                let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged
                 let world = World.publishEntityChange Property? Transform newTransform publishChangeBindings publishChangeEvents entity world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds newTransform.Position newTransform.Size) publishChangeBindings publishChangeEvents entity world else world
-                let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (newTransform.Position + newTransform.Size * 0.5f) publishChangeBindings publishChangeEvents entity world else world
-                let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (newTransform.Position + newTransform.Size.WithY 0.0f * 0.5f) publishChangeBindings publishChangeEvents entity world else world
-                let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
                 let world =
-                    if rotationChanged then
-                        let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees newTransform.Rotation) publishChangeBindings publishChangeEvents entity world
+                    if perimeterUnscaledChanged then
+                        // OPTIMIZATION: eliding Bounds, PerimeterOriented, PerimenterCenter, and PerimeterBottom change events for speed.
+                        let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? PerimeterUnscaled newTransform.PerimeterUnscaled publishChangeBindings publishChangeEvents entity world
+                        let world = if positionChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
+                        let world = if scaleChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
+                        let world = if offsetChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
+                        let world = if sizeChanged then World.publishEntityChange Property? Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
+                        world
+                    else world
+                let world =
+                    if anglesChanged then
                         let world = World.publishEntityChange Property? Rotation newTransform.Rotation publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Angles newTransform.Angles publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Degrees (Math.radiansToDegrees3d newTransform.Angles) publishChangeBindings publishChangeEvents entity world
                         world
                     else world
                 let world =
                     if elevationChanged
                     then World.publishEntityChange Property? Elevation newTransform.Elevation publishChangeBindings publishChangeEvents entity world
                     else world
+                let world =
+                    if overflowChanged
+                    then World.publishEntityChange Property? Overflow newTransform.Overflow publishChangeBindings publishChangeEvents entity world
+                    else world
                 world
             else world
 
         static member internal getEntityExists entity world =
             notNull (World.getEntityStateOpt entity world :> obj)
-
-        static member internal getEntityStateBoundsMax entityState =
-            // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
-            let transform = &entityState.Transform
-            match transform.Rotation with
-            | 0.0f ->
-                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
-                boundsOverflow // no need to transform when unrotated
-            | _ ->
-                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
-                let position = boundsOverflow.Position
-                let size = boundsOverflow.Size
-                let center = position + size * 0.5f
-                let corner = position + size
-                let centerToCorner = corner - center
-                let quaternion = Quaternion.CreateFromAxisAngle (Vector3.UnitZ, Math.degreesToRadians 45.0f)
-                let newSizeOver2 = v2Dup (Vector2.Transform (centerToCorner, quaternion)).Y
-                let newPosition = center - newSizeOver2
-                let newSize = newSizeOver2 * 2.0f
-                v4Bounds newPosition newSize
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
@@ -411,12 +406,19 @@ module WorldModuleEntity =
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal getEntityPositionLocal entity world = (World.getEntityState entity world).PositionLocal
-        static member internal getEntitySize entity world = (World.getEntityState entity world).Size
-        static member internal getEntityAngle entity world = Math.radiansToDegrees (World.getEntityState entity world).Rotation
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
+        static member internal getEntityRotationLocal entity world = (World.getEntityState entity world).RotationLocal
+        static member internal getEntityScale entity world = (World.getEntityState entity world).Scale
+        static member internal getEntityScaleLocal entity world = (World.getEntityState entity world).ScaleLocal
+        static member internal getEntityOffset entity world = (World.getEntityState entity world).Offset
+        static member internal getEntityAngles entity world = (World.getEntityState entity world).Angles
+        static member internal getEntityAnglesLocal entity world = (World.getEntityState entity world).AnglesLocal
+        static member internal getEntityDegrees entity world = (World.getEntityState entity world).Degrees
+        static member internal getEntityDegreesLocal entity world = Math.radiansToDegrees3d (World.getEntityState entity world).AnglesLocal
+        static member internal getEntitySize entity world = (World.getEntityState entity world).Size
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
         static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
-        static member internal getEntityFlags entity world = (World.getEntityState entity world).Transform.Flags
+        static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChangeBindings entity world = (World.getEntityState entity world).PublishChangeBindings
@@ -431,15 +433,17 @@ module WorldModuleEntity =
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
+        static member internal getEntityIsPhysical entity world = (World.getEntityState entity world).IsPhysical
+        static member internal getEntityIsCentered entity world = (World.getEntityState entity world).IsCentered
+        static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.WorldExtension.DestructionListRev
-        static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
-        static member internal getEntityId entity world = (World.getEntityState entity world).Id
+        static member internal getEntityId entity world = (World.getEntityState entity world).IdRef.Value
         static member internal getEntitySurnames entity world = (World.getEntityState entity world).Surnames
         static member internal getEntityName entity world = (World.getEntityState entity world).Surnames |> Array.last
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
@@ -452,16 +456,25 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
+
+        static member inline internal getEntityRotationMatrix entity world =
+            (World.getEntityState entity world).Transform.RotationMatrix
+
+        static member inline internal getEntityAffineMatrix entity world =
+            (World.getEntityState entity world).Transform.AffineMatrix
+        
+        static member internal getEntityAffineMatrixLocal entity world =
+            let entityState = World.getEntityState entity world
+            // TODO: 3D: optimize this hella!
+            let positionMatrix = Matrix4x4.CreateTranslation entityState.PositionLocal
+            let rotationMatrix = Matrix4x4.CreateFromQuaternion entityState.RotationLocal
+            let scaleMatrix = Matrix4x4.CreateScale entityState.ScaleLocal
+            positionMatrix * rotationMatrix * scaleMatrix
 
         static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
-            | (true, mounters) ->
-                mounters |>
-                Array.ofSeq |>
-                Array.filter (flip World.getEntityExists world) |>
-                seq
+            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SegmentedArray.ofSeq |> seq
             | (false, _) -> Seq.empty
 
         static member internal traverseEntityMounters effect entity (world : World) =
@@ -510,15 +523,34 @@ module WorldModuleEntity =
                 | (false, _) -> world
             | None -> world
 
+        static member internal propagateEntityAffineMatrix3 mount mounter world =
+            let mounterState = World.getEntityState mounter world
+            if World.isHalted world || not mounterState.IsPhysical then
+                let affineMatrixWorld = World.getEntityAffineMatrix mount world
+                let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
+                let affineMatrix = affineMatrixWorld * affineMatrixLocal
+                let position = affineMatrix.Translation
+                let rotation = affineMatrix.Rotation ()
+                let scale = affineMatrix.Scale ()
+                let mutable transform = mounterState.Transform
+                transform.Position <- position
+                transform.Rotation <- rotation
+                transform.Scale <- scale
+                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+            else world
+
         static member internal propagateEntityProperties3 mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
             | Some newMount when World.getEntityExists newMount world ->
-                let world = World.propagateEntityPosition3 newMount entity world
+                let world = World.propagateEntityAffineMatrix3 newMount entity world
                 let world = World.propagateEntityElevation3 newMount entity world
                 let world = World.propagateEntityEnabled3 newMount entity world
                 let world = World.propagateEntityVisible3 newMount entity world
                 world
             | _ -> world
+
+        static member internal propagateEntityAffineMatrix entity world =
+            World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
 
         static member internal setEntityMountOpt value entity world =
             let newMountOpt = value
@@ -555,12 +587,12 @@ module WorldModuleEntity =
                 else world
             struct (changed, world)
 
-        static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity, world) =
+        static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
             let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
-            let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+            let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
             let struct (changed, world) =
                 let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier, even if this is inlined...
                 World.updateEntityStateWithoutEvent
@@ -569,19 +601,15 @@ module WorldModuleEntity =
                         then EntityState.setTransformByRef (&value, entityState)
                         else Unchecked.defaultof<_>)
                     entity world
-            if changed then
-                let ignoredFlags = TransformMasks.DirtyMask ||| TransformMasks.InvalidatedMask
-                let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
-                let newFlags = valueInRef.Flags ||| ignoredFlags
-                if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
-                World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+            if changed
+            then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
             else world
 
-        static member internal setEntityTransformByRef (value : Transform inref, entityState : EntityState, entity, world) =
+        static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
             let oldEntityState = entityState
             let oldOmnipresent = oldEntityState.Omnipresent
-            let oldTransform = oldEntityState.Transform
+            let mutable oldTransform = oldEntityState.Transform
             let struct (changed, world) =
                 if oldOmnipresent then
                     let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
@@ -593,7 +621,7 @@ module WorldModuleEntity =
                         entity world
                 else
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                     let struct (changed, world) =
                         World.updateEntityStateWithoutEvent
@@ -602,42 +630,27 @@ module WorldModuleEntity =
                                 then EntityState.setTransformByRef (&value, entityState)
                                 else Unchecked.defaultof<_>)
                             entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                     struct (changed, world)
             if changed then
-#if DEBUG
-                let ignoredFlags = TransformMasks.DirtyMask ||| TransformMasks.InvalidatedMask
-                let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
-                let newFlags = value.Flags ||| ignoredFlags
-                if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransform."
-#endif
                 let publishChangeBindings = oldEntityState.PublishChangeBindings
                 let publishChangeEvents = oldEntityState.PublishChangeEvents
                 let world = World.publishTransformEvents (&oldTransform, &value, publishChangeBindings, publishChangeEvents, entity, world)
                 struct (changed, world)
             else struct (changed, world)
 
-        static member internal propagateEntityPosition3 mount mounter world =
-            let positionMount = World.getEntityPosition mount world
-            let positionLocal = World.getEntityPositionLocal mounter world
-            let position = positionMount + positionLocal
-            World.setEntityPosition position mounter world |> snd'
-
-        static member internal propagateEntityPosition entity world =
-            World.traverseEntityMounters World.propagateEntityPosition3 entity world
-
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
-            if v2Neq value entityState.Transform.Position then
+            if v3Neq value entityState.Position then
                 if entityState.Optimized then
-                    entityState.Transform.Position <- value
-                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
+                    entityState.Position <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Position <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityPosition entity world else world
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -645,89 +658,322 @@ module WorldModuleEntity =
 
             // ensure value changed
             let entityState = World.getEntityState entity world
-            if v2Neq value entityState.PositionLocal then
+            if v3Neq value entityState.PositionLocal then
 
-                // OPTIMIZATION: do position updates and propagation in-place as much as possible.
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 if entityState.Optimized then
                     entityState.PositionLocal <- value
-                    let positionMount =
+                    let position =
                         match Option.bind (tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
-                        | _ -> Vector2.Zero
-                    entityState.Transform.Position <- positionMount + value
-                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
+                        | Some mount when World.getEntityExists mount world ->
+                            let affineMatrix = World.getEntityAffineMatrix mount world
+                            Vector3.Transform (value, affineMatrix)
+                        | _ -> value
+                    entityState.Position <- position
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
 
-                else // do position updates and propagation out-of-place.
+                else // do updates and propagation out-of-place.
 
                     // update PositionLocal property
                     let struct (_, world) =
                         World.updateEntityState (fun entityState ->
-                            if value <> entityState.PositionLocal then
+                            if v3Neq value entityState.PositionLocal then
                                 let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                                 entityState.PositionLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
                             Property? PositionLocal value entity world
 
-                    // compute mount position
-                    let positionMount =
-                        match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityPosition mount world
-                        | _ -> Vector2.Zero
+                    // make sure we've got the latest entity state
+                    let entityState = World.getEntityState entity world
 
-                    // update Position property
-                    let world = World.setEntityPosition (positionMount + value) entity world |> snd'
+                    // compute position
+                    let position =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let affineMatrix = World.getEntityAffineMatrix mount world
+                            Vector3.Transform (value, affineMatrix)
+                        | _ -> value
+
+                    // update property
+                    let world = World.setEntityPosition position entity world |> snd'
                     struct (true, world)
 
             // nothing changed
             else struct (false, world)
 
-        static member internal setEntitySize value entity world =
-            let entityState = World.getEntityState entity world
-            if v2Neq value entityState.Transform.Size then
-                if entityState.Optimized then
-                    entityState.Transform.Size <- value
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Size <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
-            else struct (false, world)
-        
-        static member internal setEntityAngle value entity world =
-            let entityState = World.getEntityState entity world
-            let radians = Math.degreesToRadians value
-            if radians <> entityState.Transform.Rotation then
-                if entityState.Optimized then
-                    entityState.Transform.Rotation <- radians
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Rotation <- radians
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
-            else struct (false, world)
-        
         static member internal setEntityRotation value entity world =
             let entityState = World.getEntityState entity world
-            if value <> entityState.Transform.Rotation then
+            if quatNeq value entityState.Rotation then
                 if entityState.Optimized then
-                    entityState.Transform.Rotation <- value
+                    entityState.Rotation <- value
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Rotation <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world)
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
             else struct (false, world)
 
+        static member internal setEntityRotationLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if quatNeq value entityState.RotationLocal then
+
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
+                let anglesLocal = value.RollPitchYaw
+                if entityState.Optimized then
+                    entityState.RotationLocal <- value
+                    entityState.AnglesLocal <- anglesLocal
+                    let rotation =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let rotationLocal = World.getEntityRotation mount world
+                            rotationLocal * value
+                        | _ -> value
+                    entityState.Rotation <- rotation
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+
+                else // do updates and propagation out-of-place.
+
+                    // update RotationLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if quatNeq value entityState.RotationLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.RotationLocal <- value
+                                entityState.AnglesLocal <- anglesLocal
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? RotationLocal value entity world
+
+                    // make sure we've got the latest entity state
+                    let entityState = World.getEntityState entity world
+
+                    // send additional events if needed
+                    let world =
+                        let publishChangeBindings = entityState.PublishChangeBindings
+                        let publishChangeEvents = entityState.PublishChangeEvents
+                        if publishChangeBindings || publishChangeEvents then
+                            let world = World.publishEntityChange Property? AnglesLocal anglesLocal publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange Property? DegreesLocal (Math.radiansToDegrees3d anglesLocal) publishChangeBindings publishChangeEvents entity world
+                            world
+                        else world
+
+                    // make sure we've got the latest entity state again
+                    let entityState = World.getEntityState entity world
+
+                    // compute rotation
+                    let rotation =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let rotationMount = World.getEntityRotation mount world
+                            rotationMount * value
+                        | _ -> value
+
+                    // update property
+                    let world = World.setEntityRotation rotation entity world |> snd'
+                    struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
+
+        static member internal setEntityScale value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.Scale then
+                if entityState.Optimized then
+                    entityState.Scale <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Scale <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityScaleLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.ScaleLocal then
+
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
+                if entityState.Optimized then
+                    entityState.ScaleLocal <- value
+                    let scale =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let scale = World.getEntityScale mount world
+                            value * scale
+                        | _ -> value
+                    entityState.Scale <- scale
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+
+                else // do updates and propagation out-of-place.
+
+                    // update ScaleLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if v3Neq value entityState.ScaleLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.ScaleLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? ScaleLocal value entity world
+
+                    // compute scale
+                    let scale =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let scale = World.getEntityScale mount world
+                            value * scale
+                        | _ -> value
+
+                    // update property
+                    let world = World.setEntityScale scale entity world |> snd'
+                    struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
+
+        static member internal setEntityOffset value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.Offset then
+                if entityState.Optimized then
+                    entityState.Offset <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Offset <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntitySize value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.Size then
+                if entityState.Optimized then
+                    entityState.Size <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Size <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityAngles value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.Angles then
+                if entityState.Optimized then
+                    entityState.Angles <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Angles <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal setEntityAnglesLocal value entity world =
+
+            // ensure value changed
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.AnglesLocal then
+
+                // OPTIMIZATION: do updates and propagation in-place as much as possible.
+                let rotationLocal = value.RollPitchYaw
+                if entityState.Optimized then
+                    entityState.RotationLocal <- rotationLocal
+                    entityState.AnglesLocal <- value
+                    let rotation =
+                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        | Some mount when World.getEntityExists mount world ->
+                            let rotationMount = World.getEntityRotation mount world
+                            rotationMount * rotationLocal
+                        | _ -> rotationLocal
+                    entityState.Rotation <- rotation
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+
+                else // do updates and propagation out-of-place.
+
+                    // update AnglesLocal property
+                    let struct (_, world) =
+                        World.updateEntityState (fun entityState ->
+                            if v3Neq value entityState.AnglesLocal then
+                                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                                entityState.RotationLocal <- rotationLocal
+                                entityState.AnglesLocal <- value
+                                entityState
+                            else Unchecked.defaultof<_>)
+                            Property? RotationLocal value entity world
+
+                    // make sure we've got the latest entity state
+                    let entityState = World.getEntityState entity world
+
+                    // send additional events if needed
+                    let world =
+                        let publishChangeBindings = entityState.PublishChangeBindings
+                        let publishChangeEvents = entityState.PublishChangeEvents
+                        if publishChangeBindings || publishChangeEvents then
+                            let world = World.publishEntityChange Property? AnglesLocal value publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange Property? DegreesLocal (Math.radiansToDegrees3d value) publishChangeBindings publishChangeEvents entity world
+                            world
+                        else world
+
+                    // make sure we've got the latest entity state again
+                    let entityState = World.getEntityState entity world
+
+                    // update rotation property if mounting, otherwise update angles property
+                    match Option.bind (tryResolve entity) entityState.MountOpt with
+                    | Some mount when World.getEntityExists mount world ->
+                        let rotationMount = World.getEntityRotation mount world
+                        let rotation = rotationMount * rotationLocal
+                        let world = World.setEntityRotation rotation entity world |> snd'
+                        struct (true, world)
+                    | _ ->
+                        let world = World.setEntityAngles value entity world |> snd'
+                        struct (true, world)
+
+            // nothing changed
+            else struct (false, world)
+
+        static member internal setEntityDegrees value entity world =
+            World.setEntityAngles (Math.degreesToRadians3d value) entity world
+
+        static member internal setEntityDegreesLocal value entity world =
+            World.setEntityAnglesLocal (Math.degreesToRadians3d value) entity world
+
         static member internal propagateEntityElevation3 mount mounter world =
-            let elevationParent = World.getEntityElevation mount world
+            let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
-            let elevation = elevationParent + elevationLocal
+            let elevation = elevationMount + elevationLocal
             World.setEntityElevation elevation mounter world |> snd'
 
         static member internal propagateEntityElevation entity world =
             World.traverseEntityMounters World.propagateEntityElevation3 entity world
+        
+        static member internal setEntityElevation value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Transform.Elevation then
+                if entityState.Optimized then
+                    entityState.Transform.Elevation <- value
+                    let world = if entityState.Mounted then World.propagateEntityElevation entity world else world
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Elevation <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if World.getEntityMounted entity world then World.propagateEntityElevation entity world else world
+                    struct (true, world)
+            else struct (false, world)
 
         static member internal setEntityElevationLocal value entity world =
 
@@ -764,36 +1010,33 @@ module WorldModuleEntity =
                         | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
 
-                    // update Elevation property
+                    // update property
                     let world = World.setEntityElevation (elevationMount + value) entity world |> snd'
                     struct (true, world)
 
             // nothing changed
             else struct (false, world)
-        
-        static member internal setEntityElevation value entity world =
-            let entityState = World.getEntityState entity world
-            if value <> entityState.Transform.Elevation then
-                if entityState.Optimized then
-                    entityState.Transform.Elevation <- value
-                    let world = if entityState.Mounted then World.propagateEntityElevation entity world else world
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Elevation <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityElevation entity world else world
-                    struct (true, world)
-            else struct (false, world)
 
         static member internal propagateEntityEnabled3 mount mounter world =
-            let enabledParent = World.getEntityEnabled mount world
+            let enabledMount = World.getEntityEnabled mount world
             let enabledLocal = World.getEntityEnabledLocal mounter world
-            let enabled = enabledParent && enabledLocal
+            let enabled = enabledMount && enabledLocal
             World.setEntityEnabled enabled mounter world |> snd'
 
         static member internal propagateEntityEnabled entity world =
             World.traverseEntityMounters World.propagateEntityEnabled3 entity world
+            
+        static member internal setEntityEnabled value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.Enabled then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.Enabled <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? Enabled value entity world
+            let world = if changed && World.getEntityMounted entity world then World.propagateEntityEnabled entity world else world
+            struct (true, world)
 
         static member internal setEntityEnabledLocal value entity world =
             let struct (changed, world) =
@@ -815,18 +1058,6 @@ module WorldModuleEntity =
                     World.setEntityEnabled enabled entity world |> snd'
                 else world
             struct (changed, world)
-            
-        static member internal setEntityEnabled value entity world =
-            let struct (changed, world) =
-                World.updateEntityState (fun entityState ->
-                    if value <> entityState.Enabled then
-                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                        entityState.Enabled <- value
-                        entityState
-                    else Unchecked.defaultof<_>)
-                    Property? Enabled value entity world
-            let world = if changed && World.getEntityMounted entity world then World.propagateEntityEnabled entity world else world
-            struct (true, world)
 
         static member internal propagateEntityVisible3 mount mounter world =
             let visibleMount = World.getEntityVisible mount world
@@ -836,6 +1067,18 @@ module WorldModuleEntity =
 
         static member internal propagateEntityVisible entity world =
             World.traverseEntityMounters World.propagateEntityVisible3 entity world
+            
+        static member internal setEntityVisible value entity world =
+            let struct (changed, world) =
+                World.updateEntityState (fun entityState ->
+                    if value <> entityState.Visible then
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.Visible <- value
+                        entityState
+                    else Unchecked.defaultof<_>)
+                    Property? Visible value entity world
+            let world = if changed && World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
+            struct (true, world)
 
         static member internal setEntityVisibleLocal value entity world =
             let struct (changed, world) =
@@ -857,59 +1100,89 @@ module WorldModuleEntity =
                     World.setEntityVisible visible entity world |> snd'
                 else world
             struct (changed, world)
-            
-        static member internal setEntityVisible value entity world =
-            let struct (changed, world) =
-                World.updateEntityState (fun entityState ->
-                    if value <> entityState.Visible then
-                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                        entityState.Visible <- value
-                        entityState
-                    else Unchecked.defaultof<_>)
-                    Property? Visible value entity world
-            let world = if changed && World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
-            struct (true, world)
-
-        static member internal getEntityBounds entity world =
-            let mutable transform = &(World.getEntityState entity world).Transform
-            v4Bounds transform.Position transform.Size
-
-        static member internal setEntityBounds (value : Vector4) entity world =
+        
+        static member internal setEntityOverflow value entity world =
             let entityState = World.getEntityState entity world
-            let position = value.Position
-            let size = value.Size
-            if v2Neq entityState.Transform.Position position || v2Neq entityState.Transform.Size size then
+            if value <> entityState.Transform.Overflow then
                 if entityState.Optimized then
-                    entityState.Transform.Position <- position
-                    entityState.Transform.Size <- size
-                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
+                    entityState.Transform.Overflow <- value
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
-                    transform.Position <- position
-                    transform.Size <- size
+                    transform.Overflow <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if entityState.Mounted then World.propagateEntityPosition entity world else world
                     struct (true, world)
             else struct (false, world)
 
-        static member internal getEntityCenter entity world =
-            let mutable transform = &(World.getEntityState entity world).Transform
-            transform.Position + transform.Size * 0.5f
+        static member internal getEntityPerimeterUnscaled entity world =
+            (World.getEntityState entity world).Transform.PerimeterUnscaled
 
-        static member internal setEntityCenter value entity world =
+        static member internal setEntityPerimeterUnscaled value entity world =
             let entityState = World.getEntityState entity world
-            let position = value - entityState.Transform.Size * 0.5f
-            World.setEntityPosition position entity world
+            if box3Neq value entityState.PerimeterUnscaled then
+                if entityState.Optimized then
+                    entityState.PerimeterUnscaled <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.PerimeterUnscaled <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
 
-        static member internal getEntityBottom entity world =
-            let mutable transform = &(World.getEntityState entity world).Transform
-            transform.Position + transform.Size.WithY 0.0f * 0.5f
+        static member internal getEntityPerimeter entity world =
+            (World.getEntityState entity world).Transform.Perimeter
 
-        static member internal setEntityBottom value entity world =
+        static member internal setEntityPerimeter value entity world =
             let entityState = World.getEntityState entity world
-            let position = value - entityState.Transform.Size.WithY 0.0f * 0.5f
-            World.setEntityPosition position entity world
+            if box3Neq value entityState.Perimeter then
+                if entityState.Optimized then
+                    entityState.Perimeter <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.Perimeter <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal getEntityPerimeterCenter entity world =
+            (World.getEntityState entity world).Transform.PerimeterCenter
+
+        static member internal setEntityPerimeterCenter value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.PerimeterCenter then
+                if entityState.Optimized then
+                    entityState.PerimeterCenter <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.PerimeterCenter <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal getEntityPerimeterBottom entity world =
+            (World.getEntityState entity world).Transform.PerimeterBottom
+
+        static member internal setEntityPerimeterBottom value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.PerimeterBottom then
+                if entityState.Optimized then
+                    entityState.PerimeterBottom <- value
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.PerimeterBottom <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
+        static member internal getEntityPerimeterOriented entity world =
+            (World.getEntityState entity world).Transform.PerimeterOriented
+
+        static member internal getEntityBounds entity world =
+            (World.getEntityState entity world).Transform.Bounds
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -1001,9 +1274,9 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -1027,9 +1300,9 @@ module WorldModuleEntity =
                         let oldEntityState = entityState
                         let oldOmnipresent = oldEntityState.Omnipresent
                         let oldAbsolute = oldEntityState.Absolute
-                        let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                        let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                        let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.isSelected entity world
@@ -1103,11 +1376,11 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                    World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
@@ -1343,21 +1616,11 @@ module WorldModuleEntity =
             | Some _ as opt -> opt
             | None -> Some dispatcherName
 
-        static member internal getEntityBoundsOverflow entity world =
+        static member internal getEntityInView2d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
-            v4BoundsOverflow transform.Position transform.Size entityState.Overflow
-
-        static member internal getEntityBoundsMax entity world =
-            let entityState = World.getEntityState entity world
-            World.getEntityStateBoundsMax entityState
-
-        static member internal getEntityInView entity world =
-            let entityState = World.getEntityState entity world
-            let mutable transform = &entityState.Transform
-            if not transform.Omnipresent then
-                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
-                World.isBoundsInView transform.Absolute boundsOverflow world
+            if not transform.Omnipresent
+            then World.isBoundsInView2d transform.Absolute transform.Bounds.Box2 world
             else true
 
         static member internal getEntityQuickSize (entity : Entity) world =
@@ -1365,18 +1628,19 @@ module WorldModuleEntity =
             let facets = World.getEntityFacets entity world
             let quickSize = dispatcher.GetQuickSize (entity, world)
             Array.fold
-                (fun (maxSize : Vector2) (facet : Facet) ->
+                (fun (maxSize : Vector3) (facet : Facet) ->
                     let quickSize = facet.GetQuickSize (entity, world)
-                    Vector2
+                    Vector3
                         (Math.Max (quickSize.X, maxSize.X),
-                         Math.Max (quickSize.Y, maxSize.Y)))
+                         Math.Max (quickSize.Y, maxSize.Y),
+                         Math.Max (quickSize.Z, maxSize.Z)))
                 quickSize
                 facets
 
-        static member internal getEntitySortingPriority entity world =
+        static member internal getEntitySortingPriority2d entity world =
             let entityState = World.getEntityState entity world
             { SortElevation = entityState.Transform.Elevation
-              SortPositionY = entityState.Transform.Position.Y
+              SortHorizon = entityState.Transform.Perimeter.Position.Y
               SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
@@ -1465,19 +1729,32 @@ module WorldModuleEntity =
                 let mountOpt = World.getEntityMountOpt entity world
                 let world = World.addEntityToMounts mountOpt entity world
 
-                // mutate entity tree if entity is selected
+                // mutate respective spatial tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                                (fun entityTree ->
-                                    let entityState = World.getEntityState entity world
-                                    let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                                    SpatialTree.addElement (entityState.Omnipresent || entityState.Absolute) entityBoundsMax entity entityTree
-                                    entityTree)
-                                (World.getEntityTree world)
-                        World.setEntityTree entityTree world
+                        if World.getEntityIs2d entity world then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                    (fun entityTree ->
+                                        let entityState = World.getEntityState entity world
+                                        let entityBounds = entityState.Bounds
+                                        Quadtree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds.Box2 entity entityTree
+                                        entityTree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                    (fun entityTree ->
+                                        let entityState = World.getEntityState entity world
+                                        let entityBounds = entityState.Bounds
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.addElement (entityState.Omnipresent || entityState.Absolute) entityBounds element entityTree
+                                        entityTree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
                     else world
 
                 // register entity if needed
@@ -1515,16 +1792,29 @@ module WorldModuleEntity =
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> world.WorldExtension.Dispatchers.RebuildEntityTree world)
-                                (fun entityTree ->
-                                    let entityState = World.getEntityState entity oldWorld
-                                    let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                                    SpatialTree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBoundsMax entity entityTree
-                                    entityTree)
-                                (World.getEntityTree world)
-                        World.setEntityTree entityTree world
+                        if World.getEntityIs2d entity world then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
+                                    (fun quadtree ->
+                                        let entityState = World.getEntityState entity oldWorld
+                                        let entityBounds = entityState.Bounds
+                                        Quadtree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds.Box2 entity quadtree
+                                        quadtree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
+                                    (fun octree ->
+                                        let entityState = World.getEntityState entity oldWorld
+                                        let entityBounds = entityState.Bounds
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.removeElement (entityState.Omnipresent || entityState.Absolute) entityBounds element octree
+                                        octree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
                     else world
 
                 // remove cached entity event addresses
@@ -1564,7 +1854,7 @@ module WorldModuleEntity =
                 | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // compute the optional overlay name
-            let overlayNameDefault = Overlay.typeNameToOverlayName dispatcherName
+            let overlayNameDefault = Overlay.dispatcherNameToOverlayName dispatcherName
             let overlayNameOpt =
                 match overlayDescriptor with
                 | NoOverlay -> None
@@ -1629,7 +1919,7 @@ module WorldModuleEntity =
             // propagate properties
             let world =
                 if World.getEntityMounted entity world then
-                    let world = World.propagateEntityPosition entity world
+                    let world = World.propagateEntityAffineMatrix entity world
                     let world = World.propagateEntityElevation entity world
                     let world = World.propagateEntityEnabled entity world
                     let world = World.propagateEntityVisible entity world
@@ -1663,7 +1953,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id; Surnames = destination.Surnames }
+                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); IdRef = ref Gen.id; Surnames = destination.Surnames }
                 World.addEntity false entityState destination world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
@@ -1674,7 +1964,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Id = Gen.id; Surnames = destination.Surnames }
+                let entityState = { entityStateOpt with IdRef = ref Gen.id; Surnames = destination.Surnames }
                 let children = World.getEntityEntities source world
                 let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
@@ -1712,9 +2002,9 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | (None, None) ->
@@ -1738,9 +2028,9 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | Left error -> (Left error, world)
@@ -1768,7 +2058,7 @@ module WorldModuleEntity =
                 | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
-        static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldBounds (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
             if WorldModule.isSelected entity world then
@@ -1779,33 +2069,55 @@ module WorldModuleEntity =
                 let newOmnipresent = entityState.Omnipresent || entityState.Absolute
                 if newOmnipresent <> oldOmnipresent then
 
-                    // remove and add entity in entity tree
-                    let newBoundsMax = World.getEntityStateBoundsMax entityState
-                    let entityTree =
-                        MutantCache.mutateMutant
-                            (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                            (fun entityTree ->
-                                SpatialTree.removeElement oldOmnipresent oldBoundsMax entity entityTree
-                                SpatialTree.addElement newOmnipresent newBoundsMax entity entityTree
-                                entityTree)
-                            (World.getEntityTree world)
-                    World.setEntityTree entityTree world
+                    // remove and add entity in respective spatial tree
+                    let newBounds = entityState.Bounds
+                    if entityState.Is2d then
+                        let quadree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                (fun quadree ->
+                                    Quadtree.removeElement oldOmnipresent oldBounds.Box2 entity quadree
+                                    Quadtree.addElement newOmnipresent newBounds.Box2 entity quadree
+                                    quadree)
+                                (World.getQuadtree world)
+                        World.setQuadtree quadree world
+                    else
+                        let octree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                (fun octree ->
+                                    let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                    Octree.removeElement oldOmnipresent oldBounds element octree
+                                    Octree.addElement newOmnipresent newBounds element octree
+                                    octree)
+                                (World.getOctree world)
+                        World.setOctree octree world
 
-                // OPTIMIZATION: only update when entity is not omnipresent
+                // OPTIMIZATION: only update when entity is not omnipresent.
                 elif not newOmnipresent then
 
-                    // OPTIMIZATION: only update when entity bounds max has changed
-                    let newBoundsMax = World.getEntityStateBoundsMax entityState
-                    if oldBoundsMax <> newBoundsMax then
+                    // OPTIMIZATION: only update when entity bounds has changed.
+                    let newBounds = entityState.Bounds
+                    if not (oldBounds.Equals newBounds) then
 
                         // update entity in entity tree
-                        let entityTree =
-                            MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                                (fun entityTree -> SpatialTree.updateElement oldBoundsMax newBoundsMax entity entityTree; entityTree)
-                                (World.getEntityTree world)
-                        let world = World.setEntityTree entityTree world
-                        world
+                        if entityState.Is2d then
+                            let quadree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                    (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadree world
+                        else
+                            let octree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                    (fun octree ->
+                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        Octree.updateElement oldBounds newBounds element octree
+                                        octree)
+                                    (World.getOctree world)
+                            World.setOctree octree world
 
                     // just world
                     else world
@@ -1834,13 +2146,14 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
-                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
-                let position =
+                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
+                let position2d =
                     if atMouse
-                    then World.mouseToWorld entityState.Absolute rightClickPosition world
-                    else World.mouseToWorld entityState.Absolute (World.getEyeSize world * 0.5f) world
-                let transform = { EntityState.getTransform entityState with Position = position }
-                let transform = Math.snapTransform positionSnap rotationSnap transform
+                    then World.mouseToWorld2d entityState.Absolute rightClickPosition world
+                    else World.mouseToWorld2d entityState.Absolute (World.getEyeSize2d world * 0.5f) world
+                let mutable transform = entityState.Transform
+                transform.Position <- position2d.V3
+                transform.Snap (positionSnap, rotationSnap)
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
@@ -1852,20 +2165,30 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         EntityGetters.Assign ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         EntityGetters.Assign ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
-        EntityGetters.Assign ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
-        EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
-        EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPositionLocal entity world })
-        EntityGetters.Assign ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
-        EntityGetters.Assign ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
-        EntityGetters.Assign ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
-        EntityGetters.Assign ("Angle", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityAngle entity world })
-        EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
+        EntityGetters.Assign ("PerimeterUnscaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterUnscaled entity world })
+        EntityGetters.Assign ("Perimeter", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world })
+        EntityGetters.Assign ("PerimeterCenter", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPerimeterCenter entity world })
+        EntityGetters.Assign ("PerimeterBottom", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPerimeterBottom entity world })
+        EntityGetters.Assign ("PerimeterOriented", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterOriented entity world })
+        EntityGetters.Assign ("Bounds", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world })
+        EntityGetters.Assign ("Position", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world })
+        EntityGetters.Assign ("PositionLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world })
+        EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world })
+        EntityGetters.Assign ("RotationLocal", fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotationLocal entity world })
+        EntityGetters.Assign ("Scale", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScale entity world })
+        EntityGetters.Assign ("ScaleLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScaleLocal entity world })
+        EntityGetters.Assign ("Offset", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityOffset entity world })
+        EntityGetters.Assign ("Angles", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityAngles entity world })
+        EntityGetters.Assign ("AnglesLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityAnglesLocal entity world })
+        EntityGetters.Assign ("Degrees", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityDegrees entity world })
+        EntityGetters.Assign ("DegreesLocal", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityDegreesLocal entity world })
+        EntityGetters.Assign ("Size", fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntitySize entity world })
         EntityGetters.Assign ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
         EntityGetters.Assign ("ElevationLocal", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevationLocal entity world })
+        EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityOverflow entity world })
         EntityGetters.Assign ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
         EntityGetters.Assign ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
         EntityGetters.Assign ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         EntityGetters.Assign ("PublishChangeBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world })
@@ -1880,6 +2203,9 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
+        EntityGetters.Assign ("IsPhysical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsPhysical entity world })
+        EntityGetters.Assign ("IsCentered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsCentered entity world })
+        EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         EntityGetters.Assign ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
@@ -1892,20 +2218,28 @@ module WorldModuleEntity =
     /// Initialize property setters.
     let private initSetters () =
         EntitySetters.Assign ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
-        EntitySetters.Assign ("Bounds", fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world)
-        EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("Bottom", fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Assign ("Angle", fun property entity world -> World.setEntityAngle (property.PropertyValue :?> single) entity world)
-        EntitySetters.Assign ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world)
+        EntitySetters.Assign ("PerimeterUnscaled", fun property entity world -> World.setEntityPerimeterUnscaled (property.PropertyValue :?> Box3) entity world)
+        EntitySetters.Assign ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
+        EntitySetters.Assign ("PerimeterCenter", fun property entity world -> World.setEntityPerimeterCenter (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("PerimeterBottom", fun property entity world -> World.setEntityPerimeterBottom (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Scale", fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("ScaleLocal", fun property entity world -> World.setEntityScaleLocal (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world)
+        EntitySetters.Assign ("RotationLocal", fun property entity world -> World.setEntityRotationLocal (property.PropertyValue :?> Quaternion) entity world)
+        EntitySetters.Assign ("Offset", fun property entity world -> World.setEntityOffset (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Angles", fun property entity world -> World.setEntityAngles (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("AnglesLocal", fun property entity world -> World.setEntityAnglesLocal (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Degrees", fun property entity world -> World.setEntityDegrees (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("DegreesLocal", fun property entity world -> World.setEntityDegreesLocal (property.PropertyValue :?> Vector3) entity world)
+        EntitySetters.Assign ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector3) entity world)
         EntitySetters.Assign ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world)
+        EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
-        EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world)
         EntitySetters.Assign ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)

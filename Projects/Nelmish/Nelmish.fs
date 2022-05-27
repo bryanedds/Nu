@@ -31,18 +31,18 @@ type NelmishDispatcher () =
             [Content.group Simulants.DefaultGroup.Name []
                 [Content.button "Decrement"
                     [Entity.Text == "-"
-                     Entity.Position == v2 -256.0f 64.0f
+                     Entity.Position == v3 -256.0f 64.0f 0.0f
                      Entity.ClickEvent ==> msg Decrement]
                  Content.button "Increment"
                     [Entity.Text == "+"
-                     Entity.Position == v2 0.0f 64.0f
+                     Entity.Position == v3 0.0f 64.0f 0.0f
                      Entity.ClickEvent ==> msg Increment]
                  Content.text "Counter"
                     [Entity.Text <== model --> scstring
-                     Entity.Position == v2 -128.0f -32.0f
+                     Entity.Position == v3 -128.0f -32.0f 0.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                  Content.entityIf model (fun model -> model <> 0) $ fun _ _ ->
                     Content.button "Reset"
                         [Entity.Text == "Reset"
-                         Entity.Position == v2 -128.0f -128.0f
+                         Entity.Position == v3 -128.0f -128.0f 0.0f
                          Entity.ClickEvent ==> msg Reset]]]]

@@ -176,7 +176,7 @@ module WorldModule =
             ignore world
 
         /// Make the world.
-        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher =
+        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher =
             let config = AmbientState.getConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
@@ -193,7 +193,8 @@ module WorldModule =
                   ScreenStates = screenStates
                   GameState = gameState
                   EntityMounts = UMap.makeEmpty HashIdentity.Structural config
-                  EntityTree = MutantCache.make id entityTree
+                  Quadtree = MutantCache.make id quadtree
+                  Octree = MutantCache.make id octree
                   SelectedEcsOpt = None
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
@@ -279,10 +280,15 @@ module WorldModule =
         static member setUpdateRate updateRate world =
             World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) Simulants.Game world
 
-        /// Check that the world is advancing.
+        /// Check that the update rate is non-zero.
         [<FunctionBinding>]
         static member isAdvancing world =
             World.getAmbientStateBy AmbientState.isAdvancing world
+
+        /// Check that the update rate is zero.
+        [<FunctionBinding>]
+        static member isHalted world =
+            World.getAmbientStateBy AmbientState.isHalted world
 
         /// Get the world's update time.
         [<FunctionBinding>]
@@ -425,26 +431,37 @@ module WorldModule =
             World.addTasklet simulant tasklet world
 
         /// Attempt to get the window flags.
+        [<FunctionBinding>]
         static member tryGetWindowFlags world =
             World.getAmbientStateBy AmbientState.tryGetWindowFlags world
 
         /// Attempt to check that the window is minimized.
+        [<FunctionBinding>]
         static member tryGetWindowMinimized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
 
         /// Attempt to check that the window is maximized.
+        [<FunctionBinding>]
         static member tryGetWindowMaximized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
             
         /// Attempt to check that the window is in a full screen state.
+        [<FunctionBinding>]
         static member tryGetWindowFullScreen world =
             World.getAmbientStateBy AmbientState.tryGetWindowFullScreen world
 
         /// Attempt to set the window's full screen state.
+        [<FunctionBinding>]
         static member trySetWindowFullScreen fullScreen world =
             World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
+        /// Attempt to get the window size.
+        [<FunctionBinding>]
+        static member tryGetWindowSize world =
+            World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
+
         /// Check whether the world should sleep rather than run.
+        [<FunctionBinding>]
         static member shouldSleep world =
             World.getAmbientStateBy AmbientState.shouldSleep world
 
@@ -510,19 +527,33 @@ module WorldModule =
         static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
             World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
 
-    type World with // EntityTree
+    type World with // Quadtree
 
-        static member internal getEntityTree world =
-            world.EntityTree
+        static member internal getQuadtree world =
+            world.Quadtree
 
-        static member internal setEntityTree entityTree world =
+        static member internal setQuadtree quadtree world =
             if World.getImperative world then
-                world.EntityTree <- entityTree
+                world.Quadtree <- quadtree
                 world
-            else World.choose { world with EntityTree = entityTree }
+            else World.choose { world with Quadtree = quadtree }
 
-        static member internal updateEntityTree updater world =
-            World.setEntityTree (updater (World.getEntityTree world))
+        static member internal updateQuadtree updater world =
+            World.setQuadtree (updater (World.getQuadtree world))
+
+    type World with // Octree
+
+        static member internal getOctree world =
+            world.Octree
+
+        static member internal setOctree octree world =
+            if World.getImperative world then
+                world.Octree <- octree
+                world
+            else World.choose { world with Octree = octree }
+
+        static member internal updateOctree updater world =
+            World.setOctree (updater (World.getOctree world))
 
     type World with // SelectedEcsOpt
 
@@ -554,7 +585,7 @@ module WorldModule =
             World.setSubsystems (updater world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
-            World.updateSubsystems (fun subsystems -> { subsystems with Renderer = subsystems.Renderer.CleanUp () }) world
+            World.updateSubsystems (fun subsystems -> subsystems.RendererProcess2d.Terminate (); subsystems) world
 
     type World with // EventSystem
 
@@ -933,7 +964,7 @@ module WorldModule =
         static member internal getMemberProperties (state : SimulantState) =
             state |>
             getType |>
-            getProperties |>
+            (fun ty -> ty.GetProperties ()) |>
             Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
             Array.toList
 
@@ -965,7 +996,7 @@ module WorldModule =
         /// Swallow all handled events.
         static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, world)
-            
+
         /// Handle event by exiting app.
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)

@@ -87,9 +87,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="packages.config" />
-    <None Include="Assets\Default\CharacterJump.png" />
-    <None Include="Assets\Default\CharacterIdle.png" />
-    <None Include="Assets\Default\CharacterWalk.png" />
+    <None Include="Assets\Default\SideViewCharacterJump.png" />
+    <None Include="Assets\Default\SideViewCharacterIdle.png" />
+    <None Include="Assets\Default\SideViewCharacterWalk.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />
@@ -167,11 +167,14 @@
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
+    <Reference Include="OpenGL.Net">
+      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+    </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.10.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.11.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.7.3.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.7.11.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS.dll\lib\net20\SDL2-CS.dll</HintPath>

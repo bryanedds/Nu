@@ -49,8 +49,8 @@ type Direction =
         | Downward -> Upward
         | Leftward -> Rightward
 
-    static member ofVector2 (v2 : Vector2) =
-        let angle = double (atan2 v2.Y v2.X)
+    static member ofVector3 (v3 : Vector3) =
+        let angle = double (atan2 v3.Y v3.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
             if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
@@ -59,8 +59,8 @@ type Direction =
             else                                                            Downward
         direction
 
-    static member ofVector2Biased (v2 : Vector2) =
-        let angle = double (atan2 v2.Y v2.X)
+    static member ofVector3Biased (v3 : Vector3) =
+        let angle = double (atan2 v3.Y v3.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
             if      angle > Math.PI * 1.74997 || angle <= Math.PI * 0.25003 then    Rightward
@@ -69,12 +69,12 @@ type Direction =
             else                                                                    Downward
         direction
 
-    static member toVector2 direction =
+    static member toVector3 direction =
         match direction with
-        | Upward -> v2Up
-        | Rightward -> v2Right
-        | Downward -> v2Down
-        | Leftward -> v2Left
+        | Upward -> v3Up
+        | Rightward -> v3Right
+        | Downward -> v3Down
+        | Leftward -> v3Left
 
 type EffectType =
     | Physical
@@ -569,10 +569,10 @@ type [<NoEquality; NoComparison>] MoveType =
         | Mosey -> Some Constants.Gameplay.CueMoseySpeed
         | Instant -> None
 
-    static member computeStepAndStepCount (translation : Vector2) (moveType : MoveType) =
+    static member computeStepAndStepCount (translation : Vector3) (moveType : MoveType) =
         match moveType.MoveSpeedOpt with
         | Some moveSpeed ->
-            let stepCount = translation.Length () / moveSpeed
+            let stepCount = translation.Magnitude / moveSpeed
             let step = translation / stepCount
             (step, int (ceil stepCount))
         | None -> (translation, 1)
@@ -606,9 +606,9 @@ type [<NoEquality; NoComparison>] Cue =
     | FadeState of int64 * CueTarget * int64 * bool
     | Animate of CueTarget * CharacterAnimationType * CueWait
     | AnimateState of int64 * CueWait
-    | Move of CueTarget * Vector2 * MoveType
-    | MoveState of int64 * CueTarget * Vector2 * Vector2 * MoveType
-    | Warp of FieldType * Vector2 * Direction
+    | Move of CueTarget * Vector3 * MoveType
+    | MoveState of int64 * CueTarget * Vector3 * Vector3 * MoveType
+    | Warp of FieldType * Vector3 * Direction
     | WarpState
     | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
     | BattleState
@@ -791,11 +791,11 @@ type [<NoEquality; NoComparison>] ShopData =
 
 type [<NoEquality; NoComparison>] EnemyDescriptor =
     { EnemyType : EnemyType
-      EnemyPosition : Vector2 }
+      EnemyPosition : Vector3 }
 
 type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
-      BattleAllyPositions : Vector2 list
+      BattleAllyPositions : Vector3 list
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
       BattleTileIndexOffset : int
@@ -846,7 +846,7 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | EmptyProp
 
 type [<NoEquality; NoComparison>] PropDescriptor =
-    { PropBounds : Vector4
+    { PropPerimeter : Box3
       PropElevation : single
       PropData : PropData
       PropId : int }
@@ -877,9 +877,9 @@ module FieldData =
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
-        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-        let propSize = v2 (single object.Width) (single object.Height)
-        let propBounds = v4Bounds propPosition propSize
+        let propPosition = v3 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) 0.0f // invert y
+        let propSize = v3 (single object.Width) (single object.Height) 0.0f
+        let propPerimeter = box3 propPosition propSize
         let propElevation =
             match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
             | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
@@ -887,7 +887,7 @@ module FieldData =
         match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
         | (true, propDataStr) ->
             let propData = scvalue propDataStr
-            Some { PropBounds = propBounds; PropElevation = propElevation; PropData = propData; PropId = object.Id }
+            Some { PropPerimeter = propPerimeter; PropElevation = propElevation; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
     let inflateProp prop (treasures : ItemType FStack) rand =
@@ -990,27 +990,26 @@ module FieldData =
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (walkLength, _, _, _, _) ->
-                    let tileMapBounds = v4Bounds v2Zero (v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
+                    let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
                         let walkLengthScalar =
                             match origin with
                             | OriginC -> Constants.Field.WalkLengthScalarOpened
                             | _ -> Constants.Field.WalkLengthScalarClosed
                         let walkRatio = single walkLength * walkLengthScalar
-                        let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
-                        let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
-                        delta.Length ()
+                        let delta = tileMapPerimeter.Bottom - tileMapPerimeter.Top
+                        delta.Magnitude * walkRatio
                     let distanceFromOrigin =
                         match origin with
-                        | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
-                        | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
-                        | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
-                        | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
-                        | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
-                        | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
-                        | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
-                        | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
-                        | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
+                        | OriginC -> let delta = avatarBottom - tileMapPerimeter.Center in delta.Magnitude
+                        | OriginN -> let delta = avatarBottom - tileMapPerimeter.Top in delta.Magnitude
+                        | OriginE -> let delta = avatarBottom - tileMapPerimeter.Right in delta.Magnitude
+                        | OriginS -> let delta = avatarBottom - tileMapPerimeter.Bottom in delta.Magnitude
+                        | OriginW -> let delta = avatarBottom - tileMapPerimeter.Left in delta.Magnitude
+                        | OriginNE -> let delta = avatarBottom - tileMapPerimeter.TopRight in delta.Magnitude
+                        | OriginNW -> let delta = avatarBottom - tileMapPerimeter.TopLeft in delta.Magnitude
+                        | OriginSE -> let delta = avatarBottom - tileMapPerimeter.BottomRight in delta.Magnitude
+                        | OriginSW -> let delta = avatarBottom - tileMapPerimeter.BottomLeft in delta.Magnitude
                     let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
                     | 0 | 1 -> Some WeakSpirit

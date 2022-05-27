@@ -197,7 +197,7 @@ type MapRand =
         | _ -> failwithumf ()
 
     static member private walk biasChance bias (cursor : Vector2i) map rand =
-        let bounds = v4iBounds v2iZero map.MapSize
+        let bounds = box2i v2iZero map.MapSize
         let mutable cursor = cursor
         let (i, rand) = Rand.nextIntUnder 4 rand
         let (chance, rand) = Rand.nextSingleUnder 1.0f rand
@@ -211,13 +211,13 @@ type MapRand =
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
         | 1 ->
             // try go east (positive x)
-            if  cursor.X < dec bounds.Z then
+            if  cursor.X < dec bounds.Size.X then
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
                 cursor.X <- inc cursor.X
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
         | 2 ->
             // try go south (positive y)
-            if  cursor.Y < dec bounds.W then
+            if  cursor.Y < dec bounds.Size.Y then
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
                 cursor.Y <- inc cursor.Y
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
@@ -304,18 +304,18 @@ type MapRand =
 
     static member makeFromRand walkLength biasChance (size : Vector2i) origin floor rand =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
-        let bounds = v4iBounds v2iZero size
+        let bounds = box2i v2iZero size
         let (cursor, biases) =
             match origin with
-            | OriginC ->        (bounds.Center,                     [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
-            | OriginN ->        (bounds.Bottom,                     [2; 2; 1; 3])
-            | OriginE ->        (bounds.Right - v2iRight,           [3; 3; 0; 2])
-            | OriginS ->        (bounds.Top - v2iUp,                [0; 0; 1; 3])
-            | OriginW ->        (bounds.Left,                       [1; 1; 0; 2])
-            | OriginNE ->       (v2i (dec bounds.Z) bounds.Y,       [2; 2; 3; 3])
-            | OriginNW ->       (v2i bounds.X bounds.Y,             [2; 2; 1; 1])
-            | OriginSE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 0; 3; 3])
-            | OriginSW ->       (v2i bounds.X (dec bounds.W),       [0; 0; 1; 1])
+            | OriginC ->        (bounds.Center,                                 [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
+            | OriginN ->        (bounds.Bottom,                                 [2; 2; 1; 3])
+            | OriginE ->        (bounds.Right - v2iRight,                       [3; 3; 0; 2])
+            | OriginS ->        (bounds.Top - v2iUp,                            [0; 0; 1; 3])
+            | OriginW ->        (bounds.Left,                                   [1; 1; 0; 2])
+            | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Position.Y,     [2; 2; 3; 3])
+            | OriginNW ->       (v2i bounds.Position.X bounds.Position.Y,       [2; 2; 1; 1])
+            | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 0; 3; 3])
+            | OriginSW ->       (v2i bounds.Position.X (dec bounds.Size.Y),     [0; 0; 1; 1])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
                 let map = { MapRand.make size with MapOriginOpt = Some cursor }
@@ -407,7 +407,7 @@ type MapRand =
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
-                        for objectRef in Seq.toArray segment.ObjectGroups.[0].Objects do
+                        for objectRef in segment.ObjectGroups.[0].Objects do
                             let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height

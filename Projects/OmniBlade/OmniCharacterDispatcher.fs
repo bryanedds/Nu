@@ -19,7 +19,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher<Character, unit, unit> (Character.empty)
+        inherit EntityDispatcher2d<Character, unit, unit> (true, false, Character.empty)
 
         static let getSpriteInset (character : Character) world =
             Character.getAnimationInset (World.getUpdateTime world) character
@@ -30,7 +30,7 @@ module CharacterDispatcher =
                     match Character.getAnimationProgressOpt (World.getUpdateTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
-                else Color.White
+                else Color.One
             color
 
         static let getSpriteGlow (character : Character) world =
@@ -72,10 +72,8 @@ module CharacterDispatcher =
                 | Some afflictionY ->
                     let time = World.getUpdateTime world
                     let afflictionX = time / 8L % 8L |> int
-                    let inset =
-                        v4Bounds
-                            (v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y))
-                            Constants.Battle.AfflictionCelSize
+                    let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
+                    let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
                     Some inset
                 | None -> None
             else None
@@ -93,25 +91,25 @@ module CharacterDispatcher =
                     | None -> None
                 match celXOpt with
                 | Some celX ->
-                    let inset = v4Bounds (v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f) Constants.Battle.ChargeOrbCelSize
+                    let chargeOrbPosition = v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f
+                    let inset = box2 chargeOrbPosition Constants.Battle.ChargeOrbCelSize
                     Some inset
                 | None -> None
             else None
 
         override this.Initializers (character, _) =
             [Entity.Omnipresent == true
-             Entity.Bounds <== character --> fun character -> character.Bounds]
+             Entity.Perimeter <== character --> fun character -> character.Perimeter]
 
         override this.View (character, entity, world) =
-            if entity.GetVisible world && entity.GetInView world then
-                let transform = entity.GetTransform world
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter
                 let characterView =
-                    Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = entity.GetAbsolute world
-                              Offset = Vector2.Zero
-                              InsetOpt = Some (getSpriteInset character world)
+                              InsetOpt = ValueSome (getSpriteInset character world)
                               Image = character.AnimationSheet
                               Color = getSpriteColor character world
                               Blend = Transparent
@@ -119,52 +117,54 @@ module CharacterDispatcher =
                               Flip = FlipNone })
                 let afflictionView =
                     match getAfflictionInsetOpt character world with
-                    | Some _ as insetOpt ->
-                        let image = Assets.Battle.AfflictionsAnimationSheet
-                        let position =
+                    | Some afflictionInset ->
+                        let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
+                        let afflictionPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize
                             | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
                             | BossStature ->
-                                transform.Position + transform.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
-                        let transform = { transform with Position = position; Size = Constants.Battle.AfflictionSize }
-                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                                perimeter.Position + perimeter.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
+                        let mutable afflictionTransform = Transform.makeDefault v3CenteredOffset2d
+                        afflictionTransform.Position <- afflictionPosition
+                        afflictionTransform.Size <- Constants.Battle.AfflictionSize
+                        afflictionTransform.Elevation <- transform.Elevation + 0.1f
+                        Render2d (afflictionTransform.Elevation, afflictionTransform.Perimeter.Position.Y, AssetTag.generalize afflictionImage,
                             SpriteDescriptor
-                                { Transform = transform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
-                                  InsetOpt = insetOpt
-                                  Image = image
-                                  Color = colWhite
+                                { Transform = afflictionTransform
+                                  InsetOpt = ValueSome afflictionInset
+                                  Image = afflictionImage
+                                  Color = Color.One
                                   Blend = Transparent
-                                  Glow = colZero
+                                  Glow = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 let chargeOrbView =
                     match getChargeOrbInsetOpt character world with
-                    | Some _ as insetOpt ->
-                        let image = Assets.Battle.ChargeOrbAnimationSheet
-                        let position =
+                    | Some chargeOrbInset ->
+                        let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
+                        let chargeOrbPosition =
                             match character.Stature with
                             | SmallStature | NormalStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
                             | LargeStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
                             | BossStature ->
-                                transform.Position + transform.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
-                        let transform = { transform with Position = position; Size = Constants.Battle.ChargeOrbSize }
-                        Render (transform.Elevation + 0.1f, transform.Position.Y, AssetTag.generalize image,
+                                perimeter.Position + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
+                        let mutable chargeOrbTransform = Transform.makeDefault v3CenteredOffset2d
+                        chargeOrbTransform.Position <- chargeOrbPosition
+                        chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
+                        chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
+                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Perimeter.Position.Y, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
-                                { Transform = transform
-                                  Absolute = entity.GetAbsolute world
-                                  Offset = Vector2.Zero
-                                  InsetOpt = insetOpt
-                                  Image = image
-                                  Color = colWhite
+                                { Transform = chargeOrbTransform
+                                  InsetOpt = ValueSome chargeOrbInset
+                                  Image = chargeOrbImage
+                                  Color = Color.One
                                   Blend = Transparent
-                                  Glow = colZero
+                                  Glow = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 Views [|characterView; afflictionView; chargeOrbView|]

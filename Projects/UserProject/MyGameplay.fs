@@ -56,22 +56,24 @@ module MyGameplay =
                 | Jump ->
                     let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world then
-                        let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
+                        let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
                         World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     else world
                 | MoveLeft ->
                     let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
-                    then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
-                    else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
+                    then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
                 | MoveRight ->
                     let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                     if World.isBodyOnGround physicsId world
-                    then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
-                    else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
+                    then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
                 | UpdateEye ->
-                    if World.getUpdateRate world <> 0L
-                    then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Player.Character.GetCenter world) world
+                    if World.getUpdateRate world <> 0L then
+                        let characterPerimeter = Simulants.Gameplay.Player.Character.GetPerimeter world
+                        let characterCenter = characterPerimeter.Center
+                        Simulants.Game.SetEyePosition2d characterCenter.V2 world
                     else world
                 | Nop -> world
             just world
@@ -83,16 +85,16 @@ module MyGameplay =
              Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
                      [Entity.Text == "Quit"
-                      Entity.Position == v2 260.0f -260.0f
+                      Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent ==> msg Quit]]
 
              // the player group
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.group Simulants.Gameplay.Player.Group.Name []
-                    [Content.character Simulants.Gameplay.Player.Character.Name
-                        [Entity.Position == v2 0.0f 0.0f
-                         Entity.Size == v2 108.0f 108.0f]]
+                    [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
+                        [Entity.Position == v3 0.0f 0.0f 0.0f
+                         Entity.Size == v3 108.0f 108.0f 0.0f]]
 
              // the scene group
              Content.groupIfScreenSelected screen $ fun _ _ ->

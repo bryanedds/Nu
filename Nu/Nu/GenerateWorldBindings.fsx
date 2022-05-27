@@ -39,8 +39,8 @@ type FunctionBinding =
       FunctionReturn : ReturnConversion }
 
 let getExtrinsicKeywords () =
-    "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind " +
-    "self parent grandparent game toData monitor"
+    "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind " +
+    "self game toData monitor"
 
 let getParameterConversion (ty : Type) =
     match ty.Name with
@@ -268,7 +268,7 @@ let generateBindingFunction binding =
     
     let exceptionHandler =
         "        with exn ->\n" +
-        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, None)\n" +
+        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, ValueNone)\n" +
         "            struct (violation, World.choose oldWorld)\n"
     
     functionAndExceptionHeader +
@@ -296,7 +296,7 @@ let generateBindingFunction' binding =
     "            match evaleds with\n" +
     "            | " + argArray + " -> " + binding.FunctionBindingName + " " + argsStr + "world\n" +
     "            | _ ->\n" +
-    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, ValueNone)\n" +
     "                struct (violation, world)\n" +
     "        | Some violation -> struct (violation, world)\n"
 

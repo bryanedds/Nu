@@ -14,9 +14,9 @@ module Program =
             { SdlWindowConfig.defaultConfig with
                 WindowTitle = "OmniBlade"
 #if DEBUG
-                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 #else
-                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN }
+                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL ||| SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN }
 #endif
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }

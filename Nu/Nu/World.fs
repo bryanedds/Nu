@@ -94,14 +94,14 @@ module Nu =
                         let entity = Entity (Array.skip 2 eventNames)
                         match eventFirstName with
                         | "Update" ->
-    #if DEBUG
+#if DEBUG
                             if Array.contains (Address.head Events.Wildcard) eventNames then
                                 Log.debug
                                     ("Subscribing to entity update events with a wildcard is not supported. " +
                                      "This will cause a bug where some entity update events are not published.")
-    #endif
+#endif
                             World.updateEntityPublishUpdateFlag entity world |> snd'
-    #if !DISABLE_ENTITY_POST_UPDATE
+#if !DISABLE_ENTITY_POST_UPDATE
                         | "PostUpdate" ->
     #if DEBUG
                             if Array.contains (Address.head Events.Wildcard) eventNames then
@@ -110,7 +110,7 @@ module Nu =
                                      "This will cause a bug where some entity post-update events are not published.")
     #endif
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
-    #endif
+#endif
                         | _ -> world
                     else world
                 let world =
@@ -154,6 +154,10 @@ module Nu =
                         | _ -> world
                     else world
                 world :> obj
+
+            // init getEntityIs2d F# reach-around
+            WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
+                World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -236,47 +240,77 @@ module Nu =
                 EventSystem.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortPositionY = 0.0f; SortTarget = group } :> IComparable
-                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortHorizon = 0.0f; SortTarget = group } :> IComparable
+                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortHorizon = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world
 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
-                let entityTree =
+                let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                        (fun entityTree ->
-                            for entity in entities do
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.addElement entityOmnipresent entityMaxBounds entity entityTree
-                            entityTree)
-                        (World.getEntityTree world)
-                World.setEntityTree entityTree world
+                                Quadtree.addElement entityOmnipresent entityBounds.Box2 entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
+                let octree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun octree ->
+                            for entity in entities3d do
+                                let entityState = World.getEntityState entity world
+                                let entityBounds = entityState.Bounds
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                Octree.addElement entityOmnipresent entityBounds element octree
+                            octree)
+                        (World.getOctree world)
+                let world = World.setOctree octree world
+                world
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
-                let entityTree =
+                let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildEntityTree oldWorld)
-                        (fun entityTree ->
-                            for entity in entities do
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                let entityBounds = entityState.Bounds
                                 let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
-                                SpatialTree.removeElement entityOmnipresent entityMaxBounds entity entityTree
-                            entityTree)
-                        (World.getEntityTree world)
-                World.setEntityTree entityTree world
+                                Quadtree.removeElement entityOmnipresent entityBounds.Box2 entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
+                let octree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun octree ->
+                            for entity in entities3d do
+                                let entityState = World.getEntityState entity world
+                                let entityBounds = entityState.Bounds
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
+                                let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                Octree.removeElement entityOmnipresent entityBounds element octree
+                            octree)
+                        (World.getOctree world)
+                let world = World.setOctree octree world
+                world
 
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
@@ -284,8 +318,8 @@ module Nu =
                     World.getGroups screen world |>
                     Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
-                    Seq.toArray
-                Array.fold (fun world (entity : Entity) ->
+                    SegmentedArray.ofSeq
+                SegmentedArray.fold (fun world (entity : Entity) ->
                     World.registerEntityPhysics entity world)
                     world entities
 
@@ -295,8 +329,8 @@ module Nu =
                     World.getGroups screen world |>
                     Seq.map (flip World.getEntitiesFlattened world) |>
                     Seq.concat |>
-                    Seq.toArray
-                Array.fold (fun world (entity : Entity) ->
+                    SegmentedArray.ofSeq
+                SegmentedArray.fold (fun world (entity : Entity) ->
                     World.unregisterEntityPhysics entity world)
                     world entities
 
@@ -376,11 +410,10 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher ()
+                [EntityDispatcher2d (false, true) :> EntityDispatcher
+                 EntityDispatcher3d (false, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
-                 BasicEmitterDispatcher () :> EntityDispatcher
-                 EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
                  LabelDispatcher () :> EntityDispatcher
@@ -390,26 +423,28 @@ module WorldModule3 =
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
-                 BlockDispatcher () :> EntityDispatcher
-                 BoxDispatcher () :> EntityDispatcher
-                 CharacterDispatcher () :> EntityDispatcher
+                 BasicEmitter2dDispatcher () :> EntityDispatcher
+                 Effect2dDispatcher () :> EntityDispatcher
+                 Block2dDispatcher () :> EntityDispatcher
+                 Box2dDispatcher () :> EntityDispatcher
+                 SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
-                 TmxMapDispatcher () :> EntityDispatcher]
+                 TmxMapDispatcher () :> EntityDispatcher
+                 ConcatenatedSceneryDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
-                [BasicEmitterFacet () :> Facet
-                 EffectFacet () :> Facet
-                 ScriptFacet () :> Facet
-                 TextFacet () :> Facet
-                 RigidBodyFastFacet () :> Facet
-                 RigidBodyFacet () :> Facet
-                 JointFacet () :> Facet
-                 TileMapFacet () :> Facet
-                 TmxMapFacet () :> Facet
+                [ScriptFacet () :> Facet
                  StaticSpriteFacet () :> Facet
-                 AnimatedSpriteFacet () :> Facet]
+                 AnimatedSpriteFacet () :> Facet
+                 TextFacet () :> Facet
+                 BasicEmitter2dFacet () :> Facet
+                 Effect2dFacet () :> Facet
+                 RigidBody2dFacet () :> Facet
+                 Joint2dFacet () :> Facet
+                 TileMapFacet () :> Facet
+                 TmxMapFacet () :> Facet]
 
         /// Make an empty world.
         static member makeEmpty (config : WorldConfig) =
@@ -442,12 +477,13 @@ module WorldModule3 =
                   Facets = World.makeDefaultFacets ()
                   TryGetExtrinsic = World.tryGetExtrinsic
                   UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                  RebuildEntityTree = World.rebuildEntityTree }
+                  RebuildQuadtree = World.rebuildQuadtree
+                  RebuildOctree = World.rebuildOctree }
 
             // make the world's subsystems
             let subsystems =
-                { PhysicsEngine = MockPhysicsEngine.make ()
-                  Renderer = MockRenderer.make ()
+                { PhysicsEngine2d = MockPhysicsEngine.make ()
+                  RendererProcess2d = RendererInline2d (fun () -> MockRenderer2d.make () :> Renderer2d)
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -459,11 +495,14 @@ module WorldModule3 =
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
 
-            // make the world's entity tree
-            let entityTree = World.makeEntityTree ()
+            // make the world's quadtree
+            let quadtree = World.makeQuadtree ()
+
+            // make the world's octree
+            let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree (snd defaultGameDispatcher)
+            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -479,7 +518,7 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake sdlDeps config (plugin : NuPlugin) =
+        static member tryMake (sdlDeps : SdlDeps) config (plugin : NuPlugin) =
 
             // ensure game engine is initialized
             Nu.init config.NuConfig
@@ -517,7 +556,8 @@ module WorldModule3 =
                       Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                       TryGetExtrinsic = World.tryGetExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                      RebuildEntityTree = World.rebuildEntityTree }
+                      RebuildQuadtree = World.rebuildQuadtree
+                      RebuildOctree = World.rebuildOctree }
 
                 // look up the active game dispather
                 let activeGameDispatcherType = if config.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
@@ -525,20 +565,26 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine =
+                    let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
-                    let renderer =
-                        match SdlDeps.getRenderContextOpt sdlDeps with
-                        | Some renderContext -> SdlRenderer.make renderContext :> Renderer
-                        | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
+                    let createRenderer2d =
+                        fun () ->
+                            match SdlDeps.getWindowOpt sdlDeps with
+                            | Some window -> GlRenderer2d.make window :> Renderer2d
+                            | None -> MockRenderer2d.make () :> Renderer2d
+                    let rendererProcess2d =
+                        if config.StandAlone
+                        then RendererThread2d createRenderer2d :> RendererProcess2d
+                        else RendererInline2d createRenderer2d :> RendererProcess2d
+                    rendererProcess2d.Start ()
+                    rendererProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
-                    { PhysicsEngine = physicsEngine
-                      Renderer = renderer
+                    { PhysicsEngine2d = physicsEngine2d
+                      RendererProcess2d = rendererProcess2d
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
@@ -561,11 +607,14 @@ module WorldModule3 =
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)
 
-                    // make the world's entity tree
-                    let entityTree = World.makeEntityTree ()
+                    // make the world's quadtree
+                    let quadtree = World.makeQuadtree ()
+
+                    // make the world's octree
+                    let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher
+                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world

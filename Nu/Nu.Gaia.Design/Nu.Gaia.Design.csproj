@@ -32,6 +32,12 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="OpenGL.Net">
+      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenGL.Net.WinForms">
+      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
+    </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>
@@ -85,7 +91,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SelectablePanel.cs">
-      <SubType>Component</SubType>
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="TreeViewExtension.cs" />
     <EmbeddedResource Include="AssetPicker.resx">

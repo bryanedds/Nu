@@ -54,10 +54,13 @@ module WorldModule2 =
 
     type World with
 
-        static member internal makeEntityTree () =
-            SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+        static member internal makeQuadtree () =
+            Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
 
-        static member internal rebuildEntityTree world =
+        static member internal makeOctree () =
+            Octree.make Constants.Engine.OctreeGranularity Constants.Engine.OctreeDepth Constants.Engine.OctreeBounds
+
+        static member internal rebuildQuadtree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
@@ -67,11 +70,30 @@ module WorldModule2 =
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
                 | None -> Seq.empty
             let entities = Seq.append omniEntities selectedEntities
-            let tree = World.makeEntityTree ()
+            let quadtree = World.makeQuadtree ()
             for entity in entities do
-                let boundsMax = entity.GetBoundsMax world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) boundsMax entity tree
-            tree
+                let bounds = entity.GetBounds world
+                if entity.GetIs2d world then
+                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds.Box2 entity quadtree
+            quadtree
+
+        static member internal rebuildOctree world =
+            let omniEntities =
+                match World.getOmniScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let selectedEntities =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let entities = Seq.append omniEntities selectedEntities
+            let octree = World.makeOctree ()
+            for entity in entities do
+                let bounds = entity.GetBounds world
+                if not (entity.GetIs2d world) then
+                    let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds element octree
+            octree
 
         /// Resolve a relation to an address in the current script context.
         static member resolve relation world =
@@ -339,14 +361,14 @@ module WorldModule2 =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            let cameraEyeSize = World.getEyeSize world
+            let cameraEyeSize = World.getEyeSize2d world
             let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
             let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
             let world = splashSprite.SetPersistent false world
-            let world = splashSprite.SetSize cameraEyeSize world
-            let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+            let world = splashSprite.SetSize cameraEyeSize.V3 world
+            let world = splashSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
             let world =
                 match splashDescriptor.SplashImageOpt with
                 | Some splashImage ->
@@ -439,7 +461,7 @@ module WorldModule2 =
         /// Send a message to the subcomponents to reload its assets.
         [<FunctionBinding>]
         static member reloadExistingAssets world =
-            let world = World.reloadRenderAssets world
+            let world = World.reloadRenderAssets2d world
             let world = World.reloadAudioAssets world
             World.reloadSymbols world
             world
@@ -482,9 +504,9 @@ module WorldModule2 =
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
-             let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             let world = World.updateRenderer (fun renderer -> renderer.ClearMessages (); renderer) world
-             let world = World.updateAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages (); audioPlayer) world
+             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+             World.withRendererProcess2d (fun rendererProcess -> rendererProcess.ClearMessages ()) world
+             World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
              world
 
         /// Shelve the a world for background storage.
@@ -496,11 +518,11 @@ module WorldModule2 =
         /// Unshelve the state of a world.
         static member unshelve world =
 
-            // clear existing physics messages
-            let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            // clear existing 2d physics messages
+            let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
 
-            // rebuild physics state
-            let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
+            // rebuild 2d physics state
+            let world = World.enqueuePhysicsMessage2d RebuildPhysicsHackMessage world
 
             // propagate current physics state
             let entities = World.getEntities1 world
@@ -564,7 +586,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mousePosition = World.getMousePosition world
+                    let mousePosition = World.getMousePosition2d world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -574,7 +596,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mousePosition = World.getMousePosition world
+                    let mousePosition = World.getMousePosition2d world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -628,17 +650,17 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member private processIntegrationMessage integrationMessage world =
+        static member private processIntegrationMessage2d integrationMessage world =
             match World.getLiveness world with
             | Live ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let collisionAddress = Events.Collision --> entity.EntityAddress
+                        let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                         let collisionData =
-                            { Collider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
-                              Collidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
+                            { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
+                              BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
@@ -647,18 +669,19 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let separationAddress = Events.Separation --> entity.EntityAddress
+                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
                         let separationData =
-                            { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
-                              Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
+                            { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
+                              BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
                         World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
+                    let offset = entity.GetOffset world
                     let size = entity.GetSize world
-                    let position = bodyTransformMessage.Position - size * 0.5f
+                    let position = bodyTransformMessage.Position - size * offset
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
@@ -667,34 +690,29 @@ module WorldModule2 =
                     else world
             | Dead -> world
 
-        static member private getEntities3 getElementsFromTree world =
-            let entityTree = World.getEntityTree world
-            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree world) entityTree
-            let world = World.setEntityTree entityTree world
-            let entities : Entity seq = getElementsFromTree spatialTree
+        static member private getEntities2dBy getElementsFromQuadtree world =
+            let quadtree = World.getQuadtree world
+            let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
+            let world = World.setQuadtree quadtreeCache world
+            let entities : Entity seq = getElementsFromQuadtree quadtree
             (entities, world)
 
-        /// Get all cullable (non-omnipresent) entities.
-        static member getEntitiesCullable world =
-            let entities = world |> World.getEntities1 |> Seq.filter (fun entity -> not (entity.GetOmnipresent world))
-            (entities, world)
+        /// Get all omnipresent (non-cullable) 2d entities.
+        static member getEntitiesOmnipresent2d world =
+            World.getEntities2dBy Quadtree.getElementsOmnipresent world
 
-        /// Get all omnipresent (non-cullable) entities.
-        static member getEntitiesOmnipresent world =
-            World.getEntities3 SpatialTree.getElementsOmnipresent world
+        /// Get all 2d entities in the current 2d view, including all omnipresent entities.
+        static member getEntitiesInView2d world =
+            let viewBounds = World.getViewBoundsRelative2d world
+            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds) world
 
-        /// Get all entities in the current view, including all omnipresent entities.
-        static member getEntitiesInView world =
-            let viewBounds = World.getViewBoundsRelative world
-            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
+        /// Get all 2d entities in the given bounds, including all omnipresent entities.
+        static member getEntitiesInBounds2d bounds world =
+            World.getEntities2dBy (Quadtree.getElementsInBounds bounds) world
 
-        /// Get all entities in the given bounds, including all omnipresent entities.
-        static member getEntitiesInBounds bounds world =
-            World.getEntities3 (SpatialTree.getElementsInBounds bounds) world
-
-        /// Get all entities at the given point, including all omnipresent entities.
-        static member getEntitiesAtPoint point world =
-            World.getEntities3 (SpatialTree.getElementsAtPoint point) world
+        /// Get all 2d entities at the given point, including all omnipresent entities.
+        static member getEntitiesAtPoint2d point world =
+            World.getEntities2dBy (Quadtree.getElementsAtPoint point) world
 
         static member private updateSimulants world =
 
@@ -704,7 +722,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -745,7 +763,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
 #endif
             PostUpdateGatherTimer.Stop ()
 
@@ -785,20 +803,22 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Color.White.WithA (byte (alpha * 255.0f))
-                let position = -eyeSize * 0.5f // negation for right-handedness
-                let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0u }
-                World.enqueueRenderLayeredMessage
+                let color = Color.One.WithA alpha
+                let position = -eyeSize.V3 * 0.5f
+                let size = eyeSize.V3
+                let mutable transform = Transform.makeDefault v3CenteredOffset2d
+                transform.Position <- position
+                transform.Size <- size
+                transform.Elevation <- Single.MaxValue
+                transform.Absolute <- true
+                World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      PositionY = transform.Position.Y
+                      Horizon = transform.Perimeter.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
-                              Absolute = true
-                              Offset = Vector2.Zero
-                              InsetOpt = None
+                              InsetOpt = ValueNone
                               Image = dissolveImage
                               Color = color
                               Blend = Transparent
@@ -809,8 +829,8 @@ module WorldModule2 =
 
         static member private actualizeScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
         static member private actualizeSimulants world =
@@ -821,7 +841,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView world
+            let (entities, world) = World.getEntitiesInView2d world
             ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first
@@ -861,33 +881,19 @@ module WorldModule2 =
             else (Dead, world)
 
         static member private processPhysics world =
-            let physicsEngine = World.getPhysicsEngine world
+            let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine physicsEngine world
+            let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate (World.getUpdateRate world) physicsMessages
-            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+            let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
             world
-
-        static member private render renderMessages renderContext (renderer : Renderer) eyeCenter eyeSize eyeMargin =
-            match Constants.Render.ScreenClearing with
-            | NoClear -> ()
-            | ColorClear (r, g, b) ->
-                SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
-                SDL.SDL_RenderClear renderContext |> ignore
-            renderer.Render eyeCenter eyeSize eyeMargin renderMessages
-            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
-                SDL.SDL_RenderFlush renderContext |> ignore
-            SDL.SDL_RenderPresent renderContext
-
-        static member private play audioMessages (audioPlayer : AudioPlayer) =
-            audioPlayer.Play audioMessages
 
         static member private cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
-        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness (rendererThreadOpt : Task option) (audioPlayerThreadOpt : Task option) world =
+        /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
+        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness firstFrame world =
             TotalTimer.Start ()
             if runWhile world then
                 if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFps) // don't let game run too fast while full screen unfocused
@@ -940,75 +946,27 @@ module WorldModule2 =
                                                     PerFrameTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
-#if MULTITHREAD_RUN_LOOP
-                                                        // attempt to finish renderer thread
-                                                        let world =
-                                                            match rendererThreadOpt with
-                                                            | Some rendererThread ->
-                                                                Async.AwaitTask rendererThread |> Async.RunSynchronously
-                                                                world
-                                                            | None -> world
-    
-                                                        // attempt to finish audio player thread
-                                                        let world =
-                                                            match audioPlayerThreadOpt with
-                                                            | Some audioPlayerThread ->
-                                                                Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
-                                                                world
-                                                            | None -> world
-    
-                                                        // attempt to start renderer thread
-                                                        let (rendererThreadOpt, world) =
-                                                            match SdlDeps.getRenderContextOpt sdlDeps with
-                                                            | Some renderContext ->
-                                                                let renderer = World.getRenderer world
-                                                                let renderMessages = renderer.PopMessages ()
-                                                                let world = World.setRenderer renderer world
-                                                                let eyeCenter = World.getEyeCenter world
-                                                                let eyeSize = World.getEyeSize world
-                                                                let eyeMargin = World.getEyeMargin world
-                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin)
-                                                                (Some rendererThread, world)
-                                                            | None -> (None, world)
-    
-                                                        // attempt to start audio player thread
-                                                        let (audioPlayerThreadOpt, world) =
-                                                            if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                                let audioPlayer = World.getAudioPlayer world
-                                                                let audioMessages = audioPlayer.PopMessages ()
-                                                                let world = World.setAudioPlayer audioPlayer world
-                                                                let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer)
-                                                                (Some audioPlayerThread, world)
-                                                            else (None, world)
-#else
-                                                        // process rendering on main thread
-                                                        RenderTimer.Start ()
-                                                        let world =
-                                                            match SdlDeps.getRenderContextOpt sdlDeps with
-                                                            | Some renderContext ->
-                                                                let renderer = World.getRenderer world
-                                                                let renderMessages = renderer.PopMessages ()
-                                                                let world = World.setRenderer renderer world
-                                                                let eyeCenter = World.getEyeCenter world
-                                                                let eyeSize = World.getEyeSize world
-                                                                let eyeMargin = World.getEyeMargin world
-                                                                World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin
-                                                                world
-                                                            | None -> world
-                                                        RenderTimer.Stop ()
-    
-                                                        // process audio on main thread
+
+                                                        // process audio
                                                         AudioTimer.Start ()
                                                         let world =
                                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                 let audioPlayer = World.getAudioPlayer world
                                                                 let audioMessages = audioPlayer.PopMessages ()
-                                                                let world = World.setAudioPlayer audioPlayer world
-                                                                World.play audioMessages audioPlayer
+                                                                audioPlayer.Play audioMessages
                                                                 world
                                                             else world
                                                         AudioTimer.Stop ()
-#endif
+
+                                                        // process rendering
+                                                        let rendererProcess2d = World.getRendererProcess2d world
+                                                        if not firstFrame then rendererProcess2d.Swap ()
+                                                        let windowSize =
+                                                            match World.tryGetWindowSize world with
+                                                            | Some windowsSize -> windowsSize
+                                                            | None -> Constants.Render.Resolution
+                                                        rendererProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) windowSize
+
                                                         // post-process the world
                                                         PostFrameTimer.Start ()
                                                         let world = World.postFrame world
@@ -1016,12 +974,12 @@ module WorldModule2 =
                                                         PostFrameTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
-    
+
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
-                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
-    
+                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness false world
+
                                                         | Dead -> world
                                                     | Dead -> world
                                                 | Dead -> world
@@ -1038,7 +996,7 @@ module WorldModule2 =
         /// Run the game engine with the given handler.
         static member run4 runWhile sdlDeps liveness world =
             let result =
-                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None None world
+                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness true world
                     World.cleanUp world
                     Constants.Engine.SuccessExitCode
                 with exn ->

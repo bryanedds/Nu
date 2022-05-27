@@ -7,13 +7,14 @@
  */
 
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace Nu
 {
     /// <summary>
     /// Contains common mathematical functions and constants.
     /// Copied from - https://github.com/opentk/opentk/blob/3.x/src/OpenTK/Math/MathHelper.cs
+    /// Modified by BGE to add 
     /// </summary>
     public static class MathHelper
     {
@@ -140,61 +141,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Calculates the binomial coefficient <paramref name="n"/> above <paramref name="k"/>.
-        /// </summary>
-        /// <param name="n">The n.</param>
-        /// <param name="k">The k.</param>
-        /// <returns>n! / (k! * (n - k)!)</returns>
-        public static long BinomialCoefficient(int n, int k)
-        {
-            return Factorial(n) / (Factorial(k) * Factorial(n - k));
-        }
-
-        /// <summary>
-        /// Convert degrees to radians
-        /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
-        public static float DegreesToRadians(float degrees)
-        {
-            const float degToRad = (float)System.Math.PI / 180.0f;
-            return degrees * degToRad;
-        }
-
-        /// <summary>
-        /// Convert radians to degrees
-        /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
-        public static float RadiansToDegrees(float radians)
-        {
-            const float radToDeg = 180.0f / (float)System.Math.PI;
-            return radians * radToDeg;
-        }
-
-        /// <summary>
-        /// Convert degrees to radians
-        /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
-        public static double DegreesToRadians(double degrees)
-        {
-            const double degToRad = System.Math.PI / 180.0;
-            return degrees * degToRad;
-        }
-
-        /// <summary>
-        /// Convert radians to degrees
-        /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
-        public static double RadiansToDegrees(double radians)
-        {
-            const double radToDeg = 180.0 / System.Math.PI;
-            return radians * radToDeg;
-        }
-
-        /// <summary>
         /// Swaps two double values.
         /// </summary>
         /// <param name="a">The first value.</param>
@@ -255,6 +201,95 @@ namespace Nu
         }
 
         /// <summary>
+        /// Linearly interpolates between two values.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns> 
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>value1 + (value2 - value1) * amount</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// See <see cref="MathHelper.LerpPrecise"/> for a less efficient version with more precision around edge cases.
+        /// </remarks>
+        public static float Lerp(float value1, float value2, float amount)
+        {
+            return value1 + (value2 - value1) * amount;
+        }
+
+        /// <summary>
+        /// Linearly interpolates between two values.
+        /// This method is a less efficient, more precise version of <see cref="MathHelper.Lerp"/>.
+        /// See remarks for more info.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns>
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>((1 - amount) * value1) + (value2 * amount)</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// This method does not have the floating point precision issue that <see cref="MathHelper.Lerp"/> has.
+        /// i.e. If there is a big gap between value1 and value2 in magnitude (e.g. value1=10000000000000000, value2=1),
+        /// right at the edge of the interpolation range (amount=1), <see cref="MathHelper.Lerp"/> will return 0 (whereas it should return 1).
+        /// This also holds for value1=10^17, value2=10; value1=10^18,value2=10^2... so on.
+        /// For an in depth explanation of the issue, see below references:
+        /// Relevant Wikipedia Article: https://en.wikipedia.org/wiki/Linear_interpolation#Programming_language_support
+        /// Relevant StackOverflow Answer: http://stackoverflow.com/questions/4353525/floating-point-linear-interpolation#answer-23716956
+        /// </remarks>
+        public static float LerpPrecise(float value1, float value2, float amount)
+        {
+            return ((1 - amount) * value1) + (value2 * amount);
+        }
+
+        /// <summary>
+        /// Performs a Hermite spline interpolation.
+        /// </summary>
+        /// <param name="value1">Source position.</param>
+        /// <param name="tangent1">Source tangent.</param>
+        /// <param name="value2">Source position.</param>
+        /// <param name="tangent2">Source tangent.</param>
+        /// <param name="amount">Weighting factor.</param>
+        /// <returns>The result of the Hermite spline interpolation.</returns>
+        public static float Hermite(float value1, float tangent1, float value2, float tangent2, float amount)
+        {
+            // All transformed to double not to lose precission
+            // Otherwise, for high numbers of param:amount the result is NaN instead of Infinity
+            double v1 = value1, v2 = value2, t1 = tangent1, t2 = tangent2, s = amount, result;
+            double sCubed = s * s * s;
+            double sSquared = s * s;
+
+            if (amount == 0f)
+                result = value1;
+            else if (amount == 1f)
+                result = value2;
+            else
+                result = (2 * v1 - 2 * v2 + t2 + t1) * sCubed +
+                    (3 * v2 - 3 * v1 - 2 * t1 - t2) * sSquared +
+                    t1 * s +
+                    v1;
+            return (float)result;
+        }
+
+        /// <summary>
+        /// Interpolates between two values using a cubic equation.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Source value.</param>
+        /// <param name="amount">Weighting value.</param>
+        /// <returns>Interpolated value.</returns>
+        public static float SmoothStep(float value1, float value2, float amount)
+        {
+            // It is expected that 0 < amount < 1
+            // If amount < 0, return value1
+            // If amount > 1, return value2
+            float result = MathHelper.Clamp(amount, 0f, 1f);
+            result = MathHelper.Hermite(value1, 0f, value2, 0f, result);
+
+            return result;
+        }
+
+        /// <summary>
         /// Approximates double-precision floating point equality by an epsilon (maximum error) value.
         /// This method is designed as a "fits-all" solution and attempts to handle as many cases as possible.
         /// </summary>
@@ -262,7 +297,6 @@ namespace Nu
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
         /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
         {
             const double doubleNormal = (1L << 52) * double.Epsilon;
@@ -295,7 +329,6 @@ namespace Nu
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
         /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEqualEpsilon(float a, float b, float epsilon)
         {
             const float floatNormal = (1 << 23) * float.Epsilon;
@@ -331,7 +364,6 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEquivalent(float a, float b, float tolerance)
         {
             if (a == b)
@@ -354,7 +386,6 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool ApproximatelyEquivalent(double a, double b, double tolerance)
         {
             if (a == b)
@@ -365,6 +396,314 @@ namespace Nu
 
             double diff = Math.Abs(a - b);
             return diff <= tolerance;
+        }
+
+        /// <summary>
+        /// Impose the sign of a number onto a value.
+        /// </summary>
+        public static double CopySign(double value, double sign)
+        {
+            return (IsNegative(value) == IsNegative(sign)) ? value : -value;
+        }
+
+        /// <summary>
+        /// Calculates the binomial coefficient <paramref name="n"/> above <paramref name="k"/>.
+        /// </summary>
+        /// <param name="n">The n.</param>
+        /// <param name="k">The k.</param>
+        /// <returns>n! / (k! * (n - k)!)</returns>
+        public static long BinomialCoefficient(int n, int k)
+        {
+            return Factorial(n) / (Factorial(k) * Factorial(n - k));
+        }
+
+        /// <summary>
+        /// Determine if a value is negative (includning NaN).
+        /// </summary>
+        public static bool IsNegative(this double value)
+        {
+            return Math.Sign(value) == -1;
+        }
+
+        /// <summary>
+        /// Convert degrees to radians
+        /// </summary>
+        /// <param name="degrees">An angle in degrees</param>
+        /// <returns>The angle expressed in radians</returns>
+        public static float ToRadians(this float degrees)
+        {
+            const float degToRad = (float)System.Math.PI / 180.0f;
+            return degrees * degToRad;
+        }
+
+        /// <summary>
+        /// Convert radians to degrees
+        /// </summary>
+        /// <param name="radians">An angle in radians</param>
+        /// <returns>The angle expressed in degrees</returns>
+        public static float ToDegrees(this float radians)
+        {
+            const float radToDeg = 180.0f / (float)System.Math.PI;
+            return radians * radToDeg;
+        }
+
+        /// <summary>
+        /// Convert degrees to radians
+        /// </summary>
+        /// <param name="degrees">An angle in degrees</param>
+        /// <returns>The angle expressed in radians</returns>
+        public static double ToRadians(this double degrees)
+        {
+            const double degToRad = System.Math.PI / 180.0;
+            return degrees * degToRad;
+        }
+
+        /// <summary>
+        /// Convert radians to degrees
+        /// </summary>
+        /// <param name="radians">An angle in radians</param>
+        /// <returns>The angle expressed in degrees</returns>
+        public static double ToDegrees(this double radians)
+        {
+            const double radToDeg = 180.0 / System.Math.PI;
+            return radians * radToDeg;
+        }
+
+        /// <summary>
+        /// Convert euler angles in [roll, pitch, yaw] to a quaternion.
+        /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+        /// NOTE: because this use double-precision calculation, this is slower than it need be.
+        /// TODO: Use MathF instead once we upgrade to .NET 5.
+        /// </summary>
+        public static Quaternion RollPitchYaw(in this Vector3 angles)
+		{
+            var roll = angles.X;
+            var pitch = angles.Y;
+            var yaw = angles.Z;
+
+            // Abbreviations for the various angular functions
+            double cy = Math.Cos(yaw * 0.5);
+            double sy = Math.Sin(yaw * 0.5);
+            double cp = Math.Cos(pitch * 0.5);
+            double sp = Math.Sin(pitch * 0.5);
+            double cr = Math.Cos(roll * 0.5);
+            double sr = Math.Sin(roll * 0.5);
+
+            Quaternion q;
+            q.W = (float)(cr * cp * cy + sr * sp * sy);
+            q.X = (float)(sr * cp * cy - cr * sp * sy);
+            q.Y = (float)(cr * sp * cy + sr * cp * sy);
+            q.Z = (float)(cr * cp * sy - sr * sp * cy);
+
+            return q;
+        }
+
+        /// <summary>
+        /// Convert a quaternion to euler angles in [roll, pitch, yaw].
+        /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+        /// NOTE: because this use double-precision calculation, this is slower than it need be.
+        /// TODO: Use MathF instead once we upgrade to .NET 5.
+        /// </summary>
+        public static Vector3 RollPitchYaw(in this Quaternion rotation)
+        {
+            Vector3 angles;
+
+            // roll (x-axis rotation)
+            var sinr_cosp = 2.0f * (rotation.W * rotation.X + rotation.Y * rotation.Z);
+            var cosr_cosp = 1.0f - 2.0f * (rotation.X * rotation.X + rotation.Y * rotation.Y);
+            angles.X = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+
+            // pitch (y-axis rotation)
+            double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
+            if (Math.Abs(sinp) >= 1.0f)
+                angles.Y = (float)CopySign(Math.PI / 2.0f, sinp); // use 90 degrees if out of range
+            else
+                angles.Y = (float)Math.Asin(sinp);
+
+            // yaw (z-axis rotation)
+            double siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y);
+            double cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z);
+            angles.Z = (float)Math.Atan2(siny_cosp, cosy_cosp);
+
+            return angles;
+        }
+
+        /// <summary>
+        /// Extract scale from a matrix.
+        /// </summary>
+        public static Vector3 Scale(in this Matrix4x4 matrix)
+		{
+            return new Vector3(
+                new Vector3(matrix.M11, matrix.M21, matrix.M31).Length(),
+                new Vector3(matrix.M12, matrix.M22, matrix.M32).Length(),
+                new Vector3(matrix.M13, matrix.M23, matrix.M33).Length());
+        }
+
+        /// <summary>
+        /// Extract rotation from a matrix.
+        /// </summary>
+        public static Quaternion Rotation(in this Matrix4x4 matrix)
+        {
+            return Quaternion.CreateFromRotationMatrix(matrix);
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Box3"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
+        /// <returns>
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
+        /// </returns>
+        public static PlaneIntersectionType Intersects(in this Plane plane, Box3 box)
+        {
+            return box.Intersects(plane);
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Box3"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
+        /// <param name="result">
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
+        /// </param>
+        public static void Intersects(in this Plane plane, ref Box3 box, out PlaneIntersectionType result)
+        {
+            box.Intersects(in plane, out result);
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Frustum"/>.
+        /// </summary>
+        /// <param name="frustum">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <returns>
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Frustum"/>.
+        /// </returns>
+        public static PlaneIntersectionType Intersects(in this Plane plane, Frustum frustum)
+        {
+			PlaneIntersectionType result;
+			frustum.Intersects(in plane, out result);
+            return result;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Frustum"/>.
+        /// </summary>
+        /// <param name="frustum">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <param name="result">
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Frustum"/>.
+        /// </param>
+        /// </returns>
+        public static void Intersects(in this Plane plane, in Frustum frustum, out PlaneIntersectionType result)
+        {
+            frustum.Intersects(in plane, out result);
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Sphere"/>.
+        /// </summary>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
+        /// <returns>
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Sphere"/>.
+        /// </returns>
+        public static PlaneIntersectionType Intersects(in this Plane plane, Sphere sphere)
+        {
+			PlaneIntersectionType result;
+			sphere.Intersects(in plane, out result);
+            return result;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Sphere"/>.
+        /// </summary>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
+        /// <param name="result">
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Sphere"/>.
+        /// </param>
+        public static void Intersects(in this Plane plane, in Sphere sphere, out PlaneIntersectionType result)
+        {
+            sphere.Intersects(in plane, out result);
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Vector3"/>.
+        /// </summary>
+        /// <param name="sphere">The <see cref="Vector3"/> to test for intersection.</param>
+        /// <returns>
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Vector3"/>.
+        /// </returns>
+        public static PlaneIntersectionType Intersects(in this Plane plane, Vector3 point)
+        {
+            PlaneIntersectionType result;
+            plane.Intersects(in point, out result);
+            return result;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Vector3"/>.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3"/> to test for intersection.</param>
+        /// <param name="result">
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Vector3"/>.
+        /// </param>
+        public static void Intersects(in this Plane plane, in Vector3 point, out PlaneIntersectionType result)
+        {
+            float distance;
+            plane.DotCoordinate(in point, out distance);
+
+            if (distance > 0)
+            {
+                result = PlaneIntersectionType.Front;
+                return;
+            }
+
+            if (distance < 0)
+            {
+                result = PlaneIntersectionType.Back;
+                return;
+            }
+
+            result = PlaneIntersectionType.Intersecting;
+        }
+
+        /// <summary>
+        /// Get the dot product of a <see cref="Vector3"/> with
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
+        /// </summary>
+        /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
+        /// <returns>
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
+        /// </returns>
+        public static float DotCoordinate(this Plane plane, Vector3 value)
+        {
+            return (plane.Normal.X * value.X) + (plane.Normal.Y * value.Y) + (plane.Normal.Z * value.Z) + plane.D;
+        }
+
+        /// <summary>
+        /// Get the dot product of a <see cref="Vector3"/> with
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
+        /// </summary>
+        /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
+        /// <param name="result">
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
+        /// </param>
+        public static void DotCoordinate(in this Plane plane, in Vector3 value, out float result)
+        {
+            result = (plane.Normal.X * value.X) + (plane.Normal.Y * value.Y) + (plane.Normal.Z * value.Z) + plane.D;
+        }
+
+        /// <summary>
+        /// Returns a value indicating what side (positive/negative) of a plane a point is
+        /// </summary>
+        /// <param name="plane">The plane to check against</param>
+        /// <param name="point">The point to check with</param>
+        /// <returns>Greater than zero if on the positive side, less than zero if on the negative size, 0 otherwise</returns>
+        public static float ClassifyPoint(in this Plane plane, in Vector3 point)
+        {
+            return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
         }
     }
 }
