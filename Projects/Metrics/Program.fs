@@ -64,27 +64,31 @@ type MetricsEntityDispatcher () =
   #if ECS_HYBRID
     inherit EntityDispatcher2d (false, false)
   #else
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (false, true, Assets.Default.Image)
+    inherit EntityDispatcher2d (false, true)
   #endif
 
   #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 
-    override this.View (staticImage, entity, world) =
+    override this.Actualize (entity, world) =
+        let staticImage = Assets.Default.Image
         let mutable transform = entity.GetTransform world
-        View.Render2d
-            (transform.Elevation,
-             transform.Position.Y,
-             AssetTag.generalize staticImage,
-             SpriteDescriptor
-                { Transform = transform
-                  InsetOpt = ValueNone
-                  Image = staticImage
-                  Color = Color.One
-                  Blend = Transparent
-                  Glow = Color.Zero
-                  Flip = FlipNone })
+        let renderMessage =
+            RenderLayeredMessage2d
+                { Elevation = transform.Elevation
+                  Horizon = transform.Position.Y
+                  AssetTag = AssetTag.generalize staticImage
+                  RenderDescriptor =
+                    SpriteDescriptor
+                        { Transform = transform
+                          InsetOpt = ValueNone
+                          Image = staticImage
+                          Color = Color.One
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = FlipNone }}
+        World.enqueueRenderMessage2d renderMessage world
   #endif
 
   #if ECS_HYBRID
