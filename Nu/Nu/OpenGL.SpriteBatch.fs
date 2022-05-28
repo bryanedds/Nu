@@ -1,7 +1,6 @@
 ﻿namespace OpenGL
 open System
 open System.Numerics
-open System.Runtime.InteropServices
 open Prime
 open Nu
 
