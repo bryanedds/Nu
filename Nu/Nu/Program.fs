@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Diagnostics
 open System.IO
+open ImGuiNET
 open Prime
 module Program =
 

@@ -94,6 +94,7 @@
     <Compile Include="Render2d.fs" />
     <Compile Include="Render3d.fs" />
     <Compile Include="Audio.fs" />
+    <Compile Include="ImGui.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Particles.fs" />
     <Compile Include="View.fs" />
@@ -123,6 +124,7 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
+    <Compile Include="WorldImGui.fs" />
     <Compile Include="WorldTmxMap.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />
@@ -232,6 +234,12 @@
     </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\packages\FSharpx.Core.1.8.32\lib\40\FSharpx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="ImGui.NET">
+      <HintPath>..\Nu.Dependencies\ImGui.NET\lib\net472\ImGui.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="ImGuizmo.NET">
+      <HintPath>..\Nu.Dependencies\ImGui.NET\lib\net472\ImGuizmo.NET.dll</HintPath>
     </Reference>
     <Reference Include="Magick.NET-Q8-x64">
       <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>

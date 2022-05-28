@@ -258,7 +258,7 @@ module Hl =
              "#define VERTS 4"
              ""
              "const vec4 filters[VERTS] ="
-             "  vec4[4]("
+             "  vec4[VERTS]("
              "      vec4(1,1,0,0),"
              "      vec4(1,1,1,0),"
              "      vec4(1,1,1,1),"
@@ -425,3 +425,45 @@ module Hl =
         // teardown state
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+
+    /// Create a sprite shader with attributes:
+    ///     0: vec2 position
+    /// and uniforms:
+    ///     a: mat4 modelViewProjection
+    ///     b: vec2 texCoords4
+    ///     c: vec4 color
+    ///     d: sampler2D tex
+    let CreateImGuiShader () =
+
+        // vertex shader code
+        let vertexShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "uniform mat4 viewProjection;"
+             "in vec2 position;"
+             "in vec2 texCoordsIn;"
+             "in vec4 in_color;"
+             "out vec4 color;"
+             "out vec2 texCoords;"
+             "void main()"
+             "{"
+             "    gl_Position = viewProjection * vec4(position, 0, 1);"
+             "    color = in_color;"
+             "	  texCoords = texCoordsIn;"
+             "}"] |> String.join "\n"
+
+        // fragment shader code
+        let fragmentShaderStr =
+            [Constants.Render.GlslVersionPragma
+             "uniform sampler2D FontTexture;"
+             "in vec4 color;"
+             "in vec2 texCoords;"
+             "out vec4 frag;"
+             "void main()"
+             "{"
+             "    frag = color * texture(FontTexture, texCoords);"
+             "}"] |> String.join "\n"
+
+        // create shader
+        let shader = CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr)
+        let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
+        (viewProjectionUniform, shader)

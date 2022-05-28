@@ -483,7 +483,8 @@ module WorldModule3 =
             let subsystems =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
                   RendererProcess2d = RendererInline2d (fun () -> MockRenderer2d.make () :> Renderer2d)
-                  AudioPlayer = MockAudioPlayer.make () }
+                  AudioPlayer = MockAudioPlayer.make ()
+                  ImGui = ImGui.make () }
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.make ()
@@ -582,9 +583,12 @@ module WorldModule3 =
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
+                    let imGui = ImGui.make ()
+                    ImGui.setCurrent imGui
                     { PhysicsEngine2d = physicsEngine2d
                       RendererProcess2d = rendererProcess2d
-                      AudioPlayer = audioPlayer }
+                      AudioPlayer = audioPlayer
+                      ImGui = imGui }
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers

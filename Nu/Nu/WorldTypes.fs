@@ -1273,7 +1273,8 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] internal Subsystems =
         { PhysicsEngine2d : PhysicsEngine
           RendererProcess2d : RendererProcess2d
-          AudioPlayer : AudioPlayer }
+          AudioPlayer : AudioPlayer
+          ImGui : ImGui }
 
     /// Keeps the World from occupying more than two cache lines.
     and [<ReferenceEquality; NoComparison>] internal WorldExtension =
