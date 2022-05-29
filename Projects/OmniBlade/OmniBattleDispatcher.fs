@@ -490,8 +490,8 @@ module BattleDispatcher =
                 let world =
                     match positioning with
                     | Position position -> entity.SetPosition position world
-                    | Center center -> entity.SetPerimeterCenter center world
-                    | Bottom bottom -> entity.SetPerimeterBottom bottom world
+                    | Center center -> entity.SetCenter center world
+                    | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
                 entity.SetSelfDestruct true world)
                 delay screen world
@@ -1172,14 +1172,14 @@ module BattleDispatcher =
                     [// health bar
                      Content.fillBar "HealthBar" 
                         [Entity.Size == v3 48.0f 6.0f 0.0f
-                         Entity.PerimeterCenter <== ally --> fun ally -> ally.BottomOffset
+                         Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Fill <== ally --> fun ally -> single ally.HitPoints / single ally.HitPointsMax]
                          
                      // tech bar
                      Content.fillBar "TechBar" 
                         [Entity.Size == v3 48.0f 6.0f 0.0f
-                         Entity.PerimeterCenter <== ally --> fun ally -> ally.BottomOffset2
+                         Entity.Center <== ally --> fun ally -> ally.BottomOffset2
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
                          Entity.Fill <== ally --> fun ally -> single ally.TechPoints / single ally.TechPointsMax]
