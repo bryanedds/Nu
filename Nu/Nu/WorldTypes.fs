@@ -867,8 +867,8 @@ module WorldTypes =
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
         member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
         member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-        member this.PerimeterCenter with get () = this.Transform.PerimeterCenter and set value = this.Transform.PerimeterCenter <- value
-        member this.PerimeterBottom with get () = this.Transform.PerimeterBottom and set value = this.Transform.PerimeterBottom <- value
+        member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
+        member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
         member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
         member this.Bounds with get () = this.Transform.Bounds
 
