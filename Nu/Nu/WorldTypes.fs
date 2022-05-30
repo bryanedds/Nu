@@ -728,24 +728,23 @@ module WorldTypes =
         { // cache lines 1-4 (assuming 16 byte header)
           mutable Transform : Transform
           Dispatcher : EntityDispatcher
-          // cache line 5
           mutable Facets : Facet array
           mutable Xtension : Xtension
+          // cache line 5
           mutable Model : DesignerProperty
           mutable PositionLocal : Vector3
-          // cache line 6 (-2)
           mutable RotationLocal : Quaternion
+          // cache line 6
           mutable ScaleLocal : Vector3
           mutable AnglesLocal : Vector3
-          // cache line 7
           mutable ElevationLocal : single
           mutable MountOpt : Entity Relation option
+          // cache line 7
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
           IdRef : Guid ref
-          // cache line 8
           Surnames : string array }
 
         interface SimulantState with
