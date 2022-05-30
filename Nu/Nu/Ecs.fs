@@ -112,9 +112,19 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
         refEq
             this.ArrayObjsBuffered
             this.ArrayObjsUnbuffered
+            
+type SystemId = Type HashSet
+
+type 'w Store' =
+    interface
+        abstract RegisterComponent : obj -> uint64 -> unit
+        abstract UnregisterComponent : uint64 -> struct (Type * obj)
+        end
 
 /// An ECS system.
 and 'w System =
+    abstract Id : SystemId
+    abstract Stores : Dictionary<Type, 'w Store'>
     abstract Correlation : string HashSet
     abstract Filter : uint64 -> unit
 
