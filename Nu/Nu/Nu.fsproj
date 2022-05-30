@@ -77,6 +77,7 @@
     <Compile Include="SegmentedList.fs" />
     <Compile Include="Ecs.fs" />
     <Compile Include="Systems.fs" />
+    <Compile Include="EcsAlt.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Quadtree.fs" />
