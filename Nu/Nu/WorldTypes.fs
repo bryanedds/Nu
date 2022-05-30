@@ -725,27 +725,27 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache lines 1-3 (assuming 16 byte header)
+        { // cache lines 1-4 (assuming 16 byte header)
           mutable Transform : Transform
-          // cache line 4
           Dispatcher : EntityDispatcher
+          // cache line 5
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable PositionLocal : Vector3
-          // cache line 5 (-1)
+          // cache line 6 (-2)
           mutable RotationLocal : Quaternion
           mutable ScaleLocal : Vector3
           mutable AnglesLocal : Vector3
-          // cache line 6 (+1)
+          // cache line 7
           mutable ElevationLocal : single
           mutable MountOpt : Entity Relation option
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          // cache line 7
           IdRef : Guid ref
+          // cache line 8
           Surnames : string array }
 
         interface SimulantState with
