@@ -10,6 +10,25 @@ type 'w SystemKey =
     { SystemIndex : uint64
       System : 'w System }
 
+type Query<'c, 'c2, 'c3, 'w when
+    'c : struct and 'c :> 'c Component and
+    'c2 : struct and 'c2 :> 'c2 Component and
+    'c3 : struct and 'c3 :> 'c3 Component> () =
+    
+    let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+
+    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'w>) world =
+        for systemEntry in systems do
+            let system = systemEntry.Value
+            let stores = system.Stores
+            let arr = stores.[typeof<'c>].Components :?> 'c array
+            let arr2 = stores.[typeof<'c2>].Components :?> 'c2 array
+            let arr3 = stores.[typeof<'c3>].Components :?> 'c3 array
+            let mutable i = 0
+            let mutable world = world
+            while i < arr.Length do
+                world <- statement.Invoke (&arr.[i], &arr2.[i], &arr3.[i], world)
+
 type CorrelatedStore'<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) as this =
     inherit Store<'w> (Unchecked.defaultof<'c>.TypeName)
 

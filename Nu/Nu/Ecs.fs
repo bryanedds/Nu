@@ -119,6 +119,7 @@ type 'w Store' =
     interface
         abstract RegisterComponent : obj -> uint64 -> unit
         abstract UnregisterComponent : uint64 -> struct (Type * obj)
+        abstract Components : obj
         end
 
 /// An ECS system.
