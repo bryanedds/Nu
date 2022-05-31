@@ -7,11 +7,12 @@ open System.Threading.Tasks
 open Prime
 
 /// Identifies an archetype.
+/// TODO: consider embedding hash code to make look-ups faster.
 type [<CustomEquality; NoComparison>] ArchetypeId =
     { ComponentNames : string HashSet
       Tags : string HashSet }
 
-    static member HashHashSet (hashSet : _ HashSet) =
+    static member inline Hash (hashSet : _ HashSet) =
         let mutable h = 0
         for item in hashSet do
             h <- h ^^^ item.GetHashCode ()
@@ -22,8 +23,8 @@ type [<CustomEquality; NoComparison>] ArchetypeId =
         left.Tags.SetEquals right.Tags
 
     override this.GetHashCode () =
-        let h = ArchetypeId.HashHashSet this.ComponentNames
-        h ^^^ ArchetypeId.HashHashSet this.Tags
+        let h = ArchetypeId.Hash this.ComponentNames
+        h ^^^ ArchetypeId.Hash this.Tags
 
     override this.Equals that =
         match that with
