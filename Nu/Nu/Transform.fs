@@ -11,29 +11,30 @@ open Nu
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                    0b0000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b0000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
-    let [<Literal>] OmnipresentMask =               0b0000000000000000001000u
-    let [<Literal>] AbsoluteMask =                  0b0000000000000000010000u
-    let [<Literal>] ImperativeMask =                0b0000000000000000100000u
-    let [<Literal>] PublishChangeBindingsMask =     0b0000000000000001000000u
-    let [<Literal>] PublishChangeEventsMask =       0b0000000000000010000000u
-    let [<Literal>] EnabledMask =                   0b0000000000000100000000u
-    let [<Literal>] VisibleMask =                   0b0000000000001000000000u
-    let [<Literal>] AlwaysUpdateMask =              0b0000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b0000000000100000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b0000000001000000000000u
-    let [<Literal>] PersistentMask =                0b0000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b0000000100000000000000u
-    let [<Literal>] MountedMask =                   0b0000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b0000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b0000100000000000000000u
-    let [<Literal>] CenteredMask =                  0b0001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000u
-    let [<Literal>] AffineMatrixDirtyMask =         0b0100000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b1000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b1111110010001100100001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b00000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
+    let [<Literal>] OmnipresentMask =               0b00000000000000000001000u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000000010000u
+    let [<Literal>] ImperativeMask =                0b00000000000000000100000u
+    let [<Literal>] PublishChangeBindingsMask =     0b00000000000000001000000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000000000010000000u
+    let [<Literal>] EnabledMask =                   0b00000000000000100000000u
+    let [<Literal>] VisibleMask =                   0b00000000000001000000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000000100000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b00000000001000000000000u
+    let [<Literal>] PersistentMask =                0b00000000010000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b00000000100000000000000u
+    let [<Literal>] MountedMask =                   0b00000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00000100000000000000000u
+    let [<Literal>] CenteredMask =                  0b00001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
+    let [<Literal>] AffineMatrixDirtyMask =         0b00100000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b01111110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -81,6 +82,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
+    member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
     member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
 
     member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
@@ -94,18 +96,23 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Rotation_
         and set value =
             this.Rotation_ <- value
-            let rollPitchYaw = value.RollPitchYaw
-            this.Angles_.X <- rollPitchYaw.X
-            this.Angles_.Y <- rollPitchYaw.Y
-            this.Angles_.Z <- rollPitchYaw.Z
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
             this.PerimeterOrientedDirty <- true
+            this.AnglesDirty <- true
 
     member this.Angles
-        with get () = this.Angles_
+        with get () =
+            if this.AnglesDirty then
+                let rollPitchYaw = this.Rotation_.RollPitchYaw
+                this.Angles_.X <- rollPitchYaw.X
+                this.Angles_.Y <- rollPitchYaw.Y
+                this.Angles_.Z <- rollPitchYaw.Z
+                this.AnglesDirty <- false
+            this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
+            this.AnglesDirty <- false
             if value.X = 0.0f && value.Y = 0.0f // OPTIMIZATION: apply rotation constructively in the z-only case.
             then this.Rotation_ <- Quaternion (0.0f, 0.0f, value.Z, 1.0f)
             else this.Rotation_ <- value.RollPitchYaw
@@ -216,14 +223,6 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.Offset_ * this.Scale_
         perimeter.Center + offsetScaled
 
-    /// Set the angles and rotation of the transform manually to elide RollPitchYaw calculation.
-    member this.SetAnglesAndRotation (angles, rotation) =
-        this.Angles_ <-angles
-        this.Rotation_ <- rotation
-        this.RotationMatrixDirty <- true
-        this.AffineMatrixDirty <- true
-        this.PerimeterOrientedDirty <- true
-
     // TODO: 3D: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
         this.Position <- Math.snapF3d positionSnap this.Position
@@ -239,7 +238,6 @@ type [<NoEquality; NoComparison>] Transform =
         left.Rotation_.Equals right.Rotation_ &&
         left.Scale_.Equals right.Scale_ &&
         left.Offset_.Equals right.Offset_ &&
-        left.Angles_.Equals right.Angles_ &&
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
         left.Overflow_ = right.Overflow_
