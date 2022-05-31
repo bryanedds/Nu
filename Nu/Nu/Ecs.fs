@@ -277,12 +277,13 @@ and 'w Ecs () =
         let compName = typeof<'c>.Name
         this.RegisterNamedComponent<'c> compName comp entityId world
 
-    member this.RegisterQuery (query : 'w Query) =
+    member this.RegisterQuery<'q when 'q :> 'w Query> (query : 'q) =
         for systemEntry in systems do
             let system = systemEntry.Value
             if query.CheckCompatibility system then
                 query.RegisterSystem system
         queries.Add query
+        query
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : EcsCallback<'d, 'w>) =
         match subscriptions.TryGetValue eventName with
