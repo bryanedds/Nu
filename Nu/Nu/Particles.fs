@@ -462,13 +462,13 @@ module Particles =
     [<RequireQualifiedAccess>]
     module Scope =
 
-        /// Make a scope.
-        let inline make<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
+        /// Make a scope with pure in and out lambdas.
+        let inline byCopy<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
             { In = SegmentedArray.map getField
               Out = fun (output, fields) (targets : 'a SegmentedArray) -> (output, SegmentedArray.map2 setField fields targets) }
 
-        /// Make a scope with optimized in and out delegates.
-        let inline fast<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
+        /// Make a scope with in-place in and out delegates.
+        let inline byRef<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
             { In =
                 fun (targets : 'a SegmentedArray) ->
                     let fields = SegmentedArray.zeroCreate targets.Length
@@ -721,17 +721,17 @@ module Particles =
 
     [<RequireQualifiedAccess>]
     module BasicParticle =
-        let body = Scope.fast (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
-        let position = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
-        let scale = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
-        let angles = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
-        let offset = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
-        let size = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
-        let inset = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
-        let color = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
-        let glow = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
+        let body = Scope.byRef (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
+        let position = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
+        let scale = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
+        let angles = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
+        let offset = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
+        let size = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
+        let inset = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
+        let color = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
+        let glow = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
         let flipH =
-            Scope.fast
+            Scope.byRef
                 (new In<_, _> (fun p v ->
                     let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
                     v <- struct (p.Life, flipH)))
@@ -748,7 +748,7 @@ module Particles =
                         | (FlipHV, false) -> FlipV
                     p.Flip <- flip))
         let flipV =
-            Scope.fast
+            Scope.byRef
                 (new In<_, _> (fun p v ->
                     let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
                     v <- struct (p.Life, flipV)))
