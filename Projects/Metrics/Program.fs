@@ -130,7 +130,7 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world _ ->
                 movers.RegisterComponents { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } ecs.EntityId world)
-                world (Seq.init 4000000 id)
+                world (Seq.init 40000 id)
 
         // create 4000 shakers
         let world =
