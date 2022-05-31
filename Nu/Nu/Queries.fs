@@ -8,16 +8,16 @@ open Prime
 type Query<'c, 'w when
     'c : struct and 'c :> 'c Component> (compName : string, ecs : 'w Ecs) =
 
-    let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
     new (ecs) = Query<_, _> (typeof<'c>.Name, ecs)
 
-    member this.CheckCompatibility (system : 'w System) =
-        let stores = system.Stores
+    member this.CheckCompatibility (archetype : 'w Archetype) =
+        let stores = archetype.Stores
         stores.ContainsKey compName
 
-    member this.RegisterSystem (system : 'w System) =
-        systems.Add (system.Id, system)
+    member this.RegisterArchetype (archetype : 'w Archetype) =
+        archetypes.Add (archetype.Id, archetype)
 
     member this.RegisterNamedComponent compName (comp : 'c) entityId world =
         ecs.RegisterNamedComponent compName comp entityId world
@@ -33,9 +33,9 @@ type Query<'c, 'w when
 
     member this.Iterate (statement : Statement<'c, 's>) state =
         let mutable state = state
-        for systemEntry in systems do
-            let system = systemEntry.Value
-            let stores = system.Stores
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let stores = archetype.Stores
             let store = stores.[compName] :?> 'c Store
             let mutable i = 0
             while i < store.Length do
@@ -44,24 +44,24 @@ type Query<'c, 'w when
         state
 
     interface 'w Query with
-        member this.CheckCompatibility system = this.CheckCompatibility system
-        member this.RegisterSystem system = this.RegisterSystem system
+        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
+        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
 
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component> (compName : string, comp2Name : string, ecs : 'w Ecs) =
 
-    let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
     new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, ecs)
 
-    member this.CheckCompatibility (system : 'w System) =
-        let stores = system.Stores
+    member this.CheckCompatibility (archetype : 'w Archetype) =
+        let stores = archetype.Stores
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name
 
-    member this.RegisterSystem (system : 'w System) =
-        systems.Add (system.Id, system)
+    member this.RegisterArchetype (archetype : 'w Archetype) =
+        archetypes.Add (archetype.Id, archetype)
 
     member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) entityId world =
         let world = ecs.RegisterNamedComponent compName comp entityId world
@@ -81,9 +81,9 @@ type Query<'c, 'c2, 'w when
 
     member this.Iterate (statement : Statement<'c, 'c2, 's>) state =
         let mutable state = state
-        for systemEntry in systems do
-            let system = systemEntry.Value
-            let stores = system.Stores
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let stores = archetype.Stores
             let store = stores.[compName] :?> 'c Store
             let store2 = stores.[comp2Name] :?> 'c2 Store
             let mutable i = 0
@@ -93,34 +93,34 @@ type Query<'c, 'c2, 'w when
         state
 
     member this.Index (statement : Statement<'c, 'c2, 's>) entityId state =
-        let systemSlot = ecs.IndexSystemSlot entityId
-        let stores = systemSlot.System.Stores
+        let archetypeSlot = ecs.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
         let store2 = stores.[comp2Name] :?> 'c2 Store
-        let i = systemSlot.SystemIndex
+        let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], state)
 
     interface 'w Query with
-        member this.CheckCompatibility system = this.CheckCompatibility system
-        member this.RegisterSystem system = this.RegisterSystem system
+        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
+        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
 
 type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component> (compName : string, comp2Name : string, comp3Name : string, ecs : 'w Ecs) =
 
-    let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
     new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, ecs)
 
-    member this.CheckCompatibility (system : 'w System) =
-        let stores = system.Stores
+    member this.CheckCompatibility (archetype : 'w Archetype) =
+        let stores = archetype.Stores
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name &&
         stores.ContainsKey comp3Name
 
-    member this.RegisterSystem (system : 'w System) =
-        systems.Add (system.Id, system)
+    member this.RegisterArchetype (archetype : 'w Archetype) =
+        archetypes.Add (archetype.Id, archetype)
 
     member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) comp3Name (comp3 : 'c3) entityId world =
         let world = ecs.RegisterNamedComponent compName comp entityId world
@@ -142,9 +142,9 @@ type Query<'c, 'c2, 'c3, 'w when
 
     member this.Iterate (statement : Statement<'c, 'c2, 'c3, 's>) state =
         let mutable state = state
-        for systemEntry in systems do
-            let system = systemEntry.Value
-            let stores = system.Stores
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let stores = archetype.Stores
             let store = stores.[compName] :?> 'c Store
             let store2 = stores.[comp2Name] :?> 'c2 Store
             let store3 = stores.[comp3Name] :?> 'c3 Store
@@ -155,5 +155,5 @@ type Query<'c, 'c2, 'c3, 'w when
         state
 
     interface 'w Query with
-        member this.CheckCompatibility system = this.CheckCompatibility system
-        member this.RegisterSystem system = this.RegisterSystem system
+        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
+        member this.RegisterArchetype archetype = this.RegisterArchetype archetype

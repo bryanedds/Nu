@@ -5,9 +5,9 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
-open Nu
 
-type SystemId = string HashSet
+/// Identifies an archetype.
+type ArchetypeId = string HashSet
 
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =
@@ -22,10 +22,12 @@ type [<NoEquality; NoComparison; Struct>] EntityId =
     interface EntityId Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
+/// Data for a component registration event.
 type [<NoEquality; NoComparison; Struct>] ComponentRegistrationData =
     { EntityId : uint64
       ComponentName : string }
 
+/// Describes a means to store components.
 type Store =
     interface
         abstract Length : int
@@ -37,6 +39,7 @@ type Store =
         abstract Read : int -> int -> FileStream -> unit
         end
 
+/// Stores components.
 type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
     let mutable arr = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve
     member this.Length = arr.Length
@@ -71,13 +74,15 @@ type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
         member this.Grow () = this.Grow ()
         member this.Read index count stream = this.Read index count stream
 
+/// Describes a means to query components.
 type 'w Query =
     interface
-        abstract CheckCompatibility : 'w System -> bool
-        abstract RegisterSystem : 'w System -> unit
+        abstract CheckCompatibility : 'w Archetype -> bool
+        abstract RegisterArchetype : 'w Archetype -> unit
         end
 
-and 'w System (storeTypes : Dictionary<string, Type>) =
+/// A collection of component stores.
+and 'w Archetype (storeTypes : Dictionary<string, Type>) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
@@ -134,9 +139,10 @@ and 'w System (storeTypes : Dictionary<string, Type>) =
             store.Read count freeIndex stream
         freeIndex <- freeIndex + count
 
-type [<StructuralEquality; NoComparison; Struct>] 'w SystemSlot =
-    { SystemIndex : int
-      System : 'w System }
+/// An entity's place in an archetype.
+type [<StructuralEquality; NoComparison; Struct>] 'w ArchetypeSlot =
+    { ArchetypeIndex : int
+      Archetype : 'w Archetype }
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
@@ -161,19 +167,20 @@ type EcsCallback<'d, 'w> =
 and EcsCallbackBoxed<'w> =
     EcsEvent<obj, 'w> -> 'w Ecs -> 'w -> 'w
 
+/// An archetype-based ECS construct.
 and 'w Ecs () =
 
     let mutable subscriptionIdCurrent = 0u
     let mutable entityIdCurrent = 0UL
-    let systems = dictPlus<SystemId, 'w System> (HashSet<string>.CreateSetComparer ()) []
-    let systemSlots = dictPlus<uint64, 'w SystemSlot> HashIdentity.Structural []
+    let archetypes = dictPlus<ArchetypeId, 'w Archetype> (HashSet<string>.CreateSetComparer ()) []
+    let archetypeSlots = dictPlus<uint64, 'w ArchetypeSlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
     let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
     let queries = List<'w Query> ()
 
-    let createSystem (inferredType : Type) (systemId : SystemId) =
+    let createArchetype (inferredType : Type) (archetypeId : ArchetypeId) =
         let storeTypes =
-            systemId |>
+            archetypeId |>
             Seq.map (fun componentName ->
                 match componentTypes.TryGetValue componentName with
                 | (true, componentType) -> (componentName, componentType)
@@ -183,12 +190,12 @@ and 'w Ecs () =
                     else failwith ("Could not infer component type of '" + componentName + "'.")
                     (componentName, inferredType)) |>
             dictPlus HashIdentity.Structural
-        let system = System<'w> storeTypes
-        systems.Add (system.Id, system)
+        let archetype = Archetype<'w> storeTypes
+        archetypes.Add (archetype.Id, archetype)
         for query in queries do
-            if query.CheckCompatibility system then
-                query.RegisterSystem system
-        system
+            if query.CheckCompatibility archetype then
+                query.RegisterArchetype archetype
+        archetype
 
     member private this.SubscriptionId =
         subscriptionIdCurrent <- inc subscriptionIdCurrent
@@ -240,41 +247,41 @@ and 'w Ecs () =
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
 
     member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) entityId world =
-        match systemSlots.TryGetValue entityId with
-        | (true, systemSlot) ->
-            let system = systemSlot.System
-            let comps = system.GetComponents systemSlot.SystemIndex
-            system.Unregister systemSlot.SystemIndex
-            systemSlots.Remove entityId |> ignore<bool>
+        match archetypeSlots.TryGetValue entityId with
+        | (true, archetypeSlot) ->
+            let archetype = archetypeSlot.Archetype
+            let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
+            archetype.Unregister archetypeSlot.ArchetypeIndex
+            archetypeSlots.Remove entityId |> ignore<bool>
             comps.Add (compName, comp)
-            let systemId = HashSet system.Id
-            systemId.Add compName |> ignore<bool>
+            let archetypeId = HashSet archetype.Id
+            archetypeId.Add compName |> ignore<bool>
             let world =
-                match systems.TryGetValue systemId with
-                | (true, system) ->
-                    let systemIndex = system.Register comps
-                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                match archetypes.TryGetValue archetypeId with
+                | (true, archetype) ->
+                    let archetypeIndex = archetype.Register comps
+                    archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
                 | (false, _) ->
-                    let system = createSystem typeof<'c> systemId
-                    let systemIndex = system.Register comps
-                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                    let archetype = createArchetype typeof<'c> archetypeId
+                    let archetypeIndex = archetype.Register comps
+                    archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ComponentName = compName }
             this.Publish EcsEvents.RegisterComponent eventData world
         | (false, _) ->
-            let systemId = HashSet.singleton HashIdentity.Structural compName
+            let archetypeId = HashSet.singleton HashIdentity.Structural compName
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let world =
-                match systems.TryGetValue systemId with
-                | (true, system) ->
-                    let systemIndex = system.Register comps
-                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                match archetypes.TryGetValue archetypeId with
+                | (true, archetype) ->
+                    let archetypeIndex = archetype.Register comps
+                    archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
                 | (false, _) ->
-                    let system = createSystem typeof<'c> systemId
-                    let systemIndex = system.Register comps
-                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                    let archetype = createArchetype typeof<'c> archetypeId
+                    let archetypeIndex = archetype.Register comps
+                    archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ComponentName = compName }
             this.Publish EcsEvents.RegisterComponent eventData world
@@ -284,19 +291,19 @@ and 'w Ecs () =
         this.RegisterNamedComponent<'c> compName comp entityId world
 
     member this.UnregisterNamedComponent compName entityId world =
-        match systemSlots.TryGetValue entityId with
-        | (true, systemSlot) ->
-            let system = systemSlot.System
-            let comps = system.GetComponents systemSlot.SystemIndex
+        match archetypeSlots.TryGetValue entityId with
+        | (true, archetypeSlot) ->
+            let archetype = archetypeSlot.Archetype
+            let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             let eventData = { EntityId = entityId; ComponentName = compName }
             let world = this.Publish EcsEvents.UnregisteringComponent eventData world
-            system.Unregister systemSlot.SystemIndex
-            systemSlots.Remove entityId |> ignore<bool>
+            archetype.Unregister archetypeSlot.ArchetypeIndex
+            archetypeSlots.Remove entityId |> ignore<bool>
             comps.Remove compName |> ignore<bool>
-            let systemId = HashSet system.Id
-            systemId.Remove compName |> ignore<bool>
-            let systemIndex = system.Register comps
-            systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+            let archetypeId = HashSet archetype.Id
+            archetypeId.Remove compName |> ignore<bool>
+            let archetypeIndex = archetype.Register comps
+            archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
             world
         | (false, _) -> world
 
@@ -304,22 +311,22 @@ and 'w Ecs () =
         this.UnregisterNamedComponent typeof<'c>.Name entityId world
 
     member this.UnregisterComponents entityId world =
-        match systemSlots.TryGetValue entityId with
-        | (true, systemSlot) ->
-            let system = systemSlot.System
+        match archetypeSlots.TryGetValue entityId with
+        | (true, archetypeSlot) ->
+            let archetype = archetypeSlot.Archetype
             let mutable world = world
-            for compName in system.Stores.Keys do
+            for compName in archetype.Stores.Keys do
                 let eventData = { EntityId = entityId; ComponentName = compName }
                 world <- this.Publish EcsEvents.UnregisteringComponent eventData world
-            system.Unregister systemSlot.SystemIndex
+            archetype.Unregister archetypeSlot.ArchetypeIndex
             world
         | (false, _) -> world
 
     member this.RegisterQuery<'q when 'q :> 'w Query> (query : 'q) =
-        for systemEntry in systems do
-            let system = systemEntry.Value
-            if query.CheckCompatibility system then
-                query.RegisterSystem system
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            if query.CheckCompatibility archetype then
+                query.RegisterArchetype archetype
         queries.Add query
         query
 
@@ -341,10 +348,10 @@ and 'w Ecs () =
         | (true, callbacks) -> callbacks.Remove subscriptionId
         | (false, _) -> false
 
-    member this.IndexSystemSlot entityId =
-        systemSlots.[entityId]
+    member this.IndexArchetypeSlot entityId =
+        archetypeSlots.[entityId]
 
-    member this.ReadComponents count systemId stream =
-        match systems.TryGetValue systemId with
-        | (true, system) -> system.Read count stream
-        | (false, _) -> failwith "Could not find system."
+    member this.ReadComponents count archetypeId stream =
+        match archetypes.TryGetValue archetypeId with
+        | (true, archetype) -> archetype.Read count stream
+        | (false, _) -> failwith "Could not find archetype."
