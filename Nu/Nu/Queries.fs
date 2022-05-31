@@ -65,8 +65,8 @@ type Query<'c, 'c2, 'w when
     member this.RegisterComponents (comp : 'c) (comp2 : 'c2) entityId world =
         this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 entityId world
 
-    member this.Iterate (statement : Statement<'c, 'c2, 'w>) world =
-        let mutable world = world
+    member this.Iterate (statement : Statement<'c, 'c2, 's>) state =
+        let mutable state = state
         for systemEntry in systems do
             let system = systemEntry.Value
             let stores = system.Stores
@@ -74,9 +74,17 @@ type Query<'c, 'c2, 'w when
             let store2 = stores.[comp2Name] :?> 'c2 Store
             let mutable i = 0
             while i < store.Length do
-                world <- statement.Invoke (&store.[i], &store2.[i], world)
+                state <- statement.Invoke (&store.[i], &store2.[i], state)
                 i <- inc i
-        world
+        state
+
+    member this.Index (statement : Statement<'c, 'c2, 's>) entityId state =
+        let systemSlot = ecs.IndexSystemSlot entityId
+        let stores = systemSlot.System.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let i = systemSlot.SystemIndex
+        statement.Invoke (&store.[i], &store2.[i], state)
 
     interface 'w Query with
         member this.CheckCompatibility system = this.CheckCompatibility system
