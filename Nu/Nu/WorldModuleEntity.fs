@@ -298,9 +298,10 @@ module WorldModuleEntity =
                 let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
                 let centeredChanged = newTransform.Centered <> oldTransform.Centered
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged || centeredChanged
+                // OPTIMIZATION: eliding PerimeterOriented, Bounds, and data for Transform change events for speed.
+                let world = World.publishEntityChange Property? Transform () publishChangeBindings publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
-                        // OPTIMIZATION: eliding PerimeterOriented, Bounds, and Transform change events for speed.
                         let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Center newTransform.Center publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Bottom newTransform.Bottom publishChangeBindings publishChangeEvents entity world
