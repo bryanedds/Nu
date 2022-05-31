@@ -120,5 +120,4 @@ module Effects =
 module Ecs =
 
     let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
-    let [<Literal>] ArrayGrowth = 2
     let [<Literal>] PreallocateAmount = ArrayReserve
