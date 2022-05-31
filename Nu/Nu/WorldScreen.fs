@@ -134,11 +134,11 @@ module WorldScreenModule =
             // update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.StoreGlobal
-            let world = ecs.Publish EcsEvents.Update () ecs.StoreGlobal world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
+            let world = ecs.Publish EcsEvents.Update () world
 #else
-            let world = ecs.Publish EcsEvents.Update () ecs.StoreGlobal world
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.StoreGlobal
+            let world = ecs.Publish EcsEvents.Update () world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
 #endif
 
             // update via dispatcher
@@ -157,11 +157,11 @@ module WorldScreenModule =
             // post-update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.StoreGlobal
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.StoreGlobal world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
+            let world = ecs.Publish EcsEvents.PostUpdate () world
 #else
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.StoreGlobal world
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.StoreGlobal
+            let world = ecs.Publish EcsEvents.PostUpdate () world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
 #endif
                 
             // post-update via dispatcher
@@ -179,7 +179,7 @@ module WorldScreenModule =
         
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Actualize () ecs.StoreGlobal world
+            let world = ecs.Publish EcsEvents.Actualize () world
 
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world

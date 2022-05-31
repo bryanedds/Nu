@@ -1,10 +1,11 @@
 ﻿namespace Nu
 open System
 open System.Collections.Generic
-open Prime
-open Nu
 open System.IO
 open System.Runtime.InteropServices
+open System.Threading.Tasks
+open Prime
+open Nu
 
 type SystemId = string HashSet
 
@@ -126,12 +127,37 @@ type [<StructuralEquality; NoComparison>] 'w SystemSlot =
     { SystemIndex : int
       System : 'w System }
 
-type 'w Ecs () =
+[<RequireQualifiedAccess>]
+module EcsEvents =
 
+    let [<Literal>] Update = "Update"
+    let [<Literal>] UpdateParallel = "UpdateParallel"
+    let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
+    let [<Literal>] Actualize = "Actualize"
+    let [<Literal>] RegisterComponent = "RegisterComponent"
+    let [<Literal>] UnregisterComponent = "UnregisterComponent"
+
+/// An ECS event.
+type [<NoEquality; NoComparison>] EcsEvent<'d, 'w> =
+    { EcsEventData : 'd }
+
+/// An ECS event callback.
+type EcsCallback<'d, 'w> =
+    EcsEvent<'d, 'w> -> 'w Ecs -> 'w -> 'w
+
+/// A boxed ECS event callback.
+and EcsCallbackBoxed<'w> =
+    EcsEvent<obj, 'w> -> 'w Ecs -> 'w -> 'w
+
+and 'w Ecs () =
+
+    let mutable subscriptionIdCurrent = 0u
     let mutable entityIdCurrent = 0UL
     let systemSlots = dictPlus<uint64, 'w SystemSlot> HashIdentity.Structural []
     let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
+    let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
     let queries = List<'w Query> ()
 
     let createSystem (inferredType : Type) (systemId : SystemId) =
@@ -153,12 +179,56 @@ type 'w Ecs () =
                 query.RegisterSystem system
         system
 
-    member this.ReadComponents count systemId stream =
-        match systems.TryGetValue systemId with
-        | (true, system) -> system.Read count stream
-        | (false, _) -> failwith "Could not find system."
+    member private this.SubscriptionId =
+        subscriptionIdCurrent <- inc subscriptionIdCurrent
+        if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of ECS subscription ids not supported."
+        subscriptionIdCurrent
 
-    member private this.RegisterNamedComponentInternal<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) compName entityId world =
+    member this.EntityId =
+        entityIdCurrent <- inc entityIdCurrent
+        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
+        entityIdCurrent
+
+    member private this.BoxCallback<'d> (callback : EcsCallback<'d, 'w>) =
+        let boxableCallback = fun (evt : EcsEvent<obj, 'w>) store ->
+            let evt = { EcsEventData = evt.EcsEventData :?> 'd }
+            callback evt store
+        boxableCallback :> obj
+
+    member this.Publish<'d> eventName (eventData : 'd) (world : 'w) =
+        match subscriptions.TryGetValue eventName with
+        | (false, _) -> world
+        | (true, callbacks) ->
+            Seq.fold (fun world (callback : obj) ->
+                match callback with
+                | :? EcsCallback<obj, 'w> as objCallback ->
+                    let evt = { EcsEventData = eventData :> obj }
+                    objCallback evt this world
+                | _ -> failwithumf ())
+                world callbacks.Values
+
+    member this.PublishAsync<'d> eventName (eventData : 'd) =
+        let vsync =
+            match subscriptions.TryGetValue eventName with
+            | (true, callbacks) ->
+                callbacks |>
+                Seq.map (fun subscription ->
+                    Task.Run (fun () ->
+                        match subscription.Value with
+                        | :? EcsCallback<obj, 'w> as objCallback ->
+                            let evt = { EcsEventData = eventData :> obj }
+                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel
+            | (false, _) -> Vsync.Parallel []
+        Vsync.StartAsTask vsync
+
+    member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
+        match componentTypes.TryGetValue componentName with
+        | (true, _) -> failwith "Component type already registered."
+        | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
+
+    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) compName entityId (world : 'w) : 'w =
         match systemSlots.TryGetValue entityId with
         | (true, systemSlot) ->
             let system = systemSlot.System
@@ -170,36 +240,24 @@ type 'w Ecs () =
             let world =
                 let mutable world = world
                 match systems.TryGetValue systemId with
-                | (true, system) -> system.Register comps
+                | (true, system) ->
+                    system.Register comps
+                    world
                 | (false, _) ->
                     let system = createSystem typeof<'c> systemId
                     system.Register comps
                     world
-            world
+            this.Publish EcsEvents.RegisterComponent entityId world
         | (false, _) ->
             let systemId = HashSet.singleton HashIdentity.Structural compName
             let system = createSystem typeof<'c> systemId
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             system.Register comps
-            world
+            this.Publish EcsEvents.RegisterComponent entityId world
 
-    member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
-        match componentTypes.TryGetValue componentName with
-        | (true, _) -> failwith "Component type already registered."
-        | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
-
-    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) compName (entityIdOpt : uint64 voption) world =
-        match entityIdOpt with
-        | ValueSome entityId ->
-            this.RegisterNamedComponentInternal<'c> comp compName entityId world
-        | ValueNone ->
-            entityIdCurrent <- inc entityIdCurrent
-            let entityId = entityIdCurrent
-            this.RegisterNamedComponentInternal<'c> comp compName entityId world
-
-    member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (entityIdOpt : uint64 voption) world =
+    member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
         let compName = typeof<'c>.Name
-        this.RegisterNamedComponent<'c> comp compName entityIdOpt world
+        this.RegisterNamedComponent<'c> comp compName entityId world
 
     member this.RegisterQuery (query : 'w Query) =
         for systemEntry in systems do
@@ -208,11 +266,25 @@ type 'w Ecs () =
                 query.RegisterSystem system
         queries.Add query
 
-[<RequireQualifiedAccess>]
-module EcsEvents =
+    member this.SubscribePlus<'d> subscriptionId eventName (callback : EcsCallback<'d, 'w>) =
+        match subscriptions.TryGetValue eventName with
+        | (true, callbacks) ->
+            callbacks.Add (subscriptionId, this.BoxCallback<'d> callback)
+            subscriptionId
+        | (false, _) ->
+            let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d> callback)]
+            subscriptions.Add (eventName, callbacks)
+            subscriptionId
 
-    let [<Literal>] Update = "Update"
-    let [<Literal>] UpdateParallel = "UpdateParallel"
-    let [<Literal>] PostUpdate = "PostUpdate"
-    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
-    let [<Literal>] Actualize = "Actualize"
+    member this.Subscribe<'d> eventName callback =
+        this.SubscribePlus<'d> this.SubscriptionId eventName callback |> ignore
+
+    member this.Unsubscribe eventName subscriptionId =
+        match subscriptions.TryGetValue eventName with
+        | (true, callbacks) -> callbacks.Remove subscriptionId
+        | (false, _) -> false
+
+    member this.ReadComponents count systemId stream =
+        match systems.TryGetValue systemId with
+        | (true, system) -> system.Read count stream
+        | (false, _) -> failwith "Could not find system."
