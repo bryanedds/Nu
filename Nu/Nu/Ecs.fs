@@ -7,7 +7,22 @@ open System.Threading.Tasks
 open Prime
 
 /// Identifies an archetype.
-type ArchetypeId = string HashSet
+type [<CustomEquality; NoComparison>] ArchetypeId =
+    { ComponentNames : string HashSet
+      Tags : string HashSet }
+
+    static member equals left right =
+        left.ComponentNames.SetEquals right.ComponentNames &&
+        left.Tags.SetEquals right.Tags
+
+    override this.GetHashCode () =
+        hash this.ComponentNames ^^^
+        hash this.Tags
+
+    override this.Equals that =
+        match that with
+        | :? ArchetypeId as that -> ArchetypeId.equals this that
+        | _ -> failwithumf ()
 
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =
@@ -83,12 +98,12 @@ type 'w Query =
         end
 
 /// A collection of component stores.
-and 'w Archetype (storeTypes : Dictionary<string, Type>) =
+and 'w Archetype (storeTypes : Dictionary<string, Type>, tags : string HashSet) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
     let stores = dictPlus<string, Store> HashIdentity.Structural []
-    let id = hashSetPlus HashIdentity.Structural storeTypes.Keys
+    let id = { ComponentNames = hashSetPlus HashIdentity.Structural storeTypes.Keys; Tags = tags }
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
@@ -98,8 +113,8 @@ and 'w Archetype (storeTypes : Dictionary<string, Type>) =
             stores.Add (storeTypeEntry.Key, store)
 
     member this.Id = id
-
     member this.Stores = stores
+    member this.Tags = tags
 
     member this.Register (comps : Dictionary<string, obj>) =
         if freeList.Count > 0 then
@@ -157,8 +172,8 @@ module EcsEvents =
     let [<Literal>] PostUpdate = "PostUpdate"
     let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] Actualize = "Actualize"
-    let [<Literal>] RegisterComponent = "RegisterComponent"
-    let [<Literal>] UnregisteringComponent = "UnregisteringComponent"
+    let [<Literal>] Register = "Register"
+    let [<Literal>] Unregistering = "Unregistering"
 
 /// An ECS event.
 type [<NoEquality; NoComparison>] EcsEvent<'d, 'w> =
@@ -177,7 +192,7 @@ and 'w Ecs () =
 
     let mutable subscriptionIdCurrent = 0u
     let mutable entityIdCurrent = 0UL
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> (HashSet<string>.CreateSetComparer ()) []
+    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
     let archetypeSlots = dictPlus<uint64, 'w ArchetypeSlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
     let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
@@ -185,7 +200,7 @@ and 'w Ecs () =
 
     let createArchetype (inferredType : Type) (archetypeId : ArchetypeId) =
         let storeTypes =
-            archetypeId |>
+            archetypeId.ComponentNames |>
             Seq.map (fun componentName ->
                 match componentTypes.TryGetValue componentName with
                 | (true, componentType) -> (componentName, componentType)
@@ -195,7 +210,7 @@ and 'w Ecs () =
                     else failwith ("Could not infer component type of '" + componentName + "'.")
                     (componentName, inferredType)) |>
             dictPlus HashIdentity.Structural
-        let archetype = Archetype<'w> storeTypes
+        let archetype = Archetype<'w> (storeTypes, archetypeId.Tags)
         archetypes.Add (archetype.Id, archetype)
         for query in queries do
             if query.CheckCompatibility archetype then
@@ -258,8 +273,10 @@ and 'w Ecs () =
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
-            let archetypeId = HashSet archetype.Id
-            archetypeId.Add tag |> ignore<bool>
+            let archetypeId =
+                { ComponentNames = archetype.Id.ComponentNames
+                  Tags = hashSetPlus HashIdentity.Structural archetype.Id.Tags }
+            archetypeId.Tags.Add tag |> ignore<bool>
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -272,10 +289,12 @@ and 'w Ecs () =
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ContextName = tag }
-            this.Publish EcsEvents.RegisterComponent eventData world
+            this.Publish EcsEvents.Register eventData world
         | (false, _) ->
-            let archetypeId = HashSet.singleton HashIdentity.Structural tag
-            let comps = dictPlus HashIdentity.Structural []
+            let archetypeId =
+                { ComponentNames = hashSetPlus HashIdentity.Structural []
+                  Tags = HashSet.singleton HashIdentity.Structural tag }
+            let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -288,7 +307,7 @@ and 'w Ecs () =
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ContextName = tag }
-            this.Publish EcsEvents.RegisterComponent eventData world
+            this.Publish EcsEvents.Register eventData world
 
     member this.UnregisterTag tag entityId world =
         match archetypeSlots.TryGetValue entityId with
@@ -296,13 +315,15 @@ and 'w Ecs () =
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             let eventData = { EntityId = entityId; ContextName = tag }
-            let world = this.Publish EcsEvents.UnregisteringComponent eventData world
+            let world = this.Publish EcsEvents.Unregistering eventData world
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
             comps.Remove tag |> ignore<bool>
-            let archetypeId = HashSet archetype.Id
-            archetypeId.Remove tag |> ignore<bool>
-            if archetypeId.Count > 0 then
+            let archetypeId =
+                { ComponentNames = archetype.Id.ComponentNames
+                  Tags = hashSetPlus HashIdentity.Structural archetype.Id.Tags }
+            archetypeId.Tags.Remove tag |> ignore<bool>
+            if archetypeId.ComponentNames.Count > 0 || archetypeId.Tags.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                 world
@@ -317,8 +338,10 @@ and 'w Ecs () =
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
             comps.Add (compName, comp)
-            let archetypeId = HashSet archetype.Id
-            archetypeId.Add compName |> ignore<bool>
+            let archetypeId =
+                { ComponentNames = hashSetPlus HashIdentity.Structural archetype.Id.ComponentNames
+                  Tags = archetype.Id.Tags }
+            archetypeId.ComponentNames.Add compName |> ignore<bool>
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -331,9 +354,11 @@ and 'w Ecs () =
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ContextName = compName }
-            this.Publish EcsEvents.RegisterComponent eventData world
+            this.Publish EcsEvents.Register eventData world
         | (false, _) ->
-            let archetypeId = HashSet.singleton HashIdentity.Structural compName
+            let archetypeId =
+                { ComponentNames = HashSet.singleton HashIdentity.Structural compName
+                  Tags = hashSetPlus HashIdentity.Structural [] }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let world =
                 match archetypes.TryGetValue archetypeId with
@@ -347,7 +372,7 @@ and 'w Ecs () =
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
             let eventData = { EntityId = entityId; ContextName = compName }
-            this.Publish EcsEvents.RegisterComponent eventData world
+            this.Publish EcsEvents.Register eventData world
 
     member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
         let compName = typeof<'c>.Name
@@ -359,13 +384,15 @@ and 'w Ecs () =
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             let eventData = { EntityId = entityId; ContextName = compName }
-            let world = this.Publish EcsEvents.UnregisteringComponent eventData world
+            let world = this.Publish EcsEvents.Unregistering eventData world
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
             comps.Remove compName |> ignore<bool>
-            let archetypeId = HashSet archetype.Id
-            archetypeId.Remove compName |> ignore<bool>
-            if archetypeId.Count > 0 then
+            let archetypeId =
+                { ComponentNames = hashSetPlus HashIdentity.Structural archetype.Id.ComponentNames
+                  Tags = archetype.Id.Tags }
+            archetypeId.ComponentNames.Remove compName |> ignore<bool>
+            if archetypeId.ComponentNames.Count > 0 || archetypeId.Tags.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                 world
@@ -375,14 +402,17 @@ and 'w Ecs () =
     member this.UnregisterComponent<'c> entityId world =
         this.UnregisterNamedComponent typeof<'c>.Name entityId world
 
-    member this.UnregisterComponents entityId world =
+    member this.UnregisterEntity entityId world =
         match archetypeSlots.TryGetValue entityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let mutable world = world
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityId = entityId; ContextName = compName }
-                world <- this.Publish EcsEvents.UnregisteringComponent eventData world
+                world <- this.Publish EcsEvents.Unregistering eventData world
+            for tag in archetype.Tags do
+                let eventData = { EntityId = entityId; ContextName = tag }
+                world <- this.Publish EcsEvents.Unregistering eventData world
             archetype.Unregister archetypeSlot.ArchetypeIndex
             world
         | (false, _) -> world
