@@ -5,12 +5,6 @@ namespace Nu
 open System
 open Prime
 
-/// The base component type of an Ecs.
-type Component<'c when 'c : struct and 'c :> 'c Component> =
-    interface
-        abstract Active : bool with get, set
-        end
-
 /// A delegate for interfacing with correlated components.
 type Statement<'c, 'w when
     'c : struct and 'c :> 'c Component> =

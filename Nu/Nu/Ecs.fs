@@ -6,6 +6,12 @@ open Nu
 
 type SystemId = string HashSet
 
+/// The base component type of an Ecs.
+type Component<'c when 'c : struct and 'c :> 'c Component> =
+    interface
+        abstract Active : bool with get, set
+        end
+
 /// The component that holds an entity's id.
 type [<NoEquality; NoComparison; Struct>] EntityId =
     { mutable Active : bool
