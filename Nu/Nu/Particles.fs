@@ -201,16 +201,22 @@ module Particles =
     module Transformer =
 
         /// Accelerate bodies both linearly and angularly.
-        let accelerate bodies =
-            SegmentedArray.transform (fun (body : Body) ->
-                { body with Position = body.Position + body.LinearVelocity; Angles = body.Angles + body.AngularVelocity })
-                bodies
+        let accelerate (bodies : Body SegmentedArray) =
+            let mutable i = 0
+            while i < dec bodies.Length do
+                let body = &bodies.[i]
+                body.Position <- body.Position + body.LinearVelocity
+                body.Angles <- body.Angles + body.AngularVelocity
+                i <- inc i
+            bodies
 
         /// Constrain bodies.
-        let rec constrain c bodies =
+        let rec constrain c (bodies : Body SegmentedArray) =
             match c with
             | Sphere (radius, center) ->
-                SegmentedArray.transform (fun (body : Body) ->
+                let mutable i = 0
+                while i < dec bodies.Length do
+                    let body = &bodies.[i]
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - center
                     let distanceSquared = delta.MagnitudeSquared
@@ -219,21 +225,23 @@ module Particles =
                         let normal = Vector3.Normalize (center - positionNext)
                         let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
                         let linearVelocity = reflectedVelocity * body.Restitution
-                        { body with LinearVelocity = linearVelocity }
-                    else body)
-                    bodies
+                        body.LinearVelocity <- linearVelocity
+                    i <- inc i
+                bodies
             | Box box ->
                 // TODO: implement properly bouncing angles.
-                SegmentedArray.transform (fun (body : Body) ->
+                let mutable i = 0
+                while i < dec bodies.Length do
+                    let body = &bodies.[i]
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
                     if Math.isPointInBounds3d positionNext box then
                         let speed = body.LinearVelocity.Magnitude
                         let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution
-                        { body with LinearVelocity = linearVelocity }
-                    else body)
-                    bodies
+                        body.LinearVelocity <- linearVelocity
+                    i <- inc i
+                bodies
             | Constraints constraints ->
                 SegmentedArray.fold (flip constrain) bodies constraints
 
@@ -242,20 +250,24 @@ module Particles =
             fun _ c bodies ->
                 match force with
                 | Gravity gravity ->
-                    let bodies = SegmentedArray.transform (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
+                    let mutable i = 0
+                    while i < dec bodies.Length do
+                        let body = &bodies.[i]
+                        body.LinearVelocity <- body.LinearVelocity + gravity
+                        i <- inc i
                     (Output.empty, bodies)
                 | Attractor (position, radius, force) ->
-                    let bodies =
-                        SegmentedArray.transform (fun (body : Body) ->
-                            let direction = position - body.Position
-                            let distance = direction.Magnitude
-                            let normal = direction / distance
-                            if distance < radius then
-                                let pull = (radius - distance) / radius
-                                let pullForce = pull * force
-                                { body with LinearVelocity = body.LinearVelocity + pullForce * normal }
-                            else body)
-                            bodies
+                    let mutable i = 0
+                    while i < dec bodies.Length do
+                        let body = &bodies.[i]
+                        let direction = position - body.Position
+                        let distance = direction.Magnitude
+                        let normal = direction / distance
+                        if distance < radius then
+                            let pull = (radius - distance) / radius
+                            let pullForce = pull * force
+                            body.LinearVelocity <- body.LinearVelocity + pullForce * normal
+                        i <- inc i
                     (Output.empty, bodies)
                 | Drag (linearDrag, angularDrag) ->
                     let bodies =
