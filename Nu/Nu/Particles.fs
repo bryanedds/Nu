@@ -195,7 +195,7 @@ module Particles =
 
     /// Transforms a constrained value.
     type 'a Transformer =
-        int64 -> Constraint -> 'a SegmentedArray -> (Output * 'a SegmentedArray)
+        int64 -> Constraint -> 'a SegmentedArray -> Output
 
     [<RequireQualifiedAccess>]
     module Transformer =
@@ -208,7 +208,6 @@ module Particles =
                 body.Position <- body.Position + body.LinearVelocity
                 body.Angles <- body.Angles + body.AngularVelocity
                 i <- inc i
-            bodies
 
         /// Constrain bodies.
         let rec constrain c (bodies : Body SegmentedArray) =
@@ -227,7 +226,6 @@ module Particles =
                         let linearVelocity = reflectedVelocity * body.Restitution
                         body.LinearVelocity <- linearVelocity
                     i <- inc i
-                bodies
             | Box box ->
                 // TODO: implement properly bouncing angles.
                 let mutable i = 0
@@ -241,9 +239,12 @@ module Particles =
                         let linearVelocity = speed * distanceNormalized * body.Restitution
                         body.LinearVelocity <- linearVelocity
                     i <- inc i
-                bodies
             | Constraints constraints ->
-                SegmentedArray.fold (flip constrain) bodies constraints
+                let mutable i = 0
+                while i < dec constraints.Length do
+                    let constrain' = constraints.[i]
+                    constrain constrain' bodies
+                    i <- inc i
 
         /// Make a force transformer.
         let force force : Body Transformer =
@@ -255,7 +256,7 @@ module Particles =
                         let body = &bodies.[i]
                         body.LinearVelocity <- body.LinearVelocity + gravity
                         i <- inc i
-                    (Output.empty, bodies)
+                    Output.empty
                 | Attractor (position, radius, force) ->
                     let mutable i = 0
                     while i < dec bodies.Length do
@@ -268,50 +269,80 @@ module Particles =
                             let pullForce = pull * force
                             body.LinearVelocity <- body.LinearVelocity + pullForce * normal
                         i <- inc i
-                    (Output.empty, bodies)
+                    Output.empty
                 | Drag (linearDrag, angularDrag) ->
-                    let bodies =
-                        SegmentedArray.transform (fun (body : Body) ->
-                            let linearDrag = body.LinearVelocity * linearDrag
-                            let angularDrag = body.AngularVelocity * angularDrag
-                            { body with
-                                LinearVelocity = body.LinearVelocity - linearDrag
-                                AngularVelocity = body.AngularVelocity - angularDrag })
-                            bodies
-                    (Output.empty, bodies)
+                    let mutable i = 0
+                    while i < dec bodies.Length do
+                        let body = &bodies.[i]
+                        let linearDrag = body.LinearVelocity * linearDrag
+                        let angularDrag = body.AngularVelocity * angularDrag
+                        body.LinearVelocity <- body.LinearVelocity - linearDrag
+                        body.AngularVelocity <- body.AngularVelocity - angularDrag
+                        i <- inc i
+                    Output.empty
                 | Velocity c2 ->
                     let c3 = c + c2
-                    let bodies = constrain c3 bodies
-                    let bodies = accelerate bodies
-                    (Output.empty, bodies)
+                    constrain c3 bodies
+                    accelerate bodies
+                    Output.empty
 
         /// Make a logic transformer.
         let logic logic : struct (Life * bool) Transformer =
             match logic.LogicType with
             | Or value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, targetValue || value)
+                        i <- inc i
+                    Output.empty
             | Nor value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, not targetValue && not value)
+                        i <- inc i
+                    Output.empty
             | Xor value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, targetValue <> value)
+                        i <- inc i
+                    Output.empty
             | And value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, targetValue && value)
+                        i <- inc i
+                    Output.empty
             | Nand value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, not (targetValue && value))
+                        i <- inc i
+                    Output.empty
             | Equal value ->
                 fun _ _ targets ->
-                    let targets = SegmentedArray.transform (fun struct (targetLife, _) -> struct (targetLife, value)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, _) = v
+                        targets.[i] <- struct (targetLife, value)
+                        i <- inc i
+                    Output.empty
 
         /// Make a generic range transformer.
         let inline rangeSrtp mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
@@ -325,116 +356,138 @@ module Particles =
             match range.RangeType with
             | Constant value ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let result = applyRange targetValue value
-                            struct (targetLife, result)) targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        targets.[i] <- struct (targetLife, applyRange targetValue value)
+                        i <- inc i
+                    Output.empty
             | Linear (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let result = applyRange targetValue (value + scale (value2 - value, progress))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let result = applyRange targetValue (value + scale (value2 - value, progress))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | Random (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
-                            let randValue = fst (Rand.nextSingle rand)
-                            let result = applyRange targetValue (value + scale (value2 - value, randValue))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
+                        let randValue = fst (Rand.nextSingle rand)
+                        let result = applyRange targetValue (value + scale (value2 - value, randValue))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | Chaos (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let chaosValue = Gen.randomf
-                            let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let chaosValue = Gen.randomf
+                        let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | Ease (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
-                            let result = applyRange targetValue (value + scale (value2 - value, progressEase))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
+                        let result = applyRange targetValue (value + scale (value2 - value, progressEase))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | EaseIn (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 0.5
-                            let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 0.5
+                        let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | EaseOut (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 0.5
-                            let progressEaseOut = Math.Sin progressScaled
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 0.5
+                        let progressEaseOut = Math.Sin progressScaled
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | Sin (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 2.0
-                            let progressSin = Math.Sin progressScaled
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 2.0
+                        let progressSin = Math.Sin progressScaled
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | SinScaled (scalar, value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 2.0 * float scalar
-                            let progressSin = Math.Sin progressScaled
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                        let progressSin = Math.Sin progressScaled
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | Cos (value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 2.0
-                            let progressCos = Math.Cos progressScaled
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 2.0
+                        let progressCos = Math.Cos progressScaled
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
             | CosScaled (scalar, value, value2) ->
                 fun _ _ targets ->
-                    let targets =
-                        SegmentedArray.transform (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress3 time range.RangeLife targetLife
-                            let progressScaled = float progress * Math.PI * 2.0 * float scalar
-                            let progressCos = Math.Cos progressScaled
-                            let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
-                            struct (targetLife, result))
-                            targets
-                    (Output.empty, targets)
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        let v = &targets.[i]
+                        let struct (targetLife, targetValue) = v
+                        let progress = Life.getProgress3 time range.RangeLife targetLife
+                        let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                        let progressCos = Math.Cos progressScaled
+                        let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
+                        targets.[i] <- struct (targetLife, result)
+                        i <- inc i
+                    Output.empty
 
         /// Make an int range transformer.
         let rangeInt time range = rangeSrtp (fun (x : int, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int (single x * y)) time range
@@ -463,7 +516,7 @@ module Particles =
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
         { In : 'a SegmentedArray -> 'b SegmentedArray
-          Out : (Output * 'b SegmentedArray) -> 'a SegmentedArray -> (Output * 'a SegmentedArray) }
+          Out : Output -> 'b SegmentedArray -> 'a SegmentedArray -> Output }
 
     type In<'a, 'b when 'a : struct> =
         delegate of 'a byref * 'b byref -> unit
@@ -474,13 +527,8 @@ module Particles =
     [<RequireQualifiedAccess>]
     module Scope =
 
-        /// Make a scope with pure in and out lambdas.
-        let inline byCopy<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
-            { In = SegmentedArray.map getField
-              Out = fun (output, fields) (targets : 'a SegmentedArray) -> (output, SegmentedArray.map2 setField fields targets) }
-
         /// Make a scope with in-place in and out delegates.
-        let inline byRef<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
+        let inline make<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
             { In =
                 fun (targets : 'a SegmentedArray) ->
                     let fields = SegmentedArray.zeroCreate targets.Length
@@ -489,12 +537,12 @@ module Particles =
                         getField.Invoke (&targets.[i], &fields.[i])
                         i <- inc i
                     fields
-              Out = fun (output, fields) (targets : 'a SegmentedArray) ->
+              Out = fun output fields (targets : 'a SegmentedArray) ->
                 let mutable i = 0
                 while i < dec targets.Length do
                     setField.Invoke (&fields.[i], &targets.[i])
                     i <- inc i
-                (output, targets) }
+                output }
 
     /// The base behavior type.
     type Behavior =
@@ -503,7 +551,7 @@ module Particles =
         abstract Run : int64 -> Constraint -> obj -> (Output * obj)
 
         /// Run the behavior over multiple targets.
-        abstract RunMany : int64 -> Constraint -> obj -> (Output * obj)
+        abstract RunMany : int64 -> Constraint -> obj -> Output
 
     /// Defines a generic behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
@@ -521,19 +569,18 @@ module Particles =
         /// Run the behavior over targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
-            let targets2 = behavior.Scope.In targets
-            let (output, targets3) =
-                FStack.fold (fun (output, targets) transformer ->
-                    let (output2, targets) = transformer time constrain targets
-                    (output + output2, targets))
-                    (Output.empty, targets2)
+            let fields = behavior.Scope.In targets
+            let output =
+                FStack.fold (fun output transformer ->
+                    output + transformer time constrain fields)
+                    Output.empty
                     behavior.Transformers
-            let (output, targets4) = behavior.Scope.Out (output, targets3) targets
-            (output, targets4)
+            behavior.Scope.Out output fields targets
 
         /// Run the behavior over a single target.
         static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
-            let (output, targets) = Behavior<'a, 'b>.runMany time constrain behavior (SegmentedArray.singleton target)
+            let targets = SegmentedArray.singleton target
+            let output = Behavior<'a, 'b>.runMany time constrain behavior targets
             let target = SegmentedArray.item 0 targets
             (output, target)
 
@@ -542,8 +589,7 @@ module Particles =
                 let (outputs, target) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
                 (outputs, target :> obj)
             member this.RunMany time constrain targetsObj =
-                let (outputs, targets) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a SegmentedArray)
-                (outputs, targets :> obj)
+                Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a SegmentedArray)
 
     /// A composition of behaviors.
     type [<NoEquality; NoComparison>] Behaviors =
@@ -581,13 +627,12 @@ module Particles =
 
         /// Run the behaviors over targets.
         static member runMany time behaviors constrain (targets : 'a SegmentedArray) =
-            let (outputs, targets) =
-                FStack.fold (fun (output, targets) (behavior : Behavior) ->
-                    let (output2, targets2) = behavior.RunMany time constrain targets
-                    (output + output2, targets2))
-                    (Output.empty, targets :> obj)
+            let outputs =
+                FStack.fold (fun output (behavior : Behavior) ->
+                    output + behavior.RunMany time constrain targets)
+                    Output.empty
                     behaviors.Behaviors
-            (outputs, targets :?> 'a SegmentedArray)
+            outputs
 
     /// Describes an emitter.
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
@@ -673,8 +718,7 @@ module Particles =
             let output3 = emitter.ParticleBehavior time emitter
 
             // update existing particles compositionally
-            let (output4, particleBuffer) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
-            let emitter = { emitter with ParticleRing = particleBuffer }
+            let output4 = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
 
             // fin
             (output + output2 + output3 + output4, emitter)
@@ -733,17 +777,17 @@ module Particles =
 
     [<RequireQualifiedAccess>]
     module BasicParticle =
-        let body = Scope.byRef (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
-        let position = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
-        let scale = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
-        let angles = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
-        let offset = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
-        let size = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
-        let inset = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
-        let color = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
-        let glow = Scope.byRef (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
+        let body = Scope.make (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
+        let position = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
+        let scale = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
+        let angles = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
+        let offset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
+        let size = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
+        let inset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
+        let color = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
+        let glow = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
         let flipH =
-            Scope.byRef
+            Scope.make
                 (new In<_, _> (fun p v ->
                     let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
                     v <- struct (p.Life, flipH)))
@@ -760,7 +804,7 @@ module Particles =
                         | (FlipHV, false) -> FlipV
                     p.Flip <- flip))
         let flipV =
-            Scope.byRef
+            Scope.make
                 (new In<_, _> (fun p v ->
                     let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
                     v <- struct (p.Life, flipV)))
