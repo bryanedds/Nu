@@ -143,7 +143,7 @@ module EcsEvents =
     let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] Actualize = "Actualize"
     let [<Literal>] RegisterComponent = "RegisterComponent"
-    let [<Literal>] UnregisterComponent = "UnregisterComponent"
+    let [<Literal>] UnregisteringComponent = "UnregisteringComponent"
 
 /// An ECS event.
 type [<NoEquality; NoComparison>] EcsEvent<'d, 'w> =
@@ -276,6 +276,25 @@ and 'w Ecs () =
     member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
         let compName = typeof<'c>.Name
         this.RegisterNamedComponent<'c> compName comp entityId world
+
+    member this.UnregisterNamedComponent compName entityId world =
+        match systemSlots.TryGetValue entityId with
+        | (true, systemSlot) ->
+            let system = systemSlot.System
+            let comps = system.GetComponents systemSlot.SystemIndex
+            let world = this.Publish EcsEvents.UnregisteringComponent entityId world
+            system.Unregister systemSlot.SystemIndex
+            systemSlots.Remove entityId |> ignore<bool>
+            comps.Remove compName |> ignore<bool>
+            let systemId = HashSet system.Id
+            systemId.Remove compName |> ignore<bool>
+            let systemIndex = system.Register comps
+            systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+            world
+        | (false, _) -> world
+
+    member this.UnregisterComponent<'c> entityId world =
+        this.UnregisterNamedComponent typeof<'c>.Name entityId world
 
     member this.RegisterQuery<'q when 'q :> 'w Query> (query : 'q) =
         for systemEntry in systems do
