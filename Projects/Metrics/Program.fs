@@ -120,23 +120,27 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
+        // create movers query
+        let movers = Query<Position, Velocity, World> ecs
+
+        // create shakers query
+        let shakers = Query<EntityId, Position, Shake, World> ecs
+
         // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                let entityId = ecs.EntityId
-                let world = ecs.RegisterComponent { Active = true; Position = v2Zero } entityId world
-                let world = ecs.RegisterComponent { Active = true; Velocity = v2One } entityId world
+                movers.RegisterComponents { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } ecs.EntityId world)
                 world (Seq.init 4000000 id)
 
         // create 4000 shakers
         let world =
             Seq.fold (fun world _ ->
-                let struct (entityId, world) = movers.NextEntityId world
-                shakers.Allocate { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } world |> snd')
+                let entityId = ecs.EntityId
+                shakers.RegisterComponents { Active = true; EntityId = entityId } { Active = true; Position = v2Zero } { Active = true; Origin = v2Zero; Offset = v2One } entityId world)
                 world (Seq.init 4000 id)
 
         // define update for movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ ->
             movers.Iterate $
                 new Statement<_, _, _> (fun position velocity world ->
                     position.Position.X <- position.Position.X + velocity.Velocity.X
@@ -144,7 +148,7 @@ type MyGameDispatcher () =
                     world)
 
         // define update for shakers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ ->
             shakers.Iterate $
                 new Statement<_, _, _, _> (fun _ position shake world ->
                     position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X

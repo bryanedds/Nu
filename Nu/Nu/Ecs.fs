@@ -228,7 +228,7 @@ and 'w Ecs () =
         | (true, _) -> failwith "Component type already registered."
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
 
-    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) compName entityId (world : 'w) : 'w =
+    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) entityId (world : 'w) : 'w =
         match systemSlots.TryGetValue entityId with
         | (true, systemSlot) ->
             let system = systemSlot.System
@@ -257,7 +257,7 @@ and 'w Ecs () =
 
     member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
         let compName = typeof<'c>.Name
-        this.RegisterNamedComponent<'c> comp compName entityId world
+        this.RegisterNamedComponent<'c> compName comp entityId world
 
     member this.RegisterQuery (query : 'w Query) =
         for systemEntry in systems do

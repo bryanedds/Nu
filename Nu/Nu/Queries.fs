@@ -6,9 +6,11 @@ open System
 open Prime
 
 type Query<'c, 'w when
-    'c : struct and 'c :> 'c Component> (compName : string) =
+    'c : struct and 'c :> 'c Component> (compName : string, ecs : 'w Ecs) =
 
     let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+
+    new (ecs) = Query<_, _> (typeof<'c>.Name, ecs)
 
     member this.CheckCompatibility (system : 'w System) =
         let stores = system.Stores
@@ -16,6 +18,12 @@ type Query<'c, 'w when
 
     member this.RegisterSystem (system : 'w System) =
         systems.Add (system.Id, system)
+
+    member this.RegisterNamedComponents compName (comp : 'c) entityId world =
+        ecs.RegisterNamedComponent compName comp entityId world
+
+    member this.RegisterComponents (comp : 'c) entityId world =
+        this.RegisterNamedComponents typeof<'c>.Name comp entityId world
 
     member this.Iterate (statement : Statement<'c, 'w>) world =
         let mutable world = world
@@ -35,9 +43,11 @@ type Query<'c, 'w when
 
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component> (compName : string, comp2Name : string) =
+    'c2 : struct and 'c2 :> 'c2 Component> (compName : string, comp2Name : string, ecs : 'w Ecs) =
 
     let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+
+    new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, ecs)
 
     member this.CheckCompatibility (system : 'w System) =
         let stores = system.Stores
@@ -46,6 +56,14 @@ type Query<'c, 'c2, 'w when
 
     member this.RegisterSystem (system : 'w System) =
         systems.Add (system.Id, system)
+
+    member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) entityId world =
+        let world = ecs.RegisterNamedComponent compName comp entityId world
+        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
+        world
+
+    member this.RegisterComponents (comp : 'c) (comp2 : 'c2) entityId world =
+        this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 entityId world
 
     member this.Iterate (statement : Statement<'c, 'c2, 'w>) world =
         let mutable world = world
@@ -67,9 +85,11 @@ type Query<'c, 'c2, 'w when
 type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component> (compName : string, comp2Name : string, comp3Name : string) =
+    'c3 : struct and 'c3 :> 'c3 Component> (compName : string, comp2Name : string, comp3Name : string, ecs : 'w Ecs) =
 
     let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
+
+    new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, ecs)
 
     member this.CheckCompatibility (system : 'w System) =
         let stores = system.Stores
@@ -79,6 +99,15 @@ type Query<'c, 'c2, 'c3, 'w when
 
     member this.RegisterSystem (system : 'w System) =
         systems.Add (system.Id, system)
+
+    member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) comp3Name (comp3 : 'c3) entityId world =
+        let world = ecs.RegisterNamedComponent compName comp entityId world
+        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
+        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
+        world
+
+    member this.RegisterComponents (comp : 'c) (comp2 : 'c2) (comp3 : 'c3) entityId world =
+        this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 typeof<'c3>.Name comp3 entityId world
 
     member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'w>) world =
         let mutable world = world
