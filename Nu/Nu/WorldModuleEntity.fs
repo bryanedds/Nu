@@ -298,14 +298,16 @@ module WorldModuleEntity =
                 let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
                 let centeredChanged = newTransform.Centered <> oldTransform.Centered
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged || centeredChanged
-                // OPTIMIZATION: eliding PerimeterOriented, Bounds, and data for Transform change events for speed.
+                // OPTIMIZATION: eliding data for computed change events for speed.
                 let world = World.publishEntityChange Property? Transform () publishChangeBindings publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
-                        let world = World.publishEntityChange Property? Perimeter newTransform.Perimeter publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Center newTransform.Center publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Bottom newTransform.Bottom publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? PerimeterUnscaled newTransform.PerimeterUnscaled publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Bounds () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? PerimeterOriented () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Perimeter () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Center () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Bottom () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? PerimeterUnscaled () publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged || centeredChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged || centeredChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
                         let world = if offsetChanged || centeredChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
@@ -315,9 +317,9 @@ module WorldModuleEntity =
                     else world
                 let world =
                     if anglesChanged then
-                        let world = World.publishEntityChange Property? Rotation newTransform.Rotation publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Angles newTransform.Angles publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Degrees (Math.radiansToDegrees3d newTransform.Angles) publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Rotation () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Angles () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Degrees () publishChangeBindings publishChangeEvents entity world
                         world
                     else world
                 let world =
