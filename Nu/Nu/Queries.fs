@@ -19,23 +19,29 @@ type Query<'c, 'w when
     member this.RegisterSystem (system : 'w System) =
         systems.Add (system.Id, system)
 
-    member this.RegisterNamedComponents compName (comp : 'c) entityId world =
+    member this.RegisterNamedComponent compName (comp : 'c) entityId world =
         ecs.RegisterNamedComponent compName comp entityId world
 
-    member this.RegisterComponents (comp : 'c) entityId world =
-        this.RegisterNamedComponents typeof<'c>.Name comp entityId world
+    member this.RegisterComponent (comp : 'c) entityId world =
+        this.RegisterNamedComponent typeof<'c>.Name comp entityId world
 
-    member this.Iterate (statement : Statement<'c, 'w>) world =
-        let mutable world = world
+    member this.UnregisterNamedComponent compName entityId world =
+        ecs.UnregisterNamedComponent compName entityId world
+
+    member this.UnregisterComponent<'c> entityId world =
+        ecs.UnregisterComponent<'c> entityId world
+
+    member this.Iterate (statement : Statement<'c, 's>) state =
+        let mutable state = state
         for systemEntry in systems do
             let system = systemEntry.Value
             let stores = system.Stores
             let store = stores.[compName] :?> 'c Store
             let mutable i = 0
             while i < store.Length do
-                world <- statement.Invoke (&store.[i], world)
+                state <- statement.Invoke (&store.[i], state)
                 i <- inc i
-        world
+        state
 
     interface 'w Query with
         member this.CheckCompatibility system = this.CheckCompatibility system
@@ -64,6 +70,14 @@ type Query<'c, 'c2, 'w when
 
     member this.RegisterComponents (comp : 'c) (comp2 : 'c2) entityId world =
         this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 entityId world
+
+    member this.UnregisterNamedComponents compName comp2Name entityId world =
+        let world = ecs.UnregisterNamedComponent compName entityId world
+        let world = ecs.UnregisterNamedComponent comp2Name entityId world
+        world
+
+    member this.UnregisterComponents entityId world =
+        this.UnregisterNamedComponents typeof<'c>.Name typeof<'c2>.Name entityId world
 
     member this.Iterate (statement : Statement<'c, 'c2, 's>) state =
         let mutable state = state
@@ -117,8 +131,17 @@ type Query<'c, 'c2, 'c3, 'w when
     member this.RegisterComponents (comp : 'c) (comp2 : 'c2) (comp3 : 'c3) entityId world =
         this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 typeof<'c3>.Name comp3 entityId world
 
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'w>) world =
-        let mutable world = world
+    member this.UnregisterNamedComponents compName comp2Name comp3Name entityId world =
+        let world = ecs.UnregisterNamedComponent compName entityId world
+        let world = ecs.UnregisterNamedComponent comp2Name entityId world
+        let world = ecs.UnregisterNamedComponent comp3Name entityId world
+        world
+
+    member this.UnregisterComponents entityId world =
+        this.UnregisterNamedComponents typeof<'c>.Name typeof<'c2>.Name typeof<'c3>.Name entityId world
+
+    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 's>) state =
+        let mutable state = state
         for systemEntry in systems do
             let system = systemEntry.Value
             let stores = system.Stores
@@ -127,9 +150,9 @@ type Query<'c, 'c2, 'c3, 'w when
             let store3 = stores.[comp3Name] :?> 'c3 Store
             let mutable i = 0
             while i < store.Length do
-                world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
+                state <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
                 i <- inc i
-        world
+        state
 
     interface 'w Query with
         member this.CheckCompatibility system = this.CheckCompatibility system
