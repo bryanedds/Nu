@@ -22,6 +22,10 @@ type [<NoEquality; NoComparison; Struct>] EntityId =
     interface EntityId Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
+type [<NoEquality; NoComparison; Struct>] ComponentRegistrationData =
+    { EntityId : uint64
+      ComponentName : string }
+
 type Store =
     interface
         abstract Length : int
@@ -191,18 +195,18 @@ and 'w Ecs () =
         if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of ECS subscription ids not supported."
         subscriptionIdCurrent
 
-    member this.EntityId =
-        entityIdCurrent <- inc entityIdCurrent
-        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
-        entityIdCurrent
-
     member private this.BoxCallback<'d> (callback : EcsCallback<'d, 'w>) =
         let boxableCallback = fun (evt : EcsEvent<obj, 'w>) store ->
             let evt = { EcsEventData = evt.EcsEventData :?> 'd }
             callback evt store
         boxableCallback :> obj
 
-    member this.Publish<'d> eventName (eventData : 'd) (world : 'w) =
+    member this.EntityId =
+        entityIdCurrent <- inc entityIdCurrent
+        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
+        entityIdCurrent
+
+    member this.Publish<'d> eventName (eventData : 'd) world =
         match subscriptions.TryGetValue eventName with
         | (false, _) -> world
         | (true, callbacks) ->
@@ -235,7 +239,7 @@ and 'w Ecs () =
         | (true, _) -> failwith "Component type already registered."
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
 
-    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) entityId (world : 'w) : 'w =
+    member this.RegisterNamedComponent<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) entityId world =
         match systemSlots.TryGetValue entityId with
         | (true, systemSlot) ->
             let system = systemSlot.System
@@ -256,7 +260,8 @@ and 'w Ecs () =
                     let systemIndex = system.Register comps
                     systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
                     world
-            this.Publish EcsEvents.RegisterComponent entityId world
+            let eventData = { EntityId = entityId; ComponentName = compName }
+            this.Publish EcsEvents.RegisterComponent eventData world
         | (false, _) ->
             let systemId = HashSet.singleton HashIdentity.Structural compName
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
@@ -271,7 +276,8 @@ and 'w Ecs () =
                     let systemIndex = system.Register comps
                     systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
                     world
-            this.Publish EcsEvents.RegisterComponent entityId world
+            let eventData = { EntityId = entityId; ComponentName = compName }
+            this.Publish EcsEvents.RegisterComponent eventData world
 
     member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
         let compName = typeof<'c>.Name
@@ -282,7 +288,8 @@ and 'w Ecs () =
         | (true, systemSlot) ->
             let system = systemSlot.System
             let comps = system.GetComponents systemSlot.SystemIndex
-            let world = this.Publish EcsEvents.UnregisteringComponent entityId world
+            let eventData = { EntityId = entityId; ComponentName = compName }
+            let world = this.Publish EcsEvents.UnregisteringComponent eventData world
             system.Unregister systemSlot.SystemIndex
             systemSlots.Remove entityId |> ignore<bool>
             comps.Remove compName |> ignore<bool>
@@ -295,6 +302,18 @@ and 'w Ecs () =
 
     member this.UnregisterComponent<'c> entityId world =
         this.UnregisterNamedComponent typeof<'c>.Name entityId world
+
+    member this.UnregisterComponents entityId world =
+        match systemSlots.TryGetValue entityId with
+        | (true, systemSlot) ->
+            let system = systemSlot.System
+            let mutable world = world
+            for compName in system.Stores.Keys do
+                let eventData = { EntityId = entityId; ComponentName = compName }
+                world <- this.Publish EcsEvents.UnregisteringComponent eventData world
+            system.Unregister systemSlot.SystemIndex
+            world
+        | (false, _) -> world
 
     member this.RegisterQuery<'q when 'q :> 'w Query> (query : 'q) =
         for systemEntry in systems do
@@ -321,6 +340,9 @@ and 'w Ecs () =
         match subscriptions.TryGetValue eventName with
         | (true, callbacks) -> callbacks.Remove subscriptionId
         | (false, _) -> false
+
+    member this.IndexSystemSlot entityId =
+        systemSlots.[entityId]
 
     member this.ReadComponents count systemId stream =
         match systems.TryGetValue systemId with
