@@ -851,7 +851,7 @@ module Particles =
                     let particle' = &particles'.[index]
                     particle'.Transform.Position <- particle.Body.Position
                     particle'.Transform.Scale <- particle.Body.Scale
-                    particle'.Transform.SetAnglesAndRotation (particle.Body.Angles, quatId) // HACK: since we know the quat rotation is never used for particle renders, just set it as identity.
+                    particle'.Transform.Angles <- particle.Body.Angles
                     particle'.Transform.Offset <- particle.Offset
                     particle'.Transform.Size <- particle.Size
                     particle'.Transform.Centered <- true
