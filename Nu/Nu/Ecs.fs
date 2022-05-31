@@ -153,6 +153,7 @@ module EcsEvents =
     let [<Literal>] PostUpdate = "PostUpdate"
     let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] Actualize = "Actualize"
+    let [<Literal>] ActualizeParallel = "ActualizeParallel"
     let [<Literal>] RegisterComponent = "RegisterComponent"
     let [<Literal>] UnregisteringComponent = "UnregisteringComponent"
 

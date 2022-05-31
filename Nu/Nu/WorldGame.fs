@@ -209,8 +209,7 @@ module WorldGameModule =
         static member internal actualizeGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
-            let world = dispatcher.Actualize (game, world)
-            World.choose world
+            dispatcher.Actualize (game, world)
 
         /// Get all the entities in the world.
         [<FunctionBinding "getEntities0">]

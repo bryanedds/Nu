@@ -15,7 +15,7 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member internal actualizeView view world =
+        static member internal processView view world =
             match view with
             | Render2d (elevation, horizon, assetTag, descriptor) ->
                 let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
@@ -26,8 +26,12 @@ module DeclarativeOperators2 =
             | StopSong -> World.stopSong world
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
-            | Views views -> Array.fold (fun world view -> World.actualizeView view world) world views
-            | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.actualizeView view world) world views
+            | Views2 (view, view2) -> world |> World.processView view |> World.processView view2
+            | Views views -> Array.fold (fun world view -> World.processView view world) world views
+            | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.processView view world) world views
+
+        static member internal processViews views world =
+            Seq.fold (fun world view -> World.processView view world) world views
 
 [<AutoOpen>]
 module FacetModule =
@@ -126,8 +130,7 @@ module FacetModule =
                 world initializers
 
         override this.Actualize (entity, world) =
-            let view = this.View (this.GetModel entity world, entity, world)
-            World.actualizeView view world
+            this.View (this.GetModel entity world, entity, world)
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
@@ -264,21 +267,19 @@ module StaticSpriteFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let staticImage = entity.GetStaticImage world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = transform.Elevation
-                      Horizon = perimeter.Position.Y
-                      AssetTag = AssetTag.generalize staticImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = transform
-                              InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-                              Image = staticImage
-                              Color = entity.GetColor world
-                              Blend = entity.GetBlend world
-                              Glow = entity.GetGlow world
-                              Flip = entity.GetFlip world }}
-                    world
-            else world
+                Render2d
+                    (transform.Elevation,
+                     perimeter.Position.Y,
+                     AssetTag.generalize staticImage,
+                     SpriteDescriptor
+                        { Transform = transform
+                          InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+                          Image = staticImage
+                          Color = entity.GetColor world
+                          Blend = entity.GetBlend world
+                          Glow = entity.GetGlow world
+                          Flip = entity.GetFlip world })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
@@ -338,21 +339,19 @@ module AnimatedSpriteFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let animationSheet = entity.GetAnimationSheet world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = transform.Elevation
-                      Horizon = perimeter.Position.Y
-                      AssetTag = AssetTag.generalize animationSheet
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = transform
-                              InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
-                              Image = animationSheet
-                              Color = entity.GetColor world
-                              Blend = entity.GetBlend world
-                              Glow = entity.GetGlow world
-                              Flip = entity.GetFlip world }}
-                    world
-            else world
+                Render2d
+                    (transform.Elevation,
+                     perimeter.Position.Y,
+                     AssetTag.generalize animationSheet,
+                     SpriteDescriptor
+                        { Transform = transform
+                          InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+                          Image = animationSheet
+                          Color = entity.GetColor world
+                          Blend = entity.GetBlend world
+                          Glow = entity.GetGlow world
+                          Flip = entity.GetFlip world })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             (entity.GetCelSize world).V3
@@ -408,19 +407,17 @@ module TextFacetModule =
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = textTransform.Elevation
-                      Horizon = horizon
-                      AssetTag = AssetTag.generalize font
-                      RenderDescriptor =
-                        TextDescriptor
-                            { Transform = textTransform
-                              Text = text
-                              Font = font
-                              Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
-                              Justification = entity.GetJustification world }}
-                    world
-            else world
+                Render2d
+                    (textTransform.Elevation,
+                     horizon,
+                     AssetTag.generalize font,
+                     TextDescriptor
+                        { Transform = textTransform
+                          Text = text
+                          Font = font
+                          Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
+                          Justification = entity.GetJustification world })
+            else View.empty
 
 [<AutoOpen>]
 module BasicEmitter2dFacetModule =
@@ -654,12 +651,13 @@ module BasicEmitter2dFacetModule =
                     particleSystem |>
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
-                        { Elevation = descriptor.Elevation
-                          Horizon = descriptor.Horizon
-                          AssetTag = AssetTag.generalize descriptor.Image
-                          RenderDescriptor = ParticlesDescriptor descriptor })
-                World.enqueueRenderLayeredMessages2d particlesMessages world
-            else world
+                        Render2d
+                            (descriptor.Elevation,
+                             descriptor.Horizon,
+                             AssetTag.generalize descriptor.Image,
+                             ParticlesDescriptor descriptor))
+                Views (Array.ofList particlesMessages)
+            else View.empty
 
 [<AutoOpen>]
 module Effect2dFacetModule =
@@ -807,7 +805,7 @@ module Effect2dFacetModule =
                 let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
 
                 // actualize effect view
-                let world = World.actualizeView view world
+                let world = World.processView view world
 
                 // convert view to array for storing tags and spawning emitters
                 let views = View.toSeq view
@@ -817,7 +815,7 @@ module Effect2dFacetModule =
                     views |>
                     Seq.choose (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
                     Map.ofSeq
-                let world = entity.SetEffectTags tags world
+                let fn = entity.SetEffectTags tags
 
                 // spawn emitters
                 let particleSystem =
@@ -844,19 +842,21 @@ module Effect2dFacetModule =
                     particleSystem |>
                     ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
-                        { Elevation = descriptor.Elevation
-                          Horizon = descriptor.Horizon
-                          AssetTag = AssetTag.generalize descriptor.Image
-                          RenderDescriptor = ParticlesDescriptor descriptor })
-                let world = World.enqueueRenderLayeredMessages2d particlesMessages world
+                        Render2d
+                            (descriptor.Elevation,
+                             descriptor.Horizon,
+                             AssetTag.generalize descriptor.Image,
+                             ParticlesDescriptor descriptor))
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
                 if effectHistory.Count > entity.GetEffectHistoryMax world then effectHistory.RemoveFromBack () |> ignore
-                world
+
+                // fin
+                Views (Array.ofList particlesMessages)
 
             // no need to evaluate non-visible effect
-            else world
+            else View.empty
 
         override this.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
@@ -1126,7 +1126,7 @@ module TileMapFacetModule =
                     let mutable transform = entity.GetTransform world
                     let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                     let viewBounds = World.getViewBounds2d transform.Absolute world
-                    let tileMapMessages =
+                    let tileMapViews =
                         TmxMap.getLayeredMessages2d
                             (World.getUpdateTime world)
                             transform.Absolute
@@ -1139,9 +1139,9 @@ module TileMapFacetModule =
                             (entity.GetTileIndexOffset world)
                             (entity.GetTileIndexOffsetRange world)
                             tileMap
-                    World.enqueueRenderLayeredMessages2d tileMapMessages world
-                | None -> world
-            else world
+                    Views (Array.ofList tileMapViews)
+                | None -> View.empty
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
@@ -1221,7 +1221,7 @@ module TmxMapFacetModule =
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                 let viewBounds = World.getViewBounds2d transform.Absolute world
                 let tmxMap = entity.GetTmxMap world
-                let tmxMapMessages =
+                let tmxMapViews =
                     TmxMap.getLayeredMessages2d
                         (World.getUpdateTime world)
                         transform.Absolute
@@ -1234,8 +1234,8 @@ module TmxMapFacetModule =
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
                         tmxMap
-                World.enqueueRenderLayeredMessages2d tmxMapMessages world
-            else world
+                Views (Array.ofList tmxMapViews)
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             let tmxMap = entity.GetTmxMap world
@@ -1329,8 +1329,7 @@ module EntityDispatcherModule =
             Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 
         override this.Actualize (entity, world) =
-            let view = this.View (this.GetModel entity world, entity, world)
-            World.actualizeView view world
+            this.View (this.GetModel entity world, entity, world)
 
         override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
             entity.TrySignalFacet signalObj facetName world
@@ -1532,21 +1531,19 @@ module ButtonDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Position.Y
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Glow = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            else world
+                Render2d
+                    (spriteTransform.Elevation,
+                     spriteTransform.Position.Y,
+                     AssetTag.generalize spriteImage,
+                     SpriteDescriptor
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = FlipNone })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUpImage world) world with
@@ -1572,21 +1569,19 @@ module LabelDispatcherModule =
                 let mutable transform = entity.GetTransform world
                 let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
                 let spriteImage = entity.GetLabelImage world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Position.Y
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Glow = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            else world
+                Render2d
+                    (spriteTransform.Elevation,
+                     spriteTransform.Position.Y,
+                     AssetTag.generalize spriteImage,
+                     SpriteDescriptor
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = FlipNone })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
@@ -1617,22 +1612,20 @@ module TextDispatcherModule =
                 | Some spriteImage ->
                     let mutable transform = entity.GetTransform world
                     let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
-                    World.enqueueRenderLayeredMessage2d
-                        { Elevation = spriteTransform.Elevation
-                          Horizon = spriteTransform.Position.Y
-                          AssetTag = AssetTag.generalize spriteImage
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = spriteTransform
-                                  InsetOpt = ValueNone
-                                  Image = spriteImage
-                                  Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                                  Blend = Transparent
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }}
-                        world
-                | None -> world
-            else world
+                    Render2d
+                        (spriteTransform.Elevation,
+                         spriteTransform.Position.Y,
+                         AssetTag.generalize spriteImage,
+                         SpriteDescriptor
+                            { Transform = spriteTransform
+                              InsetOpt = ValueNone
+                              Image = spriteImage
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone })
+                | None -> View.empty
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
@@ -1750,21 +1743,19 @@ module ToggleButtonDispatcherModule =
                     if entity.GetToggled world || entity.GetPressed world
                     then entity.GetToggledImage world
                     else entity.GetUntoggledImage world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Position.Y
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Glow = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            else world
+                Render2d
+                    (spriteTransform.Elevation,
+                     spriteTransform.Position.Y,
+                     AssetTag.generalize spriteImage,
+                     SpriteDescriptor
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = FlipNone })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
@@ -1874,21 +1865,19 @@ module RadioButtonDispatcherModule =
                     if entity.GetDialed world || entity.GetPressed world
                     then entity.GetDialedImage world
                     else entity.GetUndialedImage world
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Position.Y
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Glow = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            else world
+                Render2d
+                    (spriteTransform.Elevation,
+                     spriteTransform.Position.Y,
+                     AssetTag.generalize spriteImage,
+                     SpriteDescriptor
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = FlipNone })
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUndialedImage world) world with
@@ -2064,21 +2053,19 @@ module FillBarDispatcherModule =
                 let disabledColor = entity.GetDisabledColor world
                 let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
                 let borderImage = entity.GetBorderImage world
-                let world =
-                    World.enqueueRenderLayeredMessage2d
-                        { Elevation = borderTransform.Elevation
-                          Horizon = horizon
-                          AssetTag = AssetTag.generalize borderImage
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = borderTransform
-                                  InsetOpt = ValueNone
-                                  Image = borderImage
-                                  Color = borderImageColor
-                                  Blend = Transparent
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }}
-                        world
+                let borderView =
+                    Render2d
+                        (borderTransform.Elevation,
+                         horizon,
+                         AssetTag.generalize borderImage,
+                         SpriteDescriptor
+                            { Transform = borderTransform
+                              InsetOpt = ValueNone
+                              Image = borderImage
+                              Color = borderImageColor
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone })
 
                 // fill sprite
                 let fillSize = perimeter.Size
@@ -2095,25 +2082,23 @@ module FillBarDispatcherModule =
                 fillTransform.Absolute <- transform.Absolute
                 let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
                 let fillImage = entity.GetFillImage world
-                let world =
-                    World.enqueueRenderLayeredMessage2d
-                        { Elevation = fillTransform.Elevation
-                          Horizon = horizon
-                          AssetTag = AssetTag.generalize fillImage
-                          RenderDescriptor =
-                              SpriteDescriptor
-                                  { Transform = fillTransform
-                                    InsetOpt = ValueNone
-                                    Image = fillImage
-                                    Color = fillImageColor
-                                    Blend = Transparent
-                                    Glow = Color.Zero
-                                    Flip = FlipNone }}
-                        world
+                let fillView =
+                    Render2d
+                        (fillTransform.Elevation,
+                         horizon,
+                         AssetTag.generalize fillImage,
+                         SpriteDescriptor
+                            { Transform = fillTransform
+                              InsetOpt = ValueNone
+                              Image = fillImage
+                              Color = fillImageColor
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone })
 
                 // fin
-                world
-            else world
+                Views2 (borderView, fillView)
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
@@ -2244,21 +2229,19 @@ module SideViewCharacterDispatcherModule =
                     else
                         let image = entity.GetSideViewCharacterWalkSheet world
                         struct (ValueSome (computeWalkCelInset celSize celRun animationDelay time), image)
-                World.enqueueRenderLayeredMessage2d
-                    { Elevation = transform.Elevation
-                      Horizon = transform.Perimeter.Position.Y
-                      AssetTag = AssetTag.generalize image
-                      RenderDescriptor =
-                        SpriteDescriptor
-                            { Transform = transform
-                              InsetOpt = insetOpt
-                              Image = image
-                              Color = Color.One
-                              Blend = Transparent
-                              Glow = Color.Zero
-                              Flip = if facingLeft then FlipH else FlipNone }}
-                    world
-            else world
+                Render2d
+                    (transform.Elevation,
+                     transform.Perimeter.Position.Y,
+                     AssetTag.generalize image,
+                     SpriteDescriptor
+                        { Transform = transform
+                          InsetOpt = insetOpt
+                          Image = image
+                          Color = Color.One
+                          Blend = Transparent
+                          Glow = Color.Zero
+                          Flip = if facingLeft then FlipH else FlipNone })
+            else View.empty
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -2371,8 +2354,7 @@ module GroupDispatcherModule =
                 world initializers
 
         override this.Actualize (group, world) =
-            let view = this.View (this.GetModel group world, group, world)
-            World.actualizeView view world
+            this.View (this.GetModel group world, group, world)
 
         override this.TrySignal (signalObj, group, world) =
             match signalObj with
@@ -2468,8 +2450,7 @@ module ScreenDispatcherModule =
                 world initializers
 
         override this.Actualize (screen, world) =
-            let view = this.View (this.GetModel screen world, screen, world)
-            World.actualizeView view world
+            this.View (this.GetModel screen world, screen, world)
 
         override this.TrySignal (signalObj, screen, world) =
             match signalObj with

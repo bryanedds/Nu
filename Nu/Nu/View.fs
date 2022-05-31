@@ -13,7 +13,9 @@ type [<NoEquality; NoComparison>] View =
     | StopSong
     | SpawnEmitter of string * Particles.BasicEmitterDescriptor
     | Tag of string * obj
+    //| Schedule of (World -> World)
     | Views of View array
+    | Views2 of View * View
     | SegmentedViews of View SegmentedArray
 
 [<RequireQualifiedAccess>]

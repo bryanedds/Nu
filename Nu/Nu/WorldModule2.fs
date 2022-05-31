@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Numerics
 open System.IO
+open System.Linq
 open System.Threading
 open System.Threading.Tasks
 open FSharpx.Collections
@@ -844,28 +845,33 @@ module WorldModule2 =
             ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first
-            let world = World.actualizeGame world
-            let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
+            let gameView = World.actualizeGame world
+            let world = World.processView gameView world
+            let screenViews = List.map (fun screen -> World.actualizeScreen screen world) screens
+            let world = World.processViews screenViews world
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
-            let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
+            let groupViews = Seq.map (fun group -> World.actualizeGroup group world) groups
+            let world = World.processViews groupViews world
 
             // actualize entities
             ActualizeEntitiesTimer.Start ()
+            let noGCRegion = false // GC.TryStartNoGCRegion 33554432L // 16MB
             let world =
-                if World.getStandAlone world then
-                    Seq.fold (fun world (entity : Entity) ->
-                        World.actualizeEntity entity world)
-                        world entities
-                else 
-                    Seq.fold (fun world (entity : Entity) ->
-                        let group = entity.Group
-                        if group.GetVisible world
-                        then World.actualizeEntity entity world
-                        else world)
-                        world entities
+                try let entityViews =
+                        if World.getStandAlone world then
+                            let query = ParallelEnumerable.Select (entities.ToArray().AsParallel(), fun (entity : Entity) -> World.actualizeEntity entity world)
+                            query.AsEnumerable ()
+                        else
+                            Seq.map (fun (entity : Entity) ->
+                                if entity.Group.GetVisible world
+                                then World.actualizeEntity entity world
+                                else View.empty)
+                                entities
+                    World.processViews entityViews world
+                finally if noGCRegion then GC.EndNoGCRegion ()
             ActualizeEntitiesTimer.Stop ()
 
-            // fin
+            // process views
             world
 
         static member private processInput world =
@@ -1084,8 +1090,7 @@ module GameDispatcherModule =
                 world initializers
 
         override this.Actualize (game, world) =
-            let view = this.View (this.GetModel game world, game, world)
-            World.actualizeView view world
+            this.View (this.GetModel game world, game, world)
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with

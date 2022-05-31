@@ -70,21 +70,18 @@ type MetricsEntityDispatcher () =
     override this.Actualize (entity, world) =
         let staticImage = Assets.Default.Image
         let mutable transform = entity.GetTransform world
-        let renderMessage =
-            RenderLayeredMessage2d
-                { Elevation = transform.Elevation
-                  Horizon = transform.Position.Y
-                  AssetTag = AssetTag.generalize staticImage
-                  RenderDescriptor =
-                    SpriteDescriptor
-                        { Transform = transform
-                          InsetOpt = ValueNone
-                          Image = staticImage
-                          Color = Color.One
-                          Blend = Transparent
-                          Glow = Color.Zero
-                          Flip = FlipNone }}
-        World.enqueueRenderMessage2d renderMessage world
+        Render2d
+            (transform.Elevation,
+             transform.Position.Y,
+             AssetTag.generalize staticImage,
+             SpriteDescriptor
+                { Transform = transform
+                  InsetOpt = ValueNone
+                  Image = staticImage
+                  Color = Color.One
+                  Blend = Transparent
+                  Glow = Color.Zero
+                  Flip = FlipNone })
   #endif
 
   #if ECS_HYBRID

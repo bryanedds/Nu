@@ -382,12 +382,12 @@ module TmxMap =
                             if Math.isBoundsIntersectingBounds2d (box2 transform.Position.V2 transform.Size.V2) viewBounds then
 
                                 // accumulate descriptor
-                                descriptors.Add
-                                    { Elevation = transform.Elevation
-                                      Horizon = transform.PerimeterUnscaled.Position.Y // ignoring scale and orientation for tile map
-                                      AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
-                                      RenderDescriptor =
-                                        TilesDescriptor
+                                descriptors.Add $
+                                    Render2d
+                                        (transform.Elevation,
+                                         transform.PerimeterUnscaled.Position.Y, // ignoring scale and orientation for tile map
+                                         AssetTag.make "" "", // just disregard asset for render ordering
+                                         TilesDescriptor
                                             { Transform = transform
                                               Color = tileMapColor
                                               Glow = tileMapGlow
@@ -395,7 +395,7 @@ module TmxMap =
                                               Tiles = Seq.toArray tiles
                                               TileSourceSize = tileSourceSize
                                               TileSize = tileSize
-                                              TileAssets = tileAssets }}
+                                              TileAssets = tileAssets })
 
                         // loop
                         yC <- inc yC

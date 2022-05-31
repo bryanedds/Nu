@@ -321,8 +321,8 @@ module WorldTypes =
         default this.PostUpdate (_, world) = world
 
         /// Actualize a game.
-        abstract Actualize : Game * World -> World
-        default this.Actualize (_, world) = world
+        abstract Actualize : Game * World -> View
+        default this.Actualize (_, _) = View.empty
 
         /// Try to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
@@ -349,8 +349,8 @@ module WorldTypes =
         default this.PostUpdate (_, world) = world
 
         /// Actualize a screen.
-        abstract Actualize : Screen * World -> World
-        default this.Actualize (_, world) = world
+        abstract Actualize : Screen * World -> View
+        default this.Actualize (_, _) = View.empty
 
         /// Try to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
@@ -377,8 +377,8 @@ module WorldTypes =
         default this.PostUpdate (_, world) = world
 
         /// Actualize a group.
-        abstract Actualize : Group * World -> World
-        default this.Actualize (_, world) = world
+        abstract Actualize : Group * World -> View
+        default this.Actualize (_, _) = View.empty
 
         /// Try to send a signal to a group.
         abstract TrySignal : obj * Group * World -> World
@@ -440,8 +440,8 @@ module WorldTypes =
 #endif
 
         /// Actualize an entity.
-        abstract Actualize : Entity * World -> World
-        default this.Actualize (_, world) = world
+        abstract Actualize : Entity * World -> View
+        default this.Actualize (_, _) = View.empty
 
         /// Apply physics changes to an entity.
         abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
@@ -501,8 +501,8 @@ module WorldTypes =
 #endif
 
         /// Actualize a facet.
-        abstract Actualize : Entity * World -> World
-        default this.Actualize (_, world) = world
+        abstract Actualize : Entity * World -> View
+        default this.Actualize (_, _) = View.empty
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
