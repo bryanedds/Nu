@@ -48,7 +48,8 @@ type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
     member this.SetItem index comp = arr.[index] <- comp
     member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
     member this.Grow () =
-        let arr' = Array.zeroCreate<'c> (arr.Length * 2)
+        let length = int (single (max arr.Length 2) * 1.5f)
+        let arr' = Array.zeroCreate<'c> length
         Array.Copy (arr, arr', arr.Length)
         arr <- arr'
     member this.Read index count (stream : FileStream) =
