@@ -11,13 +11,19 @@ type [<CustomEquality; NoComparison>] ArchetypeId =
     { ComponentNames : string HashSet
       Tags : string HashSet }
 
+    static member HashHashSet (hashSet : _ HashSet) =
+        let mutable h = 0
+        for item in hashSet do
+            h <- h ^^^ item.GetHashCode ()
+        h
+
     static member equals left right =
         left.ComponentNames.SetEquals right.ComponentNames &&
         left.Tags.SetEquals right.Tags
 
     override this.GetHashCode () =
-        hash this.ComponentNames ^^^
-        hash this.Tags
+        let h = ArchetypeId.HashHashSet this.ComponentNames
+        h ^^^ ArchetypeId.HashHashSet this.Tags
 
     override this.Equals that =
         match that with
@@ -211,7 +217,7 @@ and 'w Ecs () =
                     (componentName, inferredType)) |>
             dictPlus HashIdentity.Structural
         let archetype = Archetype<'w> (storeTypes, archetypeId.Tags)
-        archetypes.Add (archetype.Id, archetype)
+        archetypes.Add (archetypeId, archetype)
         for query in queries do
             if query.CheckCompatibility archetype then
                 query.RegisterArchetype archetype
