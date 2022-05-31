@@ -725,26 +725,25 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache lines 1-3 (assuming 16 byte header)
+        { // cache lines 1-4 (assuming 16 byte header)
           mutable Transform : Transform
-          // cache line 4
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
+          // cache line 5
           mutable Model : DesignerProperty
           mutable PositionLocal : Vector3
-          // cache line 5 (-1)
           mutable RotationLocal : Quaternion
+          // cache line 6
           mutable ScaleLocal : Vector3
           mutable AnglesLocal : Vector3
-          // cache line 6 (+1)
           mutable ElevationLocal : single
           mutable MountOpt : Entity Relation option
+          // cache line 7
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          // cache line 7
           IdRef : Guid ref
           Surnames : string array }
 
@@ -867,8 +866,8 @@ module WorldTypes =
         member this.AffineMatrix with get () = this.Transform.AffineMatrix
         member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
         member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-        member this.PerimeterCenter with get () = this.Transform.PerimeterCenter and set value = this.Transform.PerimeterCenter <- value
-        member this.PerimeterBottom with get () = this.Transform.PerimeterBottom and set value = this.Transform.PerimeterBottom <- value
+        member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
+        member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
         member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
         member this.Bounds with get () = this.Transform.Bounds
 

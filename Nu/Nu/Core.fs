@@ -10,12 +10,6 @@ open System.Runtime.InteropServices
 open System.Configuration
 open Prime
 
-/// Specifies the screen-clearing routine.
-/// NOTE: this type is here only to make the screen clear constant defineable in Constants.fs.
-type [<StructuralEquality; NoComparison>] ScreenClear =
-    | NoClear
-    | ColorClear of Color
-
 [<RequireQualifiedAccess>]
 module internal CoreInternal =
 
