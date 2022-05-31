@@ -3,6 +3,8 @@ open System
 open System.Collections.Generic
 open Prime
 open Nu
+open System.IO
+open System.Runtime.InteropServices
 
 type SystemId = string HashSet
 
@@ -27,22 +29,38 @@ type Store =
         abstract SetItem : int -> obj -> unit
         abstract ZeroItem : int -> unit
         abstract Grow : unit -> unit
+        abstract Read : int -> int -> FileStream -> unit
         end
 
 type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
     let mutable arr = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve
     member this.Item i = &arr.[i]
     member this.Length = arr.Length
+    member this.Grow () =
+        let arr' = Array.zeroCreate<'c> (arr.Length * 2)
+        Array.Copy (arr, arr', arr.Length)
+        arr <- arr'
     interface Store with
         member this.Length = arr.Length
         member this.Name = name
         member this.Item i = arr.[i] :> obj
         member this.SetItem index compObj = arr.[index] <- compObj :?> 'c
         member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
-        member this.Grow () =
-            let arr' = Array.zeroCreate<'c> (arr.Length * 2)
-            Array.Copy (arr, arr', arr.Length)
-            arr <- arr'
+        member this.Grow () = this.Grow ()
+        member this.Read index count (stream : FileStream) =
+            let compSize = sizeof<'c>
+            let comp = Unchecked.defaultof<'c> :> obj
+            let buffer = Array.zeroCreate<byte> compSize
+            let gch = GCHandle.Alloc (comp, GCHandleType.Pinned)
+            try 
+                let mutable index = index
+                for _ in 0 .. dec count do
+                    stream.Read (buffer, 0, compSize) |> ignore<int>
+                    Marshal.Copy (buffer, 0, gch.AddrOfPinnedObject (), compSize)
+                    if index = arr.Length then this.Grow ()
+                    arr.[index] <- comp :?> 'c
+                    index <- inc index
+            finally gch.Free ()
 
 type 'w Query =
     interface
@@ -98,6 +116,12 @@ and 'w System (storeTypes : Dictionary<string, Type>) =
             comps.Add (storeEntry.Key, storeEntry.Value.[index])
         comps
 
+    member this.Read count (stream : FileStream) =
+        for storeEntry in stores do
+            let store = storeEntry.Value
+            store.Read count freeIndex stream
+        freeIndex <- freeIndex + count
+
 type [<StructuralEquality; NoComparison>] 'w SystemSlot =
     { SystemIndex : int
       System : 'w System }
@@ -128,6 +152,11 @@ type 'w Ecs () =
             if query.CheckCompatibility system then
                 query.RegisterSystem system
         system
+
+    member this.ReadComponents count systemId stream =
+        match systems.TryGetValue systemId with
+        | (true, system) -> system.Read count stream
+        | (false, _) -> failwith "Could not find system."
 
     member private this.RegisterNamedComponentInternal<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) compName entityId world =
         match systemSlots.TryGetValue entityId with
