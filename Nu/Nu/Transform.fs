@@ -214,6 +214,14 @@ type [<NoEquality; NoComparison>] Transform =
         let offsetScaled = this.Offset_ * this.Scale_
         perimeter.Center + offsetScaled
 
+    /// Set the angles and rotation of the transform manually to elide RollPitchYaw calculation.
+    member this.SetAnglesAndRotation (angles, rotation) =
+        this.Angles_ <-angles
+        this.Rotation_ <- rotation
+        this.RotationMatrixDirty <- true
+        this.AffineMatrixDirty <- true
+        this.PerimeterOrientedDirty <- true
+
     // TODO: 3D: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
         this.Position <- Math.snapF3d positionSnap this.Position
