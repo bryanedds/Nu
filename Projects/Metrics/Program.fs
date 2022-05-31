@@ -11,21 +11,18 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
-        member this.TypeName = nameof StaticSpriteComponent
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
     interface Position Component with
-        member this.TypeName = nameof Position
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
     interface Velocity Component with
-        member this.TypeName = nameof Velocity
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type [<NoEquality; NoComparison; Struct>] Shake =
@@ -33,7 +30,6 @@ type [<NoEquality; NoComparison; Struct>] Shake =
       mutable Origin : Vector2
       mutable Offset : Vector2 }
     interface Shake Component with
-        member this.TypeName = nameof Shake
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 #if FACETED
@@ -124,22 +120,12 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
-        // create component stores
-        let _ = ecs.RegisterStore (CorrelatedStore<EntityId, World> ecs)
-        let _ = ecs.RegisterStore (CorrelatedStore<Position, World> ecs)
-        let _ = ecs.RegisterStore (CorrelatedStore<Velocity, World> ecs)
-        let _ = ecs.RegisterStore (CorrelatedStore<Shake, World> ecs)
-
-        // create movers system
-        let movers = ecs.RegisterSystem (System<Position, Velocity, World> ecs)
-
-        // create shakers system
-        let shakers = ecs.RegisterSystem (System<EntityId, Position, Shake, World> ecs)
-
         // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                movers.Allocate { Active = true; Position = v2Zero } { Active = true; Velocity = v2One } world |> snd')
+                let entityId = ecs.EntityId
+                let world = ecs.RegisterComponent { Active = true; Position = v2Zero } entityId world
+                let world = ecs.RegisterComponent { Active = true; Velocity = v2One } entityId world
                 world (Seq.init 4000000 id)
 
         // create 4000 shakers
