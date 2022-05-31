@@ -35,33 +35,37 @@ type Store =
 
 type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
     let mutable arr = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve
-    member this.Item i = &arr.[i]
     member this.Length = arr.Length
+    member this.Name = name
+    member this.Item i = &arr.[i]
+    member this.SetItem index comp = arr.[index] <- comp
+    member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
     member this.Grow () =
         let arr' = Array.zeroCreate<'c> (arr.Length * 2)
         Array.Copy (arr, arr', arr.Length)
         arr <- arr'
+    member this.Read index count (stream : FileStream) =
+        let compSize = sizeof<'c>
+        let comp = Unchecked.defaultof<'c> :> obj
+        let buffer = Array.zeroCreate<byte> compSize
+        let gch = GCHandle.Alloc (comp, GCHandleType.Pinned)
+        try 
+            let mutable index = index
+            for _ in 0 .. dec count do
+                stream.Read (buffer, 0, compSize) |> ignore<int>
+                Marshal.Copy (buffer, 0, gch.AddrOfPinnedObject (), compSize)
+                if index = arr.Length then this.Grow ()
+                arr.[index] <- comp :?> 'c
+                index <- inc index
+        finally gch.Free ()
     interface Store with
-        member this.Length = arr.Length
-        member this.Name = name
-        member this.Item i = arr.[i] :> obj
-        member this.SetItem index compObj = arr.[index] <- compObj :?> 'c
-        member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
+        member this.Length = this.Length
+        member this.Name = this.Name
+        member this.Item i = this.Item i :> obj
+        member this.SetItem index compObj = this.SetItem index (compObj :?> 'c)
+        member this.ZeroItem index = this.ZeroItem index
         member this.Grow () = this.Grow ()
-        member this.Read index count (stream : FileStream) =
-            let compSize = sizeof<'c>
-            let comp = Unchecked.defaultof<'c> :> obj
-            let buffer = Array.zeroCreate<byte> compSize
-            let gch = GCHandle.Alloc (comp, GCHandleType.Pinned)
-            try 
-                let mutable index = index
-                for _ in 0 .. dec count do
-                    stream.Read (buffer, 0, compSize) |> ignore<int>
-                    Marshal.Copy (buffer, 0, gch.AddrOfPinnedObject (), compSize)
-                    if index = arr.Length then this.Grow ()
-                    arr.[index] <- comp :?> 'c
-                    index <- inc index
-            finally gch.Free ()
+        member this.Read index count stream = this.Read index count stream
 
 type 'w Query =
     interface
@@ -73,14 +77,14 @@ and 'w System (storeTypes : Dictionary<string, Type>) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
-    let (id : SystemId) = hashSetPlus HashIdentity.Structural []
     let stores = dictPlus<string, Store> HashIdentity.Structural []
+    let id = hashSetPlus HashIdentity.Structural storeTypes.Keys
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
         for storeTypeEntry in storeTypes do
             let storeType = storeTypeGeneric.MakeGenericType [|storeTypeEntry.Value|]
-            let store = Activator.CreateInstance (storeType, [|storeTypeEntry.Key|]) :?> Store
+            let store = Activator.CreateInstance (storeType, storeTypeEntry.Key) :?> Store
             stores.Add (storeTypeEntry.Key, store)
 
     let store0 = stores.Values |> Seq.head
@@ -95,13 +99,16 @@ and 'w System (storeTypes : Dictionary<string, Type>) =
             freeList.Remove index |> ignore<bool>
             for compEntry in comps do
                 stores.[compEntry.Key].SetItem index compEntry.Value
+            index
         else
-            if freeIndex < store0.Length then
+            let index = freeIndex
+            if index = store0.Length then
                 for storeEntry in stores do
                     storeEntry.Value.Grow ()
             for compEntry in comps do
-                stores.[compEntry.Key].SetItem freeIndex compEntry.Value
+                stores.[compEntry.Key].SetItem index compEntry.Value
             freeIndex <- inc freeIndex
+            index
 
     member this.Unregister (index : int) =
         for storeEntry in stores do
@@ -123,7 +130,7 @@ and 'w System (storeTypes : Dictionary<string, Type>) =
             store.Read count freeIndex stream
         freeIndex <- freeIndex + count
 
-type [<StructuralEquality; NoComparison>] 'w SystemSlot =
+type [<StructuralEquality; NoComparison; Struct>] 'w SystemSlot =
     { SystemIndex : int
       System : 'w System }
 
@@ -154,8 +161,8 @@ and 'w Ecs () =
 
     let mutable subscriptionIdCurrent = 0u
     let mutable entityIdCurrent = 0UL
+    let systems = dictPlus<SystemId, 'w System> (HashSet<string>.CreateSetComparer ()) []
     let systemSlots = dictPlus<uint64, 'w SystemSlot> HashIdentity.Structural []
-    let systems = dictPlus<SystemId, 'w System> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
     let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
     let queries = List<'w Query> ()
@@ -234,25 +241,36 @@ and 'w Ecs () =
             let system = systemSlot.System
             let comps = system.GetComponents systemSlot.SystemIndex
             system.Unregister systemSlot.SystemIndex
+            systemSlots.Remove entityId |> ignore<bool>
             comps.Add (compName, comp)
             let systemId = HashSet system.Id
             systemId.Add compName |> ignore<bool>
             let world =
-                let mutable world = world
                 match systems.TryGetValue systemId with
                 | (true, system) ->
-                    system.Register comps
+                    let systemIndex = system.Register comps
+                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
                     world
                 | (false, _) ->
                     let system = createSystem typeof<'c> systemId
-                    system.Register comps
+                    let systemIndex = system.Register comps
+                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
                     world
             this.Publish EcsEvents.RegisterComponent entityId world
         | (false, _) ->
             let systemId = HashSet.singleton HashIdentity.Structural compName
-            let system = createSystem typeof<'c> systemId
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
-            system.Register comps
+            let world =
+                match systems.TryGetValue systemId with
+                | (true, system) ->
+                    let systemIndex = system.Register comps
+                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                    world
+                | (false, _) ->
+                    let system = createSystem typeof<'c> systemId
+                    let systemIndex = system.Register comps
+                    systemSlots.Add (entityId, { SystemIndex = systemIndex; System = system })
+                    world
             this.Publish EcsEvents.RegisterComponent entityId world
 
     member this.RegisterComponent<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId world =
