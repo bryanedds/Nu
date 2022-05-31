@@ -104,9 +104,11 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () = this.Angles_
-        and set value =
+        and set (value : Vector3) =
             this.Angles_ <- value
-            this.Rotation_ <- value.RollPitchYaw
+            if value.X = 0.0f && value.Y = 0.0f // OPTIMIZATION: apply rotation a posteriori in the z-only case.
+            then this.Rotation_ <- Quaternion (0.0f, 0.0f, value.Z, 1.0f)
+            else this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
             this.PerimeterOrientedDirty <- true
