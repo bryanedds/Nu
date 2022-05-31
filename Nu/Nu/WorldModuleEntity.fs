@@ -304,9 +304,9 @@ module WorldModuleEntity =
                     if perimeterUnscaledChanged then
                         let world = World.publishEntityChange Property? Bounds () publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? PerimeterOriented () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Perimeter () publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Center () publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? Bottom () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange Property? Perimeter () publishChangeBindings publishChangeEvents entity world
                         let world = World.publishEntityChange Property? PerimeterUnscaled () publishChangeBindings publishChangeEvents entity world
                         let world = if positionChanged || centeredChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
                         let world = if scaleChanged || centeredChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
