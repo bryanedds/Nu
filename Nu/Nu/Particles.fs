@@ -453,6 +453,12 @@ module Particles =
         { In : 'a SegmentedArray -> 'b SegmentedArray
           Out : (Output * 'b SegmentedArray) -> 'a SegmentedArray -> (Output * 'a SegmentedArray) }
 
+    type In<'a, 'b when 'a : struct> =
+        delegate of 'a byref * 'b byref -> unit
+
+    type Out<'a, 'b when 'a : struct> =
+        delegate of 'b byref * 'a byref -> unit
+
     [<RequireQualifiedAccess>]
     module Scope =
 
@@ -460,6 +466,23 @@ module Particles =
         let inline make<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
             { In = SegmentedArray.map getField
               Out = fun (output, fields) (targets : 'a SegmentedArray) -> (output, SegmentedArray.map2 setField fields targets) }
+
+        /// Make a scope with optimized in and out delegates.
+        let inline fast<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
+            { In =
+                fun (targets : 'a SegmentedArray) ->
+                    let fields = SegmentedArray.zeroCreate targets.Length
+                    let mutable i = 0
+                    while i < dec targets.Length do
+                        getField.Invoke (&targets.[i], &fields.[i])
+                        i <- inc i
+                    fields
+              Out = fun (output, fields) (targets : 'a SegmentedArray) ->
+                let mutable i = 0
+                while i < dec targets.Length do
+                    setField.Invoke (&fields.[i], &targets.[i])
+                    i <- inc i
+                (output, targets) }
 
     /// The base behavior type.
     type Behavior =
@@ -698,23 +721,23 @@ module Particles =
 
     [<RequireQualifiedAccess>]
     module BasicParticle =
-        let body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
-        let position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
-        let scale = Scope.make (fun p -> struct (p.Life, p.Body.Scale)) (fun struct (_, v) p -> { p with Body = { p.Body with Scale = v }})
-        let angles = Scope.make (fun p -> struct (p.Life, p.Body.Angles)) (fun struct (_, v) p -> { p with Body = { p.Body with Angles = v }})
-        let offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
-        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
-        let inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
-        let color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
-        let glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
+        let body = Scope.fast (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
+        let position = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
+        let scale = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
+        let angles = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
+        let offset = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
+        let size = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
+        let inset = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
+        let color = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
+        let glow = Scope.fast (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
         let flipH =
-            Scope.make
-                (fun p ->
+            Scope.fast
+                (new In<_, _> (fun p v ->
                     let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
-                    struct (p.Life, flipH))
-                (fun struct (_, v) p ->
+                    v <- struct (p.Life, flipH)))
+                (new Out<_, _> (fun v p ->
                     let flip =
-                        match (p.Flip, v) with
+                        match (p.Flip, snd' v) with
                         | (FlipNone, true) -> FlipH
                         | (FlipH, true) -> FlipH
                         | (FlipV, true) -> FlipHV
@@ -723,15 +746,15 @@ module Particles =
                         | (FlipH, false) -> FlipNone
                         | (FlipV, false) -> FlipV
                         | (FlipHV, false) -> FlipV
-                    { p with Flip = flip })
+                    p.Flip <- flip))
         let flipV =
-            Scope.make
-                (fun p ->
+            Scope.fast
+                (new In<_, _> (fun p v ->
                     let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
-                    struct (p.Life, flipV))
-                (fun struct (_, v) p ->
+                    v <- struct (p.Life, flipV)))
+                (new Out<_, _> (fun v p ->
                     let flip =
-                        match (p.Flip, v) with
+                        match (p.Flip, snd' v) with
                         | (FlipNone, true) -> FlipV
                         | (FlipH, true) -> FlipHV
                         | (FlipV, true) -> FlipV
@@ -740,7 +763,7 @@ module Particles =
                         | (FlipH, false) -> FlipH
                         | (FlipV, false) -> FlipNone
                         | (FlipHV, false) -> FlipH
-                    { p with Flip = flip })
+                    p.Flip <- flip))
 
     /// Describes a basic emitter.
     type BasicEmitterDescriptor =
