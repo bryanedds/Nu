@@ -8,6 +8,7 @@ open Prime
 
 // TODO: 3D: cache empty sets and dicts.
 // TODO: 3D: remove any incidental allocation.
+// TODO: 3D: make sure to use proper collection comparer for string keys.
 
 type [<StructuralEquality; NoComparison>] ComparableTerm =
     | IntTerm of int
@@ -37,7 +38,7 @@ type Terms =
     Dictionary<string, Term>
 
 type [<StructuralEquality; NoComparison>] Subquery =
-    | Star // matches everything
+    | Wildcard // matches everything
     | Eq of Term
     | Gt of ComparableTerm
     | Ge of ComparableTerm
@@ -63,7 +64,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member eval term subquery =
         match subquery with
-        | Star -> true
+        | Wildcard -> true
         | Eq term  -> Subquery.equalTo term term
         | Gt c ->
             match term with
@@ -196,6 +197,7 @@ type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
 /// Describes a means to query components.
 type 'w Query =
     interface
+        abstract Subquery : Subquery
         abstract CheckCompatibility : 'w Archetype -> bool
         abstract RegisterArchetype : 'w Archetype -> unit
         end
@@ -217,6 +219,7 @@ and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Terms) =
 
     member this.Id = id
     member this.Stores = stores
+    member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
     member this.Terms = terms
     member this.TermsValueCollection = TermsValueCollection terms.Values
 
