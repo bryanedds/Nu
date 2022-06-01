@@ -35,7 +35,6 @@ type [<StructuralEquality; NoComparison>] Term =
     static member dict entries = dictPlus<string, Term> HashIdentity.Structural entries
 
 type [<StructuralEquality; NoComparison>] Subquery =
-    | Wildcard // matches everything
     | Eq of Term
     | Gt of Groupoid
     | Ge of Groupoid
@@ -62,8 +61,8 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member eval term subquery =
         match subquery with
-        | Wildcard -> true
-        | Eq term  -> Subquery.equalTo term term
+        | Eq term  ->
+            Subquery.equalTo term term
         | Gt c ->
             match term with
             | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i > i2 | (Real s, Real s2) -> s > s2 | _ -> false
