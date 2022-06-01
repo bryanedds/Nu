@@ -94,7 +94,7 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for getting a screen's Ecs.
-    let mutable internal getScreenEcs : Screen -> World -> World Ecs =
+    let mutable internal getScreenEcs : Screen -> World -> Ecs =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.

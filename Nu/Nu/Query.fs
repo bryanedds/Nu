@@ -41,64 +41,64 @@ type [<AbstractClass; Sealed>] Exclude =
        (componentNames : string HashSet) =
        Exclude.byName (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, componentNames)
 
-type 'w Query
+type Query
     (compNames : string HashSet, exclude : string HashSet -> bool, subqueries : Dictionary<string, Subquery>) =
 
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
+    let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
 
     static member create
         (compName, exclude, subqueries) =
-        Query<'w> (HashSet.singleton HashIdentity.Structural compName, exclude, subqueries)
+        Query (HashSet.singleton HashIdentity.Structural compName, exclude, subqueries)
 
     static member create
         (compName, comp2Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], exclude, subqueries)
 
     static member create
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], exclude, subqueries)
 
     static member create<'c when
         'c : struct and 'c :> 'c Component>
         (exclude, subqueries) =
-        Query<'w> (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, exclude, subqueries)
+        Query (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, exclude, subqueries)
 
     static member create<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
@@ -106,7 +106,7 @@ type 'w Query
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
@@ -115,7 +115,7 @@ type 'w Query
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
@@ -125,7 +125,7 @@ type 'w Query
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
@@ -136,7 +136,7 @@ type 'w Query
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
@@ -148,7 +148,7 @@ type 'w Query
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], exclude, subqueries)
 
     static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
@@ -161,17 +161,17 @@ type 'w Query
         'c8 : struct and 'c8 :> 'c8 Component and
         'c9 : struct and 'c9 :> 'c9 Component>
         (exclude, subqueries) =
-        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], exclude, subqueries)
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], exclude, subqueries)
 
     member this.Subqueries = subqueries
 
-    member this.CheckCompatibility (archetype : 'w Archetype) =
+    member this.CheckCompatibility (archetype : Archetype) =
         let stores = archetype.Stores
         Seq.forall stores.ContainsKey compNames &&
         not (exclude archetype.ComponentNames) &&
         Subquery.evalMany archetype.Terms subqueries
 
-    member this.RegisterArchetype (archetype : 'w Archetype) =
+    member this.RegisterArchetype (archetype : Archetype) =
         archetypes.Add (archetype.Id, archetype)
 
     member this.Iterate (compName, statement : Statement<'c, 's>) : 's -> 's =
@@ -414,7 +414,7 @@ type 'w Query
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
         this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, statement)
 
-    interface 'w IQuery with
+    interface IQuery with
         member this.Subqueries = this.Subqueries
         member this.CheckCompatibility archetype = this.CheckCompatibility archetype
         member this.RegisterArchetype archetype = this.RegisterArchetype archetype
