@@ -13,7 +13,8 @@ open Prime
 type [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
-    | Tag of string
+    | Tag
+    | Case of string
     | Entity of uint64
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
@@ -30,8 +31,10 @@ type [<StructuralEquality; NoComparison>] Term =
             result
         else false
     static member dict entries = dictPlus<string, Term> HashIdentity.Structural entries
+    static member singleton termName term = Term.dict [(termName, term)]
 
 type [<StructuralEquality; NoComparison>] Subquery =
+    | Is
     | Eq of Term
     | Gt of Term
     | Ge of Term
@@ -43,10 +46,10 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member private equalTo term term2 =
         match (term, term2) with
-        | (Tag tag, Tag tag2) -> strEq tag tag2
-        | (Entity entityId, Entity entityId2) -> entityId = entityId2
         | (Z i, Z i2) -> i = i2
         | (R i, R i2) -> i = i2
+        | (Case case', Case case2) -> strEq case' case2
+        | (Entity entityId, Entity entityId2) -> entityId = entityId2
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
             then List.forall2 Subquery.equalTo terms terms2
@@ -55,6 +58,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member eval term subquery =
         match subquery with
+        | Is -> true
         | Eq term2  ->
             Subquery.equalTo term term2
         | Gt term2 ->
@@ -98,8 +102,8 @@ type [<StructuralEquality; NoComparison>] Subquery =
             | (false, _) -> result <- false
         result
 
-    static member dict entries =
-        dictPlus<string, Subquery> HashIdentity.Structural entries
+    static member dict entries = dictPlus<string, Subquery> HashIdentity.Structural entries
+    static member singleton subqueryName subquery = Term.dict [(subqueryName, subquery)]
 
 /// Identifies an archetype.
 /// TODO: consider embedding hash code to make look-ups faster.
