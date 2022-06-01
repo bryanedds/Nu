@@ -121,7 +121,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
+        let movers = ecs.RegisterQuery (Query<Position, Velocity, World> (Exclude.byType<EntityId>, Subquery.dict [], ecs))
 
         // create shakers query
         let shakers = ecs.RegisterQuery (Query<EntityId, Position, Shake, World> ecs)
