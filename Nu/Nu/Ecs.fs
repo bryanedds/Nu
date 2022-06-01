@@ -19,7 +19,6 @@ type [<StructuralEquality; NoComparison>] Term =
     | EntityTerm of uint64
     | ComparableTerm of ComparableTerm
     | Terms of Term list
-    | TermsValueCollection of Dictionary.ValueCollection<string, Term>
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
         if lefts.Count = rights.Count then
@@ -33,6 +32,7 @@ type [<StructuralEquality; NoComparison>] Term =
                 | (false, _) -> result <- false
             result
         else false
+    static member dict = dictPlus<string, Term> HashIdentity.Structural []
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Wildcard // matches everything
@@ -85,14 +85,25 @@ type [<StructuralEquality; NoComparison>] Subquery =
             | _ -> true
         | And subqueries ->
             match term with
-            | Terms tags -> if tags.Length = subqueries.Length then List.forall2 Subquery.eval tags subqueries else false
-            | TermsValueCollection tags -> if tags.Count = subqueries.Length then Seq.forall2 Subquery.eval tags subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 Subquery.eval terms subqueries else false
             | _ -> false
         | Or subqueries ->
             match term with
-            | Terms tags -> if tags.Length = subqueries.Length then List.exists2 Subquery.eval tags subqueries else false
-            | TermsValueCollection tags -> if tags.Count = subqueries.Length then Seq.exists2 Subquery.eval tags subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 Subquery.eval terms subqueries else false
             | _ -> false
+
+    static member evalMany (terms : Dictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
+        let mutable result = true
+        let mutable termEnr = terms.GetEnumerator ()
+        while result && termEnr.MoveNext () do
+            let termEntry = termEnr.Current
+            match subqueries.TryGetValue termEntry.Key with
+            | (true, subquery) -> result <- Subquery.eval termEntry.Value subquery
+            | (false, _) -> result <- false
+        result
+
+    static member dict =
+        dictPlus<string, Subquery> HashIdentity.Structural []
 
 /// Identifies an archetype.
 /// TODO: consider embedding hash code to make look-ups faster.
@@ -194,7 +205,7 @@ type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
 /// Describes a means to query components.
 type 'w Query =
     interface
-        abstract Subquery : Subquery
+        abstract Subqueries : Dictionary<string, Subquery>
         abstract CheckCompatibility : 'w Archetype -> bool
         abstract RegisterArchetype : 'w Archetype -> unit
         end
@@ -218,7 +229,6 @@ and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Dictionary<stri
     member this.Stores = stores
     member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
     member this.Terms = terms
-    member this.TermsValueCollection = TermsValueCollection terms.Values
 
     member this.Register (comps : Dictionary<string, obj>) =
         if freeList.Count > 0 then
