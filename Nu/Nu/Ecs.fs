@@ -10,14 +10,14 @@ open Prime
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 
-type [<StructuralEquality; NoComparison>] Groupoid =
-    | Num of int
-    | Real of single
+type [<StructuralEquality; NoComparison>] Number =
+    | Z of int
+    | R of single
 
 type [<StructuralEquality; NoComparison>] Term =
     | Tag of string
     | Entity of uint64
-    | Groupoid of Groupoid
+    | Number of Number
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -36,10 +36,10 @@ type [<StructuralEquality; NoComparison>] Term =
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Eq of Term
-    | Gt of Groupoid
-    | Ge of Groupoid
-    | Lt of Groupoid
-    | Le of Groupoid
+    | Gt of Number
+    | Ge of Number
+    | Lt of Number
+    | Le of Number
     | Not of Subquery
     | And of Subquery list
     | Or of Subquery list
@@ -48,10 +48,10 @@ type [<StructuralEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (Tag tag, Tag tag2) -> strEq tag tag2
         | (Entity entityId, Entity entityId2) -> entityId = entityId2
-        | (Groupoid comparable, Groupoid comparable2) ->
+        | (Number comparable, Number comparable2) ->
             match (comparable, comparable2) with
-            | (Num i, Num i2) -> i = i2
-            | (Real i, Real i2) -> i = i2
+            | (Z i, Z i2) -> i = i2
+            | (R i, R i2) -> i = i2
             | _ -> false
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -65,19 +65,19 @@ type [<StructuralEquality; NoComparison>] Subquery =
             Subquery.equalTo term term
         | Gt c ->
             match term with
-            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i > i2 | (Real s, Real s2) -> s > s2 | _ -> false
+            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i > i2 | (R s, R s2) -> s > s2 | _ -> false
             | _ -> false
         | Ge c ->
             match term with
-            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i >= i2 | (Real s, Real s2) -> s >= s2 | _ -> false
+            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i >= i2 | (R s, R s2) -> s >= s2 | _ -> false
             | _ -> false
         | Lt c ->
             match term with
-            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i < i2 | (Real s, Real s2) -> s < s2 | _ -> false
+            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i < i2 | (R s, R s2) -> s < s2 | _ -> false
             | _ -> false
         | Le c ->
             match term with
-            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i <= i2 | (Real s, Real s2) -> s <= s2 | _ -> false
+            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i <= i2 | (R s, R s2) -> s <= s2 | _ -> false
             | _ -> false
         | Not subquery ->
             not (Subquery.eval term subquery)
