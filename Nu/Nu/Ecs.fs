@@ -10,14 +10,11 @@ open Prime
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 
-type [<StructuralEquality; NoComparison>] Number =
+type [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
-
-type [<StructuralEquality; NoComparison>] Term =
     | Tag of string
     | Entity of uint64
-    | Number of Number
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -36,10 +33,10 @@ type [<StructuralEquality; NoComparison>] Term =
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Eq of Term
-    | Gt of Number
-    | Ge of Number
-    | Lt of Number
-    | Le of Number
+    | Gt of Term
+    | Ge of Term
+    | Lt of Term
+    | Le of Term
     | Not of Subquery
     | And of Subquery list
     | Or of Subquery list
@@ -48,11 +45,8 @@ type [<StructuralEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (Tag tag, Tag tag2) -> strEq tag tag2
         | (Entity entityId, Entity entityId2) -> entityId = entityId2
-        | (Number comparable, Number comparable2) ->
-            match (comparable, comparable2) with
-            | (Z i, Z i2) -> i = i2
-            | (R i, R i2) -> i = i2
-            | _ -> false
+        | (Z i, Z i2) -> i = i2
+        | (R i, R i2) -> i = i2
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
             then List.forall2 Subquery.equalTo terms terms2
@@ -61,24 +55,28 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member eval term subquery =
         match subquery with
-        | Eq term  ->
-            Subquery.equalTo term term
-        | Gt c ->
-            match term with
-            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i > i2 | (R s, R s2) -> s > s2 | _ -> false
-            | _ -> false
-        | Ge c ->
-            match term with
-            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i >= i2 | (R s, R s2) -> s >= s2 | _ -> false
-            | _ -> false
-        | Lt c ->
-            match term with
-            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i < i2 | (R s, R s2) -> s < s2 | _ -> false
-            | _ -> false
-        | Le c ->
-            match term with
-            | Number c2 -> match (c, c2) with (Z i, Z i2) -> i <= i2 | (R s, R s2) -> s <= s2 | _ -> false
-            | _ -> false
+        | Eq term2  ->
+            Subquery.equalTo term term2
+        | Gt term2 ->
+            match (term, term2) with
+            | (Z i, Z i2) -> i > i2
+            | (R s, R s2) -> s > s2
+            | (_, _) -> false
+        | Ge term2 ->
+            match (term, term2) with
+            | (Z i, Z i2) -> i >= i2
+            | (R s, R s2) -> s >= s2
+            | (_, _) -> false
+        | Lt term2 ->
+            match (term, term2) with
+            | (Z i, Z i2) -> i < i2
+            | (R s, R s2) -> s < s2
+            | (_, _) -> false
+        | Le term2 ->
+            match (term, term2) with
+            | (Z i, Z i2) -> i <= i2
+            | (R s, R s2) -> s <= s2
+            | (_, _) -> false
         | Not subquery ->
             not (Subquery.eval term subquery)
         | And subqueries ->
