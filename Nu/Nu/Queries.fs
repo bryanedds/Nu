@@ -9,16 +9,16 @@ open Prime
 type [<AbstractClass; Sealed>] Exclude =
 
     static member byName (compName : string, componentNames : string HashSet) =
-        not (componentNames.Contains compName)
+        componentNames.Contains compName
 
     static member byName (compName : string, comp2Name : string, componentNames : string HashSet) =
-       not (componentNames.Contains compName) &&
-       not (componentNames.Contains comp2Name)
+        componentNames.Contains compName &&
+        componentNames.Contains comp2Name
 
     static member byName (compName : string, comp2Name : string, comp3Name : string, componentNames : string HashSet) =
-       not (componentNames.Contains compName) &&
-       not (componentNames.Contains comp2Name) &&
-       not (componentNames.Contains comp3Name)
+        componentNames.Contains compName &&
+        componentNames.Contains comp2Name &&
+        componentNames.Contains comp3Name
 
     static member byType<'c when
        'c : struct and 'c :> 'c Component>
@@ -40,11 +40,11 @@ type [<AbstractClass; Sealed>] Exclude =
 
 type Query<'c, 'w when
     'c : struct and 'c :> 'c Component>
-    (compName : string, excluding : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
+    (compName : string, exclude : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) = Query<_, _> (typeof<'c>.Name, excluding, subquery, ecs)
+    new (exclude, subquery, ecs) = Query<_, _> (typeof<'c>.Name, exclude, subquery, ecs)
     new (subquery, ecs) = Query<_, _> (typeof<'c>.Name, tautology, subquery, ecs)
     new (ecs) = Query<_, _> (typeof<'c>.Name, tautology, Wildcard, ecs)
 
@@ -53,7 +53,7 @@ type Query<'c, 'w when
     member this.CheckCompatibility (archetype : 'w Archetype) =
         let stores = archetype.Stores
         stores.ContainsKey compName &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -91,11 +91,11 @@ type Query<'c, 'w when
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component>
-    (compName : string, comp2Name : string, excluding : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
+    (compName : string, comp2Name : string, exclude : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, excluding, subquery, ecs)
+    new (exclude, subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, exclude, subquery, ecs)
     new (subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, tautology, subquery, ecs)
     new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, tautology, Wildcard, ecs)
 
@@ -105,7 +105,7 @@ type Query<'c, 'c2, 'w when
         let stores = archetype.Stores
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -157,11 +157,11 @@ type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
     'c3 : struct and 'c3 :> 'c3 Component>
-    (compName : string, comp2Name : string, comp3Name : string, excluding : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
+    (compName : string, comp2Name : string, comp3Name : string, exclude : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, excluding, subquery, ecs)
+    new (exclude, subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, exclude, subquery, ecs)
     new (subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, tautology, subquery, ecs)
     new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, tautology, Wildcard, ecs)
 
@@ -172,7 +172,7 @@ type Query<'c, 'c2, 'c3, 'w when
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name &&
         stores.ContainsKey comp3Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -224,19 +224,19 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
      comp2Name : string,
      comp3Name : string,
      comp4Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
              typeof<'c3>.Name,
              typeof<'c4>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -268,7 +268,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         stores.ContainsKey comp2Name &&
         stores.ContainsKey comp3Name &&
         stores.ContainsKey comp4Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -360,20 +360,20 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
      comp3Name : string,
      comp4Name : string,
      comp5Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
              typeof<'c3>.Name,
              typeof<'c4>.Name,
              typeof<'c5>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -408,7 +408,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         stores.ContainsKey comp3Name &&
         stores.ContainsKey comp4Name &&
         stores.ContainsKey comp5Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -511,13 +511,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
      comp4Name : string,
      comp5Name : string,
      comp6Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -525,7 +525,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
              typeof<'c4>.Name,
              typeof<'c5>.Name,
              typeof<'c6>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -563,7 +563,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         stores.ContainsKey comp4Name &&
         stores.ContainsKey comp5Name &&
         stores.ContainsKey comp6Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -677,13 +677,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
      comp5Name : string,
      comp6Name : string,
      comp7Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -692,7 +692,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
              typeof<'c5>.Name,
              typeof<'c6>.Name,
              typeof<'c7>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -733,7 +733,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         stores.ContainsKey comp5Name &&
         stores.ContainsKey comp6Name &&
         stores.ContainsKey comp7Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -858,13 +858,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
      comp6Name : string,
      comp7Name : string,
      comp8Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -874,7 +874,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
              typeof<'c6>.Name,
              typeof<'c7>.Name,
              typeof<'c8>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -918,7 +918,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
         stores.ContainsKey comp6Name &&
         stores.ContainsKey comp7Name &&
         stores.ContainsKey comp8Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
@@ -1054,13 +1054,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
      comp7Name : string,
      comp8Name : string,
      comp9Name : string,
-     excluding : string HashSet -> bool, 
+     exclude : string HashSet -> bool, 
      subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (excluding, subquery, ecs) =
+    new (exclude, subquery, ecs) =
         Query<_, _, _, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -1071,7 +1071,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
              typeof<'c7>.Name,
              typeof<'c8>.Name,
              typeof<'c9>.Name,
-             excluding,
+             exclude,
              subquery,
              ecs)
 
@@ -1118,7 +1118,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
         stores.ContainsKey comp7Name &&
         stores.ContainsKey comp8Name &&
         stores.ContainsKey comp9Name &&
-        excluding archetype.ComponentNames &&
+        not (exclude archetype.ComponentNames) &&
         Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
