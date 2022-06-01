@@ -70,7 +70,7 @@ module Render =
     let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
     let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
-    let (*Literal*) ScreenClearing = ColorClear Color.White
+    let (*Literal*) WindowClearColor = Color.White
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1
     let [<Literal>] OpenGlCore = true
