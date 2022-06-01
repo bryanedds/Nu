@@ -8,6 +8,9 @@ open Prime
 
 type [<AbstractClass; Sealed>] Exclude =
 
+    static member zero =
+        fun (_ : string HashSet) -> false
+
     static member byName (compName : string, componentNames : string HashSet) =
         componentNames.Contains compName
 
@@ -38,109 +41,387 @@ type [<AbstractClass; Sealed>] Exclude =
        (componentNames : string HashSet) =
        Exclude.byName (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, componentNames)
 
-type Query<'c, 'w when
-    'c : struct and 'c :> 'c Component>
-    (compName : string, exclude : string HashSet -> bool, subqueries : Dictionary<string, Subquery>, ecs : 'w Ecs) =
+type 'w Query
+    (compNames : string HashSet, exclude : string HashSet -> bool, subqueries : Dictionary<string, Subquery>, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (exclude, subquery, ecs) = Query<_, _> (typeof<'c>.Name, exclude, subquery, ecs)
-    new (subquery, ecs) = Query<_, _> (typeof<'c>.Name, tautology, subquery, ecs)
-    new (ecs) = Query<_, _> (typeof<'c>.Name, tautology, dictPlus HashIdentity.Structural [], ecs)
+    static member create
+        (compName, exclude, subqueries, ecs) =
+        Query<'w> (HashSet.singleton HashIdentity.Structural compName, exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], exclude, subqueries, ecs)
+
+    static member create
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], exclude, subqueries, ecs)
+
+    static member create<'c when
+        'c : struct and 'c :> 'c Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, exclude, subqueries, ecs)
+
+    static member create<'c, 'c2 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4, 'c5 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], exclude, subqueries, ecs)
+
+    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        (exclude, subqueries, ecs) =
+        Query<'w> (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], exclude, subqueries, ecs)
 
     member this.Subqueries = subqueries
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
         let stores = archetype.Stores
-        stores.ContainsKey compName &&
+        Seq.forall stores.ContainsKey compNames &&
         not (exclude archetype.ComponentNames) &&
         Subquery.evalMany archetype.Terms subqueries
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
 
-    member this.RegisterNamedComponent compName (comp : 'c) entityId world =
-        ecs.RegisterNamedComponent compName comp entityId world
+    member this.Iterate (compName, statement : Statement<'c, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke (&store.[i], state)
+                    i <- inc i
+            state
 
-    member this.RegisterComponent (comp : 'c) entityId world =
-        this.RegisterNamedComponent typeof<'c>.Name comp entityId world
+    member this.Iterate (compName, comp2Name, statement : Statement<'c, 'c2, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke (&store.[i], &store2.[i], state)
+                    i <- inc i
+            state
 
-    member this.UnregisterNamedComponent compName entityId world =
-        ecs.UnregisterNamedComponent compName entityId world
+    member this.Iterate (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
+                    i <- inc i
+            state
 
-    member this.UnregisterComponent<'c> entityId world =
-        ecs.UnregisterComponent<'c> entityId world
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
+                    i <- inc i
+            state
 
-    member this.Iterate (statement : Statement<'c, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke (&store.[i], state)
-                i <- inc i
-        state
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let store5 = stores.[comp5Name] :?> 'c5 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+                    i <- inc i
+            state
 
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let store5 = stores.[comp5Name] :?> 'c5 Store
+                let store6 = stores.[comp6Name] :?> 'c6 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+                    i <- inc i
+            state
 
-type Query<'c, 'c2, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component>
-    (compName : string, comp2Name : string, exclude : string HashSet -> bool, subqueries : Dictionary<string, Subquery>, ecs : 'w Ecs) =
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let store5 = stores.[comp5Name] :?> 'c5 Store
+                let store6 = stores.[comp6Name] :?> 'c6 Store
+                let store7 = stores.[comp7Name] :?> 'c7 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+                    i <- inc i
+            state
 
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let store5 = stores.[comp5Name] :?> 'c5 Store
+                let store6 = stores.[comp6Name] :?> 'c6 Store
+                let store7 = stores.[comp7Name] :?> 'c7 Store
+                let store8 = stores.[comp8Name] :?> 'c8 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+                    i <- inc i
+            state
 
-    new (exclude, subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, exclude, subquery, ecs)
-    new (subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, tautology, subquery, ecs)
-    new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, tautology, dictPlus HashIdentity.Structural [], ecs)
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let stores = archetype.Stores
+                let store = stores.[compName] :?> 'c Store
+                let store2 = stores.[comp2Name] :?> 'c2 Store
+                let store3 = stores.[comp3Name] :?> 'c3 Store
+                let store4 = stores.[comp4Name] :?> 'c4 Store
+                let store5 = stores.[comp5Name] :?> 'c5 Store
+                let store6 = stores.[comp6Name] :?> 'c6 Store
+                let store7 = stores.[comp7Name] :?> 'c7 Store
+                let store8 = stores.[comp8Name] :?> 'c8 Store
+                let store9 = stores.[comp9Name] :?> 'c9 Store
+                let mutable i = 0
+                while i < store.Length do
+                    state <- statement.Invoke
+                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
+                    i <- inc i
+            state
 
-    member this.Subqueries = subqueries
+    member this.Iterate<'c, 's when
+        'c : struct and 'c :> 'c Component>
+        (statement : Statement<'c, 's>) =
+        this.Iterate (typeof<'c>.Name, statement)
 
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
+    member this.Iterate<'c, 'c2, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        (statement : Statement<'c, 'c2, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, statement)
 
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
+    member this.Iterate<'c, 'c2, 'c3, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        (statement : Statement<'c, 'c2, 'c3, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, statement)
 
-    member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) entityId world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        world
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, statement)
 
-    member this.RegisterComponents (comp : 'c) (comp2 : 'c2) entityId world =
-        this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 entityId world
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, statement)
 
-    member this.UnregisterNamedComponents compName comp2Name entityId world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        world
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, statement)
 
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents typeof<'c>.Name typeof<'c2>.Name entityId world
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, statement)
 
-    member this.Iterate (statement : Statement<'c, 'c2, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke (&store.[i], &store2.[i], state)
-                i <- inc i
-        state
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, statement)
 
-    member this.Index (statement : Statement<'c, 'c2, 's>) entityId state =
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, statement)
+
+    member this.Index (compName, statement : Statement<'c, 's>, entityId, state) =
+        let archetypeSlot = ecs.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], state)
+
+    member this.Index (compName, comp2Name, statement : Statement<'c, 'c2, 's>, entityId, state) =
         let archetypeSlot = ecs.IndexArchetypeSlot entityId
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -148,1098 +429,16 @@ type Query<'c, 'c2, 'w when
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], state)
 
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component>
-    (compName : string, comp2Name : string, comp3Name : string, exclude : string HashSet -> bool, subqueries : Dictionary<string, Subquery>, ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, exclude, subquery, ecs)
-    new (subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, tautology, subquery, ecs)
-    new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, tautology, dictPlus HashIdentity.Structural [], ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents compName (comp : 'c) comp2Name (comp2 : 'c2) comp3Name (comp3 : 'c3) entityId world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        world
-
-    member this.RegisterComponents (comp : 'c) (comp2 : 'c2) (comp3 : 'c3) entityId world =
-        this.RegisterNamedComponents typeof<'c>.Name comp typeof<'c2>.Name comp2 typeof<'c3>.Name comp3 entityId world
-
-    member this.UnregisterNamedComponents compName comp2Name comp3Name entityId world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents typeof<'c>.Name typeof<'c2>.Name typeof<'c3>.Name entityId world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     comp5Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        stores.ContainsKey comp5Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        comp5Name (comp5 : 'c5)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        let world = ecs.RegisterNamedComponent comp5Name comp5 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        (comp5 : 'c5)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            typeof<'c5>.Name comp5
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        comp5Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        let world = ecs.UnregisterNamedComponent comp5Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            typeof<'c5>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let store5 = stores.[comp5Name] :?> 'c5 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     &store5.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     comp5Name : string,
-     comp6Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        stores.ContainsKey comp5Name &&
-        stores.ContainsKey comp6Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        comp5Name (comp5 : 'c5)
-        comp6Name (comp6 : 'c6)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        let world = ecs.RegisterNamedComponent comp5Name comp5 entityId world
-        let world = ecs.RegisterNamedComponent comp6Name comp6 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        (comp5 : 'c5)
-        (comp6 : 'c6)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            typeof<'c5>.Name comp5
-            typeof<'c6>.Name comp6
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        comp5Name
-        comp6Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        let world = ecs.UnregisterNamedComponent comp5Name entityId world
-        let world = ecs.UnregisterNamedComponent comp6Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            typeof<'c5>.Name
-            typeof<'c6>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let store5 = stores.[comp5Name] :?> 'c5 Store
-            let store6 = stores.[comp6Name] :?> 'c6 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     &store5.[i],
-                     &store6.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     comp5Name : string,
-     comp6Name : string,
-     comp7Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        stores.ContainsKey comp5Name &&
-        stores.ContainsKey comp6Name &&
-        stores.ContainsKey comp7Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        comp5Name (comp5 : 'c5)
-        comp6Name (comp6 : 'c6)
-        comp7Name (comp7 : 'c7)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        let world = ecs.RegisterNamedComponent comp5Name comp5 entityId world
-        let world = ecs.RegisterNamedComponent comp6Name comp6 entityId world
-        let world = ecs.RegisterNamedComponent comp7Name comp7 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        (comp5 : 'c5)
-        (comp6 : 'c6)
-        (comp7 : 'c7)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            typeof<'c5>.Name comp5
-            typeof<'c6>.Name comp6
-            typeof<'c7>.Name comp7
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        comp5Name
-        comp6Name
-        comp7Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        let world = ecs.UnregisterNamedComponent comp5Name entityId world
-        let world = ecs.UnregisterNamedComponent comp6Name entityId world
-        let world = ecs.UnregisterNamedComponent comp7Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            typeof<'c5>.Name
-            typeof<'c6>.Name
-            typeof<'c7>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let store5 = stores.[comp5Name] :?> 'c5 Store
-            let store6 = stores.[comp6Name] :?> 'c6 Store
-            let store7 = stores.[comp7Name] :?> 'c7 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     &store5.[i],
-                     &store6.[i],
-                     &store7.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component and
-    'c8 : struct and 'c8 :> 'c8 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     comp5Name : string,
-     comp6Name : string,
-     comp7Name : string,
-     comp8Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        stores.ContainsKey comp5Name &&
-        stores.ContainsKey comp6Name &&
-        stores.ContainsKey comp7Name &&
-        stores.ContainsKey comp8Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        comp5Name (comp5 : 'c5)
-        comp6Name (comp6 : 'c6)
-        comp7Name (comp7 : 'c7)
-        comp8Name (comp8 : 'c8)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        let world = ecs.RegisterNamedComponent comp5Name comp5 entityId world
-        let world = ecs.RegisterNamedComponent comp6Name comp6 entityId world
-        let world = ecs.RegisterNamedComponent comp7Name comp7 entityId world
-        let world = ecs.RegisterNamedComponent comp8Name comp8 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        (comp5 : 'c5)
-        (comp6 : 'c6)
-        (comp7 : 'c7)
-        (comp8 : 'c8)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            typeof<'c5>.Name comp5
-            typeof<'c6>.Name comp6
-            typeof<'c7>.Name comp7
-            typeof<'c8>.Name comp8
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        comp5Name
-        comp6Name
-        comp7Name
-        comp8Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        let world = ecs.UnregisterNamedComponent comp5Name entityId world
-        let world = ecs.UnregisterNamedComponent comp6Name entityId world
-        let world = ecs.UnregisterNamedComponent comp7Name entityId world
-        let world = ecs.UnregisterNamedComponent comp8Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            typeof<'c5>.Name
-            typeof<'c6>.Name
-            typeof<'c7>.Name
-            typeof<'c8>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let store5 = stores.[comp5Name] :?> 'c5 Store
-            let store6 = stores.[comp6Name] :?> 'c6 Store
-            let store7 = stores.[comp7Name] :?> 'c7 Store
-            let store8 = stores.[comp8Name] :?> 'c8 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     &store5.[i],
-                     &store6.[i],
-                     &store7.[i],
-                     &store8.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
-        member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
-
-type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
-    'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component and
-    'c4 : struct and 'c4 :> 'c4 Component and
-    'c5 : struct and 'c5 :> 'c5 Component and
-    'c6 : struct and 'c6 :> 'c6 Component and
-    'c7 : struct and 'c7 :> 'c7 Component and
-    'c8 : struct and 'c8 :> 'c8 Component and
-    'c9 : struct and 'c9 :> 'c9 Component>
-    (compName : string,
-     comp2Name : string,
-     comp3Name : string,
-     comp4Name : string,
-     comp5Name : string,
-     comp6Name : string,
-     comp7Name : string,
-     comp8Name : string,
-     comp9Name : string,
-     exclude : string HashSet -> bool, 
-     subqueries : Dictionary<string, Subquery>,
-     ecs : 'w Ecs) =
-
-    let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
-
-    new (exclude, subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             typeof<'c9>.Name,
-             exclude,
-             subquery,
-             ecs)
-
-    new (subquery, ecs) =
-        Query<_, _, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             typeof<'c9>.Name,
-             tautology,
-             subquery,
-             ecs)
-
-    new (ecs) =
-        Query<_, _, _, _, _, _, _, _, _, _>
-            (typeof<'c>.Name,
-             typeof<'c2>.Name,
-             typeof<'c3>.Name,
-             typeof<'c4>.Name,
-             typeof<'c5>.Name,
-             typeof<'c6>.Name,
-             typeof<'c7>.Name,
-             typeof<'c8>.Name,
-             typeof<'c9>.Name,
-             tautology,
-             dictPlus HashIdentity.Structural [],
-             ecs)
-
-    member this.Subqueries = subqueries
-
-    member this.CheckCompatibility (archetype : 'w Archetype) =
-        let stores = archetype.Stores
-        stores.ContainsKey compName &&
-        stores.ContainsKey comp2Name &&
-        stores.ContainsKey comp3Name &&
-        stores.ContainsKey comp4Name &&
-        stores.ContainsKey comp5Name &&
-        stores.ContainsKey comp6Name &&
-        stores.ContainsKey comp7Name &&
-        stores.ContainsKey comp8Name &&
-        stores.ContainsKey comp9Name &&
-        not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
-
-    member this.RegisterArchetype (archetype : 'w Archetype) =
-        archetypes.Add (archetype.Id, archetype)
-
-    member this.RegisterNamedComponents
-        compName (comp : 'c)
-        comp2Name (comp2 : 'c2)
-        comp3Name (comp3 : 'c3)
-        comp4Name (comp4 : 'c4)
-        comp5Name (comp5 : 'c5)
-        comp6Name (comp6 : 'c6)
-        comp7Name (comp7 : 'c7)
-        comp8Name (comp8 : 'c8)
-        comp9Name (comp9 : 'c9)
-        entityId
-        world =
-        let world = ecs.RegisterNamedComponent compName comp entityId world
-        let world = ecs.RegisterNamedComponent comp2Name comp2 entityId world
-        let world = ecs.RegisterNamedComponent comp3Name comp3 entityId world
-        let world = ecs.RegisterNamedComponent comp4Name comp4 entityId world
-        let world = ecs.RegisterNamedComponent comp5Name comp5 entityId world
-        let world = ecs.RegisterNamedComponent comp6Name comp6 entityId world
-        let world = ecs.RegisterNamedComponent comp7Name comp7 entityId world
-        let world = ecs.RegisterNamedComponent comp8Name comp8 entityId world
-        let world = ecs.RegisterNamedComponent comp9Name comp9 entityId world
-        world
-
-    member this.RegisterComponents
-        (comp : 'c)
-        (comp2 : 'c2)
-        (comp3 : 'c3)
-        (comp4 : 'c4)
-        (comp5 : 'c5)
-        (comp6 : 'c6)
-        (comp7 : 'c7)
-        (comp8 : 'c8)
-        (comp9 : 'c9)
-        entityId
-        world =
-        this.RegisterNamedComponents
-            typeof<'c>.Name comp
-            typeof<'c2>.Name comp2
-            typeof<'c3>.Name comp3
-            typeof<'c4>.Name comp4
-            typeof<'c5>.Name comp5
-            typeof<'c6>.Name comp6
-            typeof<'c7>.Name comp7
-            typeof<'c8>.Name comp8
-            typeof<'c9>.Name comp9
-            entityId
-            world
-
-    member this.UnregisterNamedComponents
-        compName
-        comp2Name
-        comp3Name
-        comp4Name
-        comp5Name
-        comp6Name
-        comp7Name
-        comp8Name
-        comp9Name
-        entityId
-        world =
-        let world = ecs.UnregisterNamedComponent compName entityId world
-        let world = ecs.UnregisterNamedComponent comp2Name entityId world
-        let world = ecs.UnregisterNamedComponent comp3Name entityId world
-        let world = ecs.UnregisterNamedComponent comp4Name entityId world
-        let world = ecs.UnregisterNamedComponent comp5Name entityId world
-        let world = ecs.UnregisterNamedComponent comp6Name entityId world
-        let world = ecs.UnregisterNamedComponent comp7Name entityId world
-        let world = ecs.UnregisterNamedComponent comp8Name entityId world
-        let world = ecs.UnregisterNamedComponent comp9Name entityId world
-        world
-
-    member this.UnregisterComponents entityId world =
-        this.UnregisterNamedComponents
-            typeof<'c>.Name
-            typeof<'c2>.Name
-            typeof<'c3>.Name
-            typeof<'c4>.Name
-            typeof<'c5>.Name
-            typeof<'c6>.Name
-            typeof<'c7>.Name
-            typeof<'c8>.Name
-            typeof<'c9>.Name
-            entityId
-            world
-
-    member this.Iterate (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) state =
-        let mutable state = state
-        for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            let stores = archetype.Stores
-            let store = stores.[compName] :?> 'c Store
-            let store2 = stores.[comp2Name] :?> 'c2 Store
-            let store3 = stores.[comp3Name] :?> 'c3 Store
-            let store4 = stores.[comp4Name] :?> 'c4 Store
-            let store5 = stores.[comp5Name] :?> 'c5 Store
-            let store6 = stores.[comp6Name] :?> 'c6 Store
-            let store7 = stores.[comp7Name] :?> 'c7 Store
-            let store8 = stores.[comp8Name] :?> 'c8 Store
-            let store9 = stores.[comp9Name] :?> 'c9 Store
-            let mutable i = 0
-            while i < store.Length do
-                state <- statement.Invoke
-                    (&store.[i],
-                     &store2.[i],
-                     &store3.[i],
-                     &store4.[i],
-                     &store5.[i],
-                     &store6.[i],
-                     &store7.[i],
-                     &store8.[i],
-                     &store9.[i],
-                     state)
-                i <- inc i
-        state
-
-    interface 'w Query with
+    member this.Index (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>, entityId, state) =
+        let archetypeSlot = ecs.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
+
+    interface 'w IQuery with
         member this.Subqueries = this.Subqueries
         member this.CheckCompatibility archetype = this.CheckCompatibility archetype
         member this.RegisterArchetype archetype = this.RegisterArchetype archetype
