@@ -129,17 +129,17 @@ type MyGameDispatcher () =
         // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
             Seq.fold (fun world _ ->
-                let mover = ecs.EntityId
+                let mover = ecs.EntityRef
                 let world = ecs.RegisterComponent { Active = true; Position = v2Zero } mover world
                 let world = ecs.RegisterComponent { Active = true; Velocity = v2One } mover world
-                ecs.Set { Active = true; Velocity = v2One } mover
+                mover.Set { Active = true; Velocity = v2One }
                 world)
                 world (Seq.init 4000000 id)
 
         // create 4000 shakers
         let world =
             Seq.fold (fun world _ ->
-                let shaker = ecs.EntityId
+                let shaker = ecs.EntityRef
                 let world = ecs.RegisterComponent { Active = true; EntityId = shaker } shaker world
                 let world = ecs.RegisterComponent { Active = true; Position = v2Zero } shaker world
                 let world = ecs.RegisterComponent { Active = true; Origin = v2Zero; Offset = v2One } shaker world
