@@ -16,6 +16,7 @@ type [<StructuralEquality; NoComparison>] ComparableTerm =
 
 type [<StructuralEquality; NoComparison>] Term =
     | TagTerm
+    | KeywordTerm of string
     | EntityTerm of uint64
     | ComparableTerm of ComparableTerm
     | Terms of Term list
@@ -47,6 +48,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member private equalTo term term2 =
         match (term, term2) with
+        | (KeywordTerm keyword, KeywordTerm keyword2) -> strEq keyword keyword2
         | (EntityTerm entityId, EntityTerm entityId2) -> entityId = entityId2
         | (ComparableTerm comparable, ComparableTerm comparable2) ->
             match (comparable, comparable2) with
