@@ -119,7 +119,8 @@ type [<StructuralEquality; NoComparison>] Term =
 and [<StructuralEquality; NoComparison>] Subquery =
     | Is
     | Has of string
-    | Uses of string * Type
+    | ByName of string
+    | ByType of Type
     | Eq of Term
     | Gt of Term
     | Ge of Term
@@ -144,7 +145,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
             else false
         | _ -> false
 
-    static member eval term subquery =
+    static member eval termName term subquery =
         match subquery with
         | Is ->
             true
@@ -152,9 +153,13 @@ and [<StructuralEquality; NoComparison>] Subquery =
             match term with
             | Labels labels -> labels.Contains label
             | _ -> false
-        | Uses (name, ty) ->
+        | ByName name ->
             match term with
-            | Component' (name2, ty2, _)  -> strEq name name2 && refEq ty ty2
+            | Component' (name2, _, _)  -> strEq name name2
+            | _ -> false
+        | ByType ty ->
+            match term with
+            | Component' (_, ty2, _)  -> refEq ty ty2
             | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
@@ -183,14 +188,14 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | (C c, C c2) -> c.CompareTo c2 <= 0
             | (_, _) -> false
         | Not subquery ->
-            not (Subquery.eval term subquery)
+            not (Subquery.eval termName term subquery)
         | And subqueries ->
             match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 Subquery.eval terms subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 (Subquery.eval termName) terms subqueries else false
             | _ -> false
         | Or subqueries ->
             match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 Subquery.eval terms subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 (Subquery.eval termName) terms subqueries else false
             | _ -> false
 
     static member evalMany (terms : Dictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
@@ -199,7 +204,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
         while result && termEnr.MoveNext () do
             let termEntry = termEnr.Current
             match subqueries.TryGetValue termEntry.Key with
-            | (true, subquery) -> result <- Subquery.eval termEntry.Value subquery
+            | (true, subquery) -> result <- Subquery.eval termEntry.Key termEntry.Value subquery
             | (false, _) -> result <- false
         result
 

@@ -46,61 +46,61 @@ type Query
 
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
 
-    static member create
+    static member byName
         (compName, exclude, subqueries) =
         Query (HashSet.singleton HashIdentity.Structural compName, exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], exclude, subqueries)
 
-    static member create
+    static member byName
         (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], exclude, subqueries)
 
-    static member create<'c when
+    static member byType<'c when
         'c : struct and 'c :> 'c Component>
         (exclude, subqueries) =
         Query (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, exclude, subqueries)
 
-    static member create<'c, 'c2 when
+    static member byType<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3 when
+    static member byType<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4 when
+    static member byType<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -108,7 +108,7 @@ type Query
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4, 'c5 when
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -117,7 +117,7 @@ type Query
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -127,7 +127,7 @@ type Query
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -138,7 +138,7 @@ type Query
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -150,7 +150,7 @@ type Query
         (exclude, subqueries) =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], exclude, subqueries)
 
-    static member create<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
