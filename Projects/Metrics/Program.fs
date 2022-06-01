@@ -140,7 +140,7 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world _ ->
                 let shaker = ecs.EntityRef
-                let world = ecs.RegisterComponent { Active = true; EntityId = shaker } shaker world
+                let world = ecs.RegisterComponent { Active = true; EntityId = shaker.EntityId } shaker world
                 let world = ecs.RegisterComponent { Active = true; Position = v2Zero } shaker world
                 let world = ecs.RegisterComponent { Active = true; Origin = v2Zero; Offset = v2One } shaker world
                 world)
