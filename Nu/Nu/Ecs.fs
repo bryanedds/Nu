@@ -34,9 +34,6 @@ type [<StructuralEquality; NoComparison>] Term =
             result
         else false
 
-type Terms =
-    Dictionary<string, Term>
-
 type [<StructuralEquality; NoComparison>] Subquery =
     | Wildcard // matches everything
     | Eq of Term
@@ -101,7 +98,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
 /// TODO: consider embedding hash code to make look-ups faster.
 type [<CustomEquality; NoComparison>] ArchetypeId =
     { ComponentNames : string HashSet
-      Terms : Terms }
+      Terms : Dictionary<string, Term> }
 
     static member inline Hash (hashSet : _ HashSet) =
         let mutable h = 0
@@ -203,7 +200,7 @@ type 'w Query =
         end
 
 /// A collection of component stores.
-and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Terms) =
+and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Dictionary<string, Term>) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
