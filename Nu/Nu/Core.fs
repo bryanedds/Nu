@@ -56,7 +56,7 @@ module CoreOperators =
 
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
-    let ($) f g = f g
+    let inline ($) f g = f g
 
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
