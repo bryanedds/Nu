@@ -97,6 +97,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | EntityRef of EntityRef
+    | Intra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
@@ -160,10 +161,12 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
         | ByName name ->
             match term with
+            | Intra (name2, _, _)  -> strEq name name2
             | Extra (name2, _, _)  -> strEq name name2
             | _ -> false
         | ByType ty ->
             match term with
+            | Intra (_, ty2, _)  -> refEq ty ty2
             | Extra (_, ty2, _)  -> refEq ty ty2
             | _ -> false
         | Eq term2  ->
@@ -251,6 +254,7 @@ and Archetype (terms : Dictionary<string, Term>) =
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in terms do
             match termEntry.Value with
+            | Intra (name, ty, _)
             | Extra (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
@@ -400,6 +404,7 @@ and Ecs () =
 
     member this.RegisterTerm (termName : string) term (entityRef : EntityRef) (state : 's) =
         if termName.StartsWith "@" then failwith "Term names that start with '@' are for internal use only."
+        if (match term with Intra _ -> true | _ -> false) then failwith "Intra components are for internal use only."
         match archetypeSlots.TryGetValue entityRef.EntityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
@@ -468,7 +473,7 @@ and Ecs () =
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Add (compName, comp)
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
-            archetypeId.Terms.Add ("@" + compName, Extra (compName, typeof<'c>, { AlwaysEqualValue = null }))
+            archetypeId.Terms.Add ("@" + compName, Intra (compName, typeof<'c>, { AlwaysEqualValue = null }))
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -483,7 +488,7 @@ and Ecs () =
             let eventData = { EntityId = entityRef.EntityId; ContextName = compName }
             this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Extra (compName, typeof<'c>, { AlwaysEqualValue = null })) }
+            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Intra (compName, typeof<'c>, { AlwaysEqualValue = null })) }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let state =
                 match archetypes.TryGetValue archetypeId with
