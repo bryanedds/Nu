@@ -32,7 +32,7 @@ type [<StructuralEquality; NoComparison>] Term =
                 | (false, _) -> result <- false
             result
         else false
-    static member dict = dictPlus<string, Term> HashIdentity.Structural []
+    static member dict entries = dictPlus<string, Term> HashIdentity.Structural entries
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Wildcard // matches everything
@@ -102,8 +102,8 @@ type [<StructuralEquality; NoComparison>] Subquery =
             | (false, _) -> result <- false
         result
 
-    static member dict =
-        dictPlus<string, Subquery> HashIdentity.Structural []
+    static member dict entries =
+        dictPlus<string, Subquery> HashIdentity.Structural entries
 
 /// Identifies an archetype.
 /// TODO: consider embedding hash code to make look-ups faster.
