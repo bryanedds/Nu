@@ -97,7 +97,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | EntityRef of EntityRef
-    | Component' of string * Type * obj AlwaysEqual // only creates component when at top-level.
+    | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -145,6 +145,11 @@ and [<StructuralEquality; NoComparison>] Subquery =
             else false
         | _ -> false
 
+    static member evalFailOnExtra termName term subquery =
+        match term with
+        | Extra _ -> failwith "Extra can only be used as a top-level term."
+        | _ -> Subquery.eval termName term subquery
+
     static member eval termName term subquery =
         match subquery with
         | Is ->
@@ -155,11 +160,11 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
         | ByName name ->
             match term with
-            | Component' (name2, _, _)  -> strEq name name2
+            | Extra (name2, _, _)  -> strEq name name2
             | _ -> false
         | ByType ty ->
             match term with
-            | Component' (_, ty2, _)  -> refEq ty ty2
+            | Extra (_, ty2, _)  -> refEq ty ty2
             | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
@@ -191,11 +196,11 @@ and [<StructuralEquality; NoComparison>] Subquery =
             not (Subquery.eval termName term subquery)
         | And subqueries ->
             match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 (Subquery.eval termName) terms subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 (Subquery.evalFailOnExtra termName) terms subqueries else false
             | _ -> false
         | Or subqueries ->
             match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 (Subquery.eval termName) terms subqueries else false
+            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 (Subquery.evalFailOnExtra termName) terms subqueries else false
             | _ -> false
 
     static member evalMany (terms : Dictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
@@ -246,7 +251,7 @@ and Archetype (terms : Dictionary<string, Term>) =
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in terms do
             match termEntry.Value with
-            | Component' (name, ty, _) ->
+            | Extra (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
                 stores.Add (name, store)
@@ -399,7 +404,7 @@ and Ecs () =
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
-            match term with Component' (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
@@ -420,7 +425,7 @@ and Ecs () =
         | (false, _) ->
             let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural termName term }
             let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
-            match term with Component' (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -463,7 +468,7 @@ and Ecs () =
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Add (compName, comp)
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
-            archetypeId.Terms.Add ("@" + compName, Component' (compName, typeof<'c>, { AlwaysEqualValue = null }))
+            archetypeId.Terms.Add ("@" + compName, Extra (compName, typeof<'c>, { AlwaysEqualValue = null }))
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -478,7 +483,7 @@ and Ecs () =
             let eventData = { EntityId = entityRef.EntityId; ContextName = compName }
             this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Component' (compName, typeof<'c>, { AlwaysEqualValue = null })) }
+            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Extra (compName, typeof<'c>, { AlwaysEqualValue = null })) }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let state =
                 match archetypes.TryGetValue archetypeId with
