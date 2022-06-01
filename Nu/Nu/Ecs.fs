@@ -378,7 +378,7 @@ and Ecs () =
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
                     objCallback evt this state
-                | _ -> ())
+                | _ -> state)
                 state callbacks.Values
 
     member this.PublishAsync<'d, 's> eventName (eventData : 'd) =
@@ -414,6 +414,12 @@ and Ecs () =
         match subscriptions.TryGetValue eventName with
         | (true, callbacks) -> callbacks.Remove subscriptionId
         | (false, _) -> false
+
+    member this.IndexArchetypeSlot (entityRef : EntityRef) =
+        archetypeSlots.[entityRef.EntityId]
+
+    member this.IndexArchetype archetypeId =
+        archetypes.[archetypeId]
 
     member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
@@ -573,9 +579,6 @@ and Ecs () =
 
     member this.RegisterArchetype archetypeId archetype =
         archetypes.Add (archetypeId, archetype)
-
-    member this.IndexArchetypeSlot (entityRef : EntityRef) =
-        archetypeSlots.[entityRef.EntityId]
 
     member this.ReadComponents count archetypeId stream =
         match archetypes.TryGetValue archetypeId with
