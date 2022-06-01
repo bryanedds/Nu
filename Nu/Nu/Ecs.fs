@@ -20,6 +20,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | Entity of uint64
+    | Component of string * Type
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -36,10 +37,12 @@ type [<StructuralEquality; NoComparison>] Term =
         else false
     static member dict entries = dictPlus<string, Term> HashIdentity.Structural entries
     static member singleton termName term = Term.dict [(termName, term)]
+    static member zero = Term.dict []
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Is
     | Has of string
+    | Uses of string * Type
     | Eq of Term
     | Gt of Term
     | Ge of Term
@@ -71,6 +74,10 @@ type [<StructuralEquality; NoComparison>] Subquery =
         | Has label ->
             match term with
             | Labels labels -> labels.Contains label
+            | _ -> false
+        | Uses (name, ty) ->
+            match term with
+            | Component (name2, ty2)  -> strEq name name2 && refEq ty ty2
             | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
@@ -120,7 +127,8 @@ type [<StructuralEquality; NoComparison>] Subquery =
         result
 
     static member dict entries = dictPlus<string, Subquery> HashIdentity.Structural entries
-    static member singleton subqueryName subquery = Term.dict [(subqueryName, subquery)]
+    static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
+    static member zero = Subquery.dict []
 
 /// Identifies an archetype.
 /// TODO: consider embedding hash code to make look-ups faster.
@@ -220,7 +228,7 @@ type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
         member this.Read index count stream = this.Read index count stream
 
 /// Describes a means to query components.
-type 'w Query =
+type 'w IQuery =
     interface
         abstract Subqueries : Dictionary<string, Subquery>
         abstract CheckCompatibility : 'w Archetype -> bool
@@ -241,6 +249,17 @@ and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Dictionary<stri
             let storeType = storeTypeGeneric.MakeGenericType [|storeTypeEntry.Value|]
             let store = Activator.CreateInstance (storeType, storeTypeEntry.Key) :?> Store
             stores.Add (storeTypeEntry.Key, store)
+
+    do
+        let storeTypeGeneric = typedefof<EntityId Store>
+        for termEntry in terms do
+            match termEntry.Value with
+            | Component (name, ty) ->
+                let storeType = storeTypeGeneric.MakeGenericType [|ty|]
+                let store = Activator.CreateInstance (storeType, name) :?> Store
+                stores.Add (name, store)
+            | _ -> ()
+                
 
     member this.Id = id
     member this.Stores = stores
@@ -327,7 +346,7 @@ and 'w Ecs () =
     let archetypeSlots = dictPlus<uint64, 'w ArchetypeSlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
     let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
-    let queries = List<'w Query> ()
+    let queries = List<'w IQuery> ()
 
     let createArchetype (inferredType : Type) (archetypeId : ArchetypeId) =
         let storeTypes =
@@ -547,7 +566,7 @@ and 'w Ecs () =
             world
         | (false, _) -> world
 
-    member this.RegisterQuery<'q when 'q :> 'w Query> (query : 'q) =
+    member this.RegisterQuery<'q when 'q :> 'w IQuery> (query : 'q) =
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             if query.CheckCompatibility archetype then
