@@ -227,7 +227,7 @@ module SpriteBatch =
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
-    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2, color : Color, bfs, bfd, beq, texture, env) =
+    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = State.create absolute bfs bfd beq texture
