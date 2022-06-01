@@ -38,14 +38,9 @@ type [<AbstractClass; Sealed>] Exclude =
        (componentNames : string HashSet) =
        Exclude.byName (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, componentNames)
 
-[<RequireQualifiedAccess>]
-module Exclude =
-
-    type Predicate = string HashSet -> bool
-
 type Query<'c, 'w when
     'c : struct and 'c :> 'c Component>
-    (compName : string, excluding : Exclude.Predicate, subquery : Subquery, ecs : 'w Ecs) =
+    (compName : string, excluding : string HashSet -> bool, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
