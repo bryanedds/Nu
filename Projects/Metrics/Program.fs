@@ -146,18 +146,16 @@ type MyGameDispatcher () =
                 world (Seq.init 4000 id)
 
         // define update for movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ ->
-            movers.Iterate<_, _, _> $ new Statement<_, _, _> (fun position velocity (world : World) ->
-                position.Position.X <- position.Position.X + velocity.Velocity.X
-                position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-                world)
+        ecs.Subscribe EcsEvents.Update $ fun _ _ -> movers.Iterate (fun position velocity world ->
+            position.Position.X <- position.Position.X + velocity.Velocity.X
+            position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+            world)
 
         // define update for shakers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ ->
-            shakers.Iterate<_, _, _> $ new Statement<_, _, _> (fun position shake (world : World) ->
-                position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
-                position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
-                world)
+        ecs.Subscribe EcsEvents.Update $ fun _ _ -> shakers.Iterate (fun position shake world ->
+            position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+            position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+            world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
