@@ -14,7 +14,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
     | Tag
-    | Case of string
+    | Label of string
     | Entity of uint64
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
@@ -48,7 +48,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (Z i, Z i2) -> i = i2
         | (R i, R i2) -> i = i2
-        | (Case case', Case case2) -> strEq case' case2
+        | (Label label, Label label2) -> strEq label label2
         | (Entity entityId, Entity entityId2) -> entityId = entityId2
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
