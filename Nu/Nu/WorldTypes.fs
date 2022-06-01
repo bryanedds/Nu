@@ -599,7 +599,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Ecs : World Ecs
+          Ecs : Ecs
           TransitionState : TransitionState
           TransitionUpdates : int64
           Incoming : Transition
@@ -1301,7 +1301,7 @@ module WorldTypes =
               EntityMounts : UMap<Entity, Entity USet>
               mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
               mutable Octree : Entity Octree MutantCache // mutated when Imperative
-              mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
+              mutable SelectedEcsOpt : Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
               Subsystems : Subsystems
@@ -1431,8 +1431,8 @@ module WorldTypes =
         default this.MakeKeyedValues world = ([], world)
 
         /// Make the Ecs for each screen.
-        abstract MakeEcs : unit -> World Ecs
-        default this.MakeEcs () = Ecs<World> ()
+        abstract MakeEcs : unit -> Ecs
+        default this.MakeEcs () = Ecs ()
 
         /// Attempt to make an emitter of the given name.
         abstract TryMakeEmitter : int64 -> int64 -> int64 -> single -> int -> string -> Particles.Emitter option
