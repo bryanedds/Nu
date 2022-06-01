@@ -378,7 +378,7 @@ and Ecs () =
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
                     objCallback evt this state
-                | _ -> failwithumf ())
+                | _ -> ())
                 state callbacks.Values
 
     member this.PublishAsync<'d, 's> eventName (eventData : 'd) =
@@ -392,10 +392,28 @@ and Ecs () =
                         | :? EcsCallback<obj, 's> as objCallback ->
                             let evt = { EcsEventData = eventData :> obj }
                             objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
-                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                        | _ -> ()) |> Vsync.AwaitTask) |>
                 Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
+
+    member this.SubscribePlus<'d, 's> subscriptionId eventName (callback : EcsCallback<'d, 's>) =
+        match subscriptions.TryGetValue eventName with
+        | (true, callbacks) ->
+            callbacks.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
+            subscriptionId
+        | (false, _) ->
+            let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
+            subscriptions.Add (eventName, callbacks)
+            subscriptionId
+
+    member this.Subscribe<'d, 's> eventName callback =
+        this.SubscribePlus<'d, 's> this.SubscriptionId eventName callback |> ignore
+
+    member this.Unsubscribe eventName subscriptionId =
+        match subscriptions.TryGetValue eventName with
+        | (true, callbacks) -> callbacks.Remove subscriptionId
+        | (false, _) -> false
 
     member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
@@ -555,24 +573,6 @@ and Ecs () =
 
     member this.RegisterArchetype archetypeId archetype =
         archetypes.Add (archetypeId, archetype)
-
-    member this.SubscribePlus<'d, 's> subscriptionId eventName (callback : EcsCallback<'d, 's>) =
-        match subscriptions.TryGetValue eventName with
-        | (true, callbacks) ->
-            callbacks.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
-            subscriptionId
-        | (false, _) ->
-            let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
-            subscriptions.Add (eventName, callbacks)
-            subscriptionId
-
-    member this.Subscribe<'d, 's> eventName callback =
-        this.SubscribePlus<'d, 's> this.SubscriptionId eventName callback |> ignore
-
-    member this.Unsubscribe eventName subscriptionId =
-        match subscriptions.TryGetValue eventName with
-        | (true, callbacks) -> callbacks.Remove subscriptionId
-        | (false, _) -> false
 
     member this.IndexArchetypeSlot (entityRef : EntityRef) =
         archetypeSlots.[entityRef.EntityId]
