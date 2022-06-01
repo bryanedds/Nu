@@ -553,6 +553,9 @@ and Ecs () =
         queries.Add query
         query
 
+    member this.RegisterArchetype archetypeId archetype =
+        archetypes.Add (archetypeId, archetype)
+
     member this.SubscribePlus<'d, 's> subscriptionId eventName (callback : EcsCallback<'d, 's>) =
         match subscriptions.TryGetValue eventName with
         | (true, callbacks) ->
