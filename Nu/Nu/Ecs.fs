@@ -6,11 +6,101 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
+// TODO: 3D: cache empty sets and dicts.
+// TODO: 3D: remove any incidental allocation.
+
+type [<StructuralEquality; NoComparison>] ComparableTerm =
+    | IntTerm of int
+    | SingleTerm of single
+
+type [<StructuralEquality; NoComparison>] Term =
+    | TagTerm
+    | EntityTerm of uint64
+    | ComparableTerm of ComparableTerm
+    | Terms of Term list
+    | TermsValueCollection of Dictionary.ValueCollection<string, Term>
+    static member equals (this : Term) (that : Term) = this.Equals that
+    static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
+        if lefts.Count = rights.Count then
+            let mutable result = true
+            let mutable enr = lefts.GetEnumerator ()
+            while result && enr.MoveNext () do
+                let current = enr.Current
+                let termName = current.Key
+                match rights.TryGetValue termName with
+                | (true, term) -> result <- Term.equals current.Value term
+                | (false, _) -> result <- false
+            result
+        else false
+
+type Terms =
+    Dictionary<string, Term>
+
+type [<StructuralEquality; NoComparison>] Subquery =
+    | Star // matches everything
+    | Eq of Term
+    | Gt of ComparableTerm
+    | Ge of ComparableTerm
+    | Lt of ComparableTerm
+    | Le of ComparableTerm
+    | Not
+    | And of Subquery list
+    | Or of Subquery list
+
+    static member private equalTo term term2 =
+        match (term, term2) with
+        | (EntityTerm entityId, EntityTerm entityId2) -> entityId = entityId2
+        | (ComparableTerm comparable, ComparableTerm comparable2) ->
+            match (comparable, comparable2) with
+            | (IntTerm i, IntTerm i2) -> i = i2
+            | (SingleTerm i, SingleTerm i2) -> i = i2
+            | _ -> false
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.equalTo terms terms2
+            else false
+        | _ -> false
+
+    static member eval term subquery =
+        match subquery with
+        | Star -> true
+        | Eq term  -> Subquery.equalTo term term
+        | Gt c ->
+            match term with
+            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i > i2 | (SingleTerm s, SingleTerm s2) -> s > s2 | _ -> false
+            | _ -> false
+        | Ge c ->
+            match term with
+            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i >= i2 | (SingleTerm s, SingleTerm s2) -> s >= s2 | _ -> false
+            | _ -> false
+        | Lt c ->
+            match term with
+            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i < i2 | (SingleTerm s, SingleTerm s2) -> s < s2 | _ -> false
+            | _ -> false
+        | Le c ->
+            match term with
+            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i <= i2 | (SingleTerm s, SingleTerm s2) -> s <= s2 | _ -> false
+            | _ -> false
+        | Not ->
+            match term with
+            | TagTerm -> false
+            | _ -> true
+        | And subqueries ->
+            match term with
+            | Terms tags -> if tags.Length = subqueries.Length then List.forall2 Subquery.eval tags subqueries else false
+            | TermsValueCollection tags -> if tags.Count = subqueries.Length then Seq.forall2 Subquery.eval tags subqueries else false
+            | _ -> false
+        | Or subqueries ->
+            match term with
+            | Terms tags -> if tags.Length = subqueries.Length then List.exists2 Subquery.eval tags subqueries else false
+            | TermsValueCollection tags -> if tags.Count = subqueries.Length then Seq.exists2 Subquery.eval tags subqueries else false
+            | _ -> false
+
 /// Identifies an archetype.
 /// TODO: consider embedding hash code to make look-ups faster.
 type [<CustomEquality; NoComparison>] ArchetypeId =
     { ComponentNames : string HashSet
-      Tags : string HashSet }
+      Terms : Terms }
 
     static member inline Hash (hashSet : _ HashSet) =
         let mutable h = 0
@@ -18,13 +108,19 @@ type [<CustomEquality; NoComparison>] ArchetypeId =
             h <- h ^^^ item.GetHashCode ()
         h
 
+    static member inline Hash (dict : Dictionary<_, _>) =
+        let mutable h = 0
+        for item in dict do
+            h <- h ^^^ item.Key.GetHashCode () ^^^ item.Value.GetHashCode ()
+        h
+
     static member equals left right =
         left.ComponentNames.SetEquals right.ComponentNames &&
-        left.Tags.SetEquals right.Tags
+        Term.equalsMany left.Terms right.Terms
 
     override this.GetHashCode () =
         let h = ArchetypeId.Hash this.ComponentNames
-        h ^^^ ArchetypeId.Hash this.Tags
+        h ^^^ ArchetypeId.Hash this.Terms
 
     override this.Equals that =
         match that with
@@ -105,12 +201,12 @@ type 'w Query =
         end
 
 /// A collection of component stores.
-and 'w Archetype (storeTypes : Dictionary<string, Type>, tags : string HashSet) =
+and 'w Archetype (storeTypes : Dictionary<string, Type>, terms : Terms) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
     let stores = dictPlus<string, Store> HashIdentity.Structural []
-    let id = { ComponentNames = hashSetPlus HashIdentity.Structural storeTypes.Keys; Tags = tags }
+    let id = { ComponentNames = hashSetPlus HashIdentity.Structural storeTypes.Keys; Terms = terms }
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
@@ -121,7 +217,8 @@ and 'w Archetype (storeTypes : Dictionary<string, Type>, tags : string HashSet) 
 
     member this.Id = id
     member this.Stores = stores
-    member this.Tags = tags
+    member this.Terms = terms
+    member this.TermsValueCollection = TermsValueCollection terms.Values
 
     member this.Register (comps : Dictionary<string, obj>) =
         if freeList.Count > 0 then
@@ -217,7 +314,7 @@ and 'w Ecs () =
                     else failwith ("Could not infer component type of '" + componentName + "'.")
                     (componentName, inferredType)) |>
             dictPlus HashIdentity.Structural
-        let archetype = Archetype<'w> (storeTypes, archetypeId.Tags)
+        let archetype = Archetype<'w> (storeTypes, archetypeId.Terms)
         archetypes.Add (archetypeId, archetype)
         for query in queries do
             if query.CheckCompatibility archetype then
@@ -273,7 +370,7 @@ and 'w Ecs () =
         | (true, _) -> failwith "Component type already registered."
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
 
-    member this.RegisterTag tag entityId world =
+    member this.RegisterTerm termName term entityId world =
         match archetypeSlots.TryGetValue entityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
@@ -282,8 +379,8 @@ and 'w Ecs () =
             archetypeSlots.Remove entityId |> ignore<bool>
             let archetypeId =
                 { ComponentNames = archetype.Id.ComponentNames
-                  Tags = hashSetPlus HashIdentity.Structural archetype.Id.Tags }
-            archetypeId.Tags.Add tag |> ignore<bool>
+                  Terms = Dictionary<_, _> archetype.Id.Terms }
+            archetypeId.Terms.Add (termName, term)
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -295,12 +392,12 @@ and 'w Ecs () =
                     let archetypeIndex = archetype.Register comps
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
-            let eventData = { EntityId = entityId; ContextName = tag }
+            let eventData = { EntityId = entityId; ContextName = termName }
             this.Publish EcsEvents.Register eventData world
         | (false, _) ->
             let archetypeId =
                 { ComponentNames = hashSetPlus HashIdentity.Structural []
-                  Tags = HashSet.singleton HashIdentity.Structural tag }
+                  Terms = Dictionary.singleton HashIdentity.Structural termName term }
             let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
             let world =
                 match archetypes.TryGetValue archetypeId with
@@ -313,24 +410,23 @@ and 'w Ecs () =
                     let archetypeIndex = archetype.Register comps
                     archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     world
-            let eventData = { EntityId = entityId; ContextName = tag }
+            let eventData = { EntityId = entityId; ContextName = termName }
             this.Publish EcsEvents.Register eventData world
 
-    member this.UnregisterTag tag entityId world =
+    member this.UnregisterTag termName entityId world =
         match archetypeSlots.TryGetValue entityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
-            let eventData = { EntityId = entityId; ContextName = tag }
+            let eventData = { EntityId = entityId; ContextName = termName }
             let world = this.Publish EcsEvents.Unregistering eventData world
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
-            comps.Remove tag |> ignore<bool>
             let archetypeId =
                 { ComponentNames = archetype.Id.ComponentNames
-                  Tags = hashSetPlus HashIdentity.Structural archetype.Id.Tags }
-            archetypeId.Tags.Remove tag |> ignore<bool>
-            if archetypeId.ComponentNames.Count > 0 || archetypeId.Tags.Count > 0 then
+                  Terms = Dictionary<_, _> archetype.Id.Terms }
+            archetypeId.Terms.Remove termName |> ignore<bool>
+            if archetypeId.ComponentNames.Count > 0 || archetypeId.Terms.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                 world
@@ -347,7 +443,7 @@ and 'w Ecs () =
             comps.Add (compName, comp)
             let archetypeId =
                 { ComponentNames = hashSetPlus HashIdentity.Structural archetype.Id.ComponentNames
-                  Tags = archetype.Id.Tags }
+                  Terms = archetype.Id.Terms }
             archetypeId.ComponentNames.Add compName |> ignore<bool>
             let world =
                 match archetypes.TryGetValue archetypeId with
@@ -365,7 +461,7 @@ and 'w Ecs () =
         | (false, _) ->
             let archetypeId =
                 { ComponentNames = HashSet.singleton HashIdentity.Structural compName
-                  Tags = hashSetPlus HashIdentity.Structural [] }
+                  Terms = dictPlus HashIdentity.Structural [] }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let world =
                 match archetypes.TryGetValue archetypeId with
@@ -397,9 +493,9 @@ and 'w Ecs () =
             comps.Remove compName |> ignore<bool>
             let archetypeId =
                 { ComponentNames = hashSetPlus HashIdentity.Structural archetype.Id.ComponentNames
-                  Tags = archetype.Id.Tags }
+                  Terms = archetype.Id.Terms }
             archetypeId.ComponentNames.Remove compName |> ignore<bool>
-            if archetypeId.ComponentNames.Count > 0 || archetypeId.Tags.Count > 0 then
+            if archetypeId.ComponentNames.Count > 0 || archetypeId.Terms.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                 world
@@ -417,8 +513,8 @@ and 'w Ecs () =
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityId = entityId; ContextName = compName }
                 world <- this.Publish EcsEvents.Unregistering eventData world
-            for tag in archetype.Tags do
-                let eventData = { EntityId = entityId; ContextName = tag }
+            for termEntry in archetype.Terms do
+                let eventData = { EntityId = entityId; ContextName = termEntry.Key }
                 world <- this.Publish EcsEvents.Unregistering eventData world
             archetype.Unregister archetypeSlot.ArchetypeIndex
             world
