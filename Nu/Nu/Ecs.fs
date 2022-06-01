@@ -11,6 +11,12 @@ open Prime
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 // TODO: 3D: make sure to use TryAdd in the appropriate places.
 
+/// Allows a value to always pass as equal with another of its same type.
+type [<CustomEquality; NoComparison>] 'a AlwaysEqual =
+    { AlwaysEqualValue : 'a }
+    override this.GetHashCode () = 0
+    override this.Equals (that : obj) = that :? AlwaysEqual<'a>
+
 type [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
@@ -20,7 +26,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | Entity of uint64
-    | Component of string * Type
+    | Component of string * Type * obj AlwaysEqual
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -77,7 +83,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
         | Uses (name, ty) ->
             match term with
-            | Component (name2, ty2)  -> strEq name name2 && refEq ty ty2
+            | Component (name2, ty2, _)  -> strEq name name2 && refEq ty ty2
             | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
@@ -238,7 +244,7 @@ and 'w Archetype (terms : Dictionary<string, Term>) =
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in terms do
             match termEntry.Value with
-            | Component (name, ty) ->
+            | Component (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
                 stores.Add (name, store)
@@ -394,6 +400,7 @@ and 'w Ecs () =
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
+            match term with Component (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
@@ -414,6 +421,7 @@ and 'w Ecs () =
         | (false, _) ->
             let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural termName term }
             let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
+            match term with Component (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -456,7 +464,7 @@ and 'w Ecs () =
             archetypeSlots.Remove entityId |> ignore<bool>
             comps.Add (compName, comp)
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
-            archetypeId.Terms.Add ("@" + compName, Component (compName, typeof<'c>))
+            archetypeId.Terms.Add ("@" + compName, Component (compName, typeof<'c>, { AlwaysEqualValue = null }))
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -471,7 +479,7 @@ and 'w Ecs () =
             let eventData = { EntityId = entityId; ContextName = compName }
             this.Publish EcsEvents.Register eventData world
         | (false, _) ->
-            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Component (compName, typeof<'c>)) }
+            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Component (compName, typeof<'c>, { AlwaysEqualValue = null })) }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let world =
                 match archetypes.TryGetValue archetypeId with
