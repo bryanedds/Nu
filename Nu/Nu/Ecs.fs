@@ -9,12 +9,16 @@ open Prime
 // TODO: 3D: cache empty sets and dicts.
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
+// TODO: 3D: make sure to use TryAdd in the appropriate places.
 
 type [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
+    | C of IComparable
+    | Obj of obj
     | Tag
     | Label of string
+    | Labels of string HashSet
     | Entity of uint64
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
@@ -35,6 +39,7 @@ type [<StructuralEquality; NoComparison>] Term =
 
 type [<StructuralEquality; NoComparison>] Subquery =
     | Is
+    | Has of string
     | Eq of Term
     | Gt of Term
     | Ge of Term
@@ -46,9 +51,12 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member private equalTo term term2 =
         match (term, term2) with
-        | (Z i, Z i2) -> i = i2
-        | (R i, R i2) -> i = i2
+        | (Z z, Z z2) -> z = z2
+        | (R r, R r2) -> r = r2
+        | (C c, C c2) -> c = c2
+        | (Obj o, Obj o2) -> objEq o o2
         | (Label label, Label label2) -> strEq label label2
+        | (Labels labels, Labels labels2) -> labels.SetEquals labels2
         | (Entity entityId, Entity entityId2) -> entityId = entityId2
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -58,28 +66,37 @@ type [<StructuralEquality; NoComparison>] Subquery =
 
     static member eval term subquery =
         match subquery with
-        | Is -> true
+        | Is ->
+            true
+        | Has label ->
+            match term with
+            | Labels labels -> labels.Contains label
+            | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
         | Gt term2 ->
             match (term, term2) with
-            | (Z i, Z i2) -> i > i2
-            | (R s, R s2) -> s > s2
+            | (Z z, Z z2) -> z > z2
+            | (R r, R r2) -> r > r2
+            | (C c, C c2) -> c.CompareTo c2 > 0
             | (_, _) -> false
         | Ge term2 ->
             match (term, term2) with
-            | (Z i, Z i2) -> i >= i2
-            | (R s, R s2) -> s >= s2
+            | (Z z, Z z2) -> z >= z2
+            | (R r, R r2) -> r >= r2
+            | (C c, C c2) -> c.CompareTo c2 >= 0
             | (_, _) -> false
         | Lt term2 ->
             match (term, term2) with
-            | (Z i, Z i2) -> i < i2
-            | (R s, R s2) -> s < s2
+            | (Z z, Z z2) -> z < z2
+            | (R r, R r2) -> r < r2
+            | (C c, C c2) -> c.CompareTo c2 < 0
             | (_, _) -> false
         | Le term2 ->
             match (term, term2) with
-            | (Z i, Z i2) -> i <= i2
-            | (R s, R s2) -> s <= s2
+            | (Z z, Z z2) -> z <= z2
+            | (R r, R r2) -> r <= r2
+            | (C c, C c2) -> c.CompareTo c2 <= 0
             | (_, _) -> false
         | Not subquery ->
             not (Subquery.eval term subquery)
