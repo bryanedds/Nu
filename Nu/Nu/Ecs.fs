@@ -10,15 +10,14 @@ open Prime
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 
-type [<StructuralEquality; NoComparison>] ComparableTerm =
-    | IntTerm of int
-    | SingleTerm of single
+type [<StructuralEquality; NoComparison>] Groupoid =
+    | Num of int
+    | Real of single
 
 type [<StructuralEquality; NoComparison>] Term =
-    | TagTerm
-    | KeywordTerm of string
-    | EntityTerm of uint64
-    | ComparableTerm of ComparableTerm
+    | Tag of string
+    | Entity of uint64
+    | Groupoid of Groupoid
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -38,22 +37,22 @@ type [<StructuralEquality; NoComparison>] Term =
 type [<StructuralEquality; NoComparison>] Subquery =
     | Wildcard // matches everything
     | Eq of Term
-    | Gt of ComparableTerm
-    | Ge of ComparableTerm
-    | Lt of ComparableTerm
-    | Le of ComparableTerm
-    | Not
+    | Gt of Groupoid
+    | Ge of Groupoid
+    | Lt of Groupoid
+    | Le of Groupoid
+    | Not of Subquery
     | And of Subquery list
     | Or of Subquery list
 
     static member private equalTo term term2 =
         match (term, term2) with
-        | (KeywordTerm keyword, KeywordTerm keyword2) -> strEq keyword keyword2
-        | (EntityTerm entityId, EntityTerm entityId2) -> entityId = entityId2
-        | (ComparableTerm comparable, ComparableTerm comparable2) ->
+        | (Tag tag, Tag tag2) -> strEq tag tag2
+        | (Entity entityId, Entity entityId2) -> entityId = entityId2
+        | (Groupoid comparable, Groupoid comparable2) ->
             match (comparable, comparable2) with
-            | (IntTerm i, IntTerm i2) -> i = i2
-            | (SingleTerm i, SingleTerm i2) -> i = i2
+            | (Num i, Num i2) -> i = i2
+            | (Real i, Real i2) -> i = i2
             | _ -> false
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -67,24 +66,22 @@ type [<StructuralEquality; NoComparison>] Subquery =
         | Eq term  -> Subquery.equalTo term term
         | Gt c ->
             match term with
-            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i > i2 | (SingleTerm s, SingleTerm s2) -> s > s2 | _ -> false
+            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i > i2 | (Real s, Real s2) -> s > s2 | _ -> false
             | _ -> false
         | Ge c ->
             match term with
-            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i >= i2 | (SingleTerm s, SingleTerm s2) -> s >= s2 | _ -> false
+            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i >= i2 | (Real s, Real s2) -> s >= s2 | _ -> false
             | _ -> false
         | Lt c ->
             match term with
-            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i < i2 | (SingleTerm s, SingleTerm s2) -> s < s2 | _ -> false
+            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i < i2 | (Real s, Real s2) -> s < s2 | _ -> false
             | _ -> false
         | Le c ->
             match term with
-            | ComparableTerm c2 -> match (c, c2) with (IntTerm i, IntTerm i2) -> i <= i2 | (SingleTerm s, SingleTerm s2) -> s <= s2 | _ -> false
+            | Groupoid c2 -> match (c, c2) with (Num i, Num i2) -> i <= i2 | (Real s, Real s2) -> s <= s2 | _ -> false
             | _ -> false
-        | Not ->
-            match term with
-            | TagTerm -> false
-            | _ -> true
+        | Not subquery ->
+            not (Subquery.eval term subquery)
         | And subqueries ->
             match term with
             | Terms terms -> if terms.Length = subqueries.Length then List.forall2 Subquery.eval terms subqueries else false
