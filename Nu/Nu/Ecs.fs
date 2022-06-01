@@ -26,7 +26,7 @@ type [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | Entity of uint64
-    | Component of string * Type * obj AlwaysEqual
+    | Component' of string * Type * obj AlwaysEqual
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
@@ -83,7 +83,7 @@ type [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
         | Uses (name, ty) ->
             match term with
-            | Component (name2, ty2, _)  -> strEq name name2 && refEq ty ty2
+            | Component' (name2, ty2, _)  -> strEq name name2 && refEq ty ty2
             | _ -> false
         | Eq term2  ->
             Subquery.equalTo term term2
@@ -157,12 +157,6 @@ type [<CustomEquality; NoComparison>] ArchetypeId =
         match that with
         | :? ArchetypeId as that -> ArchetypeId.equals this that
         | _ -> failwithumf ()
-
-/// The base component type of an Ecs.
-type Component<'c when 'c : struct and 'c :> 'c Component> =
-    interface
-        abstract Active : bool with get, set
-        end
 
 /// The component that holds an entity's id.
 type [<NoEquality; NoComparison; Struct>] EntityId =
@@ -244,7 +238,7 @@ and 'w Archetype (terms : Dictionary<string, Term>) =
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in terms do
             match termEntry.Value with
-            | Component (name, ty, _) ->
+            | Component' (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
                 stores.Add (name, store)
@@ -400,7 +394,7 @@ and 'w Ecs () =
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
-            match term with Component (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            match term with Component' (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityId |> ignore<bool>
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
@@ -421,7 +415,7 @@ and 'w Ecs () =
         | (false, _) ->
             let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural termName term }
             let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
-            match term with Component (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            match term with Component' (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -464,7 +458,7 @@ and 'w Ecs () =
             archetypeSlots.Remove entityId |> ignore<bool>
             comps.Add (compName, comp)
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
-            archetypeId.Terms.Add ("@" + compName, Component (compName, typeof<'c>, { AlwaysEqualValue = null }))
+            archetypeId.Terms.Add ("@" + compName, Component' (compName, typeof<'c>, { AlwaysEqualValue = null }))
             let world =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -479,7 +473,7 @@ and 'w Ecs () =
             let eventData = { EntityId = entityId; ContextName = compName }
             this.Publish EcsEvents.Register eventData world
         | (false, _) ->
-            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Component (compName, typeof<'c>, { AlwaysEqualValue = null })) }
+            let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Component' (compName, typeof<'c>, { AlwaysEqualValue = null })) }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let world =
                 match archetypes.TryGetValue archetypeId with
@@ -564,6 +558,186 @@ and 'w Ecs () =
 
     member this.IndexArchetypeSlot entityId =
         archetypeSlots.[entityId]
+
+    member this.Index (compName, statement : Statement<'c, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], state)
+
+    member this.Index (compName, comp2Name, statement : Statement<'c, 'c2, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, statement : Statement<'c, 'c2, 'c3, 'c4, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, comp5Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let store6 = stores.[comp6Name] :?> 'c6 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let store6 = stores.[comp6Name] :?> 'c6 Store
+        let store7 = stores.[comp7Name] :?> 'c7 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let store6 = stores.[comp6Name] :?> 'c6 Store
+        let store7 = stores.[comp7Name] :?> 'c7 Store
+        let store8 = stores.[comp8Name] :?> 'c8 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+
+    member this.Index (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>, entityId, state : 's) =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let store6 = stores.[comp6Name] :?> 'c6 Store
+        let store7 = stores.[comp7Name] :?> 'c7 Store
+        let store8 = stores.[comp8Name] :?> 'c8 Store
+        let store9 = stores.[comp9Name] :?> 'c9 Store
+        let i = archetypeSlot.ArchetypeIndex
+        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
+
+    member this.Index'<'c, 's when
+        'c : struct and 'c :> 'c Component>
+        (statement : Statement<'c, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        (statement : Statement<'c, 'c2, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        (statement : Statement<'c, 'c2, 'c3, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 'c5, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, statement, entityId, state)
+
+    member this.Index<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>, entityId, state : 's) =
+        this.Index (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, statement, entityId, state)
 
     member this.ReadComponents count archetypeId stream =
         match archetypes.TryGetValue archetypeId with
