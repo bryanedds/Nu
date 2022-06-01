@@ -121,10 +121,10 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query.create<Position, Velocity> (Exclude.zero, Subquery.zero))
+        let movers = ecs.RegisterQuery (Query.byType<Position, Velocity> (Exclude.zero, Subquery.zero))
 
         // create shakers query
-        let shakers = ecs.RegisterQuery (Query.create<EntityId, Position, Shake> (Exclude.zero, Subquery.zero))
+        let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> (Exclude.zero, Subquery.zero))
 
         // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
@@ -139,7 +139,6 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world _ ->
                 let shaker = ecs.EntityRef
-                let world = shaker.Register { Active = true; EntityId = shaker.EntityId } world
                 let world = shaker.Register { Active = true; Position = v2Zero } world
                 let world = shaker.Register { Active = true; Origin = v2Zero; Offset = v2One } world
                 world)
