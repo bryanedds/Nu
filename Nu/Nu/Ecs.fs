@@ -559,6 +559,26 @@ and 'w Ecs () =
     member this.IndexArchetypeSlot entityId =
         archetypeSlots.[entityId]
 
+    member this.GetNamed<'c when 'c : struct and 'c :> 'c Component> compName entityId =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = archetypeSlot.ArchetypeIndex
+        &store.[i]
+
+    member this.Get<'c when 'c : struct and 'c :> 'c Component> entityId =
+        this.GetNamed<'c> typeof<'c>.Name entityId
+
+    member this.SetNamed<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) entityId =
+        let archetypeSlot = this.IndexArchetypeSlot entityId
+        let stores = archetypeSlot.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = archetypeSlot.ArchetypeIndex
+        store.[i] <- comp
+
+    member this.Set<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) entityId =
+        this.SetNamed<'c> typeof<'c>.Name comp entityId
+
     member this.Index (compName, statement : Statement<'c, 's>, entityId, state : 's) =
         let archetypeSlot = this.IndexArchetypeSlot entityId
         let stores = archetypeSlot.Archetype.Stores
