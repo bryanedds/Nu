@@ -7,17 +7,17 @@ open System.Collections.Generic
 open Prime
 
 type Query<'c, 'w when
-    'c : struct and 'c :> 'c Component> (compName : string, tags : string HashSet, ecs : 'w Ecs) =
+    'c : struct and 'c :> 'c Component> (compName : string, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) = Query<_, _> (typeof<'c>.Name, tags, ecs)
-    new (ecs) = Query<_, _> (typeof<'c>.Name, hashSetPlus HashIdentity.Structural [], ecs)
+    new (subquery, ecs) = Query<_, _> (typeof<'c>.Name, subquery, ecs)
+    new (ecs) = Query<_, _> (typeof<'c>.Name, Star, ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
         let stores = archetype.Stores
         stores.ContainsKey compName &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -52,18 +52,18 @@ type Query<'c, 'w when
 
 type Query<'c, 'c2, 'w when
     'c : struct and 'c :> 'c Component and
-    'c2 : struct and 'c2 :> 'c2 Component> (compName : string, comp2Name : string, tags : string HashSet, ecs : 'w Ecs) =
+    'c2 : struct and 'c2 :> 'c2 Component> (compName : string, comp2Name : string, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, tags, ecs)
-    new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, hashSetPlus HashIdentity.Structural [], ecs)
+    new (subquery, ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, subquery, ecs)
+    new (ecs) = Query<_, _, _> (typeof<'c>.Name, typeof<'c2>.Name, Star, ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
         let stores = archetype.Stores
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -112,19 +112,19 @@ type Query<'c, 'c2, 'w when
 type Query<'c, 'c2, 'c3, 'w when
     'c : struct and 'c :> 'c Component and
     'c2 : struct and 'c2 :> 'c2 Component and
-    'c3 : struct and 'c3 :> 'c3 Component> (compName : string, comp2Name : string, comp3Name : string, tags : string HashSet, ecs : 'w Ecs) =
+    'c3 : struct and 'c3 :> 'c3 Component> (compName : string, comp2Name : string, comp3Name : string, subquery : Subquery, ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, tags, ecs)
-    new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, hashSetPlus HashIdentity.Structural [], ecs)
+    new (subquery, ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, subquery, ecs)
+    new (ecs) = Query<_, _, _, _> (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, Star, ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
         let stores = archetype.Stores
         stores.ContainsKey compName &&
         stores.ContainsKey comp2Name &&
         stores.ContainsKey comp3Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -174,18 +174,18 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
      comp2Name : string,
      comp3Name : string,
      comp4Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
              typeof<'c3>.Name,
              typeof<'c4>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -194,7 +194,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
              typeof<'c2>.Name,
              typeof<'c3>.Name,
              typeof<'c4>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -203,7 +203,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         stores.ContainsKey comp2Name &&
         stores.ContainsKey comp3Name &&
         stores.ContainsKey comp4Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -293,19 +293,19 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
      comp3Name : string,
      comp4Name : string,
      comp5Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
              typeof<'c3>.Name,
              typeof<'c4>.Name,
              typeof<'c5>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -315,7 +315,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
              typeof<'c3>.Name,
              typeof<'c4>.Name,
              typeof<'c5>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -325,7 +325,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         stores.ContainsKey comp3Name &&
         stores.ContainsKey comp4Name &&
         stores.ContainsKey comp5Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -426,12 +426,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
      comp4Name : string,
      comp5Name : string,
      comp6Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -439,7 +439,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
              typeof<'c4>.Name,
              typeof<'c5>.Name,
              typeof<'c6>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -450,7 +450,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
              typeof<'c4>.Name,
              typeof<'c5>.Name,
              typeof<'c6>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -461,7 +461,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         stores.ContainsKey comp4Name &&
         stores.ContainsKey comp5Name &&
         stores.ContainsKey comp6Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -573,12 +573,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
      comp5Name : string,
      comp6Name : string,
      comp7Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -587,7 +587,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
              typeof<'c5>.Name,
              typeof<'c6>.Name,
              typeof<'c7>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -599,7 +599,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
              typeof<'c5>.Name,
              typeof<'c6>.Name,
              typeof<'c7>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -611,7 +611,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         stores.ContainsKey comp5Name &&
         stores.ContainsKey comp6Name &&
         stores.ContainsKey comp7Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -734,12 +734,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
      comp6Name : string,
      comp7Name : string,
      comp8Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -749,7 +749,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
              typeof<'c6>.Name,
              typeof<'c7>.Name,
              typeof<'c8>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -762,7 +762,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
              typeof<'c6>.Name,
              typeof<'c7>.Name,
              typeof<'c8>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -775,7 +775,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w when
         stores.ContainsKey comp6Name &&
         stores.ContainsKey comp7Name &&
         stores.ContainsKey comp8Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -909,12 +909,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
      comp7Name : string,
      comp8Name : string,
      comp9Name : string,
-     tags : string HashSet,
+     subquery : Subquery,
      ecs : 'w Ecs) =
 
     let archetypes = dictPlus<ArchetypeId, 'w Archetype> HashIdentity.Structural []
 
-    new (tags, ecs) =
+    new (subquery, ecs) =
         Query<_, _, _, _, _, _, _, _, _, _>
             (typeof<'c>.Name,
              typeof<'c2>.Name,
@@ -925,7 +925,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
              typeof<'c7>.Name,
              typeof<'c8>.Name,
              typeof<'c9>.Name,
-             tags,
+             subquery,
              ecs)
 
     new (ecs) =
@@ -939,7 +939,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
              typeof<'c7>.Name,
              typeof<'c8>.Name,
              typeof<'c9>.Name,
-             hashSetPlus HashIdentity.Structural [],
+             Star,
              ecs)
 
     member this.CheckCompatibility (archetype : 'w Archetype) =
@@ -953,7 +953,7 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w when
         stores.ContainsKey comp7Name &&
         stores.ContainsKey comp8Name &&
         stores.ContainsKey comp9Name &&
-        archetype.Tags.SetEquals tags
+        Subquery.eval archetype.TermsValueCollection subquery
 
     member this.RegisterArchetype (archetype : 'w Archetype) =
         archetypes.Add (archetype.Id, archetype)
