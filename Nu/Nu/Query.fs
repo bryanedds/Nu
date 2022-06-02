@@ -47,9 +47,11 @@ type Query
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
 
     member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
-        match stores.TryGetValue compName with (true, store) -> store :?> 'c Store | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+        match stores.TryGetValue compName with
+        | (true, store) -> store :?> 'c Store
+        | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
 
-    member this.Subqueries = subqueries
+    member this.Subqueries = subqueries :> IReadOnlyDictionary<_, _>
 
     member this.CheckCompatibility (archetype : Archetype) =
         let stores = archetype.Stores
