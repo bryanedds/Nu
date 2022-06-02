@@ -6,8 +6,7 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
-// TODO: 3D: make sure to use TryAdd in the appropriate places.
-// TODO: 3D: create try functions where applicable and do error-checking where not.
+// TODO: 3D: create try functions where applicable and do error-checking where not (search for '.[').
 
 /// Allows a value to always pass as equal with another of its same type.
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
@@ -242,7 +241,7 @@ and ArchetypeId (terms) =
 
     member this.AddTerm termName term =
         let terms = Dictionary (terms, StringComparer.Ordinal)
-        terms.Add (termName, term)
+        terms.[termName] <- term
         ArchetypeId terms
 
     member this.RemoveTerm termName =
@@ -283,7 +282,7 @@ and Archetype (archetypeId : ArchetypeId) =
             | Extra (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
-                stores.Add (name, store)
+                stores.[name] <- store
             | _ -> ()
 
     member this.Id = archetypeId
@@ -400,7 +399,7 @@ and Ecs () =
             callback evt store
         boxableCallback :> obj
 
-    member this.RegisterEntityInternal archetypeId comps entityRef =
+    member private this.RegisterEntityInternal archetypeId comps entityRef =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
