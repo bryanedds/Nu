@@ -430,6 +430,9 @@ and Ecs () =
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
                     state <- objCallback evt this state
+                | :? EcsCallback<obj, obj> as objCallback ->
+                    let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                    state <- objCallback evt this (state :> obj) :?> 's
                 | _ -> ()
         | (false, _) -> ()
         state
@@ -445,6 +448,9 @@ and Ecs () =
                         | :? EcsCallback<obj, 's> as objCallback ->
                             let evt = { EcsEventData = eventData :> obj }
                             objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
+                        | :? EcsCallback<obj, obj> as objCallback ->
+                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
                         | _ -> ()) |> Vsync.AwaitTask) |>
                 Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
