@@ -134,11 +134,11 @@ module WorldScreenModule =
             // update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
-            let world = ecs.Publish EcsEvents.Update () world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel GlobalEvent ()
+            let world = ecs.Publish EcsEvents.Update GlobalEvent () world
 #else
-            let world = ecs.Publish EcsEvents.Update () world
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
+            let world = ecs.Publish EcsEvents.Update GlobalEvent () world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel GlobalEvent ()
 #endif
 
             // update via dispatcher
@@ -157,11 +157,11 @@ module WorldScreenModule =
             // post-update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
-            let world = ecs.Publish EcsEvents.PostUpdate () world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel GlobalEvent ()
+            let world = ecs.Publish EcsEvents.PostUpdate GlobalEvent () world
 #else
-            let world = ecs.Publish EcsEvents.PostUpdate () world
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
+            let world = ecs.Publish EcsEvents.PostUpdate GlobalEvent () world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel GlobalEvent ()
 #endif
                 
             // post-update via dispatcher
@@ -179,7 +179,7 @@ module WorldScreenModule =
         
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Actualize () world
+            let world = ecs.Publish EcsEvents.Actualize GlobalEvent () world
 
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
