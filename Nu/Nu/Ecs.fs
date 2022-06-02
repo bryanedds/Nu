@@ -6,15 +6,14 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
-// TODO: 3D: cache empty sets and dicts.
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 // TODO: 3D: make sure to use TryAdd in the appropriate places.
-// TODO: 3D: abstract ArchetypeId.
 
 /// Allows a value to always pass as equal with another of its same type.
-type [<CustomEquality; NoComparison>] 'a AlwaysEqual =
-    { AlwaysEqualValue : 'a }
+type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
+    | AlwaysEqual of 'a
+    member this.Value = match this with AlwaysEqual value -> value
     override this.GetHashCode () = 0
     override this.Equals (that : obj) = that :? AlwaysEqual<'a>
 
@@ -115,7 +114,7 @@ and [<StructuralEquality; NoComparison>] Term =
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
-    static member equalsMany (lefts : Dictionary<string, Term>) (rights : Dictionary<string, Term>) =
+    static member equalsMany (lefts : IReadOnlyDictionary<string, Term>) (rights : IReadOnlyDictionary<string, Term>) =
         if lefts.Count = rights.Count then
             let mutable result = true
             let mutable enr = lefts.GetEnumerator ()
@@ -235,29 +234,35 @@ and [<StructuralEquality; NoComparison>] Subquery =
     static member zero = Subquery.dict []
 
 /// Identifies an archetype.
-and [<CustomEquality; NoComparison>] ArchetypeId =
-    { Terms : Dictionary<string, Term>
-      mutable HashOpt : int ValueOption }
+and [<CustomEquality; NoComparison>] ArchetypeId (terms) =
 
-    static member inline Hash (dict : Dictionary<_, _>) =
-        let mutable h = 0
-        for item in dict do
-            h <- h ^^^ item.Key.GetHashCode () ^^^ (item.Value.GetHashCode () * 13)
-        h
+    let hashCode = Dictionary.hash terms // OPTIMIZATION: hash is cached for speed
 
-    static member equals left right =
+    member this.Terms = terms :> IReadOnlyDictionary<_, _>
+    member this.HashCode = hashCode
+
+    member this.AddTerm termName term =
+        let terms = Dictionary (terms, StringComparer.Ordinal)
+        terms.Add (termName, term)
+        ArchetypeId terms
+
+    member this.RemoveTerm termName =
+        let terms = Dictionary (terms, StringComparer.Ordinal)
+        terms.Remove termName |> ignore<bool>
+        ArchetypeId terms
+
+    static member equals (left : ArchetypeId) (right : ArchetypeId) =
+        left.HashCode = right.HashCode &&
         Term.equalsMany left.Terms right.Terms
 
-    static member make terms =
-        { Terms = terms; HashOpt = ValueNone }
+    static member singleton termName term =
+        ArchetypeId (Dictionary.singleton StringComparer.Ordinal termName term)
+
+    static member zero =
+        ArchetypeId (dictPlus StringComparer.Ordinal [])
 
     override this.GetHashCode () =
-        match this.HashOpt with
-        | ValueSome h -> h
-        | ValueNone ->
-            let h = ArchetypeId.Hash this.Terms
-            this.HashOpt <- ValueSome h
-            h
+        hashCode
 
     override this.Equals that =
         match that with
@@ -265,16 +270,15 @@ and [<CustomEquality; NoComparison>] ArchetypeId =
         | _ -> failwithumf ()
 
 /// A collection of component stores.
-and Archetype (terms : Dictionary<string, Term>) =
+and Archetype (archetypeId : ArchetypeId) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
     let stores = dictPlus<string, Store> HashIdentity.Structural []
-    let id = ArchetypeId.make terms
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
-        for termEntry in terms do
+        for termEntry in archetypeId.Terms do
             match termEntry.Value with
             | Intra (name, ty, _)
             | Extra (name, ty, _) ->
@@ -283,10 +287,9 @@ and Archetype (terms : Dictionary<string, Term>) =
                 stores.Add (name, store)
             | _ -> ()
 
-    member this.Id = id
     member this.Stores = stores
     member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
-    member this.Terms = terms
+    member this.Id = archetypeId
 
     member private this.Grow () =
         for storeEntry in stores do
@@ -377,7 +380,7 @@ and Ecs () =
     let queries = List<IQuery> ()
 
     let createArchetype (archetypeId : ArchetypeId) =
-        let archetype = Archetype (archetypeId.Terms)
+        let archetype = Archetype archetypeId
         archetypes.Add (archetypeId, archetype)
         for query in queries do
             if query.CheckCompatibility archetype then
@@ -462,17 +465,16 @@ and Ecs () =
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
 
     member this.RegisterTerm (termName : string) term (entityRef : EntityRef) (state : 's) =
-        if termName.StartsWith "@" then failwith "Term names that start with '@' are for internal use only."
+        if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         if (match term with Intra _ -> true | _ -> false) then failwith "Intra components are for internal use only."
         match archetypeSlots.TryGetValue entityRef.EntityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
-            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
-            let archetypeId = ArchetypeId.make (Dictionary<_, _> archetype.Id.Terms)
-            archetypeId.Terms.Add (termName, term)
+            let archetypeId = archetype.Id.AddTerm termName term
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -487,9 +489,9 @@ and Ecs () =
             let eventData = { EntityRef = entityRef; ContextName = termName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register termName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = ArchetypeId.make (Dictionary.singleton HashIdentity.Structural termName term)
-            let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
-            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.AlwaysEqualValue) | _ -> ()
+            let archetypeId = ArchetypeId (Dictionary.singleton HashIdentity.Structural termName term)
+            let comps = dictPlus HashIdentity.Structural []
+            match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -505,7 +507,7 @@ and Ecs () =
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register termName) eventData (state :> obj) :?> 's
 
     member this.UnregisterTerm (termName : string) (entityRef : EntityRef) (state : 's) =
-        if termName.StartsWith "@" then failwith "Term names that start with '@' are for internal use only."
+        if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         match archetypeSlots.TryGetValue entityRef.EntityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
@@ -514,8 +516,7 @@ and Ecs () =
             let state = this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering termName) eventData (state :> obj) :?> 's
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
-            let archetypeId = ArchetypeId.make (Dictionary<_, _> archetype.Id.Terms)
-            archetypeId.Terms.Remove termName |> ignore<bool>
+            let archetypeId = archetype.Id.RemoveTerm termName
             if archetypeId.Terms.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
@@ -531,8 +532,10 @@ and Ecs () =
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Add (compName, comp)
-            let archetypeId = ArchetypeId.make (Dictionary<_, _> archetype.Id.Terms)
-            archetypeId.Terms.Add ("@" + compName, Intra (compName, typeof<'c>, { AlwaysEqualValue = null }))
+            let archetypeId =
+                archetype.Id.AddTerm
+                    (Constants.Ecs.IntraComponentPrefix + compName)
+                    (Intra (compName, typeof<'c>, AlwaysEqual null))
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -547,7 +550,10 @@ and Ecs () =
             let eventData = { EntityRef = entityRef; ContextName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register compName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = ArchetypeId.make (Dictionary.singleton HashIdentity.Structural ("@" + compName) (Intra (compName, typeof<'c>, { AlwaysEqualValue = null })))
+            let archetypeId =
+                ArchetypeId.singleton
+                    (Constants.Ecs.IntraComponentPrefix + compName)
+                    (Intra (compName, typeof<'c>, AlwaysEqual null))
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
             let state =
                 match archetypes.TryGetValue archetypeId with
@@ -577,8 +583,7 @@ and Ecs () =
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Remove compName |> ignore<bool>
-            let archetypeId = ArchetypeId.make (Dictionary<_, _> archetype.Id.Terms)
-            archetypeId.Terms.Remove ("@" + compName) |> ignore<bool>
+            let archetypeId = archetype.Id.RemoveTerm (Constants.Ecs.IntraComponentPrefix + compName)
             if archetypeId.Terms.Count > 0 then
                 let archetypeIndex = archetype.Register comps
                 archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
@@ -597,7 +602,7 @@ and Ecs () =
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityRef = entityRef; ContextName = compName }
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering compName) eventData (state :> obj) :?> 's
-            for termEntry in archetype.Terms do
+            for termEntry in archetype.Id.Terms do
                 let eventData = { EntityRef = entityRef; ContextName = termEntry.Key }
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering termEntry.Key) eventData (state :> obj) :?> 's
             archetype.Unregister archetypeSlot.ArchetypeIndex
