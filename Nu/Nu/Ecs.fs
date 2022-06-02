@@ -106,7 +106,7 @@ and [<StructuralEquality; NoComparison>] Term =
     | Label of string
     | Labels of string HashSet
     | EntityRef of EntityRef
-    | Intra of string * Type * obj AlwaysEqual // only creates component when at top-level.
+    | Intra of string * Type
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
@@ -170,12 +170,12 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
         | ByName name ->
             match term with
-            | Intra (name2, _, _)  -> strEq name name2
+            | Intra (name2, _)  -> strEq name name2
             | Extra (name2, _, _)  -> strEq name name2
             | _ -> false
         | ByType ty ->
             match term with
-            | Intra (_, ty2, _)  -> refEq ty ty2
+            | Intra (_, ty2)  -> refEq ty ty2
             | Extra (_, ty2, _)  -> refEq ty ty2
             | _ -> false
         | Eq term2  ->
@@ -276,7 +276,7 @@ and Archetype (archetypeId : ArchetypeId) =
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in archetypeId.Terms do
             match termEntry.Value with
-            | Intra (name, ty, _)
+            | Intra (name, ty)
             | Extra (name, ty, _) ->
                 let storeType = storeTypeGeneric.MakeGenericType [|ty|]
                 let store = Activator.CreateInstance (storeType, name) :?> Store
@@ -348,7 +348,7 @@ and Archetype (archetypeId : ArchetypeId) =
 /// Describes a means to query components.
 and IQuery =
     interface
-        abstract Subqueries : Dictionary<string, Subquery>
+        abstract Subqueries : IReadOnlyDictionary<string, Subquery>
         abstract CheckCompatibility : Archetype -> bool
         abstract RegisterArchetype : Archetype -> unit
         end
@@ -531,12 +531,12 @@ and Ecs () =
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Add (compName, comp)
-            let archetypeId = archetype.Id.AddTerm (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>, AlwaysEqual null))
+            let archetypeId = archetype.Id.AddTerm (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>))
             this.RegisterEntityInternal archetypeId comps entityRef
             let eventData = { EntityRef = entityRef; ContextName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entityRef compName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = ArchetypeId.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>, AlwaysEqual null))
+            let archetypeId = ArchetypeId.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>))
             let comps = Dictionary.singleton StringComparer.Ordinal compName (comp :> obj)
             this.RegisterEntityInternal archetypeId comps entityRef
             let eventData = { EntityRef = entityRef; ContextName = compName }
@@ -621,7 +621,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
       Ecs : Ecs }
 
     member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
-        match stores.TryGetValue compName with (true, store) -> store :?> 'c Store | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+        match stores.TryGetValue compName with
+        | (true, store) -> store :?> 'c Store
+        | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
 
     member this.RegisterPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
         this.Ecs.RegisterComponentPlus<'c, 's> compName comp this state
