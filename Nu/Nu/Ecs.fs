@@ -6,9 +6,8 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
-// TODO: 3D: remove any incidental allocation.
-// TODO: 3D: make sure to use proper collection comparer for string keys.
 // TODO: 3D: make sure to use TryAdd in the appropriate places.
+// TODO: 3D: create try functions where applicable and do error-checking where not.
 
 /// Allows a value to always pass as equal with another of its same type.
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
@@ -126,7 +125,7 @@ and [<StructuralEquality; NoComparison>] Term =
                 | (false, _) -> result <- false
             result
         else false
-    static member dict entries = dictPlus<string, Term> HashIdentity.Structural entries
+    static member dict entries = dictPlus<string, Term> StringComparer.Ordinal entries
     static member singleton termName term = Term.dict [(termName, term)]
     static member zero = Term.dict []
 
@@ -229,7 +228,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | (false, _) -> result <- false
         result
 
-    static member dict entries = dictPlus<string, Subquery> HashIdentity.Structural entries
+    static member dict entries = dictPlus<string, Subquery> StringComparer.Ordinal entries
     static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
     static member zero = Subquery.dict []
 
@@ -274,7 +273,7 @@ and Archetype (archetypeId : ArchetypeId) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
-    let stores = dictPlus<string, Store> HashIdentity.Structural []
+    let stores = dictPlus<string, Store> StringComparer.Ordinal []
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
@@ -290,7 +289,7 @@ and Archetype (archetypeId : ArchetypeId) =
     member this.Id = archetypeId
     member this.Length = freeIndex
     member this.Stores = stores
-    member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
+    member this.ComponentNames = hashSetPlus StringComparer.Ordinal stores.Keys
 
     member private this.Grow () =
         for storeEntry in stores do
@@ -330,7 +329,7 @@ and Archetype (archetypeId : ArchetypeId) =
         this.FreeIndex index
 
     member this.GetComponents index =
-        let comps = dictPlus<string, obj> HashIdentity.Structural []
+        let comps = dictPlus<string, obj> StringComparer.Ordinal []
         for storeEntry in stores do
             comps.Add (storeEntry.Key, storeEntry.Value.[index])
         comps
@@ -377,7 +376,7 @@ and Ecs () =
     let mutable entityIdCurrent = 0UL
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
     let archetypeSlots = dictPlus<uint64, ArchetypeSlot> HashIdentity.Structural []
-    let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
+    let componentTypes = dictPlus<string, Type> StringComparer.Ordinal []
     let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let subscribedEntities = dictPlus<EntityRef, int> HashIdentity.Structural []
     let queries = List<IQuery> ()
@@ -509,7 +508,7 @@ and Ecs () =
             this.RegisterEntityInternal archetypeId comps entityRef
         | (false, _) ->
             let archetypeId = ArchetypeId.singleton termName term
-            let comps = dictPlus HashIdentity.Structural []
+            let comps = dictPlus StringComparer.Ordinal []
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             this.RegisterEntityInternal archetypeId comps entityRef
 
@@ -541,7 +540,7 @@ and Ecs () =
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entityRef compName) eventData (state :> obj) :?> 's
         | (false, _) ->
             let archetypeId = ArchetypeId.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>, AlwaysEqual null))
-            let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
+            let comps = Dictionary.singleton StringComparer.Ordinal compName (comp :> obj)
             this.RegisterEntityInternal archetypeId comps entityRef
             let eventData = { EntityRef = entityRef; ContextName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entityRef compName) eventData (state :> obj) :?> 's
