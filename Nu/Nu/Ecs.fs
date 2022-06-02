@@ -289,22 +289,20 @@ and Archetype (terms : Dictionary<string, Term>) =
     member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
     member this.Terms = terms
 
-    member this.Register (comps : Dictionary<string, obj>) =
+    member private this.Grow () =
+        for storeEntry in stores do
+            storeEntry.Value.Grow ()
+
+    member private this.AllocIndex =
         if freeList.Count > 0 then
             let index = Seq.head freeList
             freeList.Remove index |> ignore<bool>
-            for compEntry in comps do
-                stores.[compEntry.Key].SetItem index compEntry.Value
             index
         else
             match Seq.tryHead stores with
             | Some headStoreEntry ->
                 let index = freeIndex
-                if index = headStoreEntry.Value.Length then
-                    for storeEntry in stores do
-                        storeEntry.Value.Grow ()
-                for compEntry in comps do
-                    stores.[compEntry.Key].SetItem index compEntry.Value
+                if index = headStoreEntry.Value.Length then this.Grow ()
                 freeIndex <- inc freeIndex
                 index
             | None ->
@@ -312,13 +310,20 @@ and Archetype (terms : Dictionary<string, Term>) =
                 freeIndex <- inc freeIndex
                 index
 
+    member private this.FreeIndex index =
+        if index = dec freeIndex
+        then freeIndex <- dec freeIndex
+        else freeList.Add index |> ignore<bool>
+
+    member this.Register (comps : Dictionary<string, obj>) =
+        let index = this.AllocIndex
+        for compEntry in comps do
+            stores.[compEntry.Key].SetItem index compEntry.Value
+        index
+
     member this.Unregister (index : int) =
         for storeEntry in stores do
             storeEntry.Value.ZeroItem index
-        if index = dec freeIndex then
-            freeIndex <- dec freeIndex
-        else
-            freeList.Add index |> ignore<bool>
 
     member this.GetComponents index =
         let comps = dictPlus<string, obj> HashIdentity.Structural []
@@ -327,10 +332,18 @@ and Archetype (terms : Dictionary<string, Term>) =
         comps
 
     member this.Read count (stream : FileStream) =
+        let firstIndex = freeIndex
+        let lastIndex = freeIndex + count
+        match Seq.tryHead stores with
+        | Some headStoreEntry ->
+            while headStoreEntry.Value.Length <= lastIndex do
+                this.Grow ()
+        | None -> ()
         for storeEntry in stores do
             let store = storeEntry.Value
             store.Read count freeIndex stream
-        freeIndex <- freeIndex + count
+        freeIndex <- inc lastIndex
+        (firstIndex, lastIndex)
 
 /// Describes a means to query components.
 and IQuery =
@@ -621,10 +634,28 @@ and Ecs () =
     member this.RegisterArchetype archetypeId archetype =
         archetypes.Add (archetypeId, archetype)
 
+    member this.RegisterEntity archetypeId =
+        let archetype =
+            match archetypes.TryGetValue archetypeId with
+            | (true, archetype) -> archetype
+            | (false, _) -> createArchetype archetypeId
+        let entityRef = this.EntityRef
+        let archetypeIndex = archetype.Register (dictPlus HashIdentity.Structural [])
+        archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+        entityRef
+
     member this.ReadComponents count archetypeId stream =
-        match archetypes.TryGetValue archetypeId with
-        | (true, archetype) -> archetype.Read count stream
-        | (false, _) -> failwith "Could not find archetype."
+        let archetype =
+            match archetypes.TryGetValue archetypeId with
+            | (true, archetype) -> archetype
+            | (false, _) -> createArchetype archetypeId
+        let (firstIndex, lastIndex) = archetype.Read count stream
+        let entityRefs = SegmentedArray.zeroCreate count
+        for i in firstIndex .. lastIndex do
+            let entityRef = this.EntityRef
+            archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = i; Archetype = archetype })
+            entityRefs.[i - firstIndex] <- entityRef
+        entityRefs
 
 and [<StructuralEquality; NoComparison; Struct>] EntityRef =
     { EntityId : uint64
