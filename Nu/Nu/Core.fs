@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Diagnostics
 #if !PLATFORM_AGNOSTIC_TIMESTAMPING
 open System.Runtime.InteropServices
@@ -61,3 +62,13 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
+
+// TODO: remove this after updating Prime.
+[<RequireQualifiedAccess>]
+module Dictionary =
+
+    let hash (dict : IReadOnlyDictionary<_, _>) =
+        let mutable h = 0
+        for entry in dict do
+            h <- h ^^^ entry.Key.GetHashCode () ^^^ (entry.Value.GetHashCode () * 13)
+        h

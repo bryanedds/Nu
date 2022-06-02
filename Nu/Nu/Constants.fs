@@ -121,3 +121,4 @@ module Ecs =
 
     let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
     let [<Literal>] PreallocateAmount = ArrayReserve
+    let [<Literal>] IntraComponentPrefix = "@"
