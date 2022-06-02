@@ -128,15 +128,15 @@ and [<StructuralEquality; NoComparison>] Term =
     static member zero = Term.dict []
 
 and [<StructuralEquality; NoComparison>] Subquery =
-    | Is
-    | Of of string
-    | ByName of string
-    | ByType of Type
-    | Eq of Term
-    | Gt of Term
-    | Ge of Term
-    | Lt of Term
-    | Le of Term
+    | Is of string
+    | Of of string * string
+    | ByName of string * string
+    | ByType of string * Type
+    | Eq of string * Term
+    | Gt of string * Term
+    | Ge of string * Term
+    | Lt of string * Term
+    | Le of string * Term
     | Not of Subquery
     | And of Subquery list
     | Or of Subquery list
@@ -156,82 +156,93 @@ and [<StructuralEquality; NoComparison>] Subquery =
             else false
         | _ -> false
 
-    static member evalFailOnExtra termName term subquery =
-        match term with
-        | Extra _ -> failwith "Extra can only be used as a top-level term."
-        | _ -> Subquery.eval termName term subquery
-
-    static member eval termName term subquery =
+    static member eval (terms : IReadOnlyDictionary<string, Term>) (subquery : Subquery) : bool =
         match subquery with
-        | Is ->
-            true
-        | Of label ->
-            match term with
-            | Labels labels -> labels.Contains label
-            | _ -> false
-        | ByName name ->
-            match term with
-            | Intra (name2, _)  -> strEq name name2
-            | Extra (name2, _, _)  -> strEq name name2
-            | _ -> false
-        | ByType ty ->
-            match term with
-            | Intra (_, ty2)  -> refEq ty ty2
-            | Extra (_, ty2, _)  -> refEq ty ty2
-            | _ -> false
-        | Eq term2  ->
-            Subquery.equalTo term term2
-        | Gt term2 ->
-            match (term, term2) with
-            | (Z z, Z z2) -> z > z2
-            | (R r, R r2) -> r > r2
-            | (C c, C c2) -> c.CompareTo c2 > 0
-            | (_, _) -> false
-        | Ge term2 ->
-            match (term, term2) with
-            | (Z z, Z z2) -> z >= z2
-            | (R r, R r2) -> r >= r2
-            | (C c, C c2) -> c.CompareTo c2 >= 0
-            | (_, _) -> false
-        | Lt term2 ->
-            match (term, term2) with
-            | (Z z, Z z2) -> z < z2
-            | (R r, R r2) -> r < r2
-            | (C c, C c2) -> c.CompareTo c2 < 0
-            | (_, _) -> false
-        | Le term2 ->
-            match (term, term2) with
-            | (Z z, Z z2) -> z <= z2
-            | (R r, R r2) -> r <= r2
-            | (C c, C c2) -> c.CompareTo c2 <= 0
-            | (_, _) -> false
+        | Is termName ->
+            terms.ContainsKey termName
+        | Of (termName, label) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Labels labels -> labels.Contains label
+                | _ -> false
+            | (false, _) -> false
+        | ByName (termName, compName2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Intra (compName, _)  -> strEq compName compName2
+                | Extra (compName, _, _)  -> strEq compName compName2
+                | _ -> false
+            | (false, _) -> false
+        | ByType (termName, ty2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Intra (_, ty)  -> refEq ty ty2
+                | Extra (_, ty, _)  -> refEq ty ty2
+                | _ -> false
+            | (false, _) -> false
+        | Eq (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                Subquery.equalTo term term2
+            | (false, _) -> false
+        | Gt (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match (term, term2) with
+                | (Z z, Z z2) -> z > z2
+                | (R r, R r2) -> r > r2
+                | (C c, C c2) -> c.CompareTo c2 > 0
+                | (_, _) -> false
+            | (false, _) -> false
+        | Ge (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match (term, term2) with
+                | (Z z, Z z2) -> z >= z2
+                | (R r, R r2) -> r >= r2
+                | (C c, C c2) -> c.CompareTo c2 >= 0
+                | (_, _) -> false
+            | (false, _) -> false
+        | Lt (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match (term, term2) with
+                | (Z z, Z z2) -> z < z2
+                | (R r, R r2) -> r < r2
+                | (C c, C c2) -> c.CompareTo c2 < 0
+                | (_, _) -> false
+            | (false, _) -> false
+        | Le (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match (term, term2) with
+                | (Z z, Z z2) -> z <= z2
+                | (R r, R r2) -> r <= r2
+                | (C c, C c2) -> c.CompareTo c2 <= 0
+                | (_, _) -> false
+            | (false, _) -> false
         | Not subquery ->
-            not (Subquery.eval termName term subquery)
+            not (Subquery.eval terms subquery)
         | And subqueries ->
-            match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.forall2 (Subquery.evalFailOnExtra termName) terms subqueries else false
-            | _ -> false
+            List.forall (Subquery.eval terms) subqueries
         | Or subqueries ->
-            match term with
-            | Terms terms -> if terms.Length = subqueries.Length then List.exists2 (Subquery.evalFailOnExtra termName) terms subqueries else false
-            | _ -> false
+            List.exists (Subquery.eval terms) subqueries
 
-    static member evalMany (terms : IReadOnlyDictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
-        let mutable termEnr = terms.GetEnumerator ()
-        let mutable passing = true
-        let mutable passCount = 0
-        while passing && termEnr.MoveNext () do
-            let termEntry = termEnr.Current
-            match subqueries.TryGetValue termEntry.Key with
-            | (true, subquery) ->
-                passCount <- inc passCount
-                passing <- Subquery.eval termEntry.Key termEntry.Value subquery
-            | (false, _) -> passing <- false
-        passing && passCount = subqueries.Count
+    static member evalMany (terms : IReadOnlyDictionary<string, Term>) (subqueries : Subquery seq) =
+        let mutable result = true
+        let mutable subqueryEnr = subqueries.GetEnumerator ()
+        while result && subqueryEnr.MoveNext () do
+            let subquery = subqueryEnr.Current
+            if not (Subquery.eval terms subquery) then
+                result <- false
+        result
 
     static member dict entries = dictPlus<string, Subquery> StringComparer.Ordinal entries
     static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
-    static member zero = Subquery.dict []
+    static member zero = []
 
 /// Identifies an archetype.
 and ArchetypeId (terms) =
@@ -352,7 +363,7 @@ and Archetype (archetypeId : ArchetypeId) =
 /// Describes a means to query components.
 and IQuery =
     interface
-        abstract Subqueries : IReadOnlyDictionary<string, Subquery>
+        abstract Subqueries : Subquery seq
         abstract TryRegisterArchetype : Archetype -> unit
         end
 
