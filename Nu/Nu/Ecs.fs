@@ -620,6 +620,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
     { EntityId : uint64
       Ecs : Ecs }
 
+    member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
+        match stores.TryGetValue compName with (true, store) -> store :?> 'c Store | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+
     member this.RegisterPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
         this.Ecs.RegisterComponentPlus<'c, 's> compName comp this state
 
@@ -689,100 +692,118 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
 
     member this.Frame (compName, state : 's, statement : Statement<'c, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], state)
 
     member this.Frame (compName, comp2Name, state : 's, statement : Statement<'c, 'c2, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
-        let store5 = stores.[comp5Name] :?> 'c5 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
-        let store5 = stores.[comp5Name] :?> 'c5 Store
-        let store6 = stores.[comp6Name] :?> 'c6 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
-        let store5 = stores.[comp5Name] :?> 'c5 Store
-        let store6 = stores.[comp6Name] :?> 'c6 Store
-        let store7 = stores.[comp7Name] :?> 'c7 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
-        let store5 = stores.[comp5Name] :?> 'c5 Store
-        let store6 = stores.[comp6Name] :?> 'c6 Store
-        let store7 = stores.[comp7Name] :?> 'c7 Store
-        let store8 = stores.[comp8Name] :?> 'c8 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+        let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
 
     member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let store2 = stores.[comp2Name] :?> 'c2 Store
-        let store3 = stores.[comp3Name] :?> 'c3 Store
-        let store4 = stores.[comp4Name] :?> 'c4 Store
-        let store5 = stores.[comp5Name] :?> 'c5 Store
-        let store6 = stores.[comp6Name] :?> 'c6 Store
-        let store7 = stores.[comp7Name] :?> 'c7 Store
-        let store8 = stores.[comp8Name] :?> 'c8 Store
-        let store9 = stores.[comp9Name] :?> 'c9 Store
+        let archetype = archetypeSlot.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> compName archetypeId stores
+        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+        let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
+        let store9 = this.IndexStore<'c9> comp9Name archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
 
