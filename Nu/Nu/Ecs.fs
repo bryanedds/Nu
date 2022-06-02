@@ -10,6 +10,7 @@ open Prime
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 // TODO: 3D: make sure to use TryAdd in the appropriate places.
+// TODO: 3D: combine eventName and event into a single key?
 // TODO: 3D: abstract ArchetypeId.
 
 /// Allows a value to always pass as equal with another of its same type.
