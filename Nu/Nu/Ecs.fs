@@ -219,7 +219,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | Terms terms -> if terms.Length = subqueries.Length then List.exists2 (Subquery.evalFailOnExtra termName) terms subqueries else false
             | _ -> false
 
-    static member evalMany (terms : Dictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
+    static member evalMany (terms : IReadOnlyDictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
         let mutable result = true
         let mutable termEnr = terms.GetEnumerator ()
         while result && termEnr.MoveNext () do
@@ -287,9 +287,10 @@ and Archetype (archetypeId : ArchetypeId) =
                 stores.Add (name, store)
             | _ -> ()
 
+    member this.Id = archetypeId
+    member this.Length = freeIndex
     member this.Stores = stores
     member this.ComponentNames = hashSetPlus HashIdentity.Structural stores.Keys
-    member this.Id = archetypeId
 
     member private this.Grow () =
         for storeEntry in stores do
@@ -326,6 +327,7 @@ and Archetype (archetypeId : ArchetypeId) =
     member this.Unregister (index : int) =
         for storeEntry in stores do
             storeEntry.Value.ZeroItem index
+        this.FreeIndex index
 
     member this.GetComponents index =
         let comps = dictPlus<string, obj> HashIdentity.Structural []
