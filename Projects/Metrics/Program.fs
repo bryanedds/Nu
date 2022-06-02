@@ -133,7 +133,7 @@ type MyGameDispatcher () =
                 let world = mover.Register { Active = true; Position = v2Zero } world
                 let world = mover.Register { Active = true; Velocity = v2One } world
                 world)
-                world (Seq.init 40000 id)
+                world (Seq.init 400000 id)
 
         // create 4000 shakers
         let world =
