@@ -640,6 +640,19 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
     member this.UnregisterTerm termName =
         this.Ecs.UnregisterTerm termName this
 
+    member this.ValidatePlus compName =
+        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
+        let stores = archetypeSlot.Archetype.Stores
+        stores.ContainsKey compName
+
+    member this.Validate<'c when 'c : struct and 'c :> 'c Component> () =
+        this.ValidatePlus typeof<'c>.Name
+
+    member this.ValidateTerm termName =
+        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
+        let terms = archetypeSlot.Archetype.Id.Terms
+        terms.ContainsKey termName
+
     member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> compName =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
@@ -649,6 +662,11 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
 
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         this.IndexPlus<'c> typeof<'c>.Name
+
+    member this.IndexTerm termName =
+        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
+        let terms = archetypeSlot.Archetype.Id.Terms
+        terms.[termName]
 
     member this.MutatePlus<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
