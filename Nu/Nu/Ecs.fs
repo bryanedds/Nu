@@ -488,7 +488,7 @@ and Ecs () =
             | _ -> failwith "Subscribed entities count mismatch."
         result
 
-    member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
+    member this.RegisterComponentName<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
         | (true, _) -> failwith "Component type already registered."
         | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
@@ -525,7 +525,7 @@ and Ecs () =
                 archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         | (false, _) -> ()
 
-    member this.RegisterNamedComponent<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (entityRef : EntityRef) (state : 's) =
+    member this.RegisterComponentPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (entityRef : EntityRef) (state : 's) =
         match archetypeSlots.TryGetValue entityRef.EntityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
@@ -546,9 +546,9 @@ and Ecs () =
 
     member this.RegisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (entityRef : EntityRef) (state : 's) =
         let compName = typeof<'c>.Name
-        this.RegisterNamedComponent<'c, 's> compName comp (entityRef : EntityRef) state
+        this.RegisterComponentPlus<'c, 's> compName comp (entityRef : EntityRef) state
 
-    member this.UnregisterNamedComponent<'c, 's when 'c : struct and 'c :> 'c Component> compName (entityRef : EntityRef) (state : 's) =
+    member this.UnregisterComponentPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (entityRef : EntityRef) (state : 's) =
         match archetypeSlots.TryGetValue entityRef.EntityId with
         | (true, archetypeSlot) ->
             let archetype = archetypeSlot.Archetype
@@ -567,7 +567,7 @@ and Ecs () =
         | (false, _) -> state
 
     member this.UnregisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (entityRef : EntityRef) (state : 's) =
-        this.UnregisterNamedComponent<'c, 's> typeof<'c>.Name entityRef state
+        this.UnregisterComponentPlus<'c, 's> typeof<'c>.Name entityRef state
 
     member this.RegisterEntity archetypeId comps state =
         let mutable state = state
@@ -622,13 +622,25 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
     { EntityId : uint64
       Ecs : Ecs }
 
-    member this.RegisterNamed<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
-        this.Ecs.RegisterNamedComponent<'c, 's> compName comp this state
+    member this.RegisterPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
+        this.Ecs.RegisterComponentPlus<'c, 's> compName comp this state
 
     member this.Register<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (state : 's) =
         this.Ecs.RegisterComponent<'c, 's> comp this state
 
-    member this.IndexNamed<'c when 'c : struct and 'c :> 'c Component> compName =
+    member this.UnregisterPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (state : 's) =
+        this.Ecs.UnregisterComponentPlus<'c, 's> compName this state
+
+    member this.Unregister<'c, 's when 'c : struct and 'c :> 'c Component> (state : 's) =
+        this.Ecs.UnregisterComponent<'c, 's> this state
+
+    member this.RegisterTerm termName term =
+        this.Ecs.RegisterTerm termName term this
+
+    member this.UnregisterTerm termName =
+        this.Ecs.UnregisterTerm termName this
+
+    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> compName =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -636,9 +648,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         &store.[i]
 
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
-        this.IndexNamed<'c> typeof<'c>.Name
+        this.IndexPlus<'c> typeof<'c>.Name
 
-    member this.MutateNamed<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
+    member this.MutatePlus<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -646,9 +658,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         store.[i] <- comp
 
     member this.Mutate<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) =
-        this.MutateNamed<'c> typeof<'c>.Name comp
+        this.MutatePlus<'c> typeof<'c>.Name comp
 
-    member this.ChangeNamed<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
+    member this.ChangePlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (comp : 'c) (state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -657,7 +669,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         this.Ecs.Publish (EcsEvents.Change this) { EntityRef = this; ComponentName = compName } state
 
     member this.Change<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (state : 's) =
-        this.ChangeNamed<'c, 's> typeof<'c>.Name comp state
+        this.ChangePlus<'c, 's> typeof<'c>.Name comp state
 
     member this.Frame (compName, state : 's, statement : Statement<'c, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
