@@ -469,10 +469,7 @@ and Ecs () =
             | (false, _) -> false
         | (false, _) -> false
 
-    member this.IndexArchetype archetypeId =
-        archetypes.[archetypeId]
-
-    member this.IndexArchetypeSlot (entityRef : EntityRef) =
+    member internal this.IndexArchetypeSlot (entityRef : EntityRef) =
         archetypeSlots.[entityRef.EntityId]
 
     member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
@@ -631,16 +628,13 @@ and Ecs () =
         queries.Add query
         query
 
-    member this.RegisterArchetype archetypeId archetype =
-        archetypes.Add (archetypeId, archetype)
-
-    member this.RegisterEntity archetypeId =
+    member this.RegisterEntity archetypeId terms =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let entityRef = this.EntityRef
-        let archetypeIndex = archetype.Register (dictPlus HashIdentity.Structural [])
+        let archetypeIndex = archetype.Register terms
         archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         entityRef
 
