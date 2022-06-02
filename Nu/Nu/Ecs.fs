@@ -217,14 +217,17 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | _ -> false
 
     static member evalMany (terms : IReadOnlyDictionary<string, Term>) (subqueries : Dictionary<string, Subquery>) =
-        let mutable result = true
         let mutable termEnr = terms.GetEnumerator ()
-        while result && termEnr.MoveNext () do
+        let mutable passing = true
+        let mutable passCount = 0
+        while passing && termEnr.MoveNext () do
             let termEntry = termEnr.Current
             match subqueries.TryGetValue termEntry.Key with
-            | (true, subquery) -> result <- Subquery.eval termEntry.Key termEntry.Value subquery
-            | (false, _) -> result <- false
-        result
+            | (true, subquery) ->
+                passCount <- inc passCount
+                passing <- Subquery.eval termEntry.Key termEntry.Value subquery
+            | (false, _) -> passing <- false
+        passing && passCount = subqueries.Count
 
     static member dict entries = dictPlus<string, Subquery> StringComparer.Ordinal entries
     static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
