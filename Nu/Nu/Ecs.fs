@@ -353,8 +353,7 @@ and Archetype (archetypeId : ArchetypeId) =
 and IQuery =
     interface
         abstract Subqueries : IReadOnlyDictionary<string, Subquery>
-        abstract CheckCompatibility : Archetype -> bool
-        abstract RegisterArchetype : Archetype -> unit
+        abstract TryRegisterArchetype : Archetype -> unit
         end
 
 /// An entity's place in an archetype.
@@ -386,8 +385,7 @@ and Ecs () =
         let archetype = Archetype archetypeId
         archetypes.Add (archetypeId, archetype)
         for query in queries do
-            if query.CheckCompatibility archetype then
-                query.RegisterArchetype archetype
+            query.TryRegisterArchetype archetype
         archetype
 
     member private this.AllocSubscriptionId () =
@@ -593,9 +591,7 @@ and Ecs () =
 
     member this.RegisterQuery<'q when 'q :> IQuery> (query : 'q) =
         for archetypeEntry in archetypes do
-            let archetype = archetypeEntry.Value
-            if query.CheckCompatibility archetype then
-                query.RegisterArchetype archetype
+            query.TryRegisterArchetype archetypeEntry.Value
         queries.Add query
         query
 

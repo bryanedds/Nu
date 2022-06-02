@@ -20,14 +20,14 @@ type Query
         match stores.TryGetValue compName with
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+        
+    member this.Subqueries =
+        subqueries :> IReadOnlyDictionary<_, _>
 
-    member this.Subqueries = subqueries :> IReadOnlyDictionary<_, _>
-
-    member this.CheckCompatibility (archetype : Archetype) =
-        Subquery.evalMany archetype.Id.Terms subqueries
-
-    member this.RegisterArchetype (archetype : Archetype) =
-        archetypes.Add (archetype.Id, archetype)
+    member this.TryRegisterArchetype (archetype : Archetype) =
+        if  not (archetypes.ContainsKey archetype.Id) &&
+            Subquery.evalMany archetype.Id.Terms subqueries then
+            archetypes.Add (archetype.Id, archetype)
 
     member this.Iterate (compName, statement : Statement<'c, 's>) : 's -> 's =
         fun state ->
@@ -301,8 +301,7 @@ type Query
 
     interface IQuery with
         member this.Subqueries = this.Subqueries
-        member this.CheckCompatibility archetype = this.CheckCompatibility archetype
-        member this.RegisterArchetype archetype = this.RegisterArchetype archetype
+        member this.TryRegisterArchetype archetype = this.TryRegisterArchetype archetype
 
     static member byName
         (compName, subqueries) =
