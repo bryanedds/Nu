@@ -396,6 +396,9 @@ and Ecs () =
             callback evt store
         boxableCallback :> obj
 
+    member internal this.IndexArchetypeSlot (entityRef : EntityRef) =
+        archetypeSlots.[entityRef.EntityId]
+
     member this.EntityRef =
         entityIdCurrent <- inc entityIdCurrent
         if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
@@ -468,9 +471,6 @@ and Ecs () =
             | (true, callbacks) -> callbacks.Remove subscriptionId
             | (false, _) -> false
         | (false, _) -> false
-
-    member internal this.IndexArchetypeSlot (entityRef : EntityRef) =
-        archetypeSlots.[entityRef.EntityId]
 
     member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
