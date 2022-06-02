@@ -10,7 +10,6 @@ open Prime
 // TODO: 3D: remove any incidental allocation.
 // TODO: 3D: make sure to use proper collection comparer for string keys.
 // TODO: 3D: make sure to use TryAdd in the appropriate places.
-// TODO: 3D: combine eventName and event into a single key?
 // TODO: 3D: abstract ArchetypeId.
 
 /// Allows a value to always pass as equal with another of its same type.
@@ -374,7 +373,7 @@ and Ecs () =
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
     let archetypeSlots = dictPlus<uint64, ArchetypeSlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
-    let subscriptions = dictPlus<string, Dictionary<EcsEventType, Dictionary<uint32, obj>>> HashIdentity.Structural []
+    let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let queries = List<IQuery> ()
 
     let createArchetype (archetypeId : ArchetypeId) =
@@ -409,36 +408,30 @@ and Ecs () =
         (eventData : 'd)
         (state : 's) : 's =
         let mutable state = state
-        match subscriptions.TryGetValue event.EventName with
-        | (true, subscriptions) ->
-            match subscriptions.TryGetValue event.EventType with
-            | (true, subscriptions) ->
-                for entry in subscriptions do
-                    match entry.Value with
-                    | :? EcsCallback<obj, 's> as objCallback ->
-                        let evt = { EcsEventData = eventData :> obj }
-                        state <- objCallback evt this state
-                    | _ -> ()
-            | (false, _) -> ()
+        match subscriptions.TryGetValue event with
+        | (true, callbacks) ->
+            for entry in callbacks do
+                match entry.Value with
+                | :? EcsCallback<obj, 's> as objCallback ->
+                    let evt = { EcsEventData = eventData :> obj }
+                    state <- objCallback evt this state
+                | _ -> ()
         | (false, _) -> ()
         state
 
     member this.PublishAsync<'d, 's> event (eventData : 'd) =
         let vsync =
-            match subscriptions.TryGetValue event.EventName with
-            | (true, subscriptions) ->
-                match subscriptions.TryGetValue event.EventType with
-                | (true, subscriptions) ->
-                    subscriptions |>
-                    Seq.map (fun subscription ->
-                        Task.Run (fun () ->
-                            match subscription.Value with
-                            | :? EcsCallback<obj, 's> as objCallback ->
-                                let evt = { EcsEventData = eventData :> obj }
-                                objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
-                            | _ -> ()) |> Vsync.AwaitTask) |>
-                    Vsync.Parallel
-                | (false, _) -> Vsync.Parallel []
+            match subscriptions.TryGetValue event with
+            | (true, callbacks) ->
+                callbacks |>
+                Seq.map (fun entry ->
+                    Task.Run (fun () ->
+                        match entry.Value with
+                        | :? EcsCallback<obj, 's> as objCallback ->
+                            let evt = { EcsEventData = eventData :> obj }
+                            objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
+                        | _ -> ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
 
@@ -446,30 +439,21 @@ and Ecs () =
         subscriptionId
         event
         (callback : EcsCallback<'d, 's>) =
-        match subscriptions.TryGetValue event.EventName with
-        | (true, subscriptions) ->
-            match subscriptions.TryGetValue event.EventType with
-            | (true, subscriptions) ->
-                subscriptions.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
-                subscriptionId
-            | (false, _) ->
-                let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
-                subscriptions.Add (event.EventType, callbacks)
-                subscriptionId
+        match subscriptions.TryGetValue event with
+        | (true, callbacks) ->
+            callbacks.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
+            subscriptionId
         | (false, _) ->
             let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
-            subscriptions.Add (event.EventName, dictPlus HashIdentity.Structural [(event.EventType, callbacks)])
+            subscriptions.Add (event, callbacks)
             subscriptionId
 
     member this.Subscribe<'d, 's> event callback =
         this.SubscribePlus<'d, 's> this.SubscriptionId event callback |> ignore
 
     member this.Unsubscribe event subscriptionId =
-        match subscriptions.TryGetValue event.EventName with
-        | (true, subscriptions) ->
-            match subscriptions.TryGetValue event.EventType with
-            | (true, callbacks) -> callbacks.Remove subscriptionId
-            | (false, _) -> false
+        match subscriptions.TryGetValue event with
+        | (true, callbacks) -> callbacks.Remove subscriptionId
         | (false, _) -> false
 
     member this.RegisterComponentType<'c when 'c : struct and 'c :> 'c Component> componentName =
