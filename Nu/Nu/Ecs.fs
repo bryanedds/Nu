@@ -5,6 +5,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
+open System.Diagnostics
 
 /// Allows a value to always pass as equal with another of its same type.
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
@@ -292,7 +293,7 @@ and Archetype (archetypeId : ArchetypeId) =
         for storeEntry in stores do
             storeEntry.Value.Grow ()
 
-    member private this.AllocIndex =
+    member private this.AllocIndex () =
         if freeList.Count > 0 then
             let index = Seq.head freeList
             freeList.Remove index |> ignore<bool>
@@ -315,7 +316,7 @@ and Archetype (archetypeId : ArchetypeId) =
         else freeList.Add index |> ignore<bool>
 
     member this.Register (comps : Dictionary<string, obj>) =
-        let index = this.AllocIndex
+        let index = this.AllocIndex ()
         for compEntry in comps do
             stores.[compEntry.Key].SetItem index compEntry.Value
         index
@@ -386,7 +387,7 @@ and Ecs () =
                 query.RegisterArchetype archetype
         archetype
 
-    member private this.SubscriptionId =
+    member private this.AllocSubscriptionId () =
         subscriptionIdCurrent <- inc subscriptionIdCurrent
         if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of ECS subscription ids not supported."
         subscriptionIdCurrent
@@ -467,7 +468,7 @@ and Ecs () =
         subscriptionId
 
     member this.Subscribe<'d, 's> event callback =
-        this.SubscribePlus<'d, 's> this.SubscriptionId event callback |> ignore
+        this.SubscribePlus<'d, 's> (this.AllocSubscriptionId ()) event callback |> ignore
 
     member this.Unsubscribe event subscriptionId =
         let result =
