@@ -129,7 +129,7 @@ and [<StructuralEquality; NoComparison>] Term =
 
 and [<StructuralEquality; NoComparison>] Subquery =
     | Is
-    | Has of string
+    | Of of string
     | ByName of string
     | ByType of Type
     | Eq of Term
@@ -165,7 +165,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
         match subquery with
         | Is ->
             true
-        | Has label ->
+        | Of label ->
             match term with
             | Labels labels -> labels.Contains label
             | _ -> false
