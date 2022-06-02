@@ -6,8 +6,6 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
-// TODO: 3D: create try functions where applicable and do error-checking where not (search for '.[').
-
 /// Allows a value to always pass as equal with another of its same type.
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
     | AlwaysEqual of 'a
