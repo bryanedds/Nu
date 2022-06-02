@@ -169,7 +169,7 @@ type Query
         let stores = archetype.Stores
         Seq.forall stores.ContainsKey compNames &&
         not (exclude archetype.ComponentNames) &&
-        Subquery.evalMany archetype.Terms subqueries
+        Subquery.evalMany archetype.Id.Terms subqueries
 
     member this.RegisterArchetype (archetype : Archetype) =
         archetypes.Add (archetype.Id, archetype)
@@ -179,12 +179,15 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke (&store.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, statement : Statement<'c, 'c2, 's>) : 's -> 's =
@@ -192,13 +195,16 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke (&store.[i], &store2.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>) : 's -> 's =
@@ -206,14 +212,17 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
                 let store3 = stores.[comp3Name] :?> 'c3 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) : 's -> 's =
@@ -221,16 +230,18 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
                 let store3 = stores.[comp3Name] :?> 'c3 Store
                 let store4 = stores.[comp4Name] :?> 'c4 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) : 's -> 's =
@@ -238,6 +249,7 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
@@ -245,10 +257,11 @@ type Query
                 let store4 = stores.[comp4Name] :?> 'c4 Store
                 let store5 = stores.[comp5Name] :?> 'c5 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) : 's -> 's =
@@ -256,6 +269,7 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
@@ -264,10 +278,11 @@ type Query
                 let store5 = stores.[comp5Name] :?> 'c5 Store
                 let store6 = stores.[comp6Name] :?> 'c6 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) : 's -> 's =
@@ -275,6 +290,7 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
@@ -284,10 +300,11 @@ type Query
                 let store6 = stores.[comp6Name] :?> 'c6 Store
                 let store7 = stores.[comp7Name] :?> 'c7 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) : 's -> 's =
@@ -295,6 +312,7 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
@@ -305,10 +323,11 @@ type Query
                 let store7 = stores.[comp7Name] :?> 'c7 Store
                 let store8 = stores.[comp8Name] :?> 'c8 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
@@ -316,6 +335,7 @@ type Query
             let mutable state = state
             for archetypeEntry in archetypes do
                 let archetype = archetypeEntry.Value
+                let length = archetype.Length
                 let stores = archetype.Stores
                 let store = stores.[compName] :?> 'c Store
                 let store2 = stores.[comp2Name] :?> 'c2 Store
@@ -327,10 +347,11 @@ type Query
                 let store8 = stores.[comp8Name] :?> 'c8 Store
                 let store9 = stores.[comp9Name] :?> 'c9 Store
                 let mutable i = 0
-                while i < store.Length do
-                    state <- statement.Invoke
-                        (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
-                    i <- inc i
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
+                        i <- inc i
             state
 
     member this.Iterate<'c, 's when
