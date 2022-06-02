@@ -85,14 +85,19 @@ module EcsEvents =
     let [<Literal>] Change = "Change"
 
 /// Data for an Ecs registration event.
-type [<NoEquality; NoComparison; Struct>] RegistrationData =
+type [<NoEquality; NoComparison; Struct>] EcsChangeData =
+    { EntityRef : EntityRef
+      ComponentName : string }
+
+/// Data for an Ecs registration event.
+and [<NoEquality; NoComparison; Struct>] EcsRegistrationData =
     { EntityRef : EntityRef
       ContextName : string }
 
-/// Data for an Ecs registration event.
-and [<NoEquality; NoComparison; Struct>] ComponentChangeData =
-    { EntityRef : EntityRef
-      ComponentName : string }
+and [<StructuralEquality; NoComparison; Struct>] EcsEventType =
+    | GlobalEvent
+    | ComponentEvent of ComponentEvent : string
+    | EntityEvent of EntityRef : EntityRef
 
 and [<StructuralEquality; NoComparison>] Term =
     | Z of int
@@ -329,16 +334,12 @@ and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
       Archetype : Archetype }
 
 /// An ECS event.
-and [<NoEquality; NoComparison>] EcsEvent<'d, 'w> =
+and [<NoEquality; NoComparison>] EcsEvent<'d, 's> =
     { EcsEventData : 'd }
 
 /// An ECS event callback.
-and EcsCallback<'d, 's> =
+and private EcsCallback<'d, 's> =
     EcsEvent<'d, 's> -> Ecs -> 's -> 's
-
-/// A boxed ECS event callback.
-and EcsCallbackBoxed<'s> =
-    EcsEvent<obj, 's> -> Ecs -> 's -> 's
 
 /// An archetype-based ECS construct.
 and Ecs () =
@@ -348,7 +349,7 @@ and Ecs () =
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
     let archetypeSlots = dictPlus<uint64, ArchetypeSlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> HashIdentity.Structural []
-    let subscriptions = dictPlus<string, Dictionary<uint32, obj>> StringComparer.Ordinal []
+    let subscriptions = dictPlus<string, Dictionary<EcsEventType, Dictionary<uint32, obj>>> HashIdentity.Structural []
     let queries = List<IQuery> ()
 
     let createArchetype (archetypeId : ArchetypeId) =
@@ -375,50 +376,74 @@ and Ecs () =
         if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
         { EntityId = entityIdCurrent; Ecs = this }
 
-    member this.Publish<'d, 's> eventName (eventData : 'd) (state : 's) =
+    member this.Publish<'d, 's>
+        eventName
+        eventType
+        (eventData : 'd)
+        (state : 's) : 's =
+        let mutable state = state
         match subscriptions.TryGetValue eventName with
-        | (false, _) -> state
-        | (true, callbacks) ->
-            Seq.fold (fun state (callback : obj) ->
-                match callback with
-                | :? EcsCallback<obj, 's> as objCallback ->
-                    let evt = { EcsEventData = eventData :> obj }
-                    objCallback evt this state
-                | _ -> state)
-                state callbacks.Values
+        | (true, subscriptions) ->
+            match subscriptions.TryGetValue eventType with
+            | (true, subscriptions) ->
+                for entry in subscriptions do
+                    match entry.Value with
+                    | :? EcsCallback<obj, 's> as objCallback ->
+                        let evt = { EcsEventData = eventData :> obj }
+                        state <- objCallback evt this state
+                    | _ -> ()
+            | (false, _) -> ()
+        | (false, _) -> ()
+        state
 
-    member this.PublishAsync<'d, 's> eventName (eventData : 'd) =
+    member this.PublishAsync<'d, 's> eventName eventType (eventData : 'd) =
         let vsync =
             match subscriptions.TryGetValue eventName with
-            | (true, callbacks) ->
-                callbacks |>
-                Seq.map (fun subscription ->
-                    Task.Run (fun () ->
-                        match subscription.Value with
-                        | :? EcsCallback<obj, 's> as objCallback ->
-                            let evt = { EcsEventData = eventData :> obj }
-                            objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
-                        | _ -> ()) |> Vsync.AwaitTask) |>
-                Vsync.Parallel
+            | (true, subscriptions) ->
+                match subscriptions.TryGetValue eventType with
+                | (true, subscriptions) ->
+                    subscriptions |>
+                    Seq.map (fun subscription ->
+                        Task.Run (fun () ->
+                            match subscription.Value with
+                            | :? EcsCallback<obj, 's> as objCallback ->
+                                let evt = { EcsEventData = eventData :> obj }
+                                objCallback evt this Unchecked.defaultof<'s> |> ignore<'s>
+                            | _ -> ()) |> Vsync.AwaitTask) |>
+                    Vsync.Parallel
+                | (false, _) -> Vsync.Parallel []
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
 
-    member this.SubscribePlus<'d, 's> subscriptionId eventName (callback : EcsCallback<'d, 's>) =
+    member this.SubscribePlus<'d, 's>
+        subscriptionId
+        eventName
+        eventType
+        (callback : EcsCallback<'d, 's>) =
         match subscriptions.TryGetValue eventName with
-        | (true, callbacks) ->
-            callbacks.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
-            subscriptionId
+        | (true, subscriptions) ->
+            match subscriptions.TryGetValue eventType with
+            | (true, subscriptions) ->
+                subscriptions.Add (subscriptionId, this.BoxCallback<'d, 's> callback)
+                subscriptionId
+            | (false, _) ->
+                let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
+                subscriptions.Add (eventType, callbacks)
+                subscriptionId
         | (false, _) ->
             let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d, 's> callback)]
-            subscriptions.Add (eventName, callbacks)
+            subscriptions.Add (eventName, dictPlus HashIdentity.Structural [(eventType, callbacks)])
             subscriptionId
 
     member this.Subscribe<'d, 's> eventName callback =
         this.SubscribePlus<'d, 's> this.SubscriptionId eventName callback |> ignore
 
-    member this.Unsubscribe eventName subscriptionId =
+    member this.Unsubscribe eventName eventType subscriptionId =
         match subscriptions.TryGetValue eventName with
-        | (true, callbacks) -> callbacks.Remove subscriptionId
+        | (true, subscriptions) ->
+            match subscriptions.TryGetValue eventType with
+            | (true, callbacks) -> callbacks.Remove subscriptionId
+            | (false, _) -> false
         | (false, _) -> false
 
     member this.IndexArchetype archetypeId =
@@ -456,7 +481,7 @@ and Ecs () =
                     archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     state
             let eventData = { EntityRef = entityRef; ContextName = termName }
-            this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
+            this.Publish<EcsRegistrationData, obj> EcsEvents.Register GlobalEvent eventData (state :> obj) :?> 's
         | (false, _) ->
             let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural termName term }
             let comps = dictPlus HashIdentity.Structural [] // TODO: use cached empty dictionary.
@@ -473,7 +498,7 @@ and Ecs () =
                     archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     state
             let eventData = { EntityRef = entityRef; ContextName = termName }
-            this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
+            this.Publish<EcsRegistrationData, obj> EcsEvents.Register GlobalEvent eventData (state :> obj) :?> 's
 
     member this.UnregisterTerm (termName : string) (entityRef : EntityRef) (state : 's) =
         if termName.StartsWith "@" then failwith "Term names that start with '@' are for internal use only."
@@ -482,7 +507,7 @@ and Ecs () =
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             let eventData = { EntityRef = entityRef; ContextName = termName }
-            let state = this.Publish<RegistrationData, obj> EcsEvents.Unregistering eventData (state :> obj) :?> 's
+            let state = this.Publish<EcsRegistrationData, obj> EcsEvents.Unregistering GlobalEvent eventData (state :> obj) :?> 's
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             let archetypeId = { Terms = Dictionary<_, _> archetype.Id.Terms }
@@ -516,7 +541,7 @@ and Ecs () =
                     archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     state
             let eventData = { EntityRef = entityRef; ContextName = compName }
-            this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
+            this.Publish<EcsRegistrationData, obj> EcsEvents.Register (ComponentEvent compName) eventData (state :> obj) :?> 's
         | (false, _) ->
             let archetypeId = { Terms = Dictionary.singleton HashIdentity.Structural ("@" + compName) (Intra (compName, typeof<'c>, { AlwaysEqualValue = null })) }
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
@@ -532,7 +557,7 @@ and Ecs () =
                     archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
                     state
             let eventData = { EntityRef = entityRef; ContextName = compName }
-            this.Publish<RegistrationData, obj> EcsEvents.Register eventData (state :> obj) :?> 's
+            this.Publish<EcsRegistrationData, obj> EcsEvents.Register (ComponentEvent compName) eventData (state :> obj) :?> 's
 
     member this.RegisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (entityRef : EntityRef) (state : 's) =
         let compName = typeof<'c>.Name
@@ -544,7 +569,7 @@ and Ecs () =
             let archetype = archetypeSlot.Archetype
             let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
             let eventData = { EntityRef = entityRef; ContextName = compName }
-            let state = this.Publish<RegistrationData, obj> EcsEvents.Unregistering eventData (state :> obj) :?> 's
+            let state = this.Publish<EcsRegistrationData, obj> EcsEvents.Unregistering (ComponentEvent compName) eventData (state :> obj) :?> 's
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Remove compName |> ignore<bool>
@@ -567,10 +592,10 @@ and Ecs () =
             let mutable state = state
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityRef = entityRef; ContextName = compName }
-                state <- this.Publish<RegistrationData, obj> EcsEvents.Unregistering eventData (state :> obj) :?> 's
+                state <- this.Publish<EcsRegistrationData, obj> EcsEvents.Unregistering (EntityEvent entityRef) eventData (state :> obj) :?> 's
             for termEntry in archetype.Terms do
                 let eventData = { EntityRef = entityRef; ContextName = termEntry.Key }
-                state <- this.Publish<RegistrationData, obj> EcsEvents.Unregistering eventData (state :> obj) :?> 's
+                state <- this.Publish<EcsRegistrationData, obj> EcsEvents.Unregistering (EntityEvent entityRef) eventData (state :> obj) :?> 's
             archetype.Unregister archetypeSlot.ArchetypeIndex
             state
         | (false, _) -> state
@@ -627,19 +652,19 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let store = stores.[compName] :?> 'c Store
         let i = archetypeSlot.ArchetypeIndex
         store.[i] <- comp
-        this.Ecs.Publish "Change" { EntityRef = this; ComponentName = compName } state
+        this.Ecs.Publish "Change" (EntityEvent this) { EntityRef = this; ComponentName = compName } state
 
     member this.Change<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (state : 's) =
         this.ChangeNamed<'c, 's> typeof<'c>.Name comp state
 
-    member this.Window (compName, state : 's, statement : Statement<'c, 's>) =
+    member this.Frame (compName, state : 's, statement : Statement<'c, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], state)
 
-    member this.Window (compName, comp2Name, state : 's, statement : Statement<'c, 'c2, 's>) =
+    member this.Frame (compName, comp2Name, state : 's, statement : Statement<'c, 'c2, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -647,7 +672,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -656,7 +681,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -666,7 +691,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, comp5Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -677,7 +702,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -689,7 +714,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -702,7 +727,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -716,7 +741,7 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
 
-    member this.Window (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
+    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
@@ -731,42 +756,42 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         let i = archetypeSlot.ArchetypeIndex
         statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
 
-    member this.Window<'c, 's when
+    member this.Frame<'c, 's when
         'c : struct and 'c :> 'c Component>
         (state : 's, statement : Statement<'c, 's>) =
-        this.Window (typeof<'c>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 's when
+    member this.Frame<'c, 'c2, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
         (state : 's, statement : Statement<'c, 'c2, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 's when
+    member this.Frame<'c, 'c2, 'c3, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 'c5, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -774,9 +799,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -785,9 +810,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -797,9 +822,9 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, state, statement)
 
-    member this.Window<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
+    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -810,4 +835,4 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         'c8 : struct and 'c8 :> 'c8 Component and
         'c9 : struct and 'c9 :> 'c9 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
-        this.Window (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, state, statement)
+        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, state, statement)
