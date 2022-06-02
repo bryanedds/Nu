@@ -435,8 +435,8 @@ and Ecs () =
             subscriptions.Add (eventName, dictPlus HashIdentity.Structural [(eventType, callbacks)])
             subscriptionId
 
-    member this.Subscribe<'d, 's> eventName callback =
-        this.SubscribePlus<'d, 's> this.SubscriptionId eventName callback |> ignore
+    member this.Subscribe<'d, 's> eventName eventType callback =
+        this.SubscribePlus<'d, 's> this.SubscriptionId eventName eventType callback |> ignore
 
     member this.Unsubscribe eventName eventType subscriptionId =
         match subscriptions.TryGetValue eventName with
