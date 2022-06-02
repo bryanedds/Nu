@@ -234,7 +234,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
     static member zero = Subquery.dict []
 
 /// Identifies an archetype.
-and [<CustomEquality; NoComparison>] ArchetypeId (terms) =
+and ArchetypeId (terms) =
 
     let hashCode = Dictionary.hash terms // OPTIMIZATION: hash is cached for speed
 
@@ -398,6 +398,15 @@ and Ecs () =
             callback evt store
         boxableCallback :> obj
 
+    member this.RegisterEntityInternal archetypeId terms entityRef =
+        let archetype =
+            match archetypes.TryGetValue archetypeId with
+            | (true, archetype) -> archetype
+            | (false, _) -> createArchetype archetypeId
+        let archetypeIndex = archetype.Register terms
+        archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+
+
     member internal this.IndexArchetypeSlot (entityRef : EntityRef) =
         archetypeSlots.[entityRef.EntityId]
 
@@ -489,7 +498,7 @@ and Ecs () =
             let eventData = { EntityRef = entityRef; ContextName = termName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register termName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = ArchetypeId (Dictionary.singleton HashIdentity.Structural termName term)
+            let archetypeId = ArchetypeId.singleton termName term
             let comps = dictPlus HashIdentity.Structural []
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             let state =
@@ -532,10 +541,7 @@ and Ecs () =
             archetype.Unregister archetypeSlot.ArchetypeIndex
             archetypeSlots.Remove entityRef.EntityId |> ignore<bool>
             comps.Add (compName, comp)
-            let archetypeId =
-                archetype.Id.AddTerm
-                    (Constants.Ecs.IntraComponentPrefix + compName)
-                    (Intra (compName, typeof<'c>, AlwaysEqual null))
+            let archetypeId = archetype.Id.AddTerm (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>, AlwaysEqual null))
             let state =
                 match archetypes.TryGetValue archetypeId with
                 | (true, archetype) ->
@@ -550,22 +556,9 @@ and Ecs () =
             let eventData = { EntityRef = entityRef; ContextName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register compName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId =
-                ArchetypeId.singleton
-                    (Constants.Ecs.IntraComponentPrefix + compName)
-                    (Intra (compName, typeof<'c>, AlwaysEqual null))
+            let archetypeId = ArchetypeId.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>, AlwaysEqual null))
             let comps = Dictionary.singleton HashIdentity.Structural compName (comp :> obj)
-            let state =
-                match archetypes.TryGetValue archetypeId with
-                | (true, archetype) ->
-                    let archetypeIndex = archetype.Register comps
-                    archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
-                    state
-                | (false, _) ->
-                    let archetype = createArchetype archetypeId
-                    let archetypeIndex = archetype.Register comps
-                    archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
-                    state
+            this.RegisterEntityInternal archetypeId comps entityRef
             let eventData = { EntityRef = entityRef; ContextName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register compName) eventData (state :> obj) :?> 's
 
@@ -617,15 +610,19 @@ and Ecs () =
         queries.Add query
         query
 
-    member this.RegisterEntity archetypeId terms =
+    member this.RegisterEntity archetypeId comps state =
+        let mutable state = state
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let entityRef = this.EntityRef
-        let archetypeIndex = archetype.Register terms
+        let archetypeIndex = archetype.Register comps
         archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
-        entityRef
+        for compName in archetype.Stores.Keys do
+            let eventData = { EntityRef = entityRef; ContextName = compName }
+            state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering compName) eventData (state :> obj) :?> 's
+        (entityRef, state)
 
     member this.ReadComponents count archetypeId stream =
         let archetype =
