@@ -87,9 +87,9 @@ and [<NoEquality; NoComparison>] Subquery =
     | Lt of Subquery * Subquery
     | Le of Subquery * Subquery
     | If of Subquery * Subquery * Subquery
-    | Intersect of Subquery * Subquery
-    | Or of Subquery list
-    | And of Subquery list
+    | Intersects of Subquery * Subquery
+    | Or of Subquery * Subquery
+    | And of Subquery * Subquery
     | Not of Subquery
     | Val of Term
     | Var of string
@@ -100,6 +100,7 @@ and [<NoEquality; NoComparison>] Subquery =
     | ByName of string * string
     | ByType of string * Type
     | Fun of (Map<string, Term> -> Term)
+    | Subqueries of Subquery list
 
     static member eq term term2 =
         match (term, term2) with
@@ -225,25 +226,30 @@ and [<NoEquality; NoComparison>] Subquery =
             | B b -> if b then Subquery.eval terms consequent else Subquery.eval terms alternate
             | Err _ as err -> err
             | _ -> Err "Invalid If predicate; B required."
-        | Intersect (subquery, subquery2) ->
+        | Intersects (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Box3 box, Box3 box2) -> B (box.Intersects box2)
             | (V3 v, Box3 box) | (Box3 box, V3 v)-> B (box.Intersects v)
             | ((Err _ as err), _) -> err
             | (_, (Err _ as err)) -> err
             | (_, _) -> Err "Invalid Intersect arguments."
-        | Or subqueries ->
-            let mutable errOpt = ValueNone
-            let result = List.exists (fun term -> match Subquery.eval terms term with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) subqueries
-            match errOpt with ValueSome err -> Err err | ValueNone -> B result
+        | Or (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | (B b, B b2) -> B (b || b2)
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (_, _) -> Err "Invalid Or arguments; two B's required."
+        | And (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | (B b, B b2) -> B (b && b2)
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (_, _) -> Err "Invalid And arguments; two B's required."
         | Not subquery ->
-            let mutable errOpt = ValueNone
-            let result = not (match Subquery.eval terms subquery with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false)
-            match errOpt with ValueSome err -> Err err | ValueNone -> B result
-        | And subqueries ->
-            let mutable errOpt = ValueNone
-            let result = List.forall (fun term -> match Subquery.eval terms term with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) subqueries
-            match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            match Subquery.eval terms subquery with
+            | B b -> B (not b)
+            | Err _ as err -> err
+            | _ -> Err "Invalid Not argument; B required."
         | Val term ->
             term
         | Var varName ->
@@ -299,6 +305,8 @@ and [<NoEquality; NoComparison>] Subquery =
             | (false, _) -> Err "Non-existent term."
         | Fun fn ->
             fn terms
+        | Subqueries subqueries ->
+            Terms (List.map (Subquery.eval terms) subqueries)
 
     static member evalMany (terms : Map<string, Term>) (subqueries : Subquery seq) =
         let mutable result = true
@@ -316,16 +324,24 @@ and [<NoEquality; NoComparison>] Subquery =
             if ty = typeof<int> then Val (I (value :?> int))
             elif ty = typeof<single> then Val (F (value :?> single))
             else failwith "Unsupported value type."
+        | Patterns.NewArray (_, items) ->
+            Subqueries (List.map Subquery.unquote items)
         | Patterns.Let (var, q, q2) -> 
             Let (var.Name, Subquery.unquote q, Subquery.unquote q2)
         | Patterns.IfThenElse (predicate, consequent, alternative) ->
             If (Subquery.unquote predicate, Subquery.unquote consequent, Subquery.unquote alternative)
+        //| Patterns.Lambda (var, body) ->
+        //    match body. with
+        //    | Patterns.
+        //    Fun (var, )
         | Patterns.Call (_, info, args) ->
             match (info.Name, args) with
             | ("at", [arg; arg2]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("GetArray", [arg2; arg]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
             | ("head", [arg]) -> Head (Subquery.unquote arg)
             | ("tail", [arg]) -> Tail (Subquery.unquote arg)
             | ("not", [arg]) -> Not (Subquery.unquote arg)
+            | ("intersects", [arg; arg2]) -> Intersects (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_Equality", [arg; arg2]) -> Eq (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_LessThan", [arg; arg2]) -> Lt (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_LessThanOrEqual", [arg; arg2]) -> Le (Subquery.unquote arg, Subquery.unquote arg2)
