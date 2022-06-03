@@ -121,10 +121,10 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query.byType<Position, Velocity> Subquery.zero)
+        let movers = ecs.RegisterQuery (Query.byType<Position, Velocity> [])
 
         // create shakers query
-        let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> Subquery.zero)
+        let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> [])
 
         // create 4M movers (goal: 60FPS, current: 60FPS)
         let world =
