@@ -5,7 +5,6 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
-open System.Diagnostics
 
 /// Allows a value to always pass as equal with another of its same type.
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
@@ -249,6 +248,20 @@ and ArchetypeId (terms) =
 
     let hashCode = Dictionary.hash terms // OPTIMIZATION: hash is cached for speed
 
+    new (intraComponents, subterms : Dictionary<string, Term>) =
+        ArchetypeId
+            (let intraterms = Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) intraComponents
+             let terms = dictPlus StringComparer.Ordinal intraterms
+             subterms |> Seq.iter (fun subtermEntry -> terms.Add (subtermEntry.Key, subtermEntry.Value))
+             terms)
+
+    new (intraComponentTypes : Type seq, subterms : Dictionary<string, Term>) =
+        ArchetypeId
+            (let intraterms = intraComponentTypes |> Seq.map (fun compTy -> let compName = compTy.Name in (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy)))
+             let terms = dictPlus StringComparer.Ordinal intraterms
+             subterms |> Seq.iter (fun subtermEntry -> terms.Add (subtermEntry.Key, subtermEntry.Value))
+             terms)
+
     member this.Terms = terms :> IReadOnlyDictionary<_, _>
     member this.HashCode = hashCode
 
@@ -279,6 +292,213 @@ and ArchetypeId (terms) =
         match that with
         | :? ArchetypeId as that -> ArchetypeId.equals this that
         | _ -> failwithumf ()
+
+    static member make<'c when
+        'c : struct and 'c :> 'c Component>
+        (compName, subterms) =
+        ArchetypeId ([(compName, typeof<'c>)], subterms)
+
+    static member make<'c, 'c2 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        (compName, comp2Name, subterms) =
+        ArchetypeId ([(compName, typeof<'c>); (comp2Name, typeof<'c2>)], subterms)
+
+    static member make<'c, 'c2, 'c3 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        (compName, comp2Name, comp3Name, subterms) =
+        ArchetypeId ([(compName, typeof<'c>); (comp2Name, typeof<'c2>); (comp3Name, typeof<'c3>)], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        (compName, comp2Name, comp3Name, comp4Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)],
+             subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)
+              (comp5Name, typeof<'c5>)],
+             subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)
+              (comp5Name, typeof<'c5>)
+              (comp6Name, typeof<'c6>)],
+             subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)
+              (comp5Name, typeof<'c5>)
+              (comp6Name, typeof<'c6>)
+              (comp7Name, typeof<'c7>)],
+             subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)
+              (comp5Name, typeof<'c5>)
+              (comp6Name, typeof<'c6>)
+              (comp7Name, typeof<'c7>)
+              (comp8Name, typeof<'c8>)],
+             subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, subterms) =
+        ArchetypeId
+            ([(compName, typeof<'c>)
+              (comp2Name, typeof<'c2>)
+              (comp3Name, typeof<'c3>)
+              (comp4Name, typeof<'c4>)
+              (comp5Name, typeof<'c5>)
+              (comp6Name, typeof<'c6>)
+              (comp7Name, typeof<'c7>)
+              (comp8Name, typeof<'c8>)
+              (comp9Name, typeof<'c9>)],
+             subterms)
+
+    static member make<'c when
+        'c : struct and 'c :> 'c Component>
+        subterms =
+        ArchetypeId ([typeof<'c>], subterms)
+
+    static member make<'c, 'c2 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>], subterms)
+
+    static member make<'c, 'c2, 'c3 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>; typeof<'c8>], subterms)
+
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        subterms =
+        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>; typeof<'c8>; typeof<'c9>], subterms)
 
 /// A collection of component stores.
 and Archetype (archetypeId : ArchetypeId) =
@@ -572,8 +792,7 @@ and Ecs () =
     member this.UnregisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (entityRef : EntityRef) (state : 's) =
         this.UnregisterComponentPlus<'c, 's> typeof<'c>.Name entityRef state
 
-    member this.RegisterEntity archetypeId comps state =
-        let mutable state = state
+    member this.RegisterEntityPlus withEvent comps archetypeId state =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
@@ -581,11 +800,36 @@ and Ecs () =
         let entityRef = this.EntityRef
         let archetypeIndex = archetype.Register comps
         archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
-        if subscribedEntities.ContainsKey entityRef then
+        let mutable state = state
+        if withEvent then
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityRef = entityRef; ContextName = compName }
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entityRef compName) eventData (state :> obj) :?> 's
         (entityRef, state)
+
+    member this.RegisterEntitiesPlus withEvent count comps archetypeId state =
+
+        // get archetype
+        let archetype =
+            match archetypes.TryGetValue archetypeId with
+            | (true, archetype) -> archetype
+            | (false, _) -> createArchetype archetypeId
+
+        // register entities to archetype
+        let mutable state = state
+        let entityRefs = SegmentedArray.zeroCreate count
+        for i in 0 .. dec count do
+            let entityRef = this.EntityRef
+            let archetypeIndex = archetype.Register comps
+            archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+            entityRefs.[i] <- entityRef
+            if withEvent then
+                for compName in archetype.Stores.Keys do
+                    let eventData = { EntityRef = entityRef; ContextName = compName }
+                    state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entityRef compName) eventData (state :> obj) :?> 's
+
+        // fin
+        (entityRefs, state)
 
     member this.UnregisterEntity (entityRef : EntityRef) (state : 's) =
         match archetypeSlots.TryGetValue entityRef.EntityId with
