@@ -293,6 +293,16 @@ and ArchetypeId (terms) =
         | :? ArchetypeId as that -> ArchetypeId.equals this that
         | _ -> failwithumf ()
 
+    static member make (intraComponents : obj seq, subterms) =
+        let intraComponentTypes = Seq.map getType intraComponents
+        let intraComponentNames = Seq.map (fun (ty : Type) -> ty.Name) intraComponentTypes
+        let intraComponents = Seq.zip intraComponentNames intraComponentTypes
+        ArchetypeId (intraComponents, subterms)
+
+    static member make (intraComponents : (string * obj) seq, subterms) =
+        let intraComponents = Seq.map (fun (compName, compValue) -> (compName, getType compValue)) intraComponents
+        ArchetypeId (intraComponents, subterms)
+
     static member make<'c when
         'c : struct and 'c :> 'c Component>
         (compName, subterms) =
@@ -807,7 +817,7 @@ and Ecs () =
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entityRef compName) eventData (state :> obj) :?> 's
         (entityRef, state)
 
-    member this.RegisterEntities skipEvents count comps archetypeId state =
+    member this.RegisterEntitiesPlus skipEvents count comps archetypeId state =
 
         // get archetype
         let archetype =
@@ -830,6 +840,10 @@ and Ecs () =
 
         // fin
         (entityRefs, state)
+
+    member this.RegisterEntities skipEvents count comps archetypeId state =
+        let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
+        this.RegisterEntitiesPlus skipEvents count comps archetypeId state
 
     member this.UnregisterEntity (entityRef : EntityRef) (state : 's) =
         match archetypeSlots.TryGetValue entityRef.EntityId with
