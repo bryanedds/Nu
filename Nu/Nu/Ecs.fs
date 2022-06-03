@@ -48,10 +48,12 @@ and [<AbstractClass; Sealed>] EcsEvents =
     static member Change entity = { EcsEventName = "Change"; EcsEventType = EntityEvent entity }
 
 and [<StructuralEquality; NoComparison>] Term =
+    | Err of string
+    | B of bool
     | I of int
     | F of single
     | V3 of Vector3
-    | B3 of Box3
+    | Box3 of Box3
     | Cmp of IComparable
     | Arb of obj
     | Tag
@@ -76,220 +78,234 @@ and [<StructuralEquality; NoComparison>] Term =
         else false
 
 and [<NoEquality; NoComparison>] Subquery =
-    | Is of string
-    | Of of string * string
-    | Eq of string * Term
-    | Gt of string * Term
-    | Ge of string * Term
-    | Lt of string * Term
-    | Le of string * Term
-    | If of string * (Term -> bool)
-    | Intersect of string * Term
+    | Is of Subquery
+    | Of of Subquery * string
+    | Eq of Subquery * Subquery
+    | Gt of Subquery * Subquery
+    | Ge of Subquery * Subquery
+    | Lt of Subquery * Subquery
+    | Le of Subquery * Subquery
+    | If of Subquery * Subquery * Subquery
+    | Intersect of Subquery * Subquery
     | Or of Subquery list
     | And of Subquery list
     | Not of Subquery
-    | It of Subquery * Subquery
+    | Val of Term
+    | Var of string
     | Let of string * Subquery * Subquery
-    | Literal of Term
-    | At of string * int
-    | Head of string
-    | Tail of string
+    | At of Subquery * Subquery
+    | Head of Subquery
+    | Tail of Subquery
     | ByName of string * string
     | ByType of string * Type
-    | Analyze of (Map<string, Term> -> bool)
+    | Fun of (Map<string, Term> -> Term)
 
-    static member private equalTo term term2 =
+    static member eq term term2 =
         match (term, term2) with
-        | (I i, I i2) -> i = i2
-        | (F f, F f2) -> f = f2
-        | (V3 v, V3 v2) -> v3Eq v v2
-        | (B3 b, B3 b2) -> box3Eq b b2
-        | (Cmp c, Cmp c2) -> c = c2
-        | (Arb o, Arb o2) -> objEq o o2
-        | (Label label, Label label2) -> strEq label label2
-        | (Labels labels, Labels labels2) -> labels.SetEquals labels2
-        | (EcsEntity entity, EcsEntity entity2) -> genEq entity entity2
+        | (I i, I i2) -> B (i = i2)
+        | (F f, F f2) -> B (f = f2)
+        | (V3 v, V3 v2) -> B (v3Eq v v2)
+        | (Box3 b, Box3 b2) -> B (box3Eq b b2)
+        | (Cmp c, Cmp c2) -> B (c = c2)
+        | (Arb o, Arb o2) -> B (objEq o o2)
+        | (Label label, Label label2) -> B (strEq label label2)
+        | (Labels labels, Labels labels2) -> B (labels.SetEquals labels2)
+        | (EcsEntity entity, EcsEntity entity2) -> B (genEq entity entity2)
         | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.equalTo terms terms2
-            else false
-        | _ -> false
+            if terms.Length = terms2.Length then
+                let mutable errOpt = ValueNone
+                let result = List.forall2 (fun term term2 -> match Subquery.eq term term2 with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            else B false
+        | ((Err _ as err), _) -> err
+        | (_, (Err _ as err)) -> err
+        | _ -> Err "Checking equality on unlike terms."
 
-    static member private greaterThan term term2 =
+    static member gt term term2 =
         match (term, term2) with
-        | (I i, I i2) -> i > i2
-        | (F f, F f2) -> f > f2
-        | (Cmp c, Cmp c2) -> c.CompareTo c2 > 0
+        | (I i, I i2) -> B (i > i2)
+        | (F f, F f2) -> B (f > f2)
+        | (Cmp c, Cmp c2) -> B (c.CompareTo c2 > 0)
         | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.greaterThan terms terms2
-            else false
-        | (_, _) -> false
+            if terms.Length = terms2.Length then
+                let mutable errOpt = ValueNone
+                let result = List.forall2 (fun term term2 -> match Subquery.gt term term2 with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            else B false
+        | ((Err _ as err), _) -> err
+        | (_, (Err _ as err)) -> err
+        | (_, _) -> Err "Comparing non-comparable terms."
 
-    static member private greaterEqual term term2 =
+    static member ge term term2 =
         match (term, term2) with
-        | (I i, I i2) -> i >= i2
-        | (F f, F f2) -> f >= f2
-        | (Cmp c, Cmp c2) -> c.CompareTo c2 >= 0
+        | (I i, I i2) -> B (i >= i2)
+        | (F f, F f2) -> B (f >= f2)
+        | (Cmp c, Cmp c2) -> B (c.CompareTo c2 >= 0)
         | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.greaterEqual terms terms2
-            else false
-        | (_, _) -> false
+            if terms.Length = terms2.Length then
+                let mutable errOpt = ValueNone
+                let result = List.forall2 (fun term term2 -> match Subquery.ge term term2 with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            else B false
+        | ((Err _ as err), _) -> err
+        | (_, (Err _ as err)) -> err
+        | (_, _) -> Err "Comparing non-comparable terms."
 
-    static member private lesserThan term term2 =
+    static member lt term term2 =
         match (term, term2) with
-        | (I i, I i2) -> i < i2
-        | (F f, F f2) -> f < f2
-        | (Cmp c, Cmp c2) -> c.CompareTo c2 < 0
+        | (I i, I i2) -> B (i < i2)
+        | (F f, F f2) -> B (f < f2)
+        | (Cmp c, Cmp c2) -> B (c.CompareTo c2 < 0)
         | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.lesserThan terms terms2
-            else false
-        | (_, _) -> false
+            if terms.Length = terms2.Length then
+                let mutable errOpt = ValueNone
+                let result = List.forall2 (fun term term2 -> match Subquery.lt term term2 with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            else B false
+        | ((Err _ as err), _) -> err
+        | (_, (Err _ as err)) -> err
+        | (_, _) -> Err "Comparing non-comparable terms."
 
-    static member private lesserEqual term term2 =
+    static member le term term2 =
         match (term, term2) with
-        | (I i, I i2) -> i <= i2
-        | (F f, F f2) -> f <= f2
-        | (Cmp c, Cmp c2) -> c.CompareTo c2 <= 0
+        | (I i, I i2) -> B (i <= i2)
+        | (F f, F f2) -> B (f <= f2)
+        | (Cmp c, Cmp c2) -> B (c.CompareTo c2 <= 0)
         | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.lesserEqual terms terms2
-            else false
-        | (_, _) -> false
+            if terms.Length = terms2.Length then
+                let mutable errOpt = ValueNone
+                let result = List.forall2 (fun term term2 -> match Subquery.le term term2 with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Err err | ValueNone -> B result
+            else B false
+        | ((Err _ as err), _) -> err
+        | (_, (Err _ as err)) -> err
+        | (_, _) -> Err "Comparing non-comparable terms."
 
-    static member private tryEvalTerm (terms : Map<string, Term>) subquery =
+    static member eval (terms : Map<string, Term>) (subquery : Subquery) : Term =
         match subquery with
-        | Literal term ->
-            ValueSome term
-        | Head termName ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Terms terms ->
-                    match terms with
-                    | head :: _ -> ValueSome head
-                    | _ -> ValueNone
-                | _ -> ValueNone
-            | (false, _) -> ValueNone
-        | Tail termName ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Terms terms ->
-                    match terms with
-                    | _ :: tail -> ValueSome (Terms tail)
-                    | _ -> ValueNone
-                | _ -> ValueNone
-            | (false, _) -> ValueNone
-        | At (termName, index) ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Terms terms ->
-                    match Seq.tryItem index terms with
-                    | Some item -> ValueSome item
-                    | None -> ValueNone
-                | _ -> ValueNone
-            | (false, _) -> ValueNone
-        | _ -> ValueNone
-
-    static member eval (terms : Map<string, Term>) (subquery : Subquery) : bool =
-        match subquery with
-        | Is termName ->
-            terms.ContainsKey termName
-        | Of (termName, label2) ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Label label -> strEq label label2
-                | Labels labels -> labels.Contains label2
-                | _ -> false
-            | (false, _) -> false
-        | Eq (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> Subquery.equalTo term term2
-            | (false, _) -> false
-        | Gt (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> Subquery.greaterThan term term2
-            | (false, _) -> false
-        | Ge (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> Subquery.greaterEqual term term2
-            | (false, _) -> false
-        | Lt (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> Subquery.lesserThan term term2
-            | (false, _) -> false
-        | Le (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> Subquery.lesserEqual term term2
-            | (false, _) -> false
-        | If (termName, pred) ->
-            match terms.TryGetValue termName with
-            | (true, term) -> pred term
-            | (false, _) -> false
-        | Intersect (termName, term2) ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match (term, term2) with
-                | (B3 box, B3 box2) -> box.Intersects box2
-                | (V3 v, B3 box) | (B3 box, V3 v)-> box.Intersects v
-                | (_, _) -> false
-            | (false, _) -> false
+        | Is subquery ->
+            match subquery with
+            | Val v -> match v with Err _ as err -> err | _ -> B true
+            | Var v -> B (terms.ContainsKey v)
+            | _ -> B true
+        | Of (subquery, label2) ->
+            match Subquery.eval terms subquery with
+            | Label label -> B (strEq label label2)
+            | Labels labels -> B (labels.Contains label2)
+            | Err _ as err -> err
+            | _ -> Err "Label check on non-label(s)."
+        | Eq (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (term, term2) -> Subquery.eq term term2
+        | Gt (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (term, term2) -> Subquery.gt term term2
+        | Ge (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (term, term2) -> Subquery.ge term term2
+        | Lt (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (term, term2) -> Subquery.lt term term2
+        | Le (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (term, term2) -> Subquery.le term term2
+        | If (predicate, consequent, alternate) ->
+            match Subquery.eval terms predicate with
+            | B b -> if b then Subquery.eval terms consequent else Subquery.eval terms alternate
+            | Err _ as err -> err
+            | _ -> Err "Invalid If predicate; B required."
+        | Intersect (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | (Box3 box, Box3 box2) -> B (box.Intersects box2)
+            | (V3 v, Box3 box) | (Box3 box, V3 v)-> B (box.Intersects v)
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (_, _) -> Err "Invalid Intersect arguments."
         | Or subqueries ->
-            List.exists (Subquery.eval terms) subqueries
+            let mutable errOpt = ValueNone
+            let result = List.exists (fun term -> match Subquery.eval terms term with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) subqueries
+            match errOpt with ValueSome err -> Err err | ValueNone -> B result
         | Not subquery ->
-            not (Subquery.eval terms subquery)
+            let mutable errOpt = ValueNone
+            let result = not (match Subquery.eval terms subquery with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false)
+            match errOpt with ValueSome err -> Err err | ValueNone -> B result
         | And subqueries ->
-            List.forall (Subquery.eval terms) subqueries
+            let mutable errOpt = ValueNone
+            let result = List.forall (fun term -> match Subquery.eval terms term with B b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) subqueries
+            match errOpt with ValueSome err -> Err err | ValueNone -> B result
+        | Val term ->
+            term
+        | Var varName ->
+            match terms.TryGetValue varName with
+            | (true, term) -> term
+            | (false, _) -> Err "Non-existent binding."
         | Let (bindingName, subquery, subquery2) ->
-            match Subquery.tryEvalTerm terms subquery with
-            | ValueSome term ->
-                let terms = Map.add bindingName term terms
-                Subquery.eval terms subquery2
-            | ValueNone -> false
-        | It (subquery, subquery2) ->
-            match Subquery.tryEvalTerm terms subquery with
-            | ValueSome term ->
-                let terms = Map.add "it" term terms
-                Subquery.eval terms subquery2
-            | ValueNone -> false
-        | Literal _ | At (_, _) | Head _ | Tail _ ->
-            false
+            let term = Subquery.eval terms subquery
+            let terms = Map.add bindingName term terms
+            Subquery.eval terms subquery2
+        | At (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (I index, Terms terms2) ->
+                match Seq.tryItem index terms2 with
+                | Some item -> item
+                | None -> B false
+            | (_, _) -> Err "Invalid At arguments; I and Terms required."
+        | Head subquery ->
+            match Subquery.eval terms subquery with
+            | Err _ as err -> err
+            | Terms terms2 ->
+                match terms2 with
+                | head :: _ -> head
+                | _ -> Err "Invalid Head option; non-empty Terms required."
+            | _ -> Err "Invalid Head argument; Terms required."
+        | Tail subquery ->
+            match Subquery.eval terms subquery with
+            | Err _ as err -> err
+            | Terms terms2 ->
+                match terms2 with
+                | _ :: tail -> Terms tail
+                | _ -> Err "Invalid Tail option; non-empty Terms required."
+            | _ -> Err "Invalid Tail argument; Terms required."
         | ByName (termName, compName2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
-                | Intra (compName, _)  -> strEq compName compName2
-                | Extra (compName, _, _)  -> strEq compName compName2
-                | _ -> false
-            | (false, _) -> false
+                | Intra (compName, _)  -> B (strEq compName compName2)
+                | Extra (compName, _, _)  -> B (strEq compName compName2)
+                | Err _ as err -> err
+                | _ -> Err "Invalid ByName target; Intra or Extra required."
+            | (false, _) -> Err "Non-existent term."
         | ByType (termName, ty2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
-                | Intra (_, ty)  -> refEq ty ty2
-                | Extra (_, ty, _) -> refEq ty ty2
-                | _ -> false
-            | (false, _) -> false
-        | Analyze analyzer ->
-            analyzer terms
+                | Intra (_, ty)  -> B (refEq ty ty2)
+                | Extra (_, ty, _) -> B (refEq ty ty2)
+                | Err _ as err -> err
+                | _ -> Err "Invalid ByType target; Intra or Extra required."
+            | (false, _) -> Err "Non-existent term."
+        | Fun fn ->
+            fn terms
 
     static member evalMany (terms : Map<string, Term>) (subqueries : Subquery seq) =
         let mutable result = true
         let mutable subqueryEnr = subqueries.GetEnumerator ()
         while result && subqueryEnr.MoveNext () do
             let subquery = subqueryEnr.Current
-            if not (Subquery.eval terms subquery) then
-                result <- false
+            match Subquery.eval terms subquery with B true -> () | _ -> result <- false
         result
-
-    static member dict entries = dictPlus<string, Subquery> StringComparer.Ordinal entries
-    static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
-    static member zero = []
 
 /// An entity's place in an archetype.
 and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
@@ -1185,7 +1201,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
 
     do
         for compName in compNames do
-            subqueries.Add (Is (Constants.Ecs.IntraComponentPrefix + compName))
+            subqueries.Add (Is (Var (Constants.Ecs.IntraComponentPrefix + compName)))
 
     member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
         match stores.TryGetValue compName with
