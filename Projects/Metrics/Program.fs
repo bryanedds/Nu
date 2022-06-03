@@ -127,7 +127,7 @@ type MyGameDispatcher () =
         let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> [])
 
         // create 4M movers (goal: 60FPS, current: 60FPS)
-        let moverComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Velocity = v2Zero } :> obj]
+        let moverComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Velocity = v2One } :> obj]
         let moverArchetypeId = ArchetypeId.make (moverComponents, Term.zero)
         let world = ecs.RegisterEntities true 4000000 moverComponents moverArchetypeId world |> snd
 
