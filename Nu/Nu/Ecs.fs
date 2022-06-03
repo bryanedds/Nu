@@ -75,7 +75,7 @@ and [<StructuralEquality; NoComparison>] Term =
 
 and [<StructuralEquality; NoComparison>] Subquery =
     | Is of string
-    | Of of string * string
+    | Any of string * string
     | ByName of string * string
     | ByType of string * Type
     | Eq of string * Term
@@ -102,11 +102,12 @@ and [<StructuralEquality; NoComparison>] Subquery =
         match subquery with
         | Is termName ->
             terms.ContainsKey termName
-        | Of (termName, label) ->
+        | Any (termName, label2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
-                | Labels labels -> labels.Contains label
+                | Label label -> strEq label label2
+                | Labels labels -> labels.Contains label2
                 | _ -> false
             | (false, _) -> false
         | ByName (termName, compName2) ->
