@@ -2,6 +2,7 @@
 open System
 open System.Collections.Generic
 open System.IO
+open System.Numerics
 open System.Threading.Tasks
 open Prime
 open Nu
@@ -49,6 +50,8 @@ and [<AbstractClass; Sealed>] EcsEvents =
 and [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
+    | V3 of Vector3
+    | B3 of Box3
     | Cmp of IComparable
     | Arb of obj
     | Tag
@@ -84,6 +87,7 @@ and [<NoEquality; NoComparison>] Subquery =
     | Lt of string * Term
     | Le of string * Term
     | If of string * (Term -> bool)
+    | Intersect of string * Term
     | Or of Subquery list
     | And of Subquery list
     | Not of Subquery
@@ -101,6 +105,8 @@ and [<NoEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (Z z, Z z2) -> z = z2
         | (R r, R r2) -> r = r2
+        | (V3 v, V3 v2) -> v3Eq v v2
+        | (B3 b, B3 b2) -> box3Eq b b2
         | (Cmp c, Cmp c2) -> c = c2
         | (Arb o, Arb o2) -> objEq o o2
         | (Label label, Label label2) -> strEq label label2
@@ -227,6 +233,14 @@ and [<NoEquality; NoComparison>] Subquery =
         | If (termName, pred) ->
             match terms.TryGetValue termName with
             | (true, term) -> pred term
+            | (false, _) -> false
+        | Intersect (termName, term2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match (term, term2) with
+                | (B3 box, B3 box2) -> box.Intersects box2
+                | (V3 v, B3 box) | (B3 box, V3 v)-> box.Intersects v
+                | (_, _) -> false
             | (false, _) -> false
         | Or subqueries ->
             List.exists (Subquery.eval terms) subqueries
