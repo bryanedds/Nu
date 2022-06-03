@@ -48,8 +48,8 @@ and [<AbstractClass; Sealed>] EcsEvents =
     static member Change entity = { EcsEventName = "Change"; EcsEventType = EntityEvent entity }
 
 and [<StructuralEquality; NoComparison>] Term =
-    | Z of int
-    | R of single
+    | I of int
+    | F of single
     | V3 of Vector3
     | B3 of Box3
     | Cmp of IComparable
@@ -103,8 +103,8 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member private equalTo term term2 =
         match (term, term2) with
-        | (Z z, Z z2) -> z = z2
-        | (R r, R r2) -> r = r2
+        | (I i, I i2) -> i = i2
+        | (F f, F f2) -> f = f2
         | (V3 v, V3 v2) -> v3Eq v v2
         | (B3 b, B3 b2) -> box3Eq b b2
         | (Cmp c, Cmp c2) -> c = c2
@@ -120,8 +120,8 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member private greaterThan term term2 =
         match (term, term2) with
-        | (Z z, Z z2) -> z > z2
-        | (R r, R r2) -> r > r2
+        | (I i, I i2) -> i > i2
+        | (F f, F f2) -> f > f2
         | (Cmp c, Cmp c2) -> c.CompareTo c2 > 0
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -131,8 +131,8 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member private greaterEqual term term2 =
         match (term, term2) with
-        | (Z z, Z z2) -> z >= z2
-        | (R r, R r2) -> r >= r2
+        | (I i, I i2) -> i >= i2
+        | (F f, F f2) -> f >= f2
         | (Cmp c, Cmp c2) -> c.CompareTo c2 >= 0
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -142,8 +142,8 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member private lesserThan term term2 =
         match (term, term2) with
-        | (Z z, Z z2) -> z < z2
-        | (R r, R r2) -> r < r2
+        | (I i, I i2) -> i < i2
+        | (F f, F f2) -> f < f2
         | (Cmp c, Cmp c2) -> c.CompareTo c2 < 0
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
@@ -153,8 +153,8 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member private lesserEqual term term2 =
         match (term, term2) with
-        | (Z z, Z z2) -> z <= z2
-        | (R r, R r2) -> r <= r2
+        | (I i, I i2) -> i <= i2
+        | (F f, F f2) -> f <= f2
         | (Cmp c, Cmp c2) -> c.CompareTo c2 <= 0
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length
