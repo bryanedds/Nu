@@ -56,7 +56,6 @@ and [<StructuralEquality; NoComparison>] Term =
     | Entity of EcsEntity
     | Intra of string * Type
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
-    | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : IReadOnlyDictionary<string, Term>) (rights : IReadOnlyDictionary<string, Term>) =
         if lefts.Count = rights.Count then
@@ -97,10 +96,6 @@ and [<StructuralEquality; NoComparison>] Subquery =
         | (Label label, Label label2) -> strEq label label2
         | (Labels labels, Labels labels2) -> labels.SetEquals labels2
         | (Entity entity, Entity entity2) -> genEq entity entity2
-        | (Terms terms, Terms terms2) ->
-            if terms.Length = terms2.Length
-            then List.forall2 Subquery.equalTo terms terms2
-            else false
         | _ -> false
 
     static member eval (terms : IReadOnlyDictionary<string, Term>) (subquery : Subquery) : bool =
