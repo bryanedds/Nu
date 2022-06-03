@@ -4,6 +4,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Threading.Tasks
+open FSharp.Quotations
 open Prime
 open Nu
 
@@ -306,6 +307,32 @@ and [<NoEquality; NoComparison>] Subquery =
             let subquery = subqueryEnr.Current
             match Subquery.eval terms subquery with B true -> () | _ -> result <- false
         result
+
+    static member unquote (quote : Expr) =
+        match quote with
+        | Patterns.Var var ->
+            Var var.Name
+        | Patterns.Value (value, ty) ->
+            if ty = typeof<int> then Val (I (value :?> int))
+            elif ty = typeof<single> then Val (F (value :?> single))
+            else failwith "Unsupported value type."
+        | Patterns.Let (var, q, q2) -> 
+            Let (var.Name, Subquery.unquote q, Subquery.unquote q2)
+        | Patterns.IfThenElse (predicate, consequent, alternative) ->
+            If (Subquery.unquote predicate, Subquery.unquote consequent, Subquery.unquote alternative)
+        | Patterns.Call (_, info, args) ->
+            match (info.Name, args) with
+            | ("at", [arg; arg2]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("head", [arg]) -> Head (Subquery.unquote arg)
+            | ("tail", [arg]) -> Tail (Subquery.unquote arg)
+            | ("not", [arg]) -> Not (Subquery.unquote arg)
+            | ("op_Equality", [arg; arg2]) -> Eq (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("op_LessThan", [arg; arg2]) -> Lt (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("op_LessThanOrEqual", [arg; arg2]) -> Le (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("op_GreaterThan", [arg; arg2]) -> Gt (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("op_GreaterThanOrEqual", [arg; arg2]) -> Ge (Subquery.unquote arg, Subquery.unquote arg2)
+            | _ -> failwith "Unsupported call."
+        | _ -> failwith "Unsupport Subquery expression."
 
 /// An entity's place in an archetype.
 and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
