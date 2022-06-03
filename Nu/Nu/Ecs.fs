@@ -62,10 +62,10 @@ and [<StructuralEquality; NoComparison>] Term =
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
-    static member equalsMany (lefts : IReadOnlyDictionary<string, Term>) (rights : IReadOnlyDictionary<string, Term>) =
+    static member equalsMany (lefts : Map<string, Term>) (rights : Map<string, Term>) =
         if lefts.Count = rights.Count then
             let mutable result = true
-            let mutable enr = lefts.GetEnumerator ()
+            let mutable enr = (lefts :> IDictionary<_,_>).GetEnumerator ()
             while result && enr.MoveNext () do
                 let current = enr.Current
                 let termName = current.Key
@@ -74,9 +74,6 @@ and [<StructuralEquality; NoComparison>] Term =
                 | (false, _) -> result <- false
             result
         else false
-    static member dict entries = dictPlus<string, Term> StringComparer.Ordinal entries
-    static member singleton termName term = Term.dict [(termName, term)]
-    static member zero = Term.dict []
 
 and [<NoEquality; NoComparison>] Subquery =
     | Is of string
@@ -99,7 +96,7 @@ and [<NoEquality; NoComparison>] Subquery =
     | Tail of string
     | ByName of string * string
     | ByType of string * Type
-    | Analyze of (IReadOnlyDictionary<string, Term> -> bool)
+    | Analyze of (Map<string, Term> -> bool)
 
     static member private equalTo term term2 =
         match (term, term2) with
@@ -309,7 +306,7 @@ and ArchetypeId (terms : Map<string, Term>) =
             (let intraterms = intraComponents|> Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
              intraterms @@ subterms)
 
-    new (intraComponentTypes : Type seq, subterms : Dictionary<string, Term>) =
+    new (intraComponentTypes : Type seq, subterms : Map<string, Term>) =
         ArchetypeId
             (let intraterms = intraComponentTypes |> Seq.map (fun compTy -> let compName = compTy.Name in (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
              intraterms @@ subterms)
