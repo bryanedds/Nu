@@ -127,22 +127,14 @@ type MyGameDispatcher () =
         let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> [])
 
         // create 4M movers (goal: 60FPS, current: 60FPS)
-        let world =
-            Seq.fold (fun world _ ->
-                let mover = ecs.EntityRef
-                let world = mover.Register { Active = true; Position = v2Zero } world
-                let world = mover.Register { Active = true; Velocity = v2One } world
-                world)
-                world (Seq.init 4000000 id)
+        let moverComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Velocity = v2Zero } :> obj]
+        let moverArchetypeId = ArchetypeId.make (moverComponents, Term.zero)
+        let world = ecs.RegisterEntities true 4000000 moverComponents moverArchetypeId world |> snd
 
         // create 4000 shakers
-        let world =
-            Seq.fold (fun world _ ->
-                let shaker = ecs.EntityRef
-                let world = shaker.Register { Active = true; Position = v2Zero } world
-                let world = shaker.Register { Active = true; Origin = v2Zero; Offset = v2One } world
-                world)
-                world (Seq.init 4000 id)
+        let shakerArchetypeId = ArchetypeId.make<Position, Shake> Term.zero
+        let shakerComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Origin = v2Zero; Offset = v2One } :> obj]
+        let world = ecs.RegisterEntities true 4000 shakerComponents shakerArchetypeId world |> snd
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ -> movers.Iterate (fun position velocity world ->
