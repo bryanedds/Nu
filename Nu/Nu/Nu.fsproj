@@ -75,7 +75,7 @@
     <Compile Include="KeyedArray.fs" />
     <Compile Include="SegmentedArray.fs" />
     <Compile Include="SegmentedList.fs" />
-    <Compile Include="Statements.fs" />
+    <Compile Include="Store.fs" />
     <Compile Include="Ecs.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Math.fs" />

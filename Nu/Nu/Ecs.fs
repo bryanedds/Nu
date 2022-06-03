@@ -2,74 +2,30 @@
 open System
 open System.Collections.Generic
 open System.IO
-open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Prime
 
-/// Allows a value to always pass as equal with another of its same type.
-type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
-    | AlwaysEqual of 'a
-    member this.Value = match this with AlwaysEqual value -> value
-    override this.GetHashCode () = 0
-    override this.Equals (that : obj) = that :? AlwaysEqual<'a>
+/// An Ecs event callback.
+type private EcsCallback<'d, 's> =
+    EcsEvent<'d, 's> -> Ecs -> 's -> 's
 
-/// The component that holds an entity's id.
-type [<NoEquality; NoComparison; Struct>] EntityId =
-    { mutable Active : bool
-      mutable EntityId : uint64 }
-    interface EntityId Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
+/// The type of Ecs event.
+and [<StructuralEquality; NoComparison; Struct>] EcsEventType =
+    | GlobalEvent
+    | EntityEvent of EntityRef : EntityRef
+    | ComponentEvent of EntityRef2 : EntityRef * ComponentEvent : string
 
-/// Describes a means to store components.
-type Store =
-    interface
-        abstract Length : int
-        abstract Name : string
-        abstract Item : int -> obj
-        abstract SetItem : int -> obj -> unit
-        abstract ZeroItem : int -> unit
-        abstract Grow : unit -> unit
-        abstract Read : int -> int -> FileStream -> unit
-        end
+/// An Ecs event.
+and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
+    { EventName : string
+      EventType : EcsEventType }
 
-/// Stores components.
-type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
-    let mutable arr = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve
-    member this.Length = arr.Length
-    member this.Name = name
-    member this.Item i = &arr.[i]
-    member this.SetItem index comp = arr.[index] <- comp
-    member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
-    member this.Grow () =
-        let length = int (single (max arr.Length 2) * 1.5f)
-        let arr' = Array.zeroCreate<'c> length
-        Array.Copy (arr, arr', arr.Length)
-        arr <- arr'
-    member this.Read index count (stream : FileStream) =
-        let compSize = sizeof<'c>
-        let comp = Unchecked.defaultof<'c> :> obj
-        let buffer = Array.zeroCreate<byte> compSize
-        let gch = GCHandle.Alloc (comp, GCHandleType.Pinned)
-        try 
-            let mutable index = index
-            for _ in 0 .. dec count do
-                stream.Read (buffer, 0, compSize) |> ignore<int>
-                Marshal.Copy (buffer, 0, gch.AddrOfPinnedObject (), compSize)
-                if index = arr.Length then this.Grow ()
-                arr.[index] <- comp :?> 'c
-                index <- inc index
-        finally gch.Free ()
-    interface Store with
-        member this.Length = this.Length
-        member this.Name = this.Name
-        member this.Item i = this.Item i :> obj
-        member this.SetItem index compObj = this.SetItem index (compObj :?> 'c)
-        member this.ZeroItem index = this.ZeroItem index
-        member this.Grow () = this.Grow ()
-        member this.Read index count stream = this.Read index count stream
+/// An Ecs event.
+and [<NoEquality; NoComparison>] EcsEvent<'d, 's> =
+    { EcsEventData : 'd }
 
 /// Data for an Ecs registration event.
-type [<NoEquality; NoComparison; Struct>] EcsChangeData =
+and [<NoEquality; NoComparison; Struct>] EcsChangeData =
     { EntityRef : EntityRef
       ComponentName : string }
 
@@ -78,15 +34,7 @@ and [<NoEquality; NoComparison; Struct>] EcsRegistrationData =
     { EntityRef : EntityRef
       ContextName : string }
 
-and [<StructuralEquality; NoComparison; Struct>] EcsEventType =
-    | GlobalEvent
-    | EntityEvent of EntityRef : EntityRef
-    | ComponentEvent of EntityRef2 : EntityRef * ComponentEvent : string
-
-and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
-    { EventName : string
-      EventType : EcsEventType }
-
+/// The out-of-box events for the Ecs construct.
 and [<AbstractClass; Sealed>] EcsEvents =
     static member Update = { EventName = "Update"; EventType = GlobalEvent }
     static member UpdateParallel = { EventName = "UpdateParallel"; EventType = GlobalEvent }
@@ -243,6 +191,11 @@ and [<StructuralEquality; NoComparison>] Subquery =
     static member singleton subqueryName subquery = Subquery.dict [(subqueryName, subquery)]
     static member zero = []
 
+/// An entity's place in an archetype.
+and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
+    { ArchetypeIndex : int
+      Archetype : Archetype }
+
 /// Identifies an archetype.
 and ArchetypeId (terms) =
 
@@ -262,8 +215,11 @@ and ArchetypeId (terms) =
              subterms |> Seq.iter (fun subtermEntry -> terms.Add (subtermEntry.Key, subtermEntry.Value))
              terms)
 
-    member this.Terms = terms :> IReadOnlyDictionary<_, _>
-    member this.HashCode = hashCode
+    member this.Terms =
+        terms :> IReadOnlyDictionary<_, _>
+
+    member this.HashCode =
+        hashCode
 
     member this.AddTerm termName term =
         let terms = Dictionary (terms, StringComparer.Ordinal)
@@ -590,27 +546,7 @@ and Archetype (archetypeId : ArchetypeId) =
         freeIndex <- inc lastIndex
         (firstIndex, lastIndex)
 
-/// Describes a means to query components.
-and IQuery =
-    interface
-        abstract Subqueries : Subquery seq
-        abstract TryRegisterArchetype : Archetype -> unit
-        end
-
-/// An entity's place in an archetype.
-and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
-    { ArchetypeIndex : int
-      Archetype : Archetype }
-
-/// An ECS event.
-and [<NoEquality; NoComparison>] EcsEvent<'d, 's> =
-    { EcsEventData : 'd }
-
-/// An ECS event callback.
-and private EcsCallback<'d, 's> =
-    EcsEvent<'d, 's> -> Ecs -> 's -> 's
-
-/// An archetype-based ECS construct.
+/// An archetype-based Ecs construct.
 and Ecs () =
 
     let mutable subscriptionIdCurrent = 0u
@@ -620,7 +556,7 @@ and Ecs () =
     let componentTypes = dictPlus<string, Type> StringComparer.Ordinal []
     let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let subscribedEntities = dictPlus<EntityRef, int> HashIdentity.Structural []
-    let queries = List<IQuery> ()
+    let queries = List<Query> ()
 
     let createArchetype (archetypeId : ArchetypeId) =
         let archetype = Archetype archetypeId
@@ -631,7 +567,7 @@ and Ecs () =
 
     member private this.AllocSubscriptionId () =
         subscriptionIdCurrent <- inc subscriptionIdCurrent
-        if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of ECS subscription ids not supported."
+        if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of Ecs subscription ids not supported."
         subscriptionIdCurrent
 
     member private this.BoxCallback<'d, 's> (callback : EcsCallback<'d, 's>) =
@@ -660,7 +596,7 @@ and Ecs () =
 
     member this.EntityRef =
         entityIdCurrent <- inc entityIdCurrent
-        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of ECS entity ids not supported."
+        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of Ecs entity ids not supported."
         { EntityId = entityIdCurrent; Ecs = this }
 
     member this.Publish<'d, 's> event (eventData : 'd) (state : 's) : 's =
@@ -802,7 +738,7 @@ and Ecs () =
     member this.UnregisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (entityRef : EntityRef) (state : 's) =
         this.UnregisterComponentPlus<'c, 's> typeof<'c>.Name entityRef state
 
-    member this.RegisterEntity skipEvents comps archetypeId state =
+    member this.RegisterEntity publishEvents comps archetypeId state =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
@@ -811,13 +747,13 @@ and Ecs () =
         let archetypeIndex = archetype.Register comps
         archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         let mutable state = state
-        if not skipEvents then
+        if not publishEvents then
             for compName in archetype.Stores.Keys do
                 let eventData = { EntityRef = entityRef; ContextName = compName }
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entityRef compName) eventData (state :> obj) :?> 's
         (entityRef, state)
 
-    member this.RegisterEntitiesPlus skipEvents count comps archetypeId state =
+    member this.RegisterEntitiesPlus publishEvents count comps archetypeId state =
 
         // get archetype
         let archetype =
@@ -833,7 +769,7 @@ and Ecs () =
             let archetypeIndex = archetype.Register comps
             archetypeSlots.Add (entityRef.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
             entityRefs.[i] <- entityRef
-            if not skipEvents then
+            if publishEvents then
                 for compName in archetype.Stores.Keys do
                     let eventData = { EntityRef = entityRef; ContextName = compName }
                     state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entityRef compName) eventData (state :> obj) :?> 's
@@ -841,9 +777,9 @@ and Ecs () =
         // fin
         (entityRefs, state)
 
-    member this.RegisterEntities skipEvents count comps archetypeId state =
+    member this.RegisterEntities publishEvents count comps archetypeId state =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
-        this.RegisterEntitiesPlus skipEvents count comps archetypeId state
+        this.RegisterEntitiesPlus publishEvents count comps archetypeId state
 
     member this.UnregisterEntity (entityRef : EntityRef) (state : 's) =
         match archetypeSlots.TryGetValue entityRef.EntityId with
@@ -858,7 +794,7 @@ and Ecs () =
             state
         | (false, _) -> state
 
-    member this.RegisterQuery<'q when 'q :> IQuery> (query : 'q) =
+    member this.RegisterQuery (query : Query) =
         for archetypeEntry in archetypes do
             query.TryRegisterArchetype archetypeEntry.Value
         queries.Add query
@@ -1150,3 +1086,412 @@ and [<StructuralEquality; NoComparison; Struct>] EntityRef =
         'c9 : struct and 'c9 :> 'c9 Component>
         (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
         this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, state, statement)
+
+and Query (compNames : string HashSet, subqueries : Subquery seq) =
+
+    let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
+    let subqueries = List subqueries
+
+    do
+        for compName in compNames do
+            subqueries.Add (Is (Constants.Ecs.IntraComponentPrefix + compName))
+
+    member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
+        match stores.TryGetValue compName with
+        | (true, store) -> store :?> 'c Store
+        | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+
+    member this.Subqueries =
+        seq subqueries
+
+    member this.TryRegisterArchetype (archetype : Archetype) =
+        if  not (archetypes.ContainsKey archetype.Id) &&
+            Subquery.evalMany archetype.Id.Terms subqueries then
+            archetypes.Add (archetype.Id, archetype)
+
+    member this.Iterate (compName, statement : Statement<'c, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, statement : Statement<'c, 'c2, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+                let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
+        fun state ->
+            let mutable state = state
+            for archetypeEntry in archetypes do
+                let archetype = archetypeEntry.Value
+                let archetypeId = archetype.Id
+                let length = archetype.Length
+                let stores = archetype.Stores
+                let store = this.IndexStore<'c> compName archetypeId stores
+                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+                let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
+                let store9 = this.IndexStore<'c9> comp9Name archetypeId stores
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
+                        i <- inc i
+            state
+
+    member this.Iterate<'c, 's when
+        'c : struct and 'c :> 'c Component>
+        (statement : Statement<'c, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        (statement : Statement<'c, 'c2, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        (statement : Statement<'c, 'c2, 'c3, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, statement)
+
+    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
+        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, statement)
+
+    static member byName
+        (compName, subqueries) =
+        Query (HashSet.singleton HashIdentity.Structural compName, subqueries)
+
+    static member byName
+        (compName, comp2Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], subqueries)
+
+    static member byName
+        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, subqueries) =
+        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], subqueries)
+
+    static member byType<'c when
+        'c : struct and 'c :> 'c Component>
+        subqueries =
+        Query (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, subqueries)
+
+    static member byType<'c, 'c2 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], subqueries)
+
+    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
+        'c : struct and 'c :> 'c Component and
+        'c2 : struct and 'c2 :> 'c2 Component and
+        'c3 : struct and 'c3 :> 'c3 Component and
+        'c4 : struct and 'c4 :> 'c4 Component and
+        'c5 : struct and 'c5 :> 'c5 Component and
+        'c6 : struct and 'c6 :> 'c6 Component and
+        'c7 : struct and 'c7 :> 'c7 Component and
+        'c8 : struct and 'c8 :> 'c8 Component and
+        'c9 : struct and 'c9 :> 'c9 Component>
+        subqueries =
+        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], subqueries)
