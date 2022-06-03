@@ -129,7 +129,7 @@ type MyGameDispatcher () =
         // create 1M movers the slow way
         let world =
             Seq.fold (fun world _ ->
-                let mover = ecs.EntityRef
+                let mover = ecs.Entity
                 let world = mover.Register { Active = true; Position = v2Zero } world
                 let world = mover.Register { Active = true; Velocity = v2One } world
                 world)
