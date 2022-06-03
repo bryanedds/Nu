@@ -138,12 +138,12 @@ type MyGameDispatcher () =
         // create 3M more movers (goal: 60FPS, current: 60FPS)
         let moverComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Velocity = v2One } :> obj]
         let moverArchetypeId = ArchetypeId.make (moverComponents, Term.zero)
-        let world = ecs.RegisterEntities false 3000000 moverComponents moverArchetypeId world |> snd
+        let world = ecs.RegisterEntities true 3000000 moverComponents moverArchetypeId world |> snd
 
         // create 4000 shakers
         let shakerArchetypeId = ArchetypeId.make<Position, Shake> Term.zero
         let shakerComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Origin = v2Zero; Offset = v2One } :> obj]
-        let world = ecs.RegisterEntities false 4000 shakerComponents shakerArchetypeId world |> snd
+        let world = ecs.RegisterEntities true 4000 shakerComponents shakerArchetypeId world |> snd
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ ->
