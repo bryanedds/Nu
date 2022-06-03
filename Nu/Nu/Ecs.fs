@@ -792,7 +792,6 @@ and Ecs () =
     member this.RegisterEntities elideEvents count comps archetypeId state =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
         this.RegisterEntitiesPlus elideEvents count comps archetypeId state
-        this.RegisterEntitiesPlus elideEvents count comps archetypeId state
 
     member this.RegisterQuery (query : Query) =
         for archetypeEntry in archetypes do
