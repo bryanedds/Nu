@@ -75,7 +75,7 @@ and [<StructuralEquality; NoComparison>] Term =
     static member singleton termName term = Term.dict [(termName, term)]
     static member zero = Term.dict []
 
-and [<StructuralEquality; NoComparison>] Subquery =
+and [<NoEquality; NoComparison>] Subquery =
     | Is of string
     | Of of string * string
     | ByName of string * string
@@ -85,6 +85,7 @@ and [<StructuralEquality; NoComparison>] Subquery =
     | Ge of string * Term
     | Lt of string * Term
     | Le of string * Term
+    | If of string * (Term -> bool)
     | Not of Subquery
     | And of Subquery list
     | Or of Subquery list
@@ -195,6 +196,10 @@ and [<StructuralEquality; NoComparison>] Subquery =
         | Le (termName, term2) ->
             match terms.TryGetValue termName with
             | (true, term) -> Subquery.lesserEqual term term2
+            | (false, _) -> false
+        | If (termName, pred) ->
+            match terms.TryGetValue termName with
+            | (true, term) -> pred term
             | (false, _) -> false
         | Not subquery ->
             not (Subquery.eval terms subquery)
