@@ -718,8 +718,7 @@ and Ecs () =
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (state :> obj) :?> 's
 
     member this.RegisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (entity : EcsEntity) (state : 's) =
-        let compName = typeof<'c>.Name
-        this.RegisterComponentPlus<'c, 's> compName comp (entity : EcsEntity) state
+        this.RegisterComponentPlus<'c, 's> (typeof<'c>.Name) comp (entity : EcsEntity) state
 
     member this.UnregisterComponentPlus<'c, 's when 'c : struct and 'c :> 'c Component> compName (entity : EcsEntity) (state : 's) =
         match archetypeSlots.TryGetValue entity.EntityId with
@@ -738,7 +737,7 @@ and Ecs () =
     member this.UnregisterComponent<'c, 's when 'c : struct and 'c :> 'c Component> (entity : EcsEntity) (state : 's) =
         this.UnregisterComponentPlus<'c, 's> typeof<'c>.Name entity state
 
-    member this.RegisterEntity publishEvents comps archetypeId state =
+    member this.RegisterEntity elideEvents comps archetypeId state =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
@@ -747,13 +746,26 @@ and Ecs () =
         let archetypeIndex = archetype.Register comps
         archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         let mutable state = state
-        if not publishEvents then
+        if not elideEvents then
             for compName in archetype.Stores.Keys do
                 let eventData = { EcsEntity = entity; ComponentName = compName }
                 state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (state :> obj) :?> 's
         (entity, state)
 
-    member this.RegisterEntitiesPlus publishEvents count comps archetypeId state =
+    member this.UnregisterEntity (entity : EcsEntity) (state : 's) =
+        match archetypeSlots.TryGetValue entity.EntityId with
+        | (true, archetypeSlot) ->
+            let archetype = archetypeSlot.Archetype
+            let mutable state = state
+            if subscribedEntities.ContainsKey entity then
+                for compName in archetype.Stores.Keys do
+                    let eventData = { EcsEntity = entity; ComponentName = compName }
+                    state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (state :> obj) :?> 's
+            archetype.Unregister archetypeSlot.ArchetypeIndex
+            state
+        | (false, _) -> state
+
+    member this.RegisterEntitiesPlus elideEvents count comps archetypeId state =
 
         // get archetype
         let archetype =
@@ -769,7 +781,7 @@ and Ecs () =
             let archetypeIndex = archetype.Register comps
             archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
             entitys.[i] <- entity
-            if publishEvents then
+            if not elideEvents then
                 for compName in archetype.Stores.Keys do
                     let eventData = { EcsEntity = entity; ComponentName = compName }
                     state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (state :> obj) :?> 's
@@ -777,22 +789,10 @@ and Ecs () =
         // fin
         (entitys, state)
 
-    member this.RegisterEntities publishEvents count comps archetypeId state =
+    member this.RegisterEntities elideEvents count comps archetypeId state =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
-        this.RegisterEntitiesPlus publishEvents count comps archetypeId state
-
-    member this.UnregisterEntity (entity : EcsEntity) (state : 's) =
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
-            let archetype = archetypeSlot.Archetype
-            let mutable state = state
-            if subscribedEntities.ContainsKey entity then
-                for compName in archetype.Stores.Keys do
-                    let eventData = { EcsEntity = entity; ComponentName = compName }
-                    state <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (state :> obj) :?> 's
-            archetype.Unregister archetypeSlot.ArchetypeIndex
-            state
-        | (false, _) -> state
+        this.RegisterEntitiesPlus elideEvents count comps archetypeId state
+        this.RegisterEntitiesPlus elideEvents count comps archetypeId state
 
     member this.RegisterQuery (query : Query) =
         for archetypeEntry in archetypes do
