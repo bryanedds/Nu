@@ -1,11 +1,12 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
-namespace Nu
+namespace Nu.Ecs
 open System
 open System.IO
 open System.Runtime.InteropServices
 open Prime
+open Nu
 
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =

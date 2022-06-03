@@ -1,9 +1,10 @@
-﻿namespace Nu
+﻿namespace Nu.Ecs
 open System
 open System.Collections.Generic
 open System.IO
 open System.Threading.Tasks
 open Prime
+open Nu
 
 /// An Ecs event callback.
 type private EcsCallback<'d, 's> =
@@ -48,14 +49,15 @@ and [<AbstractClass; Sealed>] EcsEvents =
 and [<StructuralEquality; NoComparison>] Term =
     | Z of int
     | R of single
-    | C of IComparable
-    | Obj of obj
+    | Cmp of IComparable
+    | Arb of obj
     | Tag
     | Label of string
     | Labels of string HashSet
-    | Entity of EcsEntity
+    | EcsEntity of EcsEntity
     | Intra of string * Type
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
+    | Terms of Term list
     static member equals (this : Term) (that : Term) = this.Equals that
     static member equalsMany (lefts : IReadOnlyDictionary<string, Term>) (rights : IReadOnlyDictionary<string, Term>) =
         if lefts.Count = rights.Count then
@@ -75,7 +77,7 @@ and [<StructuralEquality; NoComparison>] Term =
 
 and [<StructuralEquality; NoComparison>] Subquery =
     | Is of string
-    | Any of string * string
+    | Of of string * string
     | ByName of string * string
     | ByType of string * Type
     | Eq of string * Term
@@ -91,18 +93,66 @@ and [<StructuralEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (Z z, Z z2) -> z = z2
         | (R r, R r2) -> r = r2
-        | (C c, C c2) -> c = c2
-        | (Obj o, Obj o2) -> objEq o o2
+        | (Cmp c, Cmp c2) -> c = c2
+        | (Arb o, Arb o2) -> objEq o o2
         | (Label label, Label label2) -> strEq label label2
         | (Labels labels, Labels labels2) -> labels.SetEquals labels2
-        | (Entity entity, Entity entity2) -> genEq entity entity2
+        | (EcsEntity entity, EcsEntity entity2) -> genEq entity entity2
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.equalTo terms terms2
+            else false
         | _ -> false
+
+    static member private greaterThan term term2 =
+        match (term, term2) with
+        | (Z z, Z z2) -> z > z2
+        | (R r, R r2) -> r > r2
+        | (Cmp c, Cmp c2) -> c.CompareTo c2 > 0
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.greaterThan terms terms2
+            else false
+        | (_, _) -> false
+
+    static member private greaterEqual term term2 =
+        match (term, term2) with
+        | (Z z, Z z2) -> z >= z2
+        | (R r, R r2) -> r >= r2
+        | (Cmp c, Cmp c2) -> c.CompareTo c2 >= 0
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.greaterEqual terms terms2
+            else false
+        | (_, _) -> false
+
+    static member private lesserThan term term2 =
+        match (term, term2) with
+        | (Z z, Z z2) -> z < z2
+        | (R r, R r2) -> r < r2
+        | (Cmp c, Cmp c2) -> c.CompareTo c2 < 0
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.lesserThan terms terms2
+            else false
+        | (_, _) -> false
+
+    static member private lesserEqual term term2 =
+        match (term, term2) with
+        | (Z z, Z z2) -> z <= z2
+        | (R r, R r2) -> r <= r2
+        | (Cmp c, Cmp c2) -> c.CompareTo c2 <= 0
+        | (Terms terms, Terms terms2) ->
+            if terms.Length = terms2.Length
+            then List.forall2 Subquery.lesserEqual terms terms2
+            else false
+        | (_, _) -> false
 
     static member eval (terms : IReadOnlyDictionary<string, Term>) (subquery : Subquery) : bool =
         match subquery with
         | Is termName ->
             terms.ContainsKey termName
-        | Any (termName, label2) ->
+        | Of (termName, label2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
@@ -123,49 +173,28 @@ and [<StructuralEquality; NoComparison>] Subquery =
             | (true, term) ->
                 match term with
                 | Intra (_, ty)  -> refEq ty ty2
-                | Extra (_, ty, _)  -> refEq ty ty2
+                | Extra (_, ty, _) -> refEq ty ty2
                 | _ -> false
             | (false, _) -> false
         | Eq (termName, term2) ->
             match terms.TryGetValue termName with
-            | (true, term) ->
-                Subquery.equalTo term term2
+            | (true, term) -> Subquery.equalTo term term2
             | (false, _) -> false
         | Gt (termName, term2) ->
             match terms.TryGetValue termName with
-            | (true, term) ->
-                match (term, term2) with
-                | (Z z, Z z2) -> z > z2
-                | (R r, R r2) -> r > r2
-                | (C c, C c2) -> c.CompareTo c2 > 0
-                | (_, _) -> false
+            | (true, term) -> Subquery.greaterThan term term2
             | (false, _) -> false
         | Ge (termName, term2) ->
             match terms.TryGetValue termName with
-            | (true, term) ->
-                match (term, term2) with
-                | (Z z, Z z2) -> z >= z2
-                | (R r, R r2) -> r >= r2
-                | (C c, C c2) -> c.CompareTo c2 >= 0
-                | (_, _) -> false
+            | (true, term) -> Subquery.greaterEqual term term2
             | (false, _) -> false
         | Lt (termName, term2) ->
             match terms.TryGetValue termName with
-            | (true, term) ->
-                match (term, term2) with
-                | (Z z, Z z2) -> z < z2
-                | (R r, R r2) -> r < r2
-                | (C c, C c2) -> c.CompareTo c2 < 0
-                | (_, _) -> false
+            | (true, term) -> Subquery.lesserThan term term2
             | (false, _) -> false
         | Le (termName, term2) ->
             match terms.TryGetValue termName with
-            | (true, term) ->
-                match (term, term2) with
-                | (Z z, Z z2) -> z <= z2
-                | (R r, R r2) -> r <= r2
-                | (C c, C c2) -> c.CompareTo c2 <= 0
-                | (_, _) -> false
+            | (true, term) -> Subquery.lesserEqual term term2
             | (false, _) -> false
         | Not subquery ->
             not (Subquery.eval terms subquery)

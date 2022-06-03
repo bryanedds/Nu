@@ -306,5 +306,5 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Angles <- angles
         transform
 
-    interface Transform Component with
+    interface Transform Ecs.Component with
         member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask

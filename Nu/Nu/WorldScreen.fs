@@ -137,8 +137,8 @@ module WorldScreenModule =
             let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
             let world = ecs.Publish EcsEvents.Update () world
 #else
-            let world = ecs.Publish EcsEvents.Update () world
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
+            let world = ecs.Publish Ecs.EcsEvents.Update () world
+            let updateTask = ecs.PublishAsync Ecs.EcsEvents.UpdateParallel ()
 #endif
 
             // update via dispatcher
@@ -160,8 +160,8 @@ module WorldScreenModule =
             let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
             let world = ecs.Publish EcsEvents.PostUpdate () world
 #else
-            let world = ecs.Publish EcsEvents.PostUpdate () world
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
+            let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
+            let postUpdateTask = ecs.PublishAsync Ecs.EcsEvents.PostUpdateParallel ()
 #endif
                 
             // post-update via dispatcher
@@ -179,7 +179,7 @@ module WorldScreenModule =
         
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Actualize () world
+            let world = ecs.Publish Ecs.EcsEvents.Actualize () world
 
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
