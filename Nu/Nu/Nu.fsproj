@@ -77,7 +77,6 @@
     <Compile Include="SegmentedList.fs" />
     <Compile Include="Store.fs" />
     <Compile Include="Ecs.fs" />
-    <Compile Include="Query.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Quadtree.fs" />

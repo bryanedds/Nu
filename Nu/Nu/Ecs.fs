@@ -78,17 +78,24 @@ and [<StructuralEquality; NoComparison>] Term =
 and [<NoEquality; NoComparison>] Subquery =
     | Is of string
     | Of of string * string
-    | ByName of string * string
-    | ByType of string * Type
     | Eq of string * Term
     | Gt of string * Term
     | Ge of string * Term
     | Lt of string * Term
     | Le of string * Term
     | If of string * (Term -> bool)
-    | Not of Subquery
-    | And of Subquery list
     | Or of Subquery list
+    | And of Subquery list
+    | Not of Subquery
+    | It of Subquery * Subquery
+    | Let of string * Subquery * Subquery
+    | Literal of Term
+    | At of string * int
+    | Head of string
+    | Tail of string
+    | ByName of string * string
+    | ByType of string * Type
+    | Analyze of (IReadOnlyDictionary<string, Term> -> bool)
 
     static member private equalTo term term2 =
         match (term, term2) with
@@ -149,7 +156,43 @@ and [<NoEquality; NoComparison>] Subquery =
             else false
         | (_, _) -> false
 
-    static member eval (terms : IReadOnlyDictionary<string, Term>) (subquery : Subquery) : bool =
+    static member private tryEvalTerm (terms : Map<string, Term>) subquery =
+        match subquery with
+        | Literal term ->
+            ValueSome term
+        | Head termName ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Terms terms ->
+                    match terms with
+                    | head :: _ -> ValueSome head
+                    | _ -> ValueNone
+                | _ -> ValueNone
+            | (false, _) -> ValueNone
+        | Tail termName ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Terms terms ->
+                    match terms with
+                    | _ :: tail -> ValueSome (Terms tail)
+                    | _ -> ValueNone
+                | _ -> ValueNone
+            | (false, _) -> ValueNone
+        | At (termName, index) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Terms terms ->
+                    match Seq.tryItem index terms with
+                    | Some item -> ValueSome item
+                    | None -> ValueNone
+                | _ -> ValueNone
+            | (false, _) -> ValueNone
+        | _ -> ValueNone
+
+    static member eval (terms : Map<string, Term>) (subquery : Subquery) : bool =
         match subquery with
         | Is termName ->
             terms.ContainsKey termName
@@ -159,22 +202,6 @@ and [<NoEquality; NoComparison>] Subquery =
                 match term with
                 | Label label -> strEq label label2
                 | Labels labels -> labels.Contains label2
-                | _ -> false
-            | (false, _) -> false
-        | ByName (termName, compName2) ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Intra (compName, _)  -> strEq compName compName2
-                | Extra (compName, _, _)  -> strEq compName compName2
-                | _ -> false
-            | (false, _) -> false
-        | ByType (termName, ty2) ->
-            match terms.TryGetValue termName with
-            | (true, term) ->
-                match term with
-                | Intra (_, ty)  -> refEq ty ty2
-                | Extra (_, ty, _) -> refEq ty ty2
                 | _ -> false
             | (false, _) -> false
         | Eq (termName, term2) ->
@@ -201,14 +228,46 @@ and [<NoEquality; NoComparison>] Subquery =
             match terms.TryGetValue termName with
             | (true, term) -> pred term
             | (false, _) -> false
+        | Or subqueries ->
+            List.exists (Subquery.eval terms) subqueries
         | Not subquery ->
             not (Subquery.eval terms subquery)
         | And subqueries ->
             List.forall (Subquery.eval terms) subqueries
-        | Or subqueries ->
-            List.exists (Subquery.eval terms) subqueries
+        | Let (bindingName, subquery, subquery2) ->
+            match Subquery.tryEvalTerm terms subquery with
+            | ValueSome term ->
+                let terms = Map.add bindingName term terms
+                Subquery.eval terms subquery2
+            | ValueNone -> false
+        | It (subquery, subquery2) ->
+            match Subquery.tryEvalTerm terms subquery with
+            | ValueSome term ->
+                let terms = Map.add "it" term terms
+                Subquery.eval terms subquery2
+            | ValueNone -> false
+        | Literal _ | At (_, _) | Head _ | Tail _ ->
+            false
+        | ByName (termName, compName2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Intra (compName, _)  -> strEq compName compName2
+                | Extra (compName, _, _)  -> strEq compName compName2
+                | _ -> false
+            | (false, _) -> false
+        | ByType (termName, ty2) ->
+            match terms.TryGetValue termName with
+            | (true, term) ->
+                match term with
+                | Intra (_, ty)  -> refEq ty ty2
+                | Extra (_, ty, _) -> refEq ty ty2
+                | _ -> false
+            | (false, _) -> false
+        | Analyze analyzer ->
+            analyzer terms
 
-    static member evalMany (terms : IReadOnlyDictionary<string, Term>) (subqueries : Subquery seq) =
+    static member evalMany (terms : Map<string, Term>) (subqueries : Subquery seq) =
         let mutable result = true
         let mutable subqueryEnr = subqueries.GetEnumerator ()
         while result && subqueryEnr.MoveNext () do
@@ -227,49 +286,41 @@ and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
       Archetype : Archetype }
 
 /// Identifies an archetype.
-and ArchetypeId (terms) =
+and ArchetypeId (terms : Map<string, Term>) =
 
-    let hashCode = Dictionary.hash terms // OPTIMIZATION: hash is cached for speed
+    let hashCode = hash terms // OPTIMIZATION: hash is cached for speed
 
-    new (intraComponents, subterms : Dictionary<string, Term>) =
+    new (intraComponents, subterms : Map<string, Term>) =
         ArchetypeId
-            (let intraterms = Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) intraComponents
-             let terms = dictPlus StringComparer.Ordinal intraterms
-             subterms |> Seq.iter (fun subtermEntry -> terms.Add (subtermEntry.Key, subtermEntry.Value))
-             terms)
+            (let intraterms = intraComponents|> Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
+             intraterms @@ subterms)
 
     new (intraComponentTypes : Type seq, subterms : Dictionary<string, Term>) =
         ArchetypeId
-            (let intraterms = intraComponentTypes |> Seq.map (fun compTy -> let compName = compTy.Name in (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy)))
-             let terms = dictPlus StringComparer.Ordinal intraterms
-             subterms |> Seq.iter (fun subtermEntry -> terms.Add (subtermEntry.Key, subtermEntry.Value))
-             terms)
+            (let intraterms = intraComponentTypes |> Seq.map (fun compTy -> let compName = compTy.Name in (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
+             intraterms @@ subterms)
 
-    member this.Terms =
-        terms :> IReadOnlyDictionary<_, _>
+    member this.Terms : Map<string, Term> =
+        terms
 
     member this.HashCode =
         hashCode
 
     member this.AddTerm termName term =
-        let terms = Dictionary (terms, StringComparer.Ordinal)
-        terms.[termName] <- term
-        ArchetypeId terms
+        ArchetypeId (Map.add termName term terms)
 
     member this.RemoveTerm termName =
-        let terms = Dictionary (terms, StringComparer.Ordinal)
-        terms.Remove termName |> ignore<bool>
-        ArchetypeId terms
+        ArchetypeId (Map.remove termName terms)
 
     static member equals (left : ArchetypeId) (right : ArchetypeId) =
         left.HashCode = right.HashCode &&
         Term.equalsMany left.Terms right.Terms
 
     static member singleton termName term =
-        ArchetypeId (Dictionary.singleton StringComparer.Ordinal termName term)
+        ArchetypeId (Map.singleton termName term)
 
     static member zero =
-        ArchetypeId (dictPlus StringComparer.Ordinal [])
+        ArchetypeId Map.empty
 
     override this.GetHashCode () =
         hashCode
