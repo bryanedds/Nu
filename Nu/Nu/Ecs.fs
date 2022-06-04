@@ -82,12 +82,6 @@ and ArchetypeId (terms : Map<string, Term>) =
         left.HashCode = right.HashCode &&
         Term.equalsMany left.Terms right.Terms
 
-    static member singleton termName term =
-        ArchetypeId (Map.singleton termName term)
-
-    static member zero =
-        ArchetypeId Map.empty
-
     override this.GetHashCode () =
         hashCode
 
@@ -106,36 +100,48 @@ and ArchetypeId (terms : Map<string, Term>) =
         let intraComponents = Seq.map (fun (compName, compValue) -> (compName, getType compValue)) intraComponents
         ArchetypeId (intraComponents, subterms)
 
+    static member make ?subterms =
+        ArchetypeId (([] : (string * Type) list), Option.getOrDefault Map.empty subterms)
+
     static member make<'c when
         'c : struct and 'c :> 'c Component>
-        (compName, subterms) =
-        ArchetypeId ([(compName, typeof<'c>)], subterms)
+        (?compName, ?subterms) =
+        ArchetypeId
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
-        (compName, comp2Name, subterms) =
-        ArchetypeId ([(compName, typeof<'c>); (comp2Name, typeof<'c2>)], subterms)
+        (?compName, ?comp2Name, ?subterms) =
+        ArchetypeId
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
-        (compName, comp2Name, comp3Name, subterms) =
-        ArchetypeId ([(compName, typeof<'c>); (comp2Name, typeof<'c2>); (comp3Name, typeof<'c3>)], subterms)
+        (?compName, ?comp2Name, ?comp3Name, ?subterms) =
+        ArchetypeId
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component>
-        (compName, comp2Name, comp3Name, comp4Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)],
-             subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
@@ -143,14 +149,14 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component>
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)
-              (comp5Name, typeof<'c5>)],
-             subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
@@ -159,15 +165,15 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component>
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)
-              (comp5Name, typeof<'c5>)
-              (comp6Name, typeof<'c6>)],
-             subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
@@ -177,16 +183,16 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component>
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)
-              (comp5Name, typeof<'c5>)
-              (comp6Name, typeof<'c6>)
-              (comp7Name, typeof<'c7>)],
-             subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
@@ -197,17 +203,17 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component>
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)
-              (comp5Name, typeof<'c5>)
-              (comp6Name, typeof<'c6>)
-              (comp7Name, typeof<'c7>)
-              (comp8Name, typeof<'c8>)],
-             subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)
+              (Option.getOrDefault typeof<'c8>.Name comp8Name, typeof<'c8>)],
+             Option.getOrDefault Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
@@ -219,99 +225,18 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component and
         'c9 : struct and 'c9 :> 'c9 Component>
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, subterms) =
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subterms) =
         ArchetypeId
-            ([(compName, typeof<'c>)
-              (comp2Name, typeof<'c2>)
-              (comp3Name, typeof<'c3>)
-              (comp4Name, typeof<'c4>)
-              (comp5Name, typeof<'c5>)
-              (comp6Name, typeof<'c6>)
-              (comp7Name, typeof<'c7>)
-              (comp8Name, typeof<'c8>)
-              (comp9Name, typeof<'c9>)],
-             subterms)
-
-    static member make<'c when
-        'c : struct and 'c :> 'c Component>
-        subterms =
-        ArchetypeId ([typeof<'c>], subterms)
-
-    static member make<'c, 'c2 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>], subterms)
-
-    static member make<'c, 'c2, 'c3 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4, 'c5 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>; typeof<'c8>], subterms)
-
-    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component and
-        'c9 : struct and 'c9 :> 'c9 Component>
-        subterms =
-        ArchetypeId ([typeof<'c>; typeof<'c2>; typeof<'c3>; typeof<'c4>; typeof<'c5>; typeof<'c6>; typeof<'c7>; typeof<'c8>; typeof<'c9>], subterms)
+            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
+              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)
+              (Option.getOrDefault typeof<'c8>.Name comp8Name, typeof<'c8>)
+              (Option.getOrDefault typeof<'c9>.Name comp9Name, typeof<'c9>)],
+             Option.getOrDefault Map.empty subterms)
 
 /// A collection of component stores.
 and Archetype (archetypeId : ArchetypeId) =
@@ -534,7 +459,7 @@ and Ecs () =
             let archetypeId = archetypeSlot.Archetype.Id.AddTerm termName term
             this.RegisterEntityInternal comps archetypeId entity
         | (false, _) ->
-            let archetypeId = ArchetypeId.singleton termName term
+            let archetypeId = ArchetypeId.make (Map.singleton termName term)
             let comps = dictPlus StringComparer.Ordinal []
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             this.RegisterEntityInternal comps archetypeId entity
@@ -558,7 +483,7 @@ and Ecs () =
             let eventData = { EcsEntity = entity; ComponentName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (state :> obj) :?> 's
         | (false, _) ->
-            let archetypeId = ArchetypeId.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>))
+            let archetypeId = ArchetypeId (Map.singleton (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>)))
             let comps = Dictionary.singleton StringComparer.Ordinal compName (comp :> obj)
             this.RegisterEntityInternal comps archetypeId entity
             let eventData = { EcsEntity = entity; ComponentName = compName }
@@ -742,203 +667,154 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
     member this.Change<'c, 's when 'c : struct and 'c :> 'c Component> (comp : 'c) (state : 's) =
         this.ChangePlus<'c, 's> typeof<'c>.Name comp state
 
-    member this.Frame (compName, state : 's, statement : Statement<'c, 's>) =
+    member this.Frame (statement : Statement<'c, 's>, ?compName, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], state)
+        statement.Invoke (&store.[i], Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, state : 's, statement : Statement<'c, 'c2, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 's>,
+         ?compName, ?comp2Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
-        let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
-    member this.Frame (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let archetype = archetypeSlot.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> compName archetypeId stores
-        let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-        let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-        let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-        let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-        let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-        let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
-        let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
-        let store9 = this.IndexStore<'c9> comp9Name archetypeId stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+        let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
         let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
-
-    member this.Frame<'c, 's when
-        'c : struct and 'c :> 'c Component>
-        (state : 's, statement : Statement<'c, 's>) =
-        this.Frame (typeof<'c>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component>
-        (state : 's, statement : Statement<'c, 'c2, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, state, statement)
-
-    member this.Frame<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component and
-        'c9 : struct and 'c9 :> 'c9 Component>
-        (state : 's, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) =
-        this.Frame (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, state, statement)
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
 and Query (compNames : string HashSet, subqueries : Subquery seq) =
 
@@ -962,241 +838,287 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             Subquery.evalMany archetype.Id.Terms subqueries then
             archetypes.Add (archetype.Id, archetype)
 
-    member this.Iterate (compName, statement : Statement<'c, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, state)
-                        i <- inc i
-            state
+    member this.Iterate (statement : Statement<'c, 's>, ?compName, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, statement : Statement<'c, 'c2, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 's>,
+         ?compName, ?comp2Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, statement : Statement<'c, 'c2, 'c3, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, statement : Statement<'c, 'c2, 'c3, 'c4, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
-                let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
-        fun state ->
-            let mutable state = state
-            for archetypeEntry in archetypes do
-                let archetype = archetypeEntry.Value
-                let archetypeId = archetype.Id
-                let length = archetype.Length
-                let stores = archetype.Stores
-                let store = this.IndexStore<'c> compName archetypeId stores
-                let store2 = this.IndexStore<'c2> comp2Name archetypeId stores
-                let store3 = this.IndexStore<'c3> comp3Name archetypeId stores
-                let store4 = this.IndexStore<'c4> comp4Name archetypeId stores
-                let store5 = this.IndexStore<'c5> comp5Name archetypeId stores
-                let store6 = this.IndexStore<'c6> comp6Name archetypeId stores
-                let store7 = this.IndexStore<'c7> comp7Name archetypeId stores
-                let store8 = this.IndexStore<'c8> comp8Name archetypeId stores
-                let store9 = this.IndexStore<'c9> comp9Name archetypeId stores
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
-                        i <- inc i
-            state
+    member this.Iterate
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) : 's =
+        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    state <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
+                    i <- inc i
+        state
 
-    member this.Iterate<'c, 's when
+    static member make
+        (?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural [],
+             Option.getOrDefault [] subqueries)
+
+    static member make<'c when
         'c : struct and 'c :> 'c Component>
-        (statement : Statement<'c, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, statement)
+        (?compName, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 's when
+    static member make<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
-        (statement : Statement<'c, 'c2, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, statement)
+        (?compName, ?comp2Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 's when
+    static member make<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
-        (statement : Statement<'c, 'c2, 'c3, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 's when
+    static member make<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 's when
+    static member make<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name
+                 Option.getOrDefault typeof<'c5>.Name comp5Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's when
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name
+                 Option.getOrDefault typeof<'c5>.Name comp5Name
+                 Option.getOrDefault typeof<'c6>.Name comp6Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's when
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -1204,10 +1126,19 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name
+                 Option.getOrDefault typeof<'c5>.Name comp5Name
+                 Option.getOrDefault typeof<'c6>.Name comp6Name
+                 Option.getOrDefault typeof<'c7>.Name comp7Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's when
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -1216,10 +1147,20 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, statement)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name
+                 Option.getOrDefault typeof<'c5>.Name comp5Name
+                 Option.getOrDefault typeof<'c6>.Name comp6Name
+                 Option.getOrDefault typeof<'c7>.Name comp7Name
+                 Option.getOrDefault typeof<'c8>.Name comp8Name],
+             Option.getOrDefault [] subqueries)
 
-    member this.Iterate<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
+    static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
@@ -1229,122 +1170,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component and
         'c9 : struct and 'c9 :> 'c9 Component>
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>) : 's -> 's =
-        this.Iterate (typeof<'c>.Name, typeof<'c2>.Name, typeof<'c3>.Name, typeof<'c4>.Name, typeof<'c5>.Name, typeof<'c6>.Name, typeof<'c7>.Name, typeof<'c8>.Name, typeof<'c9>.Name, statement)
-
-    static member byName
-        (compName, subqueries) =
-        Query (HashSet.singleton HashIdentity.Structural compName, subqueries)
-
-    static member byName
-        (compName, comp2Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name], subqueries)
-
-    static member byName
-        (compName, comp2Name, comp3Name, comp4Name, comp5Name, comp6Name, comp7Name, comp8Name, comp9Name, subqueries) =
-        Query (hashSetPlus HashIdentity.Structural [compName; comp2Name; comp3Name; comp4Name; comp5Name; comp6Name; comp7Name; comp8Name; comp9Name], subqueries)
-
-    static member byType<'c when
-        'c : struct and 'c :> 'c Component>
-        subqueries =
-        Query (HashSet.singleton HashIdentity.Structural typeof<'c>.Name, subqueries)
-
-    static member byType<'c, 'c2 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4, 'c5 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name], subqueries)
-
-    static member byType<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
-        'c : struct and 'c :> 'c Component and
-        'c2 : struct and 'c2 :> 'c2 Component and
-        'c3 : struct and 'c3 :> 'c3 Component and
-        'c4 : struct and 'c4 :> 'c4 Component and
-        'c5 : struct and 'c5 :> 'c5 Component and
-        'c6 : struct and 'c6 :> 'c6 Component and
-        'c7 : struct and 'c7 :> 'c7 Component and
-        'c8 : struct and 'c8 :> 'c8 Component and
-        'c9 : struct and 'c9 :> 'c9 Component>
-        subqueries =
-        Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], subqueries)
+        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subqueries) =
+        Query
+            (hashSetPlus HashIdentity.Structural
+                [Option.getOrDefault typeof<'c>.Name compName
+                 Option.getOrDefault typeof<'c2>.Name comp2Name
+                 Option.getOrDefault typeof<'c3>.Name comp3Name
+                 Option.getOrDefault typeof<'c4>.Name comp4Name
+                 Option.getOrDefault typeof<'c5>.Name comp5Name
+                 Option.getOrDefault typeof<'c6>.Name comp6Name
+                 Option.getOrDefault typeof<'c7>.Name comp7Name
+                 Option.getOrDefault typeof<'c8>.Name comp8Name
+                 Option.getOrDefault typeof<'c9>.Name comp9Name],
+             Option.getOrDefault [] subqueries)
