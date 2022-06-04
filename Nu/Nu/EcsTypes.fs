@@ -220,8 +220,8 @@ and [<NoEquality; NoComparison>] Subquery =
     | At of Subquery * Subquery
     | Head of Subquery
     | Tail of Subquery
-    | ByName of string * string
-    | ByType of string * Type
+    | Named of string * string
+    | Typed of string * Type
     | Fun of (Map<string, Term> -> Term)
     | Subqueries of Subquery list
 
@@ -457,7 +457,7 @@ and [<NoEquality; NoComparison>] Subquery =
                 | _ -> Err "Invalid Tail option; non-empty Terms required."
             | Err _ as err -> err
             | _ -> Err "Invalid Tail argument; Terms required."
-        | ByName (termName, compName2) ->
+        | Named (termName, compName2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
@@ -466,7 +466,7 @@ and [<NoEquality; NoComparison>] Subquery =
                 | Err _ as err -> err
                 | _ -> Err "Invalid ByName target; Intra or Extra required."
             | (false, _) -> Err "Non-existent term."
-        | ByType (termName, ty2) ->
+        | Typed (termName, ty2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
@@ -560,9 +560,13 @@ and [<NoEquality; NoComparison>] Subquery =
             | ("op_LessThanOrEqual", [arg; arg2]) -> Le (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_GreaterThan", [arg; arg2]) -> Gt (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_GreaterThanOrEqual", [arg; arg2]) -> Ge (Subquery.unquote arg, Subquery.unquote arg2)
-            | ("isType", [arg]) ->
+            | ("named", [arg; arg2]) ->
+                match (arg, arg2) with
+                | (Patterns.Value (:? string as varName, _), Patterns.Value (:? string as compName, _)) -> Named (varName, compName)
+                | (_, _) -> failwith "Invalid IsType arguments."
+            | ("typed", [arg]) ->
                 match (arg, info.GetGenericArguments ()) with
-                | (Patterns.Value (:? string as varName, _), [|ty|]) -> ByType (varName, ty)
+                | (Patterns.Value (:? string as varName, _), [|ty|]) -> Typed (varName, ty)
                 | (_, _) -> failwith "Invalid IsType arguments."
             | _ -> failwith "Unsupported call."
         | _ -> failwith "Unsupport Subquery expression."
@@ -579,7 +583,8 @@ module Subquery =
         let head (_ : 'a array) = Unchecked.defaultof<'a>
         let tail (_ : 'a array) = Unchecked.defaultof<'a array>
         let intersects (_ : 'a) (_ : 'a) = Unchecked.defaultof<bool>
-        let isType<'c when 'c : struct and 'c :> 'c Component> (_ : string) = Unchecked.defaultof<bool>
+        let named (_ : string) = Unchecked.defaultof<bool>
+        let typed<'c when 'c : struct and 'c :> 'c Component> (_ : string) = Unchecked.defaultof<bool>
 
 [<RequireQualifiedAccess>]
 module Fun =
