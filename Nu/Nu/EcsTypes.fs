@@ -11,18 +11,19 @@ open FSharp.Quotations
 open Prime
 open Nu
 
-/// The base component type of an Ecs.
-type Component<'c when 'c : struct and 'c :> 'c Component> =
-    interface
-        abstract Active : bool with get, set
-        end
-
 /// Allows a value to always pass as equal with another of its same type.
+/// TODO: move this elsewhere?
 type [<CustomEquality; NoComparison; Struct>] 'a AlwaysEqual =
     | AlwaysEqual of 'a
     member this.Value = match this with AlwaysEqual value -> value
     override this.GetHashCode () = 0
     override this.Equals (that : obj) = that :? AlwaysEqual<'a>
+
+/// The base component type of an Ecs.
+type Component<'c when 'c : struct and 'c :> 'c Component> =
+    interface
+        abstract Active : bool with get, set
+        end
 
 /// The component that holds an entity's id.
 type [<NoEquality; NoComparison; Struct>] EntityId =
@@ -161,7 +162,7 @@ type Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
     delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref * 'c8 byref * 'c9 byref * 's -> 's
 
 and [<StructuralEquality; NoComparison>] Term =
-    | Err of string
+    | Error of string
     | Tag
     | Bool of bool
     | Int of int
@@ -170,7 +171,7 @@ and [<StructuralEquality; NoComparison>] Term =
     | V3 of Vector3
     | Box3 of Box3
     | Cmp of IComparable
-    | Arb of obj
+    | Obj of obj
     | Pair of Term * Term
     | EntityId of uint64
     | Intra of string * Type
@@ -234,7 +235,7 @@ and [<NoEquality; NoComparison>] Subquery =
         | (V3 v, V3 v2) -> Bool (v3Eq v v2)
         | (Box3 b, Box3 b2) -> Bool (box3Eq b b2)
         | (Cmp c, Cmp c2) -> Bool (c = c2)
-        | (Arb o, Arb o2) -> Bool (objEq o o2)
+        | (Obj o, Obj o2) -> Bool (objEq o o2)
         | (EntityId entityId, EntityId entityId2) -> Bool (genEq entityId entityId2)
         | (Pair (termFst, termSnd), Pair (termFst2, termSnd2)) ->
             match Subquery.eq termFst termFst2 with
@@ -242,20 +243,20 @@ and [<NoEquality; NoComparison>] Subquery =
                 if b then
                     match Subquery.eq termSnd termSnd2 with
                     | Bool _ as b -> b
-                    | Err _ as err -> err
+                    | Error _ as err -> err
                     | _ -> failwithumf ()
                 else Bool false
-            | Err _ as err -> err
+            | Error _ as err -> err
             | _ -> failwithumf ()
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
-                let result = List.forall2 (fun term term2 -> match Subquery.eq term term2 with Bool b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
-                match errOpt with ValueSome err -> Err err | ValueNone -> Bool result
+                let result = List.forall2 (fun term term2 -> match Subquery.eq term term2 with Bool b -> b | Error err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Error err | ValueNone -> Bool result
             else Bool false
-        | ((Err _ as err), _) -> err
-        | (_, (Err _ as err)) -> err
-        | _ -> Err "Checking equality on unlike terms."
+        | ((Error _ as err), _) -> err
+        | (_, (Error _ as err)) -> err
+        | _ -> Error "Checking equality on unlike terms."
 
     static member gt term term2 =
         match (term, term2) with
@@ -266,12 +267,12 @@ and [<NoEquality; NoComparison>] Subquery =
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
-                let result = List.forall2 (fun term term2 -> match Subquery.gt term term2 with Bool b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
-                match errOpt with ValueSome err -> Err err | ValueNone -> Bool result
+                let result = List.forall2 (fun term term2 -> match Subquery.gt term term2 with Bool b -> b | Error err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Error err | ValueNone -> Bool result
             else Bool false
-        | ((Err _ as err), _) -> err
-        | (_, (Err _ as err)) -> err
-        | (_, _) -> Err "Comparing non-comparable terms."
+        | ((Error _ as err), _) -> err
+        | (_, (Error _ as err)) -> err
+        | (_, _) -> Error "Comparing non-comparable terms."
 
     static member ge term term2 =
         match (term, term2) with
@@ -282,12 +283,12 @@ and [<NoEquality; NoComparison>] Subquery =
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
-                let result = List.forall2 (fun term term2 -> match Subquery.ge term term2 with Bool b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
-                match errOpt with ValueSome err -> Err err | ValueNone -> Bool result
+                let result = List.forall2 (fun term term2 -> match Subquery.ge term term2 with Bool b -> b | Error err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Error err | ValueNone -> Bool result
             else Bool false
-        | ((Err _ as err), _) -> err
-        | (_, (Err _ as err)) -> err
-        | (_, _) -> Err "Comparing non-comparable terms."
+        | ((Error _ as err), _) -> err
+        | (_, (Error _ as err)) -> err
+        | (_, _) -> Error "Comparing non-comparable terms."
 
     static member lt term term2 =
         match (term, term2) with
@@ -298,12 +299,12 @@ and [<NoEquality; NoComparison>] Subquery =
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
-                let result = List.forall2 (fun term term2 -> match Subquery.lt term term2 with Bool b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
-                match errOpt with ValueSome err -> Err err | ValueNone -> Bool result
+                let result = List.forall2 (fun term term2 -> match Subquery.lt term term2 with Bool b -> b | Error err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Error err | ValueNone -> Bool result
             else Bool false
-        | ((Err _ as err), _) -> err
-        | (_, (Err _ as err)) -> err
-        | (_, _) -> Err "Comparing non-comparable terms."
+        | ((Error _ as err), _) -> err
+        | (_, (Error _ as err)) -> err
+        | (_, _) -> Error "Comparing non-comparable terms."
 
     static member le term term2 =
         match (term, term2) with
@@ -314,110 +315,110 @@ and [<NoEquality; NoComparison>] Subquery =
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
-                let result = List.forall2 (fun term term2 -> match Subquery.le term term2 with Bool b -> b | Err err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
-                match errOpt with ValueSome err -> Err err | ValueNone -> Bool result
+                let result = List.forall2 (fun term term2 -> match Subquery.le term term2 with Bool b -> b | Error err -> (errOpt <- ValueSome err; false) | _ -> false) terms terms2
+                match errOpt with ValueSome err -> Error err | ValueNone -> Bool result
             else Bool false
-        | ((Err _ as err), _) -> err
-        | (_, (Err _ as err)) -> err
-        | (_, _) -> Err "Comparing non-comparable terms."
+        | ((Error _ as err), _) -> err
+        | (_, (Error _ as err)) -> err
+        | (_, _) -> Error "Comparing non-comparable terms."
 
     static member eval (terms : Map<string, Term>) (subquery : Subquery) : Term =
         match subquery with
         | V3Ctor (subquery, subquery2, subquery3) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2, Subquery.eval terms subquery3) with
             | (Single x, Single y, Single z) -> V3 (v3 x y z)
-            | ((Err _ as err), _, _) -> err
-            | (_, (Err _ as err), _) -> err
-            | (_, _, (Err _ as err)) -> err
-            | (_, _, _) -> Err "Invalid v3 call; 3 F's required."
+            | ((Error _ as err), _, _) -> err
+            | (_, (Error _ as err), _) -> err
+            | (_, _, (Error _ as err)) -> err
+            | (_, _, _) -> Error "Invalid v3 call; 3 Singles required."
         | Box3Ctor (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (V3 p, V3 s) -> Box3 (box3 p s)
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (_, _) -> Err "Invalid box3 call; 2 V3's required."
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
+            | (_, _) -> Error "Invalid box3 call; 2 V3's required."
         | PairCtor (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (f, s) -> Pair (f, s)
         | EntityIdCtor entityId ->
             EntityId entityId
         | Tagged subquery ->
             match subquery with
-            | Val v -> match v with Err _ as err -> err | _ -> Bool true
+            | Val v -> match v with Error _ as err -> err | _ -> Bool true
             | Var v -> Bool (terms.ContainsKey v)
             | _ -> Bool true
         | Eq (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (term, term2) -> Subquery.eq term term2
         | Gt (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (term, term2) -> Subquery.gt term term2
         | Ge (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (term, term2) -> Subquery.ge term term2
         | Lt (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (term, term2) -> Subquery.lt term term2
         | Le (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
             | (term, term2) -> Subquery.le term term2
         | If (predicate, consequent, alternate) ->
             match Subquery.eval terms predicate with
             | Bool b -> if b then Subquery.eval terms consequent else Subquery.eval terms alternate
-            | Err _ as err -> err
-            | _ -> Err "Invalid If predicate; B required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid If predicate; Bool required."
         | GetX subquery ->
-            match Subquery.eval terms subquery with V3 v -> Single v.X | Err _ as err -> err | _ -> Err "Invalid GetX argument; V3 required."
+            match Subquery.eval terms subquery with V3 v -> Single v.X | Error _ as err -> err | _ -> Error "Invalid GetX argument; V3 required."
         | GetY subquery ->
-            match Subquery.eval terms subquery with V3 v -> Single v.Y | Err _ as err -> err | _ -> Err "Invalid GetY argument; V3 required."
+            match Subquery.eval terms subquery with V3 v -> Single v.Y | Error _ as err -> err | _ -> Error "Invalid GetY argument; V3 required."
         | GetZ subquery ->
-            match Subquery.eval terms subquery with V3 v -> Single v.Z | Err _ as err -> err | _ -> Err "Invalid GetZ argument; V3 required."
+            match Subquery.eval terms subquery with V3 v -> Single v.Z | Error _ as err -> err | _ -> Error "Invalid GetZ argument; V3 required."
         | GetPosition subquery ->
-            match Subquery.eval terms subquery with Box3 box -> V3 box.Position | Err _ as err -> err | _ -> Err "Invalid GetPosition argument; Box3 required."
+            match Subquery.eval terms subquery with Box3 box -> V3 box.Position | Error _ as err -> err | _ -> Error "Invalid GetPosition argument; Box3 required."
         | GetSize subquery ->
-            match Subquery.eval terms subquery with Box3 box -> V3 box.Size | Err _ as err -> err | _ -> Err "Invalid GetSize argument; Box3 required."
+            match Subquery.eval terms subquery with Box3 box -> V3 box.Size | Error _ as err -> err | _ -> Error "Invalid GetSize argument; Box3 required."
         | Intersects (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Box3 box, Box3 box2) -> Bool (box.Intersects box2)
             | (V3 v, Box3 box) | (Box3 box, V3 v)-> Bool (box.Intersects v)
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (_, _) -> Err "Invalid Intersect arguments."
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
+            | (_, _) -> Error "Invalid Intersect arguments."
         | Or (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Bool b, Bool b2) -> Bool (b || b2)
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (_, _) -> Err "Invalid Or arguments; two B's required."
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
+            | (_, _) -> Error "Invalid Or arguments; two Bools required."
         | And (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Bool b, Bool b2) -> Bool (b && b2)
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (_, _) -> Err "Invalid And arguments; two B's required."
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
+            | (_, _) -> Error "Invalid And arguments; two Bools required."
         | Not subquery ->
             match Subquery.eval terms subquery with
             | Bool b -> Bool (not b)
-            | Err _ as err -> err
-            | _ -> Err "Invalid Not argument; B required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid Not argument; Bool required."
         | Val term ->
             term
         | Var varName ->
             match terms.TryGetValue varName with
             | (true, term) -> term
-            | (false, _) -> Err "Non-existent binding."
+            | (false, _) -> Error "Non-existent binding."
         | Let (bindingName, subquery, subquery2) ->
             let term = Subquery.eval terms subquery
             let terms = Map.add bindingName term terms
@@ -425,56 +426,56 @@ and [<NoEquality; NoComparison>] Subquery =
         | Fst subquery ->
             match Subquery.eval terms subquery with
             | Pair (termsFst, _) -> termsFst
-            | Err _ as err -> err
-            | _ -> Err "Invalid Fst argument; Pair required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid Fst argument; Pair required."
         | Snd subquery ->
             match Subquery.eval terms subquery with
             | Pair (_, termsSnd) -> termsSnd
-            | Err _ as err -> err
-            | _ -> Err "Invalid Fst argument; Pair required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid Fst argument; Pair required."
         | At (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Terms terms2, Int index) ->
                 match Seq.tryItem index terms2 with
                 | Some item -> item
                 | None -> Bool false
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (_, _) -> Err "Invalid At arguments; Terms and I required."
+            | ((Error _ as err), _) -> err
+            | (_, (Error _ as err)) -> err
+            | (_, _) -> Error "Invalid At arguments; Terms and Int required."
         | Head subquery ->
             match Subquery.eval terms subquery with
             | Terms terms2 ->
                 match terms2 with
                 | head :: _ -> head
-                | _ -> Err "Invalid Head option; non-empty Terms required."
-            | Err _ as err -> err
-            | _ -> Err "Invalid Head argument; Terms required."
+                | _ -> Error "Invalid Head option; non-empty Terms required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid Head argument; Terms required."
         | Tail subquery ->
             match Subquery.eval terms subquery with
             | Terms terms2 ->
                 match terms2 with
                 | _ :: tail -> Terms tail
-                | _ -> Err "Invalid Tail option; non-empty Terms required."
-            | Err _ as err -> err
-            | _ -> Err "Invalid Tail argument; Terms required."
+                | _ -> Error "Invalid Tail option; non-empty Terms required."
+            | Error _ as err -> err
+            | _ -> Error "Invalid Tail argument; Terms required."
         | Named (termName, compName2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
                 | Intra (compName, _)  -> Bool (strEq compName compName2)
                 | Extra (compName, _, _)  -> Bool (strEq compName compName2)
-                | Err _ as err -> err
-                | _ -> Err "Invalid ByName target; Intra or Extra required."
-            | (false, _) -> Err "Non-existent term."
+                | Error _ as err -> err
+                | _ -> Error "Invalid Named argument; Intra or Extra required."
+            | (false, _) -> Error "Non-existent term."
         | Typed (termName, ty2) ->
             match terms.TryGetValue termName with
             | (true, term) ->
                 match term with
                 | Intra (_, ty)  -> Bool (refEq ty ty2)
                 | Extra (_, ty, _) -> Bool (refEq ty ty2)
-                | Err _ as err -> err
-                | _ -> Err "Invalid ByType target; Intra or Extra required."
-            | (false, _) -> Err "Non-existent term."
+                | Error _ as err -> err
+                | _ -> Error "Invalid Typed argument; Intra or Extra required."
+            | (false, _) -> Error "Non-existent term."
         | Fun fn ->
             fn terms
         | Subqueries subqueries ->
