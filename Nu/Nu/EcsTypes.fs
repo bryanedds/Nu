@@ -202,6 +202,11 @@ and [<NoEquality; NoComparison>] Subquery =
     | Lt of Subquery * Subquery
     | Le of Subquery * Subquery
     | If of Subquery * Subquery * Subquery
+    | GetX of Subquery
+    | GetY of Subquery
+    | GetZ of Subquery
+    | GetPosition of Subquery
+    | GetSize of Subquery
     | Intersects of Subquery * Subquery
     | Or of Subquery * Subquery
     | And of Subquery * Subquery
@@ -370,6 +375,16 @@ and [<NoEquality; NoComparison>] Subquery =
             | B b -> if b then Subquery.eval terms consequent else Subquery.eval terms alternate
             | Err _ as err -> err
             | _ -> Err "Invalid If predicate; B required."
+        | GetX subquery ->
+            match Subquery.eval terms subquery with V3 v -> F v.X | Err _ as err -> err | _ -> Err "Invalid GetX argument; V3 required."
+        | GetY subquery ->
+            match Subquery.eval terms subquery with V3 v -> F v.Y | Err _ as err -> err | _ -> Err "Invalid GetY argument; V3 required."
+        | GetZ subquery ->
+            match Subquery.eval terms subquery with V3 v -> F v.Z | Err _ as err -> err | _ -> Err "Invalid GetZ argument; V3 required."
+        | GetPosition subquery ->
+            match Subquery.eval terms subquery with Box3 box -> V3 box.Position | Err _ as err -> err | _ -> Err "Invalid GetPosition argument; Box3 required."
+        | GetSize subquery ->
+            match Subquery.eval terms subquery with Box3 box -> V3 box.Size | Err _ as err -> err | _ -> Err "Invalid GetSize argument; Box3 required."
         | Intersects (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | (Box3 box, Box3 box2) -> B (box.Intersects box2)
@@ -494,6 +509,14 @@ and [<NoEquality; NoComparison>] Subquery =
             match (info.Name, args) with
             | ("Item", [arg]) -> At (Subquery.unquote arg, Subquery.unquote target)
             | _ -> failwith "Unsupported call."
+        | Patterns.FieldGet (Some target, info) ->
+            match info.Name with
+            | "X" -> GetX (Subquery.unquote target)
+            | "Y" -> GetY (Subquery.unquote target)
+            | "Z" -> GetZ (Subquery.unquote target)
+            | "Position" -> GetPosition (Subquery.unquote target)
+            | "Size" -> GetSize (Subquery.unquote target)
+            | _ -> failwith "Unsupported index."
         | Patterns.NewTuple args ->
             match args with
             | [arg; arg2] -> PairCtor (Subquery.unquote arg, Subquery.unquote arg2)
