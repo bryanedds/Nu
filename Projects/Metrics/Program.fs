@@ -149,7 +149,7 @@ type MyGameDispatcher () =
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ world ->
-            movers.Iterate (state = world, statement = fun position velocity world ->
+            movers.Iterate (fun position velocity world ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y
                 world)

@@ -372,20 +372,22 @@ and Ecs () =
         { EntityId = entityIdCurrent; Ecs = this }
 
     member this.Publish<'d, 's> event (eventData : 'd) (state : 's) : 's =
-        let mutable state = state
+        let mutable stateOpt = state
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
             for entry in callbacks do
                 match entry.Value with
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
-                    state <- objCallback evt this state
+                    stateOpt <- match objCallback evt this stateOpt :> obj with null -> Unchecked.defaultof<'s> | state -> state :?> 's
                 | :? EcsCallback<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                    state <- objCallback evt this (state :> obj) :?> 's
+                    stateOpt <- match objCallback evt this stateOpt with null -> Unchecked.defaultof<'s> | state -> state :?> 's
                 | _ -> ()
         | (false, _) -> ()
-        state
+        if notNull (state :> obj) && isNull (stateOpt :> obj)
+        then state // return orginal state because the conversion process for an unused state may have dropped it
+        else stateOpt
 
     member this.PublishAsync<'d, 's> event (eventData : 'd) =
         let vsync =
