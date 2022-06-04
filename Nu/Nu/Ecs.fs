@@ -376,22 +376,14 @@ and Ecs () =
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
             for entry in callbacks do
-
-                // invoke callback
                 match entry.Value with
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
-                    stateOpt <- match objCallback evt this stateOpt :> obj with null -> Unchecked.defaultof<'s> | state -> state :?> 's
+                    stateOpt <- match objCallback evt this stateOpt :> obj with null -> state | state -> state :?> 's
                 | :? EcsCallback<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                    stateOpt <- match objCallback evt this stateOpt with null -> Unchecked.defaultof<'s> | state -> state :?> 's
+                    stateOpt <- match objCallback evt this stateOpt with null -> state | state -> state :?> 's
                 | _ -> ()
-
-                // use orginal state if the callback may have dropped it.
-                // note this is not correct semantics for nullable types.
-                if notNull (state :> obj) && isNull (stateOpt :> obj) then
-                    stateOpt <- state
-
         | (false, _) -> ()
         stateOpt
 
