@@ -2,6 +2,7 @@
 open System
 open System.Collections.Generic
 open System.Numerics
+open FSharp.Quotations
 open Prime
 open Nu
 open Nu.Declarative
@@ -122,10 +123,10 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query.byType<Position, Velocity> [])
+        let movers = ecs.RegisterQuery (Query.make<Position, Velocity> ())
 
         // create shakers query
-        let shakers = ecs.RegisterQuery (Query.byType<Position, Shake> [])
+        let shakers = ecs.RegisterQuery (Query.make<Position, Shake> ())
 
         // create 1M movers the slow way
         let world =
@@ -141,23 +142,24 @@ type MyGameDispatcher () =
         let moverArchetypeId = ArchetypeId.make (moverComponents, Map.empty)
         let world = ecs.RegisterEntities true 3000000 moverComponents moverArchetypeId world |> snd
 
-        // create 4000 shakers
-        let shakerArchetypeId = ArchetypeId.make<Position, Shake> Map.empty
+        // create 40 shakers
+        let shakerArchetypeId = ArchetypeId.make<Position, Shake> (subterms = Map.empty)
         let shakerComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Origin = v2Zero; Offset = v2One } :> obj]
-        let world = ecs.RegisterEntities true 4000 shakerComponents shakerArchetypeId world |> snd
+        let world = ecs.RegisterEntities true 40 shakerComponents shakerArchetypeId world |> snd
 
         // define update for movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ ->
-            movers.Iterate (fun position velocity world ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ world ->
+            movers.Iterate (state = world, statement = fun position velocity world ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y
                 world)
 
         // define update for shakers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ -> shakers.Iterate (fun position shake world ->
-            position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
-            position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
-            world)
+        ecs.Subscribe EcsEvents.Update $ fun _ _ world ->
+            shakers.Iterate (state = world, statement = fun position shake world ->
+                position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+                position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+                world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
