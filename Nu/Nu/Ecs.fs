@@ -376,6 +376,8 @@ and Ecs () =
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
             for entry in callbacks do
+
+                // invoke callback
                 match entry.Value with
                 | :? EcsCallback<obj, 's> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
@@ -384,10 +386,14 @@ and Ecs () =
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
                     stateOpt <- match objCallback evt this stateOpt with null -> Unchecked.defaultof<'s> | state -> state :?> 's
                 | _ -> ()
+
+                // use orginal state if the callback may have dropped it.
+                // note this is not correct semantics for nullable types.
+                if notNull (state :> obj) && isNull (stateOpt :> obj) then
+                    stateOpt <- state
+
         | (false, _) -> ()
-        if notNull (state :> obj) && isNull (stateOpt :> obj)
-        then state // return orginal state because the conversion process for an unused state may have dropped it
-        else stateOpt
+        stateOpt
 
     member this.PublishAsync<'d, 's> event (eventData : 'd) =
         let vsync =
