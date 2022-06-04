@@ -55,11 +55,11 @@ and [<StructuralEquality; NoComparison>] Term =
     | F of single
     | V3 of Vector3
     | Box3 of Box3
+    | S of string
     | Cmp of IComparable
     | Arb of obj
     | Tag
-    | Label of string
-    | Labels of string HashSet
+    | Pair of Term * Term
     | EcsEntity of EcsEntity
     | Intra of string * Type
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
@@ -79,8 +79,10 @@ and [<StructuralEquality; NoComparison>] Term =
         else false
 
 and [<NoEquality; NoComparison>] Subquery =
-    | Is of Subquery
-    | Of of Subquery * string
+    | V3Ctor of Subquery * Subquery * Subquery
+    | Box3Ctor of Subquery * Subquery
+    | PairCtor of Subquery * Subquery
+    | Tagged of Subquery
     | Eq of Subquery * Subquery
     | Gt of Subquery * Subquery
     | Ge of Subquery * Subquery
@@ -94,6 +96,8 @@ and [<NoEquality; NoComparison>] Subquery =
     | Val of Term
     | Var of string
     | Let of string * Subquery * Subquery
+    | Fst of Subquery
+    | Snd of Subquery
     | At of Subquery * Subquery
     | Head of Subquery
     | Tail of Subquery
@@ -104,15 +108,26 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member eq term term2 =
         match (term, term2) with
+        | (B b, B b2) -> B (b = b2)
         | (I i, I i2) -> B (i = i2)
         | (F f, F f2) -> B (f = f2)
         | (V3 v, V3 v2) -> B (v3Eq v v2)
         | (Box3 b, Box3 b2) -> B (box3Eq b b2)
+        | (S str, S str2) -> B (strEq str str2)
         | (Cmp c, Cmp c2) -> B (c = c2)
         | (Arb o, Arb o2) -> B (objEq o o2)
-        | (Label label, Label label2) -> B (strEq label label2)
-        | (Labels labels, Labels labels2) -> B (labels.SetEquals labels2)
         | (EcsEntity entity, EcsEntity entity2) -> B (genEq entity entity2)
+        | (Pair (termFst, termSnd), Pair (termFst2, termSnd2)) ->
+            match Subquery.eq termFst termFst2 with
+            | B b ->
+                if b then
+                    match Subquery.eq termSnd termSnd2 with
+                    | B _ as b -> b
+                    | Err _ as err -> err
+                    | _ -> failwithumf ()
+                else B false
+            | Err _ as err -> err
+            | _ -> failwithumf ()
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
                 let mutable errOpt = ValueNone
@@ -127,6 +142,7 @@ and [<NoEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (I i, I i2) -> B (i > i2)
         | (F f, F f2) -> B (f > f2)
+        | (S s, S s2) -> B (s > s2)
         | (Cmp c, Cmp c2) -> B (c.CompareTo c2 > 0)
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
@@ -142,6 +158,7 @@ and [<NoEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (I i, I i2) -> B (i >= i2)
         | (F f, F f2) -> B (f >= f2)
+        | (S s, S s2) -> B (s >= s2)
         | (Cmp c, Cmp c2) -> B (c.CompareTo c2 >= 0)
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
@@ -157,6 +174,7 @@ and [<NoEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (I i, I i2) -> B (i < i2)
         | (F f, F f2) -> B (f < f2)
+        | (S s, S s2) -> B (s < s2)
         | (Cmp c, Cmp c2) -> B (c.CompareTo c2 < 0)
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
@@ -172,6 +190,7 @@ and [<NoEquality; NoComparison>] Subquery =
         match (term, term2) with
         | (I i, I i2) -> B (i <= i2)
         | (F f, F f2) -> B (f <= f2)
+        | (S s, S s2) -> B (s <= s2)
         | (Cmp c, Cmp c2) -> B (c.CompareTo c2 <= 0)
         | (Terms terms, Terms terms2) ->
             if terms.Length = terms2.Length then
@@ -185,17 +204,29 @@ and [<NoEquality; NoComparison>] Subquery =
 
     static member eval (terms : Map<string, Term>) (subquery : Subquery) : Term =
         match subquery with
-        | Is subquery ->
+        | V3Ctor (subquery, subquery2, subquery3) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2, Subquery.eval terms subquery3) with
+            | (F x, F y, F z) -> V3 (v3 x y z)
+            | ((Err _ as err), _, _) -> err
+            | (_, (Err _ as err), _) -> err
+            | (_, _, (Err _ as err)) -> err
+            | (_, _, _) -> Err "Invalid v3 call; 3 F's required."
+        | Box3Ctor (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | (V3 p, V3 s) -> Box3 (box3 p s)
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (_, _) -> Err "Invalid box3 call; 2 V3's required."
+        | PairCtor (subquery, subquery2) ->
+            match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (f, s) -> Pair (f, s)
+        | Tagged subquery ->
             match subquery with
             | Val v -> match v with Err _ as err -> err | _ -> B true
             | Var v -> B (terms.ContainsKey v)
             | _ -> B true
-        | Of (subquery, label2) ->
-            match Subquery.eval terms subquery with
-            | Label label -> B (strEq label label2)
-            | Labels labels -> B (labels.Contains label2)
-            | Err _ as err -> err
-            | _ -> Err "Label check on non-label(s)."
         | Eq (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
             | ((Err _ as err), _) -> err
@@ -260,30 +291,40 @@ and [<NoEquality; NoComparison>] Subquery =
             let term = Subquery.eval terms subquery
             let terms = Map.add bindingName term terms
             Subquery.eval terms subquery2
+        | Fst subquery ->
+            match Subquery.eval terms subquery with
+            | Pair (termsFst, _) -> termsFst
+            | Err _ as err -> err
+            | _ -> Err "Invalid Fst argument; Pair required."
+        | Snd subquery ->
+            match Subquery.eval terms subquery with
+            | Pair (_, termsSnd) -> termsSnd
+            | Err _ as err -> err
+            | _ -> Err "Invalid Fst argument; Pair required."
         | At (subquery, subquery2) ->
             match (Subquery.eval terms subquery, Subquery.eval terms subquery2) with
-            | ((Err _ as err), _) -> err
-            | (_, (Err _ as err)) -> err
-            | (I index, Terms terms2) ->
+            | (Terms terms2, I index) ->
                 match Seq.tryItem index terms2 with
                 | Some item -> item
                 | None -> B false
-            | (_, _) -> Err "Invalid At arguments; I and Terms required."
+            | ((Err _ as err), _) -> err
+            | (_, (Err _ as err)) -> err
+            | (_, _) -> Err "Invalid At arguments; Terms and I required."
         | Head subquery ->
             match Subquery.eval terms subquery with
-            | Err _ as err -> err
             | Terms terms2 ->
                 match terms2 with
                 | head :: _ -> head
                 | _ -> Err "Invalid Head option; non-empty Terms required."
+            | Err _ as err -> err
             | _ -> Err "Invalid Head argument; Terms required."
         | Tail subquery ->
             match Subquery.eval terms subquery with
-            | Err _ as err -> err
             | Terms terms2 ->
                 match terms2 with
                 | _ :: tail -> Terms tail
                 | _ -> Err "Invalid Tail option; non-empty Terms required."
+            | Err _ as err -> err
             | _ -> Err "Invalid Tail argument; Terms required."
         | ByName (termName, compName2) ->
             match terms.TryGetValue termName with
@@ -323,30 +364,47 @@ and [<NoEquality; NoComparison>] Subquery =
         | Patterns.Value (value, ty) ->
             if ty = typeof<int> then Val (I (value :?> int))
             elif ty = typeof<single> then Val (F (value :?> single))
-            else failwith "Unsupported value type."
-        | Patterns.NewArray (_, items) ->
-            Subqueries (List.map Subquery.unquote items)
+            elif ty = typeof<Map<string, Term> -> Term> then Fun (value :?> (Map<string, Term> -> Term))
+            else failwith "Unsupported Val or Fun type."
         | Patterns.Let (var, q, q2) -> 
             Let (var.Name, Subquery.unquote q, Subquery.unquote q2)
         | Patterns.IfThenElse (predicate, consequent, alternative) ->
             If (Subquery.unquote predicate, Subquery.unquote consequent, Subquery.unquote alternative)
-        //| Patterns.Lambda (var, body) ->
-        //    match body. with
-        //    | Patterns.
-        //    Fun (var, )
+        | Patterns.PropertyGet (_, info, args) ->
+            match (info.Name, args) with
+            | ("v3Zero", []) -> Val (V3 v3Zero)
+            | ("v3One", []) -> Val (V3 v3One)
+            | ("box3Zero", []) -> Val (Box3 (box3 v3Zero v3Zero))
+            | ("box3One", []) -> Val (Box3 (box3 v3Zero v3One))
+            | _ -> failwith "Unsupported call."
+        | Patterns.NewTuple args ->
+            match args with
+            | [arg; arg2] -> PairCtor (Subquery.unquote arg, Subquery.unquote arg2)
+            | _ -> failwith "Invalid Pair arguments; 2 Terms required (only 2-tuples are supported)."
+        | Patterns.NewArray (_, items) ->
+            Subqueries (List.map Subquery.unquote items)
         | Patterns.Call (_, info, args) ->
             match (info.Name, args) with
+            | ("tagged", [arg]) -> Tagged (Subquery.unquote arg)
+            | ("fst", [arg]) -> Fst (Subquery.unquote arg)
+            | ("snd", [arg]) -> Snd (Subquery.unquote arg)
             | ("at", [arg; arg2]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
-            | ("GetArray", [arg2; arg]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("GetArray", [arg; arg2]) -> At (Subquery.unquote arg, Subquery.unquote arg2)
             | ("head", [arg]) -> Head (Subquery.unquote arg)
             | ("tail", [arg]) -> Tail (Subquery.unquote arg)
             | ("not", [arg]) -> Not (Subquery.unquote arg)
+            | ("v3", [arg; arg2; arg3]) -> V3Ctor (Subquery.unquote arg, Subquery.unquote arg2, Subquery.unquote arg3)
+            | ("box3", [arg; arg2]) -> Box3Ctor (Subquery.unquote arg, Subquery.unquote arg2)
             | ("intersects", [arg; arg2]) -> Intersects (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_Equality", [arg; arg2]) -> Eq (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_LessThan", [arg; arg2]) -> Lt (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_LessThanOrEqual", [arg; arg2]) -> Le (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_GreaterThan", [arg; arg2]) -> Gt (Subquery.unquote arg, Subquery.unquote arg2)
             | ("op_GreaterThanOrEqual", [arg; arg2]) -> Ge (Subquery.unquote arg, Subquery.unquote arg2)
+            | ("isType", [arg]) ->
+                match (arg, info.GetGenericArguments ()) with
+                | (Patterns.Value (:? string as varName, _),  [|ty|]) -> ByType (varName, ty)
+                | (_, _) -> failwith "Invalid IsType arguments."
             | _ -> failwith "Unsupported call."
         | _ -> failwith "Unsupport Subquery expression."
 
@@ -1018,6 +1076,13 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let terms = archetypeSlot.Archetype.Id.Terms
         terms.[termName]
 
+    member this.UpdateTerm updater termName =
+        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
+        let terms = archetypeSlot.Archetype.Id.Terms
+        let term = updater terms.[termName]
+        this.UnregisterTerm termName
+        this.RegisterTerm termName term
+
     member this.MutatePlus<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
         let archetypeSlot = this.Ecs.IndexArchetypeSlot this
         let stores = archetypeSlot.Archetype.Stores
@@ -1244,7 +1309,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
 
     do
         for compName in compNames do
-            subqueries.Add (Is (Var (Constants.Ecs.IntraComponentPrefix + compName)))
+            subqueries.Add (Tagged (Var (Constants.Ecs.IntraComponentPrefix + compName)))
 
     member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
         match stores.TryGetValue compName with
@@ -1645,3 +1710,25 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c9 : struct and 'c9 :> 'c9 Component>
         subqueries =
         Query (hashSetPlus HashIdentity.Structural [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name; typeof<'c8>.Name; typeof<'c9>.Name], subqueries)
+
+[<RequireQualifiedAccess>]
+module Fun =
+    
+    type Type =
+        Map<string, Term> -> Term
+
+    let make (fn : Map<string, Term> -> Term) =
+        Expr.Value (fn, typeof<Map<string, Term> -> Term>)
+
+[<AutoOpen>]
+module Subquery =
+
+    [<AutoOpen>]
+    module Ops =
+
+        let tagged (_ : 'a) = Unchecked.defaultof<bool>
+        let at (_ : 'a array) (_ : 'b) = Unchecked.defaultof<'a>
+        let head (_ : 'a array) = Unchecked.defaultof<'a>
+        let tail (_ : 'a array) = Unchecked.defaultof<'a array>
+        let intersects (_ : 'a) (_ : 'a) = Unchecked.defaultof<bool>
+        let isType<'c when 'c : struct and 'c :> 'c Component> (_ : string) = Unchecked.defaultof<bool>
