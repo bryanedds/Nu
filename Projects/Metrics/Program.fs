@@ -148,15 +148,15 @@ type MyGameDispatcher () =
         let world = ecs.RegisterEntities true 40 shakerComponents shakerArchetypeId world |> snd
 
         // define update for movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ world ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             movers.Iterate (fun position velocity world ->
                 position.Position.X <- position.Position.X + velocity.Velocity.X
                 position.Position.Y <- position.Position.Y + velocity.Velocity.Y
                 world)
 
         // define update for shakers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ world ->
-            shakers.Iterate (state = world, statement = fun position shake world ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            shakers.Iterate (fun position shake world ->
                 position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
                 position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
                 world)
