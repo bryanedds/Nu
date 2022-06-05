@@ -612,6 +612,9 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
 
+    member this.ToEntityId ecs =
+        { EntityId = this.Archetype.EntityIdStore.[this.ArchetypeIndex].EntityId; Ecs = ecs }
+
     member this.ValidatePlus compName =
         let stores = this.Archetype.Stores
         stores.ContainsKey compName
@@ -793,6 +796,9 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         match stores.TryGetValue compName with
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+
+    member this.ToEntitySlot () =
+        this.Ecs.IndexEntitySlot this
 
     member this.RegisterPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct> compName (comp : 'c) (world : 'w) =
         this.Ecs.RegisterComponentPlus<'c, 'w> compName comp this world
