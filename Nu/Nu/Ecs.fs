@@ -46,11 +46,6 @@ and [<AbstractClass; Sealed>] EcsEvents =
     static member Unregistering entity compName = { EcsEventName = "Unregistering"; EcsEventType = ComponentEvent (entity, compName) }
     static member Change entity = { EcsEventName = "Change"; EcsEventType = EntityEvent entity }
 
-/// An entity's place in an archetype.
-and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
-    { ArchetypeIndex : int
-      Archetype : Archetype }
-
 /// Identifies an archetype.
 and ArchetypeId (terms : Map<string, Term>) =
 
@@ -75,12 +70,12 @@ and ArchetypeId (terms : Map<string, Term>) =
         hashCode
 
     member this.AddTerm termName term =
-        if strEq termName (nameof EntitId) then
+        if strEq termName (nameof EntityId) then
             failwith "Cannot update an archetype's EntityId term."
         ArchetypeId (Map.add termName term terms)
 
     member this.RemoveTerm termName =
-        if strEq termName (nameof EntitId) then
+        if strEq termName (nameof EntityId) then
             failwith "All archetypes require an EntityId component."
         ArchetypeId (Map.remove termName terms)
 
@@ -337,7 +332,7 @@ and Ecs () =
     let mutable subscriptionIdCurrent = 0u
     let mutable entityIdCurrent = 0UL
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
-    let archetypeSlots = dictPlus<uint64, ArchetypeSlot> HashIdentity.Structural []
+    let entitySlots = dictPlus<uint64, EcsEntitySlot> HashIdentity.Structural []
     let componentTypes = dictPlus<string, Type> StringComparer.Ordinal []
     let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let subscribedEntities = dictPlus<EcsEntity, int> HashIdentity.Structural []
@@ -367,17 +362,17 @@ and Ecs () =
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let archetypeIndex = archetype.Register comps entity.EntityId
-        archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+        entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
 
-    member private this.UnregisterEntityInternal archetypeSlot entity =
-        let archetype = archetypeSlot.Archetype
-        let comps = archetype.GetComponents archetypeSlot.ArchetypeIndex
-        archetypeSlots.Remove entity.EntityId |> ignore<bool>
-        archetype.Unregister archetypeSlot.ArchetypeIndex
+    member private this.UnregisterEntityInternal entitySlot entity =
+        let archetype = entitySlot.Archetype
+        let comps = archetype.GetComponents entitySlot.ArchetypeIndex
+        entitySlots.Remove entity.EntityId |> ignore<bool>
+        archetype.Unregister entitySlot.ArchetypeIndex
         comps
 
-    member internal this.IndexArchetypeSlot (entity : EcsEntity) =
-        archetypeSlots.[entity.EntityId]
+    member this.IndexEntitySlot (entity : EcsEntity) =
+        entitySlots.[entity.EntityId]
 
     member this.Entity =
         entityIdCurrent <- inc entityIdCurrent
@@ -471,11 +466,11 @@ and Ecs () =
     member this.RegisterTerm (termName : string) term (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         if (match term with Intra _ -> true | _ -> false) then failwith "Intra components are for internal use only."
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
-            let comps = this.UnregisterEntityInternal archetypeSlot entity
+        match entitySlots.TryGetValue entity.EntityId with
+        | (true, entitySlot) ->
+            let comps = this.UnregisterEntityInternal entitySlot entity
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
-            let archetypeId = archetypeSlot.Archetype.Id.AddTerm termName term
+            let archetypeId = entitySlot.Archetype.Id.AddTerm termName term
             this.RegisterEntityInternal comps archetypeId entity
         | (false, _) ->
             let archetypeId = ArchetypeId.make (Map.singleton termName term)
@@ -485,20 +480,20 @@ and Ecs () =
 
     member this.UnregisterTerm (termName : string) (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
-            let comps = this.UnregisterEntityInternal archetypeSlot entity
-            let archetypeId = archetypeSlot.Archetype.Id.RemoveTerm termName
+        match entitySlots.TryGetValue entity.EntityId with
+        | (true, entitySlot) ->
+            let comps = this.UnregisterEntityInternal entitySlot entity
+            let archetypeId = entitySlot.Archetype.Id.RemoveTerm termName
             if archetypeId.Terms.Count > 0 then this.RegisterEntityInternal comps archetypeId entity
         | (false, _) -> ()
 
     member this.RegisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (comp : 'c) (entity : EcsEntity) (world : 'w) =
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
-            let comps = this.UnregisterEntityInternal archetypeSlot entity
+        match entitySlots.TryGetValue entity.EntityId with
+        | (true, entitySlot) ->
+            let comps = this.UnregisterEntityInternal entitySlot entity
             comps.Add (compName, comp)
-            let archetypeId = archetypeSlot.Archetype.Id.AddTerm (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>))
+            let archetypeId = entitySlot.Archetype.Id.AddTerm (Constants.Ecs.IntraComponentPrefix + compName) (Intra (compName, typeof<'c>))
             this.RegisterEntityInternal comps archetypeId entity
             let eventData = { EcsEntity = entity; ComponentName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (world :> obj) :?> 'w
@@ -515,12 +510,12 @@ and Ecs () =
 
     member this.UnregisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (entity : EcsEntity) (world : 'w) =
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
+        match entitySlots.TryGetValue entity.EntityId with
+        | (true, entitySlot) ->
             let eventData = { EcsEntity = entity; ComponentName = compName }
             let world = this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
-            let comps = this.UnregisterEntityInternal archetypeSlot entity
-            let archetypeId = archetypeSlot.Archetype.Id.RemoveTerm (Constants.Ecs.IntraComponentPrefix + compName)
+            let comps = this.UnregisterEntityInternal entitySlot entity
+            let archetypeId = entitySlot.Archetype.Id.RemoveTerm (Constants.Ecs.IntraComponentPrefix + compName)
             if archetypeId.Terms.Count > 0 then
                 comps.Remove compName |> ignore<bool>
                 this.RegisterEntityInternal comps archetypeId entity
@@ -539,7 +534,7 @@ and Ecs () =
             | (false, _) -> createArchetype archetypeId
         let entity = this.Entity
         let archetypeIndex = archetype.Register comps entity.EntityId
-        archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+        entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         let mutable world = world
         if not elideEvents then
             for compName in archetype.Stores.Keys do
@@ -548,15 +543,15 @@ and Ecs () =
         (entity, world)
 
     member this.UnregisterEntity (entity : EcsEntity) (world : 'w) =
-        match archetypeSlots.TryGetValue entity.EntityId with
-        | (true, archetypeSlot) ->
-            let archetype = archetypeSlot.Archetype
+        match entitySlots.TryGetValue entity.EntityId with
+        | (true, entitySlot) ->
+            let archetype = entitySlot.Archetype
             let mutable world = world
             if subscribedEntities.ContainsKey entity then
                 for compName in archetype.Stores.Keys do
                     let eventData = { EcsEntity = entity; ComponentName = compName }
                     world <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
-            archetype.Unregister archetypeSlot.ArchetypeIndex
+            archetype.Unregister entitySlot.ArchetypeIndex
             world
         | (false, _) -> world
 
@@ -574,7 +569,7 @@ and Ecs () =
         for i in 0 .. dec count do
             let entity = this.Entity
             let archetypeIndex = archetype.Register comps entity.EntityId
-            archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+            entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
             entitys.[i] <- entity
             if not elideEvents then
                 for compName in archetype.Stores.Keys do
@@ -603,9 +598,192 @@ and Ecs () =
         let entitys = SegmentedArray.zeroCreate count
         for i in firstIndex .. lastIndex do
             let entity = this.Entity
-            archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype })
+            entitySlots.Add (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype })
             entitys.[i - firstIndex] <- entity
         entitys
+
+/// An entity's slot in an archetype.
+and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
+    { ArchetypeIndex : int
+      Archetype : Archetype }
+
+    member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
+        match stores.TryGetValue compName with
+        | (true, store) -> store :?> 'c Store
+        | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+
+    member this.ValidatePlus compName =
+        let stores = this.Archetype.Stores
+        stores.ContainsKey compName
+
+    member this.Validate<'c when 'c : struct and 'c :> 'c Component> () =
+        this.ValidatePlus typeof<'c>.Name
+
+    member this.ValidateTerm termName =
+        let terms = this.Archetype.Id.Terms
+        terms.ContainsKey termName
+
+    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> compName =
+        let stores = this.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = this.ArchetypeIndex
+        &store.[i]
+
+    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
+        this.IndexPlus<'c> typeof<'c>.Name
+
+    member this.IndexTerm termName =
+        let terms = this.Archetype.Id.Terms
+        terms.[termName]
+
+    member this.MutatePlus<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
+        let stores = this.Archetype.Stores
+        let store = stores.[compName] :?> 'c Store
+        let i = this.ArchetypeIndex
+        store.[i] <- comp
+
+    member this.Mutate<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) =
+        this.MutatePlus<'c> typeof<'c>.Name comp
+
+    member this.Frame (statement : Statement<'c, 's>, ?compName, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke (&store.[i], Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 's>,
+         ?compName, ?comp2Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
+
+    member this.Frame
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) =
+        let archetype = this.Archetype
+        let archetypeId = archetype.Id
+        let stores = archetype.Stores
+        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+        let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+        let i = this.ArchetypeIndex
+        statement.Invoke
+            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
+             Option.getOrDefault Unchecked.defaultof<'s> state)
 
 and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
     { EntityId : uint64
@@ -635,209 +813,171 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         this.Ecs.UnregisterTerm termName this
 
     member this.ValidatePlus compName =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        stores.ContainsKey compName
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.ValidatePlus compName
 
     member this.Validate<'c when 'c : struct and 'c :> 'c Component> () =
-        this.ValidatePlus typeof<'c>.Name
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Validate<'c> ()
 
     member this.ValidateTerm termName =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let terms = archetypeSlot.Archetype.Id.Terms
-        terms.ContainsKey termName
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.ValidateTerm termName
 
     member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> compName =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let i = archetypeSlot.ArchetypeIndex
-        &store.[i]
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.IndexPlus<'c> compName
 
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
-        this.IndexPlus<'c> typeof<'c>.Name
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Index<'c> ()
 
     member this.IndexTerm termName =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let terms = archetypeSlot.Archetype.Id.Terms
-        terms.[termName]
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.IndexTerm termName
 
     member this.UpdateTerm updater termName =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let terms = archetypeSlot.Archetype.Id.Terms
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        let terms = entitySlot.Archetype.Id.Terms
         let term = updater terms.[termName]
         this.UnregisterTerm termName
         this.RegisterTerm termName term
 
     member this.MutatePlus<'c when 'c : struct and 'c :> 'c Component> compName (comp : 'c) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
-        let store = stores.[compName] :?> 'c Store
-        let i = archetypeSlot.ArchetypeIndex
-        store.[i] <- comp
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.MutatePlus<'c> compName comp
 
     member this.Mutate<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) =
-        this.MutatePlus<'c> typeof<'c>.Name comp
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Mutate<'c> comp
 
     member this.ChangePlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct> compName (comp : 'c) (world : 'w) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let stores = archetypeSlot.Archetype.Stores
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        let stores = entitySlot.Archetype.Stores
         let store = stores.[compName] :?> 'c Store
-        let i = archetypeSlot.ArchetypeIndex
+        let i = entitySlot.ArchetypeIndex
         store.[i] <- comp
         this.Ecs.Publish (EcsEvents.Change this) { EcsEntity = this; ComponentName = compName } world
 
     member this.Change<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct> (comp : 'c) (world : 'w) =
         this.ChangePlus<'c, 'w> typeof<'c>.Name comp world
 
-    member this.Frame (statement : Statement<'c, 's>, ?compName, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke (&store.[i], Option.getOrDefault Unchecked.defaultof<'s> state)
+    member this.Frame
+        (statement : Statement<'c, 's>,
+         ?compName, ?state : 's) =
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 's>,
          ?compName, ?comp2Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null comp5Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null comp5Name,
+             Option.getOrDefault null comp6Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null comp5Name,
+             Option.getOrDefault null comp6Name,
+             Option.getOrDefault null comp7Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null comp5Name,
+             Option.getOrDefault null comp6Name,
+             Option.getOrDefault null comp7Name,
+             Option.getOrDefault null comp8Name,
+             Option.getOrDefault null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) =
-        let archetypeSlot = this.Ecs.IndexArchetypeSlot this
-        let archetype = archetypeSlot.Archetype
-        let archetypeId = archetype.Id
-        let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-        let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
-        let i = archetypeSlot.ArchetypeIndex
-        statement.Invoke
-            (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+        let entitySlot = this.Ecs.IndexEntitySlot this
+        entitySlot.Frame
+            (statement,
+             Option.getOrDefault null compName,
+             Option.getOrDefault null comp2Name,
+             Option.getOrDefault null comp3Name,
+             Option.getOrDefault null comp4Name,
+             Option.getOrDefault null comp5Name,
+             Option.getOrDefault null comp6Name,
+             Option.getOrDefault null comp7Name,
+             Option.getOrDefault null comp8Name,
+             Option.getOrDefault null comp9Name,
+             Option.getOrDefault null state)
 
 and Query (compNames : string HashSet, subqueries : Subquery seq) =
 
@@ -861,7 +1001,17 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             Subquery.evalMany archetype.Id.Terms subqueries then
             archetypes.Add (archetype.Id, archetype)
 
-    member this.IndexEntitySlots ecs =
+    member this.IndexEntitySlots () =
+        let slots = SegmentedList.make ()
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            for i in 0 .. dec archetype.Length do
+                let entityId = archetype.EntityIdStore.[i]
+                if entityId.Active then
+                    SegmentedList.add { ArchetypeIndex = i; Archetype = archetype } slots
+        slots
+
+    member this.IndexEntities ecs =
         let entities = SegmentedList.make ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
