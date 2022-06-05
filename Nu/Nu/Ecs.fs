@@ -388,7 +388,7 @@ and Ecs () =
                     world <- match objCallback evt this world :> obj with null -> oldState | world -> world :?> 'w
                 | :? EcsCallback<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                    world <- match objCallback evt this world with null -> oldState | world -> world :?> 'w
+                    world <- match objCallback evt this world :> obj with null -> oldState | world -> world :?> 'w
                 | _ -> ()
         | (false, _) -> ()
         world
@@ -479,9 +479,7 @@ and Ecs () =
             if archetypeId.Terms.Count > 0 then this.RegisterEntityInternal comps archetypeId entity
         | (false, _) -> ()
 
-    member this.RegisterComponentPlus<'c, 'w when
-        'c : struct and 'c :> 'c Component and
-        'w : not struct>
+    member this.RegisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (comp : 'c) (entity : EcsEntity) (world : 'w) =
         match archetypeSlots.TryGetValue entity.EntityId with
         | (true, archetypeSlot) ->
@@ -498,15 +496,11 @@ and Ecs () =
             let eventData = { EcsEntity = entity; ComponentName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (world :> obj) :?> 'w
 
-    member this.RegisterComponent<'c, 'w when
-        'c : struct and 'c :> 'c Component and
-        'w : not struct>
+    member this.RegisterComponent<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         (comp : 'c) (entity : EcsEntity) (world : 'w) =
         this.RegisterComponentPlus<'c, 'w> (typeof<'c>.Name) comp (entity : EcsEntity) world
 
-    member this.UnregisterComponentPlus<'c, 'w when
-        'c : struct and 'c :> 'c Component and
-        'w : not struct>
+    member this.UnregisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (entity : EcsEntity) (world : 'w) =
         match archetypeSlots.TryGetValue entity.EntityId with
         | (true, archetypeSlot) ->
@@ -522,9 +516,7 @@ and Ecs () =
         | (false, _) -> world
 
     member this.UnregisterComponent<'c, 'w when
-        'c : struct and 'c :> 'c Component and
-        'w : not struct>
-        (entity : EcsEntity) (world : 'w) =
+        'c : struct and 'c :> 'c Component and 'w : not struct> (entity : EcsEntity) (world : 'w) =
         this.UnregisterComponentPlus<'c, 'w> typeof<'c>.Name entity world
 
     member this.RegisterEntity elideEvents comps archetypeId world =
