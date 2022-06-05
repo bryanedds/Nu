@@ -388,7 +388,7 @@ and Ecs () =
                     world <- match objCallback evt this world :> obj with null -> oldState | world -> world :?> 'w
                 | :? EcsCallback<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                    world <- match objCallback evt this world :> obj with null -> oldState | world -> world :?> 'w
+                    world <- match objCallback evt this world with null -> oldState | world -> world :?> 'w
                 | _ -> ()
         | (false, _) -> ()
         world
@@ -843,7 +843,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
     member this.Subqueries =
         seq subqueries
 
-    member this.TryRegisterArchetype (archetype : Archetype) =
+    member internal this.TryRegisterArchetype (archetype : Archetype) =
         if  not (archetypes.ContainsKey archetype.Id) &&
             Subquery.evalMany archetype.Id.Terms subqueries then
             archetypes.Add (archetype.Id, archetype)
