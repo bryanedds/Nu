@@ -58,7 +58,7 @@ and ArchetypeId (terms : Map<string, Term>) =
 
     new (intraComponents, subterms : Map<string, Term>) =
         ArchetypeId
-            (let intraterms = intraComponents|> Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
+            (let intraterms = intraComponents |> Seq.map (fun (compName, compTy) -> (Constants.Ecs.IntraComponentPrefix + compName, Intra (compName, compTy))) |> Map.ofSeq
              intraterms @@ subterms)
 
     new (intraComponentTypes : Type seq, subterms : Map<string, Term>) =
@@ -243,7 +243,8 @@ and Archetype (archetypeId : ArchetypeId) =
 
     let mutable freeIndex = 0
     let freeList = hashSetPlus<int> HashIdentity.Structural []
-    let stores = dictPlus<string, Store> StringComparer.Ordinal []
+    let entityIdStore = Store<EntityId> "EntityId"
+    let stores = Dictionary.singleton StringComparer.Ordinal "EntityId" (entityIdStore :> Store)
 
     do
         let storeTypeGeneric = typedefof<EntityId Store>
@@ -258,6 +259,7 @@ and Archetype (archetypeId : ArchetypeId) =
 
     member this.Id = archetypeId
     member this.Length = freeIndex
+    member this.EntityIdStore = entityIdStore
     member this.Stores = stores
     member this.ComponentNames = hashSetPlus StringComparer.Ordinal stores.Keys
 
@@ -265,30 +267,34 @@ and Archetype (archetypeId : ArchetypeId) =
         for storeEntry in stores do
             storeEntry.Value.Grow ()
 
-    member private this.AllocIndex () =
-        if freeList.Count > 0 then
-            let index = Seq.head freeList
-            freeList.Remove index |> ignore<bool>
-            index
-        else
-            match Seq.tryHead stores with
-            | Some headStoreEntry ->
-                let index = freeIndex
-                if index = headStoreEntry.Value.Length then this.Grow ()
-                freeIndex <- inc freeIndex
+    member private this.AllocIndex entityId =
+        let index =
+            if freeList.Count > 0 then
+                let index = Seq.head freeList
+                freeList.Remove index |> ignore<bool>
                 index
-            | None ->
-                let index = freeIndex
-                freeIndex <- inc freeIndex
-                index
+            else
+                match Seq.tryHead stores with
+                | Some headStoreEntry ->
+                    let index = freeIndex
+                    if index = headStoreEntry.Value.Length then this.Grow ()
+                    freeIndex <- inc freeIndex
+                    index
+                | None ->
+                    let index = freeIndex
+                    freeIndex <- inc freeIndex
+                    index
+        entityIdStore.[index] <- { Active = true; EntityId = entityId }
+        index
 
     member private this.FreeIndex index =
+        entityIdStore.[index] <- { Active = false; EntityId = 0UL }
         if index = dec freeIndex
         then freeIndex <- dec freeIndex
         else freeList.Add index |> ignore<bool>
 
-    member this.Register (comps : Dictionary<string, obj>) =
-        let index = this.AllocIndex ()
+    member this.Register (comps : Dictionary<string, obj>) entityId =
+        let index = this.AllocIndex entityId
         for compEntry in comps do
             stores.[compEntry.Key].SetItem index compEntry.Value
         index
@@ -353,7 +359,7 @@ and Ecs () =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
-        let archetypeIndex = archetype.Register comps
+        let archetypeIndex = archetype.Register comps entity.EntityId
         archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
 
     member private this.UnregisterEntityInternal archetypeSlot entity =
@@ -525,7 +531,7 @@ and Ecs () =
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let entity = this.Entity
-        let archetypeIndex = archetype.Register comps
+        let archetypeIndex = archetype.Register comps entity.EntityId
         archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
         let mutable world = world
         if not elideEvents then
@@ -560,7 +566,7 @@ and Ecs () =
         let entitys = SegmentedArray.zeroCreate count
         for i in 0 .. dec count do
             let entity = this.Entity
-            let archetypeIndex = archetype.Register comps
+            let archetypeIndex = archetype.Register comps entity.EntityId
             archetypeSlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
             entitys.[i] <- entity
             if not elideEvents then
@@ -847,6 +853,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         if  not (archetypes.ContainsKey archetype.Id) &&
             Subquery.evalMany archetype.Id.Terms subqueries then
             archetypes.Add (archetype.Id, archetype)
+
+    member this.IndexEntitySlots ecs =
+        let entities = SegmentedList.make ()
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            for i in 0 .. dec archetype.Length do
+                let entityId = archetype.EntityIdStore.[i]
+                if entityId.Active then
+                    SegmentedList.add { EntityId = entityId.EntityId; Ecs = ecs } entities
+        entities
 
     member this.Iterate (statement : Statement<'c, 'w>, ?compName, ?world : 'w) : 'w =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
