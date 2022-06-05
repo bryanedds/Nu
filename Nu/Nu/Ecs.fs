@@ -54,6 +54,8 @@ and [<StructuralEquality; NoComparison; Struct>] ArchetypeSlot =
 /// Identifies an archetype.
 and ArchetypeId (terms : Map<string, Term>) =
 
+    let terms = Map.add (nameof EntityId) (Intra (nameof EntityId, typeof<EntityId>)) terms
+
     let hashCode = hash terms // OPTIMIZATION: hash is cached for speed
 
     new (intraComponents, subterms : Map<string, Term>) =
@@ -73,9 +75,13 @@ and ArchetypeId (terms : Map<string, Term>) =
         hashCode
 
     member this.AddTerm termName term =
+        if strEq termName (nameof EntitId) then
+            failwith "Cannot update an archetype's EntityId term."
         ArchetypeId (Map.add termName term terms)
 
     member this.RemoveTerm termName =
+        if strEq termName (nameof EntitId) then
+            failwith "All archetypes require an EntityId component."
         ArchetypeId (Map.remove termName terms)
 
     static member equals (left : ArchetypeId) (right : ArchetypeId) =
@@ -249,13 +255,14 @@ and Archetype (archetypeId : ArchetypeId) =
     do
         let storeTypeGeneric = typedefof<EntityId Store>
         for termEntry in archetypeId.Terms do
-            match termEntry.Value with
-            | Intra (name, ty)
-            | Extra (name, ty, _) ->
-                let storeType = storeTypeGeneric.MakeGenericType [|ty|]
-                let store = Activator.CreateInstance (storeType, name) :?> Store
-                stores.[name] <- store
-            | _ -> ()
+            if termEntry.Key <> nameof EntityId then
+                match termEntry.Value with
+                | Intra (name, ty)
+                | Extra (name, ty, _) ->
+                    let storeType = storeTypeGeneric.MakeGenericType [|ty|]
+                    let store = Activator.CreateInstance (storeType, name) :?> Store
+                    stores.[name] <- store
+                | _ -> ()
 
     member this.Id = archetypeId
     member this.Length = freeIndex
