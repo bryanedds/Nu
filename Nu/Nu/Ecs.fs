@@ -38,9 +38,7 @@ and [<NoEquality; NoComparison; Struct>] EcsRegistrationData =
 /// The out-of-box events for the Ecs construct.
 and [<AbstractClass; Sealed>] EcsEvents =
     static member Update = { EcsEventName = "Update"; EcsEventType = GlobalEvent }
-    static member UpdateParallel = { EcsEventName = "UpdateParallel"; EcsEventType = GlobalEvent }
     static member PostUpdate = { EcsEventName = "PostUpdate"; EcsEventType = GlobalEvent }
-    static member PostUpdateParallel = { EcsEventName = "PostUpdateParallel"; EcsEventType = GlobalEvent }
     static member Actualize = { EcsEventName = "Actualize"; EcsEventType = GlobalEvent }
     static member Register entity compName = { EcsEventName = "Register"; EcsEventType = ComponentEvent (entity, compName) }
     static member Unregistering entity compName = { EcsEventName = "Unregistering"; EcsEventType = ComponentEvent (entity, compName) }
@@ -420,7 +418,7 @@ and Ecs () =
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
 
-    member this.SubscribePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallback<'d, 'w>) =
+    member this.SubscribePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w) =
         let subscriptionId =
             match subscriptions.TryGetValue event with
             | (true, callbacks) ->
@@ -457,6 +455,22 @@ and Ecs () =
                 | (false, _) -> failwith "Subscribed entities count mismatch."
             | _ -> failwith "Subscribed entities count mismatch."
         result
+
+    member this.SubscribeParallelPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit) =
+        this.SubscribePlus<'d, 'w>
+            subscriptionId
+            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
+            (fun evt ecs world -> callback evt ecs world; world)
+
+    member this.SubscribeParallel<'d, 'w when 'w : not struct> event callback =
+        this.Subscribe<'d, 'w>
+            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
+            (fun evt ecs world -> callback evt ecs world; world)
+
+    member this.UnsubscribeParallel event subscriptionId =
+        this.Unsubscribe
+            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
+            subscriptionId
 
     member this.RegisterComponentName<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
@@ -1222,6 +1236,238 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                     world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
                     i <- inc i
         world
+
+    member this.IterateParallel (statement : Statement<'c, 'w>, ?compName, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            lock store $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'w>,
+         ?compName, ?comp2Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            let mutable i = 0
+            while i < store.Length && i < length do
+                let comp = &store.[i]
+                if comp.Active then
+                    world <- statement.Invoke (&comp, &store2.[i], &store3.[i], world)
+                    i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+            lock store5 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+            lock store5 $ fun () ->
+            lock store6 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+            lock store5 $ fun () ->
+            lock store6 $ fun () ->
+            lock store7 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+            lock store5 $ fun () ->
+            lock store6 $ fun () ->
+            lock store7 $ fun () ->
+            lock store8 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
+                        i <- inc i
+
+    member this.IterateParallel
+        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?world : 'w) =
+        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        for archetypeEntry in archetypes do
+            let archetype = archetypeEntry.Value
+            let archetypeId = archetype.Id
+            let length = archetype.Length
+            let stores = archetype.Stores
+            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+            lock store $ fun () ->
+            lock store2 $ fun () ->
+            lock store3 $ fun () ->
+            lock store4 $ fun () ->
+            lock store5 $ fun () ->
+            lock store6 $ fun () ->
+            lock store7 $ fun () ->
+            lock store8 $ fun () ->
+            lock store9 $ fun () ->
+                let mutable i = 0
+                while i < store.Length && i < length do
+                    let comp = &store.[i]
+                    if comp.Active then
+                        world <- statement.Invoke (&comp, &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
+                        i <- inc i
 
     static member make
         (?subqueries) =
