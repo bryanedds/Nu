@@ -273,7 +273,6 @@ and Archetype (archetypeId : ArchetypeId) =
     member this.Length = freeIndex
     member this.EntityIdStore = entityIdStore
     member this.Stores = stores
-    member this.ComponentNames = hashSetPlus StringComparer.Ordinal stores.Keys
 
     member private this.Grow () =
         for storeEntry in stores do
@@ -651,7 +650,7 @@ and Ecs () =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
         this.RegisterEntitiesPlus elideEvents count comps archetypeId world
 
-    member this.ReadComponents count archetypeId stream =
+    member this.ReadEntities count archetypeId stream =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype

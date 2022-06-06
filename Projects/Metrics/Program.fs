@@ -123,10 +123,10 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create movers query
-        let movers = ecs.RegisterQuery (Query.make<Position, Velocity> ())
+        let movers = Query.make<Position, Velocity> ecs
 
         // create shakers query
-        let shakers = ecs.RegisterQuery (Query.make<Position, Shake> ())
+        let shakers = Query.make<Position, Shake> ecs
 
         // create 1M movers the slow way
         let world =
@@ -160,6 +160,20 @@ type MyGameDispatcher () =
                 position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
                 position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
                 world)
+
+        //// define update for movers
+        //movers.ScheduleIteration (EcsEvents.Update, [shakers],
+        //    fun position velocity world ->
+        //        position.Position.X <- position.Position.X + velocity.Velocity.X
+        //        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+        //        world)
+        //
+        //// define update for shakers
+        //shakers.ScheduleIteration (EcsEvents.Update, Independent,
+        //    fun position shake world ->
+        //        position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+        //        position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+        //        world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
