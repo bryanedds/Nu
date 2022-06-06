@@ -163,6 +163,7 @@ module WorldScreenModule =
         
             // actualize ecs
             let ecs = World.getScreenEcs screen world
+            ecs.Notify Ecs.EcsEvents.Actualize ()
             let world = ecs.Publish Ecs.EcsEvents.Actualize () world
 
             // actualize via dispatcher

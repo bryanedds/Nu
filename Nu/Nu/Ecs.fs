@@ -715,6 +715,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let stores = archetype.Stores
         let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke (&store.[i], Option.getOrDefault Unchecked.defaultof<'s> state)
 
     member this.Frame
@@ -726,6 +727,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
         let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -740,6 +742,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
         let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -755,6 +758,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
         let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -771,6 +775,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
         let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -788,6 +793,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
         let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -806,6 +812,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
         let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -825,6 +832,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
         let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
@@ -845,6 +853,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
         let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
         let i = this.ArchetypeIndex
+        if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
              Option.getOrDefault Unchecked.defaultof<'s> state)
