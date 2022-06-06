@@ -395,6 +395,7 @@ and Ecs () =
         // because we restore the original world when a null result is detected. However, this does not work
         // when 'w is a reference type that has null as a proper value because we have no way to do efficiently
         // detect that case. Option would be an example of a reference type with null as a proper value.
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.UnscheduledEventSuffix }
         let oldState = world
         let mutable world = world
         match subscriptions.TryGetValue event with
@@ -412,6 +413,7 @@ and Ecs () =
         world
 
     member this.SubscribePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w) =
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.UnscheduledEventSuffix }
         let subscriptionId =
             match subscriptions.TryGetValue event with
             | (true, callbacks) ->
@@ -433,6 +435,7 @@ and Ecs () =
         this.SubscribePlus<'d, 'w> (this.AllocSubscriptionId ()) event callback |> ignore
 
     member this.Unsubscribe event subscriptionId =
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.UnscheduledEventSuffix }
         let result =
             match subscriptions.TryGetValue event with
             | (true, callbacks) -> callbacks.Remove subscriptionId
@@ -449,43 +452,7 @@ and Ecs () =
             | _ -> failwith "Subscribed entities count mismatch."
         result
 
-    member this.PublishParallel<'d, 'w when 'w : not struct> event (eventData : 'd) =
-        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
-        let vsync =
-            match subscriptions.TryGetValue event with
-            | (true, callbacks) ->
-                callbacks |>
-                Seq.map (fun entry ->
-                    Task.Run (fun () ->
-                        match entry.Value with
-                        | :? EcsCallback<obj, 'w> as objCallback ->
-                            let evt = { EcsEventData = eventData :> obj }
-                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                        | :? EcsCallback<obj, obj> as objCallback ->
-                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
-                        | _ -> ()) |> Vsync.AwaitTask) |>
-                Vsync.Parallel
-            | (false, _) -> Vsync.Parallel []
-        Vsync.RunSynchronously vsync |> ignore<unit array>
-
-    member this.SubscribeParallelPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit) =
-        this.SubscribePlus<'d, 'w>
-            subscriptionId
-            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
-            (fun evt ecs world -> callback evt ecs world; world)
-
-    member this.SubscribeParallel<'d, 'w when 'w : not struct> event callback =
-        this.Subscribe<'d, 'w>
-            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
-            (fun evt ecs world -> callback evt ecs world; world)
-
-    member this.UnsubscribeParallel event subscriptionId =
-        this.Unsubscribe
-            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
-            subscriptionId
-
-    member this.PublishScheduled<'d, 'w when 'w : not struct> event (eventData : 'd) =
+    member this.Notify<'d, 'w when 'w : not struct> event (eventData : 'd) =
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
@@ -527,7 +494,7 @@ and Ecs () =
                     ignore result
         | (false, _) -> ()
 
-    member this.SubscribeScheduledPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallbackScheduled<'d, 'w>) =
+    member this.SchedulePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallbackScheduled<'d, 'w>) =
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
         let subscriptionId =
             match subscriptions.TryGetValue event with
@@ -546,10 +513,10 @@ and Ecs () =
         | _ -> ()
         subscriptionId
 
-    member this.SubscribeScheduled<'d, 'w when 'w : not struct> event callback =
-        this.SubscribeScheduledPlus<'d, 'w> (this.AllocSubscriptionId ()) event callback |> ignore<uint>
+    member this.Schedule<'d, 'w when 'w : not struct> event callback =
+        this.SchedulePlus<'d, 'w> (this.AllocSubscriptionId ()) event callback |> ignore<uint>
 
-    member this.UnsubscribeScheduled event subscriptionId =
+    member this.Unschedule event subscriptionId =
         this.Unsubscribe
             { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
             subscriptionId
@@ -1329,6 +1296,163 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     i <- inc i
         world
 
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'w>,
+         ?compName,
+         ?world : 'w) =
+        let callback = fun _ _ _ -> this.IterateParallel (statement, Option.getOrDefault typeof<'c>.Name compName, Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'w>,
+         ?compName, ?comp2Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'w>,
+         ?compName, ?comp2Name, ?comp3Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.ScheduleIteration
+        (event : EcsEvent,
+         dependencies : Query list,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault typeof<'c9>.Name comp9Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
     member this.IterateParallel
         (statement : Statement<'c, 'w>,
          ?compName, ?world : 'w) =
@@ -1349,163 +1473,6 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                             world <- statement.Invoke (&store.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'w>,
-         ?compName,
-         ?world : 'w) =
-        let callback = fun _ _ _ -> this.IterateParallel (statement, Option.getOrDefault typeof<'c>.Name compName, Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'w>,
-         ?compName, ?comp2Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'w>,
-         ?compName, ?comp2Name, ?comp3Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
-
-    member this.IterateScheduled
-        (event : EcsEvent,
-         dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
-         ?world : 'w) =
-        let callback =
-            fun _ _ _ ->
-                this.IterateParallel
-                    (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault typeof<'c9>.Name comp9Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
-        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'w>,

@@ -123,5 +123,5 @@ module Ecs =
     let [<Literal>] ParallelTaskSizeMinimum = 1024
     let [<Literal>] PreallocateAmount = ArrayReserve
     let [<Literal>] IntraComponentPrefix = "@"
-    let [<Literal>] ParallelEventSuffix = "Parallel"
-    let [<Literal>] ScheduledEventSuffix = "Scheduled"
+    let [<Literal>] UnscheduledEventSuffix = "!U"
+    let [<Literal>] ScheduledEventSuffix = "!S"
