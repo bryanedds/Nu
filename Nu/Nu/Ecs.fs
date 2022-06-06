@@ -500,17 +500,18 @@ and Ecs () =
             let getDependenciess = fun (callback : EcsCallbackScheduledObj) -> seq callback.EcsDependencies
             let getKey = fun (callback : EcsCallbackScheduledObj) -> callback.EcsQuery
             match dependentCallbacks.Group (getDependenciess, getKey) with
-            | (true, _) ->
-                Log.debug "Cycle found in dependencies. Executing in subscription order on main thread."
-                for callback in dependentCallbacks do
-                    match callback.EcsCallbackObj with
-                    | :? EcsCallback<obj, 'w> as objCallback ->
-                        let evt = { EcsEventData = eventData :> obj }
-                        objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                    | :? EcsCallback<obj, obj> as objCallback ->
-                        let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                        objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
-                    | _ -> ()
+            | (true, groups) ->
+                Log.debug "Cycle found in dependencies. Executing at arbitrary staring point."
+                for group in groups do
+                    for callback in group do
+                        match callback.EcsCallbackObj with
+                        | :? EcsCallback<obj, 'w> as objCallback ->
+                            let evt = { EcsEventData = eventData :> obj }
+                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                        | :? EcsCallback<obj, obj> as objCallback ->
+                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
+                        | _ -> ()
             | (false, groups) ->
                 for group in groups do
                     let result =
