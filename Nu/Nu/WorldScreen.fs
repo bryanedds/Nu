@@ -133,8 +133,8 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
+            ecs.Notify Ecs.EcsEvents.Update ()
             let world = ecs.Publish Ecs.EcsEvents.Update () world
-            ecs.PublishParallel Ecs.EcsEvents.Update ()
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -148,8 +148,8 @@ module WorldScreenModule =
         
             // post-update ecs
             let ecs = World.getScreenEcs screen world
+            ecs.Notify Ecs.EcsEvents.PostUpdate ()
             let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
-            ecs.PublishParallel Ecs.EcsEvents.PostUpdate ()
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
