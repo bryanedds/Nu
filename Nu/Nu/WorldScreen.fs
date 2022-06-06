@@ -133,20 +133,12 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
-#if ECS_BUFFERED_PLUS
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel ()
-            let world = ecs.Publish EcsEvents.Update () world
-#else
             let world = ecs.Publish Ecs.EcsEvents.Update () world
-            let updateTask = ecs.PublishAsync Ecs.EcsEvents.UpdateParallel ()
-#endif
+            ecs.PublishParallel Ecs.EcsEvents.Update ()
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Update (screen, world)
-
-            // finish update task
-            ignore<unit array> updateTask.Result
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
@@ -156,20 +148,12 @@ module WorldScreenModule =
         
             // post-update ecs
             let ecs = World.getScreenEcs screen world
-#if ECS_BUFFERED_PLUS
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel ()
-            let world = ecs.Publish EcsEvents.PostUpdate () world
-#else
             let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
-            let postUpdateTask = ecs.PublishAsync Ecs.EcsEvents.PostUpdateParallel ()
-#endif
+            ecs.PublishParallel Ecs.EcsEvents.PostUpdate ()
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)
-
-            // finish post-update task
-            ignore<unit array> postUpdateTask.Result
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
