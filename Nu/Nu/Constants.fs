@@ -123,3 +123,4 @@ module Ecs =
     let [<Literal>] PreallocateAmount = ArrayReserve
     let [<Literal>] IntraComponentPrefix = "@"
     let [<Literal>] ParallelEventSuffix = "Parallel"
+    let [<Literal>] ScheduledEventSuffix = "Scheduled"
