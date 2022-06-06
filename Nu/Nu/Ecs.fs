@@ -499,19 +499,31 @@ and Ecs () =
                 | _ -> ()
             let getDependenciess = fun (callback : EcsCallbackScheduledObj) -> seq callback.EcsDependencies
             let getKey = fun (callback : EcsCallbackScheduledObj) -> callback.EcsQuery
-            let groups = dependentCallbacks.Group (getDependenciess, getKey)
-            for group in groups do
-                let result =
-                    Parallel.ForEach (group, fun callback ->
-                        match callback.EcsCallbackObj with
-                        | :? EcsCallback<obj, 'w> as objCallback ->
-                            let evt = { EcsEventData = eventData :> obj }
-                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                        | :? EcsCallback<obj, obj> as objCallback ->
-                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
-                        | _ -> ())
-                ignore result
+            match dependentCallbacks.Group (getDependenciess, getKey) with
+            | (true, _) ->
+                Log.debug "Cycle found in dependencies. Executing in subscription order on main thread."
+                for callback in dependentCallbacks do
+                    match callback.EcsCallbackObj with
+                    | :? EcsCallback<obj, 'w> as objCallback ->
+                        let evt = { EcsEventData = eventData :> obj }
+                        objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                    | :? EcsCallback<obj, obj> as objCallback ->
+                        let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                        objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
+                    | _ -> ()
+            | (false, groups) ->
+                for group in groups do
+                    let result =
+                        Parallel.ForEach (group, fun callback ->
+                            match callback.EcsCallbackObj with
+                            | :? EcsCallback<obj, 'w> as objCallback ->
+                                let evt = { EcsEventData = eventData :> obj }
+                                objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                            | :? EcsCallback<obj, obj> as objCallback ->
+                                let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                                objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
+                            | _ -> ())
+                    ignore result
         | (false, _) -> ()
 
     member this.SubscribeScheduledPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallbackScheduled<'d, 'w>) =
@@ -1338,8 +1350,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         this.ThreadTasks tasks
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'w>,
          ?compName,
          ?world : 'w) =
@@ -1347,8 +1359,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'w>,
          ?compName, ?comp2Name,
          ?world : 'w) =
@@ -1362,8 +1374,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'w>,
          ?compName, ?comp2Name, ?comp3Name,
          ?world : 'w) =
@@ -1378,8 +1390,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
          ?world : 'w) =
@@ -1395,8 +1407,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
          ?world : 'w) =
@@ -1413,8 +1425,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
          ?world : 'w) =
@@ -1432,8 +1444,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
          ?world : 'w) =
@@ -1452,8 +1464,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
          ?world : 'w) =
@@ -1473,8 +1485,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateScheduled
-        (event,
-         dependencies,
+        (event : EcsEvent,
+         dependencies : Query list,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
          ?world : 'w) =
@@ -1893,3 +1905,11 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                  Option.getOrDefault typeof<'c9>.Name comp9Name],
              Option.getOrDefault [] subqueries,
              ecs)
+
+[<AutoOpen>]
+module Query =
+
+    [<AutoOpen>]
+    module Ops =
+
+        let Independent = [] : Query list

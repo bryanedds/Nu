@@ -10,24 +10,28 @@ namespace Nu
     /// </summary>
     public static class TopologicalSort
     {
-        public static IList<ICollection<T>> Group<T, TKey>(this IEnumerable<T> source, Func<T, IEnumerable<TKey>> getDependencies, Func<T, TKey> getKey)
+        public static (bool, IList<ICollection<T>>) Group<T, TKey>(this IEnumerable<T> source, Func<T, IEnumerable<TKey>> getDependencies, Func<T, TKey> getKey)
         {
             ICollection<T> source2 = (source as ICollection<T>) ?? source.ToArray();
             return Group<T>(source2, RemapDependencies(source2, getDependencies, getKey), null);
         }
 
-        public static IList<ICollection<T>> Group<T, TKey>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getDependencies, Func<T, TKey> getKey)
+        public static (bool, IList<ICollection<T>>) Group<T, TKey>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getDependencies, Func<T, TKey> getKey)
         {
-            return Group<T>(source, getDependencies, new GenericEqualityComparer<T, TKey>(getKey));
+            return Group(source, getDependencies, new GenericEqualityComparer<T, TKey>(getKey));
         }
 
-        public static IList<ICollection<T>> Group<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getDependencies, IEqualityComparer<T> comparer = null)
+        public static (bool, IList<ICollection<T>>) Group<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getDependencies, IEqualityComparer<T> comparer = null)
         {
+            var cycleFound = false;
             var sorted = new List<ICollection<T>>();
             var visited = new Dictionary<T, int>(comparer);
             foreach (var item in source)
-                Visit(item, getDependencies, sorted, visited);
-            return sorted;
+            {
+                var (cycleFound2, _) = Visit(item, getDependencies, sorted, visited);
+                cycleFound = cycleFound || cycleFound2;
+            }
+            return (cycleFound, sorted);
         }
 
         public static IList<T> Sort<T, TKey>(this IEnumerable<T> source, Func<T, IEnumerable<TKey>> getDependencies, Func<T, TKey> getKey)
