@@ -10,12 +10,12 @@ open Nu
 type private EcsCallback<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
-and EcsDependency =
-    | EcsWrites of ArchetypeId
-    | EcsReads of ArchetypeId
-    | EcsDependencies of EcsDependency list
+/// Describes an Ecs processing dependency.
+and [<NoEquality; NoComparison>] EcsDependency =
+    | Independent
+    | Dependent of string list // list of component names
 
-/// An Ecs event callback.
+/// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] private EcsCallbackScheduled<'d, 'w when 'w : not struct> =
     { EcsDependency : EcsDependency
       EcsEvent : EcsEvent<'d, 'w> -> Ecs -> 'w -> obj }
@@ -247,9 +247,6 @@ and ArchetypeId (terms : Map<string, Term>) =
               (Option.getOrDefault typeof<'c9>.Name comp9Name, typeof<'c9>)],
              Option.getOrDefault Map.empty subterms)
 
-    // inside Ecs...
-    // this.SubscribeScheduled<'d, 'w when 'w : not struct> dependency event callback =
-
 /// A collection of component stores.
 and Archetype (archetypeId : ArchetypeId) =
 
@@ -434,9 +431,9 @@ and Ecs () =
 
     member this.PublishScheduled<'d, 'w when 'w : not struct> event (eventData : 'd) =
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
-        let dependentCallbacks = SegmentedList.make ()
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
+            let dependentCallbacks = SegmentedList.make ()
             for entry in callbacks do
                 match entry.Value with
                 | :? EcsCallbackScheduled<obj, 'w> as objCallback ->
@@ -444,6 +441,8 @@ and Ecs () =
                 | :? EcsCallbackScheduled<obj, obj> as objCallback ->
                     SegmentedList.add (objCallback.EcsDependency, objCallback.EcsEvent :> obj) dependentCallbacks
                 | _ -> ()
+            // TODO: add dependencies to graph and solve for order / simultanaity the execute in parallel.
+            ignore eventData
         | (false, _) -> ()
 
     member this.SubscribePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w) =
