@@ -13,13 +13,13 @@ type private EcsCallback<'d, 'w when 'w : not struct> =
 /// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
     { EcsQuery : Query
-      EcsQueries : Query List
+      EcsDependencies : Query list
       EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit }
 
 /// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] private EcsCallbackScheduledObj =
     { EcsQuery : Query
-      EcsQueries : Query List
+      EcsDependencies : Query list
       EcsCallbackObj : obj }
 
 /// The type of Ecs event.
@@ -493,13 +493,13 @@ and Ecs () =
             for entry in callbacks do
                 match entry.Value with
                 | :? EcsCallbackScheduled<obj, 'w> as objCallback ->
-                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
+                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsDependencies = objCallback.EcsDependencies; EcsCallbackObj = objCallback.EcsCallback }
                 | :? EcsCallbackScheduled<obj, obj> as objCallback ->
-                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
+                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsDependencies = objCallback.EcsDependencies; EcsCallbackObj = objCallback.EcsCallback }
                 | _ -> ()
-            let getDeps = fun (callback : EcsCallbackScheduledObj) -> seq callback.EcsQueries
+            let getDependenciess = fun (callback : EcsCallbackScheduledObj) -> seq callback.EcsDependencies
             let getKey = fun (callback : EcsCallbackScheduledObj) -> callback.EcsQuery
-            let groups = dependentCallbacks.Group (getDeps, getKey)
+            let groups = dependentCallbacks.Group (getDependenciess, getKey)
             for group in groups do
                 let result =
                     Parallel.ForEach (group, fun callback ->
@@ -534,7 +534,7 @@ and Ecs () =
         subscriptionId
 
     member this.SubscribeScheduled<'d, 'w when 'w : not struct> event callback =
-        this.SubscribeScheduledPlus<'d, 'w> (this.AllocSubscriptionId ()) event callback
+        this.SubscribeScheduledPlus<'d, 'w> (this.AllocSubscriptionId ()) event callback |> ignore<uint>
 
     member this.UnsubscribeScheduled event subscriptionId =
         this.Unsubscribe
@@ -638,6 +638,11 @@ and Ecs () =
             world
         | (false, _) -> world
 
+    member internal this.RegisterQuery (query : Query) =
+        for archetypeEntry in archetypes do
+            query.TryRegisterArchetype archetypeEntry.Value
+        queries.Add query
+
     member this.RegisterEntitiesPlus elideEvents count comps archetypeId (world : 'w) =
 
         // get archetype
@@ -665,12 +670,6 @@ and Ecs () =
     member this.RegisterEntities elideEvents count comps archetypeId world =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
         this.RegisterEntitiesPlus elideEvents count comps archetypeId world
-
-    member this.RegisterQuery (query : Query) =
-        for archetypeEntry in archetypes do
-            query.TryRegisterArchetype archetypeEntry.Value
-        queries.Add query
-        query
 
     member this.ReadComponents count archetypeId stream =
         let archetype =
@@ -1068,7 +1067,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
              Option.getOrDefault null comp9Name,
              Option.getOrDefault null state)
 
-and Query (compNames : string HashSet, subqueries : Subquery seq) =
+and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as this =
 
     let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
     let subqueries = List subqueries
@@ -1076,11 +1075,19 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
     do
         for compName in compNames do
             subqueries.Add (Tagged (Var (Constants.Ecs.IntraComponentPrefix + compName)))
+        ecs.RegisterQuery this
 
     member inline private this.IndexStore<'c when 'c : struct and 'c :> 'c Component> compName archetypeId (stores : Dictionary<string, Store>) =
         match stores.TryGetValue compName with
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
+
+    member private this.ThreadTasks (tasks : (int * (unit -> unit)) List) =
+        let largeTasks = Seq.filter (fst >> (>) Constants.Ecs.ParallelTaskSizeMinimum) tasks
+        if Seq.length largeTasks > 2 then
+            let result = Parallel.ForEach (tasks, fun (_, task) -> task ())
+            ignore<ParallelLoopResult> result
+        else for (_, task) in tasks do task ()
 
     member this.Archetypes : IReadOnlyDictionary<ArchetypeId, Archetype> =
         archetypes :> _
@@ -1103,7 +1110,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                     SegmentedList.add { ArchetypeIndex = i; Archetype = archetype } slots
         slots
 
-    member this.IndexEntities ecs =
+    member this.IndexEntities () =
         let entities = SegmentedList.make ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1309,13 +1316,6 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                     i <- inc i
         world
 
-    member private this.ThreadTasks (tasks : (int * (unit -> unit)) List) =
-        let largeTasks = Seq.filter (fst >> (>) Constants.Ecs.ParallelTaskSizeMinimum) tasks
-        if Seq.length largeTasks > 2 then
-            let result = Parallel.ForEach (tasks, fun (_, task) -> task ())
-            ignore<ParallelLoopResult> result
-        else for (_, task) in tasks do task ()
-
     member this.IterateParallel
         (statement : Statement<'c, 'w>,
          ?compName, ?world : 'w) =
@@ -1336,6 +1336,163 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                             world <- statement.Invoke (&store.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'w>,
+         ?compName,
+         ?world : 'w) =
+        let callback = fun _ _ _ -> this.IterateParallel (statement, Option.getOrDefault typeof<'c>.Name compName, Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'w>,
+         ?compName, ?comp2Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'w>,
+         ?compName, ?comp2Name, ?comp3Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
+
+    member this.IterateScheduled
+        (event,
+         dependencies,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault typeof<'c9>.Name comp9Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.SubscribeScheduled event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'w>,
@@ -1578,54 +1735,59 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         this.ThreadTasks tasks
 
     static member make
-        (?subqueries) =
+        (ecs, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural [],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c when
         'c : struct and 'c :> 'c Component>
-        (?compName, ?subqueries) =
+        (ecs, ?compName, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
-        (?compName, ?comp2Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
                  Option.getOrDefault typeof<'c2>.Name comp2Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
                  Option.getOrDefault typeof<'c2>.Name comp2Name
                  Option.getOrDefault typeof<'c3>.Name comp3Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component and
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
                  Option.getOrDefault typeof<'c2>.Name comp2Name
                  Option.getOrDefault typeof<'c3>.Name comp3Name
                  Option.getOrDefault typeof<'c4>.Name comp4Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
@@ -1633,7 +1795,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c3 : struct and 'c3 :> 'c3 Component and
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
@@ -1641,7 +1803,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                  Option.getOrDefault typeof<'c3>.Name comp3Name
                  Option.getOrDefault typeof<'c4>.Name comp4Name
                  Option.getOrDefault typeof<'c5>.Name comp5Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
@@ -1650,7 +1813,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c4 : struct and 'c4 :> 'c4 Component and
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
@@ -1659,7 +1822,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                  Option.getOrDefault typeof<'c4>.Name comp4Name
                  Option.getOrDefault typeof<'c5>.Name comp5Name
                  Option.getOrDefault typeof<'c6>.Name comp6Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
@@ -1669,7 +1833,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c5 : struct and 'c5 :> 'c5 Component and
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
@@ -1679,7 +1843,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                  Option.getOrDefault typeof<'c5>.Name comp5Name
                  Option.getOrDefault typeof<'c6>.Name comp6Name
                  Option.getOrDefault typeof<'c7>.Name comp7Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
@@ -1690,7 +1855,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c6 : struct and 'c6 :> 'c6 Component and
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
@@ -1701,7 +1866,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                  Option.getOrDefault typeof<'c6>.Name comp6Name
                  Option.getOrDefault typeof<'c7>.Name comp7Name
                  Option.getOrDefault typeof<'c8>.Name comp8Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
@@ -1713,7 +1879,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         'c7 : struct and 'c7 :> 'c7 Component and
         'c8 : struct and 'c8 :> 'c8 Component and
         'c9 : struct and 'c9 :> 'c9 Component>
-        (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subqueries) =
+        (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
                 [Option.getOrDefault typeof<'c>.Name compName
@@ -1725,4 +1891,5 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                  Option.getOrDefault typeof<'c7>.Name comp7Name
                  Option.getOrDefault typeof<'c8>.Name comp8Name
                  Option.getOrDefault typeof<'c9>.Name comp9Name],
-             Option.getOrDefault [] subqueries)
+             Option.getOrDefault [] subqueries,
+             ecs)
