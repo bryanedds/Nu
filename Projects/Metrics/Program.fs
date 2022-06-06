@@ -135,12 +135,12 @@ type MyGameDispatcher () =
                 let world = mover.Register { Active = true; Position = v2Zero } world
                 let world = mover.Register { Active = true; Velocity = v2One } world
                 world)
-                world (Seq.init 1000000 id)
+                world (Seq.init 100 id)
 
         // create 3M more movers (goal: 60FPS, current: 60FPS)
         let moverComponents = [{ Active = true; Position = v2Zero } :> obj; { Active = true; Velocity = v2One } :> obj]
         let moverArchetypeId = ArchetypeId.make (moverComponents, Map.empty)
-        let world = ecs.RegisterEntities true 3000000 moverComponents moverArchetypeId world |> snd
+        let world = ecs.RegisterEntities true 300 moverComponents moverArchetypeId world |> snd
 
         // create 40 shakers
         let shakerArchetypeId = ArchetypeId.make<Position, Shake> (subterms = Map.empty)
@@ -148,32 +148,16 @@ type MyGameDispatcher () =
         let world = ecs.RegisterEntities true 40 shakerComponents shakerArchetypeId world |> snd
 
         // define update for movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            movers.Iterate (fun position velocity world ->
-                position.Position.X <- position.Position.X + velocity.Velocity.X
-                position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-                world)
+        movers.SubscribeIteration (EcsEvents.Update, fun position velocity world ->
+            position.Position.X <- position.Position.X + velocity.Velocity.X
+            position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+            world)
 
         // define update for shakers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            shakers.Iterate (fun position shake world ->
-                position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
-                position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
-                world)
-
-        //// define update for movers
-        //movers.ScheduleIteration (EcsEvents.Update, [shakers],
-        //    fun position velocity world ->
-        //        position.Position.X <- position.Position.X + velocity.Velocity.X
-        //        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-        //        world)
-        //
-        //// define update for shakers
-        //shakers.ScheduleIteration (EcsEvents.Update, Independent,
-        //    fun position shake world ->
-        //        position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
-        //        position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
-        //        world)
+        shakers.SubscribeIteration (EcsEvents.Update, fun position shake world ->
+            position.Position.X <- shake.Origin.X + Gen.randomf1 shake.Offset.X
+            position.Position.Y <- shake.Origin.Y + Gen.randomf1 shake.Offset.Y
+            world)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
