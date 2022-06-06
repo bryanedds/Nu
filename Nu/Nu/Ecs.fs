@@ -10,14 +10,9 @@ open Nu
 type private EcsCallback<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
-/// Describes an Ecs processing dependency.
-and [<NoEquality; NoComparison>] EcsDependency =
-    | Independent
-    | Dependent of string list // list of component names
-
 /// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] private EcsCallbackScheduled<'d, 'w when 'w : not struct> =
-    { EcsDependency : EcsDependency
+    { EcsDependencies : Query list
       EcsEvent : EcsEvent<'d, 'w> -> Ecs -> 'w -> obj }
 
 /// The type of Ecs event.
@@ -437,9 +432,9 @@ and Ecs () =
             for entry in callbacks do
                 match entry.Value with
                 | :? EcsCallbackScheduled<obj, 'w> as objCallback ->
-                    SegmentedList.add (objCallback.EcsDependency, objCallback.EcsEvent :> obj) dependentCallbacks
+                    SegmentedList.add (objCallback.EcsDependencies, objCallback.EcsEvent :> obj) dependentCallbacks
                 | :? EcsCallbackScheduled<obj, obj> as objCallback ->
-                    SegmentedList.add (objCallback.EcsDependency, objCallback.EcsEvent :> obj) dependentCallbacks
+                    SegmentedList.add (objCallback.EcsDependencies, objCallback.EcsEvent :> obj) dependentCallbacks
                 | _ -> ()
             // TODO: add dependencies to graph and solve for order / simultanaity the execute in parallel.
             ignore eventData
@@ -1040,6 +1035,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
 
+    member this.Archetypes =
+        archetypes :> IReadOnlyDictionary<_ , _>
+
     member this.Subqueries =
         seq subqueries
 
@@ -1266,19 +1264,22 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
 
     member this.IterateParallel (statement : Statement<'c, 'w>, ?compName, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
-        for archetypeEntry in archetypes do
+        archetypes |> Seq.map (fun archetypeEntry ->
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let stores = archetype.Stores
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            lock store $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    let comp = &store.[i]
-                    if comp.Active then
-                        world <- statement.Invoke (&comp, world)
-                        i <- inc i
+            let fn =
+                fun () ->
+                    lock store $ fun () ->
+                        let mutable i = 0
+                        while i < store.Length && i < length do
+                            let comp = &store.[i]
+                            if comp.Active then
+                                world <- statement.Invoke (&comp, world)
+                                i <- inc i
+            (archetypeId, fn)
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'w>,
