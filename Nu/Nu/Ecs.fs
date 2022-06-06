@@ -1295,6 +1295,159 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     i <- inc i
         world
 
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'w>,
+         ?compName,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'w>,
+         ?compName, ?comp2Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'w>,
+         ?compName, ?comp2Name, ?comp3Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
+    member this.SubscribeIteration
+        (event : EcsEvent,
+         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
+         ?world : 'w) =
+        let callback =
+            fun _ _ _ ->
+                this.Iterate
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.getOrDefault typeof<'c9>.Name comp9Name,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
+        ecs.Subscribe event callback
+
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
