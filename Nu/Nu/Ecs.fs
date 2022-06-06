@@ -11,16 +11,16 @@ type private EcsCallback<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
 /// A scheduled Ecs event callback.
-and [<NoEquality; NoComparison>] private EcsDependentQuery =
+and [<NoEquality; NoComparison>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
+    { EcsQuery : Query
+      EcsQueries : Query List
+      EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit }
+
+/// A scheduled Ecs event callback.
+and [<NoEquality; NoComparison>] private EcsCallbackScheduledObj =
     { EcsQuery : Query
       EcsQueries : Query List
       EcsCallbackObj : obj }
-
-/// A scheduled Ecs event callback.
-and [<NoEquality; NoComparison>] private EcsCallbackScheduled<'d, 'w when 'w : not struct> =
-    { EcsQuery : Query
-      EcsQueries : Query List
-      EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> obj }
 
 /// The type of Ecs event.
 and [<StructuralEquality; NoComparison; Struct>] EcsEventType =
@@ -411,55 +411,6 @@ and Ecs () =
         | (false, _) -> ()
         world
 
-    member this.PublishParallel<'d, 'w when 'w : not struct> event (eventData : 'd) =
-        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
-        let vsync =
-            match subscriptions.TryGetValue event with
-            | (true, callbacks) ->
-                callbacks |>
-                Seq.map (fun entry ->
-                    Task.Run (fun () ->
-                        match entry.Value with
-                        | :? EcsCallback<obj, 'w> as objCallback ->
-                            let evt = { EcsEventData = eventData :> obj }
-                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                        | :? EcsCallback<obj, obj> as objCallback ->
-                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
-                        | _ -> ()) |> Vsync.AwaitTask) |>
-                Vsync.Parallel
-            | (false, _) -> Vsync.Parallel []
-        Vsync.RunSynchronously vsync |> ignore<unit array>
-
-    member this.PublishScheduled<'d, 'w when 'w : not struct> event (eventData : 'd) =
-        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
-        match subscriptions.TryGetValue event with
-        | (true, callbacks) ->
-            let dependentCallbacks = List ()
-            for entry in callbacks do
-                match entry.Value with
-                | :? EcsCallbackScheduled<obj, 'w> as objCallback ->
-                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
-                | :? EcsCallbackScheduled<obj, obj> as objCallback ->
-                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
-                | _ -> ()
-            let getDeps = fun (callback : EcsDependentQuery) -> seq callback.EcsQueries
-            let getKey = fun (callback : EcsDependentQuery) -> callback.EcsQuery
-            let groups = dependentCallbacks.Group (getDeps, getKey)
-            for group in groups do
-                let result =
-                    Parallel.ForEach (group, fun callback ->
-                        match callback.EcsCallbackObj with
-                        | :? EcsCallback<obj, 'w> as objCallback ->
-                            let evt = { EcsEventData = eventData :> obj }
-                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                        | :? EcsCallback<obj, obj> as objCallback ->
-                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
-                        | _ -> ())
-                ignore result
-        | (false, _) -> ()
-
     member this.SubscribePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w) =
         let subscriptionId =
             match subscriptions.TryGetValue event with
@@ -498,6 +449,26 @@ and Ecs () =
             | _ -> failwith "Subscribed entities count mismatch."
         result
 
+    member this.PublishParallel<'d, 'w when 'w : not struct> event (eventData : 'd) =
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
+        let vsync =
+            match subscriptions.TryGetValue event with
+            | (true, callbacks) ->
+                callbacks |>
+                Seq.map (fun entry ->
+                    Task.Run (fun () ->
+                        match entry.Value with
+                        | :? EcsCallback<obj, 'w> as objCallback ->
+                            let evt = { EcsEventData = eventData :> obj }
+                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                        | :? EcsCallback<obj, obj> as objCallback ->
+                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
+                        | _ -> ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel
+            | (false, _) -> Vsync.Parallel []
+        Vsync.RunSynchronously vsync |> ignore<unit array>
+
     member this.SubscribeParallelPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit) =
         this.SubscribePlus<'d, 'w>
             subscriptionId
@@ -512,6 +483,62 @@ and Ecs () =
     member this.UnsubscribeParallel event subscriptionId =
         this.Unsubscribe
             { event with EcsEventName = event.EcsEventName + Constants.Ecs.ParallelEventSuffix }
+            subscriptionId
+
+    member this.PublishScheduled<'d, 'w when 'w : not struct> event (eventData : 'd) =
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
+        match subscriptions.TryGetValue event with
+        | (true, callbacks) ->
+            let dependentCallbacks = List ()
+            for entry in callbacks do
+                match entry.Value with
+                | :? EcsCallbackScheduled<obj, 'w> as objCallback ->
+                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
+                | :? EcsCallbackScheduled<obj, obj> as objCallback ->
+                    dependentCallbacks.Add { EcsQuery = objCallback.EcsQuery; EcsQueries = objCallback.EcsQueries; EcsCallbackObj = objCallback.EcsCallback }
+                | _ -> ()
+            let getDeps = fun (callback : EcsCallbackScheduledObj) -> seq callback.EcsQueries
+            let getKey = fun (callback : EcsCallbackScheduledObj) -> callback.EcsQuery
+            let groups = dependentCallbacks.Group (getDeps, getKey)
+            for group in groups do
+                let result =
+                    Parallel.ForEach (group, fun callback ->
+                        match callback.EcsCallbackObj with
+                        | :? EcsCallback<obj, 'w> as objCallback ->
+                            let evt = { EcsEventData = eventData :> obj }
+                            objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
+                        | :? EcsCallback<obj, obj> as objCallback ->
+                            let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
+                            objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
+                        | _ -> ())
+                ignore result
+        | (false, _) -> ()
+
+    member this.SubscribeScheduledPlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallbackScheduled<'d, 'w>) =
+        let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
+        let subscriptionId =
+            match subscriptions.TryGetValue event with
+            | (true, callbacks) ->
+                callbacks.Add (subscriptionId, callback)
+                subscriptionId
+            | (false, _) ->
+                let callbacks = dictPlus HashIdentity.Structural [(subscriptionId, callback :> obj)]
+                subscriptions.Add (event, callbacks)
+                subscriptionId
+        match event.EcsEventType with
+        | ComponentEvent (entity, _) ->
+            match subscribedEntities.TryGetValue entity with
+            | (true, count) -> subscribedEntities.[entity] <- inc count
+            | (false, _) -> subscribedEntities.Add (entity, 1)
+        | _ -> ()
+        subscriptionId
+
+    member this.SubscribeScheduled<'d, 'w when 'w : not struct> event callback =
+        this.SubscribeScheduledPlus<'d, 'w> (this.AllocSubscriptionId ()) event callback
+
+    member this.UnsubscribeScheduled event subscriptionId =
+        this.Unsubscribe
+            { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
             subscriptionId
 
     member this.RegisterComponentName<'c when 'c : struct and 'c :> 'c Component> componentName =
