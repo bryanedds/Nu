@@ -1301,7 +1301,12 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
          statement : Statement<'c, 'w>,
          ?compName,
          ?world : 'w) =
-        let callback = fun _ _ _ -> this.IterateParallel (statement, Option.getOrDefault typeof<'c>.Name compName, Option.getOrDefault Unchecked.defaultof<'w> world)
+        let callback =
+            fun _ _ _ ->
+                this.IterateParallel
+                    (statement,
+                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.getOrDefault Unchecked.defaultof<'w> world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
