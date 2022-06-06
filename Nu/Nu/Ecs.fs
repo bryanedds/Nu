@@ -6,8 +6,8 @@ open System.Threading.Tasks
 open Prime
 open Nu
 
-/// An Ecs event callback.
-type private EcsCallback<'d, 'w when 'w : not struct> =
+/// An unscheduled Ecs event callback.
+type private EcsCallbackUnscheduled<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
 /// A scheduled Ecs event callback.
@@ -359,7 +359,7 @@ and Ecs () =
         if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of Ecs subscription ids not supported."
         subscriptionIdCurrent
 
-    member private this.BoxCallback<'d, 'w when 'w : not struct> (callback : EcsCallback<'d, 'w>) =
+    member private this.BoxCallback<'d, 'w when 'w : not struct> (callback : EcsCallbackUnscheduled<'d, 'w>) =
         let boxableCallback = fun (evt : EcsEvent<obj, 'w>) store ->
             let evt = { EcsEventData = evt.EcsEventData :?> 'd }
             callback evt store
@@ -401,10 +401,10 @@ and Ecs () =
         | (true, callbacks) ->
             for entry in callbacks do
                 match entry.Value with
-                | :? EcsCallback<obj, 'w> as objCallback ->
+                | :? EcsCallbackUnscheduled<obj, 'w> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
                     world <- match objCallback evt this world :> obj with null -> oldState | world -> world :?> 'w
-                | :? EcsCallback<obj, obj> as objCallback ->
+                | :? EcsCallbackUnscheduled<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
                     world <- match objCallback evt this world with null -> oldState | world -> world :?> 'w
                 | _ -> ()
@@ -471,10 +471,10 @@ and Ecs () =
                 for group in groups do
                     for callback in group do
                         match callback.EcsCallbackObj with
-                        | :? EcsCallback<obj, 'w> as objCallback ->
+                        | :? EcsCallbackUnscheduled<obj, 'w> as objCallback ->
                             let evt = { EcsEventData = eventData :> obj }
                             objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                        | :? EcsCallback<obj, obj> as objCallback ->
+                        | :? EcsCallbackUnscheduled<obj, obj> as objCallback ->
                             let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
                             objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
                         | _ -> ()
@@ -483,10 +483,10 @@ and Ecs () =
                     let result =
                         Parallel.ForEach (group, fun callback ->
                             match callback.EcsCallbackObj with
-                            | :? EcsCallback<obj, 'w> as objCallback ->
+                            | :? EcsCallbackUnscheduled<obj, 'w> as objCallback ->
                                 let evt = { EcsEventData = eventData :> obj }
                                 objCallback evt this Unchecked.defaultof<'w> |> ignore<'w>
-                            | :? EcsCallback<obj, obj> as objCallback ->
+                            | :? EcsCallbackUnscheduled<obj, obj> as objCallback ->
                                 let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
                                 objCallback evt this Unchecked.defaultof<obj> |> ignore<obj>
                             | _ -> ())
@@ -1307,68 +1307,63 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'w>,
-         ?compName,
-         ?world : 'w) =
+         ?compName) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'w>,
-         ?compName, ?comp2Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'w>,
-         ?compName, ?comp2Name, ?comp3Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1376,16 +1371,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1394,16 +1388,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1413,16 +1406,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1433,16 +1425,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
                      Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.SubscribeIteration
         (event : EcsEvent,
          statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
-         ?world : 'w) =
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.Iterate
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1454,79 +1445,74 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
                      Option.getOrDefault typeof<'c8>.Name comp8Name,
                      Option.getOrDefault typeof<'c9>.Name comp9Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Subscribe event callback
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'w>,
-         ?compName,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'w>,
+         ?compName) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ (world : 'w) ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'w>,
-         ?compName, ?comp2Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'w>,
+         ?compName, ?comp2Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'w>,
-         ?compName, ?comp2Name, ?comp3Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'w>,
+         ?compName, ?comp2Name, ?comp3Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
                      Option.getOrDefault typeof<'c2>.Name comp2Name,
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1534,17 +1520,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c3>.Name comp3Name,
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1553,17 +1538,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c4>.Name comp4Name,
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1573,17 +1557,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c5>.Name comp5Name,
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1594,17 +1577,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c6>.Name comp6Name,
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
                      Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.ScheduleIteration
         (event : EcsEvent,
          dependencies : Query list,
-         statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name,
-         ?world : 'w) =
+         statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name) =
         let callback =
-            fun _ _ _ ->
+            fun _ _ world ->
                 this.IterateParallel
                     (statement,
                      Option.getOrDefault typeof<'c>.Name compName,
@@ -1616,13 +1598,13 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                      Option.getOrDefault typeof<'c7>.Name comp7Name,
                      Option.getOrDefault typeof<'c8>.Name comp8Name,
                      Option.getOrDefault typeof<'c9>.Name comp9Name,
-                     Option.getOrDefault Unchecked.defaultof<'w> world)
+                     world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
     member this.IterateParallel
-        (statement : Statement<'c, 'w>,
+        (statement : StatementPlus<'c, 'w>,
          ?compName, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1636,14 +1618,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], world)
+                            statement.Invoke (&store.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'w>,
          ?compName, ?comp2Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1659,14 +1641,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1684,14 +1666,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1711,14 +1693,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1740,14 +1722,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1771,14 +1753,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1804,14 +1786,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1839,14 +1821,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?world : 'w) =
-        let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let world = Option.getOrDefault Unchecked.defaultof<'w> world
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1876,7 +1858,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
                             i <- inc i))
         this.ThreadTasks tasks
 
