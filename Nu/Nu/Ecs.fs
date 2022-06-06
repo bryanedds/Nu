@@ -13,13 +13,13 @@ type private EcsCallback<'d, 'w when 'w : not struct> =
 /// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] private EcsDependentQuery =
     { EcsQuery : Query
-      EcsQueries : Query list
+      EcsQueries : Query List
       EcsCallbackObj : obj }
 
 /// A scheduled Ecs event callback.
 and [<NoEquality; NoComparison>] private EcsCallbackScheduled<'d, 'w when 'w : not struct> =
     { EcsQuery : Query
-      EcsQueries : Query list
+      EcsQueries : Query List
       EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> obj }
 
 /// The type of Ecs event.
@@ -1055,8 +1055,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
         | (true, store) -> store :?> 'c Store
         | (false, _) -> failwith ("Invalid entity frame for archetype " + scstring archetypeId + ".")
 
-    member this.Archetypes =
-        archetypes :> IReadOnlyDictionary<_ , _>
+    member this.Archetypes : IReadOnlyDictionary<ArchetypeId, Archetype> =
+        archetypes :> _
 
     member this.Subqueries =
         seq subqueries
@@ -1282,10 +1282,18 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
                     i <- inc i
         world
 
+    member private this.ThreadTasks (tasks : (int * (unit -> unit)) List) =
+        let largeTasks = Seq.filter (fst >> (>) Constants.Ecs.ParallelTaskSizeMinimum) tasks
+        if Seq.length largeTasks > 2 then
+            let result = Parallel.ForEach (tasks, fun (_, task) -> task ())
+            ignore<ParallelLoopResult> result
+        else for (_, task) in tasks do task ()
+
     member this.IterateParallel
         (statement : Statement<'c, 'w>,
          ?compName, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1293,17 +1301,20 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            lock store $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'w>,
          ?compName, ?comp2Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1312,18 +1323,21 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let stores = archetype.Stores
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
             let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1333,19 +1347,22 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
             let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
             let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            let mutable i = 0
-            while i < store.Length && i < length do
-                if entityIdStore.[i].Active then
-                    world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
-                    i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1356,20 +1373,23 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
             let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
             let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1381,21 +1401,24 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
             let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
             let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-            lock store5 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                lock store5 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1408,22 +1431,25 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
             let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
             let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-            lock store5 $ fun () ->
-            lock store6 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                lock store5 $ fun () ->
+                lock store6 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1437,23 +1463,26 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
             let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
             let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-            lock store5 $ fun () ->
-            lock store6 $ fun () ->
-            lock store7 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                lock store5 $ fun () ->
+                lock store6 $ fun () ->
+                lock store7 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1468,24 +1497,27 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
             let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
             let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-            lock store5 $ fun () ->
-            lock store6 $ fun () ->
-            lock store7 $ fun () ->
-            lock store8 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                lock store5 $ fun () ->
+                lock store6 $ fun () ->
+                lock store7 $ fun () ->
+                lock store8 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     member this.IterateParallel
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?world : 'w) =
         let mutable world = Option.getOrDefault Unchecked.defaultof<'w> world
+        let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
@@ -1501,20 +1533,22 @@ and Query (compNames : string HashSet, subqueries : Subquery seq) =
             let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
             let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
             let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
-            lock store $ fun () ->
-            lock store2 $ fun () ->
-            lock store3 $ fun () ->
-            lock store4 $ fun () ->
-            lock store5 $ fun () ->
-            lock store6 $ fun () ->
-            lock store7 $ fun () ->
-            lock store8 $ fun () ->
-            lock store9 $ fun () ->
-                let mutable i = 0
-                while i < store.Length && i < length do
-                    if entityIdStore.[i].Active then
-                        world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
-                        i <- inc i
+            tasks.Add (Pair.make entityIdStore.Length (fun () ->
+                lock store $ fun () ->
+                lock store2 $ fun () ->
+                lock store3 $ fun () ->
+                lock store4 $ fun () ->
+                lock store5 $ fun () ->
+                lock store6 $ fun () ->
+                lock store7 $ fun () ->
+                lock store8 $ fun () ->
+                lock store9 $ fun () ->
+                    let mutable i = 0
+                    while i < store.Length && i < length do
+                        if entityIdStore.[i].Active then
+                            world <- statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
+                            i <- inc i))
+        this.ThreadTasks tasks
 
     static member make
         (?subqueries) =
