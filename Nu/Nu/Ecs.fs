@@ -350,7 +350,6 @@ and Ecs () =
     let subscribedEntities = dictPlus<EcsEntity, int> HashIdentity.Structural []
     let queries = List<Query> ()
 
-    /// Thread-safe.
     let createArchetype (archetypeId : ArchetypeId) =
         let archetype = Archetype archetypeId
         archetypes.TryAdd (archetypeId, archetype) |> ignore<bool>
@@ -372,7 +371,6 @@ and Ecs () =
             callback evt store
         boxableCallback :> obj
 
-    /// Thread-safe.
     member private this.RegisterEntityInternal comps archetypeId entity =
         let archetype =
             match archetypes.TryGetValue archetypeId with
@@ -383,7 +381,6 @@ and Ecs () =
                 archetype.Register comps entity.EntityId
         entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype }) |> ignore<bool>
 
-    /// Thread-safe.
     member private this.UnregisterEntityInternal entitySlot entity =
         let archetype = entitySlot.Archetype
         let comps = archetype.GetComponents entitySlot.ArchetypeIndex
@@ -541,7 +538,6 @@ and Ecs () =
         | (true, _) -> failwith "Component type already registered."
         | (false, _) -> componentTypes.TryAdd (componentName, typeof<'c>) |> ignore<bool>
 
-    /// Thread-safe.
     member this.RegisterTerm (termName : string) term (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         if (match term with Intra _ -> true | _ -> false) then failwith "Intra components are for internal use only."
@@ -557,7 +553,6 @@ and Ecs () =
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             this.RegisterEntityInternal comps archetypeId entity
 
-    /// Thread-safe.
     member this.UnregisterTerm (termName : string) (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         match entitySlots.TryGetValue entity.EntityId with
@@ -567,7 +562,6 @@ and Ecs () =
             if archetypeId.Terms.Count > 0 then this.RegisterEntityInternal comps archetypeId entity
         | (false, _) -> ()
 
-    /// Thread-safe.
     member this.RegisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (comp : 'c) (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
@@ -585,12 +579,10 @@ and Ecs () =
             let eventData = { EcsEntity = entity; ComponentName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (world :> obj) :?> 'w
 
-    /// Thread-safe.
     member this.RegisterComponent<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         (comp : 'c) (entity : EcsEntity) (world : 'w) =
         this.RegisterComponentPlus<'c, 'w> (typeof<'c>.Name) comp (entity : EcsEntity) world
 
-    /// Thread-safe.
     member this.UnregisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
@@ -606,12 +598,10 @@ and Ecs () =
             else world
         | (false, _) -> world
 
-    /// Thread-safe.
     member this.UnregisterComponent<'c, 'w when
         'c : struct and 'c :> 'c Component and 'w : not struct> (entity : EcsEntity) (world : 'w) =
         this.UnregisterComponentPlus<'c, 'w> typeof<'c>.Name entity world
 
-    /// Thread-safe.
     member this.RegisterEntity elideEvents comps archetypeId world =
         let archetype =
             match archetypes.TryGetValue archetypeId with
@@ -629,7 +619,6 @@ and Ecs () =
                 world <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
         (entity, world)
 
-    /// Thread-safe.
     member this.UnregisterEntity (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
         | (true, entitySlot) ->
@@ -644,13 +633,11 @@ and Ecs () =
             world
         | (false, _) -> world
 
-    /// Thread-safe.
     member internal this.RegisterQuery (query : Query) =
         for archetypeEntry in archetypes do
             query.TryRegisterArchetype archetypeEntry.Value
         queries.Add query
 
-    /// Thread-safe.
     member this.RegisterEntitiesPlus elideEvents count comps archetypeId (world : 'w) =
 
         // get archetype
@@ -677,12 +664,10 @@ and Ecs () =
         // fin
         (entities, world)
 
-    /// Thread-safe.
     member this.RegisterEntities elideEvents count comps archetypeId world =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
         this.RegisterEntitiesPlus elideEvents count comps archetypeId world
 
-    /// Thread-safe.
     member this.ReadEntities count archetypeId stream =
         let archetype =
             match archetypes.TryGetValue archetypeId with
@@ -1116,7 +1101,6 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Subqueries =
         seq subqueries
 
-    /// Thread-safe.
     member internal this.TryRegisterArchetype (archetype : Archetype) =
         if  not (archetypes.ContainsKey archetype.Id) &&
             Subquery.evalMany archetype.Id.Terms subqueries then
