@@ -150,7 +150,7 @@ module WorldScreenModule =
             let ecs = World.getScreenEcs screen world
             ecs.Notify Ecs.EcsEvents.PostUpdate ()
             let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
-                
+
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)

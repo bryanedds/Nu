@@ -1,6 +1,7 @@
 ﻿namespace Nu.Ecs
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.IO
 open System.Threading.Tasks
 open Prime
@@ -338,55 +339,69 @@ and Archetype (archetypeId : ArchetypeId) =
 /// An archetype-based Ecs construct.
 and Ecs () =
 
+    let subscriptionIdLock = obj ()
     let mutable subscriptionIdCurrent = 0u
+    let entityIdLock = obj ()
     let mutable entityIdCurrent = 0UL
-    let archetypes = dictPlus<ArchetypeId, Archetype> HashIdentity.Structural []
-    let entitySlots = dictPlus<uint64, EcsEntitySlot> HashIdentity.Structural []
-    let componentTypes = dictPlus<string, Type> StringComparer.Ordinal []
+    let archetypes = ConcurrentDictionary<ArchetypeId, Archetype> HashIdentity.Structural
+    let entitySlots = ConcurrentDictionary<uint64, EcsEntitySlot> HashIdentity.Structural
+    let componentTypes = ConcurrentDictionary<string, Type> StringComparer.Ordinal
     let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let subscribedEntities = dictPlus<EcsEntity, int> HashIdentity.Structural []
     let queries = List<Query> ()
 
+    /// Thread-safe.
     let createArchetype (archetypeId : ArchetypeId) =
         let archetype = Archetype archetypeId
-        archetypes.Add (archetypeId, archetype)
+        archetypes.TryAdd (archetypeId, archetype) |> ignore<bool>
         for query in queries do
             query.TryRegisterArchetype archetype
         archetype
 
+    /// Thread-safe.
     member private this.AllocSubscriptionId () =
-        subscriptionIdCurrent <- inc subscriptionIdCurrent
-        if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of Ecs subscription ids not supported."
-        subscriptionIdCurrent
+        lock subscriptionIdLock $ fun () ->
+            subscriptionIdCurrent <- inc subscriptionIdCurrent
+            if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of Ecs subscription ids not supported."
+            subscriptionIdCurrent
 
+    /// Thread-safe.
     member private this.BoxCallback<'d, 'w when 'w : not struct> (callback : EcsCallbackUnscheduled<'d, 'w>) =
         let boxableCallback = fun (evt : EcsEvent<obj, 'w>) store ->
             let evt = { EcsEventData = evt.EcsEventData :?> 'd }
             callback evt store
         boxableCallback :> obj
 
+    /// Thread-safe.
     member private this.RegisterEntityInternal comps archetypeId entity =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
-        let archetypeIndex = archetype.Register comps entity.EntityId
-        entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+        let archetypeIndex =
+            lock archetype $ fun () ->
+                archetype.Register comps entity.EntityId
+        entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype }) |> ignore<bool>
 
+    /// Thread-safe.
     member private this.UnregisterEntityInternal entitySlot entity =
         let archetype = entitySlot.Archetype
         let comps = archetype.GetComponents entitySlot.ArchetypeIndex
-        entitySlots.Remove entity.EntityId |> ignore<bool>
-        archetype.Unregister entitySlot.ArchetypeIndex
+        entitySlots.TryRemove entity.EntityId |> ignore<bool * EcsEntitySlot>
+        lock archetype $ fun () ->
+            archetype.Unregister entitySlot.ArchetypeIndex
         comps
 
+    /// Thread-safe.
     member this.IndexEntitySlot (entity : EcsEntity) =
         entitySlots.[entity.EntityId]
 
+    /// Thread-safe.
     member this.Entity =
-        entityIdCurrent <- inc entityIdCurrent
-        if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of Ecs entity ids not supported."
-        { EntityId = entityIdCurrent; Ecs = this }
+        lock entityIdLock $ fun () ->
+            entityIdCurrent <- inc entityIdCurrent
+            if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of Ecs entity ids not supported."
+            { EntityId = entityIdCurrent; Ecs = this }
 
     member this.Publish<'d, 'w when 'w : not struct> event (eventData : 'd) (world : 'w) : 'w =
         // NOTE: we allow some special munging with world here. The callback may choose to ignore the world and return
@@ -520,11 +535,13 @@ and Ecs () =
             { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
             subscriptionId
 
+    /// Thread-safe.
     member this.RegisterComponentName<'c when 'c : struct and 'c :> 'c Component> componentName =
         match componentTypes.TryGetValue componentName with
         | (true, _) -> failwith "Component type already registered."
-        | (false, _) -> componentTypes.Add (componentName, typeof<'c>)
+        | (false, _) -> componentTypes.TryAdd (componentName, typeof<'c>) |> ignore<bool>
 
+    /// Thread-safe.
     member this.RegisterTerm (termName : string) term (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         if (match term with Intra _ -> true | _ -> false) then failwith "Intra components are for internal use only."
@@ -540,6 +557,7 @@ and Ecs () =
             match term with Extra (compName, _, comp) -> comps.Add (compName, comp.Value) | _ -> ()
             this.RegisterEntityInternal comps archetypeId entity
 
+    /// Thread-safe.
     member this.UnregisterTerm (termName : string) (entity : EcsEntity) =
         if termName.StartsWith Constants.Ecs.IntraComponentPrefix then failwith "Term names that start with '@' are for internal use only."
         match entitySlots.TryGetValue entity.EntityId with
@@ -549,6 +567,7 @@ and Ecs () =
             if archetypeId.Terms.Count > 0 then this.RegisterEntityInternal comps archetypeId entity
         | (false, _) -> ()
 
+    /// Thread-safe.
     member this.RegisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (comp : 'c) (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
@@ -566,10 +585,12 @@ and Ecs () =
             let eventData = { EcsEntity = entity; ComponentName = compName }
             this.Publish<EcsRegistrationData, obj> (EcsEvents.Register entity compName) eventData (world :> obj) :?> 'w
 
+    /// Thread-safe.
     member this.RegisterComponent<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         (comp : 'c) (entity : EcsEntity) (world : 'w) =
         this.RegisterComponentPlus<'c, 'w> (typeof<'c>.Name) comp (entity : EcsEntity) world
 
+    /// Thread-safe.
     member this.UnregisterComponentPlus<'c, 'w when 'c : struct and 'c :> 'c Component and 'w : not struct>
         compName (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
@@ -585,18 +606,22 @@ and Ecs () =
             else world
         | (false, _) -> world
 
+    /// Thread-safe.
     member this.UnregisterComponent<'c, 'w when
         'c : struct and 'c :> 'c Component and 'w : not struct> (entity : EcsEntity) (world : 'w) =
         this.UnregisterComponentPlus<'c, 'w> typeof<'c>.Name entity world
 
+    /// Thread-safe.
     member this.RegisterEntity elideEvents comps archetypeId world =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let entity = this.Entity
-        let archetypeIndex = archetype.Register comps entity.EntityId
-        entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
+        let archetypeIndex =
+            lock archetype $ fun () ->
+                archetype.Register comps entity.EntityId
+        entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype }) |> ignore<bool>
         let mutable world = world
         if not elideEvents then
             for compName in archetype.Stores.Keys do
@@ -604,6 +629,7 @@ and Ecs () =
                 world <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
         (entity, world)
 
+    /// Thread-safe.
     member this.UnregisterEntity (entity : EcsEntity) (world : 'w) =
         match entitySlots.TryGetValue entity.EntityId with
         | (true, entitySlot) ->
@@ -613,15 +639,18 @@ and Ecs () =
                 for compName in archetype.Stores.Keys do
                     let eventData = { EcsEntity = entity; ComponentName = compName }
                     world <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
-            archetype.Unregister entitySlot.ArchetypeIndex
+            lock archetype $ fun () ->
+                archetype.Unregister entitySlot.ArchetypeIndex
             world
         | (false, _) -> world
 
+    /// Thread-safe.
     member internal this.RegisterQuery (query : Query) =
         for archetypeEntry in archetypes do
             query.TryRegisterArchetype archetypeEntry.Value
         queries.Add query
 
+    /// Thread-safe.
     member this.RegisterEntitiesPlus elideEvents count comps archetypeId (world : 'w) =
 
         // get archetype
@@ -632,36 +661,40 @@ and Ecs () =
 
         // register entities to archetype
         let mutable world = world
-        let entitys = SegmentedArray.zeroCreate count
+        let entities = SegmentedArray.zeroCreate count
         for i in 0 .. dec count do
             let entity = this.Entity
-            let archetypeIndex = archetype.Register comps entity.EntityId
-            entitySlots.Add (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype })
-            entitys.[i] <- entity
+            let archetypeIndex =
+                lock archetype $ fun () ->
+                    archetype.Register comps entity.EntityId
+            entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = archetypeIndex; Archetype = archetype }) |> ignore<bool>
+            entities.[i] <- entity
             if not elideEvents then
                 for compName in archetype.Stores.Keys do
                     let eventData = { EcsEntity = entity; ComponentName = compName }
                     world <- this.Publish<EcsRegistrationData, obj> (EcsEvents.Unregistering entity compName) eventData (world :> obj) :?> 'w
 
         // fin
-        (entitys, world)
+        (entities, world)
 
+    /// Thread-safe.
     member this.RegisterEntities elideEvents count comps archetypeId world =
         let comps = dictPlus StringComparer.Ordinal (Seq.map (fun comp -> (getTypeName comp, comp)) comps)
         this.RegisterEntitiesPlus elideEvents count comps archetypeId world
 
+    /// Thread-safe.
     member this.ReadEntities count archetypeId stream =
         let archetype =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let (firstIndex, lastIndex) = archetype.Read count stream
-        let entitys = SegmentedArray.zeroCreate count
+        let entities = SegmentedArray.zeroCreate count
         for i in firstIndex .. lastIndex do
             let entity = this.Entity
-            entitySlots.Add (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype })
-            entitys.[i - firstIndex] <- entity
-        entitys
+            entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype }) |> ignore<bool>
+            entities.[i - firstIndex] <- entity
+        entities
 
 /// An entity's slot in an archetype.
 and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
@@ -1083,6 +1116,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Subqueries =
         seq subqueries
 
+    /// Thread-safe.
     member internal this.TryRegisterArchetype (archetype : Archetype) =
         if  not (archetypes.ContainsKey archetype.Id) &&
             Subquery.evalMany archetype.Id.Terms subqueries then
@@ -1614,7 +1648,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let stores = archetype.Stores
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1636,8 +1670,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
             let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1660,9 +1693,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
             let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1686,10 +1717,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
             let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1714,11 +1742,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
             let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
-                lock store5 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1744,12 +1768,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
             let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
-                lock store5 $ fun () ->
-                lock store6 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1776,13 +1795,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
             let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
-                lock store5 $ fun () ->
-                lock store6 $ fun () ->
-                lock store7 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1810,14 +1823,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
             let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
-                lock store5 $ fun () ->
-                lock store6 $ fun () ->
-                lock store7 $ fun () ->
-                lock store8 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
@@ -1846,15 +1852,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
             let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
-                lock store $ fun () ->
-                lock store2 $ fun () ->
-                lock store3 $ fun () ->
-                lock store4 $ fun () ->
-                lock store5 $ fun () ->
-                lock store6 $ fun () ->
-                lock store7 $ fun () ->
-                lock store8 $ fun () ->
-                lock store9 $ fun () ->
+                lock archetype $ fun () ->
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
