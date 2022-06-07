@@ -1340,9 +1340,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         state
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'w>,
-         ?compName, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 's>,
+         ?compName, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1356,14 +1356,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], world)
+                            statement.Invoke (&store.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'w>,
-         ?compName, ?comp2Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 's>,
+         ?compName, ?comp2Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1378,14 +1378,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1401,14 +1401,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1425,14 +1425,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1450,14 +1450,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1476,14 +1476,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1503,14 +1503,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1531,14 +1531,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
     member this.IterateParallel
-        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 'w>,
-         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?world : 'w) =
-        let world = Option.getOrDefault Unchecked.defaultof<'w> world
+        (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
+         ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) =
+        let state = Option.getOrDefault Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1560,7 +1560,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
                     let mutable i = 0
                     while i < store.Length && i < length do
                         if entityIdStore.[i].Active then
-                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], world)
+                            statement.Invoke (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i], state)
                             i <- inc i))
         this.ThreadTasks tasks
 
