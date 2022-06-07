@@ -3,6 +3,7 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open Prime
 open Nu
@@ -395,7 +396,7 @@ and Ecs () =
         entitySlots.[entity.EntityId]
 
     /// Thread-safe.
-    member this.Entity =
+    member this.MakeEntity () =
         lock entityIdLock $ fun () ->
             entityIdCurrent <- inc entityIdCurrent
             if entityIdCurrent = UInt64.MaxValue then failwith "Unbounded use of Ecs entity ids not supported."
@@ -624,7 +625,7 @@ and Ecs () =
             match archetypes.TryGetValue archetypeId with
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
-        let entity = this.Entity
+        let entity = this.MakeEntity ()
         let archetypeIndex =
             lock archetype $ fun () ->
                 archetype.Register comps entity.EntityId
@@ -667,7 +668,7 @@ and Ecs () =
         let mutable world = world
         let entities = SegmentedArray.zeroCreate count
         for i in 0 .. dec count do
-            let entity = this.Entity
+            let entity = this.MakeEntity ()
             let archetypeIndex =
                 lock archetype $ fun () ->
                     archetype.Register comps entity.EntityId
@@ -693,7 +694,7 @@ and Ecs () =
         let (firstIndex, lastIndex) = archetype.Read count stream
         let entities = SegmentedArray.zeroCreate count
         for i in firstIndex .. lastIndex do
-            let entity = this.Entity
+            let entity = this.MakeEntity ()
             entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype }) |> ignore<bool>
             entities.[i - firstIndex] <- entity
         entities
