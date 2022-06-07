@@ -133,7 +133,7 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
-            ecs.Notify Ecs.EcsEvents.Update ()
+            let world = ecs.Notify Ecs.EcsEvents.Update () world
             let world = ecs.Publish Ecs.EcsEvents.Update () world
 
             // update via dispatcher
@@ -145,10 +145,10 @@ module WorldScreenModule =
             World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
-        
+
             // post-update ecs
             let ecs = World.getScreenEcs screen world
-            ecs.Notify Ecs.EcsEvents.PostUpdate ()
+            let world = ecs.Notify Ecs.EcsEvents.PostUpdate () world
             let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
 
             // post-update via dispatcher
@@ -160,10 +160,10 @@ module WorldScreenModule =
             World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false false world
 
         static member internal actualizeScreen (screen : Screen) world =
-        
+
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            ecs.Notify Ecs.EcsEvents.Actualize ()
+            let world = ecs.Notify Ecs.EcsEvents.Actualize () world
             let world = ecs.Publish Ecs.EcsEvents.Actualize () world
 
             // actualize via dispatcher

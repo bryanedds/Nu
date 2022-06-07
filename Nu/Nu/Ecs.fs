@@ -348,7 +348,7 @@ and Ecs () =
     let componentTypes = ConcurrentDictionary<string, Type> StringComparer.Ordinal
     let subscriptions = dictPlus<EcsEvent, Dictionary<uint32, obj>> HashIdentity.Structural []
     let subscribedEntities = dictPlus<EcsEntity, int> HashIdentity.Structural []
-    let postCallbackOps = ConcurrentQueue<obj> ()
+    let postEventOperations = ConcurrentQueue<obj> ()
     let queries = List<Query> ()
 
     let createArchetype (archetypeId : ArchetypeId) =
@@ -402,8 +402,8 @@ and Ecs () =
             { EntityId = entityIdCurrent; Ecs = this }
 
     /// Thread-safe.
-    member this.RegisterPostCallbackOp (op : 'w -> 'w) =
-        postCallbackOps.Enqueue (op :> obj)
+    member this.RegisterPostEventOperation (operation : 'w -> 'w) =
+        postEventOperations.Enqueue (operation :> obj)
 
     member this.Publish<'d, 'w when 'w : not struct> event (eventData : 'd) (world : 'w) : 'w =
         // NOTE: we allow some special munging with world here. The callback may choose to ignore the world and return
@@ -425,11 +425,11 @@ and Ecs () =
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
                     world <- match objCallback evt this world with null -> oldState | world -> world :?> 'w
                 | _ -> ()
-            let mutable op = Unchecked.defaultof<_>
-            while postCallbackOps.TryDequeue &op do
-                match op with
-                | :? ('w -> 'w) as op -> world <- op world
-                | _ -> failwith "PostCallbackOp does not match 'w type of publish call."
+            let mutable operation = Unchecked.defaultof<_>
+            while postEventOperations.TryDequeue &operation do
+                match operation with
+                | :? ('w -> 'w) as operation -> world <- operation world
+                | _ -> failwith "PostEventOperation does not match 'w type of publish call."
         | (false, _) -> ()
         world
 
@@ -514,12 +514,13 @@ and Ecs () =
                                 objCallback evt this world |> ignore<obj>
                             | _ -> ())
                     ignore result
-            let mutable op = Unchecked.defaultof<_>
-            while postCallbackOps.TryDequeue &op do
-                match op with
-                | :? ('w -> 'w) as op -> world <- op world
-                | _ -> failwith "PostCallbackOp does not match 'w type of publish call."
+            let mutable operation = Unchecked.defaultof<_>
+            while postEventOperations.TryDequeue &operation do
+                match operation with
+                | :? ('w -> 'w) as operation -> world <- operation world
+                | _ -> failwith "PostEventOperation does not match 'w type of publish call."
         | (false, _) -> ()
+        world
 
     member this.SchedulePlus<'d, 'w when 'w : not struct> subscriptionId event (callback : EcsCallbackScheduled<'d, 'w>) =
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.ScheduledEventSuffix }
