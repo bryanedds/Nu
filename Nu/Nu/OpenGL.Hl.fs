@@ -247,14 +247,14 @@ module Hl =
         CreateShaderFromStrs (vertexStr, fragmentStr)
 
     /// Create a shader from a vertex file and a fragment file.
-    let CreateShaderFromFileNames (vertexFileName : string, fragmentFileName : string) =
-        use vertexStream = new StreamReader (File.OpenRead vertexFileName)
-        use fragmentStream = new StreamReader (File.OpenRead fragmentFileName)
+    let CreateShaderFromFilePaths (vertexFilePath : string, fragmentFilePath : string) =
+        use vertexStream = new StreamReader (File.OpenRead vertexFilePath)
+        use fragmentStream = new StreamReader (File.OpenRead fragmentFilePath)
         CreateShaderFromStreams (vertexStream, fragmentStream)
 
     /// Create a shader from a single file with both a '#shader vertex' section and a '#shader fragment' section.
-    let CreateShaderFromFileName (shaderFileName : string) =
-        use shaderStream = new StreamReader (File.OpenRead shaderFileName)
+    let CreateShaderFromFilePath (shaderFilePath : string) =
+        use shaderStream = new StreamReader (File.OpenRead shaderFilePath)
         let shaderStr = shaderStream.ReadToEnd ()
         let vertexStrIndex = shaderStr.IndexOf "#shader vertex"
         let fragmentStrIndex = shaderStr.IndexOf "#shader fragment"
@@ -267,7 +267,7 @@ module Hl =
                     (shaderStr.Substring (fragmentStrIndex, vertexStrIndex - fragmentStrIndex),
                      shaderStr.Substring (vertexStrIndex, shaderStr.Length - vertexStrIndex))
             CreateShaderFromStrs (vertexStr, fragmentStr)
-        else failwith ("Invalid shader file '" + shaderFileName + "'. Both vertex and fragment shader sections required.")
+        else failwith ("Invalid shader file '" + shaderFilePath + "'. Both vertex and fragment shader sections required.")
 
     /// Create a sprite shader with attributes:
     ///     0: vec2 position
@@ -321,6 +321,17 @@ module Hl =
         let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
         let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+
+    let CreatePhysicallyBasedShader (shaderFilePath : string) =
+        let shader = CreateShaderFromFilePath shaderFilePath
+        let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ProjectionMatrix")
+        let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ViewMatrix")
+        let modelUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ModelMatrix")
+        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_CameraPosition")
+        let depthBiasMvpUniform = OpenGL.Gl.GetUniformLocation (shader, "u_DepthBiasMVP")
+        let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
+        (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
