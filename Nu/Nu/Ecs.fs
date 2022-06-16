@@ -336,7 +336,7 @@ and Archetype (archetypeId : ArchetypeId) =
         freeIndex <- inc lastIndex
         (firstIndex, lastIndex)
 
-/// An archetype-based Ecs construct.
+/// An archetype-based Ecs construct,
 and Ecs () =
 
     let subscriptionIdLock = obj ()
