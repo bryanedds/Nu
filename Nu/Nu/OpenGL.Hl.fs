@@ -33,6 +33,7 @@ type TextureMetadata =
 module OpenGL = let _ = ()
 
 namespace OpenGL
+open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open System.Text
@@ -238,6 +239,35 @@ module Hl =
         // link shader
         OpenGL.Gl.LinkProgram shader
         shader
+
+    /// Create a shader from a vertex stream and a fragment stream.
+    let CreateShaderFromStreams (vertexStream : StreamReader, fragmentStream : StreamReader) =
+        let vertexStr = vertexStream.ReadToEnd ()
+        let fragmentStr = fragmentStream.ReadToEnd ()
+        CreateShaderFromStrs (vertexStr, fragmentStr)
+
+    /// Create a shader from a vertex file and a fragment file.
+    let CreateShaderFromFileNames (vertexFileName : string, fragmentFileName : string) =
+        use vertexStream = new StreamReader (File.OpenRead vertexFileName)
+        use fragmentStream = new StreamReader (File.OpenRead fragmentFileName)
+        CreateShaderFromStreams (vertexStream, fragmentStream)
+
+    /// Create a shader from a single file with both a '#shader vertex' section and a '#shader fragment' section.
+    let CreateShaderFromFileName (shaderFileName : string) =
+        use shaderStream = new StreamReader (File.OpenRead shaderFileName)
+        let shaderStr = shaderStream.ReadToEnd ()
+        let vertexStrIndex = shaderStr.IndexOf "#shader vertex"
+        let fragmentStrIndex = shaderStr.IndexOf "#shader fragment"
+        if vertexStrIndex > -1 && fragmentStrIndex > -1 then
+            let (vertexStr, fragmentStr) =
+                if vertexStrIndex < fragmentStrIndex then
+                    (shaderStr.Substring (vertexStrIndex, fragmentStrIndex - vertexStrIndex),
+                     shaderStr.Substring (fragmentStrIndex, shaderStr.Length - fragmentStrIndex))
+                else
+                    (shaderStr.Substring (fragmentStrIndex, vertexStrIndex - fragmentStrIndex),
+                     shaderStr.Substring (vertexStrIndex, shaderStr.Length - vertexStrIndex))
+            CreateShaderFromStrs (vertexStr, fragmentStr)
+        else failwith ("Invalid shader file '" + shaderFileName + "'. Both vertex and fragment shader sections required.")
 
     /// Create a sprite shader with attributes:
     ///     0: vec2 position
