@@ -421,7 +421,6 @@ module Hl =
           
           PhysicallyBasedShader = shader }
 
-
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
 
