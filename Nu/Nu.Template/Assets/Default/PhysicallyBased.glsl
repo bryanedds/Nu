@@ -90,7 +90,7 @@ struct Attributes
 uniform Light sys_Light;
 
 // PBR Inputs
-//uniform sampler2D u_PreintegratedFG;
+uniform sampler2D u_PreintegratedFG;
 uniform samplerCube u_EnvironmentMap;
 
 // PBR Map Inputs
@@ -226,11 +226,11 @@ vec3 GGX(Light light, Material material, vec3 eye)
 	return G * D * F;
 }
 
-//vec3 RadianceIBLIntegration(float NdotV, float roughness, vec3 specular)
-//{
-//	vec2 preintegratedFG = texture(u_PreintegratedFG, vec2(roughness, 1.0 - NdotV)).rg;
-//	return specular * preintegratedFG.r + preintegratedFG.g;
-//}
+vec3 RadianceIBLIntegration(float NdotV, float roughness, vec3 specular)
+{
+	vec2 preintegratedFG = texture(u_PreintegratedFG, vec2(roughness, 1.0 - NdotV)).rg;
+	return specular * preintegratedFG.r + preintegratedFG.g;
+}
 
 vec3 IBL(Light light, Material material, vec3 eye)
 {
@@ -240,7 +240,7 @@ vec3 IBL(Light light, Material material, vec3 eye)
 	float smoothness = 1.0 - material.roughness;
 	float mipLevel = (1.0 - smoothness * smoothness) * 10.0;
 	vec4 cs = textureLod(u_EnvironmentMap, reflectionVector, mipLevel);
-	vec3 result = pow(cs.xyz, vec3(GAMMA));// * RadianceIBLIntegration(NdotV, material.roughness, material.specular);
+	vec3 result = pow(cs.xyz, vec3(GAMMA)) * RadianceIBLIntegration(NdotV, material.roughness, material.specular);
 
 	vec3 diffuseDominantDirection = g_Attributes.normal;
 	float diffuseLowMip = 9.6;

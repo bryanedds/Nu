@@ -44,6 +44,45 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    type [<StructuralEquality; NoComparison; Struct>] Light =
+        { Color : Vector4
+          Position : Vector3
+          P0 : single
+          Direction : Vector3
+          P1 : single
+          LightVector : Vector3
+          Intensity : single }
+
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
+        { ProjectionUniform : int
+          ViewUniform : int
+          ModelUniform : int
+          EyePositionUniform : int
+          DepthBiasMvpUniform : int
+
+          LightUniform : int
+
+          PreintegratedFgMapUniform : int
+          EnvrionmentMapUniform : int
+
+          AlbedoMapUniform : int
+          SpecularMapUniform : int
+          GlossMapUniform : int
+          NormalMapUniform : int
+          ShadowMapUniform : int
+
+          StaticAlbedoUniform : int
+          StaticSpecularUniform : int
+          StaticGlossUniform : int
+          StaticNormalUniform : int
+
+          UsingAlbedoMapUniform : int
+          UsingSpecularMapUniform : int
+          UsingGlossMapUniform : int
+          UsingNormalMapUniform : int
+          
+          PhysicallyBasedShader : uint }
+
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
 #if DEBUG_RENDERING_ASSERT
@@ -323,14 +362,64 @@ module Hl =
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
 
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
+
         let shader = CreateShaderFromFilePath shaderFilePath
+
         let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ProjectionMatrix")
         let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ViewMatrix")
         let modelUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ModelMatrix")
         let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_CameraPosition")
         let depthBiasMvpUniform = OpenGL.Gl.GetUniformLocation (shader, "u_DepthBiasMVP")
-        let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
-        (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+
+        let lightUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_Light")
+
+        let preintegratedFgMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_PreintegratedFG")
+        let envrionmentMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_EnvironmentMap")
+
+        let albedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_AlbedoMap")
+        let specularMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_SpecularMap")
+        let glossMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_GlossMap")
+        let normalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_NormalMap")
+        let shadowMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_ShadowMap")
+
+        let staticAlbedoUniform = OpenGL.Gl.GetUniformLocation (shader, "u_AlbedoColor")
+        let staticSpecularUniform = OpenGL.Gl.GetUniformLocation (shader, "u_SpecularColor")
+        let staticGlossUniform = OpenGL.Gl.GetUniformLocation (shader, "u_GlossColor")
+        let staticNormalUniform = OpenGL.Gl.GetUniformLocation (shader, "u_NormalColor")
+
+        let usingAlbedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingAlbedoMap")
+        let usingSpecularMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingSpecularMap")
+        let usingGlossMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingGlossMap")
+        let usingNormalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingNormalMap")
+
+        { ProjectionUniform = projectionUniform
+          ViewUniform = viewUniform
+          ModelUniform = modelUniform
+          EyePositionUniform = eyePositionUniform
+          DepthBiasMvpUniform = depthBiasMvpUniform
+
+          LightUniform = lightUniform
+
+          PreintegratedFgMapUniform = preintegratedFgMapUniform
+          EnvrionmentMapUniform = envrionmentMapUniform
+
+          AlbedoMapUniform = albedoMapUniform
+          SpecularMapUniform = specularMapUniform
+          GlossMapUniform = glossMapUniform
+          NormalMapUniform = normalMapUniform
+          ShadowMapUniform = shadowMapUniform
+
+          StaticAlbedoUniform = staticAlbedoUniform
+          StaticSpecularUniform = staticSpecularUniform
+          StaticGlossUniform = staticGlossUniform
+          StaticNormalUniform = staticNormalUniform
+
+          UsingAlbedoMapUniform = usingAlbedoMapUniform
+          UsingSpecularMapUniform = usingSpecularMapUniform
+          UsingGlossMapUniform = usingGlossMapUniform
+          UsingNormalMapUniform = usingNormalMapUniform
+          
+          PhysicallyBasedShader = shader }
 
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
