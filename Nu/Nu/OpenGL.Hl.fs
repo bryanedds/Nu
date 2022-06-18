@@ -56,7 +56,7 @@ module Hl =
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
         { ProjectionUniform : int
           ViewUniform : int
-          ModelUniform : int
+          ModelUniform : int // TODO: turn this into an array for batching.
           EyePositionUniform : int
           DepthBiasMvpUniform : int
 
@@ -80,7 +80,7 @@ module Hl =
           UsingSpecularMapUniform : int
           UsingGlossMapUniform : int
           UsingNormalMapUniform : int
-          
+
           PhysicallyBasedShader : uint }
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
@@ -550,3 +550,96 @@ module Hl =
         // teardown state
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+
+    /// Draw a physically-based surface.
+    let DrawPhysicallyBasedSurface
+        (indices : uint, vertices : uint, vao : uint,
+         model : single array,
+         view : single array,
+         projection : single array,
+         eyePosition : Vector3 byref,
+         depthBiasMvp : single array,
+         light : Light byref,
+         preintegratedFgMap : uint,
+         environmentMap : uint,
+         albedoMapOpt : ValueEither<uint, Color>,
+         specularMapOpt : ValueEither<uint, Color>,
+         glossMapOpt : ValueEither<uint, single>,
+         normalMapOpt : ValueEither<uint, Vector3>,
+         shadowMap : uint,
+         shader : uint) =
+
+        // setup state
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+        Assert ()
+
+        // setup shader
+        OpenGL.Gl.UseProgram shader
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+        OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
+        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
+        OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
+        OpenGL.Gl.Uniform1 (texUniform, 0)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
+        Assert ()
+
+        // setup geometry
+        OpenGL.Gl.BindVertexArray vao
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertices)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indices)
+        Assert ()
+
+        // draw geometry
+        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 6, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
+        Assert ()
+
+        // teardown geometry
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+        OpenGL.Gl.BindVertexArray 0u
+        Assert ()
+
+        // teardown shader
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.UseProgram 0u
+        Assert ()
+
+        // teardown state
+        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+
+
+
+
+
+        insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+
+        
+        EyePositionUniform : int
+        DepthBiasMvpUniform : int
+
+        LightUniform : int
+
+        PreintegratedFgMapUniform : int
+        EnvrionmentMapUniform : int
+
+        AlbedoMapUniform : int
+        SpecularMapUniform : int
+        GlossMapUniform : int
+        NormalMapUniform : int
+        ShadowMapUniform : int
+
+        StaticAlbedoUniform : int
+        StaticSpecularUniform : int
+        StaticGlossUniform : int
+        StaticNormalUniform : int
+
+        UsingAlbedoMapUniform : int
+        UsingSpecularMapUniform : int
+        UsingGlossMapUniform : int
+        UsingNormalMapUniform : int
+
+        PhysicallyBasedShader : uint
