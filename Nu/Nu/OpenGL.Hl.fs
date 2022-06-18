@@ -61,6 +61,12 @@ module Hl =
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedSurface =
+        { VertexBuffer : uint
+          NormalBuffer : uint
+          TexCoordsBuffer : uint
+          IndexBuffer : uint }
+
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
 #if DEBUG_RENDERING_ASSERT
@@ -406,7 +412,7 @@ module Hl =
         let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
         finally vertexDataPtr.Free ()
         Assert ()
 
@@ -416,7 +422,7 @@ module Hl =
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
         let indexDataSize = uint (indexData.Length * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject(), OpenGL.BufferUsage.StaticDraw)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
         finally indexDataPtr.Free ()
         Assert ()
 
@@ -430,6 +436,120 @@ module Hl =
 
         // fin
         (indexBuffer, vertexBuffer, vao)
+
+    /// Create a cube for rendering to a shader matching the one created with OpenGL.Hl.CreatePhysicallyBasedShader.
+    let CreatePhysicallyBasedCube () =
+
+        let vertices =
+            [|Vector3 (-1.0f, -1.0f, -1.0f)
+              Vector3 (+1.0f, -1.0f, -1.0f)
+              Vector3 (+1.0f, +1.0f, -1.0f)
+              Vector3 (-1.0f, +1.0f, -1.0f)
+              Vector3 (-1.0f, -1.0f, +1.0f)
+              Vector3 (+1.0f, -1.0f, +1.0f)
+              Vector3 (+1.0f, +1.0f, +1.0f)
+              Vector3 (-1.0f, +1.0f, +1.0f)|]
+        
+        let normals =
+            [|Vector3 (+0.0f, +0.0f, +1.0f)
+              Vector3 (+1.0f, +0.0f, +0.0f)
+              Vector3 (+0.0f, +0.0f, -1.0f)
+              Vector3 (-1.0f, +0.0f, +0.0f)
+              Vector3 (+0.0f, +1.0f, +0.0f)
+              Vector3 (+0.0f, -1.0f, +0.0f)|]
+
+        let texCoords =
+            [|Vector2 (0.0f, 0.0f)
+              Vector2 (1.0f, 0.0f)
+              Vector2 (1.0f, 1.0f)
+              Vector2 (0.0f, 1.0f)|]
+        
+        let indices =
+            [|0; 1; 3; 3; 1; 2
+              1; 5; 2; 2; 5; 6
+              5; 4; 6; 6; 4; 7
+              4; 0; 7; 7; 0; 3
+              3; 2; 7; 7; 2; 6
+              4; 5; 0; 0; 5; 1|]
+
+        let vertexData = Array.zeroCreate<single> (18 * 6)
+        for i in 0 .. dec 36 do
+            vertexData.[i * 3 + 0] <- vertices.[indices.[i]].X
+            vertexData.[i * 3 + 1] <- vertices.[indices.[i]].Y
+            vertexData.[i * 3 + 2] <- vertices.[indices.[i]].Z
+
+        let normalData = Array.zeroCreate<single> (18 * 6)
+        for i in 0 .. dec 36 do
+            normalData.[i * 3 + 0] <- normals.[indices.[i / 6]].X
+            normalData.[i * 3 + 1] <- normals.[indices.[i / 6]].Y
+            normalData.[i * 3 + 2] <- normals.[indices.[i / 6]].Z
+
+        let texCoordsData = Array.zeroCreate<single> (12 * 6)
+        for i in 0 .. dec 36 do
+            texCoordsData.[i * 2 + 0] <- texCoords.[indices.[i % 4]].X
+            texCoordsData.[i * 2 + 1] <- texCoords.[indices.[i % 4]].Y
+
+        let indexData =
+            indices
+
+        // initialize vao
+        let vao = OpenGL.Gl.GenVertexArray ()
+        OpenGL.Gl.BindVertexArray vao
+        Assert ()
+
+        // create vertex buffer
+        let vertexBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        finally vertexBufferPtr.Free ()
+        Assert ()
+
+        // create normal buffer
+        let normalBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, normalBuffer)
+        let normalBufferPtr = GCHandle.Alloc (normalData, GCHandleType.Pinned)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (normalData.Length * sizeof<single>), normalBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        finally normalBufferPtr.Free ()
+        Assert ()
+
+        // create tex coords buffer
+        let texCoordsBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, texCoordsBuffer)
+        let texCoordsBufferPtr = GCHandle.Alloc (texCoordsData, GCHandleType.Pinned)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (texCoordsData.Length * sizeof<single>), texCoordsBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        finally texCoordsBufferPtr.Free ()
+        Assert ()
+
+        // create index buffer
+        let indexBuffer = OpenGL.Gl.GenBuffer ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+        let indexDataSize = uint (indexData.Length * sizeof<uint>)
+        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        finally indexDataPtr.Free ()
+        Assert ()
+
+        // finalize vao
+        let normalOffset = (3 (*position*)) * sizeof<single>
+        let texCoordsOffset = (3 (*position*) + 3 (*normal*)) * sizeof<single>
+        let vertexSize = (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
+        OpenGL.Gl.EnableVertexAttribArray 0u
+        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+        OpenGL.Gl.EnableVertexAttribArray 1u
+        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, normalOffset)
+        OpenGL.Gl.EnableVertexAttribArray 2u
+        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, texCoordsOffset)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+        OpenGL.Gl.BindVertexArray 0u
+        Assert ()
+
+        // make physically based surface
+        { VertexBuffer = vertexBuffer
+          NormalBuffer = normalBuffer
+          TexCoordsBuffer = texCoordsBuffer
+          IndexBuffer = indexBuffer }
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
     let DrawSprite (indices, vertices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
