@@ -44,43 +44,21 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
-    type [<StructuralEquality; NoComparison; Struct>] Light =
-        { Color : Vector4
-          Position : Vector3
-          P0 : single
-          Direction : Vector3
-          P1 : single
-          LightVector : Vector3
-          Intensity : single }
-
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
-        { ProjectionUniform : int
+        { ModelUniform : int // TODO: turn this into an array for batching.
           ViewUniform : int
-          ModelUniform : int // TODO: turn this into an array for batching.
+          ProjectionUniform : int
           EyePositionUniform : int
-          DepthBiasMvpUniform : int
-
-          LightUniform : int
-
-          PreintegratedFgMapUniform : int
-          EnvrionmentMapUniform : int
-
           AlbedoMapUniform : int
-          SpecularMapUniform : int
-          GlossMapUniform : int
+          MetallicMapUniform : int
+          RoughnessMapUniform : int
           NormalMapUniform : int
-          ShadowMapUniform : int
-
-          StaticAlbedoUniform : int
-          StaticSpecularUniform : int
-          StaticGlossUniform : int
-          StaticNormalUniform : int
-
-          UsingAlbedoMapUniform : int
-          UsingSpecularMapUniform : int
-          UsingGlossMapUniform : int
-          UsingNormalMapUniform : int
-
+          AmbientOcclusionMapUniform : int
+          IrradianceCubemapUniform : int
+          PrefilterCubemapUniform : int          
+          BrdfMapUniform : int
+          LightPositionsUniform : int
+          LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
@@ -198,6 +176,7 @@ module Hl =
 
         // upload the texture to gl
         let texture = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
@@ -237,6 +216,7 @@ module Hl =
 
         // create texture buffer
         let texture = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
@@ -363,62 +343,40 @@ module Hl =
 
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
 
+        // create shader
         let shader = CreateShaderFromFilePath shaderFilePath
 
-        let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ProjectionMatrix")
-        let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ViewMatrix")
-        let modelUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_ModelMatrix")
-        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_CameraPosition")
-        let depthBiasMvpUniform = OpenGL.Gl.GetUniformLocation (shader, "u_DepthBiasMVP")
+        // retrieve uniforms
+        let modelUniform = OpenGL.Gl.GetUniformLocation (shader, "model")
+        let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "projection")
+        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
+        let albedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoMap")
+        let metallicMapUniform = OpenGL.Gl.GetUniformLocation (shader, "metallicMap")
+        let roughnessMapUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessMap")
+        let normalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "normalMap")
+        let ambientOcclusionMapUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionMap")
+        let irradianceCubemapUniform = OpenGL.Gl.GetUniformLocation (shader, "irradianceCubemap")
+        let prefilterCubemapUniform = OpenGL.Gl.GetUniformLocation (shader, "prefilterCubemap")
+        let brdfMapUniform = OpenGL.Gl.GetUniformLocation (shader, "brdfMap")
+        let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
+        let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
 
-        let lightUniform = OpenGL.Gl.GetUniformLocation (shader, "sys_Light")
-
-        let preintegratedFgMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_PreintegratedFG")
-        let envrionmentMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_EnvironmentMap")
-
-        let albedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_AlbedoMap")
-        let specularMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_SpecularMap")
-        let glossMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_GlossMap")
-        let normalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_NormalMap")
-        let shadowMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_ShadowMap")
-
-        let staticAlbedoUniform = OpenGL.Gl.GetUniformLocation (shader, "u_AlbedoColor")
-        let staticSpecularUniform = OpenGL.Gl.GetUniformLocation (shader, "u_SpecularColor")
-        let staticGlossUniform = OpenGL.Gl.GetUniformLocation (shader, "u_GlossColor")
-        let staticNormalUniform = OpenGL.Gl.GetUniformLocation (shader, "u_NormalColor")
-
-        let usingAlbedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingAlbedoMap")
-        let usingSpecularMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingSpecularMap")
-        let usingGlossMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingGlossMap")
-        let usingNormalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "u_UsingNormalMap")
-
-        { ProjectionUniform = projectionUniform
+        // make shader record
+        { ModelUniform = modelUniform
           ViewUniform = viewUniform
-          ModelUniform = modelUniform
+          ProjectionUniform = projectionUniform
           EyePositionUniform = eyePositionUniform
-          DepthBiasMvpUniform = depthBiasMvpUniform
-
-          LightUniform = lightUniform
-
-          PreintegratedFgMapUniform = preintegratedFgMapUniform
-          EnvrionmentMapUniform = envrionmentMapUniform
-
           AlbedoMapUniform = albedoMapUniform
-          SpecularMapUniform = specularMapUniform
-          GlossMapUniform = glossMapUniform
+          MetallicMapUniform = metallicMapUniform
+          RoughnessMapUniform = roughnessMapUniform
           NormalMapUniform = normalMapUniform
-          ShadowMapUniform = shadowMapUniform
-
-          StaticAlbedoUniform = staticAlbedoUniform
-          StaticSpecularUniform = staticSpecularUniform
-          StaticGlossUniform = staticGlossUniform
-          StaticNormalUniform = staticNormalUniform
-
-          UsingAlbedoMapUniform = usingAlbedoMapUniform
-          UsingSpecularMapUniform = usingSpecularMapUniform
-          UsingGlossMapUniform = usingGlossMapUniform
-          UsingNormalMapUniform = usingNormalMapUniform
-          
+          AmbientOcclusionMapUniform = ambientOcclusionMapUniform
+          IrradianceCubemapUniform = irradianceCubemapUniform
+          PrefilterCubemapUniform = prefilterCubemapUniform
+          BrdfMapUniform = brdfMapUniform
+          LightPositionsUniform = lightPositionsUniform
+          LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
@@ -516,11 +474,11 @@ module Hl =
 
         // setup shader
         OpenGL.Gl.UseProgram shader
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
         OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
         OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         OpenGL.Gl.Uniform1 (texUniform, 0)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
@@ -543,6 +501,7 @@ module Hl =
         Assert ()
 
         // teardown shader
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
         Assert ()
@@ -558,16 +517,17 @@ module Hl =
          view : single array,
          projection : single array,
          eyePosition : Vector3 byref,
-         depthBiasMvp : single array,
-         light : Light byref,
-         preintegratedFgMap : uint,
-         environmentMap : uint,
-         albedoMapOpt : ValueEither<uint, Color>,
-         specularMapOpt : ValueEither<uint, Color>,
-         glossMapOpt : ValueEither<uint, single>,
-         normalMapOpt : ValueEither<uint, Vector3>,
-         shadowMap : uint,
-         shader : uint) =
+         albedoMap : uint,
+         metallicMap : uint,
+         roughnessMap : uint,
+         normalMap : uint,
+         ambientOcclusionMap : uint,
+         irradianceCubemap : uint,
+         prefilterCubemap : uint,
+         brdfMap : uint,
+         lightPositions : Vector3 array,
+         lightColors : Color array,
+         shader : PhysicallyBasedShader) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
@@ -575,13 +535,37 @@ module Hl =
         Assert ()
 
         // setup shader
-        OpenGL.Gl.UseProgram shader
+        OpenGL.Gl.UseProgram shader.PhysicallyBasedShader
+        OpenGL.Gl.UniformMatrix4 (shader.ModelUniform, false, model)
+        OpenGL.Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        OpenGL.Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        OpenGL.Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
+        OpenGL.Gl.Uniform1 (shader.AlbedoMapUniform, 0)
+        OpenGL.Gl.Uniform1 (shader.MetallicMapUniform, 1)
+        OpenGL.Gl.Uniform1 (shader.RoughnessMapUniform, 2)
+        OpenGL.Gl.Uniform1 (shader.NormalMapUniform, 3)
+        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionMapUniform, 4)
+        OpenGL.Gl.Uniform1 (shader.IrradianceCubemapUniform, 5)
+        OpenGL.Gl.Uniform1 (shader.PrefilterCubemapUniform, 6)
+        OpenGL.Gl.Uniform1 (shader.BrdfMapUniform, 7)
+        // TODO: light positions
+        // TODO: light colors
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
-        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
-        OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
-        OpenGL.Gl.Uniform1 (texUniform, 0)
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoMap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metallicMap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessMap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalMap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionMap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture5
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, irradianceCubemap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture6
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, prefilterCubemap)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture7
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, brdfMap)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
@@ -603,6 +587,21 @@ module Hl =
         Assert ()
 
         // teardown shader
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture5
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture6
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture7
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
         Assert ()
@@ -610,36 +609,3 @@ module Hl =
         // teardown state
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-
-
-
-
-
-        insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
-
-        
-        EyePositionUniform : int
-        DepthBiasMvpUniform : int
-
-        LightUniform : int
-
-        PreintegratedFgMapUniform : int
-        EnvrionmentMapUniform : int
-
-        AlbedoMapUniform : int
-        SpecularMapUniform : int
-        GlossMapUniform : int
-        NormalMapUniform : int
-        ShadowMapUniform : int
-
-        StaticAlbedoUniform : int
-        StaticSpecularUniform : int
-        StaticGlossUniform : int
-        StaticNormalUniform : int
-
-        UsingAlbedoMapUniform : int
-        UsingSpecularMapUniform : int
-        UsingGlossMapUniform : int
-        UsingNormalMapUniform : int
-
-        PhysicallyBasedShader : uint

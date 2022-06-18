@@ -1,9 +1,9 @@
 #shader vertex
 #version 330 core
 
-uniform mat4 projection;
-uniform mat4 view;
 uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -34,8 +34,8 @@ uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D normalMap;
 uniform sampler2D ambientOcclusionMap;
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
+uniform samplerCube irradianceCubemap;
+uniform samplerCube prefilterCubemap;
 uniform sampler2D brdfMap;
 uniform vec3 lightPositions[4];
 uniform vec3 lightColors[4];
@@ -154,11 +154,11 @@ void main()
     kD *= 1.0 - metallic;
 
     // compute diffuse term
-    vec3 irradiance = texture(irradianceMap, n).rgb;
+    vec3 irradiance = texture(irradianceCubemap, n).rgb;
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term.
-    vec3 prefilteredColor = textureLod(prefilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
+    vec3 prefilteredColor = textureLod(prefilterCubemap, r, roughness * REFLECTION_LOD_MAX).rgb;
     vec2 brdf = texture(brdfMap, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 

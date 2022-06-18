@@ -152,7 +152,6 @@ module SpriteBatch =
 
             // setup shader
             OpenGL.Gl.UseProgram env.Shader
-            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
             OpenGL.Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
             OpenGL.Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
             OpenGL.Gl.Uniform2 (env.PivotsUniform, env.Pivots)
@@ -160,6 +159,7 @@ module SpriteBatch =
             OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
             OpenGL.Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
             OpenGL.Gl.Uniform1 (env.TexUniform, 0)
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
             OpenGL.Gl.BlendEquation env.State.BlendingEquation
             OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
