@@ -1,5 +1,5 @@
 #shader vertex
-#version 330 core
+#version 410 core
 
 uniform mat4 model;
 uniform mat4 view;
@@ -22,7 +22,7 @@ void main()
 }
 
 #shader fragment
-#version 330 core
+#version 410 core
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 4.0;
@@ -30,13 +30,10 @@ const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
 uniform sampler2D albedoMap;
-uniform sampler2D metallicMap;
+uniform sampler2D metalnessMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D normalMap;
 uniform sampler2D ambientOcclusionMap;
-uniform samplerCube irradianceCubemap;
-uniform samplerCube prefilterCubemap;
-uniform sampler2D brdfMap;
 uniform vec3 lightPositions[4];
 uniform vec3 lightColors[4];
 
@@ -103,7 +100,7 @@ void main()
 {		
     // compute material properties
     vec3 albedo = pow(texture(albedoMap, texCoordsOut).rgb, vec3(2.2));
-    float metallic = texture(metallicMap, texCoordsOut).r;
+    float metalness = texture(metalnessMap, texCoordsOut).r;
     float roughness = texture(roughnessMap, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionMap, texCoordsOut).r;
 
@@ -114,7 +111,7 @@ void main()
 
     // compute reflectance term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 f0 = mix(vec3(0.04), albedo, metalness);
     vec3 reflectance = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -138,7 +135,7 @@ void main()
         // compute diffusion
         vec3 kS = f;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+        kD *= 1.0 - metalness;
 
         // compute light scalar
         float nDotL = max(dot(n, l), 0.0);
@@ -147,23 +144,8 @@ void main()
         reflectance += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-    // compute ambient lighting
-    vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
-    vec3 kS = f;
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-
-    // compute diffuse term
-    vec3 irradiance = texture(irradianceCubemap, n).rgb;
-    vec3 diffuse = irradiance * albedo;
-
-    // compute specular term.
-    vec3 prefilteredColor = textureLod(prefilterCubemap, r, roughness * REFLECTION_LOD_MAX).rgb;
-    vec2 brdf = texture(brdfMap, vec2(max(dot(n, v), 0.0), roughness)).rg;
-    vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
-
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;

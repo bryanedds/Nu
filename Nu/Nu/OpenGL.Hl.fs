@@ -50,22 +50,18 @@ module Hl =
           ProjectionUniform : int
           EyePositionUniform : int
           AlbedoMapUniform : int
-          MetallicMapUniform : int
+          MetalnessMapUniform : int
           RoughnessMapUniform : int
           NormalMapUniform : int
           AmbientOcclusionMapUniform : int
-          IrradianceCubemapUniform : int
-          PrefilterCubemapUniform : int          
-          BrdfMapUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
     type [<StructuralEquality; NoComparison>] PhysicallyBasedSurface =
         { VertexBuffer : uint
-          NormalBuffer : uint
-          TexCoordsBuffer : uint
-          IndexBuffer : uint }
+          IndexBuffer : uint
+          PhysicallyBasedVao : uint }
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
@@ -291,7 +287,7 @@ module Hl =
                 else
                     (shaderStr.Substring (fragmentStrIndex, vertexStrIndex - fragmentStrIndex),
                      shaderStr.Substring (vertexStrIndex, shaderStr.Length - vertexStrIndex))
-            CreateShaderFromStrs (vertexStr, fragmentStr)
+            CreateShaderFromStrs (vertexStr.Replace ("#shader vertex", ""), fragmentStr.Replace ("#shader fragment", ""))
         else failwith ("Invalid shader file '" + shaderFilePath + "'. Both vertex and fragment shader sections required.")
 
     /// Create a sprite shader with attributes:
@@ -358,13 +354,10 @@ module Hl =
         let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "projection")
         let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
         let albedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoMap")
-        let metallicMapUniform = OpenGL.Gl.GetUniformLocation (shader, "metallicMap")
+        let metalnessMapUniform = OpenGL.Gl.GetUniformLocation (shader, "metalnessMap")
         let roughnessMapUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessMap")
         let normalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "normalMap")
         let ambientOcclusionMapUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionMap")
-        let irradianceCubemapUniform = OpenGL.Gl.GetUniformLocation (shader, "irradianceCubemap")
-        let prefilterCubemapUniform = OpenGL.Gl.GetUniformLocation (shader, "prefilterCubemap")
-        let brdfMapUniform = OpenGL.Gl.GetUniformLocation (shader, "brdfMap")
         let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
 
@@ -374,13 +367,10 @@ module Hl =
           ProjectionUniform = projectionUniform
           EyePositionUniform = eyePositionUniform
           AlbedoMapUniform = albedoMapUniform
-          MetallicMapUniform = metallicMapUniform
+          MetalnessMapUniform = metalnessMapUniform
           RoughnessMapUniform = roughnessMapUniform
           NormalMapUniform = normalMapUniform
           AmbientOcclusionMapUniform = ambientOcclusionMapUniform
-          IrradianceCubemapUniform = irradianceCubemapUniform
-          PrefilterCubemapUniform = prefilterCubemapUniform
-          BrdfMapUniform = brdfMapUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
@@ -435,62 +425,60 @@ module Hl =
         Assert ()
 
         // fin
-        (indexBuffer, vertexBuffer, vao)
+        (vertexBuffer, indexBuffer, vao)
 
     /// Create a cube for rendering to a shader matching the one created with OpenGL.Hl.CreatePhysicallyBasedShader.
     let CreatePhysicallyBasedCube () =
 
-        let vertices =
-            [|Vector3 (-1.0f, -1.0f, -1.0f)
-              Vector3 (+1.0f, -1.0f, -1.0f)
-              Vector3 (+1.0f, +1.0f, -1.0f)
-              Vector3 (-1.0f, +1.0f, -1.0f)
-              Vector3 (-1.0f, -1.0f, +1.0f)
-              Vector3 (+1.0f, -1.0f, +1.0f)
-              Vector3 (+1.0f, +1.0f, +1.0f)
-              Vector3 (-1.0f, +1.0f, +1.0f)|]
-        
-        let normals =
-            [|Vector3 (+0.0f, +0.0f, +1.0f)
-              Vector3 (+1.0f, +0.0f, +0.0f)
-              Vector3 (+0.0f, +0.0f, -1.0f)
-              Vector3 (-1.0f, +0.0f, +0.0f)
-              Vector3 (+0.0f, +1.0f, +0.0f)
-              Vector3 (+0.0f, -1.0f, +0.0f)|]
+        // make vertex data
+        let vertexData =
+            [|
+              (*   positions   *)       (*    normals    *)         (* tex coords *)
+              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left (back face)
+              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
+              +0.5f; -0.5f; -0.5f;      -1.0f; +1.0f; +0.0f;        +0.0f; +0.0f; // bottom-right         
+              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
+              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left
+              -0.5f; +0.5f; -0.5f;      -1.0f; +0.0f; +1.0f;        +0.0f; +0.0f; // top-left
 
-        let texCoords =
-            [|Vector2 (0.0f, 0.0f)
-              Vector2 (1.0f, 0.0f)
-              Vector2 (1.0f, 1.0f)
-              Vector2 (0.0f, 1.0f)|]
-        
-        let indices =
-            [|0; 1; 3; 3; 1; 2
-              1; 5; 2; 2; 5; 6
-              5; 4; 6; 6; 4; 7
-              4; 0; 7; 7; 0; 3
-              3; 2; 7; 7; 2; 6
-              4; 5; 0; 0; 5; 1|]
+              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left (front face)
+              +0.5f; -0.5f; +0.5f;      +1.0f; +1.0f; +0.0f;        +0.0f; +0.0f; // bottom-right
+              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
+              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
+              -0.5f; +0.5f; +0.5f;      +1.0f; +0.0f; +1.0f;        +0.0f; +0.0f; // top-left
+              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left
 
-        let vertexData = Array.zeroCreate<single> (18 * 6)
-        for i in 0 .. dec 36 do
-            vertexData.[i * 3 + 0] <- vertices.[indices.[i]].X
-            vertexData.[i * 3 + 1] <- vertices.[indices.[i]].Y
-            vertexData.[i * 3 + 2] <- vertices.[indices.[i]].Z
+              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        -1.0f; +0.0f; // top-right (left face)
+              -0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        -1.0f; +0.0f; // top-left
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        -1.0f; +0.0f; // bottom-left
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        -1.0f; +0.0f; // bottom-left
+              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        -1.0f; +0.0f; // bottom-right
+              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        -1.0f; +0.0f; // top-right
 
-        let normalData = Array.zeroCreate<single> (18 * 6)
-        for i in 0 .. dec 36 do
-            normalData.[i * 3 + 0] <- normals.[indices.[i / 6]].X
-            normalData.[i * 3 + 1] <- normals.[indices.[i / 6]].Y
-            normalData.[i * 3 + 2] <- normals.[indices.[i / 6]].Z
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +1.0f; +0.0f; // top-left (right face)
+              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +1.0f; +0.0f; // bottom-right
+              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +1.0f; +0.0f; // top-right         
+              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +1.0f; +0.0f; // bottom-right
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +1.0f; +0.0f; // top-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +1.0f; +0.0f; // bottom-left
 
-        let texCoordsData = Array.zeroCreate<single> (12 * 6)
-        for i in 0 .. dec 36 do
-            texCoordsData.[i * 2 + 0] <- texCoords.[indices.[i % 4]].X
-            texCoordsData.[i * 2 + 1] <- texCoords.[indices.[i % 4]].Y
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; -1.0f; // top-right (bottom face)
+              +0.5f; -0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +0.0f; -1.0f; // top-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; -1.0f; // bottom-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; -1.0f; // bottom-left
+              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +0.0f; -1.0f; // bottom-right
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; -1.0f; // top-right
 
-        let indexData =
-            indices
+              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; +1.0f; // top-left (top face)
+              +0.5f; +0.5f ;+0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; +1.0f; // bottom-right
+              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +0.0f; +1.0f; // top-right     
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; +1.0f; // bottom-right
+              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; +1.0f; // top-left
+              -0.5f; +0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +0.0f; +1.0f; // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 36 id
 
         // initialize vao
         let vao = OpenGL.Gl.GenVertexArray ()
@@ -505,22 +493,6 @@ module Hl =
         finally vertexBufferPtr.Free ()
         Assert ()
 
-        // create normal buffer
-        let normalBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, normalBuffer)
-        let normalBufferPtr = GCHandle.Alloc (normalData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (normalData.Length * sizeof<single>), normalBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-        finally normalBufferPtr.Free ()
-        Assert ()
-
-        // create tex coords buffer
-        let texCoordsBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, texCoordsBuffer)
-        let texCoordsBufferPtr = GCHandle.Alloc (texCoordsData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (texCoordsData.Length * sizeof<single>), texCoordsBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-        finally texCoordsBufferPtr.Free ()
-        Assert ()
-
         // create index buffer
         let indexBuffer = OpenGL.Gl.GenBuffer ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -531,12 +503,15 @@ module Hl =
         Assert ()
 
         // finalize vao
+        let normalOffset =      (3 (*position*)) * sizeof<single>
+        let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+        let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
         OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
+        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
         OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
+        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, normalOffset)
         OpenGL.Gl.EnableVertexAttribArray 2u
-        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
+        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, texCoordsOffset)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
@@ -544,12 +519,11 @@ module Hl =
 
         // make physically based surface
         { VertexBuffer = vertexBuffer
-          NormalBuffer = normalBuffer
-          TexCoordsBuffer = texCoordsBuffer
-          IndexBuffer = indexBuffer }
+          IndexBuffer = indexBuffer
+          PhysicallyBasedVao = vao }
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
-    let DrawSprite (indices, vertices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -585,8 +559,9 @@ module Hl =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
 
         // setup shader
@@ -624,31 +599,30 @@ module Hl =
         Assert ()
 
         // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
     /// Draw a physically-based surface.
-    let DrawPhysicallyBasedSurface
-        (indices : uint, vertices : uint, vao : uint,
+    let DrawSurface
+        (surface : PhysicallyBasedSurface,
+         eyePosition : Vector3 byref,
          model : single array,
          view : single array,
          projection : single array,
-         eyePosition : Vector3 byref,
          albedoMap : uint,
-         metallicMap : uint,
+         metalnessMap : uint,
          roughnessMap : uint,
          normalMap : uint,
-         ambientOcclusionMap : uint,
-         irradianceCubemap : uint,
-         prefilterCubemap : uint,
          brdfMap : uint,
-         lightPositions : Vector3 array,
-         lightColors : Color array,
+         lightPositions : single array,
+         lightColors : single array,
          shader : PhysicallyBasedShader) =
 
         // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
 
         // setup shader
@@ -658,43 +632,34 @@ module Hl =
         OpenGL.Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         OpenGL.Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
         OpenGL.Gl.Uniform1 (shader.AlbedoMapUniform, 0)
-        OpenGL.Gl.Uniform1 (shader.MetallicMapUniform, 1)
+        OpenGL.Gl.Uniform1 (shader.MetalnessMapUniform, 1)
         OpenGL.Gl.Uniform1 (shader.RoughnessMapUniform, 2)
         OpenGL.Gl.Uniform1 (shader.NormalMapUniform, 3)
         OpenGL.Gl.Uniform1 (shader.AmbientOcclusionMapUniform, 4)
-        OpenGL.Gl.Uniform1 (shader.IrradianceCubemapUniform, 5)
-        OpenGL.Gl.Uniform1 (shader.PrefilterCubemapUniform, 6)
-        OpenGL.Gl.Uniform1 (shader.BrdfMapUniform, 7)
-        // TODO: light positions
-        // TODO: light colors
+        OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoMap)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metallicMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metalnessMap)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessMap)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalMap)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionMap)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture5
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, irradianceCubemap)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture6
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, prefilterCubemap)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture7
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, brdfMap)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray vao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertices)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indices)
+        OpenGL.Gl.BindVertexArray surface.PhysicallyBasedVao
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, surface.VertexBuffer)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, surface.IndexBuffer)
         Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 6, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
+        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 12, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
         Assert ()
 
         // teardown geometry
@@ -714,15 +679,10 @@ module Hl =
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture5
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture6
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture7
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
         Assert ()
 
         // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
