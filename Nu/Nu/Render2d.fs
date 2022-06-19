@@ -684,7 +684,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     OpenGL.Gl.Enable OpenGL.EnableCap.Blend
 
                     let mutable eyePosition = v3 0.0f 0.0f eyeZ
-                    let model = (Matrix4x4.CreateRotationY rotation).ToArray ()
+                    let model = Matrix4x4.CreateFromYawPitchRoll(rotation, rotation / 2.0f, 0.0f).ToArray()
                     let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
                     let projection = Constants.Render.Projection.ToArray ()
                     let lightPositions = [|-1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; -1.0f; 1.0f; 1.0f|]
