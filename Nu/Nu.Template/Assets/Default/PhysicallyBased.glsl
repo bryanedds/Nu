@@ -37,9 +37,9 @@ uniform sampler2D ambientOcclusionMap;
 uniform vec3 lightPositions[4];
 uniform vec3 lightColors[4];
 
-in vec2 texCoordsOut;
 in vec3 positionOut;
 in vec3 normalOut;
+in vec2 texCoordsOut;
 
 out vec4 frag;
 

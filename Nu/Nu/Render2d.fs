@@ -638,7 +638,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
 
-            if true then
+            if false then
 
                 // begin frame
                 OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
@@ -671,7 +671,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let ambientOcclusionMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/AmbientOcclusion.png") |> Either.getRight |> snd
                 OpenGL.Hl.Assert ()
 
-                let mutable eyeZ = 1.0f
+                let eyeZ = 2.0f
+                let mutable rotation = 0.0f
                 while true do
 
                     // begin frame
@@ -683,11 +684,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     OpenGL.Gl.Enable OpenGL.EnableCap.Blend
 
                     let mutable eyePosition = v3 0.0f 0.0f eyeZ
-                    let model = m4Identity.ToArray ()
+                    let model = (Matrix4x4.CreateRotationY rotation).ToArray ()
                     let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
                     let projection = Constants.Render.Projection.ToArray ()
                     let lightPositions = [|1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f|]
-                    let lightColors = [|1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f|]
+                    let lightColors = [|10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f|]
 
                     OpenGL.Hl.DrawSurface
                         (cube, &eyePosition, model, view, projection,
@@ -703,7 +704,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     OpenGL.Hl.EndFrame ()
                     OpenGL.Hl.Assert ()
 
-                    eyeZ <- eyeZ + 0.001f
+                    rotation <- rotation + 0.05f
 
                     (renderer :> Renderer2d).Swap ()
 

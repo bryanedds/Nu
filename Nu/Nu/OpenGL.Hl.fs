@@ -509,9 +509,9 @@ module Hl =
         OpenGL.Gl.EnableVertexAttribArray 0u
         OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
         OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, normalOffset)
+        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
         OpenGL.Gl.EnableVertexAttribArray 2u
-        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, texCoordsOffset)
+        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
