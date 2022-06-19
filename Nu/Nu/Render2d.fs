@@ -687,7 +687,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let model = (Matrix4x4.CreateRotationY rotation).ToArray ()
                     let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
                     let projection = Constants.Render.Projection.ToArray ()
-                    let lightPositions = [|1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f|]
+                    let lightPositions = [|-1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; -1.0f; 1.0f; 1.0f|]
                     let lightColors = [|10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f|]
 
                     OpenGL.Hl.DrawSurface
