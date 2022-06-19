@@ -542,9 +542,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                         // draw text sprite
                         // NOTE: we allocate an array here, too.
-                        let (indices, vertices, vao) = renderer.RenderTextQuad
+                        let (vertices, indices, vao) = renderer.RenderTextQuad
                         let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (indices, vertices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                        OpenGL.Hl.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture
@@ -638,25 +638,77 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
 
-            // begin frame
-            OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
-            let viewport = Constants.Render.Viewport
-            let projection = GlRenderer2d.computeProjection viewport renderer
-            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
-            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
-            OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
-            OpenGL.Hl.Assert ()
+            if true then
 
-            // render frame
-            GlRenderer2d.handleRenderMessages renderMessages renderer
-            GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
-            renderer.RenderLayeredMessages.Clear ()
+                // begin frame
+                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+                let viewport = Constants.Render.Viewport
+                let projection = GlRenderer2d.computeProjection viewport renderer
+                let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
+                let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
+                OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+                OpenGL.Hl.Assert ()
 
-            // end frame
-            OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
-            OpenGL.Hl.EndFrame ()
-            OpenGL.Hl.Assert ()
+                // render frame
+                GlRenderer2d.handleRenderMessages renderMessages renderer
+                GlRenderer2d.sortRenderLayeredMessages renderer
+                GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
+                renderer.RenderLayeredMessages.Clear ()
+
+                // end frame
+                OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+                OpenGL.Hl.EndFrame ()
+                OpenGL.Hl.Assert ()
+
+            else
+
+                let shader = OpenGL.Hl.CreatePhysicallyBasedShader "Assets/Default/PhysicallyBased.glsl"
+                let cube = OpenGL.Hl.CreatePhysicallyBasedCube ()
+                let albedoMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Albedo.png") |> Either.getRight |> snd
+                let metalnessMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Metalness.png") |> Either.getRight |> snd
+                let roughnessMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Roughness.png") |> Either.getRight |> snd
+                let normalMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Normal.png") |> Either.getRight |> snd
+                let ambientOcclusionMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/AmbientOcclusion.png") |> Either.getRight |> snd
+                OpenGL.Hl.Assert ()
+
+                let mutable eyeZ = 1.0f
+                while true do
+
+                    // begin frame
+                    OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+
+                    // setup state
+                    OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
+                    OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+                    OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+
+                    let mutable eyePosition = v3 0.0f 0.0f eyeZ
+                    let model = m4Identity.ToArray ()
+                    let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
+                    let projection = Constants.Render.Projection.ToArray ()
+                    let lightPositions = [|1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f; 1.0f|]
+                    let lightColors = [|1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f|]
+
+                    OpenGL.Hl.DrawSurface
+                        (cube, &eyePosition, model, view, projection,
+                         albedoMap, metalnessMap, roughnessMap, normalMap, ambientOcclusionMap,
+                         lightPositions, lightColors, shader)
+                    OpenGL.Hl.Assert ()
+
+                    // teardown state
+                    OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+                    OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+
+                    // end frame
+                    OpenGL.Hl.EndFrame ()
+                    OpenGL.Hl.Assert ()
+
+                    eyeZ <- eyeZ + 0.001f
+
+                    (renderer :> Renderer2d).Swap ()
+
+                    let mutable polledEvent = SDL.SDL_Event ()
+                    SDL2.SDL.SDL_PollEvent &polledEvent |> ignore<int>
 
         member renderer.Swap () =
             match renderer.RenderWindow with

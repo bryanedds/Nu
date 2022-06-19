@@ -142,8 +142,9 @@ module SpriteBatch =
         if env.SpriteIndex > 0 then
 
             // setup state
-            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
             OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+            OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
             OpenGL.Hl.Assert ()
         
             // setup vao
@@ -181,8 +182,9 @@ module SpriteBatch =
             OpenGL.Hl.Assert ()
 
             // teardown state
-            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+            OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
             OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
             // next batch
             env.SpriteIndex <- 0
