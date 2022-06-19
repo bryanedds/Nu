@@ -434,47 +434,47 @@ module Hl =
         let vertexData =
             [|
               (*   positions   *)       (*    normals    *)         (* tex coords *)
-              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left (back face)
-              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
-              +0.5f; -0.5f; -0.5f;      -1.0f; +1.0f; +0.0f;        +0.0f; +0.0f; // bottom-right         
-              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
-              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left
-              -0.5f; +0.5f; -0.5f;      -1.0f; +0.0f; +1.0f;        +0.0f; +0.0f; // top-left
+              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        0.0f; 0.0f; // bottom-left (back face)
+              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        1.0f; 1.0f; // top-right
+              +0.5f; -0.5f; -0.5f;      -1.0f; +1.0f; +0.0f;        1.0f; 0.0f; // bottom-right         
+              +0.5f; +0.5f; -0.5f;      -1.0f; +1.0f; +1.0f;        1.0f; 1.0f; // top-right
+              -0.5f; -0.5f; -0.5f;      -1.0f; +0.0f; +0.0f;        0.0f; 0.0f; // bottom-left
+              -0.5f; +0.5f; -0.5f;      -1.0f; +0.0f; +1.0f;        0.0f; 1.0f; // top-left
 
-              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left (front face)
-              +0.5f; -0.5f; +0.5f;      +1.0f; +1.0f; +0.0f;        +0.0f; +0.0f; // bottom-right
-              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
-              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        +0.0f; +0.0f; // top-right
-              -0.5f; +0.5f; +0.5f;      +1.0f; +0.0f; +1.0f;        +0.0f; +0.0f; // top-left
-              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        +0.0f; +0.0f; // bottom-left
+              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        0.0f; 0.0f; // bottom-left (front face)
+              +0.5f; -0.5f; +0.5f;      +1.0f; +1.0f; +0.0f;        1.0f; 1.0f; // bottom-right
+              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        1.0f; 0.0f; // top-right
+              +0.5f; +0.5f; +0.5f;      +1.0f; +1.0f; +1.0f;        1.0f; 1.0f; // top-right
+              -0.5f; +0.5f; +0.5f;      +1.0f; +0.0f; +1.0f;        0.0f; 0.0f; // top-left
+              -0.5f; -0.5f; +0.5f;      +1.0f; +0.0f; +0.0f;        0.0f; 1.0f; // bottom-left
 
-              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        -1.0f; +0.0f; // top-right (left face)
-              -0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        -1.0f; +0.0f; // top-left
-              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        -1.0f; +0.0f; // bottom-left
-              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        -1.0f; +0.0f; // bottom-left
-              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        -1.0f; +0.0f; // bottom-right
-              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        -1.0f; +0.0f; // top-right
+              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        0.0f; 0.0f; // top-right (left face)
+              -0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        1.0f; 1.0f; // top-left
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        1.0f; 0.0f; // bottom-left
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        1.0f; 1.0f; // bottom-left
+              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        0.0f; 0.0f; // bottom-right
+              -0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        0.0f; 1.0f; // top-right
 
-              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +1.0f; +0.0f; // top-left (right face)
-              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +1.0f; +0.0f; // bottom-right
-              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +1.0f; +0.0f; // top-right         
-              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +1.0f; +0.0f; // bottom-right
-              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +1.0f; +0.0f; // top-left
-              +0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +1.0f; +0.0f; // bottom-left
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        0.0f; 0.0f; // top-left (right face)
+              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        1.0f; 1.0f; // bottom-right
+              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        1.0f; 0.0f; // top-right         
+              +0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        1.0f; 1.0f; // bottom-right
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        0.0f; 0.0f; // top-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        0.0f; 1.0f; // bottom-left
 
-              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; -1.0f; // top-right (bottom face)
-              +0.5f; -0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +0.0f; -1.0f; // top-left
-              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; -1.0f; // bottom-left
-              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; -1.0f; // bottom-left
-              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +0.0f; -1.0f; // bottom-right
-              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; -1.0f; // top-right
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        0.0f; 0.0f; // top-right (bottom face)
+              +0.5f; -0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        1.0f; 1.0f; // top-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        1.0f; 0.0f; // bottom-left
+              +0.5f; -0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        1.0f; 1.0f; // bottom-left
+              -0.5f; -0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        0.0f; 0.0f; // bottom-right
+              -0.5f; -0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        0.0f; 1.0f; // top-right
 
-              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; +1.0f; // top-left (top face)
-              +0.5f; +0.5f ;+0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; +1.0f; // bottom-right
-              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        +0.0f; +1.0f; // top-right     
-              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        +0.0f; +1.0f; // bottom-right
-              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        +0.0f; +1.0f; // top-left
-              -0.5f; +0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        +0.0f; +1.0f; // bottom-left
+              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        0.0f; 0.0f; // top-left (top face)
+              +0.5f; +0.5f ;+0.5f;      +0.0f; +1.0f; +0.0f;        1.0f; 1.0f; // bottom-right
+              +0.5f; +0.5f; -0.5f;      +0.0f; +1.0f; +1.0f;        1.0f; 0.0f; // top-right     
+              +0.5f; +0.5f; +0.5f;      +0.0f; +1.0f; +0.0f;        1.0f; 1.0f; // bottom-right
+              -0.5f; +0.5f; -0.5f;      +0.0f; +0.0f; +1.0f;        0.0f; 0.0f; // top-left
+              -0.5f; +0.5f; +0.5f;      +0.0f; +0.0f; +0.0f;        0.0f; 1.0f; // bottom-left
             |]
 
         // make index data trivially
@@ -659,7 +659,7 @@ module Hl =
         Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 12, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
+        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 36, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
         Assert ()
 
         // teardown geometry
