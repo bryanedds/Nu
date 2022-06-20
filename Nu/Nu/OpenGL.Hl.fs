@@ -48,16 +48,16 @@ module Hl =
         { ViewUniform : int
           ProjectionUniform : int
           EyePositionUniform : int
-          AlbedoMapUniform : int
-          MetalnessMapUniform : int
-          RoughnessMapUniform : int
-          NormalMapUniform : int
-          AmbientOcclusionMapUniform : int
+          AlbedoTextureUniform : int
+          MetalnessTextureUniform : int
+          RoughnessTextureUniform : int
+          NormalTextureUniform : int
+          AmbientOcclusionTextureUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
-    type [<NoEquality; NoComparison>] PhysicallyBasedSurface =
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedSurface =
         { VertexBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
@@ -351,11 +351,11 @@ module Hl =
         let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "view")
         let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "projection")
         let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
-        let albedoMapUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoMap")
-        let metalnessMapUniform = OpenGL.Gl.GetUniformLocation (shader, "metalnessMap")
-        let roughnessMapUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessMap")
-        let normalMapUniform = OpenGL.Gl.GetUniformLocation (shader, "normalMap")
-        let ambientOcclusionMapUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionMap")
+        let albedoTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoTexture")
+        let metalnessTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "metalnessTexture")
+        let roughnessTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessTexture")
+        let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
+        let ambientOcclusionTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
 
@@ -363,11 +363,11 @@ module Hl =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyePositionUniform = eyePositionUniform
-          AlbedoMapUniform = albedoMapUniform
-          MetalnessMapUniform = metalnessMapUniform
-          RoughnessMapUniform = roughnessMapUniform
-          NormalMapUniform = normalMapUniform
-          AmbientOcclusionMapUniform = ambientOcclusionMapUniform
+          AlbedoTextureUniform = albedoTextureUniform
+          MetalnessTextureUniform = metalnessTextureUniform
+          RoughnessTextureUniform = roughnessTextureUniform
+          NormalTextureUniform = normalTextureUniform
+          AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
@@ -614,11 +614,11 @@ module Hl =
          models : single array array,
          view : single array,
          projection : single array,
-         albedoMap : uint,
-         metalnessMap : uint,
-         roughnessMap : uint,
-         normalMap : uint,
-         brdfMap : uint,
+         albedoTexture : uint,
+         metalnessTexture : uint,
+         roughnessTexture : uint,
+         normalTexture : uint,
+         ambientOcclusionTexture : uint,
          lightPositions : single array,
          lightColors : single array,
          modelRow0Buffer : uint,
@@ -638,23 +638,23 @@ module Hl =
         OpenGL.Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         OpenGL.Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         OpenGL.Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
-        OpenGL.Gl.Uniform1 (shader.AlbedoMapUniform, 0)
-        OpenGL.Gl.Uniform1 (shader.MetalnessMapUniform, 1)
-        OpenGL.Gl.Uniform1 (shader.RoughnessMapUniform, 2)
-        OpenGL.Gl.Uniform1 (shader.NormalMapUniform, 3)
-        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionMapUniform, 4)
+        OpenGL.Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
+        OpenGL.Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
+        OpenGL.Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
+        OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 3)
+        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
         OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metalnessMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metalnessTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, brdfMap)
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()

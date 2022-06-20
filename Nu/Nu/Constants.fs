@@ -83,6 +83,7 @@ module Render =
     let [<Literal>] SpriteBatchSize = 192
     let [<Literal>] SpriteBorderTexelScalar = 0.01f
     let [<Literal>] SpriteMessagesPrealloc = 256
+    let [<Literal>] SurfaceBatchSize = 32768
 
 [<RequireQualifiedAccess>]
 module Audio =
