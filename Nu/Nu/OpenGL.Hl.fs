@@ -57,7 +57,7 @@ module Hl =
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
-    type [<StructuralEquality; NoComparison>] PhysicallyBasedSurface =
+    type [<NoEquality; NoComparison>] PhysicallyBasedSurface =
         { VertexBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }

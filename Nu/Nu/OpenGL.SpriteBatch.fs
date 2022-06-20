@@ -7,7 +7,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    type [<StructuralEquality; NoComparison; Struct>] private State =
+    type [<NoEquality; NoComparison; Struct>] private State =
         { Absolute : bool
           BlendingFactorSrc : OpenGL.BlendingFactor
           BlendingFactorDst : OpenGL.BlendingFactor
