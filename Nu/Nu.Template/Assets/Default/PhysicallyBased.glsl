@@ -38,11 +38,11 @@ const float REFLECTION_LOD_MAX = 4.0;
 const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
-uniform sampler2D albedoMap;
-uniform sampler2D metalnessMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D normalMap;
-uniform sampler2D ambientOcclusionMap;
+uniform sampler2D albedoTexture;
+uniform sampler2D metalnessTexture;
+uniform sampler2D roughnessTexture;
+uniform sampler2D normalTexture;
+uniform sampler2D ambientOcclusionTexture;
 uniform vec3 lightPositions[4];
 uniform vec3 lightColors[4];
 
@@ -54,7 +54,7 @@ out vec4 frag;
 
 vec3 getNormal()
 {
-    vec3 tangentNormal = texture(normalMap, texCoordsOut).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(normalTexture, texCoordsOut).xyz * 2.0 - 1.0;
     vec3 q1 = dFdx(positionOut);
     vec3 q2 = dFdy(positionOut);
     vec2 st1 = dFdx(texCoordsOut);
@@ -108,10 +108,10 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void main()
 {		
     // compute material properties
-    vec3 albedo = pow(texture(albedoMap, texCoordsOut).rgb, vec3(2.2));
-    float metalness = texture(metalnessMap, texCoordsOut).r;
-    float roughness = texture(roughnessMap, texCoordsOut).r;
-    float ambientOcclusion = texture(ambientOcclusionMap, texCoordsOut).r;
+    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(2.2));
+    float metalness = texture(metalnessTexture, texCoordsOut).r;
+    float roughness = texture(roughnessTexture, texCoordsOut).r;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
 
     // compute lighting profile
     vec3 n = getNormal();

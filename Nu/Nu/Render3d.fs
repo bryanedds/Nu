@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
@@ -14,15 +15,92 @@ open Nu
 /// Renders a material of 3d surfaces.
 type RenderMaterial =
     interface // same derived type indicates two materials can potentially be batched
-        inherit IComparable // CompareTo of 0 indicates two materials can be drawn in the same batch with the same parameters
+        inherit IEquatable<RenderMaterial> // equality indicates two materials have the same draw state and can be batched
         abstract Bounds : Box3 // allows for z-sorting of translucent surfaces
         abstract Transparent : bool // can affect order in which materials are drawn such as in deferred rendering and may disallow batching
-        abstract RenderMany : RenderMaterial array * Matrix4x4 byref * Matrix4x4 byref * Vector3 * Vector3 * Vector3 * Renderer -> unit // does actual batched opengl calls
+        abstract RenderMany : obj * Matrix4x4 byref * Matrix4x4 byref * Vector3 * uint * Renderer -> unit // does actual batched opengl calls
         end
 
+type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
+    { mutable HashCode : int
+      Model : Matrix4x4
+      Bounds : Box3
+      Transparent : bool
+      AlbedoTexture : uint
+      MetalnessTexture : uint
+      RoughnessTexture : uint
+      NormalTexture : uint
+      LightPositions : Vector3 array
+      LightColors : Vector3 array
+      PhysicallyBasedSurface : OpenGL.Hl.PhysicallyBasedSurface }
+
+    static member inline hash state =
+        hash state.Transparent ^^^
+        hash state.PhysicallyBasedSurface ^^^
+        hash state.AlbedoTexture * hash state.MetalnessTexture * hash state.RoughnessTexture * hash state.NormalTexture ^^^
+        hash state.LightPositions ^^^
+        hash state.LightColors
+
+    static member inline create model bounds transparent albedoTexture metalnessTexture roughnessTexture normalTexture lightPositions lightColors surface =
+        let mutable result =
+            { HashCode = 0
+              Model = model
+              Bounds = bounds
+              Transparent = transparent
+              PhysicallyBasedSurface = surface
+              AlbedoTexture = albedoTexture
+              MetalnessTexture = metalnessTexture
+              RoughnessTexture = roughnessTexture
+              NormalTexture = normalTexture
+              LightPositions = lightPositions
+              LightColors = lightColors }
+        result.HashCode <- PhysicallyBasedMaterial.hash result
+        result
+
+    static member inline equals left right =
+        left.HashCode = right.HashCode &&
+        left.Transparent = right.Transparent &&
+        left.PhysicallyBasedSurface.IndexBuffer = right.PhysicallyBasedSurface.IndexBuffer &&
+        left.PhysicallyBasedSurface.VertexBuffer = right.PhysicallyBasedSurface.VertexBuffer &&
+        left.PhysicallyBasedSurface.PhysicallyBasedVao = right.PhysicallyBasedSurface.PhysicallyBasedVao &&
+        left.AlbedoTexture = right.AlbedoTexture &&
+        left.MetalnessTexture = right.MetalnessTexture &&
+        left.RoughnessTexture = right.RoughnessTexture &&
+        left.NormalTexture = right.NormalTexture &&
+        left.LightPositions = right.LightPositions &&
+        left.LightColors = right.LightColors
+
+    member this.Equals that =
+        PhysicallyBasedMaterial.equals this that
+
+    override this.Equals (thatObj : obj) =
+        match thatObj with
+        | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        PhysicallyBasedMaterial.hash this
+
+    interface RenderMaterial with
+        member this.Bounds = this.Bounds
+        member this.Transparent = this.Transparent
+        member this.RenderMany (materialsObj, view, projection, eyePosition, ambientOcclusionTexture, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer, renderer) =
+            render.DrawPhysicallyBasedSurfaces ()
+            match materialsObj with
+            | :? (PhysicallyBasedMaterial array) as materials ->
+                if materials.Length > 0 then
+                    let material0 = &materials.[0]
+                    OpenGL.Hl.DrawSurfaces
+                        (material0.PhysicallyBasedSurface, eyePosition, (), view.ToArray (), projection.ToArray (),
+                         material0.AlbedoTexture, material0.MetalnessTexture, material0.RoughnessTexture, material0.NormalTexture, ambientOcclusionTexture,
+                         [||], [||],
+                         modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer, )
+                    ()
+            | _ -> failwithumf ()
+
 /// A collection of render materials in a pass.
-type RenderMaterials =
-    { RenderMaterialsOpaque : Map<RenderMaterial, RenderMaterial array>
+type [<NoEquality; NoComparison>] RenderMaterials =
+    { RenderMaterialsOpaque : Dictionary<RenderMaterial, RenderMaterial array>
       RenderMaterialsTransparent : RenderMaterial array }
 
 /// Describes a 3d render pass.
