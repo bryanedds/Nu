@@ -671,8 +671,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let ambientOcclusionMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/AmbientOcclusion.png") |> Either.getRight |> snd
                 OpenGL.Hl.Assert ()
 
-                let eyeZ = 2.0f
+                let eyeZ = 150.0f
                 let mutable rotation = 0.0f
+                let mutable eyePosition = v3 0.0f 0.0f eyeZ
+                let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
+                let projection = Constants.Render.Projection.ToArray ()
+                let lightPositions = [|-50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; -50.0f; 50.0f; 50.0f|]
+                let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
+                let modelRow0Buffer = OpenGL.Gl.GenBuffer ()
+                let modelRow1Buffer = OpenGL.Gl.GenBuffer ()
+                let modelRow2Buffer = OpenGL.Gl.GenBuffer ()
+                let modelRow3Buffer = OpenGL.Gl.GenBuffer ()
                 while true do
 
                     // begin frame
@@ -683,17 +692,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
                     OpenGL.Gl.Enable OpenGL.EnableCap.Blend
 
-                    let mutable eyePosition = v3 0.0f 0.0f eyeZ
-                    let model = Matrix4x4.CreateFromYawPitchRoll(rotation, rotation / 2.0f, 0.0f).ToArray()
-                    let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
-                    let projection = Constants.Render.Projection.ToArray ()
-                    let lightPositions = [|-1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; 0.0f; 1.0f; -1.0f; 1.0f; 1.0f|]
-                    let lightColors = [|10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f; 10.0f; 0.0f; 10.0f; 0.0f; 10.0f|]
+                    let models =
+                        Array.init 65536 (fun i ->
+                            let mutable model = Matrix4x4.CreateFromYawPitchRoll(rotation, rotation / 2.0f, 0.0f)
+                            model.M41 <- single (i / 256 - 128) * 1.5f
+                            model.M42 <- single (i % 256 - 128) * 1.5f
+                            model.ToArray ())
 
-                    OpenGL.Hl.DrawSurface
-                        (cube, &eyePosition, model, view, projection,
+                    OpenGL.Hl.DrawSurfaces
+                        (cube, &eyePosition, models, view, projection,
                          albedoMap, metalnessMap, roughnessMap, normalMap, ambientOcclusionMap,
-                         lightPositions, lightColors, shader)
+                         lightPositions, lightColors, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer, shader)
                     OpenGL.Hl.Assert ()
 
                     // teardown state
