@@ -57,7 +57,7 @@ module Hl =
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
-    type [<StructuralEquality; NoComparison>] PhysicallyBasedSurface =
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
         { VertexBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
@@ -521,7 +521,7 @@ module Hl =
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
 
-        // make physically based surface
+        // make physically based geometry
         { VertexBuffer = vertexBuffer
           IndexBuffer = indexBuffer
           PhysicallyBasedVao = vao }
@@ -609,9 +609,9 @@ module Hl =
 
     /// Draw a physically-based surface.
     let DrawSurfaces
-        (surface : PhysicallyBasedSurface,
-         eyePosition : Vector3 byref,
-         models : single array array,
+        (eyePosition : Vector3 byref,
+         modelsFields : single array,
+         modelsCount : int,
          view : single array,
          projection : single array,
          albedoTexture : uint,
@@ -625,7 +625,8 @@ module Hl =
          modelRow1Buffer : uint,
          modelRow2Buffer : uint,
          modelRow3Buffer : uint,
-         shader : PhysicallyBasedShader) =
+         shader : PhysicallyBasedShader,
+         geometry : PhysicallyBasedGeometry) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
@@ -660,29 +661,27 @@ module Hl =
         Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray surface.PhysicallyBasedVao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, surface.VertexBuffer)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, surface.IndexBuffer)
+        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
         Assert ()
 
         // setup instancing
-        OpenGL.Gl.EnableVertexArrayAttrib (surface.PhysicallyBasedVao, 3u)
-        OpenGL.Gl.EnableVertexArrayAttrib (surface.PhysicallyBasedVao, 4u)
-        OpenGL.Gl.EnableVertexArrayAttrib (surface.PhysicallyBasedVao, 5u)
-        OpenGL.Gl.EnableVertexArrayAttrib (surface.PhysicallyBasedVao, 6u)
-        let models' = Array.concat models
-        let models'Length = models'.Length
-        let modelsRow0 = Array.zeroCreate<single> (models'Length / 4)
-        let modelsRow1 = Array.zeroCreate<single> (models'Length / 4)
-        let modelsRow2 = Array.zeroCreate<single> (models'Length / 4)
-        let modelsRow3 = Array.zeroCreate<single> (models'Length / 4)
+        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 3u)
+        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 4u)
+        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 5u)
+        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 6u)
+        let modelsRow0 = Array.zeroCreate<single> (modelsCount / 4)
+        let modelsRow1 = Array.zeroCreate<single> (modelsCount / 4)
+        let modelsRow2 = Array.zeroCreate<single> (modelsCount / 4)
+        let modelsRow3 = Array.zeroCreate<single> (modelsCount / 4)
         let mutable i = 0
-        while i < dec models'Length do
+        while i < dec modelsCount do
             let iOver4 = i / 4
-            modelsRow0.[iOver4] <- models'.[i]
-            modelsRow1.[iOver4] <- models'.[i+1]
-            modelsRow2.[iOver4] <- models'.[i+2]
-            modelsRow3.[iOver4] <- models'.[i+3]
+            modelsRow0.[iOver4] <- modelsFields.[i]
+            modelsRow1.[iOver4] <- modelsFields.[i+1]
+            modelsRow2.[iOver4] <- modelsFields.[i+2]
+            modelsRow3.[iOver4] <- modelsFields.[i+3]
             i <- i + 4
         let modelsRow0Ptr = GCHandle.Alloc (modelsRow0, GCHandleType.Pinned)
         let modelsRow1Ptr = GCHandle.Alloc (modelsRow1, GCHandleType.Pinned)
@@ -690,22 +689,22 @@ module Hl =
         let modelsRow3Ptr = GCHandle.Alloc (modelsRow3, GCHandleType.Pinned)
         try
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow0Buffer) // populate modelRow0Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow0.Length * sizeof<single>), modelsRow0Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow0Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (3u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow1Buffer) // populate modelRow1Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow1.Length * sizeof<single>), modelsRow1Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow1Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (4u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow2Buffer) // populate modelRow2Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow2.Length * sizeof<single>), modelsRow2Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow2Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (5u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow3Buffer) // populate modelRow3Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow3.Length * sizeof<single>), modelsRow3Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow3Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (6u, 1u)
             Assert ()
@@ -716,7 +715,7 @@ module Hl =
             modelsRow3Ptr.Free ()
 
         // draw geometry
-        OpenGL.Gl.DrawElementsInstanced (OpenGL.PrimitiveType.Triangles, 36, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, models.Length) // TODO: 3D: pass in mode and count.
+        OpenGL.Gl.DrawElementsInstanced (OpenGL.PrimitiveType.Triangles, 36, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, modelsCount) // TODO: 3D: pass in mode and count.
         Assert ()
 
         // teardown geometry

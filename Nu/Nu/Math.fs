@@ -904,6 +904,20 @@ module Matrix4x4 =
               this.M31; this.M32; this.M33; this.M34
               this.M41; this.M42; this.M43; this.M44|]
 
+        /// Convert a Matrix4x4 to an array.
+        member this.ToArray (value : Matrix4x4 byref) =
+            value.M11 <- this.M11; value.M12 <- this.M12; value.M13 <- this.M13; value.M14 <- this.M14
+            value.M21 <- this.M21; value.M22 <- this.M22; value.M23 <- this.M23; value.M24 <- this.M24
+            value.M31 <- this.M31; value.M32 <- this.M32; value.M33 <- this.M33; value.M34 <- this.M34
+            value.M41 <- this.M41; value.M42 <- this.M42; value.M43 <- this.M43; value.M44 <- this.M44
+
+        /// Convert a Matrix4x4 to an array.
+        member this.ToArray (value : single array, offset) =
+            value.[offset] <- this.M11; value.[offset+1] <- this.M12; value.[offset+2] <- this.M13; value.[offset+3] <- this.M14
+            value.[offset+4] <- this.M21; value.[offset+5] <- this.M22; value.[offset+6] <- this.M23; value.[offset+7] <- this.M24
+            value.[offset+8] <- this.M31; value.[offset+9] <- this.M32; value.[offset+10] <- this.M33; value.[offset+11] <- this.M34
+            value.[offset+12] <- this.M41; value.[offset+13] <- this.M42; value.[offset+14] <- this.M43; value.[offset+15] <- this.M44
+
     let inline m4 (r0 : Vector4) (r1 : Vector4) (r2 : Vector4) (r3 : Vector4) =
         Matrix4x4
             (r0.X, r0.Y, r0.Z, r0.W,
