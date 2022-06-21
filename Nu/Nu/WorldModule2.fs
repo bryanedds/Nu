@@ -505,7 +505,7 @@ module WorldModule2 =
         /// Clear all messages in all subsystems.
         static member clearMessages world =
              let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             World.withRendererProcess2d (fun rendererProcess -> rendererProcess.ClearMessages ()) world
+             World.withRendererProcess (fun rendererProcess -> rendererProcess.ClearMessages ()) world
              World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
              world
 
@@ -958,13 +958,13 @@ module WorldModule2 =
                                                         AudioTimer.Stop ()
 
                                                         // process rendering
-                                                        let rendererProcess2d = World.getRendererProcess2d world
-                                                        if not firstFrame then rendererProcess2d.Swap ()
+                                                        let rendererProcess = World.getRendererProcess world
+                                                        if not firstFrame then rendererProcess.Swap ()
                                                         let windowSize =
                                                             match World.tryGetWindowSize world with
                                                             | Some windowsSize -> windowsSize
                                                             | None -> Constants.Render.Resolution
-                                                        rendererProcess2d.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) windowSize
+                                                        rendererProcess.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) v3Zero m4Identity windowSize
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()
