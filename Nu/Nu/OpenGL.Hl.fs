@@ -609,7 +609,7 @@ module Hl =
 
     /// Draw a physically-based surface.
     let DrawSurfaces
-        (eyePosition : Vector3 byref,
+        (eyePosition : Vector3,
          modelsFields : single array,
          modelsCount : int,
          view : single array,
@@ -671,12 +671,12 @@ module Hl =
         OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 4u)
         OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 5u)
         OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 6u)
-        let modelsRow0 = Array.zeroCreate<single> (modelsCount / 4)
-        let modelsRow1 = Array.zeroCreate<single> (modelsCount / 4)
-        let modelsRow2 = Array.zeroCreate<single> (modelsCount / 4)
-        let modelsRow3 = Array.zeroCreate<single> (modelsCount / 4)
+        let modelsRow0 = Array.zeroCreate<single> (modelsFields.Length / 4)
+        let modelsRow1 = Array.zeroCreate<single> (modelsFields.Length / 4)
+        let modelsRow2 = Array.zeroCreate<single> (modelsFields.Length / 4)
+        let modelsRow3 = Array.zeroCreate<single> (modelsFields.Length / 4)
         let mutable i = 0
-        while i < dec modelsCount do
+        while i < dec modelsFields.Length do
             let iOver4 = i / 4
             modelsRow0.[iOver4] <- modelsFields.[i]
             modelsRow1.[iOver4] <- modelsFields.[i+1]

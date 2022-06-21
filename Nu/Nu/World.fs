@@ -482,7 +482,7 @@ module WorldModule3 =
             // make the world's subsystems
             let subsystems =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
-                  RendererProcess2d = RendererInline2d (fun () -> MockRenderer2d.make () :> Renderer2d)
+                  RendererProcess = RendererInline ((fun () -> MockRenderer2d.make () :> Renderer2d), id)
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -569,21 +569,21 @@ module WorldModule3 =
                     let createRenderer2d =
                         fun () ->
                             match SdlDeps.getWindowOpt sdlDeps with
-                            | Some window -> GlRenderer2d.make window :> Renderer2d
+                            | Some window -> GlRenderer2d.make true window :> Renderer2d
                             | None -> MockRenderer2d.make () :> Renderer2d
-                    let rendererProcess2d =
+                    let rendererProcess =
                         if config.StandAlone
-                        then RendererThread2d createRenderer2d :> RendererProcess2d
-                        else RendererInline2d createRenderer2d :> RendererProcess2d
-                    rendererProcess2d.Start ()
-                    rendererProcess2d.EnqueueMessage (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
+                        then RendererThread (createRenderer2d, id) :> RendererProcess
+                        else RendererInline (createRenderer2d, id) :> RendererProcess
+                    rendererProcess.Start ()
+                    rendererProcess.EnqueueMessage2d (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine2d = physicsEngine2d
-                      RendererProcess2d = rendererProcess2d
+                      RendererProcess = rendererProcess
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
