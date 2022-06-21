@@ -689,22 +689,22 @@ module Hl =
         let modelsRow3Ptr = GCHandle.Alloc (modelsRow3, GCHandleType.Pinned)
         try
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow0Buffer) // populate modelRow0Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow0Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow0.Length * sizeof<single>), modelsRow0Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (3u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow1Buffer) // populate modelRow1Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow1Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow1.Length * sizeof<single>), modelsRow1Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (4u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow2Buffer) // populate modelRow2Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow2Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow2.Length * sizeof<single>), modelsRow2Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (5u, 1u)
             Assert ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow3Buffer) // populate modelRow3Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), modelsRow3Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsRow3.Length * sizeof<single>), modelsRow3Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
             OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
             OpenGL.Gl.VertexAttribDivisor (6u, 1u)
             Assert ()
