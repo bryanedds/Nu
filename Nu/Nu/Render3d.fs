@@ -16,55 +16,51 @@ open Nu
 
 type [<CustomEquality; NoComparison; Struct>] RenderMaterial =
     { mutable HashCode : int
-      Model : Matrix4x4
-      Bounds : Box3
       Transparent : bool
       AlbedoTexture : uint
       MetalnessTexture : uint
       RoughnessTexture : uint
       NormalTexture : uint
       AmbientOcclusionTexture : uint
-      LightPositions : Vector3 array
-      LightColors : Vector3 array
-      Surface : OpenGL.Hl.PhysicallyBasedSurface }
+      LightPositions : Vector3 array // TODO: 3D: put this in deferred pass.
+      LightColors : Vector3 array // TODO: 3D: put this in deferred pass.
+      Geometry : OpenGL.Hl.PhysicallyBasedGeometry }
 
     static member inline hash material =
         hash material.Transparent ^^^
-        hash material.Surface ^^^
         hash material.AlbedoTexture * hash material.MetalnessTexture * hash material.RoughnessTexture * hash material.NormalTexture * hash material.AmbientOcclusionTexture ^^^
         hash material.LightPositions ^^^
-        hash material.LightColors
+        hash material.LightColors ^^^
+        hash material.Geometry
 
-    static member inline create model bounds transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture lightPositions lightColors surface =
+    static member inline create transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture lightPositions lightColors geometry =
         let mutable result =
             { HashCode = 0
-              Model = model
-              Bounds = bounds
               Transparent = transparent
-              Surface = surface
               AlbedoTexture = albedoTexture
               MetalnessTexture = metalnessTexture
               RoughnessTexture = roughnessTexture
               NormalTexture = normalTexture
               AmbientOcclusionTexture = ambientOcclusionTexture
               LightPositions = lightPositions
-              LightColors = lightColors }
+              LightColors = lightColors
+              Geometry = geometry }
         result.HashCode <- RenderMaterial.hash result
         result
 
     static member inline equals left right =
         left.HashCode = right.HashCode &&
         left.Transparent = right.Transparent &&
-        left.Surface.IndexBuffer = right.Surface.IndexBuffer &&
-        left.Surface.VertexBuffer = right.Surface.VertexBuffer &&
-        left.Surface.PhysicallyBasedVao = right.Surface.PhysicallyBasedVao &&
         left.AlbedoTexture = right.AlbedoTexture &&
         left.MetalnessTexture = right.MetalnessTexture &&
         left.RoughnessTexture = right.RoughnessTexture &&
         left.NormalTexture = right.NormalTexture &&
         left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
         left.LightPositions = right.LightPositions &&
-        left.LightColors = right.LightColors
+        left.LightColors = right.LightColors &&
+        left.Geometry.IndexBuffer = right.Geometry.IndexBuffer &&
+        left.Geometry.VertexBuffer = right.Geometry.VertexBuffer &&
+        left.Geometry.PhysicallyBasedVao = right.Geometry.PhysicallyBasedVao
 
     member this.Equals that =
         RenderMaterial.equals this that
@@ -77,15 +73,15 @@ type [<CustomEquality; NoComparison; Struct>] RenderMaterial =
     override this.GetHashCode () =
         RenderMaterial.hash this
 
-/// A collection of render materials in a pass.
-type [<NoEquality; NoComparison>] RenderMaterials =
-    { RenderMaterialsOpaque : Dictionary<RenderMaterial, RenderMaterial SegmentedList>
-      RenderMaterialsTransparent : RenderMaterial SegmentedList }
+/// A collection of render surfaces in a pass.
+type [<NoEquality; NoComparison>] RenderSurfaces =
+    { RenderSurfacesOpaque : Dictionary<RenderMaterial, Matrix4x4 SegmentedList>
+      RenderSurfacesTransparent : struct (RenderMaterial * Matrix4x4) SegmentedList }
 
 /// Describes a 3d render pass.
 type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : RenderMaterials * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
+      RenderPass3d : RenderSurfaces * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -99,8 +95,8 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderMaterialDescriptor of RenderMaterial
-    | RenderMaterialsDescriptor of RenderMaterial array
+    | RenderSurfaceDescriptor of RenderMaterial * Matrix4x4
+    | RenderSurfacesDescriptor of RenderMaterial * Matrix4x4 array
     | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
@@ -139,6 +135,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderModelRow1Buffer : uint
           RenderModelRow2Buffer : uint
           RenderModelRow3Buffer : uint
+          mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -286,6 +283,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderModelRow1Buffer = OpenGL.Gl.GenBuffer ()
               RenderModelRow2Buffer = OpenGL.Gl.GenBuffer ()
               RenderModelRow3Buffer = OpenGL.Gl.GenBuffer ()
+              RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
@@ -316,46 +314,56 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // categorize messages
             let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let materials = dictPlus<RenderMaterial, RenderMaterial SegmentedList> HashIdentity.Structural []
+            let surfaces = dictPlus<RenderMaterial, Matrix4x4 SegmentedList> HashIdentity.Structural []
             for message in renderer.RenderMessages do
                 match message with
-                | RenderMaterialDescriptor material ->
-                    match materials.TryGetValue material with
-                    | (true, materials) -> SegmentedList.add material materials
-                    | (false, _) -> materials.Add (material, SegmentedList.singleton material)
-                | RenderMaterialsDescriptor materials' ->
-                    for material in materials' do
-                        match materials.TryGetValue material with
-                        | (true, materials) -> SegmentedList.add material materials
-                        | (false, _) -> materials.Add (material, SegmentedList.singleton material)
+                | RenderSurfaceDescriptor (surface, model) ->
+                    match surfaces.TryGetValue surface with
+                    | (true, surfaces) -> SegmentedList.add model surfaces
+                    | (false, _) -> surfaces.Add (surface, SegmentedList.singleton model)
+                | RenderSurfacesDescriptor (surface, models) ->
+                    for model in models do
+                        match surfaces.TryGetValue surface with
+                        | (true, surfaces) -> SegmentedList.add model surfaces
+                        | (false, _) -> surfaces.Add (surface, SegmentedList.singleton model)
                 | RenderCallbackDescriptor3d _ -> ()
                 | RenderPrePassDescriptor3d prePass -> prePasses.Add prePass |> ignore<bool>
                 | RenderPostPassDescriptor3d postPass -> postPasses.Add postPass |> ignore<bool>
 
-            // make render materials
-            let materials =
-                { RenderMaterialsOpaque = materials
-                  RenderMaterialsTransparent = SegmentedList.make () }
+            // make render surfaces
+            let surfaces =
+                { RenderSurfacesOpaque = surfaces
+                  RenderSurfacesTransparent = SegmentedList.make () }
 
             // render pre-passes
             for pass in prePasses do
-                pass.RenderPass3d (materials, view, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, view, projection, renderer :> Renderer3d)
 
             // render main pass
-            for entry in materials.RenderMaterialsOpaque do
-                let material0 = entry.Key
-                let materials = entry.Value
-                if materials.Length > 0 then
+            for entry in surfaces.RenderSurfacesOpaque do
+                let material = entry.Key
+                let models = entry.Value
+                if models.Length > 0 then
+
+                    // ensure we have a large enough field array
+                    if models.Length * 16 * 16 > renderer.RenderModelsFields.Length then
+                        renderer.RenderModelsFields <- Array.zeroCreate<single> (renderer.RenderModelsFields.Length * 2)
+
+                    // blit models to field array
+                    for i in 0 .. dec models.Length do
+                        models.[i].ToArray (renderer.RenderModelsFields, i * 16)
+
+                    // draw surfaces
                     OpenGL.Hl.DrawSurfaces
-                        (material0.Surface, &eyePosition, (), viewArray, projectionArray,
-                         material0.AlbedoTexture, material0.MetalnessTexture, material0.RoughnessTexture, material0.NormalTexture, material0.AmbientOcclusionTexture,
+                        (&eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
+                         material.AlbedoTexture, material.MetalnessTexture, material.RoughnessTexture, material.NormalTexture, material.AmbientOcclusionTexture,
                          [||], [||],
                          renderer.RenderModelRow0Buffer, renderer.RenderModelRow1Buffer, renderer.RenderModelRow2Buffer, renderer.RenderModelRow3Buffer,
-                         renderer.RenderPhysicallyBasedShader)
+                         renderer.RenderPhysicallyBasedShader, material.Geometry)
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (materials, view, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, view, projection, renderer :> Renderer3d)
 
             // end frame
             OpenGL.Hl.EndFrame ()
