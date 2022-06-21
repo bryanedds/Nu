@@ -8,6 +8,7 @@
    [Assets Assets/Default bmp [Render] []]
    [Assets Assets/Default wav [Audio] []]
    [Assets Assets/Default ogg [Audio] []]
+   [Assets Assets/Default fbx [] []]
    [Assets Assets/Default obj [] []]
    [Assets Assets/Default mtl [] []]
    [Assets Assets/Default glsl [] []]

@@ -103,6 +103,9 @@ module Hl =
         override this.GetHashCode () =
             PhysicallyBasedMaterial.hash this
 
+    /// Type alias for an array of materials.
+    type PhysicallyBasedModel = PhysicallyBasedMaterial array
+
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
         { ViewUniform : int
@@ -386,6 +389,37 @@ module Hl =
         match errorOpt with
         | Some error -> Left error
         | None -> Right materials
+
+    let TryCreatePhysicallyBasedModel (filePath, assimp : Assimp.AssimpContext) : Either<string, PhysicallyBasedModel> =
+        try let scene = assimp.ImportFile filePath
+            let dirPath = Directory.GetDirectoryRoot filePath
+            match TryCreatePhysicallyBasedMaterials (dirPath, scene) with
+            | Right materials ->
+                let mutable errorOpt = None
+                let model = SegmentedList.make ()
+                for mesh in scene.Meshes do
+                    if Option.isNone errorOpt then
+                        match TryCreatePhysicallyBasedGeometry mesh with
+                        | Right geometry ->
+                            match materials.TryGetValue mesh.MaterialIndex with
+                            | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
+                                let material =
+                                    PhysicallyBasedMaterial.make
+                                        false
+                                        (snd albedoTexture)
+                                        (snd metalnessTexture)
+                                        (snd roughnessTexture)
+                                        (snd normalTexture)
+                                        (snd ambientOcclusionTexture)
+                                        geometry
+                                SegmentedList.add material model
+                            | (false, _) -> errorOpt <- Some ("Could not load materials for mesh in file name '" + filePath + "'.")
+                        | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
+                match errorOpt with
+                | None -> Right (Array.ofSeq model)
+                | Some error -> Left error
+            | Left error -> Left ("Could not load materials for scene in file name '" + filePath + "' due to: " + error)
+        with exn -> Left ("Could not load model '" + filePath + "' due to: " + scstring exn)
 
     /// Create a texture frame buffer.
     let CreateTextureFramebuffer () =
