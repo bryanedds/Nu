@@ -109,33 +109,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
+        | ".fbx"
         | ".obj" ->
-            try let dirPath = Directory.GetDirectoryRoot asset.FilePath
-                let scene = renderer.RenderAssimp.ImportFile asset.FilePath
-                match OpenGL.Hl.TryCreatePhysicallyBasedMaterials (dirPath, scene) with
-                | Right materials ->
-                    let materials' = SegmentedList.make ()
-                    for mesh in scene.Meshes do
-                        match OpenGL.Hl.TryCreatePhysicallyBasedGeometry mesh with
-                        | Right geometry ->
-                            match materials.TryGetValue mesh.MaterialIndex with
-                            | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
-                                let material =
-                                    OpenGL.Hl.PhysicallyBasedMaterial.make
-                                        false
-                                        (snd albedoTexture)
-                                        (snd metalnessTexture)
-                                        (snd roughnessTexture)
-                                        (snd normalTexture)
-                                        (snd ambientOcclusionTexture)
-                                        geometry
-                                SegmentedList.add material materials'
-                            | (false, _) -> Log.debug ("Could not load materials for mesh in file name '" + asset.FilePath + "'.")
-                        | Left error -> Log.debug ("Could not load geometry for mesh in file name '" + asset.FilePath + "' due to: " + error)
-                    let model = ModelAsset (Array.ofSeq materials')
-                    Some (asset.AssetTag.AssetName, model)
-                | Left error -> Log.debug ("Could not load materials for scene in file name '" + asset.FilePath + "' due to: " + error); None
-            with exn -> Log.debug ("Could not load model '" + asset.FilePath + "' due to: " + scstring exn); None
+            match OpenGL.Hl.TryCreatePhysicallyBasedModel (asset.FilePath, renderer.RenderAssimp) with
+            | Right model -> Some (asset.AssetTag.AssetName, ModelAsset model)
+            | Left error -> Log.debug ("Could not load model '" + asset.FilePath + "' due to: " + error); None
         | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
 
     static member private tryLoadRenderPackage packageName renderer =
@@ -255,6 +233,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderMessages = List ()
               RenderShouldBeginFrame = config.ShouldBeginFrame
               RenderShouldEndFrame = config.ShouldEndFrame }
+
+        let filePath = "Assets/Default/test/gun.fbx"
+        let modelOpt =
+            match OpenGL.Hl.TryCreatePhysicallyBasedModel (filePath, renderer.RenderAssimp) with
+            | Right model -> Some (ModelAsset model)
+            | Left error -> Log.debug ("Could not load model '" + filePath + "' due to: " + error); None
 
         // fin
         renderer
