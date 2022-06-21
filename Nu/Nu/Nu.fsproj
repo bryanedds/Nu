@@ -93,6 +93,7 @@
     <Compile Include="Render.fs" />
     <Compile Include="Render2d.fs" />
     <Compile Include="Render3d.fs" />
+    <Compile Include="RenderProcess.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Particles.fs" />

@@ -573,7 +573,7 @@ module WorldModule3 =
                             | None -> MockRenderer2d.make () :> Renderer2d
                     let rendererProcess =
                         if config.StandAlone
-                        then RendererThread (createRenderer2d, id) :> RendererProcess
+                        then RendererInline (createRenderer2d, id) :> RendererProcess
                         else RendererInline (createRenderer2d, id) :> RendererProcess
                     rendererProcess.Start ()
                     rendererProcess.EnqueueMessage2d (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
