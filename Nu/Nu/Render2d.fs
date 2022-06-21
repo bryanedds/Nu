@@ -108,7 +108,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          RenderLayeredMessages : RenderLayeredMessage2d List }
+          RenderLayeredMessages : RenderLayeredMessage2d List
+          RenderShouldBeginFrame : bool
+          RenderShouldEndFrame : bool }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -595,16 +597,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
 
     /// Make a GlRenderer2d.
-    static member make attachDebugMessageCallback window =
+    static member make window config =
 
-        // create SDL-OpenGL context if needed
-        match window with
-        | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-        | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
-        OpenGL.Hl.Assert ()
+        // initialize context if directed
+        if config.ShouldInitializeContext then
 
-        // listen to debug messages
-        if attachDebugMessageCallback then
+            // create SDL-OpenGL context if needed
+            match window with
+            | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
+            | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
+            OpenGL.Hl.Assert ()
+
+            // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create one-off sprite and text resources
@@ -627,7 +631,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderLayeredMessages = List () }
+              RenderLayeredMessages = List ()
+              RenderShouldBeginFrame = config.ShouldBeginFrame
+              RenderShouldEndFrame = config.ShouldEndFrame }
 
         // fin
         renderer
@@ -639,10 +645,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize windowSize renderMessages =
 
-            if false then
+            if true then
 
                 // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+                if renderer.RenderShouldBeginFrame then
+                    OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+
+                // begin sprite batch frame
                 let viewport = Constants.Render.Viewport
                 let projection = GlRenderer2d.computeProjection viewport renderer
                 let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
@@ -656,10 +665,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
                 renderer.RenderLayeredMessages.Clear ()
 
-                // end frame
+                // end sprite batch frame
                 OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
-                OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
+
+                // end frame
+                if renderer.RenderShouldEndFrame then
+                    OpenGL.Hl.EndFrame ()
+                    OpenGL.Hl.Assert ()
 
             else
 

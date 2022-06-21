@@ -146,3 +146,9 @@ type [<NoEquality; NoComparison>] WfglWindow =
 type [<NoEquality; NoComparison>] Window =
     | SglWindow of SglWindow
     | WfglWindow of WfglWindow
+
+/// Configures a renderer.
+type [<StructuralEquality; NoComparison>] RendererConfig =
+    { ShouldInitializeContext : bool
+      ShouldBeginFrame : bool
+      ShouldEndFrame : bool }

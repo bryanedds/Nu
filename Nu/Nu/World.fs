@@ -482,7 +482,10 @@ module WorldModule3 =
             // make the world's subsystems
             let subsystems =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
-                  RendererProcess = RendererInline ((fun () -> MockRenderer2d.make () :> Renderer2d), id)
+                  RendererProcess =
+                    RendererInline
+                        ((fun _ -> MockRenderer2d.make () :> Renderer2d),
+                         (fun _ -> MockRenderer3d.make () :> Renderer3d))
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -567,14 +570,19 @@ module WorldModule3 =
                     let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
                     let createRenderer2d =
-                        fun () ->
+                        fun config ->
                             match SdlDeps.getWindowOpt sdlDeps with
-                            | Some window -> GlRenderer2d.make true window :> Renderer2d
+                            | Some window -> GlRenderer2d.make window config :> Renderer2d
                             | None -> MockRenderer2d.make () :> Renderer2d
+                    let createRenderer3d =
+                        fun config ->
+                            match SdlDeps.getWindowOpt sdlDeps with
+                            | Some window -> GlRenderer3d.make window config :> Renderer3d
+                            | None -> MockRenderer3d.make () :> Renderer3d
                     let rendererProcess =
                         if config.StandAlone
-                        then RendererInline (createRenderer2d, id) :> RendererProcess
-                        else RendererInline (createRenderer2d, id) :> RendererProcess
+                        then RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
+                        else RendererInline (createRenderer2d, createRenderer3d) :> RendererProcess
                     rendererProcess.Start ()
                     rendererProcess.EnqueueMessage2d (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =

@@ -142,7 +142,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          RenderMessages : RenderMessage3d List }
+          RenderMessages : RenderMessage3d List
+          RenderShouldBeginFrame : bool
+          RenderShouldEndFrame : bool }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -262,16 +264,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         renderer.RenderPhysicallyBasedShader
 
     /// Make a GlRenderer3d.
-    static member make attachDebugMessageCallback window =
+    static member make window config =
 
-        // create SDL-OpenGL context if needed
-        match window with
-        | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-        | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
-        OpenGL.Hl.Assert ()
+        // initialize context if directed
+        if config.ShouldInitializeContext then
 
-        // listen to debug messages
-        if attachDebugMessageCallback then
+            // create SDL-OpenGL context if needed
+            match window with
+            | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
+            | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
+            OpenGL.Hl.Assert ()
+
+            // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create one-off resources
@@ -290,7 +294,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderMessages = List () }
+              RenderMessages = List ()
+              RenderShouldBeginFrame = config.ShouldBeginFrame
+              RenderShouldEndFrame = config.ShouldEndFrame }
 
         // fin
         renderer
@@ -303,7 +309,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         member renderer.Render eyePosition eyeRotation windowSize renderMessages =
 
             // begin frame
-            OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+            if renderer.RenderShouldBeginFrame then
+                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+
+            // compute view and projection
             let mutable eyePosition = eyePosition
             let mutable view = eyeRotation
             view.M41 <- eyePosition.X
@@ -371,10 +380,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render pre-passes
             for pass in postPasses do
                 pass.RenderPass3d (surfaces, view, projection, renderer :> Renderer3d)
-
+                
             // end frame
-            OpenGL.Hl.EndFrame ()
-            OpenGL.Hl.Assert ()
+            if renderer.RenderShouldEndFrame then
+                OpenGL.Hl.EndFrame ()
+                OpenGL.Hl.Assert ()
 
         member renderer.Swap () =
             match renderer.RenderWindow with
