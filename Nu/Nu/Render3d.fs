@@ -109,19 +109,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
-        | ".ttf" ->
-            let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
-            let fileFirstNameLength = String.length fileFirstName
-            if fileFirstNameLength >= 3 then
-                let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
-                match Int32.TryParse fontSizeText with
-                | (true, fontSize) ->
-                    let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontSize, fontOpt))
-                    else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
-                | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
-            else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
-        | ".dae" ->
+        | ".obj" ->
             try let dirPath = Directory.GetDirectoryRoot asset.FilePath
                 let scene = renderer.RenderAssimp.ImportFile asset.FilePath
                 match OpenGL.Hl.TryCreatePhysicallyBasedMaterials (dirPath, scene) with
