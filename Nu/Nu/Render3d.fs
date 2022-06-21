@@ -16,69 +16,10 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
-type [<CustomEquality; NoComparison; Struct>] RenderMaterial =
-    { mutable HashCode : int
-      Transparent : bool
-      AlbedoTexture : uint
-      MetalnessTexture : uint
-      RoughnessTexture : uint
-      NormalTexture : uint
-      AmbientOcclusionTexture : uint
-      LightPositions : Vector3 array // TODO: 3D: put this in deferred pass.
-      LightColors : Vector3 array // TODO: 3D: put this in deferred pass.
-      Geometry : OpenGL.Hl.PhysicallyBasedGeometry }
-
-    static member inline hash material =
-        hash material.Transparent ^^^
-        hash material.AlbedoTexture * hash material.MetalnessTexture * hash material.RoughnessTexture * hash material.NormalTexture * hash material.AmbientOcclusionTexture ^^^
-        hash material.LightPositions ^^^
-        hash material.LightColors ^^^
-        hash material.Geometry
-
-    static member inline create transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture lightPositions lightColors geometry =
-        let mutable result =
-            { HashCode = 0
-              Transparent = transparent
-              AlbedoTexture = albedoTexture
-              MetalnessTexture = metalnessTexture
-              RoughnessTexture = roughnessTexture
-              NormalTexture = normalTexture
-              AmbientOcclusionTexture = ambientOcclusionTexture
-              LightPositions = lightPositions
-              LightColors = lightColors
-              Geometry = geometry }
-        result.HashCode <- RenderMaterial.hash result
-        result
-
-    static member inline equals left right =
-        left.HashCode = right.HashCode &&
-        left.Transparent = right.Transparent &&
-        left.AlbedoTexture = right.AlbedoTexture &&
-        left.MetalnessTexture = right.MetalnessTexture &&
-        left.RoughnessTexture = right.RoughnessTexture &&
-        left.NormalTexture = right.NormalTexture &&
-        left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
-        left.LightPositions = right.LightPositions &&
-        left.LightColors = right.LightColors &&
-        left.Geometry.IndexBuffer = right.Geometry.IndexBuffer &&
-        left.Geometry.VertexBuffer = right.Geometry.VertexBuffer &&
-        left.Geometry.PhysicallyBasedVao = right.Geometry.PhysicallyBasedVao
-
-    member this.Equals that =
-        RenderMaterial.equals this that
-
-    override this.Equals (thatObj : obj) =
-        match thatObj with
-        | :? RenderMaterial as that -> RenderMaterial.equals this that
-        | _ -> false
-
-    override this.GetHashCode () =
-        RenderMaterial.hash this
-
 /// A collection of render surfaces in a pass.
 type [<NoEquality; NoComparison>] RenderSurfaces =
-    { RenderSurfacesOpaque : Dictionary<RenderMaterial, Matrix4x4 SegmentedList>
-      RenderSurfacesTransparent : struct (RenderMaterial * Matrix4x4) SegmentedList }
+    { RenderSurfacesOpaque : Dictionary<OpenGL.Hl.PhysicallyBasedMaterial, Matrix4x4 SegmentedList>
+      RenderSurfacesTransparent : struct (OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4) SegmentedList }
 
 /// Describes a 3d render pass.
 type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
@@ -97,8 +38,8 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderSurfaceDescriptor of RenderMaterial * Matrix4x4
-    | RenderSurfacesDescriptor of RenderMaterial * Matrix4x4 array
+    | RenderSurfaceDescriptor of OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4
+    | RenderSurfacesDescriptor of OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4 array
     | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
@@ -133,6 +74,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer3d =
 type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     private
         { RenderWindow : Window
+          RenderAssimp : Assimp.AssimpContext
           RenderPhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
           RenderModelRow0Buffer : uint
           RenderModelRow1Buffer : uint
@@ -179,6 +121,33 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
+        | ".dae" ->
+            try let dirPath = Directory.GetDirectoryRoot asset.FilePath
+                let scene = renderer.RenderAssimp.ImportFile asset.FilePath
+                match OpenGL.Hl.TryCreatePhysicallyBasedMaterials (dirPath, scene) with
+                | Right materials ->
+                    let materials' = SegmentedList.make ()
+                    for mesh in scene.Meshes do
+                        match OpenGL.Hl.TryCreatePhysicallyBasedGeometry mesh with
+                        | Right geometry ->
+                            match materials.TryGetValue mesh.MaterialIndex with
+                            | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
+                                let material =
+                                    OpenGL.Hl.PhysicallyBasedMaterial.make
+                                        false
+                                        (snd albedoTexture)
+                                        (snd metalnessTexture)
+                                        (snd roughnessTexture)
+                                        (snd normalTexture)
+                                        (snd ambientOcclusionTexture)
+                                        geometry
+                                SegmentedList.add material materials'
+                            | (false, _) -> Log.debug ("Could not load materials for mesh in file name '" + asset.FilePath + "'.")
+                        | Left error -> Log.debug ("Could not load geometry for mesh in file name '" + asset.FilePath + "' due to: " + error)
+                    let model = ModelAsset (Array.ofSeq materials')
+                    Some (asset.AssetTag.AssetName, model)
+                | Left error -> Log.debug ("Could not load materials for scene in file name '" + asset.FilePath + "' due to: " + error); None
+            with exn -> Log.debug ("Could not load model '" + asset.FilePath + "' due to: " + scstring exn); None
         | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
 
     static member private tryLoadRenderPackage packageName renderer =
@@ -285,6 +254,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         // make renderer
         let renderer =
             { RenderWindow = window
+              RenderAssimp = new Assimp.AssimpContext ()
               RenderPhysicallyBasedShader = physicallyBasedShader
               RenderModelRow0Buffer = OpenGL.Gl.GenBuffer ()
               RenderModelRow1Buffer = OpenGL.Gl.GenBuffer ()
@@ -330,7 +300,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // categorize messages
             let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let surfaces = dictPlus<RenderMaterial, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfaces = dictPlus<OpenGL.Hl.PhysicallyBasedMaterial, Matrix4x4 SegmentedList> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
                 | RenderSurfaceDescriptor (surface, model) ->
@@ -396,3 +366,4 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do GlRenderer3d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
+            renderer.RenderAssimp.Dispose ()

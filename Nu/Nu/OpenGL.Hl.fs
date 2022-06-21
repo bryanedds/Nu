@@ -44,6 +44,66 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    /// Describes some physically-based geometry that's loaded into VRAM.
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
+        { VertexBuffer : uint
+          IndexBuffer : uint
+          PrimitiveType : OpenGL.PrimitiveType
+          ElementCount : int
+          PhysicallyBasedVao : uint }
+
+    type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
+        { mutable HashCode : int
+          Transparent : bool
+          AlbedoTexture : uint
+          MetalnessTexture : uint
+          RoughnessTexture : uint
+          NormalTexture : uint
+          AmbientOcclusionTexture : uint
+          Geometry : PhysicallyBasedGeometry }
+
+        static member inline hash material =
+            hash material.Transparent ^^^
+            hash material.AlbedoTexture * hash material.MetalnessTexture * hash material.RoughnessTexture * hash material.NormalTexture * hash material.AmbientOcclusionTexture ^^^
+            hash material.Geometry
+
+        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
+            let mutable result =
+                { HashCode = 0
+                  Transparent = transparent
+                  AlbedoTexture = albedoTexture
+                  MetalnessTexture = metalnessTexture
+                  RoughnessTexture = roughnessTexture
+                  NormalTexture = normalTexture
+                  AmbientOcclusionTexture = ambientOcclusionTexture
+                  Geometry = geometry }
+            result.HashCode <- PhysicallyBasedMaterial.hash result
+            result
+
+        static member inline equals left right =
+            left.HashCode = right.HashCode &&
+            left.Transparent = right.Transparent &&
+            left.AlbedoTexture = right.AlbedoTexture &&
+            left.MetalnessTexture = right.MetalnessTexture &&
+            left.RoughnessTexture = right.RoughnessTexture &&
+            left.NormalTexture = right.NormalTexture &&
+            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
+            left.Geometry.IndexBuffer = right.Geometry.IndexBuffer &&
+            left.Geometry.VertexBuffer = right.Geometry.VertexBuffer &&
+            left.Geometry.PhysicallyBasedVao = right.Geometry.PhysicallyBasedVao
+
+        member this.Equals that =
+            PhysicallyBasedMaterial.equals this that
+
+        override this.Equals (thatObj : obj) =
+            match thatObj with
+            | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+            | _ -> false
+
+        override this.GetHashCode () =
+            PhysicallyBasedMaterial.hash this
+
+    /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
         { ViewUniform : int
           ProjectionUniform : int
@@ -56,13 +116,6 @@ module Hl =
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
-
-    type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
-        { VertexBuffer : uint
-          IndexBuffer : uint
-          PrimitiveType : OpenGL.PrimitiveType
-          ElementCount : int
-          PhysicallyBasedVao : uint }
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
@@ -208,6 +261,131 @@ module Hl =
     /// Delete a texture.
     let DeleteTexture (texture : uint) =
         OpenGL.Gl.DeleteTextures texture
+
+    /// Attempt to create physically-based geometry from an assimp mesh.
+    let TryCreatePhysicallyBasedGeometry (mesh : Assimp.Mesh) =
+
+        // ensure required data is available
+        if  mesh.HasVertices &&
+            mesh.HasNormals &&
+            mesh.HasTextureCoords 0 then
+
+            // populate vertex data
+            let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+            for i in 0 .. dec mesh.Vertices.Count do
+                let v = i * 8
+                let position = mesh.Vertices.[i]
+                let normal = mesh.Normals.[i]
+                let texCoords = mesh.TextureCoordinateChannels.[0].[i]
+                vertexData.[v] <- position.X
+                vertexData.[v+1] <- position.Y
+                vertexData.[v+2] <- position.Z
+                vertexData.[v+3] <- normal.X
+                vertexData.[v+4] <- normal.Y
+                vertexData.[v+5] <- normal.Z
+                vertexData.[v+6] <- texCoords.X
+                vertexData.[v+7] <- texCoords.Z
+
+            // populate index data
+            let indexData = mesh.GetIndices ()
+
+            // initialize vao
+            let vao = OpenGL.Gl.GenVertexArray ()
+            OpenGL.Gl.BindVertexArray vao
+            Assert ()
+
+            // create vertex buffer
+            let vertexBuffer = OpenGL.Gl.GenBuffer ()
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+            let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+            try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+            finally vertexBufferPtr.Free ()
+            Assert ()
+
+            // create index buffer
+            let indexBuffer = OpenGL.Gl.GenBuffer ()
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+            let indexDataSize = uint (indexData.Length * sizeof<uint>)
+            let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+            try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+            finally indexDataPtr.Free ()
+            Assert ()
+
+            // finalize vao
+            let normalOffset =      (3 (*position*)) * sizeof<single>
+            let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+            let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
+            OpenGL.Gl.EnableVertexAttribArray 0u
+            OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+            OpenGL.Gl.EnableVertexAttribArray 1u
+            OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+            OpenGL.Gl.EnableVertexAttribArray 2u
+            OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
+            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+            OpenGL.Gl.BindVertexArray 0u
+            Assert ()
+
+            // make physically based geometry
+            let geometry =
+                { VertexBuffer = vertexBuffer
+                  IndexBuffer = indexBuffer
+                  PrimitiveType = OpenGL.PrimitiveType.Triangles
+                  ElementCount = 36
+                  PhysicallyBasedVao = vao }
+
+            // fin
+            Right geometry
+
+        // error
+        else Left "Mesh is missing vertices, normals, or texCoords."
+
+    /// Attempt to create physically-based material from an assimp mesh.
+    let TryCreatePhysicallyBasedMaterial (dirPath : string, material : Assimp.Material) =
+        if  material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Diffuse, 0) &&
+            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Metalness, 0) &&
+            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Roughness, 0) &&
+            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Normals, 0) &&
+            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.AmbientOcclusion, 0) then
+            let (_, albedo) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
+            let (_, metalness) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
+            let (_, roughness) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
+            let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
+            let (_, ambientOcclusion) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
+            let albedoFilePath = Path.Combine (dirPath, albedo.FilePath)
+            let metalnessFilePath = Path.Combine (dirPath, metalness.FilePath)
+            let roughnessFilePath = Path.Combine (dirPath, roughness.FilePath)
+            let normalFilePath = Path.Combine (dirPath, normal.FilePath)
+            let ambientOcclusionFilePath = Path.Combine (dirPath, ambientOcclusion.FilePath)
+            match TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, albedoFilePath) with
+            | Right albedoTexture ->
+                match TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, metalnessFilePath) with
+                | Right metalnessTexture ->
+                    match TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, roughnessFilePath) with
+                    | Right roughnessTexture ->
+                        match TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, normalFilePath) with
+                        | Right normalTexture ->
+                            match TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, ambientOcclusionFilePath) with
+                            | Right ambientOcclusionTexture -> Right (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)
+                            | Left error -> Left ("Could not load texture '" + ambientOcclusionFilePath + "' due to '" + error + "'.")
+                        | Left error -> Left ("Could not load texture '" + normalFilePath + "' due to '" + error + "'.")
+                    | Left error -> Left ("Could not load texture '" + roughnessFilePath + "' due to '" + error + "'.")
+                | Left error -> Left ("Could not load texture '" + metalnessFilePath + "' due to '" + error + "'.")
+            | Left error -> Left ("Could not load texture '" + albedoFilePath + "' due to '" + error + "'.")
+        else Left ("Could not create physically-based material due to missing diffuse/albedo, metalness, roughness, normal, or ambientOcclusion texture.")
+
+    /// Attempt to create physically-based material from an assimp scene.
+    let TryCreatePhysicallyBasedMaterials (dirPath : string, scene : Assimp.Scene) =
+        let mutable errorOpt = None
+        let materials = dictPlus<int, _> HashIdentity.Structural []
+        for i in 0 .. dec scene.Materials.Count do
+            if Option.isNone errorOpt then
+                match TryCreatePhysicallyBasedMaterial (dirPath, scene.Materials.[i]) with
+                | Right material -> materials.Add (i, material)
+                | Left error -> errorOpt <- Some error
+        match errorOpt with
+        | Some error -> Left error
+        | None -> Right materials
 
     /// Create a texture frame buffer.
     let CreateTextureFramebuffer () =

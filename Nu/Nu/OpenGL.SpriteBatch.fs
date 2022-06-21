@@ -21,11 +21,11 @@ module SpriteBatch =
             state.BlendingEquation <> state2.BlendingEquation ||
             state.Texture <> state2.Texture
 
-        static member create absolute bfs bfd beq texture =
+        static member make absolute bfs bfd beq texture =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
         static member defaultState =
-            State.create false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+            State.make false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
 
     type [<NoEquality; NoComparison>] Env =
         private
@@ -232,7 +232,7 @@ module SpriteBatch =
     let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
-        let state = State.create absolute bfs bfd beq texture
+        let state = State.make absolute bfs bfd beq texture
         if State.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartBatch state env
             OpenGL.Hl.Assert ()

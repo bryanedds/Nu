@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Numerics
-open SDL2
 open TiledSharp
 open Prime
 open Nu
@@ -22,6 +21,7 @@ type TileMap = private { __ : unit }
 type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of TextureMetadata * uint
     | FontAsset of int * nativeint
+    | ModelAsset of OpenGL.Hl.PhysicallyBasedMaterial array
 
 /// The blend mode of a sprite.
 [<Syntax

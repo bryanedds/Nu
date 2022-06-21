@@ -135,6 +135,9 @@
     <Reference Include="Aether.Physics2D">
       <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>
+    <Reference Include="AssimpNet">
+      <HintPath>..\..\Nu\Nu.Dependencies\AssimpNet.05-07-22\AssimpNet.dll</HintPath>
+    </Reference>
     <Reference Include="Csv">
       <HintPath>..\..\packages\Csv.1.0.58\lib\net40\Csv.dll</HintPath>
     </Reference>
@@ -168,7 +171,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="OpenGL.Net">
-      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.7.11.0\lib\net472\Prime.dll</HintPath>
