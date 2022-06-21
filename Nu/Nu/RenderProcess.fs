@@ -29,8 +29,9 @@ type RendererInline (createRenderer2d, createRenderer3d) =
 
     let mutable started = false
     let mutable terminated = false
-    let mutable messages = SegmentedList.make ()
-    let mutable rendererOpt = Option<Renderer2d>.None
+    let mutable messages2d = SegmentedList.make ()
+    let mutable messages3d = SegmentedList.make ()
+    let mutable renderersOpt = Option<Renderer2d * Renderer3d>.None
 
     interface RendererProcess with
 
@@ -41,40 +42,47 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             terminated
 
         member this.Start () =
-            match rendererOpt with
+            match renderersOpt with
             | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
             | None ->
-                rendererOpt <- Some (createRenderer2d ())
+                let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false }
+                let renderer2d = createRenderer2d { ShouldInitializeContext = false; ShouldBeginFrame = false; ShouldEndFrame = true }
+                renderersOpt <- Some (renderer2d, renderer3d)
                 started <- true
 
         member this.EnqueueMessage2d message =
-            match rendererOpt with
-            | Some _ -> SegmentedList.add message messages
-            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+            match renderersOpt with
+            | Some _ -> SegmentedList.add message messages2d
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.EnqueueMessage3d message =
-            ()
+            match renderersOpt with
+            | Some _ -> SegmentedList.add message messages3d
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.ClearMessages () =
-            messages <- SegmentedList.make ()
+            messages2d <- SegmentedList.make ()
 
         member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d windowSize =
-            match rendererOpt with
-            | Some renderer ->
-                renderer.Render eyePosition2d eyeSize2d windowSize messages
-                SegmentedList.clear messages
-            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+            match renderersOpt with
+            | Some (renderer2d, renderer3d) ->
+                renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
+                SegmentedList.clear messages3d
+                renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
+                SegmentedList.clear messages2d
+            | None -> raise (InvalidOperationException "2d renderer is not yet or is no longer valid.")
 
         member this.Swap () =
-            match rendererOpt with
-            | Some renderer -> renderer.Swap ()
-            | None -> raise (InvalidOperationException "Renderer is not yet or is no longer valid.")
+            match renderersOpt with
+            | Some (renderer2d, _) -> renderer2d.Swap ()
+            | None -> raise (InvalidOperationException "2d renderer is not yet or is no longer valid.")
 
         member this.Terminate () =
-            match rendererOpt with
-            | Some renderer ->
-                renderer.CleanUp ()
-                rendererOpt <- None
+            match renderersOpt with
+            | Some (renderer2d, renderer3d) ->
+                renderer3d.CleanUp ()
+                renderer2d.CleanUp ()
+                renderersOpt <- None
                 terminated <- true
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
@@ -84,8 +92,9 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let mutable taskOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable messages = SegmentedList.make ()
-    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * Vector2 * Vector2 * Vector2i>.None
+    let [<VolatileField>] mutable messages2d = SegmentedList.make ()
+    let [<VolatileField>] mutable messages3d = SegmentedList.make ()
+    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * RenderMessage3d SegmentedList * Vector2 * Vector2 * Vector3 * Matrix4x4 * Vector2i>.None
     let [<VolatileField>] mutable swap = false
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()
@@ -114,8 +123,11 @@ type RendererThread (createRenderer2d, createRenderer3d) =
 
     member private this.Run () =
 
-        // create renderer
-        let renderer = createRenderer2d () : Renderer2d
+        // create 3d renderer
+        let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false } : Renderer3d
+
+        // create 2d renderer
+        let renderer2d = createRenderer2d { ShouldInitializeContext = false; ShouldBeginFrame = false; ShouldEndFrame = true } : Renderer2d
 
         // mark as started
         started <- true
@@ -130,14 +142,17 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if not terminated then
 
                 // receive submission
-                let (messages, eyePosition, eyeSize, windowSize) = Option.get submissionOpt
+                let (messages2d, messages3d, eyePosition2d, eyeSize2d, eyePosition3d, eyeRotation3d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
-                // render
-                renderer.Render eyePosition eyeSize windowSize messages
+                // render 3d
+                renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
+
+                // render 2d
+                renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
             
                 // recover cached sprite messages
-                freeSpriteMessages messages
+                freeSpriteMessages messages2d
 
                 // loop until swap is requested
                 while not swap && not terminated do Thread.Yield () |> ignore<bool>
@@ -146,13 +161,13 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                 if not terminated then
 
                     // swap
-                    renderer.Swap ()
+                    renderer2d.Swap ()
 
                     // complete swap request
                     swap <- false
 
         // clean up
-        renderer.CleanUp ()
+        renderer2d.CleanUp ()
 
     interface RendererProcess with
 
@@ -196,24 +211,25 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                             descriptor.CachedSprite.Blend <- sprite.Blend
                             descriptor.CachedSprite.Glow <- sprite.Glow
                             descriptor.CachedSprite.Flip <- sprite.Flip
-                            SegmentedList.add cachedSpriteMessage messages
+                            SegmentedList.add cachedSpriteMessage messages2d
                         | _ -> failwithumf ()
                     | _ -> failwithumf ()
-                | _ -> SegmentedList.add message messages
-            | _ -> SegmentedList.add message messages
+                | _ -> SegmentedList.add message messages2d
+            | _ -> SegmentedList.add message messages2d
 
         member this.EnqueueMessage3d message =
-            ()
+            SegmentedList.add message messages3d
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messages <- SegmentedList.make ()
+            messages2d <- SegmentedList.make ()
 
         member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
-            let messagesTemp = Interlocked.Exchange (&messages, SegmentedList.make ())
-            submissionOpt <- Some (messagesTemp, eyePosition2d, eyeSize2d, eyeMargin)
+            let messages2dTemp = Interlocked.Exchange (&messages2d, SegmentedList.make ())
+            let messages3dTemp = Interlocked.Exchange (&messages3d, SegmentedList.make ())
+            submissionOpt <- Some (messages2dTemp, messages3dTemp, eyePosition2d, eyeSize2d, eyePosition3d, eyeRotation3d, eyeMargin)
 
         member this.Swap () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
