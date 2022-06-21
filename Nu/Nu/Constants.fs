@@ -74,7 +74,7 @@ module Render =
     let (*Literal*) AspectRatio = ResolutionF.X / ResolutionF.Y
     let (*Literal*) NearPlaneDistance = 0.0009765625f // about 1mm
     let (*Literal*) FarPlaneDistance = 256.0f
-    let (*Literal*) Projection = Matrix4x4.CreatePerspectiveFieldOfView (FieldOfView, AspectRatio, NearPlaneDistance, FarPlaneDistance)
+    let (*Literal*) Projection = Matrix4x4.CreatePerspectiveFieldOfView (FieldOfView, AspectRatio, NearPlaneDistance, FarPlaneDistance) // TODO: 3D: be rid of this.
     let (*Literal*) WindowClearColor = Color.White
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1
@@ -123,6 +123,7 @@ module Effects =
 
     let [<Literal>] EffectHistoryMaxDefault = Engine.DesiredFps // 1 second of effect history
 
+[<RequireQualifiedAccess>]
 module Ecs =
 
     let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
@@ -131,3 +132,8 @@ module Ecs =
     let [<Literal>] IntraComponentPrefix = "@"
     let [<Literal>] UnscheduledEventSuffix = "!U"
     let [<Literal>] ScheduledEventSuffix = "!S"
+
+[<RequireQualifiedAccess>]
+module Paths =
+
+    let [<Literal>] PhysicallyBasedShaderFilePath = "Assets/Default/PhysicallyBased.glsl"
