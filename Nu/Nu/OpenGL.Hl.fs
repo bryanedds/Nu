@@ -60,6 +60,8 @@ module Hl =
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
         { VertexBuffer : uint
           IndexBuffer : uint
+          PrimitiveType : OpenGL.PrimitiveType
+          ElementCount : int
           PhysicallyBasedVao : uint }
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
@@ -524,6 +526,8 @@ module Hl =
         // make physically based geometry
         { VertexBuffer = vertexBuffer
           IndexBuffer = indexBuffer
+          PrimitiveType = OpenGL.PrimitiveType.Triangles
+          ElementCount = 36
           PhysicallyBasedVao = vao }
 
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
@@ -715,7 +719,7 @@ module Hl =
             modelsRow3Ptr.Free ()
 
         // draw geometry
-        OpenGL.Gl.DrawElementsInstanced (OpenGL.PrimitiveType.Triangles, 36, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, modelsCount) // TODO: 3D: pass in mode and count.
+        OpenGL.Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, modelsCount)
         Assert ()
 
         // teardown geometry
