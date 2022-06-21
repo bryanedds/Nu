@@ -33,20 +33,20 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
       mutable AssetTag : obj AssetTag
       mutable RenderDescriptor : RenderDescriptor }
 
-/// Describes a 2d render pass.
-and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
-    { RenderPassOrder : int64
-      RenderPass2d : Matrix4x4 * Renderer2d -> unit }
-    interface IComparable with
-        member this.CompareTo that =
-            match that with
-            | :? RenderPassDescriptor2d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
-            | _ -> -1
-    override this.Equals (that : obj) =
-        match that with
-        | :? RenderPassDescriptor2d as that -> this.RenderPassOrder = that.RenderPassOrder
-        | _ -> false
-    override this.GetHashCode () = hash this.RenderPassOrder
+///// Describes a 2d render pass.
+//and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
+//    { RenderPassOrder : int64
+//      RenderPass2d : Matrix4x4 * Renderer2d -> unit }
+//    interface IComparable with
+//        member this.CompareTo that =
+//            match that with
+//            | :? RenderPassDescriptor2d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
+//            | _ -> -1
+//    override this.Equals (that : obj) =
+//        match that with
+//        | :? RenderPassDescriptor2d as that -> this.RenderPassOrder = that.RenderPassOrder
+//        | _ -> false
+//    override this.GetHashCode () = hash this.RenderPassOrder
 
 /// A message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderMessage2d =
@@ -70,7 +70,7 @@ and Renderer2d =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
-/// The mock implementation of Renderer.
+/// The mock implementation of Renderer2d.
 type [<ReferenceEquality; NoComparison>] MockRenderer2d =
     private
         { MockRenderer2d : unit }
@@ -97,7 +97,7 @@ type RenderLayeredMessage2dComparer () =
                 if assetNameCompare <> 0 then assetNameCompare
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
-/// The SDL implementation of Renderer.
+/// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     private
         { RenderWindow : Window
@@ -594,8 +594,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         for message in renderer.RenderLayeredMessages do
             GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
 
-    /// Make a Renderer.
-    static member make window =
+    /// Make a GlRenderer2d.
+    static member make attachDebugMessageCallback window =
 
         // create SDL-OpenGL context if needed
         match window with
@@ -604,7 +604,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         OpenGL.Hl.Assert ()
 
         // listen to debug messages
-        OpenGL.Hl.AttachDebugMessageCallback ()
+        if attachDebugMessageCallback then
+            OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Hl.CreateSpriteShader ()
@@ -636,7 +637,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.SpriteBatchEnvOpt =
             Some renderer.RenderSpriteBatchEnv
 
-        member renderer.Render eyePosition eyeSize (windowSize : Vector2i) renderMessages =
+        member renderer.Render eyePosition eyeSize windowSize renderMessages =
 
             if false then
 
