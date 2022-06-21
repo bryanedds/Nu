@@ -119,6 +119,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer3d =
         { MockRenderer3d : unit }
 
     interface Renderer3d with
+        member renderer.PhysicallyBasedShader = Unchecked.defaultof<_>
         member renderer.Render _ _ _ _ = ()
         member renderer.Swap () = ()
         member renderer.CleanUp () = ()
@@ -311,11 +312,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
+            // just use constant lights for now
+            let lightPositions = [|-50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; -50.0f; 50.0f; 50.0f|]
+            let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
+
             // categorize messages
             let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let surfaces = dictPlus<RenderMaterial, Matrix4x4 SegmentedList> HashIdentity.Structural []
-            for message in renderer.RenderMessages do
+            for message in renderMessages do
                 match message with
                 | RenderSurfaceDescriptor (surface, model) ->
                     match surfaces.TryGetValue surface with
@@ -357,7 +362,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     OpenGL.Hl.DrawSurfaces
                         (&eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                          material.AlbedoTexture, material.MetalnessTexture, material.RoughnessTexture, material.NormalTexture, material.AmbientOcclusionTexture,
-                         [||], [||],
+                         lightPositions, lightColors,
                          renderer.RenderModelRow0Buffer, renderer.RenderModelRow1Buffer, renderer.RenderModelRow2Buffer, renderer.RenderModelRow3Buffer,
                          renderer.RenderPhysicallyBasedShader, material.Geometry)
 
@@ -375,9 +380,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | WfglWindow window -> window.WfglSwapWindow ()
 
         member renderer.CleanUp () =
-            OpenGL.SpriteBatch.DestroyEnv renderer.RenderSpriteBatchEnv
-            OpenGL.Hl.Assert ()
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
-            for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
+            for renderAsset in renderAssets do GlRenderer3d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
