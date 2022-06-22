@@ -107,9 +107,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
-        | ".fbx"
         | ".obj" ->
-            match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (asset.FilePath, renderer.RenderAssimp) with
+            match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
@@ -189,7 +188,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
-                for surface in modelAsset do
+                for surface in modelAsset.Surfaces do
                     match surfaces.TryGetValue surface with
                     | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
                     | (false, _) -> surfaces.Add (surface, SegmentedList.singleton modelMatrix)
@@ -315,12 +314,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         models.[i].ToArray (renderer.RenderModelsFields, i * 16)
 
                     // draw surfaces
-                    OpenGL.Hl.DrawPhysicallyBasedStaticSurfaces
+                    OpenGL.Hl.DrawPhysicallyBasedSurfaces
                         (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                          material.AlbedoTexture, material.MetalnessTexture, material.RoughnessTexture, material.NormalTexture, material.AmbientOcclusionTexture,
                          lightPositions, lightColors,
                          renderer.RenderModelRow0Buffer, renderer.RenderModelRow1Buffer, renderer.RenderModelRow2Buffer, renderer.RenderModelRow3Buffer,
-                         renderer.RenderPhysicallyBasedShader, material.Geometry)
+                         material.Geometry, renderer.RenderPhysicallyBasedShader)
 
             // render pre-passes
             for pass in postPasses do

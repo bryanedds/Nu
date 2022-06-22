@@ -47,7 +47,9 @@ module Hl =
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
-        { VertexBuffer : uint
+        { Bounds : Box3
+          Vertices : Vector3 array
+          VertexBuffer : uint
           IndexBuffer : uint
           PrimitiveType : OpenGL.PrimitiveType
           ElementCount : int
@@ -104,8 +106,10 @@ module Hl =
         override this.GetHashCode () =
             PhysicallyBasedSurface.hash this
 
-    /// Type alias for an array of surfaces.
-    type PhysicallyBasedStaticModel = PhysicallyBasedSurface array
+    /// A physically-based static model.
+    type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
+        { Bounds : Box3
+          Surfaces : PhysicallyBasedSurface array }
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -283,8 +287,10 @@ module Hl =
             mesh.HasNormals &&
             mesh.HasTextureCoords 0 then
 
-            // populate vertex data
+            // populate vertex data and bounds
             let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+            let mutable positionMin = v3Zero
+            let mutable positionMax = v3Zero
             for i in 0 .. dec mesh.Vertices.Count do
                 let v = i * 8
                 let position = mesh.Vertices.[i]
@@ -298,6 +304,13 @@ module Hl =
                 vertexData.[v+5] <- normal.Z
                 vertexData.[v+6] <- texCoords.X
                 vertexData.[v+7] <- texCoords.Z
+                positionMin.X <- min positionMin.X position.X
+                positionMin.Y <- min positionMin.Y position.Y
+                positionMin.Z <- min positionMin.Z position.Z
+                positionMax.X <- min positionMax.X position.X
+                positionMax.Y <- min positionMax.Y position.Y
+                positionMax.Z <- min positionMax.Z position.Z
+            let bounds = box3 positionMin (positionMax - positionMin)
 
             // populate index data
             let indexData = mesh.GetIndices ()
@@ -338,10 +351,19 @@ module Hl =
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
             OpenGL.Gl.BindVertexArray 0u
             Assert ()
+            
+            // compute vertices
+            let vertices = Array.zeroCreate (vertexData.Length / 3)
+            for i in 0 .. dec vertices.Length do
+                let j = i * 3
+                let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                vertices.[i] <- vertex
 
             // make physically based geometry
             let geometry =
-                { VertexBuffer = vertexBuffer
+                { Bounds = bounds
+                  Vertices = vertices
+                  VertexBuffer = vertexBuffer
                   IndexBuffer = indexBuffer
                   PrimitiveType = OpenGL.PrimitiveType.Triangles
                   ElementCount = 36
@@ -400,22 +422,31 @@ module Hl =
         | Some error -> Left error
         | None -> Right materials
 
-    let TryCreatePhysicallyBasedStaticModel (filePath, assimp : Assimp.AssimpContext) : Either<string, PhysicallyBasedStaticModel> =
+    let TryCreatePhysicallyBasedStaticModel (createMaterials, filePath, assimp : Assimp.AssimpContext) =
         try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
             let dirPath = Path.GetDirectoryName filePath
-            match TryCreatePhysicallyBasedMaterials (dirPath, scene) with
+            let materialsOpt =
+                if createMaterials
+                then TryCreatePhysicallyBasedMaterials (dirPath, scene)
+                else Right (dictPlus HashIdentity.Structural [])
+            match materialsOpt with
             | Right materials ->
                 let mutable errorOpt = None
                 let model = SegmentedList.make ()
+                let mutable bounds = box3Zero
                 for mesh in scene.Meshes do
                     if Option.isNone errorOpt then
                         match TryCreatePhysicallyBasedGeometry mesh with
                         | Right geometry ->
-                            match materials.TryGetValue mesh.MaterialIndex with
+                            let materialOpt =
+                                if createMaterials
+                                then materials.TryGetValue mesh.MaterialIndex
+                                else (true, Unchecked.defaultof<_>)
+                            match materialOpt with
                             | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
                                 let surface =
                                     PhysicallyBasedSurface.make
-                                        false
+                                        false // TODO: 3D: deal with transparencies.
                                         (snd albedoTexture)
                                         (snd metalnessTexture)
                                         (snd roughnessTexture)
@@ -423,10 +454,11 @@ module Hl =
                                         (snd ambientOcclusionTexture)
                                         geometry
                                 SegmentedList.add surface model
+                                bounds <- bounds.Combine geometry.Bounds
                             | (false, _) -> errorOpt <- Some ("Could not locate associated materials for mesh in file name '" + filePath + "'.")
                         | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
                 match errorOpt with
-                | None -> Right (Array.ofSeq model)
+                | None -> Right { Bounds = bounds; Surfaces = Array.ofSeq model }
                 | Some error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
@@ -744,9 +776,18 @@ module Hl =
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
+        
+        // compute vertices
+        let vertices = Array.zeroCreate (vertexData.Length / 3)
+        for i in 0 .. dec vertices.Length do
+            let j = i * 3
+            let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+            vertices.[i] <- vertex
 
         // make physically based geometry
-        { VertexBuffer = vertexBuffer
+        { Bounds = box3 (v3Dup -0.5f) v3One
+          Vertices = vertices
+          VertexBuffer = vertexBuffer
           IndexBuffer = indexBuffer
           PrimitiveType = OpenGL.PrimitiveType.Triangles
           ElementCount = 36
@@ -833,8 +874,8 @@ module Hl =
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
-    /// Draw a physically-based surface.
-    let DrawPhysicallyBasedStaticSurfaces
+    /// Draw a batch of physically-based surfaces.
+    let DrawPhysicallyBasedSurfaces
         (eyePosition : Vector3,
          modelsFields : single array,
          modelsCount : int,
@@ -851,8 +892,8 @@ module Hl =
          modelRow1Buffer : uint,
          modelRow2Buffer : uint,
          modelRow3Buffer : uint,
-         shader : PhysicallyBasedShader,
-         geometry : PhysicallyBasedGeometry) =
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedShader) =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
