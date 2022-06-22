@@ -713,7 +713,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             model.M42 <- single (i % 256 - 128) * 1.5f
                             model.ToArray ())
 
-                    OpenGL.Hl.DrawSurfaces
+                    OpenGL.Hl.DrawPhysicallyBasedStaticSurfaces
                         (eyePosition, Array.concat models, models.Length, view, projection,
                          albedoMap, metalnessMap, roughnessMap, normalMap, ambientOcclusionMap,
                          lightPositions, lightColors, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer, shader, cube)

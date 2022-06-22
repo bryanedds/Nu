@@ -14,17 +14,17 @@ type Image = private { __ : unit }
 /// A font. Currently just used as a phantom type.
 type Font = private { __ : unit }
 
-/// A model. Currently just used as a phantom type.
-type Model = private { __ : unit }
-
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
+
+/// A static model. Currently just used as a phantom type.
+type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
 type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of TextureMetadata * uint
     | FontAsset of int * nativeint
-    | ModelAsset of OpenGL.Hl.PhysicallyBasedModel
+    | StaticModelAsset of OpenGL.Hl.PhysicallyBasedStaticModel
 
 /// The blend mode of a sprite.
 [<Syntax
