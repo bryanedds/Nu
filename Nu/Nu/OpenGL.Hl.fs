@@ -58,6 +58,7 @@ module Hl =
         { Bounds : Box3
           Vertices : Vector3 array
           VertexBuffer : uint
+          ModelBuffer : uint
           IndexBuffer : uint
           PrimitiveType : OpenGL.PrimitiveType
           ElementCount : int
@@ -333,10 +334,39 @@ module Hl =
 
                 // create vertex buffer
                 let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                let normalOffset =      (3 (*position*)) * sizeof<single>
+                let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
                 OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
-                finally vertexBufferPtr.Free ()
+                let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                finally vertexDataPtr.Free ()
+                OpenGL.Gl.EnableVertexAttribArray 0u
+                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+                OpenGL.Gl.EnableVertexAttribArray 1u
+                OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+                OpenGL.Gl.EnableVertexAttribArray 2u
+                OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+                Assert ()
+
+                // create model buffer
+                let modelBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
+                let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                finally modelDataPtr.Free ()
+                OpenGL.Gl.EnableVertexAttribArray 3u
+                OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
+                OpenGL.Gl.EnableVertexAttribArray 4u
+                OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                OpenGL.Gl.EnableVertexAttribArray 5u
+                OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                OpenGL.Gl.EnableVertexAttribArray 6u
+                OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (3u, 1u)
+                OpenGL.Gl.VertexAttribDivisor (4u, 1u)
+                OpenGL.Gl.VertexAttribDivisor (5u, 1u)
+                OpenGL.Gl.VertexAttribDivisor (6u, 1u)
                 Assert ()
 
                 // create index buffer
@@ -349,17 +379,6 @@ module Hl =
                 Assert ()
 
                 // finalize vao
-                let normalOffset =      (3 (*position*)) * sizeof<single>
-                let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-                OpenGL.Gl.EnableVertexAttribArray 0u
-                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-                OpenGL.Gl.EnableVertexAttribArray 1u
-                OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-                OpenGL.Gl.EnableVertexAttribArray 2u
-                OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
                 OpenGL.Gl.BindVertexArray 0u
                 Assert ()
             
@@ -375,6 +394,7 @@ module Hl =
                     { Bounds = bounds
                       Vertices = vertices
                       VertexBuffer = vertexBuffer
+                      ModelBuffer = modelBuffer
                       IndexBuffer = indexBuffer
                       PrimitiveType = OpenGL.PrimitiveType.Triangles
                       ElementCount = mesh.FaceCount
@@ -383,6 +403,7 @@ module Hl =
                 // fin
                 Right geometry
 
+            // error
             else Left ("Vertex / normal / tex coords count mismatch.")
 
         // error
@@ -693,119 +714,6 @@ module Hl =
         // fin
         (vertexBuffer, indexBuffer, vao)
 
-    /// Create a cube for rendering to a shader matching the one created with OpenGL.Hl.CreatePhysicallyBasedShader.
-    let CreatePhysicallyBasedCube () =
-
-        // make vertex data
-        let vertexData =
-            [|
-              (*   positions   *)       (*    normals    *)         (* tex coords *)
-
-              // back face
-              -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
-              +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
-              +0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 0.0f; // bottom-right         
-              +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
-              -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
-              -0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 1.0f; // top-left
-
-              // front face
-              -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
-              +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
-              +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-              +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-              -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
-              -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
-
-              // left face
-              -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
-              -0.5f; +0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-left
-              -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
-              -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
-              -0.5f; -0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-right
-              -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
-
-              // right face
-              +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
-              +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
-              +0.5f; +0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-right         
-              +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
-              +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
-              +0.5f; -0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-left     
-
-              // bottom face
-              -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
-              +0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 1.0f; // top-left
-              +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
-              +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
-              -0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 0.0f; // bottom-right
-              -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
-
-              // top face
-              -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
-              +0.5f; +0.5f ;+0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
-              +0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 1.0f; // top-right     
-              +0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
-              -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
-              -0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 0.0f  // bottom-left     
-            |]
-
-        // make index data trivially
-        let indexData = Array.init 36 id
-
-        // initialize vao
-        let vao = OpenGL.Gl.GenVertexArray ()
-        OpenGL.Gl.BindVertexArray vao
-        Assert ()
-
-        // create vertex buffer
-        let vertexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-        let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
-        finally vertexBufferPtr.Free ()
-        Assert ()
-
-        // create index buffer
-        let indexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-        let indexDataSize = uint (indexData.Length * sizeof<uint>)
-        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-        finally indexDataPtr.Free ()
-        Assert ()
-
-        // finalize vao
-        let normalOffset =      (3 (*position*)) * sizeof<single>
-        let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
-        let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-        OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-        OpenGL.Gl.EnableVertexAttribArray 1u
-        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-        OpenGL.Gl.EnableVertexAttribArray 2u
-        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
-        OpenGL.Gl.BindVertexArray 0u
-        Assert ()
-        
-        // compute vertices
-        let vertices = Array.zeroCreate (vertexData.Length / 3)
-        for i in 0 .. dec vertices.Length do
-            let j = i * 3
-            let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-            vertices.[i] <- vertex
-
-        // make physically based geometry
-        { Bounds = box3 (v3Dup -0.5f) v3One
-          Vertices = vertices
-          VertexBuffer = vertexBuffer
-          IndexBuffer = indexBuffer
-          PrimitiveType = OpenGL.PrimitiveType.Triangles
-          ElementCount = 36
-          PhysicallyBasedVao = vao }
-
     /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
     let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
 
@@ -901,10 +809,6 @@ module Hl =
          ambientOcclusionTexture : uint,
          lightPositions : single array,
          lightColors : single array,
-         modelRow0Buffer : uint,
-         modelRow1Buffer : uint,
-         modelRow2Buffer : uint,
-         modelRow3Buffer : uint,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
@@ -943,65 +847,18 @@ module Hl =
         // setup geometry
         OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
+        try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+        finally modelsFieldsPtr.Free ()
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
         Assert ()
-
-        // setup instancing
-        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 3u)
-        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 4u)
-        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 5u)
-        OpenGL.Gl.EnableVertexArrayAttrib (geometry.PhysicallyBasedVao, 6u)
-        let modelsRow0 = Array.zeroCreate<single> (modelsFields.Length / 4)
-        let modelsRow1 = Array.zeroCreate<single> (modelsFields.Length / 4)
-        let modelsRow2 = Array.zeroCreate<single> (modelsFields.Length / 4)
-        let modelsRow3 = Array.zeroCreate<single> (modelsFields.Length / 4)
-        let mutable i = 0
-        while i < dec modelsFields.Length do
-            let iOver4 = i / 4
-            modelsRow0.[iOver4] <- modelsFields.[i]
-            modelsRow1.[iOver4] <- modelsFields.[i+1]
-            modelsRow2.[iOver4] <- modelsFields.[i+2]
-            modelsRow3.[iOver4] <- modelsFields.[i+3]
-            i <- i + 4
-        let modelsRowSize = modelsCount * 4 * sizeof<single>
-        let modelsRow0Ptr = GCHandle.Alloc (modelsRow0, GCHandleType.Pinned)
-        let modelsRow1Ptr = GCHandle.Alloc (modelsRow1, GCHandleType.Pinned)
-        let modelsRow2Ptr = GCHandle.Alloc (modelsRow2, GCHandleType.Pinned)
-        let modelsRow3Ptr = GCHandle.Alloc (modelsRow3, GCHandleType.Pinned)
-        try
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow0Buffer) // populate modelRow0Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint modelsRowSize, modelsRow0Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
-            OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
-            OpenGL.Gl.VertexAttribDivisor (3u, 1u)
-            Assert ()
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow1Buffer) // populate modelRow1Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint modelsRowSize, modelsRow1Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
-            OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
-            OpenGL.Gl.VertexAttribDivisor (4u, 1u)
-            Assert ()
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow2Buffer) // populate modelRow2Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint modelsRowSize, modelsRow2Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
-            OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
-            OpenGL.Gl.VertexAttribDivisor (5u, 1u)
-            Assert ()
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelRow3Buffer) // populate modelRow3Buffer
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint modelsRowSize, modelsRow3Ptr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
-            OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 0, nativeint 0)
-            OpenGL.Gl.VertexAttribDivisor (6u, 1u)
-            Assert ()
-        finally
-            modelsRow0Ptr.Free ()
-            modelsRow1Ptr.Free ()
-            modelsRow2Ptr.Free ()
-            modelsRow3Ptr.Free ()
 
         // draw geometry
         OpenGL.Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, modelsCount)
         Assert ()
 
         // teardown geometry
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
 

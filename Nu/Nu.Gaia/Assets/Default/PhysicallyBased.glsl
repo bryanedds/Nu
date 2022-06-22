@@ -7,10 +7,7 @@ uniform mat4 projection;
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoords;
-layout (location = 3) in vec4 modelRow0;
-layout (location = 4) in vec4 modelRow1;
-layout (location = 5) in vec4 modelRow2;
-layout (location = 6) in vec4 modelRow3;
+layout (location = 3) in mat4 modelTransposed;
 
 out vec3 positionOut;
 out vec3 normalOut;
@@ -18,12 +15,7 @@ out vec2 texCoordsOut;
 
 void main()
 {
-    mat4 model =
-        mat4(
-            modelRow0.x, modelRow1.x, modelRow2.x, modelRow3.x,
-            modelRow0.y, modelRow1.y, modelRow2.y, modelRow3.y,
-            modelRow0.z, modelRow1.z, modelRow2.z, modelRow3.z,
-            modelRow0.w, modelRow1.w, modelRow2.w, modelRow3.w);
+    mat4 model = transpose(modelTransposed);
     positionOut = vec3(model * vec4(position, 1.0));
     normalOut = mat3(model) * normal;
     texCoordsOut = texCoords;

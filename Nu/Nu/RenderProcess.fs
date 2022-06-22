@@ -70,12 +70,12 @@ type RendererInline (createRenderer2d, createRenderer3d) =
                 SegmentedList.clear messages3d
                 renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
                 SegmentedList.clear messages2d
-            | None -> raise (InvalidOperationException "2d renderer is not yet or is no longer valid.")
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Swap () =
             match renderersOpt with
             | Some (renderer2d, _) -> renderer2d.Swap ()
-            | None -> raise (InvalidOperationException "2d renderer is not yet or is no longer valid.")
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Terminate () =
             match renderersOpt with

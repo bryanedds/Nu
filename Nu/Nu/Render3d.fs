@@ -74,10 +74,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderPhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
-          RenderModelRow0Buffer : uint
-          RenderModelRow1Buffer : uint
-          RenderModelRow2Buffer : uint
-          RenderModelRow3Buffer : uint
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -243,10 +239,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
               RenderPhysicallyBasedShader = physicallyBasedShader
-              RenderModelRow0Buffer = OpenGL.Gl.GenBuffer ()
-              RenderModelRow1Buffer = OpenGL.Gl.GenBuffer ()
-              RenderModelRow2Buffer = OpenGL.Gl.GenBuffer ()
-              RenderModelRow3Buffer = OpenGL.Gl.GenBuffer ()
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -330,9 +322,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     OpenGL.Hl.DrawPhysicallyBasedSurfaces
                         (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                          material.AlbedoTexture, material.MetalnessTexture, material.RoughnessTexture, material.NormalTexture, material.AmbientOcclusionTexture,
-                         lightPositions, lightColors,
-                         renderer.RenderModelRow0Buffer, renderer.RenderModelRow1Buffer, renderer.RenderModelRow2Buffer, renderer.RenderModelRow3Buffer,
-                         material.Geometry, renderer.RenderPhysicallyBasedShader)
+                         lightPositions, lightColors, material.Geometry, renderer.RenderPhysicallyBasedShader)
 
             // render pre-passes
             for pass in postPasses do
