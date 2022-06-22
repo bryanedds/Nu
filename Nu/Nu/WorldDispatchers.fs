@@ -1264,8 +1264,10 @@ module StaticModelFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            let tmxMap = entity.GetTmxMap worl
-            TmxMap.getQuickSize tmxMap
+            let staticModel = entity.GetStaticModel world
+            let bounds = World.getBounds staticModel world
+            let boundsExtended = bounds.Combine bounds.Mirror
+            boundsExtended.Size
 
 [<AutoOpen>]
 module EntityDispatcherModule =
