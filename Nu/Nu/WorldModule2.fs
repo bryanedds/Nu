@@ -991,7 +991,12 @@ module WorldModule2 =
                                                             match World.tryGetWindowSize world with
                                                             | Some windowsSize -> windowsSize
                                                             | None -> Constants.Render.Resolution
-                                                        rendererProcess.SubmitMessages (World.getEyePosition2d world) (World.getEyeSize2d world) v3Zero m4Identity windowSize
+                                                        rendererProcess.SubmitMessages
+                                                            (World.getEyePosition2d world)
+                                                            (World.getEyeSize2d world)
+                                                            (World.getEyePosition3d world)
+                                                            (World.getEyeRotation3d world)
+                                                            windowSize
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()

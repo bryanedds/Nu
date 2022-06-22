@@ -19,7 +19,7 @@ type RendererProcess =
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         abstract ClearMessages : unit -> unit
-        abstract SubmitMessages : Vector2 -> Vector2 -> Vector3 -> Matrix4x4 -> Vector2i -> unit
+        abstract SubmitMessages : Vector2 -> Vector2 -> Vector3 -> Quaternion -> Vector2i -> unit
         abstract Swap : unit -> unit
         abstract Terminate : unit -> unit
         end
@@ -94,7 +94,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable messages2d = SegmentedList.make ()
     let [<VolatileField>] mutable messages3d = SegmentedList.make ()
-    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * RenderMessage3d SegmentedList * Vector2 * Vector2 * Vector3 * Matrix4x4 * Vector2i>.None
+    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * RenderMessage3d SegmentedList * Vector2 * Vector2 * Vector3 * Quaternion * Vector2i>.None
     let [<VolatileField>] mutable swap = false
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()

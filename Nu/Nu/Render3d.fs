@@ -48,7 +48,7 @@ and Renderer3d =
     /// The physically-based shader.
     abstract PhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
     /// Render a frame of the game.
-    abstract Render : Vector3 -> Matrix4x4 -> Vector2i -> RenderMessage3d SegmentedList -> unit
+    abstract Render : Vector3 -> Quaternion -> Vector2i -> RenderMessage3d SegmentedList -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -202,11 +202,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Compute the 3d view frustum.
     /// TODO: 3D: expose this elsewhere.
-    static member computeFrustum (eyePosition : Vector3) eyeRotation =
-        let mutable view = Matrix4x4.CreateFromQuaternion eyeRotation
-        view.M41 <- eyePosition.X
-        view.M42 <- eyePosition.Y
-        view.M43 <- eyePosition.Z
+    static member computeFrustum eyePosition (eyeRotation : Quaternion) =
+        let eyeTarget = Vector3.Transform (v3Forward, eyeRotation)
+        let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
         let projection = GlRenderer3d.computeProjection ()
         let viewProjection = view * projection
         Frustum viewProjection
@@ -263,11 +261,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // compute view and projection
-            let mutable eyePosition = eyePosition
-            let mutable view = eyeRotation
-            view.M41 <- eyePosition.X
-            view.M42 <- eyePosition.Y
-            view.M43 <- eyePosition.Z
+            let eyeTarget = Vector3.Transform (v3Forward, eyeRotation)
+            let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewArray = view.ToArray ()
             let projection = GlRenderer3d.computeProjection ()
             let projectionArray = projection.ToArray ()
