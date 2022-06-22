@@ -357,15 +357,15 @@ module Hl =
                 finally modelDataPtr.Free ()
                 OpenGL.Gl.EnableVertexAttribArray 3u
                 OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
+                OpenGL.Gl.VertexAttribDivisor (3u, 1u)
                 OpenGL.Gl.EnableVertexAttribArray 4u
                 OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (4u, 1u)
                 OpenGL.Gl.EnableVertexAttribArray 5u
                 OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (5u, 1u)
                 OpenGL.Gl.EnableVertexAttribArray 6u
                 OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
-                OpenGL.Gl.VertexAttribDivisor (3u, 1u)
-                OpenGL.Gl.VertexAttribDivisor (4u, 1u)
-                OpenGL.Gl.VertexAttribDivisor (5u, 1u)
                 OpenGL.Gl.VertexAttribDivisor (6u, 1u)
                 Assert ()
 
@@ -706,8 +706,6 @@ module Hl =
         // finalize vao
         OpenGL.Gl.EnableVertexAttribArray 0u
         OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
 
@@ -779,8 +777,6 @@ module Hl =
         Assert ()
 
         // teardown geometry
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
         OpenGL.Gl.BindVertexArray 0u
         Assert ()
 
