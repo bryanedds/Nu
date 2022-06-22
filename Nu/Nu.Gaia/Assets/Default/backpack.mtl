@@ -10,9 +10,9 @@ Ke 0.0 0.0 0.0
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd albedo.png
-map_Ks metalness.png
-map_Bump roughness.png
-map_Kn normal.png
-map_Ka ambientOcclusion.png
+map_Kd StaticModelAlbedo.png
+map_Ks StaticModelMetalness.png
+map_Bump StaticModelRoughness.png
+map_Kn StaticModelNormal.png
+map_Ka StaticModelAmbientOcclusion.png
 

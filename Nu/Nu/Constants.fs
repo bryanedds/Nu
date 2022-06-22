@@ -74,7 +74,6 @@ module Render =
     let (*Literal*) AspectRatio = ResolutionF.X / ResolutionF.Y
     let (*Literal*) NearPlaneDistance = 0.0009765625f // about 1mm
     let (*Literal*) FarPlaneDistance = 256.0f
-    let (*Literal*) Projection = Matrix4x4.CreatePerspectiveFieldOfView (FieldOfView, AspectRatio, NearPlaneDistance, FarPlaneDistance) // TODO: 3D: be rid of this.
     let (*Literal*) WindowClearColor = Color.White
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1

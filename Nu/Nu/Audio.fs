@@ -116,7 +116,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 let errorMsg = SDL.SDL_GetError ()
                 Log.debug ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
-        | extension -> Log.debug ("Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
+        | _ -> None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with

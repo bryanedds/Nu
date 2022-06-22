@@ -111,7 +111,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
-        | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
+        | _ -> None
 
     static member private tryLoadRenderPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
@@ -203,6 +203,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              Constants.Render.NearPlaneDistance,
              Constants.Render.FarPlaneDistance)
 
+    /// Compute the 3d view frustum.
+    static member computeFrustum (eyePosition : Vector3) eyeRotation =
+        let mutable view = Matrix4x4.CreateFromQuaternion eyeRotation
+        view.M41 <- eyePosition.X
+        view.M42 <- eyePosition.Y
+        view.M43 <- eyePosition.Z
+        let projection = GlRenderer3d.computeProjection ()
+        let viewProjection = view * projection
+        Frustum viewProjection
+
     /// Get the physically-based shader.
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedShader
@@ -256,6 +266,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // begin frame
             if renderer.RenderShouldBeginFrame then
                 OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+                OpenGL.Hl.Assert ()
 
             // compute view and projection
             let mutable eyePosition = eyePosition

@@ -145,7 +145,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
-        | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
+        | _ -> None
 
     static member private tryLoadRenderPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
@@ -645,95 +645,33 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         member renderer.Render eyePosition eyeSize windowSize renderMessages =
 
-            if true then
-
-                // begin frame
-                if renderer.RenderShouldBeginFrame then
-                    OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
-
-                // begin sprite batch frame
-                let viewport = Constants.Render.Viewport
-                let projection = GlRenderer2d.computeProjection viewport renderer
-                let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
-                let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
-                OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+            // begin frame
+            if renderer.RenderShouldBeginFrame then
+                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
                 OpenGL.Hl.Assert ()
 
-                // render frame
-                GlRenderer2d.handleRenderMessages renderMessages renderer
-                GlRenderer2d.sortRenderLayeredMessages renderer
-                GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
-                renderer.RenderLayeredMessages.Clear ()
+            // begin sprite batch frame
+            let viewport = Constants.Render.Viewport
+            let projection = GlRenderer2d.computeProjection viewport renderer
+            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
+            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
+            OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+            OpenGL.Hl.Assert ()
 
-                // end sprite batch frame
-                OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+            // render frame
+            GlRenderer2d.handleRenderMessages renderMessages renderer
+            GlRenderer2d.sortRenderLayeredMessages renderer
+            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
+            renderer.RenderLayeredMessages.Clear ()
+
+            // end sprite batch frame
+            OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+            OpenGL.Hl.Assert ()
+
+            // end frame
+            if renderer.RenderShouldEndFrame then
+                OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
-
-                // end frame
-                if renderer.RenderShouldEndFrame then
-                    OpenGL.Hl.EndFrame ()
-                    OpenGL.Hl.Assert ()
-
-            else
-
-                let shader = OpenGL.Hl.CreatePhysicallyBasedShader "Assets/Default/PhysicallyBased.glsl"
-                let cube = OpenGL.Hl.CreatePhysicallyBasedCube ()
-                let albedoMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Albedo.png") |> Either.getRight |> snd
-                let metalnessMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Metalness.png") |> Either.getRight |> snd
-                let roughnessMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Roughness.png") |> Either.getRight |> snd
-                let normalMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/Normal.png") |> Either.getRight |> snd
-                let ambientOcclusionMap = OpenGL.Hl.TryCreateTexture2d (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, "Assets/Default/AmbientOcclusion.png") |> Either.getRight |> snd
-                OpenGL.Hl.Assert ()
-
-                let eyeZ = 150.0f
-                let mutable rotation = 0.0f
-                let mutable eyePosition = v3 0.0f 0.0f eyeZ
-                let view = Matrix4x4.CreateLookAt(eyePosition, v3Zero, v3Up).ToArray()
-                let projection = Constants.Render.Projection.ToArray ()
-                let lightPositions = [|-50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; -50.0f; 50.0f; 50.0f|]
-                let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
-                let modelRow0Buffer = OpenGL.Gl.GenBuffer ()
-                let modelRow1Buffer = OpenGL.Gl.GenBuffer ()
-                let modelRow2Buffer = OpenGL.Gl.GenBuffer ()
-                let modelRow3Buffer = OpenGL.Gl.GenBuffer ()
-                while true do
-
-                    // begin frame
-                    OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
-
-                    // setup state
-                    OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
-                    OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-                    OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-
-                    let models =
-                        Array.init 65536 (fun i ->
-                            let mutable model = Matrix4x4.CreateFromYawPitchRoll(rotation, rotation / 2.0f, 0.0f)
-                            model.M41 <- single (i / 256 - 128) * 1.5f
-                            model.M42 <- single (i % 256 - 128) * 1.5f
-                            model.ToArray ())
-
-                    OpenGL.Hl.DrawPhysicallyBasedSurfaces
-                        (eyePosition, Array.concat models, models.Length, view, projection,
-                         albedoMap, metalnessMap, roughnessMap, normalMap, ambientOcclusionMap,
-                         lightPositions, lightColors, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer,
-                         cube, shader)
-                    OpenGL.Hl.Assert ()
-
-                    // teardown state
-                    OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-                    OpenGL.Gl.Disable OpenGL.EnableCap.Blend
-
-                    // end frame
-                    OpenGL.Hl.EndFrame ()
-                    OpenGL.Hl.Assert ()
-
-                    rotation <- rotation + 0.05f
-
-                    (renderer :> Renderer2d).Swap ()
-
-                    let mutable polledEvent = SDL.SDL_Event ()
-                    SDL2.SDL.SDL_PollEvent &polledEvent |> ignore<int>
 
         member renderer.Swap () =
             match renderer.RenderWindow with

@@ -31,7 +31,7 @@ open OctelementMasks
 /// Flags contains the following:
 /// Static will elide Updates.
 /// Enclosed will discriminate on occluders for both Update and Actualize.
-type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> = 
+type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> = 
     { Flags : uint
       Entry : 'e }
     member this.Static with get () = this.Flags &&& StaticMask <> 0u

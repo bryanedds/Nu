@@ -91,15 +91,17 @@ module SegmentedList =
         let segment = Array.zeroCreate segmentSize
         let segments = List<'a array> ()
         segments.Add segment
-        { TotalCapacity = segmentSize; TotalLength = 0; SegmentSize = segmentSize; Segments = segments }
+        { TotalLength = 0; TotalCapacity = segmentSize; SegmentSize = segmentSize; Segments = segments }
 
     let makeWithCapacity<'a> capacity =
         if capacity < 0 then raise (ArgumentException ("Invalid argument.", nameof capacity))
-        let size = sizeof<'a>
-        let segmentSize = Constants.Engine.LohSizeMinusArraySlop / size
-        let segmentCount = capacity / segmentSize
-        let segments = Array.init segmentCount (fun _ -> Array.zeroCreate<'a> segmentSize)
-        { TotalLength = 0; TotalCapacity = 0; SegmentSize = segmentSize; Segments = List segments }
+        if capacity = 0 then make<'a> ()
+        else
+            let size = sizeof<'a>
+            let segmentSize = Constants.Engine.LohSizeMinusArraySlop / size
+            let segmentCount = max (capacity / segmentSize) 1
+            let segments = Array.init segmentCount (fun _ -> Array.zeroCreate<'a> segmentSize)
+            { TotalLength = 0; TotalCapacity = segmentCount * segmentSize; SegmentSize = segmentSize; Segments = List segments }
 
     let isEmpty slist =
         slist.TotalLength = 0
