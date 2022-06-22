@@ -810,7 +810,7 @@ module Hl =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
 
