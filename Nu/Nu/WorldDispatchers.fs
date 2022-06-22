@@ -1256,7 +1256,7 @@ module StaticModelFacetModule =
             [define Entity.StaticModel Assets.Default.StaticModel]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world && entity.GetInView3d world then
                 let mutable transform = entity.GetTransform world
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world

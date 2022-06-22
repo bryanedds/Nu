@@ -122,8 +122,16 @@ module WorldModuleGame =
             (World.getGameState world).EyePosition3d
 
         /// Set the current 3d eye position.
-        static member internal setEyePosition3dPlus value world =
-            World.updateGameState (fun gameState -> if v3Neq value gameState.EyePosition3d then { gameState with EyePosition3d = value } else Unchecked.defaultof<_>) Property? EyePosition3d value world
+        static member internal setEyePosition3dPlus (value : Vector3) world =
+            World.updateGameState (fun gameState ->
+                let mutable frustum = Matrix4x4.CreateFromQuaternion gameState.EyeRotation3d
+                frustum.M41 <- value.X
+                frustum.M42 <- value.Y
+                frustum.M43 <- value.Z
+                let eyeFrustum3d = Frustum frustum
+                if v3Neq value gameState.EyePosition3d
+                then { gameState with EyePosition3d = value; EyeFrustum3d = eyeFrustum3d }
+                else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
         [<FunctionBinding>]
@@ -137,26 +145,25 @@ module WorldModuleGame =
 
         /// Set the current 3d eye rotation.
         static member internal setEyeRotation3dPlus value world =
-            World.updateGameState (fun gameState -> if quatNeq value gameState.EyeRotation3d then { gameState with EyeRotation3d = value } else Unchecked.defaultof<_>) Property? EyeRotation3d value world
+            World.updateGameState (fun gameState ->
+                let mutable frustum = Matrix4x4.CreateFromQuaternion value
+                frustum.M41 <- gameState.EyePosition3d.X
+                frustum.M42 <- gameState.EyePosition3d.Y
+                frustum.M43 <- gameState.EyePosition3d.Z
+                let eyeFrustum3d = Frustum frustum
+                if quatNeq value gameState.EyeRotation3d
+                then { gameState with EyeRotation3d = value; EyeFrustum3d = eyeFrustum3d }
+                else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.
         [<FunctionBinding>]
         static member setEyeRotation3d value world =
             World.setEyeRotation3dPlus value world |> snd'
 
-        /// Get the current 3d eye projection.
+        /// Get the current 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeProjection3d world =
-            (World.getGameState world).EyeProjection3dRef.Value
-
-        /// Set the current 3d eye projection.
-        static member internal setEyeProjection3dPlus value world =
-            World.updateGameState (fun gameState -> if not (value.Equals gameState.EyeProjection3dRef.Value) then { gameState with EyeProjection3dRef = ref value } else Unchecked.defaultof<_>) Property? EyeProjection3d value world
-
-        /// Set the current 3d eye projection.
-        [<FunctionBinding>]
-        static member setEyeProjection3d value world =
-            World.setEyeProjection3dPlus value world |> snd'
+        static member getEyeFrustum3d world =
+            (World.getGameState world).EyeFrustum3d
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -350,6 +357,19 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2d absolute world
             Math.isBoundsIntersectingBounds2d bounds viewBounds
 
+        /// Get the bounds of the 3d eye's sight.
+        [<FunctionBinding>]
+        static member getViewBounds3d world =
+            World.getEyeFrustum3d world
+
+        /// Check that the given bounds is within the 3d eye's sight.
+        [<FunctionBinding>]
+        static member isBoundsInView3d (bounds : Box3) world =
+            let viewBounds = World.getViewBounds3d world
+            let containment = viewBounds.Contains bounds
+            containment = ContainmentType.Contains ||
+            containment = ContainmentType.Intersects
+
         /// Transform the given mouse position to 2d screen space.
         [<FunctionBinding>]
         static member mouseToScreen2d (mousePosition : Vector2) world =
@@ -507,7 +527,6 @@ module WorldModuleGame =
         GameGetters.Add ("EyeSize2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
         GameGetters.Add ("EyePosition3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition3d world })
         GameGetters.Add ("EyeRotation3d", fun world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEyeRotation3d world })
-        GameGetters.Add ("EyeProjection3d", fun world -> { PropertyType = typeof<Matrix4x4>; PropertyValue = World.getEyeProjection3d world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
         GameGetters.Add ("Order", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder world })
         GameGetters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
@@ -521,7 +540,6 @@ module WorldModuleGame =
         GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)
         GameSetters.Add ("EyeRotation3d", fun property world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
-        GameSetters.Add ("EyeProjection3d", fun property world -> World.setEyeProjection3dPlus (property.PropertyValue :?> Matrix4x4) world)
 
     /// Initialize getters and setters
     let internal init () =
