@@ -52,7 +52,7 @@ module Hl =
           ElementCount : int
           PhysicallyBasedVao : uint }
 
-    type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
+    type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedSurface =
         { mutable HashCode : int
           Transparent : bool
           AlbedoTexture : uint
@@ -62,10 +62,10 @@ module Hl =
           AmbientOcclusionTexture : uint
           Geometry : PhysicallyBasedGeometry }
 
-        static member inline hash material =
-            hash material.Transparent ^^^
-            hash material.AlbedoTexture * hash material.MetalnessTexture * hash material.RoughnessTexture * hash material.NormalTexture * hash material.AmbientOcclusionTexture ^^^
-            hash material.Geometry
+        static member inline hash surface =
+            hash surface.Transparent ^^^
+            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
+            hash surface.Geometry
 
         static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
             let mutable result =
@@ -77,7 +77,7 @@ module Hl =
                   NormalTexture = normalTexture
                   AmbientOcclusionTexture = ambientOcclusionTexture
                   Geometry = geometry }
-            result.HashCode <- PhysicallyBasedMaterial.hash result
+            result.HashCode <- PhysicallyBasedSurface.hash result
             result
 
         static member inline equals left right =
@@ -93,18 +93,18 @@ module Hl =
             left.Geometry.PhysicallyBasedVao = right.Geometry.PhysicallyBasedVao
 
         member this.Equals that =
-            PhysicallyBasedMaterial.equals this that
+            PhysicallyBasedSurface.equals this that
 
         override this.Equals (thatObj : obj) =
             match thatObj with
-            | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+            | :? PhysicallyBasedSurface as that -> PhysicallyBasedSurface.equals this that
             | _ -> false
 
         override this.GetHashCode () =
-            PhysicallyBasedMaterial.hash this
+            PhysicallyBasedSurface.hash this
 
-    /// Type alias for an array of materials.
-    type PhysicallyBasedModel = PhysicallyBasedMaterial array
+    /// Type alias for an array of surfaces.
+    type PhysicallyBasedModel = PhysicallyBasedSurface array
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -220,42 +220,51 @@ module Hl =
     /// Attempt to create a 2d texture from a file.
     let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
 
-        // load the texture into an SDL surface, converting its format if needed
+        // attempt to load the texture into an SDL surface, converting its format if needed
         let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
-        let (surfacePtr, surface) =
+        let surfaceOpt =
             let unconvertedPtr = SDL_image.IMG_Load filePath
-            let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
-            let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
-            if unconvertedFormat.format <> format then
-                let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
-                SDL.SDL_FreeSurface unconvertedPtr
-                let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
-                (convertedPtr, converted)
-            else (unconvertedPtr, unconverted)
+            if unconvertedPtr <> nativeint 0 then
+                let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
+                let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
+                if unconvertedFormat.format <> format then
+                    let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
+                    SDL.SDL_FreeSurface unconvertedPtr
+                    let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
+                    Some (convertedPtr, converted)
+                else Some (unconvertedPtr, unconverted)
+            else None
 
-        // upload the texture to gl
-        let texture = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
-        let internalFormat = OpenGL.InternalFormat.Rgba8
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, surface.pixels)
+        // ensure surface was loaded into
+        match surfaceOpt with
+        | Some (surfacePtr, surface) ->
 
-        // teardown surface
-        SDL.SDL_FreeSurface surfacePtr
+            // upload the texture to gl
+            let texture = OpenGL.Gl.GenTexture ()
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
+            let internalFormat = OpenGL.InternalFormat.Rgba8
+            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, surface.pixels)
 
-        // check for errors
-        match OpenGL.Gl.GetError () with
-        | OpenGL.ErrorCode.NoError ->
-            let metadata =
-                { TextureWidth = surface.w
-                  TextureHeight = surface.h
-                  TextureTexelWidth = 1.0f / single surface.w
-                  TextureTexelHeight = 1.0f / single surface.h
-                  TextureInternalFormat = internalFormat }
-            Right (metadata, texture)
-        | error -> Left (string error)
+            // teardown surface
+            SDL.SDL_FreeSurface surfacePtr
+
+            // check for errors
+            match OpenGL.Gl.GetError () with
+            | OpenGL.ErrorCode.NoError ->
+                let metadata =
+                    { TextureWidth = surface.w
+                      TextureHeight = surface.h
+                      TextureTexelWidth = 1.0f / single surface.w
+                      TextureTexelHeight = 1.0f / single surface.h
+                      TextureInternalFormat = internalFormat }
+                Right (metadata, texture)
+            | error -> Left (string error)
+
+        // load error
+        | None -> Left ("Missing file or unloadable image '" + filePath + "'.")
 
     /// Attempt to create a sprite texture.
     let TryCreateSpriteTexture filePath =
@@ -345,16 +354,16 @@ module Hl =
 
     /// Attempt to create physically-based material from an assimp mesh.
     let TryCreatePhysicallyBasedMaterial (dirPath : string, material : Assimp.Material) =
-        if  material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Diffuse, 0) &&
-            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Metalness, 0) &&
-            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Roughness, 0) &&
-            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.Normals, 0) &&
-            material.HasProperty (Assimp.Unmanaged.AiMatKeys.TEXTURE_BASE, Assimp.TextureType.AmbientOcclusion, 0) then
+        if  material.HasTextureDiffuse && // mapped to albedo
+            material.HasTextureSpecular && // mapped to metalness
+            material.HasTextureHeight && // mapped to roughness
+            material.HasTextureNormal && // mapped to normal
+            material.HasTextureAmbient then // mapped to ambient occlusion
             let (_, albedo) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
-            let (_, metalness) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
-            let (_, roughness) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
+            let (_, metalness) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
+            let (_, roughness) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
             let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
-            let (_, ambientOcclusion) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
+            let (_, ambientOcclusion) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
             let albedoFilePath = Path.Combine (dirPath, albedo.FilePath)
             let metalnessFilePath = Path.Combine (dirPath, metalness.FilePath)
             let roughnessFilePath = Path.Combine (dirPath, roughness.FilePath)
@@ -391,8 +400,8 @@ module Hl =
         | None -> Right materials
 
     let TryCreatePhysicallyBasedModel (filePath, assimp : Assimp.AssimpContext) : Either<string, PhysicallyBasedModel> =
-        try let scene = assimp.ImportFile filePath
-            let dirPath = Directory.GetDirectoryRoot filePath
+        try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
+            let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (dirPath, scene) with
             | Right materials ->
                 let mutable errorOpt = None
@@ -403,8 +412,8 @@ module Hl =
                         | Right geometry ->
                             match materials.TryGetValue mesh.MaterialIndex with
                             | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
-                                let material =
-                                    PhysicallyBasedMaterial.make
+                                let surface =
+                                    PhysicallyBasedSurface.make
                                         false
                                         (snd albedoTexture)
                                         (snd metalnessTexture)
@@ -412,13 +421,13 @@ module Hl =
                                         (snd normalTexture)
                                         (snd ambientOcclusionTexture)
                                         geometry
-                                SegmentedList.add material model
-                            | (false, _) -> errorOpt <- Some ("Could not load materials for mesh in file name '" + filePath + "'.")
+                                SegmentedList.add surface model
+                            | (false, _) -> errorOpt <- Some ("Could not locate associated materials for mesh in file name '" + filePath + "'.")
                         | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
                 match errorOpt with
                 | None -> Right (Array.ofSeq model)
                 | Some error -> Left error
-            | Left error -> Left ("Could not load materials for scene in file name '" + filePath + "' due to: " + error)
+            | Left error -> Left ("Could not load materials for model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load model '" + filePath + "' due to: " + scstring exn)
 
     /// Create a texture frame buffer.

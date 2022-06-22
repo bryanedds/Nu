@@ -6,8 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Threading
-open System.Threading.Tasks
 open SDL2
 open Prime
 open Nu
@@ -18,8 +16,8 @@ open Nu
 
 /// A collection of render surfaces in a pass.
 type [<NoEquality; NoComparison>] RenderSurfaces =
-    { RenderSurfacesOpaque : Dictionary<OpenGL.Hl.PhysicallyBasedMaterial, Matrix4x4 SegmentedList>
-      RenderSurfacesTransparent : struct (OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4) SegmentedList }
+    { RenderSurfacesOpaque : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSurfacesTransparent : struct (OpenGL.Hl.PhysicallyBasedSurface * Matrix4x4) SegmentedList }
 
 /// Describes a 3d render pass.
 type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
@@ -38,8 +36,8 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderSurfaceDescriptor of OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4
-    | RenderSurfacesDescriptor of OpenGL.Hl.PhysicallyBasedMaterial * Matrix4x4 array
+    | RenderModelDescriptor of Model AssetTag * Matrix4x4
+    | RenderModelsDescriptor of Model AssetTag * Matrix4x4 array
     | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
@@ -186,6 +184,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
+    static member private categorizeModel modelAssetTag modelMatrix (surfaces : Dictionary<_, _>) renderer =
+        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | ModelAsset modelAsset ->
+                for surface in modelAsset do
+                    match surfaces.TryGetValue surface with
+                    | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
+                    | (false, _) -> surfaces.Add (surface, SegmentedList.singleton modelMatrix)
+            | _ -> Log.trace "Cannot render model with a non-model asset."
+        | _ -> Log.info ("RenderModelDescriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
+
     /// Compute the 3d projection matrix.
     static member computeProjection () =
         Matrix4x4.CreatePerspectiveFieldOfView
@@ -234,7 +244,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderShouldBeginFrame = config.ShouldBeginFrame
               RenderShouldEndFrame = config.ShouldEndFrame }
 
-        let filePath = "Assets/Default/test/gun.fbx"
+        let filePath = "Assets/Default/Test/backpack.obj"
         let modelOpt =
             match OpenGL.Hl.TryCreatePhysicallyBasedModel (filePath, renderer.RenderAssimp) with
             | Right model -> Some (ModelAsset model)
@@ -272,21 +282,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // categorize messages
             let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let surfaces = dictPlus<OpenGL.Hl.PhysicallyBasedMaterial, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfaces = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | RenderSurfaceDescriptor (surface, model) ->
-                    match surfaces.TryGetValue surface with
-                    | (true, surfaces) -> SegmentedList.add model surfaces
-                    | (false, _) -> surfaces.Add (surface, SegmentedList.singleton model)
-                | RenderSurfacesDescriptor (surface, models) ->
-                    for model in models do
-                        match surfaces.TryGetValue surface with
-                        | (true, surfaces) -> SegmentedList.add model surfaces
-                        | (false, _) -> surfaces.Add (surface, SegmentedList.singleton model)
-                | RenderCallbackDescriptor3d _ -> ()
-                | RenderPrePassDescriptor3d prePass -> prePasses.Add prePass |> ignore<bool>
-                | RenderPostPassDescriptor3d postPass -> postPasses.Add postPass |> ignore<bool>
+                | RenderModelDescriptor (modelAssetTag, modelMatrix) ->
+                    GlRenderer3d.categorizeModel modelAssetTag modelMatrix surfaces renderer
+                | RenderModelsDescriptor (modelAssetTag, modelMatrices) ->
+                    for modelMatrix in modelMatrices do
+                        GlRenderer3d.categorizeModel modelAssetTag modelMatrix surfaces renderer
+                | RenderCallbackDescriptor3d _ ->
+                    ()
+                | RenderPrePassDescriptor3d prePass ->
+                    prePasses.Add prePass |> ignore<bool>
+                | RenderPostPassDescriptor3d postPass ->
+                    postPasses.Add postPass |> ignore<bool>
 
             // make render surfaces
             let surfaces =

@@ -4460,25 +4460,12 @@
             properly located and can be read/written.
             </summary>
         </member>
-        <member name="M:Assimp.IOStream.#ctor(System.String,Assimp.FileIOMode,System.Boolean)">
+        <member name="M:Assimp.IOStream.#ctor(System.String,Assimp.FileIOMode)">
             <summary>
             Constructs a new IOStream.
             </summary>
             <param name="pathToFile">Path to file given by Assimp</param>
             <param name="fileMode">Desired file access mode</param>
-            <param name="initialize"></param>
-        </member>
-        <member name="M:Assimp.IOStream.Initialize(Assimp.Unmanaged.AiFileWriteProc,Assimp.Unmanaged.AiFileReadProc,Assimp.Unmanaged.AiFileTellProc,Assimp.Unmanaged.AiFileTellProc,Assimp.Unmanaged.AiFileSeek,Assimp.Unmanaged.AiFileFlushProc,System.IntPtr)">
-            <summary>
-            Initializes the system by setting up native pointers for Assimp to the specified functions.
-            </summary>
-            <param name="aiFileWriteProc"></param>
-            <param name="aiFileReadProc"></param>
-            <param name="aiFileTellProc"></param>
-            <param name="aiFileSizeProc"></param>
-            <param name="aiFileSeek"></param>
-            <param name="aiFileFlushProc"></param>
-            <param name="userData"></param>
         </member>
         <member name="M:Assimp.IOStream.Finalize">
             <summary>
@@ -4542,53 +4529,6 @@
             Closes the stream - flushing any data not yet read/written and disposes of resources.
             </summary>
         </member>
-        <member name="M:Assimp.IOStream.OnAiFileWriteProc(System.IntPtr,System.IntPtr,System.UIntPtr,System.UIntPtr)">
-            <summary>
-            Callback for Assimp that handles writes.
-            </summary>
-            <param name="file"></param>
-            <param name="dataToWrite"></param>
-            <param name="sizeOfElemInBytes"></param>
-            <param name="numElements"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOStream.OnAiFileReadProc(System.IntPtr,System.IntPtr,System.UIntPtr,System.UIntPtr)">
-            <summary>
-            Callback for Assimp that handles reads.
-            </summary>
-            <param name="file"></param>
-            <param name="dataRead"></param>
-            <param name="sizeOfElemInBytes"></param>
-            <param name="numElements"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOStream.OnAiFileTellProc(System.IntPtr)">
-            <summary>
-            Callback for Assimp that handles tell requests.
-            </summary>
-            <param name="file"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOStream.OnAiFileSizeProc(System.IntPtr)">
-            <summary>
-            Callback for Assimp that handles size requests.
-            </summary>
-            <param name="file"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOStream.OnAiFileSeekProc(System.IntPtr,System.UIntPtr,Assimp.Origin)">
-            <summary>
-            Callback for Assimp that handles seeks.
-            </summary>
-            <param name="file"></param>
-            <param name="offset"></param>
-            <param name="seekOrigin"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOStream.OnAiFileFlushProc(System.IntPtr)">
-            <summary>Callback for Assimp that handles flushes.</summary>
-            <param name="file"></param>
-        </member>
         <member name="T:Assimp.IOSystem">
             <summary>
             Defines a custom IO handler that can be registered to an importer that will handle I/O for assimp. This includes searching/opening
@@ -4605,22 +4545,10 @@
             Gets the number of currently opened streams.
             </summary>
         </member>
-        <member name="M:Assimp.IOSystem.#ctor(System.Boolean)">
+        <member name="M:Assimp.IOSystem.#ctor">
             <summary>
             Constructs a new IOSystem.
             </summary>
-            <param name="initialize">
-            Whether to immediately initialize the system by setting up native pointers. Set this to
-            false if you want to manually initialize and use custom function pointers for advanced use cases.
-            </param>
-        </member>
-        <member name="M:Assimp.IOSystem.Initialize(Assimp.Unmanaged.AiFileOpenProc,Assimp.Unmanaged.AiFileCloseProc,System.IntPtr)">
-            <summary>
-            Initializes the system by setting up native pointers for Assimp to the specified functions.
-            </summary>
-            <param name="fileOpenProc"></param>
-            <param name="fileCloseProc"></param>
-            <param name="userData"></param>
         </member>
         <member name="M:Assimp.IOSystem.Finalize">
             <summary>
@@ -4656,22 +4584,6 @@
             Releases unmanaged and - optionally - managed resources.
             </summary>
             <param name="disposing">True to release both managed and unmanaged resources; False to release only unmanaged resources.</param>
-        </member>
-        <member name="M:Assimp.IOSystem.OnAiFileOpenProc(System.IntPtr,System.String,System.String)">
-            <summary>
-            Callback for Assimp that handles a file being opened.
-            </summary>
-            <param name="fileIO"></param>
-            <param name="pathToFile"></param>
-            <param name="mode"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Assimp.IOSystem.OnAiFileCloseProc(System.IntPtr,System.IntPtr)">
-            <summary>
-            Callback for Assimp that handles a file being closed.
-            </summary>
-            <param name="fileIO"></param>
-            <param name="file"></param>
         </member>
         <member name="T:Assimp.Light">
             <summary>
@@ -4838,24 +4750,16 @@
             Static constructor.
             </summary>
         </member>
-        <member name="M:Assimp.LogStream.#ctor(System.Boolean)">
+        <member name="M:Assimp.LogStream.#ctor">
             <summary>
             Constructs a new LogStream.
             </summary>
-            <param name="initialize">
-            Whether to immediately initialize the system by setting up native pointers. Set this to
-            false if you want to manually initialize and use custom function pointers for advanced use cases.
-            </param>
         </member>
-        <member name="M:Assimp.LogStream.#ctor(System.String,System.Boolean)">
+        <member name="M:Assimp.LogStream.#ctor(System.String)">
             <summary>
             Constructs a new LogStream.
             </summary>
             <param name="userData">User-supplied data</param>
-            <param name="initialize">
-            Whether to immediately initialize the system by setting up native pointers. Set this to
-            false if you want to manually initialize and use custom function pointers for advanced use cases.
-            </param>
         </member>
         <member name="M:Assimp.LogStream.#ctor(Assimp.LoggingCallback)">
             <summary>
@@ -4931,22 +4835,6 @@
             Called when the log stream has been detatched from the assimp importer. After this point it will stop receiving
             messages until it is re-attached.
             </summary>
-        </member>
-        <member name="M:Assimp.LogStream.OnAiLogStreamCallback(System.String,System.IntPtr)">
-            <summary>
-            Callback for Assimp that handles a message being logged.
-            </summary>
-            <param name="msg"></param>
-            <param name="userData"></param>
-        </member>
-        <member name="M:Assimp.LogStream.Initialize(Assimp.Unmanaged.AiLogStreamCallback,Assimp.LoggingCallback,System.String,System.IntPtr)">
-            <summary>
-            Initializes the stream by setting up native pointers for Assimp to the specified functions.
-            </summary>
-            <param name="aiLogStreamCallback"></param>
-            <param name="callback"></param>
-            <param name="userData"></param>
-            <param name="assimpUserData"></param>
         </member>
         <member name="T:Assimp.ConsoleLogStream">
             <summary>
@@ -8420,21 +8308,10 @@
             unit-conversions, versions, vendors or other model-specific data. This can be used to store format-specific metadata as well.
             </summary>
         </member>
-        <member name="P:Assimp.Scene.Name">
-            <summary>
-            Gets or sets the name of the scene.
-            </summary>
-        </member>
         <member name="M:Assimp.Scene.#ctor">
             <summary>
             Constructs a new instance of the <see cref="T:Assimp.Scene"/> class.
             </summary>
-        </member>
-        <member name="M:Assimp.Scene.#ctor(System.String)">
-            <summary>
-            Constructs a new instance of the <see cref="T:Assimp.Scene"/> class.
-            </summary>
-            <param name="name">Name of the scene</param>
         </member>
         <member name="M:Assimp.Scene.Clear">
             <summary>
@@ -10430,9 +10307,9 @@
             can be used to store format-specific metadata as well.
             </summary>
         </member>
-        <member name="F:Assimp.Unmanaged.AiScene.Name">
+        <member name="F:Assimp.Unmanaged.AiScene.PrivateData">
             <summary>
-            The name of the scene itself.
+            void*, Private data do not touch!
             </summary>
         </member>
         <member name="T:Assimp.Unmanaged.AiNode">
@@ -10617,11 +10494,6 @@
             Axis aligned bounding box.
             </summary>
         </member>
-        <member name="F:Assimp.Unmanaged.AiMesh.TextureCoordsNames">
-            <summary>
-            aiString[Max_Value], array of texture coordinate names. Max_Value is defined as <see cref="F:Assimp.Unmanaged.AiDefines.AI_MAX_NUMBER_OF_TEXTURECOORDS"/>.
-            </summary>
-        </member>
         <member name="T:Assimp.Unmanaged.AiTexture">
             <summary>
             Represents an aiTexture struct.
@@ -10700,16 +10572,6 @@
         <member name="F:Assimp.Unmanaged.AiBone.NumWeights">
             <summary>
             Number of weights.
-            </summary>
-        </member>
-        <member name="F:Assimp.Unmanaged.AiBone.Armature">
-            <summary>
-            Bone armature, used for skeleton conversion.
-            </summary>
-        </member>
-        <member name="F:Assimp.Unmanaged.AiBone.Node">
-            <summary>
-            Bone needed in scene, used for skeleton conversion.
             </summary>
         </member>
         <member name="F:Assimp.Unmanaged.AiBone.Weights">
@@ -11488,23 +11350,6 @@
             </summary>
         </member>
         <member name="P:Assimp.Unmanaged.AiMeshTextureCoordinateArray.Item(System.Int32)">
-            <summary>
-            Gets or sets an array value at the specified index.
-            </summary>
-            <param name="index">Zero-based index.</param>
-        </member>
-        <member name="T:Assimp.Unmanaged.AiMeshTextureCoordinateNamesArray">
-            <summary>
-            Fixed length array for representing the texture coordinate names of a mesh. Length is equal
-            to <see cref="F:Assimp.Unmanaged.AiDefines.AI_MAX_NUMBER_OF_TEXTURECOORDS"/>.
-            </summary>
-        </member>
-        <member name="P:Assimp.Unmanaged.AiMeshTextureCoordinateNamesArray.Length">
-            <summary>
-            Gets the length of the array.
-            </summary>
-        </member>
-        <member name="P:Assimp.Unmanaged.AiMeshTextureCoordinateNamesArray.Item(System.Int32)">
             <summary>
             Gets or sets an array value at the specified index.
             </summary>
