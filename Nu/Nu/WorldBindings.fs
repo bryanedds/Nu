@@ -18,42 +18,43 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
-        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
-        "transitionScreen setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
-        "createSplashScreen6 createSplashScreen reloadExistingAssets tryReloadAssets " +
-        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
-        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
-        "playSong playSong6 playSound playSound3 " +
-        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
-        "reloadAudioAssets hintRenderPackageUse2d hintRenderPackageDisuse2d reloadRenderAssets2d " +
-        "localizeBodyShape bodyExists getBodyContactNormals getBodyLinearVelocity " +
-        "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
-        "createBody createBodies destroyBody destroyBodies " +
-        "createJoint createJoints destroyJoint destroyJoints " +
-        "setBodyEnabled setBodyPosition setBodyRotation setBodyLinearVelocity " +
-        "applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce " +
-        "isMouseButtonDown getMousePosition2d isKeyboardKeyDown expandContent " +
-        "destroyImmediate destroy tryGetParent getParent " +
-        "getChildren getExists isSelected ignorePropertyBindings " +
-        "getEntities0 getGroups0 writeGameToFile readGameFromFile " +
-        "getScreens setScreenDissolve destroyScreen createScreen " +
-        "createDissolveScreen writeScreenToFile readScreenFromFile getGroups " +
-        "createGroup destroyGroup destroyGroups writeGroupToFile " +
-        "readGroupFromFile getEntitiesFlattened getEntities getEntitiesSovereign " +
-        "destroyEntity destroyEntities tryPickEntity writeEntityToFile " +
-        "readEntityFromFile createEntity renameEntity trySetEntityOverlayNameOpt " +
-        "trySetEntityFacetNames getEyePosition2d setEyePosition2d getEyeSize2d " +
-        "setEyeSize2d getEyeBounds2d getEyePosition3d " +
-        "setEyePosition3d getEyeRotation3d setEyeRotation3d getEyeProjection3d " +
-        "setEyeProjection3d getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
-        "setOmniScreen getSelectedScreenOpt constrainEyeBounds2d getSelectedScreen " +
-        "setSelectedScreen getViewBoundsRelative2d getViewBoundsAbsolute2d getViewBounds2d " +
-        "isBoundsInView2d mouseToScreen2d mouseToWorld2d mouseToEntity2d " +
-        "getImperative getStandAlone getCollectionConfig getLiveness " +
-        "getUpdateRate setUpdateRate isAdvancing isHalted " +
-        "getUpdateTime getClockDelta exit tryGetTextureSize " +
-        "getTextureSize tryGetTextureSizeF getTextureSizeF reloadSymbols"
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen reloadExistingAssets " +
+        "tryReloadAssets getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume " +
+        "getMasterSoundVolume getMasterSongVolume setMasterAudioVolume setMasterSoundVolume " +
+        "setMasterSongVolume playSong playSong6 playSound " +
+        "playSound3 fadeOutSong stopSong hintAudioPackageUse " +
+        "hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse2d hintRenderPackageDisuse2d " +
+        "reloadRenderAssets2d localizeBodyShape bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
+        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
+        "applyBodyForce isMouseButtonDown getMousePosition2d isKeyboardKeyDown " +
+        "expandContent destroyImmediate destroy tryGetParent " +
+        "getParent getChildren getExists isSelected " +
+        "ignorePropertyBindings getEntities0 getGroups0 writeGameToFile " +
+        "readGameFromFile getScreens setScreenDissolve destroyScreen " +
+        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
+        "getGroups createGroup destroyGroup destroyGroups " +
+        "writeGroupToFile readGroupFromFile getEntitiesFlattened getEntities " +
+        "getEntitiesSovereign destroyEntity destroyEntities tryPickEntity " +
+        "writeEntityToFile readEntityFromFile createEntity renameEntity " +
+        "trySetEntityOverlayNameOpt trySetEntityFacetNames getEyePosition2d setEyePosition2d " +
+        "getEyeSize2d setEyeSize2d getEyeBounds2d getEyePosition3d " +
+        "setEyePosition3d getEyeRotation3d setEyeRotation3d getEyeFrustum3d " +
+        "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
+        "getSelectedScreenOpt constrainEyeBounds2d getSelectedScreen setSelectedScreen " +
+        "getViewBoundsRelative2d getViewBoundsAbsolute2d getViewBounds2d isBoundsInView2d " +
+        "getViewBounds3d isBoundsInView3d mouseToScreen2d mouseToWorld2d " +
+        "mouseToEntity2d reloadSymbols getImperative getStandAlone " +
+        "getCollectionConfig getLiveness getUpdateRate setUpdateRate " +
+        "isAdvancing isHalted getUpdateTime getClockDelta " +
+        "exit tryGetTextureSize getTextureSize tryGetTextureSizeF " +
+        "getTextureSizeF tryGetWindowFlags tryGetWindowMinimized tryGetWindowMaximized " +
+        "tryGetWindowFullScreen trySetWindowFullScreen tryGetWindowSize shouldSleep"
 
     let resolve relation world =
         let oldWorld = world
@@ -2116,28 +2117,15 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeRotation3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getEyeProjection3d world =
+    let getEyeFrustum3d world =
         let oldWorld = world
         try
-            let result = World.getEyeProjection3d world
+            let result = World.getEyeFrustum3d world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Matrix4x4> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<Frustum> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeProjection3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let setEyeProjection3d value world =
-        let oldWorld = world
-        try
-            let value =
-                match ScriptingSystem.tryExport typeof<Matrix4x4> value world with
-                | Some value -> value :?> Matrix4x4
-                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to Matrix4x4."
-            let result = World.setEyeProjection3d value world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeProjection3d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getOmniScreenOpt world =
@@ -2304,6 +2292,32 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getViewBounds3d world =
+        let oldWorld = world
+        try
+            let result = World.getViewBounds3d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Frustum> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds3d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let isBoundsInView3d bounds world =
+        let oldWorld = world
+        try
+            let bounds =
+                match ScriptingSystem.tryExport typeof<Box3> bounds world with
+                | Some value -> value :?> Box3
+                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box3."
+            let result = World.isBoundsInView3d bounds world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView3d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let mouseToScreen2d mousePosition world =
         let oldWorld = world
         try
@@ -2359,6 +2373,17 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToEntity2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let reloadSymbols world =
+        let oldWorld = world
+        try
+            let result = World.reloadSymbols world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getImperative world =
@@ -2542,15 +2567,83 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let reloadSymbols world =
+    let tryGetWindowFlags world =
         let oldWorld = world
         try
-            let result = World.reloadSymbols world
+            let result = World.tryGetWindowFlags world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<UInt32>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowFlags' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetWindowMinimized world =
+        let oldWorld = world
+        try
+            let result = World.tryGetWindowMinimized world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Boolean>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowMinimized' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetWindowMaximized world =
+        let oldWorld = world
+        try
+            let result = World.tryGetWindowMaximized world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Boolean>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowMaximized' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetWindowFullScreen world =
+        let oldWorld = world
+        try
+            let result = World.tryGetWindowFullScreen world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Boolean>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowFullScreen' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let trySetWindowFullScreen fullScreen world =
+        let oldWorld = world
+        try
+            let fullScreen =
+                match ScriptingSystem.tryExport typeof<Boolean> fullScreen world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'fullScreen'; expecting a value convertable to Boolean."
+            let result = World.trySetWindowFullScreen fullScreen world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetWindowFullScreen' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetWindowSize world =
+        let oldWorld = world
+        try
+            let result = World.tryGetWindowSize world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowSize' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let shouldSleep world =
+        let oldWorld = world
+        try
+            let result = World.shouldSleep world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'shouldSleep' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let evalResolveBinding fnName exprs originOpt world =
@@ -3763,23 +3856,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEyeProjection3dBinding fnName exprs originOpt world =
+    let evalGetEyeFrustum3dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeProjection3d world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalSetEyeProjection3dBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|value|] -> setEyeProjection3d value world
+            | [||] -> getEyeFrustum3d world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3917,6 +3999,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetViewBounds3dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewBounds3d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalIsBoundsInView3dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|bounds|] -> isBoundsInView3d bounds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalMouseToScreen2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3945,6 +4049,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|absolute; entityPosition; mousePosition|] -> mouseToEntity2d absolute entityPosition mousePosition world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalReloadSymbolsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadSymbols world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4115,12 +4230,78 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalReloadSymbolsBinding fnName exprs originOpt world =
+    let evalTryGetWindowFlagsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> reloadSymbols world
+            | [||] -> tryGetWindowFlags world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetWindowMinimizedBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetWindowMinimized world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetWindowMaximizedBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetWindowMaximized world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetWindowFullScreenBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetWindowFullScreen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTrySetWindowFullScreenBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|fullScreen|] -> trySetWindowFullScreen fullScreen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetWindowSizeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetWindowSize world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalShouldSleepBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> shouldSleep world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4244,8 +4425,7 @@ module WorldBindings =
              ("setEyePosition3d", { Fn = evalSetEyePosition3dBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeRotation3d", { Fn = evalGetEyeRotation3dBinding; Pars = [||]; DocOpt = None })
              ("setEyeRotation3d", { Fn = evalSetEyeRotation3dBinding; Pars = [|"value"|]; DocOpt = None })
-             ("getEyeProjection3d", { Fn = evalGetEyeProjection3dBinding; Pars = [||]; DocOpt = None })
-             ("setEyeProjection3d", { Fn = evalSetEyeProjection3dBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getEyeFrustum3d", { Fn = evalGetEyeFrustum3dBinding; Pars = [||]; DocOpt = None })
              ("getOmniScreenOpt", { Fn = evalGetOmniScreenOptBinding; Pars = [||]; DocOpt = None })
              ("setOmniScreenOpt", { Fn = evalSetOmniScreenOptBinding; Pars = [|"value"|]; DocOpt = None })
              ("getOmniScreen", { Fn = evalGetOmniScreenBinding; Pars = [||]; DocOpt = None })
@@ -4258,9 +4438,12 @@ module WorldBindings =
              ("getViewBoundsAbsolute2d", { Fn = evalGetViewBoundsAbsolute2dBinding; Pars = [||]; DocOpt = None })
              ("getViewBounds2d", { Fn = evalGetViewBounds2dBinding; Pars = [|"absolute"|]; DocOpt = None })
              ("isBoundsInView2d", { Fn = evalIsBoundsInView2dBinding; Pars = [|"absolute"; "bounds"|]; DocOpt = None })
+             ("getViewBounds3d", { Fn = evalGetViewBounds3dBinding; Pars = [||]; DocOpt = None })
+             ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("mouseToScreen2d", { Fn = evalMouseToScreen2dBinding; Pars = [|"mousePosition"|]; DocOpt = None })
              ("mouseToWorld2d", { Fn = evalMouseToWorld2dBinding; Pars = [|"absolute"; "mousePosition"|]; DocOpt = None })
              ("mouseToEntity2d", { Fn = evalMouseToEntity2dBinding; Pars = [|"absolute"; "entityPosition"; "mousePosition"|]; DocOpt = None })
+             ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
              ("getImperative", { Fn = evalGetImperativeBinding; Pars = [||]; DocOpt = None })
              ("getStandAlone", { Fn = evalGetStandAloneBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })
@@ -4276,7 +4459,13 @@ module WorldBindings =
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
-             ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
+             ("tryGetWindowFlags", { Fn = evalTryGetWindowFlagsBinding; Pars = [||]; DocOpt = None })
+             ("tryGetWindowMinimized", { Fn = evalTryGetWindowMinimizedBinding; Pars = [||]; DocOpt = None })
+             ("tryGetWindowMaximized", { Fn = evalTryGetWindowMaximizedBinding; Pars = [||]; DocOpt = None })
+             ("tryGetWindowFullScreen", { Fn = evalTryGetWindowFullScreenBinding; Pars = [||]; DocOpt = None })
+             ("trySetWindowFullScreen", { Fn = evalTrySetWindowFullScreenBinding; Pars = [|"fullScreen"|]; DocOpt = None })
+             ("tryGetWindowSize", { Fn = evalTryGetWindowSizeBinding; Pars = [||]; DocOpt = None })
+             ("shouldSleep", { Fn = evalShouldSleepBinding; Pars = [||]; DocOpt = None })
             ] |>
             dictPlus StringComparer.Ordinal
         WorldScripting.Bindings <- bindings

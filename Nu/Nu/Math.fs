@@ -624,7 +624,7 @@ module Quaternion =
     type Quaternion with
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
-    let quatId = Quaternion.Identity
+    let quatIdentity = Quaternion.Identity
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
 
@@ -1171,7 +1171,7 @@ module Math =
         bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y
 
     /// Check that a bounds is intersecting the given bounds.
-    /// TODO: move this into Box3 definition.
+    /// TODO: 3D: move this into Box3 definition.
     let isBoundsIntersectingBounds3d (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
@@ -1181,7 +1181,7 @@ module Math =
         bounds.Position.Z + bounds.Size.Z > bounds2.Position.Z
 
     /// Check that a bounds is intersecting the given bounds.
-    /// TODO: move this into Box2 definition.
+    /// TODO: 3D: move this into Box2 definition.
     let isBoundsIntersectingBounds2d (bounds : Box2) (bounds2 : Box2) =
         bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
         bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&

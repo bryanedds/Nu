@@ -537,7 +537,7 @@ module WorldTypes =
           EyeSize2d : Vector2
           EyePosition3d : Vector3
           EyeRotation3d : Quaternion
-          EyeProjection3dRef : Matrix4x4 ref
+          EyeFrustum3d : Frustum
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -547,6 +547,13 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
+            let eyePosition3d = v3Zero
+            let eyeRotation3d = quatIdentity
+            let mutable frustum = Matrix4x4.CreateFromQuaternion eyeRotation3d
+            frustum.M41 <- eyePosition3d.X
+            frustum.M42 <- eyePosition3d.Y
+            frustum.M43 <- eyePosition3d.Z
+            let eyeFrustum3d = Frustum frustum
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -556,9 +563,9 @@ module WorldTypes =
               DesiredScreenOpt = None
               EyePosition2d = v2Zero
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
-              EyePosition3d = v3Zero
-              EyeRotation3d = quatId
-              EyeProjection3dRef = ref Matrix4x4.Identity
+              EyePosition3d = eyePosition3d
+              EyeRotation3d = eyeRotation3d
+              EyeFrustum3d = eyeFrustum3d
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }

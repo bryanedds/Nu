@@ -251,6 +251,9 @@ module WorldEntityModule =
         /// Check that an entity is in the camera's view.
         member this.GetInView2d world = World.getEntityInView2d this world
 
+        /// Check that an entity is in the camera's view.
+        member this.GetInView3d world = World.getEntityInView3d this world
+
         /// Check that an entity is selected.
         member this.IsSelected world =
             let gameState = World.getGameState world

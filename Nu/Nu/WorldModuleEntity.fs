@@ -1642,6 +1642,13 @@ module WorldModuleEntity =
             then World.isBoundsInView2d transform.Absolute transform.Bounds.Box2 world
             else true
 
+        static member internal getEntityInView3d entity world =
+            let entityState = World.getEntityState entity world
+            let mutable transform = &entityState.Transform
+            if not transform.Omnipresent
+            then World.isBoundsInView3d transform.Bounds world
+            else true
+
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world
             let facets = World.getEntityFacets entity world

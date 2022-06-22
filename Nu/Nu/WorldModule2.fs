@@ -713,6 +713,30 @@ module WorldModule2 =
         static member getEntitiesAtPoint2d point world =
             World.getEntities2dBy (Quadtree.getElementsAtPoint point) world
 
+        static member private getEntities3dBy getElementsFromQuadtree world =
+            let octree = World.getOctree world
+            let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
+            let world = World.setOctree octreeCache world
+            let entities = getElementsFromQuadtree octree
+            (entities, world)
+
+        /// Get all omnipresent (non-cullable) 3d entities.
+        static member getEntitiesOmnipresent3d world =
+            World.getEntities3dBy Octree.getElementsOmnipresent world
+
+        /// Get all 3d entities in the current 3d view, including all omnipresent entities.
+        static member getEntitiesInView3d discriminatingIntent world =
+            let viewBounds = World.getViewBounds3d world
+            World.getEntities3dBy (Octree.getElementsInDiscriminatingFrustum discriminatingIntent { Unenclosed = viewBounds; Enclosed = viewBounds }) world // TODO: 3D: proper enclosed frustum.
+
+        /// Get all 3d entities in the given bounds, including all omnipresent entities.
+        static member getEntitiesInBounds3d bounds world =
+            World.getEntities3dBy (Octree.getElementsInBounds bounds) world
+
+        /// Get all 3d entities at the given point, including all omnipresent entities.
+        static member getEntitiesAtPoint3d point world =
+            World.getEntities3dBy (Octree.getElementsAtPoint point) world
+
         static member private updateSimulants world =
 
             // gather simulants
