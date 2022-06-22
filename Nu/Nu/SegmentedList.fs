@@ -250,7 +250,7 @@ module SegmentedList =
 
     let singleton item =
         let result = makeWithCapacity 1
-        result.[0] <- item
+        add item result
         result
 
     let ofSeq (seq : 'a seq) =
