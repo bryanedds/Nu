@@ -1,4 +1,5 @@
 ﻿// Nu Game Engine.
+// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
@@ -104,7 +105,7 @@ module Hl =
             PhysicallyBasedSurface.hash this
 
     /// Type alias for an array of surfaces.
-    type PhysicallyBasedModel = PhysicallyBasedSurface array
+    type PhysicallyBasedStaticModel = PhysicallyBasedSurface array
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -399,7 +400,7 @@ module Hl =
         | Some error -> Left error
         | None -> Right materials
 
-    let TryCreatePhysicallyBasedModel (filePath, assimp : Assimp.AssimpContext) : Either<string, PhysicallyBasedModel> =
+    let TryCreatePhysicallyBasedStaticModel (filePath, assimp : Assimp.AssimpContext) : Either<string, PhysicallyBasedStaticModel> =
         try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (dirPath, scene) with
@@ -427,8 +428,8 @@ module Hl =
                 match errorOpt with
                 | None -> Right (Array.ofSeq model)
                 | Some error -> Left error
-            | Left error -> Left ("Could not load materials for model in file name '" + filePath + "' due to: " + error)
-        with exn -> Left ("Could not load model '" + filePath + "' due to: " + scstring exn)
+            | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
+        with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
 
     /// Create a texture frame buffer.
     let CreateTextureFramebuffer () =
@@ -833,7 +834,7 @@ module Hl =
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
     /// Draw a physically-based surface.
-    let DrawSurfaces
+    let DrawPhysicallyBasedStaticSurfaces
         (eyePosition : Vector3,
          modelsFields : single array,
          modelsCount : int,

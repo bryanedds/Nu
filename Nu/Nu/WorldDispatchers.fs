@@ -1242,6 +1242,28 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
+module StaticModelFacetModule =
+
+    type Entity with
+        member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
+        member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
+        member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
+
+    type StaticModelFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world && entity.GetInView2d world then
+                let mutable transform = entity.GetTransform world
+                let affineMatrix = transform.AffineMatrix
+                let staticModel = entity.GetStaticModel world
+                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (staticModel, affineMatrix)) world
+            else world
+
+[<AutoOpen>]
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
@@ -2303,6 +2325,18 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
+
+[<AutoOpen>]
+module StaticModelDispatcherModule =
+
+    type StaticModelDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<StaticModelFacet>]
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel]
 
 [<AutoOpen>]
 module GroupDispatcherModule =
