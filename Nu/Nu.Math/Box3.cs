@@ -76,6 +76,48 @@ namespace Nu
         }
 
         /// <summary>
+        /// Combine area of box with a point.
+        /// </summary>
+        /// <param name="box"></param>
+        /// <returns>Box containing area of both.</returns>
+        public Box3 Combine(Vector3 point)
+		{
+            var min = Position;
+            var max = min + Size;
+            var min2 = new Vector3();
+            var max2 = new Vector3();
+            min2.X = Math.Min(min.X, point.X);
+            min2.Y = Math.Min(min.Y, point.Y);
+            min2.Z = Math.Min(min.Z, point.Z);
+            max2.X = Math.Max(max.X, point.X);
+            max2.Y = Math.Max(max.Y, point.Y);
+            max2.Z = Math.Max(max.Z, point.Z);
+            return new Box3(min, max - min);
+		}
+
+        /// <summary>
+        /// Combine area of two boxes.
+        /// </summary>
+        /// <param name="box"></param>
+        /// <returns>Box containing area of both.</returns>
+        public Box3 Combine(Box3 box)
+		{
+            var min = Position;
+            var max = min + Size;
+            var min2 = box.Position;
+            var max2 = min2 + box.Size;
+            var min3 = new Vector3();
+            var max3 = new Vector3();
+            min3.X = Math.Min(min.X, min2.X);
+            min3.Y = Math.Min(min.Y, min2.Y);
+            min3.Z = Math.Min(min.Z, min2.Z);
+            max3.X = Math.Max(max.X, max2.X);
+            max3.Y = Math.Max(max.Y, max2.Y);
+            max3.Z = Math.Max(max.Z, max2.Z);
+            return new Box3(min, max - min);
+		}
+
+        /// <summary>
         /// Equality comparator.
         /// </summary>
         /// <param name="left">The left operand.</param>

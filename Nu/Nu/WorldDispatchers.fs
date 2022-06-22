@@ -1263,6 +1263,10 @@ module StaticModelFacetModule =
                 World.enqueueRenderMessage3d (RenderStaticModelDescriptor (staticModel, affineMatrix)) world
             else world
 
+        override this.GetQuickSize (entity, world) =
+            let tmxMap = entity.GetTmxMap worl
+            TmxMap.getQuickSize tmxMap
+
 [<AutoOpen>]
 module EntityDispatcherModule =
 

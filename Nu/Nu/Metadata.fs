@@ -19,6 +19,7 @@ exception TileSetPropertyNotFoundException of string
 type [<NoEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
+    | StaticModelMetadata of OpenGL.Hl.PhysicallyBasedStaticModel
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -83,6 +84,20 @@ module Metadata =
             Log.trace errorMessage
             InvalidMetadata errorMessage
 
+    let private generateStaticModelMetadata asset =
+        if not (File.Exists asset.FilePath) then
+            let errorMessage = "Failed to load static model due to missing file '" + asset.FilePath + "'."
+            Log.trace errorMessage
+            InvalidMetadata errorMessage
+        else
+            use assimp = new Assimp.AssimpContext ()
+            match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, assimp) with
+            | Right model -> StaticModelMetadata model
+            | Left error ->
+                let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
+                Log.trace errorMessage
+                InvalidMetadata errorMessage
+
     let private generateAssetMetadata asset =
         let extension = Path.GetExtension asset.FilePath
         let metadata =
@@ -90,6 +105,7 @@ module Metadata =
             | ".bmp"
             | ".png" -> generateTextureMetadata asset
             | ".tmx" -> generateTileMapMetadata asset
+            | ".obj" -> generateStaticModelMetadata asset
             | ".wav" -> SoundMetadata
             | ".ogg" -> SongMetadata
             | _ -> InvalidMetadata ("Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'.")
@@ -162,6 +178,27 @@ module Metadata =
     /// Forcibly get the tile map metadata of the given asset (throwing on failure).
     let getTileMapMetadata assetTag metadata =
         Option.get (tryGetTileMapMetadata assetTag metadata)
+
+    /// Try to get the static model of the given asset.
+    let tryGetStaticModel (assetTag : TileMap AssetTag) metadata =
+        match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+        | Some (StaticModelMetadata model) -> Some model
+        | None -> None
+        | _ -> None
+
+    /// Forcibly get the static model of the given asset (throwing on failure).
+    let getStaticModel assetTag metadata =
+        Option.get (tryGetStaticModel assetTag metadata)
+
+    /// Try to get the bounds metadata of the given asset.
+    let tryGetBounds assetTag metadata =
+        match tryGetStaticModel assetTag metadata with
+        | Some model -> Some model.Bounds
+        | None -> None
+
+    /// Forcibly get the bounds metadata of the given asset (throwing on failure).
+    let getBounds assetTag metadata =
+        Option.get (tryGetBounds assetTag metadata)
 
     /// Get a copy of the metadata map.
     let getMetadataMap metadata =
