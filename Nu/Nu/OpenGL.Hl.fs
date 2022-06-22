@@ -29,6 +29,14 @@ type TextureMetadata =
       TextureTexelHeight : single
       TextureInternalFormat : OpenGL.InternalFormat }
 
+    /// Unpopulated texture data.
+    static member empty =
+        { TextureWidth = 0
+          TextureHeight = 0
+          TextureTexelWidth = 0.0f
+          TextureTexelHeight = 0.0f
+          TextureInternalFormat = Unchecked.defaultof<_> }
+
 /// Force qualification of OpenGL namespace in Nu unless opened explicitly.
 [<RequireQualifiedAccess>]
 module OpenGL = let _ = ()
@@ -441,7 +449,7 @@ module Hl =
                             let materialOpt =
                                 if createMaterials
                                 then materials.TryGetValue mesh.MaterialIndex
-                                else (true, Unchecked.defaultof<_>)
+                                else (true, ((TextureMetadata.empty, 0u), (TextureMetadata.empty, 0u), (TextureMetadata.empty, 0u), (TextureMetadata.empty, 0u), (TextureMetadata.empty, 0u)))
                             match materialOpt with
                             | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
                                 let surface =

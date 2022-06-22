@@ -124,13 +124,9 @@ module WorldModuleGame =
         /// Set the current 3d eye position.
         static member internal setEyePosition3dPlus (value : Vector3) world =
             World.updateGameState (fun gameState ->
-                let mutable frustum = Matrix4x4.CreateFromQuaternion gameState.EyeRotation3d
-                frustum.M41 <- value.X
-                frustum.M42 <- value.Y
-                frustum.M43 <- value.Z
-                let eyeFrustum3d = Frustum frustum
-                if v3Neq value gameState.EyePosition3d
-                then { gameState with EyePosition3d = value; EyeFrustum3d = eyeFrustum3d }
+                if v3Neq value gameState.EyePosition3d then
+                    let eyeFrustum3d = GlRenderer3d.computeFrustum value gameState.EyeRotation3d
+                    { gameState with EyePosition3d = value; EyeFrustum3d = eyeFrustum3d }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -146,13 +142,9 @@ module WorldModuleGame =
         /// Set the current 3d eye rotation.
         static member internal setEyeRotation3dPlus value world =
             World.updateGameState (fun gameState ->
-                let mutable frustum = Matrix4x4.CreateFromQuaternion value
-                frustum.M41 <- gameState.EyePosition3d.X
-                frustum.M42 <- gameState.EyePosition3d.Y
-                frustum.M43 <- gameState.EyePosition3d.Z
-                let eyeFrustum3d = Frustum frustum
-                if quatNeq value gameState.EyeRotation3d
-                then { gameState with EyeRotation3d = value; EyeFrustum3d = eyeFrustum3d }
+                if quatNeq value gameState.EyeRotation3d then
+                    let eyeFrustum3d = GlRenderer3d.computeFrustum gameState.EyePosition3d value
+                    { gameState with EyeRotation3d = value; EyeFrustum3d = eyeFrustum3d }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.

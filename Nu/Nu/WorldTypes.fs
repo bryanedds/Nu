@@ -549,11 +549,7 @@ module WorldTypes =
         static member make (dispatcher : GameDispatcher) =
             let eyePosition3d = v3Zero
             let eyeRotation3d = quatIdentity
-            let mutable frustum = Matrix4x4.CreateFromQuaternion eyeRotation3d
-            frustum.M41 <- eyePosition3d.X
-            frustum.M42 <- eyePosition3d.Y
-            frustum.M43 <- eyePosition3d.Z
-            let eyeFrustum3d = Frustum frustum
+            let eyeFrustum3d = GlRenderer3d.computeFrustum eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
