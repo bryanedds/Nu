@@ -842,11 +842,11 @@ module Hl =
 
         // setup geometry
         OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
         Assert ()
 
