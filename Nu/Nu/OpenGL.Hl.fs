@@ -295,90 +295,95 @@ module Hl =
             mesh.HasNormals &&
             mesh.HasTextureCoords 0 then
 
-            // populate vertex data and bounds
-            let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
-            let mutable positionMin = v3Zero
-            let mutable positionMax = v3Zero
-            for i in 0 .. dec mesh.Vertices.Count do
-                let v = i * 8
-                let position = mesh.Vertices.[i]
-                let normal = mesh.Normals.[i]
-                let texCoords = mesh.TextureCoordinateChannels.[0].[i]
-                vertexData.[v] <- position.X
-                vertexData.[v+1] <- position.Y
-                vertexData.[v+2] <- position.Z
-                vertexData.[v+3] <- normal.X
-                vertexData.[v+4] <- normal.Y
-                vertexData.[v+5] <- normal.Z
-                vertexData.[v+6] <- texCoords.X
-                vertexData.[v+7] <- texCoords.Z
-                positionMin.X <- min positionMin.X position.X
-                positionMin.Y <- min positionMin.Y position.Y
-                positionMin.Z <- min positionMin.Z position.Z
-                positionMax.X <- max positionMax.X position.X
-                positionMax.Y <- max positionMax.Y position.Y
-                positionMax.Z <- max positionMax.Z position.Z
-            let bounds = box3 positionMin (positionMax - positionMin)
+            // attempt to populate geometry data
+            if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
-            // populate index data
-            let indexData = mesh.GetIndices ()
+                // populate vertex data and bounds
+                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+                let mutable positionMin = v3Zero
+                let mutable positionMax = v3Zero
+                for i in 0 .. dec mesh.Vertices.Count do
+                    let v = i * 8
+                    let position = mesh.Vertices.[i]
+                    let normal = mesh.Normals.[i]
+                    let texCoords = mesh.TextureCoordinateChannels.[0].[i]
+                    vertexData.[v] <- position.X
+                    vertexData.[v+1] <- position.Y
+                    vertexData.[v+2] <- position.Z
+                    vertexData.[v+3] <- normal.X
+                    vertexData.[v+4] <- normal.Y
+                    vertexData.[v+5] <- normal.Z
+                    vertexData.[v+6] <- texCoords.X
+                    vertexData.[v+7] <- texCoords.Z
+                    positionMin.X <- min positionMin.X position.X
+                    positionMin.Y <- min positionMin.Y position.Y
+                    positionMin.Z <- min positionMin.Z position.Z
+                    positionMax.X <- max positionMax.X position.X
+                    positionMax.Y <- max positionMax.Y position.Y
+                    positionMax.Z <- max positionMax.Z position.Z
+                let bounds = box3 positionMin (positionMax - positionMin)
 
-            // initialize vao
-            let vao = OpenGL.Gl.GenVertexArray ()
-            OpenGL.Gl.BindVertexArray vao
-            Assert ()
+                // populate index data
+                let indexData = mesh.GetIndices ()
 
-            // create vertex buffer
-            let vertexBuffer = OpenGL.Gl.GenBuffer ()
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-            let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-            try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
-            finally vertexBufferPtr.Free ()
-            Assert ()
+                // initialize vao
+                let vao = OpenGL.Gl.GenVertexArray ()
+                OpenGL.Gl.BindVertexArray vao
+                Assert ()
 
-            // create index buffer
-            let indexBuffer = OpenGL.Gl.GenBuffer ()
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-            let indexDataSize = uint (indexData.Length * sizeof<uint>)
-            let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-            try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-            finally indexDataPtr.Free ()
-            Assert ()
+                // create vertex buffer
+                let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+                let vertexBufferPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexBufferPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                finally vertexBufferPtr.Free ()
+                Assert ()
 
-            // finalize vao
-            let normalOffset =      (3 (*position*)) * sizeof<single>
-            let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
-            let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-            OpenGL.Gl.EnableVertexAttribArray 0u
-            OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-            OpenGL.Gl.EnableVertexAttribArray 1u
-            OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-            OpenGL.Gl.EnableVertexAttribArray 2u
-            OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
-            OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
-            OpenGL.Gl.BindVertexArray 0u
-            Assert ()
+                // create index buffer
+                let indexBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexDataSize = uint (indexData.Length * sizeof<uint>)
+                let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                finally indexDataPtr.Free ()
+                Assert ()
+
+                // finalize vao
+                let normalOffset =      (3 (*position*)) * sizeof<single>
+                let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
+                OpenGL.Gl.EnableVertexAttribArray 0u
+                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+                OpenGL.Gl.EnableVertexAttribArray 1u
+                OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+                OpenGL.Gl.EnableVertexAttribArray 2u
+                OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+                OpenGL.Gl.BindVertexArray 0u
+                Assert ()
             
-            // compute vertices
-            let vertices = Array.zeroCreate (vertexData.Length / 3)
-            for i in 0 .. dec vertices.Length do
-                let j = i * 3
-                let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                vertices.[i] <- vertex
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 3)
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 3
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
 
-            // make physically based geometry
-            let geometry =
-                { Bounds = bounds
-                  Vertices = vertices
-                  VertexBuffer = vertexBuffer
-                  IndexBuffer = indexBuffer
-                  PrimitiveType = OpenGL.PrimitiveType.Triangles
-                  ElementCount = mesh.FaceCount
-                  PhysicallyBasedVao = vao }
+                // make physically based geometry
+                let geometry =
+                    { Bounds = bounds
+                      Vertices = vertices
+                      VertexBuffer = vertexBuffer
+                      IndexBuffer = indexBuffer
+                      PrimitiveType = OpenGL.PrimitiveType.Triangles
+                      ElementCount = mesh.FaceCount
+                      PhysicallyBasedVao = vao }
 
-            // fin
-            Right geometry
+                // fin
+                Right geometry
+
+            else Left ("Vertex / normal / tex coords count mismatch.")
 
         // error
         else Left "Mesh is missing vertices, normals, or texCoords."
