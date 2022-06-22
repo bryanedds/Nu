@@ -180,7 +180,7 @@ module Metadata =
         Option.get (tryGetTileMapMetadata assetTag metadata)
 
     /// Try to get the static model of the given asset.
-    let tryGetStaticModel (assetTag : TileMap AssetTag) metadata =
+    let tryGetStaticModel (assetTag : StaticModel AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
         | Some (StaticModelMetadata model) -> Some model
         | None -> None

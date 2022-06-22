@@ -713,10 +713,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             model.M42 <- single (i % 256 - 128) * 1.5f
                             model.ToArray ())
 
-                    OpenGL.Hl.DrawPhysicallyBasedStaticSurfaces
+                    OpenGL.Hl.DrawPhysicallyBasedSurfaces
                         (eyePosition, Array.concat models, models.Length, view, projection,
                          albedoMap, metalnessMap, roughnessMap, normalMap, ambientOcclusionMap,
-                         lightPositions, lightColors, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer, shader, cube)
+                         lightPositions, lightColors, modelRow0Buffer, modelRow1Buffer, modelRow2Buffer, modelRow3Buffer,
+                         cube, shader)
                     OpenGL.Hl.Assert ()
 
                     // teardown state
