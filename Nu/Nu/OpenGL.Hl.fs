@@ -400,7 +400,7 @@ module Hl =
                       ElementCount = mesh.FaceCount
                       PhysicallyBasedVao = vao }
 
-                // fin
+                // success
                 Right geometry
 
             // error
