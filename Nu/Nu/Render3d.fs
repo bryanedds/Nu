@@ -196,6 +196,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
     /// Compute the 3d projection matrix.
+    /// TODO: 3D: expose this elsewhere.
     static member computeProjection () =
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
@@ -204,6 +205,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              Constants.Render.FarPlaneDistance)
 
     /// Compute the 3d view frustum.
+    /// TODO: 3D: expose this elsewhere.
     static member computeFrustum (eyePosition : Vector3) eyeRotation =
         let mutable view = Matrix4x4.CreateFromQuaternion eyeRotation
         view.M41 <- eyePosition.X

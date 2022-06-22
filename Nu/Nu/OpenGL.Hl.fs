@@ -148,10 +148,10 @@ module Hl =
         Marshal.Copy (message, messageBytes, 0, length)
         let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
         match severity with
-        | OpenGL.DebugSeverity.DebugSeverityNotification
         | OpenGL.DebugSeverity.DebugSeverityLow -> Log.info messageStr
         | OpenGL.DebugSeverity.DebugSeverityMedium
         | OpenGL.DebugSeverity.DebugSeverityHigh -> Log.debug messageStr
+        | OpenGL.DebugSeverity.DebugSeverityNotification
         | OpenGL.DebugSeverity.DontCare
         | _ -> ()
 
@@ -315,9 +315,9 @@ module Hl =
                 positionMin.X <- min positionMin.X position.X
                 positionMin.Y <- min positionMin.Y position.Y
                 positionMin.Z <- min positionMin.Z position.Z
-                positionMax.X <- min positionMax.X position.X
-                positionMax.Y <- min positionMax.Y position.Y
-                positionMax.Z <- min positionMax.Z position.Z
+                positionMax.X <- max positionMax.X position.X
+                positionMax.Y <- max positionMax.Y position.Y
+                positionMax.Z <- max positionMax.Z position.Z
             let bounds = box3 positionMin (positionMax - positionMin)
 
             // populate index data
@@ -374,7 +374,7 @@ module Hl =
                   VertexBuffer = vertexBuffer
                   IndexBuffer = indexBuffer
                   PrimitiveType = OpenGL.PrimitiveType.Triangles
-                  ElementCount = 36
+                  ElementCount = mesh.FaceCount
                   PhysicallyBasedVao = vao }
 
             // fin
