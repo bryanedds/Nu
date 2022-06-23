@@ -5,14 +5,12 @@
   [Persistent True]
   [Visible True]]
  [[StaticModelDispatcher
-   [[Name StaticModel-0001]
-    [Position [-2 2.5 0]]
+   [[Position [-2 2.5 0]]
     [Rotation [0 0 0 1]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
   [StaticModelDispatcher
-   [[Name StaticModel-0002]
-    [Position [2 2.5 0]]
+   [[Position [2 2.5 0]]
     [Rotation [0 0 0 1]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
