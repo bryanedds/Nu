@@ -833,7 +833,6 @@ module Hl =
         OpenGL.Gl.DepthMask true
         OpenGL.Gl.DepthFunc DepthFunction.Lequal
         OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
-        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         Assert ()
 
@@ -899,7 +898,6 @@ module Hl =
 
         // teardown state
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.DepthMask false
