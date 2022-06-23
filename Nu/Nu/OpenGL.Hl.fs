@@ -816,6 +816,7 @@ module Hl =
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
         OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
+        OpenGL.Gl.DepthFunc DepthFunction.Lequal
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
@@ -881,5 +882,6 @@ module Hl =
         // teardown state
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
