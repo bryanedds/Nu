@@ -547,7 +547,7 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyePosition3d = v3Backward * 2.0f + v3Up * 2.0f
+            let eyePosition3d = v3Backward * 4.0f + v3Up * 2.0f
             let eyeRotation3d = quatIdentity
             let eyeFrustum3d = GlRenderer3d.computeFrustum eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
