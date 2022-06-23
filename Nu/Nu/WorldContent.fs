@@ -220,6 +220,9 @@ module Content =
     /// Describe static scenery with the given initializers.
     let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
+    /// Describe static model with the given initializers.
+    let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
+
 [<AutoOpen>]
 module ContentOperators =
 

@@ -444,7 +444,8 @@ module WorldModule3 =
                  RigidBodyFacet () :> Facet
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
-                 TmxMapFacet () :> Facet]
+                 TmxMapFacet () :> Facet
+                 StaticModelFacet () :> Facet]
 
         /// Make an empty world.
         static member makeEmpty (config : WorldConfig) =
