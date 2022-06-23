@@ -70,7 +70,7 @@ module Render =
     let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
     let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
-    let (*Literal*) FieldOfView = single (Math.PI / 2.0)
+    let (*Literal*) FieldOfView = single (Math.PI / 3.0)
     let (*Literal*) AspectRatio = ResolutionF.X / ResolutionF.Y
     let (*Literal*) NearPlaneDistance = 0.0009765625f // about 1mm
     let (*Literal*) FarPlaneDistance = 256.0f
