@@ -315,7 +315,7 @@ module Hl =
                     vertexData.[v+4] <- normal.Y
                     vertexData.[v+5] <- normal.Z
                     vertexData.[v+6] <- texCoords.X
-                    vertexData.[v+7] <- texCoords.Y
+                    vertexData.[v+7] <- 1.0f - texCoords.Y
                     positionMin.X <- min positionMin.X position.X
                     positionMin.Y <- min positionMin.Y position.Y
                     positionMin.Z <- min positionMin.Z position.Z
@@ -344,7 +344,7 @@ module Hl =
                 let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
                 OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
                 let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
                 finally vertexDataPtr.Free ()
                 OpenGL.Gl.EnableVertexAttribArray 0u
                 OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
@@ -402,7 +402,7 @@ module Hl =
                       ModelBuffer = modelBuffer
                       IndexBuffer = indexBuffer
                       PrimitiveType = OpenGL.PrimitiveType.Triangles
-                      ElementCount = mesh.FaceCount
+                      ElementCount = indexData.Length
                       PhysicallyBasedVao = vao }
 
                 // success
@@ -815,7 +815,8 @@ module Hl =
 
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
 
@@ -880,4 +881,5 @@ module Hl =
         // teardown state
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend

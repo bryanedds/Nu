@@ -269,7 +269,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // just use constant lights for now
-            let lightPositions = [|-50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; 0.0f; 50.0f; -50.0f; 50.0f; 50.0f|]
+            let lightPositions = [|-5.0f; 2.0f; 5.0f; 5.0f; 2.0f; 5.0f; -5.0f; 2.0f; -5.0f; 5.0f; 2.0f; -5.0f|]
             let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
 
             // categorize messages
