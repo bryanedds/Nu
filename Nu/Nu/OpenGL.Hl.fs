@@ -846,13 +846,16 @@ module Hl =
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
-
-        // setup geometry
-        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
+        
+        // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+
+        // setup geometry
+        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
         OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
         Assert ()
