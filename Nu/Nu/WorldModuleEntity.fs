@@ -476,7 +476,7 @@ module WorldModuleEntity =
             let positionMatrix = Matrix4x4.CreateTranslation entityState.PositionLocal
             let rotationMatrix = Matrix4x4.CreateFromQuaternion entityState.RotationLocal
             let scaleMatrix = Matrix4x4.CreateScale entityState.ScaleLocal
-            positionMatrix * rotationMatrix * scaleMatrix
+            scaleMatrix * rotationMatrix * positionMatrix
 
         static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
