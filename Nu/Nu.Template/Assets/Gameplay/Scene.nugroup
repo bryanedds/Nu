@@ -6,12 +6,10 @@
   [Visible True]]
  [[StaticModelDispatcher
    [[Position [-2 2.5 0]]
-    [Rotation [0 0 0 1]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
   [StaticModelDispatcher
    [[Position [2 2.5 0]]
-    [Rotation [0 0 0 1]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
   [Block2dDispatcher
