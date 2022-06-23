@@ -203,6 +203,7 @@ module Hl =
 
         // clear inner viewport
         OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+        OpenGL.Gl.ClearDepth 1.0f
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         Assert ()
 
@@ -814,11 +815,11 @@ module Hl =
          shader : PhysicallyBasedShader) =
 
         // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
-        OpenGL.Gl.DepthFunc DepthFunction.Lequal
         OpenGL.Gl.DepthMask true
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.DepthFunc DepthFunction.Lequal
+        OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
+        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         Assert ()
 
         // setup shader
@@ -846,13 +847,12 @@ module Hl =
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
-        
+
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
 
         // setup geometry
         OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
@@ -884,6 +884,7 @@ module Hl =
 
         // teardown state
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.DepthMask false
         OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
+        OpenGL.Gl.DepthFunc DepthFunction.Less
+        OpenGL.Gl.DepthMask false
