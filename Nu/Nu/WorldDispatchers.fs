@@ -2344,9 +2344,6 @@ module StaticModelDispatcherModule =
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel]
 
-        override this.Update (entity, world) =
-            entity.SetDegrees (entity.GetDegrees world + v3 0.0f 0.1f 0.0f) world
-
 [<AutoOpen>]
 module GroupDispatcherModule =
 
