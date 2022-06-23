@@ -202,9 +202,10 @@ module Hl =
         Assert ()
 
         // clear inner viewport
+        OpenGL.Gl.DepthMask true
         OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
-        OpenGL.Gl.ClearDepth 1.0f
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.DepthMask false
         Assert ()
 
         // clear drawing target
