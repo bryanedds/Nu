@@ -134,11 +134,11 @@ module Vector3 =
     let v3UnitY = Vector3.UnitY
     let v3UnitZ = Vector3.UnitZ
     let v3Up = v3 0.0f 1.0f 0.0f
-    let v3Right = v3 1.0f 0.0f 0.0f
     let v3Down = v3 0.0f -1.0f 0.0f
+    let v3Right = v3 1.0f 0.0f 0.0f
     let v3Left = v3 -1.0f 0.0f 0.0f
-    let v3Forward = v3 -1.0f 0.0f 0.0f
-    let v3Backward = v3 1.0f 0.0f 0.0f
+    let v3Forward = v3 0.0f 0.0f -1.0f
+    let v3Backward = v3 0.0f 0.0f 1.0f
 
 /// The Vector3 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector3Pluggable =
