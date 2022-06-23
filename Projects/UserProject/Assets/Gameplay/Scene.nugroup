@@ -5,19 +5,11 @@
   [Persistent True]
   [Visible True]]
  [[StaticModelDispatcher
-   [[Degrees [0 191.6917 0]]
-    [Name StaticModel-0002]
-    [Rotation [0 -0.9947996 0 -0.1018523]]
-    [Size [3.833142 5.769598 5.354998]]]
-   []]
-  [StaticModelDispatcher
-   [[Degrees [0 191.6917 0]]
-    [Name StaticModel-0001]
-    [Position [2 2 0]]
-    [Rotation [0 -0.9947996 0 -0.1018523]]
+   [[Name StaticModel-0001]
+    [Position [0 2 0]]
+    [Rotation [0 0 0 1]]
     [Scale [1.5 1.5 1.5]]
-    [Size [3.833142 5.769598 5.354998]]]
-   []]
+    [Size [3.833142 5.769598 5.354998]]]]
   [Block2dDispatcher
    [[Position [-320 -184 0]]
     [Size [200 200 0]]]]

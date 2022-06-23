@@ -47,6 +47,8 @@ module Reflection =
              ("AffineMatrix", true)
              ("Angles", true)
              ("AnglesLocal", true)
+             ("Degrees", true)
+             ("DegreesLocal", true)
              ("Imperative", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
