@@ -814,9 +814,9 @@ module Hl =
          shader : PhysicallyBasedShader) =
 
         // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
         OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.DepthFunc DepthFunction.Lequal
+        OpenGL.Gl.DepthMask true
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
         OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
@@ -880,8 +880,7 @@ module Hl =
         Assert ()
 
         // teardown state
-        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
+        OpenGL.Gl.DepthMask false
         OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
