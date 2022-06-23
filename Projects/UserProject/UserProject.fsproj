@@ -87,15 +87,13 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="packages.config" />
-    <None Include="Assets\Default\SideViewCharacterJump.png" />
-    <None Include="Assets\Default\SideViewCharacterIdle.png" />
-    <None Include="Assets\Default\SideViewCharacterWalk.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />
-    <None Include="Assets\Default\Song.ogg" />
-    <None Include="Assets\Default\Sound.wav" />
     <None Include="Assets\Default\Image.png" />
+    <None Include="Assets\Default\Image10.png" />
+    <None Include="Assets\Default\Image11.png" />
+    <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\Image2.png" />
     <None Include="Assets\Default\Image3.png" />
     <None Include="Assets\Default\Image4.png" />
@@ -104,17 +102,27 @@
     <None Include="Assets\Default\Image7.png" />
     <None Include="Assets\Default\Image8.png" />
     <None Include="Assets\Default\Image9.png" />
-    <None Include="Assets\Default\Image10.png" />
-    <None Include="Assets\Default\Image11.png" />
-    <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
-    <None Include="Assets\Default\TileSet.png" />
+    <None Include="Assets\Default\PhysicallyBased.glsl" />
+    <None Include="Assets\Default\SideViewCharacterIdle.png" />
+    <None Include="Assets\Default\SideViewCharacterJump.png" />
+    <None Include="Assets\Default\SideViewCharacterWalk.png" />
+    <None Include="Assets\Default\Song.ogg" />
+    <None Include="Assets\Default\Sound.wav" />
+    <None Include="Assets\Default\StaticModel.mtl" />
+    <None Include="Assets\Default\StaticModel.obj" />
+    <None Include="Assets\Default\StaticModelAlbedo.png" />
+    <None Include="Assets\Default\StaticModelAmbientOcclusion.png" />
+    <None Include="Assets\Default\StaticModelMetalness.png" />
+    <None Include="Assets\Default\StaticModelNormal.png" />
+    <None Include="Assets\Default\StaticModelRoughness.png" />
     <None Include="Assets\Default\TileMap.tmx" />
     <None Include="Assets\Default\TileMapEmpty.tmx" />
+    <None Include="Assets\Default\TileSet.png" />
     <None Include="Assets\Gameplay\Jump.wav" />
     <None Include="Assets\Gameplay\Scene.nugroup" />
-    <None Include="Assets\Gui\Title.nugroup" />
     <None Include="Assets\Gui\Credits.nugroup" />
+    <None Include="Assets\Gui\Title.nugroup" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
