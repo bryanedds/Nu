@@ -144,7 +144,6 @@ module SpriteBatch =
             // setup state
             OpenGL.Gl.Enable OpenGL.EnableCap.Blend
             OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-            OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
             OpenGL.Hl.Assert ()
         
             // setup vao
@@ -182,7 +181,6 @@ module SpriteBatch =
             OpenGL.Hl.Assert ()
 
             // teardown state
-            OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
             OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
             OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 

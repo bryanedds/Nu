@@ -300,6 +300,67 @@ module Hl =
             // attempt to populate geometry data
             if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
+#if DEBUG_RENDERING_CUBE
+                // make vertex data
+                let vertexData =
+                    [|
+                      (*   positions   *)       (*    normals    *)         (* tex coords *)
+
+                      // back face
+                      -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
+                      +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
+                      +0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 0.0f; // bottom-right         
+                      +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
+                      -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
+                      -0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 1.0f; // top-left
+
+                      // front face
+                      -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+                      +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
+                      +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                      +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                      -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
+                      -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+
+                      // left face
+                      -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
+                      -0.5f; +0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-left
+                      -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
+                      -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
+                      -0.5f; -0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-right
+                      -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
+
+                      // right face
+                      +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
+                      +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
+                      +0.5f; +0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-right         
+                      +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
+                      +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
+                      +0.5f; -0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-left     
+
+                      // bottom face
+                      -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
+                      +0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 1.0f; // top-left
+                      +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
+                      +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
+                      -0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 0.0f; // bottom-right
+                      -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
+
+                      // top face
+                      -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
+                      +0.5f; +0.5f ;+0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
+                      +0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 1.0f; // top-right     
+                      +0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
+                      -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
+                      -0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 0.0f  // bottom-left     
+                    |]
+
+                // make index data trivially
+                let indexData = Array.init 36 id
+
+                // make bounds trivially
+                let bounds = box3 (v3Dup -0.5f) v3One
+#else
                 // populate vertex data and bounds
                 let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
                 let mutable positionMin = v3Zero
@@ -328,11 +389,15 @@ module Hl =
                 // populate triangle index data
                 let indexList = SegmentedList.make ()
                 for face in mesh.Faces do
-                    if face.IndexCount = 3 then
-                        for index in face.Indices do
-                            SegmentedList.add index indexList
+                    let indices = face.Indices
+                    if indices.Count = 3 then
+                        // .obj files exported from blender seem to have reverse winding order, so we add indices in
+                        // reverse
+                        SegmentedList.add indices.[2] indexList
+                        SegmentedList.add indices.[1] indexList
+                        SegmentedList.add indices.[0] indexList
                 let indexData = Seq.toArray indexList
-
+#endif
                 // make buffers
                 let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
 
@@ -772,7 +837,6 @@ module Hl =
         // setup state
         OpenGL.Gl.Enable OpenGL.EnableCap.Blend
         OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         Assert ()
 
         // setup shader
@@ -808,7 +872,6 @@ module Hl =
         Assert ()
 
         // teardown state
-        OpenGL.Gl.CullFace OpenGL.CullFaceMode.Back
         OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
         OpenGL.Gl.Disable OpenGL.EnableCap.Blend
 
