@@ -315,7 +315,7 @@ module Hl =
                     vertexData.[v+4] <- normal.Y
                     vertexData.[v+5] <- normal.Z
                     vertexData.[v+6] <- texCoords.X
-                    vertexData.[v+7] <- texCoords.Z
+                    vertexData.[v+7] <- texCoords.Y
                     positionMin.X <- min positionMin.X position.X
                     positionMin.Y <- min positionMin.Y position.Y
                     positionMin.Z <- min positionMin.Z position.Z
@@ -325,7 +325,12 @@ module Hl =
                 let bounds = box3 positionMin (positionMax - positionMin)
 
                 // populate index data
-                let indexData = mesh.GetIndices ()
+                let indexList = SegmentedList.make ()
+                for face in mesh.Faces do
+                    if face.IndexCount = 3 then
+                        for index in face.Indices do
+                            SegmentedList. add index indexList
+                let indexData = Seq.toArray indexList
 
                 // initialize vao
                 let vao = OpenGL.Gl.GenVertexArray ()
