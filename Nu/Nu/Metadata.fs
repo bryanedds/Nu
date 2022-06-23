@@ -23,7 +23,6 @@ type [<NoEquality; NoComparison>] AssetMetadata =
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
-    | InvalidMetadata of string
 
 [<AutoOpen>]
 module TmxExtensions =
@@ -61,61 +60,63 @@ module Metadata =
         private
             { MetadataMap : UMap<string, UMap<string, AssetMetadata>> }
 
-    let private generateTextureMetadata asset =
-        if not (File.Exists asset.FilePath) then
-            let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
-            Log.trace errorMessage
-            InvalidMetadata errorMessage
-        else
+    let private tryGenerateTextureMetadata asset =
+        if File.Exists asset.FilePath then
             // TODO: P1: find an efficient way to pull metadata from a bitmap file without loading its actual bitmap.
             try use bitmap = new Bitmap (asset.FilePath)
-                TextureMetadata (Vector2i (bitmap.Width, bitmap.Height), bitmap.PixelFormat)
+                Some (TextureMetadata (Vector2i (bitmap.Width, bitmap.Height), bitmap.PixelFormat))
             with _ as exn ->
                 let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to: " + scstring exn
                 Log.trace errorMessage
-                InvalidMetadata errorMessage
+                None
+        else
+            let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
+            Log.trace errorMessage
+            None
 
-    let private generateTileMapMetadata asset =
+    let private tryGenerateTileMapMetadata asset =
         try let tmxMap = TmxMap asset.FilePath
             let imageAssets = tmxMap.ImageAssets
-            TileMapMetadata (asset.FilePath, imageAssets, tmxMap)
+            Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
         with _ as exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
-            InvalidMetadata errorMessage
+            None
 
-    let private generateStaticModelMetadata asset =
-        if not (File.Exists asset.FilePath) then
-            let errorMessage = "Failed to load static model due to missing file '" + asset.FilePath + "'."
-            Log.trace errorMessage
-            InvalidMetadata errorMessage
-        else
+    let private tryGenerateStaticModelMetadata asset =
+        if File.Exists asset.FilePath then
             use assimp = new Assimp.AssimpContext ()
             match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, assimp) with
-            | Right model -> StaticModelMetadata model
+            | Right model -> Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
                 Log.trace errorMessage
-                InvalidMetadata errorMessage
+                None
+        else
+            let errorMessage = "Failed to load static model due to missing file '" + asset.FilePath + "'."
+            Log.trace errorMessage
+            None
 
-    let private generateAssetMetadata asset =
+    let private tryGenerateAssetMetadata asset =
         let extension = Path.GetExtension asset.FilePath
-        let metadata =
+        let metadataOpt =
             match extension with
             | ".bmp"
-            | ".png" -> generateTextureMetadata asset
-            | ".tmx" -> generateTileMapMetadata asset
-            | ".obj" -> generateStaticModelMetadata asset
-            | ".wav" -> SoundMetadata
-            | ".ogg" -> SongMetadata
-            | _ -> InvalidMetadata ("Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'.")
-        (asset.AssetTag.AssetName, metadata)
+            | ".png" -> tryGenerateTextureMetadata asset
+            | ".tmx" -> tryGenerateTileMapMetadata asset
+            | ".obj" -> tryGenerateStaticModelMetadata asset
+            | ".wav" -> Some SoundMetadata
+            | ".ogg" -> Some SongMetadata
+            | _ -> None
+        match metadataOpt with
+        | Some metadata -> Some (asset.AssetTag.AssetName, metadata)
+        | None -> None
 
     let private tryGenerateMetadataSubmap imperative packageName assetGraph =
         match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
         | Right assets ->
             let config = if imperative then Imperative else Functional
-            let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq HashIdentity.Structural config
+            let submap = assets |> List.map tryGenerateAssetMetadata |> List.definitize |> UMap.makeFromSeq HashIdentity.Structural config
             (packageName, submap)
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
