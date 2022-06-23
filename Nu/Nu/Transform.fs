@@ -132,7 +132,7 @@ type [<NoEquality; NoComparison>] Transform =
             let positionMatrix = Matrix4x4.CreateTranslation this.Position_
             let rotationMatrix = this.RotationMatrix
             let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-            this.AffineMatrixOpt_ <- ref (positionMatrix * rotationMatrix * scaleMatrix)
+            this.AffineMatrixOpt_ <- ref (scaleMatrix * rotationMatrix * positionMatrix)
             this.AffineMatrixDirty <- false
         this.AffineMatrixOpt_.Value
 
