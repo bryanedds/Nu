@@ -31,10 +31,9 @@ module TransformMasks =
     let [<Literal>] VisibleLocalMask =              0b00000100000000000000000u
     let [<Literal>] CenteredMask =                  0b00001000000000000000000u
     let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
-    let [<Literal>] AffineMatrixDirtyMask =         0b00100000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b01111110010001100100001u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b00100000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b01000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b00111110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -50,13 +49,11 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
-        val mutable private AffineMatrixOpt_ : Matrix4x4 ref
-        // cache line 3
         val mutable private PerimeterOrientedOpt_ : Box3 ref
+        // cache line 3
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Overflow_ : single
-        // cache line 4
         val mutable private Elevation_ : single
         end
 
@@ -80,16 +77,15 @@ type [<NoEquality; NoComparison>] Transform =
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
-    member this.AffineMatrixDirty with get () = this.Flags_ &&& AffineMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AffineMatrixDirtyMask else this.Flags_ &&& ~~~AffineMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
     member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
 
-    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
-    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
-    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
-    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
-    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.AffineMatrixDirty <- true; this.PerimeterOrientedDirty <- true
+    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.PerimeterOrientedDirty <- true
     member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
 
     member this.Rotation
@@ -97,7 +93,6 @@ type [<NoEquality; NoComparison>] Transform =
         and set value =
             this.Rotation_ <- value
             this.RotationMatrixDirty <- true
-            this.AffineMatrixDirty <- true
             this.PerimeterOrientedDirty <- true
             this.AnglesDirty <- true
 
@@ -112,7 +107,6 @@ type [<NoEquality; NoComparison>] Transform =
             then this.Rotation_ <- Quaternion.CreateFromAxisAngle (v3Forward, value.Z)
             else this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
-            this.AffineMatrixDirty <- true
             this.PerimeterOrientedDirty <- true
 
     member this.RotationMatrix =
@@ -120,8 +114,14 @@ type [<NoEquality; NoComparison>] Transform =
         this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
-        this.CleanAffineMatrix ()
-        this.AffineMatrixOpt_.Value
+        let mutable affineMatrix = this.RotationMatrix
+        affineMatrix.M11 <- affineMatrix.M11 * this.Scale_.X
+        affineMatrix.M22 <- affineMatrix.M22 * this.Scale_.Y
+        affineMatrix.M33 <- affineMatrix.M33 * this.Scale_.Z
+        affineMatrix.M41 <- this.Position_.X
+        affineMatrix.M42 <- this.Position_.Y
+        affineMatrix.M43 <- this.Position_.Z
+        affineMatrix
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
@@ -198,18 +198,6 @@ type [<NoEquality; NoComparison>] Transform =
             this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
             this.RotationMatrixDirty <- false
 
-    member this.CleanAffineMatrix () =
-        if this.AffineMatrixDirty then
-            let mutable affineMatrix = this.RotationMatrix
-            affineMatrix.M11 <- affineMatrix.M11 * this.Scale_.X
-            affineMatrix.M22 <- affineMatrix.M22 * this.Scale_.Y
-            affineMatrix.M33 <- affineMatrix.M33 * this.Scale_.Z
-            affineMatrix.M41 <- this.Position_.X
-            affineMatrix.M42 <- this.Position_.Y
-            affineMatrix.M43 <- this.Position_.Z
-            this.AffineMatrixOpt_ <- ref affineMatrix
-            this.AffineMatrixDirty <- false
-
     member this.CleanPerimeterOriented () =
         if this.PerimeterOrientedDirty then
             let perimeterOriented =
@@ -269,7 +257,6 @@ type [<NoEquality; NoComparison>] Transform =
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
         if source.Flags_ &&& RotationMatrixDirtyMask = 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
-        if source.Flags_ &&& AffineMatrixDirtyMask = 0u then target.AffineMatrixOpt_ <- ref source.AffineMatrixOpt_.Value; target.AffineMatrixDirty <- false
         if source.Flags_ &&& PerimeterOrientedDirtyMask = 0u then target.PerimeterOrientedOpt_ <- ref source.PerimeterOrientedOpt_.Value; target.PerimeterOrientedDirty <- false
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_

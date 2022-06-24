@@ -472,11 +472,7 @@ module WorldModuleEntity =
         
         static member internal getEntityAffineMatrixLocal entity world =
             let entityState = World.getEntityState entity world
-            // TODO: 3D: optimize this hella!
-            let positionMatrix = Matrix4x4.CreateTranslation entityState.PositionLocal
-            let rotationMatrix = Matrix4x4.CreateFromQuaternion entityState.RotationLocal
-            let scaleMatrix = Matrix4x4.CreateScale entityState.ScaleLocal
-            scaleMatrix * rotationMatrix * positionMatrix
+            Matrix4x4.CreateFromTrs (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
 
         static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
@@ -592,6 +588,9 @@ module WorldModuleEntity =
 
                 else world
             struct (changed, world)
+
+        static member inline internal getEntityTransform entity world =
+            (World.getEntityState entity world).Transform
 
         static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
