@@ -29,8 +29,8 @@ type RendererInline (createRenderer2d, createRenderer3d) =
 
     let mutable started = false
     let mutable terminated = false
-    let mutable messages2d = SegmentedList.make ()
-    let mutable messages3d = SegmentedList.make ()
+    let mutable messages3d = List ()
+    let mutable messages2d = List ()
     let mutable renderersOpt = Option<Renderer2d * Renderer3d>.None
 
     interface RendererProcess with
@@ -50,26 +50,27 @@ type RendererInline (createRenderer2d, createRenderer3d) =
                 renderersOpt <- Some (renderer2d, renderer3d)
                 started <- true
 
-        member this.EnqueueMessage2d message =
-            match renderersOpt with
-            | Some _ -> SegmentedList.add message messages2d
-            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
-
         member this.EnqueueMessage3d message =
             match renderersOpt with
-            | Some _ -> SegmentedList.add message messages3d
+            | Some _ -> messages3d.Add message 
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
+        member this.EnqueueMessage2d message =
+            match renderersOpt with
+            | Some _ -> messages2d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.ClearMessages () =
-            messages2d <- SegmentedList.make ()
+            messages3d.Clear ()
+            messages2d.Clear ()
 
         member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d windowSize =
             match renderersOpt with
             | Some (renderer2d, renderer3d) ->
                 renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
-                SegmentedList.clear messages3d
+                messages3d.Clear ()
                 renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
-                SegmentedList.clear messages2d
+                messages2d.Clear ()
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Swap () =
@@ -92,16 +93,35 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let mutable taskOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable messages2d = SegmentedList.make ()
-    let [<VolatileField>] mutable messages3d = SegmentedList.make ()
-    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage2d SegmentedList * RenderMessage3d SegmentedList * Vector2 * Vector2 * Vector3 * Quaternion * Vector2i>.None
+    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i>.None
     let [<VolatileField>] mutable swap = false
+    let mutable messageBufferIndex = 0
+    let messageBuffers3d = [|List (); List ()|]
+    let messageBuffers2d = [|List (); List ()|]
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = Queue ()
     let mutable cachedStaticModelMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+
+    let allocStaticModelMessage () =
+        lock cachedStaticModelMessagesLock (fun () ->
+            if cachedStaticModelMessages.Count = 0 then
+                for _ in 0 .. dec cachedStaticModelMessagesCapacity do
+                    let staticModelDescriptor = { CachedStaticModel = Unchecked.defaultof<_>; CachedStaticModelModel = Unchecked.defaultof<_> }
+                    let cachedStaticModelMessage = RenderCachedStaticModelDescriptor staticModelDescriptor
+                    cachedStaticModelMessages.Enqueue cachedStaticModelMessage
+                cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
+                cachedStaticModelMessages.Dequeue ()
+            else cachedStaticModelMessages.Dequeue ())
+
+    let freeStaticModelMessages messages =
+        lock cachedStaticModelMessagesLock (fun () ->
+            for message in messages do
+                match message with
+                | RenderCachedStaticModelDescriptor _ -> cachedStaticModelMessages.Enqueue message
+                | _ -> ())
 
     let allocSpriteMessage () =
         lock cachedSpriteMessagesLock (fun () ->
@@ -122,24 +142,6 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                     match layeredMessage.RenderDescriptor2d with
                     | CachedSpriteDescriptor _ -> cachedSpriteMessages.Enqueue message
                     | _ -> ()
-                | _ -> ())
-
-    let allocStaticModelMessage () =
-        lock cachedStaticModelMessagesLock (fun () ->
-            if cachedStaticModelMessages.Count = 0 then
-                for _ in 0 .. dec cachedStaticModelMessagesCapacity do
-                    let staticModelDescriptor = { CachedStaticModel = Unchecked.defaultof<_>; CachedStaticModelModel = Unchecked.defaultof<_> }
-                    let cachedStaticModelMessage = RenderCachedStaticModelDescriptor staticModelDescriptor
-                    cachedStaticModelMessages.Enqueue cachedStaticModelMessage
-                cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
-                cachedStaticModelMessages.Dequeue ()
-            else cachedStaticModelMessages.Dequeue ())
-
-    let freeStaticModelMessages messages =
-        lock cachedStaticModelMessagesLock (fun () ->
-            for message in messages do
-                match message with
-                | RenderCachedStaticModelDescriptor _ -> cachedStaticModelMessages.Enqueue message
                 | _ -> ())
 
     member private this.Run () =
@@ -163,7 +165,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if not terminated then
 
                 // receive submission
-                let (messages2d, messages3d, eyePosition2d, eyeSize2d, eyePosition3d, eyeRotation3d, windowSize) = Option.get submissionOpt
+                let (messages3d, messages2d, eyePosition3d, eyeRotation3d, eyePosition2d, eyeSize2d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
                 // render 3d
@@ -214,6 +216,19 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             // wait for task to finish starting
             while not started do Thread.Yield () |> ignore<bool>
 
+        member this.EnqueueMessage3d message =
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            match message with
+            | RenderCachedStaticModelDescriptor cachedDescriptor ->
+                let cachedStaticModelMessage = allocStaticModelMessage ()
+                match cachedStaticModelMessage with
+                | RenderStaticModelDescriptor (staticModel, model) ->
+                    cachedDescriptor.CachedStaticModel <- staticModel
+                    cachedDescriptor.CachedStaticModelModel <- model
+                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+                | _ -> failwithumf ()
+            | _ -> messageBuffers3d.[messageBufferIndex].Add message
+
         member this.EnqueueMessage2d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
@@ -235,35 +250,26 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                             descriptor.CachedSprite.Blend <- sprite.Blend
                             descriptor.CachedSprite.Glow <- sprite.Glow
                             descriptor.CachedSprite.Flip <- sprite.Flip
-                            SegmentedList.add cachedSpriteMessage messages2d
+                            messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
                         | _ -> failwithumf ()
                     | _ -> failwithumf ()
-                | _ -> SegmentedList.add message messages2d
-            | _ -> SegmentedList.add message messages2d
-
-        member this.EnqueueMessage3d message =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            match message with
-            | RenderCachedStaticModelDescriptor cachedDescriptor ->
-                let cachedStaticModelMessage = allocStaticModelMessage ()
-                match cachedStaticModelMessage with
-                | RenderStaticModelDescriptor (staticModel, model) ->
-                    cachedDescriptor.CachedStaticModel <- staticModel
-                    cachedDescriptor.CachedStaticModelModel <- model
-                    SegmentedList.add cachedStaticModelMessage messages3d
-                | _ -> failwithumf ()
-            | _ -> SegmentedList.add message messages3d
+                | _ -> messageBuffers2d.[messageBufferIndex].Add message
+            | _ -> messageBuffers2d.[messageBufferIndex].Add message
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messages2d <- SegmentedList.make ()
+            messageBuffers3d.[messageBufferIndex].Clear ()
+            messageBuffers2d.[messageBufferIndex].Clear ()
 
         member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
-            let messages2dTemp = Interlocked.Exchange (&messages2d, SegmentedList.make ())
-            let messages3dTemp = Interlocked.Exchange (&messages3d, SegmentedList.make ())
-            submissionOpt <- Some (messages2dTemp, messages3dTemp, eyePosition2d, eyeSize2d, eyePosition3d, eyeRotation3d, eyeMargin)
+            let messages3d = messageBuffers3d.[messageBufferIndex]
+            let messages2d = messageBuffers2d.[messageBufferIndex]
+            messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
+            messageBuffers3d.[messageBufferIndex].Clear ()
+            messageBuffers2d.[messageBufferIndex].Clear ()
+            submissionOpt <- Some (messages3d, messages2d, eyePosition3d, eyeRotation3d, eyePosition2d, eyeSize2d, eyeMargin)
 
         member this.Swap () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
