@@ -103,12 +103,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () =
-            if this.AnglesDirty then
-                let rollPitchYaw = this.Rotation_.RollPitchYaw
-                this.Angles_.X <- rollPitchYaw.X
-                this.Angles_.Y <- rollPitchYaw.Y
-                this.Angles_.Z <- rollPitchYaw.Z
-                this.AnglesDirty <- false
+            this.CleanAngles ()
             this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
@@ -121,19 +116,11 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterOrientedDirty <- true
 
     member this.RotationMatrix =
-        if this.RotationMatrixDirty then
-            this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
-            this.RotationMatrixDirty <- false
+        this.CleanRotationMatrix ()
         this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
-        if this.AffineMatrixDirty then
-            // TODO: 3D: optimize this hella!
-            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-            let rotationMatrix = this.RotationMatrix
-            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-            this.AffineMatrixOpt_ <- ref (scaleMatrix * rotationMatrix * positionMatrix)
-            this.AffineMatrixDirty <- false
+        this.CleanAffineMatrix ()
         this.AffineMatrixOpt_.Value
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
@@ -183,6 +170,43 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterUnscaled <- bottom
 
     member this.PerimeterOriented =
+        this.CleanPerimeterOriented ()
+        this.PerimeterOrientedOpt_.Value
+
+    member this.Bounds =
+        let perimeterOriented = this.PerimeterOriented
+        let sizeOverflowed = perimeterOriented.Size * this.Overflow_
+        let center = perimeterOriented.Center
+        let positionOverflowed = center - sizeOverflowed * 0.5f
+        Box3 (positionOverflowed, sizeOverflowed)
+
+    member this.Pivot =
+        let perimeter = this.Perimeter
+        let offsetScaled = this.Offset_ * this.Scale_
+        perimeter.Center + offsetScaled
+
+    member this.CleanAngles () =
+        if this.AnglesDirty then
+            let rollPitchYaw = this.Rotation_.RollPitchYaw
+            this.Angles_.X <- rollPitchYaw.X
+            this.Angles_.Y <- rollPitchYaw.Y
+            this.Angles_.Z <- rollPitchYaw.Z
+            this.AnglesDirty <- false
+
+    member this.CleanRotationMatrix () =
+        if this.RotationMatrixDirty then
+            this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+            this.RotationMatrixDirty <- false
+
+    member this.CleanAffineMatrix () =
+        if this.AffineMatrixDirty then 
+            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
+            let rotationMatrix = this.RotationMatrix
+            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+            this.AffineMatrixOpt_ <- ref (scaleMatrix * rotationMatrix * positionMatrix)
+            this.AffineMatrixDirty <- false
+
+    member this.CleanPerimeterOriented () =
         if this.PerimeterOrientedDirty then
             let perimeterOriented =
                 let perimeter = this.Perimeter
@@ -209,19 +233,6 @@ type [<NoEquality; NoComparison>] Transform =
                 else perimeter
             this.PerimeterOrientedOpt_ <- ref perimeterOriented
             this.PerimeterOrientedDirty <- false
-        this.PerimeterOrientedOpt_.Value
-
-    member this.Bounds =
-        let perimeterOriented = this.PerimeterOriented
-        let sizeOverflowed = perimeterOriented.Size * this.Overflow_
-        let center = perimeterOriented.Center
-        let positionOverflowed = center - sizeOverflowed * 0.5f
-        Box3 (positionOverflowed, sizeOverflowed)
-
-    member this.Pivot =
-        let perimeter = this.Perimeter
-        let offsetScaled = this.Offset_ * this.Scale_
-        perimeter.Center + offsetScaled
 
     // TODO: 3D: scale snapping.
     member this.Snap (positionSnap, rotationSnap) =
