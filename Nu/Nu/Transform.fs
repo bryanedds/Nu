@@ -199,11 +199,15 @@ type [<NoEquality; NoComparison>] Transform =
             this.RotationMatrixDirty <- false
 
     member this.CleanAffineMatrix () =
-        if this.AffineMatrixDirty then 
-            let positionMatrix = Matrix4x4.CreateTranslation this.Position_
-            let rotationMatrix = this.RotationMatrix
-            let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-            this.AffineMatrixOpt_ <- ref (scaleMatrix * rotationMatrix * positionMatrix)
+        if this.AffineMatrixDirty then
+            let mutable affineMatrix = this.RotationMatrix
+            affineMatrix.M11 <- affineMatrix.M11 * this.Scale_.X
+            affineMatrix.M22 <- affineMatrix.M22 * this.Scale_.Y
+            affineMatrix.M33 <- affineMatrix.M33 * this.Scale_.Z
+            affineMatrix.M41 <- this.Position_.X
+            affineMatrix.M42 <- this.Position_.Y
+            affineMatrix.M43 <- this.Position_.Z
+            this.AffineMatrixOpt_ <- ref affineMatrix
             this.AffineMatrixDirty <- false
 
     member this.CleanPerimeterOriented () =

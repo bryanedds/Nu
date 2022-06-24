@@ -930,6 +930,17 @@ module Matrix4x4 =
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
+    /// Create a matrix from translation, rotation, and scale.
+    let CreateFromTrs (translation : Vector3, rotation, scale : Vector3) =
+        let mutable trs = Matrix4x4.CreateFromQuaternion rotation
+        trs.M11 <- trs.M11 * scale.X
+        trs.M22 <- trs.M22 * scale.Y
+        trs.M33 <- trs.M33 * scale.Z
+        trs.M41 <- translation.X
+        trs.M42 <- translation.Y
+        trs.M43 <- translation.Z
+        trs
+
 [<AutoOpen>]
 module Color =
 
