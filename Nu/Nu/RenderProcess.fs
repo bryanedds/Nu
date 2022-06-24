@@ -103,7 +103,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = Queue ()
-    let mutable cachedStaticModelMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+    let mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
