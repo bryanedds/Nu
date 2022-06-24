@@ -48,7 +48,6 @@ type MetricsEntityDispatcher () =
 #else
 type MetricsEntityDispatcher () =
     inherit StaticModelDispatcher ()
-
   #if !ECS
     override this.Update (entity, world) =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
