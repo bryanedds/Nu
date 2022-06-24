@@ -33,27 +33,9 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
       mutable AssetTag : obj AssetTag
       mutable RenderDescriptor2d : RenderDescriptor2d }
 
-///// Describes a 2d render pass.
-//and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
-//    { RenderPassOrder : int64
-//      RenderPass2d : Matrix4x4 * Renderer2d -> unit }
-//    interface IComparable with
-//        member this.CompareTo that =
-//            match that with
-//            | :? RenderPassDescriptor2d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
-//            | _ -> -1
-//    override this.Equals (that : obj) =
-//        match that with
-//        | :? RenderPassDescriptor2d as that -> this.RenderPassOrder = that.RenderPassOrder
-//        | _ -> false
-//    override this.GetHashCode () = hash this.RenderPassOrder
-
 /// A message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
-    //| RenderUpdateMaterial2d of (Renderer -> unit) // TODO: 3D: implement.
-    //| RenderPrePassDescriptor2d of RenderPassDescriptor2d // TODO: 3D: implement.
-    //| RenderPostPassDescriptor2d of RenderPassDescriptor2d // TODO: 3D: implement.
     | HintRenderPackageUseMessage2d of string
     | HintRenderPackageDisuseMessage2d of string
     | ReloadRenderAssetsMessage2d
