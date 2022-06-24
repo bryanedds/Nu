@@ -57,7 +57,7 @@ and Renderer3d =
     /// The physically-based shader.
     abstract PhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
     /// Render a frame of the game.
-    abstract Render : Vector3 -> Quaternion -> Vector2i -> RenderMessage3d SegmentedList -> unit
+    abstract Render : Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.

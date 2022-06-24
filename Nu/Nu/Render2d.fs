@@ -7,8 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
-open System.Threading
-open System.Threading.Tasks
 open SDL2
 open TiledSharp
 open Prime
@@ -46,7 +44,7 @@ and Renderer2d =
     /// The sprite batch operational environment if it exists for this implementation.
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.Env option
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d SegmentedList -> unit
+    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
