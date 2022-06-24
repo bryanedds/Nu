@@ -99,6 +99,9 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+    let cachedStaticModelMessagesLock = obj ()
+    let cachedStaticModelMessages = Queue ()
+    let mutable cachedStaticModelMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
 
     let allocSpriteMessage () =
         lock cachedSpriteMessagesLock (fun () ->
@@ -119,6 +122,24 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                     match layeredMessage.RenderDescriptor2d with
                     | CachedSpriteDescriptor _ -> cachedSpriteMessages.Enqueue message
                     | _ -> ()
+                | _ -> ())
+
+    let allocStaticModelMessage () =
+        lock cachedStaticModelMessagesLock (fun () ->
+            if cachedStaticModelMessages.Count = 0 then
+                for _ in 0 .. dec cachedStaticModelMessagesCapacity do
+                    let staticModelDescriptor = { CachedStaticModel = Unchecked.defaultof<_>; CachedStaticModelModel = Unchecked.defaultof<_> }
+                    let cachedStaticModelMessage = RenderCachedStaticModelDescriptor staticModelDescriptor
+                    cachedStaticModelMessages.Enqueue cachedStaticModelMessage
+                cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
+                cachedStaticModelMessages.Dequeue ()
+            else cachedStaticModelMessages.Dequeue ())
+
+    let freeStaticModelMessages messages =
+        lock cachedStaticModelMessagesLock (fun () ->
+            for message in messages do
+                match message with
+                | RenderCachedStaticModelDescriptor _ -> cachedStaticModelMessages.Enqueue message
                 | _ -> ())
 
     member private this.Run () =
@@ -147,6 +168,9 @@ type RendererThread (createRenderer2d, createRenderer3d) =
 
                 // render 3d
                 renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
+                
+                // recover cached static model messages
+                freeStaticModelMessages messages3d
 
                 // render 2d
                 renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
@@ -218,7 +242,17 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             | _ -> SegmentedList.add message messages2d
 
         member this.EnqueueMessage3d message =
-            SegmentedList.add message messages3d
+            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            match message with
+            | RenderCachedStaticModelDescriptor cachedDescriptor ->
+                let cachedStaticModelMessage = allocStaticModelMessage ()
+                match cachedStaticModelMessage with
+                | RenderStaticModelDescriptor (staticModel, model) ->
+                    cachedDescriptor.CachedStaticModel <- staticModel
+                    cachedDescriptor.CachedStaticModelModel <- model
+                    SegmentedList.add cachedStaticModelMessage messages3d
+                | _ -> failwithumf ()
+            | _ -> SegmentedList.add message messages3d
 
         member this.ClearMessages () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

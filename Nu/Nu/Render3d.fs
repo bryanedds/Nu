@@ -34,10 +34,16 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
         | _ -> false
     override this.GetHashCode () = hash this.RenderPassOrder
 
+/// Describes an internally cached static model used to avoid GC promotion of static model descriptors.
+and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
+    { mutable CachedStaticModel : StaticModel AssetTag
+      mutable CachedStaticModelModel : Matrix4x4 }
+
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelDescriptor of StaticModel AssetTag * Matrix4x4
     | RenderStaticModelsDescriptor of StaticModel AssetTag * Matrix4x4 array
+    | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
@@ -182,7 +188,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
-    static member private categorizeStaticModel modelAssetTag modelMatrix (surfaces : Dictionary<_, _>) renderer =
+    static member private categorizeStaticModel (modelAssetTag, modelMatrix : Matrix4x4 inref, surfaces : Dictionary<_, _>, renderer) =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -282,12 +288,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAssetTag, modelMatrix) ->
-                    GlRenderer3d.categorizeStaticModel modelAssetTag modelMatrix surfaces renderer
+                    GlRenderer3d.categorizeStaticModel (modelAssetTag, &modelMatrix, surfaces, renderer)
                 | RenderStaticModelsDescriptor (modelAssetTag, modelMatrices) ->
                     for modelMatrix in modelMatrices do
-                        GlRenderer3d.categorizeStaticModel modelAssetTag modelMatrix surfaces renderer
+                        GlRenderer3d.categorizeStaticModel (modelAssetTag, &modelMatrix, surfaces, renderer)
+                | RenderCachedStaticModelDescriptor descriptor ->
+                    GlRenderer3d.categorizeStaticModel (descriptor.CachedStaticModel, &descriptor.CachedStaticModelModel, surfaces, renderer)
                 | RenderCallbackDescriptor3d _ ->
-                    ()
+                    () // TODO: 3D: implement.
                 | RenderPrePassDescriptor3d prePass ->
                     prePasses.Add prePass |> ignore<bool>
                 | RenderPostPassDescriptor3d postPass ->
