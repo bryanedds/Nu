@@ -219,12 +219,12 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderCachedStaticModelDescriptor cachedDescriptor ->
+            | RenderStaticModelDescriptor (staticModel, staticModelModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
-                | RenderStaticModelDescriptor (staticModel, model) ->
+                | RenderCachedStaticModelDescriptor cachedDescriptor ->
                     cachedDescriptor.CachedStaticModel <- staticModel
-                    cachedDescriptor.CachedStaticModelModel <- model
+                    cachedDescriptor.CachedStaticModelModel <- staticModelModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
