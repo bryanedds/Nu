@@ -114,7 +114,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_ <- value
             this.AnglesDirty <- false
             if value.X = 0.0f && value.Y = 0.0f // OPTIMIZATION: apply rotation constructively in the z-only case.
-            then this.Rotation_ <- Quaternion (0.0f, 0.0f, value.Z, 1.0f)
+            then this.Rotation_ <- Quaternion.CreateFromAxisAngle (v3Forward, value.Z)
             else this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
             this.AffineMatrixDirty <- true
