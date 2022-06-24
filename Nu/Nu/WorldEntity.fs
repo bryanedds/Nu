@@ -23,7 +23,7 @@ module WorldEntityModule =
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
-        member this.GetTransform world = (World.getEntityState this world).Transform
+        member this.GetTransform world = World.getEntityTransform this world
         member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
         member this.SetPerimeterUnscaled value world = World.setEntityPerimeterUnscaled value this world |> snd'
