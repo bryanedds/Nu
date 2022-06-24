@@ -105,7 +105,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if cachedSpriteMessages.Count = 0 then
                 for _ in 0 .. dec cachedSpriteMessagesCapacity do
                     let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
-                    let cachedSpriteMessage = RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor = spriteDescriptor }
+                    let cachedSpriteMessage = RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor2d = spriteDescriptor }
                     cachedSpriteMessages.Enqueue cachedSpriteMessage
                 cachedSpriteMessagesCapacity <- cachedSpriteMessagesCapacity * 2
                 cachedSpriteMessages.Dequeue ()
@@ -116,7 +116,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             for message in messages do
                 match message with
                 | RenderLayeredMessage2d layeredMessage ->
-                    match layeredMessage.RenderDescriptor with
+                    match layeredMessage.RenderDescriptor2d with
                     | CachedSpriteDescriptor _ -> cachedSpriteMessages.Enqueue message
                     | _ -> ()
                 | _ -> ())
@@ -194,12 +194,12 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
             | RenderLayeredMessage2d layeredMessage ->
-                match layeredMessage.RenderDescriptor with
+                match layeredMessage.RenderDescriptor2d with
                 | SpriteDescriptor sprite ->
                     let cachedSpriteMessage = allocSpriteMessage ()
                     match cachedSpriteMessage with
                     | RenderLayeredMessage2d cachedLayeredMessage ->
-                        match cachedLayeredMessage.RenderDescriptor with
+                        match cachedLayeredMessage.RenderDescriptor2d with
                         | CachedSpriteDescriptor descriptor ->
                             cachedLayeredMessage.Elevation <- layeredMessage.Elevation
                             cachedLayeredMessage.Horizon <- layeredMessage.Horizon

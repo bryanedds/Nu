@@ -15,7 +15,7 @@ open Prime
 open Nu
 
 /// Describes what to render.
-type [<NoEquality; NoComparison>] RenderDescriptor =
+type [<NoEquality; NoComparison>] RenderDescriptor2d =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
     | SpritesSegmentedDescriptor of SegmentedSpritesDescriptor
@@ -31,7 +31,7 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : obj AssetTag
-      mutable RenderDescriptor : RenderDescriptor }
+      mutable RenderDescriptor2d : RenderDescriptor2d }
 
 ///// Describes a 2d render pass.
 //and [<CustomEquality; CustomComparison>] RenderPassDescriptor2d =
@@ -594,7 +594,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
     static member private renderLayeredMessages eyePosition eyeSize renderer =
         for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor eyePosition eyeSize renderer
+            GlRenderer2d.renderDescriptor message.RenderDescriptor2d eyePosition eyeSize renderer
 
     /// Make a GlRenderer2d.
     static member make window config =

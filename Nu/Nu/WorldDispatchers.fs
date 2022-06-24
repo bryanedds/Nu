@@ -18,8 +18,9 @@ module DeclarativeOperators2 =
         static member internal actualizeView view world =
             match view with
             | Render2d (elevation, horizon, assetTag, descriptor) ->
-                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
+            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
@@ -268,7 +269,7 @@ module StaticSpriteFacetModule =
                     { Elevation = transform.Elevation
                       Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize staticImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
@@ -342,7 +343,7 @@ module AnimatedSpriteFacetModule =
                     { Elevation = transform.Elevation
                       Horizon = perimeter.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
@@ -412,7 +413,7 @@ module TextFacetModule =
                     { Elevation = textTransform.Elevation
                       Horizon = horizon
                       AssetTag = AssetTag.generalize font
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         TextDescriptor
                             { Transform = textTransform
                               Text = text
@@ -657,7 +658,7 @@ module BasicEmitter2dFacetModule =
                         { Elevation = descriptor.Elevation
                           Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
-                          RenderDescriptor = ParticlesDescriptor descriptor })
+                          RenderDescriptor2d = ParticlesDescriptor descriptor })
                 World.enqueueRenderLayeredMessages2d particlesMessages world
             else world
 
@@ -847,7 +848,7 @@ module Effect2dFacetModule =
                         { Elevation = descriptor.Elevation
                           Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
-                          RenderDescriptor = ParticlesDescriptor descriptor })
+                          RenderDescriptor2d = ParticlesDescriptor descriptor })
                 let world = World.enqueueRenderLayeredMessages2d particlesMessages world
 
                 // update effect history in-place
@@ -1564,7 +1565,7 @@ module ButtonDispatcherModule =
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = spriteTransform
                               InsetOpt = ValueNone
@@ -1604,7 +1605,7 @@ module LabelDispatcherModule =
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = spriteTransform
                               InsetOpt = ValueNone
@@ -1649,7 +1650,7 @@ module TextDispatcherModule =
                         { Elevation = spriteTransform.Elevation
                           Horizon = spriteTransform.Position.Y
                           AssetTag = AssetTag.generalize spriteImage
-                          RenderDescriptor =
+                          RenderDescriptor2d =
                             SpriteDescriptor
                                 { Transform = spriteTransform
                                   InsetOpt = ValueNone
@@ -1782,7 +1783,7 @@ module ToggleButtonDispatcherModule =
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = spriteTransform
                               InsetOpt = ValueNone
@@ -1906,7 +1907,7 @@ module RadioButtonDispatcherModule =
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Position.Y
                       AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = spriteTransform
                               InsetOpt = ValueNone
@@ -2097,7 +2098,7 @@ module FillBarDispatcherModule =
                         { Elevation = borderTransform.Elevation
                           Horizon = horizon
                           AssetTag = AssetTag.generalize borderImage
-                          RenderDescriptor =
+                          RenderDescriptor2d =
                             SpriteDescriptor
                                 { Transform = borderTransform
                                   InsetOpt = ValueNone
@@ -2128,7 +2129,7 @@ module FillBarDispatcherModule =
                         { Elevation = fillTransform.Elevation
                           Horizon = horizon
                           AssetTag = AssetTag.generalize fillImage
-                          RenderDescriptor =
+                          RenderDescriptor2d =
                               SpriteDescriptor
                                   { Transform = fillTransform
                                     InsetOpt = ValueNone
@@ -2276,7 +2277,7 @@ module SideViewCharacterDispatcherModule =
                     { Elevation = transform.Elevation
                       Horizon = transform.Perimeter.Position.Y
                       AssetTag = AssetTag.generalize image
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = insetOpt

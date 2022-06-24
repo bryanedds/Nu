@@ -6,7 +6,8 @@ open System
 
 /// IO artifacts passively produced and consumed by Nu.
 type [<NoEquality; NoComparison>] View =
-    | Render2d of single * single * obj AssetTag * RenderDescriptor
+    | Render2d of single * single * obj AssetTag * RenderDescriptor2d
+    | Render3d of RenderMessage3d
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int

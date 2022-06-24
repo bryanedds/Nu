@@ -843,7 +843,7 @@ module WorldModule2 =
                     { Elevation = transform.Elevation
                       Horizon = transform.Perimeter.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
-                      RenderDescriptor =
+                      RenderDescriptor2d =
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = ValueNone

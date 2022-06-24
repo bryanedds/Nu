@@ -155,46 +155,19 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher2d<Image AssetTag, unit, unit> (true, false, Assets.Default.Image)
+    inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
 
-    override this.View (staticImage, entity, world) =
+    override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
-        View.Render2d
-            (transform.Elevation,
-             transform.Position.Y,
-             AssetTag.generalize staticImage,
-             SpriteDescriptor
-                { Transform = transform
-                  InsetOpt = ValueNone
-                  Image = staticImage
-                  Color = Color.One
-                  Blend = Transparent
-                  Glow = Color.Zero
-                  Flip = FlipNone })
+        let affineMatrix = transform.AffineMatrix
+        View.Render3d (RenderStaticModelDescriptor (staticModel, affineMatrix))
 
-#if PROPERTIES
-type ElmishGameDispatcher () =
-    inherit GameDispatcher<int, int, unit> (0)
+    override this.GetQuickSize (entity, world) =
+        let staticModel = entity.GetStaticModel world
+        let bounds = World.getBounds staticModel world
+        let boundsExtended = bounds.Combine bounds.Mirror
+        boundsExtended.Size
 
-    override this.Channel (_, game) =
-        [game.UpdateEvent => msg 0]
-
-    override this.Message (int, message, _, _) =
-        match message with
-        | 0 -> just (inc int)
-        | _ -> just int
-
-    override this.Content (int, _) =
-        [Content.screen Gen.name Vanilla []
-            [Content.group Gen.name []
-                [Content.entity<ElmishEntityDispatcher> Gen.name
-                    (seq {
-                        yield Entity.Omnipresent == true
-                        for index in 0 .. 100000 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 100,000 property bindings (goal: 60FPS, current: 40FPS)
-                        Seq.toList)]
-             Content.group Gen.name []
-                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
-#else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
     static member init n =
@@ -210,7 +183,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 81) // 6,561 elmish entities (goal: 60FPS w/o Stalls, current: 60FPS w/o Stalls)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 70) // 6,561 elmish entities (goal: 60FPS w/o Stalls, current: 60FPS w/o Stalls)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -227,8 +200,8 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
-                             Entity.Position == v3 (single i * 10.0f - 480.0f) (single j * 5.0f - 272.0f) 0.0f
-                             Entity.Size <== int --> fun int -> v3 (single (int % 10)) (single (int % 10)) 0.0f]]
+                             Entity.Position == v3 (single i * 5.0f - 200.0f) (single j * 2.5f - 100.0f) -250.0f
+                             Entity.Scale <== int --> fun int -> v3Dup (single (int % 10)) * 0.5f]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
 
@@ -284,7 +257,6 @@ type ElmishGameDispatcher () =
                     world)
 
         world
-#endif
 #endif
 #endif
 
