@@ -41,6 +41,9 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
+    | HintRenderPackageUseMessage3d of string
+    | HintRenderPackageDisuseMessage3d of string
+    | ReloadRenderAssetsMessage3d
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
 and Renderer3d =
