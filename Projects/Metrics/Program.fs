@@ -38,68 +38,20 @@ type [<NoEquality; NoComparison; Struct>] Shake =
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher2d (false, false)
 
-  #if !ECS_HYBRID && !ECS
+  #if !ECS
     static member Facets =
         [typeof<StaticSpriteFacet>]
 
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
   #endif
-
-  #if ECS_HYBRID
-    override this.Register (entity, world) =
-        let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
-        world
-
-    override this.Unregister (entity, world) =
-        let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
-        world
-  #endif
 #else
 type MetricsEntityDispatcher () =
-  #if ECS_HYBRID
-    inherit EntityDispatcher2d (false, false)
-  #else
-    inherit EntityDispatcher2d (false, true)
-  #endif
+    inherit StaticModelDispatcher ()
 
-  #if !ECS_HYBRID && !ECS
+  #if !ECS
     override this.Update (entity, world) =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
-
-    override this.Actualize (entity, world) =
-        let staticImage = Assets.Default.Image
-        let mutable transform = entity.GetTransform world
-        let renderMessage =
-            RenderLayeredMessage2d
-                { Elevation = transform.Elevation
-                  Horizon = transform.Position.Y
-                  AssetTag = AssetTag.generalize staticImage
-                  RenderDescriptor =
-                    SpriteDescriptor
-                        { Transform = transform
-                          InsetOpt = ValueNone
-                          Image = staticImage
-                          Color = Color.One
-                          Blend = Transparent
-                          Glow = Color.Zero
-                          Flip = FlipNone }}
-        World.enqueueRenderMessage2d renderMessage world
-  #endif
-
-  #if ECS_HYBRID
-    override this.Register (entity, world) =
-        let ecs = entity.Parent.Parent.GetEcs world
-        let id = UInt64.Parse entity.Name
-        ecs.RegisterCorrelated<StaticSpriteComponent> false { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } id world
-
-    override this.Unregister (entity, world) =
-        let ecs = entity.Parent.Parent.GetEcs world
-        let id = UInt64.Parse entity.Name
-        let struct (_, world) = ecs.UnregisterCorrelated<StaticSpriteComponent> id world
-        world
   #endif
 #endif
 
@@ -111,13 +63,6 @@ type MyGameDispatcher () =
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (screen, world) = World.createScreen (Some Simulants.Default.Screen.Name) world
-#if ECS_HYBRID
-        // grab ecs from current screen
-        let ecs = screen.GetEcs world
-
-        // create static sprite store
-        let _ = ecs.RegisterStore (CorrelatedStore<StaticSpriteComponent, World> ecs)
-#endif
 #if ECS
         // get ecs
         let ecs = screen.GetEcs world
@@ -197,45 +142,16 @@ type MyGameDispatcher () =
                 for i in 0 .. 52 do
                     for j in 0 .. 52 do
                         for k in 0 .. 8 do
-                            yield v3 (single i * 12.0f + single k) (single j * 12.0f + single k) 0.0f }
+                            yield v3 (single i * 4.5f + single k * 0.5f) (single j * 4.5f + single k * 0.5f) -205.0f }
         let world =
             Seq.foldi (fun i world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.Default.Group world
                 let world = entity.SetOmnipresent true world
-                let world = entity.SetPosition (position + v3 -450.0f -265.0f 0.0f) world
-                let world = entity.SetSize (v3One * 8.0f) world
+                let world = entity.SetPosition (position + v3 -118.0f -118.0f 0.0f) world
                 world)
                 world positions
 #endif
-        let world = World.selectScreen IdlingState Simulants.Default.Screen world
-#if ECS_HYBRID
-        // define update for static sprites
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ world ->
-            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                for i in 0 .. components.Length - 1 do
-                    let comp = &components.[i]
-                    if comp.Active then
-                        let state = comp.Entity.State world
-                        state.Rotation <- state.Rotation + 0.03f
-            world
-
-        // define actualize for static sprites
-        let _ =
-            ecs.SubscribePlus Gen.id32 EcsEvents.Actualize $ fun _ _ _ world ->
-                let messages = List ()
-                for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                    for i in 0 .. components.Length - 1 do
-                        let comp = &components.[i]
-                        if comp.Active then
-                            let state = comp.Entity.State world
-                            if state.Visible then
-                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-                                let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                                messages.Add layeredMessage
-                World.enqueueRenderLayeredMessages messages world
-#else
-        ignore screen
-#endif
+        let world = World.selectScreen IdlingState screen world
         world
 
 #if ELMISH

@@ -306,8 +306,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 if models.Length > 0 then
 
                     // ensure we have a large enough field array
-                    if models.Length * 16 * 16 > renderer.RenderModelsFields.Length then
-                        renderer.RenderModelsFields <- Array.zeroCreate<single> (renderer.RenderModelsFields.Length * 2)
+                    let mutable length = renderer.RenderModelsFields.Length
+                    while models.Length * 16 * 16 > length do length <- length * 2
+                    if renderer.RenderModelsFields.Length < length then
+                        renderer.RenderModelsFields <- Array.zeroCreate<single> length
 
                     // blit models to field array
                     for i in 0 .. dec models.Length do
