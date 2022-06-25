@@ -391,8 +391,7 @@ module Hl =
                 for face in mesh.Faces do
                     let indices = face.Indices
                     if indices.Count = 3 then
-                        // .obj files exported from blender seem to have reverse winding order, so we add indices in
-                        // reverse
+                        // NOTE: .obj files exported from blender seem to have reverse winding order, so we add indices in reverse
                         SegmentedList.add indices.[2] indexList
                         SegmentedList.add indices.[1] indexList
                         SegmentedList.add indices.[0] indexList
@@ -930,6 +929,8 @@ module Hl =
         try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+        Assert ()
 
         // setup geometry
         OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
