@@ -96,6 +96,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderPhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
+          RenderGeometryFramebuffer : uint * uint * uint * uint // TODO: 3D: create a record for this.
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -295,15 +296,22 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
-        // create one-off resources
+        // create pbr shader
         let physicallyBasedShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedShaderFilePath
         OpenGL.Hl.Assert ()
+
+        // create geometry framebuffer
+        let geometryFramebuffer =
+            match OpenGL.Hl.TryCreateGeometryFramebuffer () with
+            | Right geometryFramebuffer -> geometryFramebuffer
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
         // make renderer
         let renderer =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
               RenderPhysicallyBasedShader = physicallyBasedShader
+              RenderGeometryFramebuffer = geometryFramebuffer
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
