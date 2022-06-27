@@ -109,7 +109,11 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         lock cachedStaticModelMessagesLock (fun () ->
             if cachedStaticModelMessages.Count = 0 then
                 for _ in 0 .. dec cachedStaticModelMessagesCapacity do
-                    let staticModelDescriptor = { CachedStaticModel = Unchecked.defaultof<_>; CachedStaticModelModel = Unchecked.defaultof<_> }
+                    let staticModelDescriptor =
+                        { CachedStaticModelAbsolute = Unchecked.defaultof<_>
+                          CachedStaticModelMatrix = Unchecked.defaultof<_>
+                          CachedStaticModelRenderType = Unchecked.defaultof<_>
+                          CachedStaticModel = Unchecked.defaultof<_> }
                     let cachedStaticModelMessage = RenderCachedStaticModelDescriptor staticModelDescriptor
                     cachedStaticModelMessages.Enqueue cachedStaticModelMessage
                 cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
@@ -219,12 +223,14 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModelDescriptor (staticModel, staticModelModel) ->
+            | RenderStaticModelDescriptor (staticModelAbsolute, staticModelMatrix, staticModelRenderType, staticModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
                 | RenderCachedStaticModelDescriptor cachedDescriptor ->
+                    cachedDescriptor.CachedStaticModelAbsolute <- staticModelAbsolute
+                    cachedDescriptor.CachedStaticModelMatrix <- staticModelMatrix
+                    cachedDescriptor.CachedStaticModelRenderType <- staticModelRenderType
                     cachedDescriptor.CachedStaticModel <- staticModel
-                    cachedDescriptor.CachedStaticModelModel <- staticModelModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message

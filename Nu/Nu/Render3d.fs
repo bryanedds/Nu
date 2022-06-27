@@ -14,15 +14,37 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
+/// A callback for one-off forward rendering of a surface.
+type ForwardRenderCallback =
+    Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 -> unit
+
+/// The type of rendering used on a surface.
+type [<StructuralEquality; NoComparison; Struct>] RenderType =
+    | Deferred
+    | Forward of obj voption
+
+    static member makeForwardCallback (callback : ForwardRenderCallback)  =
+        Forward (ValueSome (callback :> obj))
+
+    static member tryGetCallback renderType =
+        match renderType with
+        | Deferred -> ValueNone
+        | Forward callbackObjOpt ->
+            match callbackObjOpt with
+            | ValueSome (:? ForwardRenderCallback as callback) -> ValueSome callback
+            | _ -> ValueNone
+
 /// A collection of render surfaces in a pass.
 type [<NoEquality; NoComparison>] RenderSurfaces =
-    { RenderSurfacesOpaque : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSurfacesTransparent : struct (OpenGL.Hl.PhysicallyBasedSurface * Matrix4x4) SegmentedList }
+    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSurfacesDeferredRelative : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
+      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
 /// Describes a 3d render pass.
 type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : RenderSurfaces * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
+      RenderPass3d : RenderSurfaces * Matrix4x4 * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -36,15 +58,16 @@ type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
 
 /// Describes an internally cached static model used to avoid GC promotion of static model descriptors.
 and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
-    { mutable CachedStaticModel : StaticModel AssetTag
-      mutable CachedStaticModelModel : Matrix4x4 }
+    { mutable CachedStaticModelAbsolute : bool
+      mutable CachedStaticModelMatrix : Matrix4x4
+      mutable CachedStaticModelRenderType : RenderType
+      mutable CachedStaticModel : StaticModel AssetTag }
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderStaticModelDescriptor of StaticModel AssetTag * Matrix4x4
-    | RenderStaticModelsDescriptor of StaticModel AssetTag * Matrix4x4 array
+    | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
+    | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
-    | RenderCallbackDescriptor3d of (Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 * Renderer3d -> unit)
     | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
@@ -188,15 +211,31 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
-    static member private categorizeStaticModel (modelAssetTag, modelMatrix : Matrix4x4 inref, surfaces : Dictionary<_, _>, renderer) =
+    static member private categorizeStaticModel
+        (modelAbsolute,
+         modelMatrix : Matrix4x4 inref,
+         modelRenderType : RenderType,
+         modelAssetTag,
+         surfacesDeferredAbsolute : Dictionary<_, _>,
+         surfacesDeferredRelative : Dictionary<_, _>,
+         renderer) =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
-                    match surfaces.TryGetValue surface with
-                    | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
-                    | (false, _) -> surfaces.Add (surface, SegmentedList.singleton modelMatrix)
+                    match modelRenderType with
+                    | Deferred ->
+                        if modelAbsolute then
+                            match surfacesDeferredAbsolute.TryGetValue surface with
+                            | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
+                            | (false, _) -> surfacesDeferredAbsolute.Add (surface, SegmentedList.singleton modelMatrix)
+                        else
+                            match surfacesDeferredRelative.TryGetValue surface with
+                            | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
+                            | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
+                    | Forward _ ->
+                        failwithnie ()
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -221,6 +260,35 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     /// Get the physically-based shader.
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedShader
+
+    static member inline renderSurfacesDeferred
+        eyePosition
+        viewArray
+        projectionArray
+        (models : Matrix4x4 SegmentedList)
+        (surface : OpenGL.Hl.PhysicallyBasedSurface)
+        lightPositions
+        lightColors
+        renderer =
+
+        // ensure there are models to render
+        if models.Length > 0 then
+
+            // ensure we have a large enough field array
+            let mutable length = renderer.RenderModelsFields.Length
+            while models.Length * 16 * 16 > length do length <- length * 2
+            if renderer.RenderModelsFields.Length < length then
+                renderer.RenderModelsFields <- Array.zeroCreate<single> length
+
+            // blit models to field array
+            for i in 0 .. dec models.Length do
+                models.[i].ToArray (renderer.RenderModelsFields, i * 16)
+
+            // draw surfaces
+            OpenGL.Hl.DrawPhysicallyBasedSurfaces
+                (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
+                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
+                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, renderer.RenderPhysicallyBasedShader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -271,8 +339,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // compute view and projection
             let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
-            let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
-            let viewArray = view.ToArray ()
+            let viewAbsolute = m4Identity
+            let viewAbsoluteArray = viewAbsolute.ToArray ()
+            let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
+            let viewRelativeArray = viewRelative.ToArray ()
             let projection = GlRenderer3d.computeProjection ()
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
@@ -284,18 +354,38 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // categorize messages
             let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let surfaces = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfacesDeferredAbsolute = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfacesDeferredRelative = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | RenderStaticModelDescriptor (modelAssetTag, modelMatrix) ->
-                    GlRenderer3d.categorizeStaticModel (modelAssetTag, &modelMatrix, surfaces, renderer)
-                | RenderStaticModelsDescriptor (modelAssetTag, modelMatrices) ->
+                | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
+                    GlRenderer3d.categorizeStaticModel
+                        (modelAbsolute,
+                         &modelMatrix,
+                         modelRenderType,
+                         modelAssetTag,
+                         surfacesDeferredAbsolute,
+                         surfacesDeferredRelative,
+                         renderer)
+                | RenderStaticModelsDescriptor (modelAbsolute, modelMatrices, modelRenderType, modelAssetTag) ->
                     for modelMatrix in modelMatrices do
-                        GlRenderer3d.categorizeStaticModel (modelAssetTag, &modelMatrix, surfaces, renderer)
+                        GlRenderer3d.categorizeStaticModel
+                            (modelAbsolute,
+                             &modelMatrix,
+                             modelRenderType,
+                             modelAssetTag,
+                             surfacesDeferredAbsolute,
+                             surfacesDeferredRelative,
+                             renderer)
                 | RenderCachedStaticModelDescriptor descriptor ->
-                    GlRenderer3d.categorizeStaticModel (descriptor.CachedStaticModel, &descriptor.CachedStaticModelModel, surfaces, renderer)
-                | RenderCallbackDescriptor3d _ ->
-                    () // TODO: 3D: implement.
+                    GlRenderer3d.categorizeStaticModel
+                        (descriptor.CachedStaticModelAbsolute,
+                         &descriptor.CachedStaticModelMatrix,
+                         descriptor.CachedStaticModelRenderType,
+                         descriptor.CachedStaticModel,
+                         surfacesDeferredAbsolute,
+                         surfacesDeferredRelative,
+                         renderer)
                 | RenderPrePassDescriptor3d prePass ->
                     prePasses.Add prePass |> ignore<bool>
                 | RenderPostPassDescriptor3d postPass ->
@@ -303,38 +393,30 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // make render surfaces
             let surfaces =
-                { RenderSurfacesOpaque = surfaces
-                  RenderSurfacesTransparent = SegmentedList.make () }
+                { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
+                  RenderSurfacesDeferredRelative = surfacesDeferredRelative
+                  RenderSurfacesForwardAbsolute = SegmentedList.make ()
+                  RenderSurfacesForwardRelative = SegmentedList.make () }
 
             // render pre-passes
             for pass in prePasses do
-                pass.RenderPass3d (surfaces, view, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
 
             // render main pass
-            for entry in surfaces.RenderSurfacesOpaque do
-                let material = entry.Key
-                let models = entry.Value
-                if models.Length > 0 then
-
-                    // ensure we have a large enough field array
-                    let mutable length = renderer.RenderModelsFields.Length
-                    while models.Length * 16 * 16 > length do length <- length * 2
-                    if renderer.RenderModelsFields.Length < length then
-                        renderer.RenderModelsFields <- Array.zeroCreate<single> length
-
-                    // blit models to field array
-                    for i in 0 .. dec models.Length do
-                        models.[i].ToArray (renderer.RenderModelsFields, i * 16)
-
-                    // draw surfaces
-                    OpenGL.Hl.DrawPhysicallyBasedSurfaces
-                        (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
-                         material.AlbedoTexture, material.MetalnessTexture, material.RoughnessTexture, material.NormalTexture, material.AmbientOcclusionTexture,
-                         lightPositions, lightColors, material.Geometry, renderer.RenderPhysicallyBasedShader)
+            for entry in surfaces.RenderSurfacesDeferredRelative do
+                GlRenderer3d.renderSurfacesDeferred
+                    eyePosition
+                    viewRelativeArray
+                    projectionArray
+                    entry.Value
+                    entry.Key
+                    lightPositions
+                    lightColors
+                    renderer
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (surfaces, view, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
                 
             // end frame
             if renderer.RenderShouldEndFrame then
