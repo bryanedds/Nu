@@ -1074,6 +1074,17 @@ type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
     static member inline defaultOutput =
         Unchecked.defaultof<RayCast2Output>
 
+/// The flipness of a texture.
+[<Syntax
+    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison; Struct>] Flip =
+    | FlipNone
+    | FlipH
+    | FlipV
+    | FlipHV
+
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -1150,6 +1161,7 @@ module Math =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
 
     /// Check that a point is within the given bounds.
+    /// TODO: 3D: move this into Box3 definition.
     let isPointInBounds3d (point : Vector3) (bounds : Box3) =
         point.X >= bounds.Position.X &&
         point.Y >= bounds.Position.Y &&
@@ -1159,6 +1171,7 @@ module Math =
         point.Z <= bounds.Position.Z + bounds.Size.Z
 
     /// Check that a point is within the given bounds.
+    /// TODO: 3D: move this into Box2 definition.
     let isPointInBounds2d (point : Vector2) (bounds : Box2) =
         point.X >= bounds.Position.X &&
         point.Y >= bounds.Position.Y &&
@@ -1166,6 +1179,7 @@ module Math =
         point.Y <= bounds.Position.Y + bounds.Size.Y
 
     /// Check that a bounds is within the given bounds.
+    /// TODO: 3D: move this into Box3 definition.
     let isBoundsInBounds3d (bounds : Box3) (bounds2 : Box3) =
         bounds.Position.X >= bounds2.Position.X &&
         bounds.Position.Y >= bounds2.Position.Y &&
@@ -1175,6 +1189,7 @@ module Math =
         bounds.Position.Z + bounds.Size.Z <= bounds2.Position.Z + bounds2.Size.Z
 
     /// Check that a bounds is within the given bounds.
+    /// TODO: 3D: move this into Box2 definition.
     let isBoundsInBounds2d (bounds : Box2) (bounds2 : Box2) =
         bounds.Position.X >= bounds2.Position.X &&
         bounds.Position.Y >= bounds2.Position.Y &&

@@ -22,7 +22,7 @@ type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
 type [<NoEquality; NoComparison>] RenderAsset =
-    | TextureAsset of TextureMetadata * uint
+    | TextureAsset of OpenGL.Hl.TextureMetadata * uint
     | FontAsset of int * nativeint
     | StaticModelAsset of OpenGL.Hl.PhysicallyBasedStaticModel
 
