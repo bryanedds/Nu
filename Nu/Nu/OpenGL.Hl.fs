@@ -53,15 +53,15 @@ module Hl =
           MetalnessTexture : uint
           RoughnessTexture : uint
           NormalTexture : uint
-          AmbientOcclusionTextureOpt : uint voption
+          AmbientOcclusionTexture : uint
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
             hash surface.Transparent ^^^
-            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTextureOpt ^^^
+            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTextureopt geometry =
+        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
             let mutable result =
                 { HashCode = 0
                   Transparent = transparent
@@ -69,7 +69,7 @@ module Hl =
                   MetalnessTexture = metalnessTexture
                   RoughnessTexture = roughnessTexture
                   NormalTexture = normalTexture
-                  AmbientOcclusionTextureOpt = ambientOcclusionTextureopt
+                  AmbientOcclusionTexture = ambientOcclusionTexture
                   PhysicallyBasedGeometry = geometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
@@ -81,7 +81,7 @@ module Hl =
             left.MetalnessTexture = right.MetalnessTexture &&
             left.RoughnessTexture = right.RoughnessTexture &&
             left.NormalTexture = right.NormalTexture &&
-            left.AmbientOcclusionTextureOpt = right.AmbientOcclusionTextureOpt &&
+            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
             left.PhysicallyBasedGeometry.IndexBuffer = right.PhysicallyBasedGeometry.IndexBuffer &&
             left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -346,14 +346,12 @@ module Hl =
         let vertexData =
             [|
                 (*   positions   *)       (*    normals    *)         (* tex coords *)
-
-                // front face
-                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
-                +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
-                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-                -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
-                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+                -1.0f; -1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+                +1.0f; -1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
+                +1.0f; +1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                +1.0f; +1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                -1.0f; +1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
+                -1.0f; -1.0f; +0.0f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
             |]
 
         // make index data trivially
@@ -623,7 +621,7 @@ module Hl =
                                         (snd metalnessTexture)
                                         (snd roughnessTexture)
                                         (snd normalTexture)
-                                        (ValueSome (snd ambientOcclusionTexture))
+                                        (snd ambientOcclusionTexture)
                                         geometry
                                 SegmentedList.add surface model
                                 bounds <- bounds.Combine geometry.Bounds
@@ -1029,7 +1027,7 @@ module Hl =
          metalnessTexture : uint,
          roughnessTexture : uint,
          normalTexture : uint,
-         ambientOcclusionTextureOpt : uint voption,
+         ambientOcclusionTexture : uint,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -1051,9 +1049,7 @@ module Hl =
         OpenGL.Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
         OpenGL.Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 3)
-        match ambientOcclusionTextureOpt with
-        | ValueSome _ -> OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
-        | ValueNone -> ()
+        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
         OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
@@ -1064,13 +1060,8 @@ module Hl =
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
-        match ambientOcclusionTextureOpt with
-        | ValueSome ambientOcclusionTexture ->
-            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
-        | ValueNone -> ()
-        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
         Assert ()
 
         // update models buffer
@@ -1104,11 +1095,8 @@ module Hl =
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        match ambientOcclusionTextureOpt with
-        | ValueSome _ ->
-            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        | ValueNone -> ()
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.UseProgram 0u
         Assert ()
 
@@ -1117,3 +1105,59 @@ module Hl =
         OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
         OpenGL.Gl.DepthFunc DepthFunction.Less
         OpenGL.Gl.DepthMask false
+
+    /// Draw a the second pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferred2Surface
+        (eyePosition : Vector3,
+         positionTexture : uint,
+         normalTexture : uint,
+         albedoTexture : uint,
+         materialTexture : uint,
+         lightPositions : single array,
+         lightColors : single array,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedDeferred2Shader) =
+
+        // setup shader
+        OpenGL.Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
+        OpenGL.Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
+        OpenGL.Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 1)
+        OpenGL.Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
+        OpenGL.Gl.Uniform1 (shader.MaterialTextureUniform, 3)
+        OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, positionTexture)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoTexture)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, materialTexture)
+        Assert ()
+
+        // setup geometry
+        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Assert ()
+
+        // draw geometry
+        OpenGL.Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
+        Assert ()
+
+        // teardown geometry
+        OpenGL.Gl.BindVertexArray 0u
+        Assert ()
+
+        // teardown shader
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Gl.UseProgram 0u

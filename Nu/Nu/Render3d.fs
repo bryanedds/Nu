@@ -281,7 +281,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // draw surfaces
             OpenGL.Hl.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
-                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTextureOpt,
+                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
                  lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
@@ -418,6 +418,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+            OpenGL.Hl.Assert ()
 
             // render deferred pass w/ absolute-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredAbsolute do
@@ -431,6 +432,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
+                OpenGL.Hl.Assert ()
 
             // render deferred pass w/ relative-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredRelative do
@@ -444,27 +446,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
+                OpenGL.Hl.Assert ()
 
             // render deferred lighting quad
-            let quadSurface =
-                OpenGL.Hl.PhysicallyBasedSurface.make
-                    false
-                    positionTextureUniform
-                    normalTextureUniform
-                    albedoTextureUniform
-                    materialTextureUniform
-                    ValueNone
-                    renderer.RenderPhysicallyBasedQuad
-            GlRenderer3d.renderPhysicallyBasedSurfaces
-                eyePosition
-                viewAbsoluteArray
-                projectionArray
-                (SegmentedList.singleton m4Identity)
-                quadSurface
-                lightPositions
-                lightColors
-                renderer.RenderPhysicallyBasedForwardShader
-                renderer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
+            OpenGL.Hl.DrawPhysicallyBasedDeferred2Surface
+                (eyePosition,
+                 positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform,
+                 lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+            OpenGL.Hl.Assert ()
 
             // render forward pass w/ absolute-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
@@ -478,6 +468,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
+                OpenGL.Hl.Assert ()
 
             // render forward pass w/ relative-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
@@ -491,11 +482,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
+                OpenGL.Hl.Assert ()
 
             // render pre-passes
             for pass in postPasses do
                 pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
-                
+                OpenGL.Hl.Assert ()
+
             // end frame
             if renderer.RenderShouldEndFrame then
                 OpenGL.Hl.EndFrame ()
