@@ -358,7 +358,7 @@ module Hl =
         let indexData = Array.init 6 id
 
         // make bounds trivially
-        let bounds = box3 (v3Dup -0.5f) v3One
+        let bounds = box3 (v3 -1.0f -1.0f 0.0f) (v3 2.0f 2.0f 0.0f)
 
         // fin
         (vertexData, indexData, bounds)
