@@ -95,7 +95,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     private
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
-          RenderPhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
+          RenderPhysicallyBasedForwardShader : OpenGL.Hl.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredShader : OpenGL.Hl.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferred2Shader : OpenGL.Hl.PhysicallyBasedDeferred2Shader
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
@@ -250,7 +252,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Get the physically-based shader.
     static member getPhysicallyBasedShader renderer =
-        renderer.RenderPhysicallyBasedShader
+        renderer.RenderPhysicallyBasedForwardShader
 
     static member inline private renderSurfacesDeferred
         eyePosition
@@ -279,7 +281,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
-                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, renderer.RenderPhysicallyBasedShader)
+                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, renderer.RenderPhysicallyBasedForwardShader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -296,8 +298,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
-        // create pbr shader
-        let physicallyBasedShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedShaderFilePath
+        // create forward shader
+        let forwardShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create deferred shaders
+        let (deferredShader, deferred2Shader) =
+            OpenGL.Hl.CreatePhysicallyBasedDeferredShaders
+                (Constants.Paths.PhysicallyBasedDeferredShaderFilePath,
+                 Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create geometry framebuffer
@@ -310,7 +319,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let renderer =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
-              RenderPhysicallyBasedShader = physicallyBasedShader
+              RenderPhysicallyBasedForwardShader = forwardShader
+              RenderPhysicallyBasedDeferredShader = deferredShader
+              RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -326,7 +337,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     interface Renderer3d with
 
         member renderer.PhysicallyBasedShader =
-            renderer.RenderPhysicallyBasedShader
+            renderer.RenderPhysicallyBasedForwardShader
 
         member renderer.Render eyePosition eyeRotation windowSize renderMessages =
 

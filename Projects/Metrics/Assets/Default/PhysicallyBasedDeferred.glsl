@@ -41,8 +41,8 @@ in vec2 texCoordsOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 normal;
-layout (location = 2) out vec4 albedo;
-layout (location = 3) out vec3 material;
+layout (location = 2) out vec3 albedo;
+layout (location = 3) out vec4 material;
 
 vec3 getNormal()
 {
@@ -73,5 +73,6 @@ void main()
     float metalness = texture(metalnessTexture, texCoordsOut).r;
     float roughness = texture(roughnessTexture, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
-    material = vec3(metalness, roughness, ambientOcclusion);
+    float uniformPreservationHack = eyePosition.x + lightPositions[0].x + lightColors[0].r; // HACK: utilizes eyePosition to keep the uniform from being optimized away.
+    material = vec4(metalness, roughness, ambientOcclusion, uniformPreservationHack); 
 }
