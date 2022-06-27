@@ -53,15 +53,15 @@ module Hl =
           MetalnessTexture : uint
           RoughnessTexture : uint
           NormalTexture : uint
-          AmbientOcclusionTexture : uint
+          AmbientOcclusionTextureOpt : uint voption
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
             hash surface.Transparent ^^^
-            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
+            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTextureOpt ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
+        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTextureopt geometry =
             let mutable result =
                 { HashCode = 0
                   Transparent = transparent
@@ -69,7 +69,7 @@ module Hl =
                   MetalnessTexture = metalnessTexture
                   RoughnessTexture = roughnessTexture
                   NormalTexture = normalTexture
-                  AmbientOcclusionTexture = ambientOcclusionTexture
+                  AmbientOcclusionTextureOpt = ambientOcclusionTextureopt
                   PhysicallyBasedGeometry = geometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
@@ -81,7 +81,7 @@ module Hl =
             left.MetalnessTexture = right.MetalnessTexture &&
             left.RoughnessTexture = right.RoughnessTexture &&
             left.NormalTexture = right.NormalTexture &&
-            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
+            left.AmbientOcclusionTextureOpt = right.AmbientOcclusionTextureOpt &&
             left.PhysicallyBasedGeometry.IndexBuffer = right.PhysicallyBasedGeometry.IndexBuffer &&
             left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -339,6 +339,32 @@ module Hl =
         // error
         else Left "Mesh is missing vertices, normals, or texCoords."
 
+    /// Create a mesh for a physically-based quad.
+    let CreatePhysicallyBasedQuadMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)       (*    normals    *)         (* tex coords *)
+
+                // front face
+                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+                +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
+                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
+                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3Dup -0.5f) v3One
+
+        // fin
+        (vertexData, indexData, bounds)
+
     /// Create a mesh for a physically-based cube.
     let CreatePhysicallyBasedCubeMesh () =
 
@@ -405,9 +431,102 @@ module Hl =
         // fin
         (vertexData, indexData, bounds)
 
+    /// Create physically-based geometry from a mesh.
+    let CreatePhysicallyBasedGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
+
+        // make buffers
+        let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
+
+            // make renderable
+            if renderable then
+
+                // initialize vao
+                let vao = OpenGL.Gl.GenVertexArray ()
+                OpenGL.Gl.BindVertexArray vao
+                Assert ()
+
+                // create vertex buffer
+                let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                let normalOffset =      (3 (*position*)) * sizeof<single>
+                let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+                let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                finally vertexDataPtr.Free ()
+                OpenGL.Gl.EnableVertexAttribArray 0u
+                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+                OpenGL.Gl.EnableVertexAttribArray 1u
+                OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+                OpenGL.Gl.EnableVertexAttribArray 2u
+                OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+                Assert ()
+
+                // create model buffer
+                let modelBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
+                let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                finally modelDataPtr.Free ()
+                OpenGL.Gl.EnableVertexAttribArray 3u
+                OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
+                OpenGL.Gl.VertexAttribDivisor (3u, 1u)
+                OpenGL.Gl.EnableVertexAttribArray 4u
+                OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (4u, 1u)
+                OpenGL.Gl.EnableVertexAttribArray 5u
+                OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (5u, 1u)
+                OpenGL.Gl.EnableVertexAttribArray 6u
+                OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                OpenGL.Gl.VertexAttribDivisor (6u, 1u)
+                Assert ()
+
+                // create index buffer
+                let indexBuffer = OpenGL.Gl.GenBuffer ()
+                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexDataSize = uint (indexData.Length * sizeof<uint>)
+                let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                finally indexDataPtr.Free ()
+                Assert ()
+
+                // finalize vao
+                OpenGL.Gl.BindVertexArray 0u
+                Assert ()
+
+                // fin
+                ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
+
+            // fake buffers
+            else
+                    
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 3)
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 3
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+                    
+                // fin
+                (vertices, 0u, 0u, 0u, 0u)
+
+        // make physically based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveType = OpenGL.PrimitiveType.Triangles
+              ElementCount = indexData.Length
+              Vertices = vertices
+              VertexBuffer = vertexBuffer
+              ModelBuffer = modelBuffer
+              IndexBuffer = indexBuffer
+              PhysicallyBasedVao = vao }
+
+        // fin
+        geometry
+
     /// Attempt to create physically-based geometry from an assimp mesh.
     let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
-
         let meshOpt =
 #if DEBUG_RENDERING_CUBE
             Right CreatePhysicallyBasedCubeMesh ()
@@ -415,101 +534,18 @@ module Hl =
             TryCreatePhysicallyBasedMesh mesh
 #endif
         match meshOpt with
-        | Right (vertexData, indexData, bounds) ->
-
-            // make buffers
-            let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
-
-                // make renderable
-                if renderable then
-
-                    // initialize vao
-                    let vao = OpenGL.Gl.GenVertexArray ()
-                    OpenGL.Gl.BindVertexArray vao
-                    Assert ()
-
-                    // create vertex buffer
-                    let vertexBuffer = OpenGL.Gl.GenBuffer ()
-                    let normalOffset =      (3 (*position*)) * sizeof<single>
-                    let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
-                    let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                    let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-                    finally vertexDataPtr.Free ()
-                    OpenGL.Gl.EnableVertexAttribArray 0u
-                    OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-                    OpenGL.Gl.EnableVertexAttribArray 1u
-                    OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-                    OpenGL.Gl.EnableVertexAttribArray 2u
-                    OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-                    Assert ()
-
-                    // create model buffer
-                    let modelBuffer = OpenGL.Gl.GenBuffer ()
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
-                    let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
-                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
-                    finally modelDataPtr.Free ()
-                    OpenGL.Gl.EnableVertexAttribArray 3u
-                    OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
-                    OpenGL.Gl.VertexAttribDivisor (3u, 1u)
-                    OpenGL.Gl.EnableVertexAttribArray 4u
-                    OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
-                    OpenGL.Gl.VertexAttribDivisor (4u, 1u)
-                    OpenGL.Gl.EnableVertexAttribArray 5u
-                    OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
-                    OpenGL.Gl.VertexAttribDivisor (5u, 1u)
-                    OpenGL.Gl.EnableVertexAttribArray 6u
-                    OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
-                    OpenGL.Gl.VertexAttribDivisor (6u, 1u)
-                    Assert ()
-
-                    // create index buffer
-                    let indexBuffer = OpenGL.Gl.GenBuffer ()
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-                    let indexDataSize = uint (indexData.Length * sizeof<uint>)
-                    let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-                    finally indexDataPtr.Free ()
-                    Assert ()
-
-                    // finalize vao
-                    OpenGL.Gl.BindVertexArray 0u
-                    Assert ()
-
-                    // fin
-                    ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
-
-                // fake buffers
-                else
-                    
-                    // compute vertices
-                    let vertices = Array.zeroCreate (vertexData.Length / 3)
-                    for i in 0 .. dec vertices.Length do
-                        let j = i * 3
-                        let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                        vertices.[i] <- vertex
-                    
-                    // fin
-                    (vertices, 0u, 0u, 0u, 0u)
-
-            // make physically based geometry
-            let geometry =
-                { Bounds = bounds
-                  PrimitiveType = OpenGL.PrimitiveType.Triangles
-                  ElementCount = indexData.Length
-                  Vertices = vertices
-                  VertexBuffer = vertexBuffer
-                  ModelBuffer = modelBuffer
-                  IndexBuffer = indexBuffer
-                  PhysicallyBasedVao = vao }
-
-            // success
-            Right geometry
-
-        // error
+        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds))
         | Left error -> Left error
+
+    /// Create physically-based quad.
+    let CreatePhysicallyBasedQuad renderable =
+        let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
+        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
+
+    /// Create physically-based cube.
+    let CreatePhysicallyBasedCube renderable =
+        let (vertexData, indexData, bounds) = CreatePhysicallyBasedCubeMesh ()
+        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
 
     /// Attempt to create physically-based material from an assimp mesh.
     let TryCreatePhysicallyBasedMaterial (dirPath : string, material : Assimp.Material) =
@@ -587,7 +623,7 @@ module Hl =
                                         (snd metalnessTexture)
                                         (snd roughnessTexture)
                                         (snd normalTexture)
-                                        (snd ambientOcclusionTexture)
+                                        (ValueSome (snd ambientOcclusionTexture))
                                         geometry
                                 SegmentedList.add surface model
                                 bounds <- bounds.Combine geometry.Bounds
@@ -993,7 +1029,7 @@ module Hl =
          metalnessTexture : uint,
          roughnessTexture : uint,
          normalTexture : uint,
-         ambientOcclusionTexture : uint,
+         ambientOcclusionTextureOpt : uint voption,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -1015,7 +1051,9 @@ module Hl =
         OpenGL.Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
         OpenGL.Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 3)
-        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        match ambientOcclusionTextureOpt with
+        | ValueSome _ -> OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        | ValueNone -> ()
         OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
@@ -1026,8 +1064,11 @@ module Hl =
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessTexture)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
+        match ambientOcclusionTextureOpt with
+        | ValueSome ambientOcclusionTexture ->
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
+        | ValueNone -> ()
         OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
         OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
         Assert ()
@@ -1063,8 +1104,11 @@ module Hl =
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        match ambientOcclusionTextureOpt with
+        | ValueSome _ ->
+            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        | ValueNone -> ()
         OpenGL.Gl.UseProgram 0u
         Assert ()
 
