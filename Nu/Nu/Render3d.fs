@@ -415,7 +415,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
-            OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
             OpenGL.Hl.Assert ()
@@ -451,8 +451,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
             OpenGL.Hl.DrawPhysicallyBasedDeferred2Surface
-                (eyePosition,
-                 positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform,
+                (positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform,
                  lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
