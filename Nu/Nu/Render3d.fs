@@ -413,11 +413,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // setup geometry buffer
             let (positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
+            OpenGL.Gl.DepthMask true
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
             OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+            OpenGL.Gl.DepthMask false
             OpenGL.Hl.Assert ()
 
             // render deferred pass w/ absolute-transformed surfaces
