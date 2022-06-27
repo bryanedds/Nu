@@ -1440,6 +1440,20 @@ module WorldTypes =
             | "BasicEmitter2d" -> Particles.BasicEmitter2d.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
             | _ -> None
 
+        /// Attempt to get a forward render callback with the given names.
+        abstract TryGetForwardRenderCallback : string -> ForwardRenderCallback voption
+        default this.TryGetForwardRenderCallback _ = ValueNone
+
+        /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
+        /// successfully converted.
+        abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
+        default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
+
+        /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
+        /// successfully converted.
+        abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
+        default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
+
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World
         default this.PreFrame world = world
@@ -1451,16 +1465,6 @@ module WorldTypes =
         /// A call-back at the end of each frame.
         abstract PostFrame : World -> World
         default this.PostFrame world = world
-
-        /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
-        /// successfully converted.
-        abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
-        default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
-
-        /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
-        /// successfully converted.
-        abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
-        default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
 
         /// Birth facets / dispatchers of type 'a from plugin.
         member internal this.Birth<'a> () =
