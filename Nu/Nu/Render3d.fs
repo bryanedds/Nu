@@ -254,7 +254,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedForwardShader
 
-    static member inline private renderSurfacesDeferred
+    static member inline private renderPhysicallyBasedSurfaces
         eyePosition
         viewArray
         projectionArray
@@ -262,6 +262,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         (surface : OpenGL.Hl.PhysicallyBasedSurface)
         lightPositions
         lightColors
+        shader
         renderer =
 
         // ensure there are models to render
@@ -281,7 +282,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
-                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, renderer.RenderPhysicallyBasedForwardShader)
+                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -412,27 +413,29 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
 
             // render main pass w/ absolute-transformed surfaces
-            for entry in surfaces.RenderSurfacesDeferredAbsolute do
-                GlRenderer3d.renderSurfacesDeferred
+            for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
+                GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
                     projectionArray
-                    entry.Value
-                    entry.Key
+                    (SegmentedList.singleton model)
+                    surface
                     lightPositions
                     lightColors
+                    renderer.RenderPhysicallyBasedForwardShader
                     renderer
 
             // render main pass w/ relative-transformed surfaces
-            for entry in surfaces.RenderSurfacesDeferredRelative do
-                GlRenderer3d.renderSurfacesDeferred
+            for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
+                GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
                     projectionArray
-                    entry.Value
-                    entry.Key
+                    (SegmentedList.singleton model)
+                    surface
                     lightPositions
                     lightColors
+                    renderer.RenderPhysicallyBasedForwardShader
                     renderer
 
             // render pre-passes
