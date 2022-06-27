@@ -392,7 +392,19 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for pass in prePasses do
                 pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
 
-            // render main pass
+            // render main pass w/ absolute-transformed surfaces
+            for entry in surfaces.RenderSurfacesDeferredAbsolute do
+                GlRenderer3d.renderSurfacesDeferred
+                    eyePosition
+                    viewAbsoluteArray
+                    projectionArray
+                    entry.Value
+                    entry.Key
+                    lightPositions
+                    lightColors
+                    renderer
+
+            // render main pass w/ relative-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderSurfacesDeferred
                     eyePosition
