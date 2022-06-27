@@ -1274,7 +1274,12 @@ module StaticModelFacetModule =
                     match entity.GetStaticModelRenderType world with
                     | StaticModelDeferred -> RenderDeferred
                     | StaticModelForward None -> RenderForward ValueNone
-                    | StaticModelForward (Some _) -> failwithnie () // TODO: 3D: implement by fetching callback from NuPlugin.
+                    | StaticModelForward (Some callbackName) ->
+                        match World.tryGetForwardRenderCallback callbackName world with
+                        | ValueSome callback -> RenderForward (ValueSome callback)
+                        | ValueNone ->
+                            Log.debug ("Failed to actualize StaticModelFacet due to missing forward render callback '" + callbackName + "'. Using canonical forward rendering instance")
+                            RenderForward ValueNone
                 World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
             else world
 
