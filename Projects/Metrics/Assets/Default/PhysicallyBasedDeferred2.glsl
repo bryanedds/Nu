@@ -11,7 +11,7 @@ out vec2 texCoordsOut;
 void main()
 {
     texCoordsOut = texCoords;
-    gl_Position = vec4(position, 1.0));
+    gl_Position = vec4(position, 1.0);
 }
 
 #shader fragment
@@ -75,10 +75,10 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void main()
 {
     // retrieve data from geometry buffer
-    vec3 position = texture(positionTexture, outTexCoords).rgb;
-    vec3 normal = texture(normalTexture, outTexCoords).rgb;
-    vec3 albedo = texture(albedoTexture, outTexCoords).rgb;
-    vec3 material = texture(materialTexture, outTexCoords).rgb;
+    vec3 position = texture(positionTexture, texCoordsOut).rgb;
+    vec3 normal = texture(normalTexture, texCoordsOut).rgb;
+    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+    vec3 material = texture(materialTexture, texCoordsOut).rgb;
 
     // compute materials
     float metalness = material.r;

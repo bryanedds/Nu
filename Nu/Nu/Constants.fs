@@ -136,3 +136,5 @@ module Ecs =
 module Paths =
 
     let [<Literal>] PhysicallyBasedShaderFilePath = "Assets/Default/PhysicallyBased.glsl"
+    let [<Literal>] PhysicallyBasedDeferredShaderFilePath = "Assets/Default/PhysicallyBasedDeferred.glsl"
+    let [<Literal>] PhysicallyBasedDeferred2ShaderFilePath = "Assets/Default/PhysicallyBasedDeferred2.glsl"

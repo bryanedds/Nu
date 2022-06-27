@@ -116,7 +116,7 @@ module Hl =
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
-    /// Describes a deferred physically-based shader that's loaded into GPU.
+    /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedDeferred2Shader =
         { EyePositionUniform : int
           PositionTextureUniform : int
