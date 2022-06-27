@@ -272,78 +272,17 @@ module Hl =
     let DeleteTexture (texture : uint) =
         OpenGL.Gl.DeleteTextures texture
 
-    /// Attempt to create physically-based geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
+    /// Attempt to create physically-based from an Assimp mesh.
+    let TryCreatePhysicallyBasedMesh (mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
             mesh.HasNormals &&
             mesh.HasTextureCoords 0 then
-
+        
             // attempt to populate geometry data
             if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
-#if DEBUG_RENDERING_CUBE
-                // make vertex data
-                let vertexData =
-                    [|
-                      (*   positions   *)       (*    normals    *)         (* tex coords *)
-
-                      // back face
-                      -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
-                      +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
-                      +0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 0.0f; // bottom-right         
-                      +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
-                      -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
-                      -0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 1.0f; // top-left
-
-                      // front face
-                      -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
-                      +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
-                      +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-                      +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
-                      -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
-                      -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
-
-                      // left face
-                      -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
-                      -0.5f; +0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-left
-                      -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
-                      -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
-                      -0.5f; -0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-right
-                      -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
-
-                      // right face
-                      +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
-                      +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
-                      +0.5f; +0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-right         
-                      +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
-                      +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
-                      +0.5f; -0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-left     
-
-                      // bottom face
-                      -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
-                      +0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 1.0f; // top-left
-                      +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
-                      +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
-                      -0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 0.0f; // bottom-right
-                      -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
-
-                      // top face
-                      -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
-                      +0.5f; +0.5f ;+0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
-                      +0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 1.0f; // top-right     
-                      +0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
-                      -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
-                      -0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 0.0f  // bottom-left     
-                    |]
-
-                // make index data trivially
-                let indexData = Array.init 36 id
-
-                // make bounds trivially
-                let bounds = box3 (v3Dup -0.5f) v3One
-#else
                 // populate vertex data and bounds
                 let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
                 let mutable positionMin = v3Zero
@@ -379,103 +318,187 @@ module Hl =
                         SegmentedList.add indices.[1] indexList
                         SegmentedList.add indices.[0] indexList
                 let indexData = Seq.toArray indexList
-#endif
-                // make buffers
-                let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
 
-                    // make renderable
-                    if renderable then
-
-                        // initialize vao
-                        let vao = OpenGL.Gl.GenVertexArray ()
-                        OpenGL.Gl.BindVertexArray vao
-                        Assert ()
-
-                        // create vertex buffer
-                        let vertexBuffer = OpenGL.Gl.GenBuffer ()
-                        let normalOffset =      (3 (*position*)) * sizeof<single>
-                        let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
-                        let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-                        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-                        finally vertexDataPtr.Free ()
-                        OpenGL.Gl.EnableVertexAttribArray 0u
-                        OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-                        OpenGL.Gl.EnableVertexAttribArray 1u
-                        OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-                        OpenGL.Gl.EnableVertexAttribArray 2u
-                        OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-                        Assert ()
-
-                        // create model buffer
-                        let modelBuffer = OpenGL.Gl.GenBuffer ()
-                        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
-                        let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
-                        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
-                        finally modelDataPtr.Free ()
-                        OpenGL.Gl.EnableVertexAttribArray 3u
-                        OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
-                        OpenGL.Gl.VertexAttribDivisor (3u, 1u)
-                        OpenGL.Gl.EnableVertexAttribArray 4u
-                        OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
-                        OpenGL.Gl.VertexAttribDivisor (4u, 1u)
-                        OpenGL.Gl.EnableVertexAttribArray 5u
-                        OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
-                        OpenGL.Gl.VertexAttribDivisor (5u, 1u)
-                        OpenGL.Gl.EnableVertexAttribArray 6u
-                        OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
-                        OpenGL.Gl.VertexAttribDivisor (6u, 1u)
-                        Assert ()
-
-                        // create index buffer
-                        let indexBuffer = OpenGL.Gl.GenBuffer ()
-                        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-                        let indexDataSize = uint (indexData.Length * sizeof<uint>)
-                        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
-                        finally indexDataPtr.Free ()
-                        Assert ()
-
-                        // finalize vao
-                        OpenGL.Gl.BindVertexArray 0u
-                        Assert ()
-
-                        // fin
-                        ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
-
-                    // fake buffers
-                    else
+                // fin
+                Right (vertexData, indexData, bounds)
                         
-                        // compute vertices
-                        let vertices = Array.zeroCreate (vertexData.Length / 3)
-                        for i in 0 .. dec vertices.Length do
-                            let j = i * 3
-                            let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                            vertices.[i] <- vertex
-                        
-                        // fin
-                        (vertices, 0u, 0u, 0u, 0u)
-
-                // make physically based geometry
-                let geometry =
-                    { Bounds = bounds
-                      PrimitiveType = OpenGL.PrimitiveType.Triangles
-                      ElementCount = indexData.Length
-                      Vertices = vertices
-                      VertexBuffer = vertexBuffer
-                      ModelBuffer = modelBuffer
-                      IndexBuffer = indexBuffer
-                      PhysicallyBasedVao = vao }
-
-                // success
-                Right geometry
-
             // error
             else Left ("Vertex / normal / tex coords count mismatch.")
 
         // error
         else Left "Mesh is missing vertices, normals, or texCoords."
+
+    /// Create a mesh for a physically-based cube.
+    let CreatePhysicallyBasedCubeMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)       (*    normals    *)         (* tex coords *)
+
+                // back face
+                -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
+                +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
+                +0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 0.0f; // bottom-right         
+                +0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        1.0f; 1.0f; // top-right
+                -0.5f; -0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 0.0f; // bottom-left
+                -0.5f; +0.5f; -0.5f;       0.0f;  0.0f; -1.0f;        0.0f; 1.0f; // top-left
+
+                // front face
+                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+                +0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 0.0f; // bottom-right
+                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                +0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        1.0f; 1.0f; // top-right
+                -0.5f; +0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 1.0f; // top-left
+                -0.5f; -0.5f; +0.5f;       0.0f;  0.0f; +1.0f;        0.0f; 0.0f; // bottom-left
+
+                // left face
+                -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
+                -0.5f; +0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-left
+                -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
+                -0.5f; -0.5f; -0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-left
+                -0.5f; -0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-right
+                -0.5f; +0.5f; +0.5f;      -1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-right
+
+                // right face
+                +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
+                +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
+                +0.5f; +0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 1.0f; // top-right         
+                +0.5f; -0.5f; -0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 1.0f; // bottom-right
+                +0.5f; +0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        1.0f; 0.0f; // top-left
+                +0.5f; -0.5f; +0.5f;      +1.0f;  0.0f;  0.0f;        0.0f; 0.0f; // bottom-left     
+
+                // bottom face
+                -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
+                +0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 1.0f; // top-left
+                +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
+                +0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        1.0f; 0.0f; // bottom-left
+                -0.5f; -0.5f; +0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 0.0f; // bottom-right
+                -0.5f; -0.5f; -0.5f;       0.0f; -1.0f;  0.0f;        0.0f; 1.0f; // top-right
+
+                // top face
+                -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
+                +0.5f; +0.5f ;+0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
+                +0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 1.0f; // top-right     
+                +0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        1.0f; 0.0f; // bottom-right
+                -0.5f; +0.5f; -0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 1.0f; // top-left
+                -0.5f; +0.5f; +0.5f;       0.0f; +1.0f;  0.0f;        0.0f; 0.0f  // bottom-left     
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 36 id
+
+        // make bounds trivially
+        let bounds = box3 (v3Dup -0.5f) v3One
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Attempt to create physically-based geometry from an assimp mesh.
+    let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
+
+        let meshOpt =
+#if DEBUG_RENDERING_CUBE
+            Right CreatePhysicallyBasedCubeMesh ()
+#else
+            TryCreatePhysicallyBasedMesh mesh
+#endif
+        match meshOpt with
+        | Right (vertexData, indexData, bounds) ->
+
+            // make buffers
+            let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
+
+                // make renderable
+                if renderable then
+
+                    // initialize vao
+                    let vao = OpenGL.Gl.GenVertexArray ()
+                    OpenGL.Gl.BindVertexArray vao
+                    Assert ()
+
+                    // create vertex buffer
+                    let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                    let normalOffset =      (3 (*position*)) * sizeof<single>
+                    let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
+                    let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+                    let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
+                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                    finally vertexDataPtr.Free ()
+                    OpenGL.Gl.EnableVertexAttribArray 0u
+                    OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
+                    OpenGL.Gl.EnableVertexAttribArray 1u
+                    OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+                    OpenGL.Gl.EnableVertexAttribArray 2u
+                    OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+                    Assert ()
+
+                    // create model buffer
+                    let modelBuffer = OpenGL.Gl.GenBuffer ()
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
+                    let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                    finally modelDataPtr.Free ()
+                    OpenGL.Gl.EnableVertexAttribArray 3u
+                    OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
+                    OpenGL.Gl.VertexAttribDivisor (3u, 1u)
+                    OpenGL.Gl.EnableVertexAttribArray 4u
+                    OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                    OpenGL.Gl.VertexAttribDivisor (4u, 1u)
+                    OpenGL.Gl.EnableVertexAttribArray 5u
+                    OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                    OpenGL.Gl.VertexAttribDivisor (5u, 1u)
+                    OpenGL.Gl.EnableVertexAttribArray 6u
+                    OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                    OpenGL.Gl.VertexAttribDivisor (6u, 1u)
+                    Assert ()
+
+                    // create index buffer
+                    let indexBuffer = OpenGL.Gl.GenBuffer ()
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                    let indexDataSize = uint (indexData.Length * sizeof<uint>)
+                    let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+                    try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                    finally indexDataPtr.Free ()
+                    Assert ()
+
+                    // finalize vao
+                    OpenGL.Gl.BindVertexArray 0u
+                    Assert ()
+
+                    // fin
+                    ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
+
+                // fake buffers
+                else
+                    
+                    // compute vertices
+                    let vertices = Array.zeroCreate (vertexData.Length / 3)
+                    for i in 0 .. dec vertices.Length do
+                        let j = i * 3
+                        let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                        vertices.[i] <- vertex
+                    
+                    // fin
+                    (vertices, 0u, 0u, 0u, 0u)
+
+            // make physically based geometry
+            let geometry =
+                { Bounds = bounds
+                  PrimitiveType = OpenGL.PrimitiveType.Triangles
+                  ElementCount = indexData.Length
+                  Vertices = vertices
+                  VertexBuffer = vertexBuffer
+                  ModelBuffer = modelBuffer
+                  IndexBuffer = indexBuffer
+                  PhysicallyBasedVao = vao }
+
+            // success
+            Right geometry
+
+        // error
+        | Left error -> Left error
 
     /// Attempt to create physically-based material from an assimp mesh.
     let TryCreatePhysicallyBasedMaterial (dirPath : string, material : Assimp.Material) =
