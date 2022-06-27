@@ -1261,7 +1261,7 @@ module StaticModelFacetModule =
                 let mutable transform = entity.GetTransform world
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
-                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (staticModel, affineMatrix)) world
+                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (entity.GetAbsolute world, affineMatrix, staticModel)) world
             else world
 
         override this.GetQuickSize (entity, world) =

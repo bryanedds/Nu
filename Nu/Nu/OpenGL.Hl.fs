@@ -71,12 +71,12 @@ module Hl =
           RoughnessTexture : uint
           NormalTexture : uint
           AmbientOcclusionTexture : uint
-          Geometry : PhysicallyBasedGeometry }
+          PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
             hash surface.Transparent ^^^
             hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
-            hash surface.Geometry
+            hash surface.PhysicallyBasedGeometry
 
         static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
             let mutable result =
@@ -87,7 +87,7 @@ module Hl =
                   RoughnessTexture = roughnessTexture
                   NormalTexture = normalTexture
                   AmbientOcclusionTexture = ambientOcclusionTexture
-                  Geometry = geometry }
+                  PhysicallyBasedGeometry = geometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
 
@@ -99,9 +99,9 @@ module Hl =
             left.RoughnessTexture = right.RoughnessTexture &&
             left.NormalTexture = right.NormalTexture &&
             left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
-            left.Geometry.IndexBuffer = right.Geometry.IndexBuffer &&
-            left.Geometry.VertexBuffer = right.Geometry.VertexBuffer &&
-            left.Geometry.PhysicallyBasedVao = right.Geometry.PhysicallyBasedVao
+            left.PhysicallyBasedGeometry.IndexBuffer = right.PhysicallyBasedGeometry.IndexBuffer &&
+            left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer &&
+            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that
