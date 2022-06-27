@@ -74,5 +74,5 @@ void main()
     float roughness = texture(roughnessTexture, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
     float uniformPreservationHack = eyePosition.x + lightPositions[0].x + lightColors[0].r; // HACK: utilizes eyePosition to keep the uniform from being optimized away.
-    material = vec4(metalness, roughness, ambientOcclusion, uniformPreservationHack); 
+    material = vec4(metalness, roughness, ambientOcclusion, uniformPreservationHack);
 }
