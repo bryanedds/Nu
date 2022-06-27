@@ -20,20 +20,9 @@ type ForwardRenderCallback =
     Vector3 * Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * Vector3 array * Color array -> Renderer3d -> unit
 
 /// The type of rendering used on a surface.
-and [<StructuralEquality; NoComparison; Struct>] RenderType =
+and [<NoEquality; NoComparison; Struct>] RenderType =
     | RenderDeferred
-    | RenderForward of obj voption
-
-    static member makeForwardCallback (callback : ForwardRenderCallback)  =
-        RenderForward (ValueSome (callback :> obj))
-
-    static member tryGetCallback renderType =
-        match renderType with
-        | RenderDeferred -> ValueNone
-        | RenderForward callbackObjOpt ->
-            match callbackObjOpt with
-            | ValueSome (:? ForwardRenderCallback as callback) -> ValueSome callback
-            | _ -> ValueNone
+    | RenderForward of ForwardRenderCallback voption
 
 /// A collection of render surfaces in a pass.
 and [<NoEquality; NoComparison>] RenderSurfaces =
