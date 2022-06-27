@@ -58,7 +58,6 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
-    | RenderPrePassDescriptor3d of RenderPassDescriptor3d
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -99,6 +98,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPhysicallyBasedDeferredShader : OpenGL.Hl.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.Hl.PhysicallyBasedDeferred2Shader
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
+          RenderPhysicallyBasedQuad : OpenGL.Hl.PhysicallyBasedGeometry
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -281,7 +281,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // draw surfaces
             OpenGL.Hl.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
-                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
+                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTextureOpt,
                  lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
@@ -316,6 +316,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
+        // create deferred lighting quad
+        let physicallyBasedQuad = OpenGL.Hl.CreatePhysicallyBasedQuad true
+
         // make renderer
         let renderer =
             { RenderWindow = window
@@ -324,6 +327,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderGeometryFramebuffer = geometryFramebuffer
+              RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -343,8 +347,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         member renderer.Render eyePosition eyeRotation windowSize renderMessages =
 
             // begin frame
+            let viewportOffset = Constants.Render.ViewportOffset windowSize
             if renderer.RenderShouldBeginFrame then
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+                OpenGL.Hl.BeginFrame viewportOffset
                 OpenGL.Hl.Assert ()
 
             // compute view and projection
@@ -362,7 +367,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
 
             // categorize messages
-            let prePasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let surfacesDeferredAbsolute = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             let surfacesDeferredRelative = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
@@ -396,10 +400,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
                          renderer)
-                | RenderPrePassDescriptor3d prePass ->
-                    prePasses.Add prePass |> ignore<bool>
                 | RenderPostPassDescriptor3d postPass ->
-                    postPasses.Add postPass |> ignore<bool>
+                    postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
             // make render surfaces
             let surfaces =
@@ -408,11 +410,63 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                   RenderSurfacesForwardAbsolute = SegmentedList.make ()
                   RenderSurfacesForwardRelative = SegmentedList.make () }
 
-            // render pre-passes
-            for pass in prePasses do
-                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
+            // setup geometry buffer
+            let (positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
+            OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
+            OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
+            OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit)
+            OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
 
-            // render main pass w/ absolute-transformed surfaces
+            // render deferred pass w/ absolute-transformed surfaces
+            for entry in surfaces.RenderSurfacesDeferredAbsolute do
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    eyePosition
+                    viewAbsoluteArray
+                    projectionArray
+                    entry.Value
+                    entry.Key
+                    lightPositions
+                    lightColors
+                    renderer.RenderPhysicallyBasedDeferredShader
+                    renderer
+
+            // render deferred pass w/ relative-transformed surfaces
+            for entry in surfaces.RenderSurfacesDeferredRelative do
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    eyePosition
+                    viewAbsoluteArray
+                    projectionArray
+                    entry.Value
+                    entry.Key
+                    lightPositions
+                    lightColors
+                    renderer.RenderPhysicallyBasedDeferredShader
+                    renderer
+
+            // render deferred lighting quad
+            let quadSurface =
+                OpenGL.Hl.PhysicallyBasedSurface.make
+                    false
+                    positionTextureUniform
+                    normalTextureUniform
+                    albedoTextureUniform
+                    materialTextureUniform
+                    ValueNone
+                    renderer.RenderPhysicallyBasedQuad
+            GlRenderer3d.renderPhysicallyBasedSurfaces
+                eyePosition
+                viewAbsoluteArray
+                projectionArray
+                (SegmentedList.singleton m4Identity)
+                quadSurface
+                lightPositions
+                lightColors
+                renderer.RenderPhysicallyBasedForwardShader
+                renderer
+
+            // render forward pass w/ absolute-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -425,7 +479,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
 
-            // render main pass w/ relative-transformed surfaces
+            // render forward pass w/ relative-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
