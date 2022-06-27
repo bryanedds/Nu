@@ -211,6 +211,37 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
+    /// Compute the 2d absolute view matrix.
+    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
+        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
+        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
+
+    /// Compute the 2d relative view matrix.
+    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
+        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
+        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
+
+    /// Compute the 2d projection matrix.
+    static member computeProjection (viewport : Box2i) (_ : GlRenderer2d) =
+        Matrix4x4.CreateOrthographicOffCenter
+            (single (viewport.Position.X),
+             single (viewport.Position.X + viewport.Size.X),
+             single (viewport.Position.Y),
+             single (viewport.Position.Y + viewport.Size.Y),
+             -1.0f, 1.0f)
+
+    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
+    static member getSpriteShader renderer =
+        renderer.RenderSpriteShader
+
+    /// Get the sprite quad created by OpenGL.Hl.CreateSpriteQuad.
+    static member getSpriteQuad renderer =
+        renderer.RenderSpriteQuad
+
+    /// Get the text quad created by OpenGL.Hl.CreateSpriteQuad.
+    static member getTextQuad renderer =
+        renderer.RenderTextQuad
+
     static member inline private batchSprite
         absolute position size pivot rotation (insetOpt : Box2 voption) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
 
@@ -261,37 +292,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
             OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
-
-    /// Compute the 2d absolute view matrix.
-    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
-        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
-        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
-
-    /// Compute the 2d relative view matrix.
-    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
-        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
-        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
-
-    /// Compute the 2d projection matrix.
-    static member computeProjection (viewport : Box2i) (_ : GlRenderer2d) =
-        Matrix4x4.CreateOrthographicOffCenter
-            (single (viewport.Position.X),
-             single (viewport.Position.X + viewport.Size.X),
-             single (viewport.Position.Y),
-             single (viewport.Position.Y + viewport.Size.Y),
-             -1.0f, 1.0f)
-
-    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
-    static member getSpriteShader renderer =
-        renderer.RenderSpriteShader
-
-    /// Get the sprite quad created by OpenGL.Hl.CreateSpriteQuad.
-    static member getSpriteQuad renderer =
-        renderer.RenderSpriteQuad
-
-    /// Get the text quad created by OpenGL.Hl.CreateSpriteQuad.
-    static member getTextQuad renderer =
-        renderer.RenderTextQuad
 
     /// Render sprite.
     static member renderSprite
