@@ -160,7 +160,7 @@ type ElmishEntityDispatcher () =
     override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticModelMatrix = transform.AffineMatrix
-        View.Render3d (RenderStaticModelDescriptor (false, staticModelMatrix, RenderDeferred, staticModel))
+        View.Render3d (RenderStaticModelDescriptor (false, staticModelMatrix, DeferredRenderType, staticModel))
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetStaticModel world

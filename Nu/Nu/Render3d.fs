@@ -21,8 +21,8 @@ type ForwardRenderCallback =
 
 /// The type of rendering used on a surface.
 and [<NoEquality; NoComparison; Struct>] RenderType =
-    | RenderDeferred
-    | RenderForward of ForwardRenderCallback voption
+    | DeferredRenderType
+    | ForwardRenderType of ForwardRenderCallback voption
 
 /// A collection of render surfaces in a pass.
 and [<NoEquality; NoComparison>] RenderSurfaces =
@@ -215,7 +215,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
                     match modelRenderType with
-                    | RenderDeferred ->
+                    | DeferredRenderType ->
                         if modelAbsolute then
                             match surfacesDeferredAbsolute.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
@@ -224,7 +224,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             match surfacesDeferredRelative.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
                             | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
-                    | RenderForward _ ->
+                    | ForwardRenderType _ ->
                         failwithnie ()
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")

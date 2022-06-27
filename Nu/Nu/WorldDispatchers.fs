@@ -1245,24 +1245,24 @@ module TmxMapFacetModule =
 [<AutoOpen>]
 module StaticModelFacetModule =
 
-    type StaticModelRenderType =
-        | StaticModelDeferred
-        | StaticModelForward of string option
+    type RenderStyle =
+        | Deferred
+        | Forward of string option
 
     type Entity with
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
         member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
-        member this.GetStaticModelRenderType world : StaticModelRenderType = this.Get Property? StaticModelRenderType world
-        member this.SetStaticModelRenderType (value : StaticModelRenderType) world = this.Set Property? StaticModelRenderType value world
-        member this.StaticModelRenderType = lens Property? StaticModelRenderType this.GetStaticModelRenderType this.SetStaticModelRenderType this
+        member this.GetRenderStyle world : RenderStyle = this.Get Property? RenderStyle world
+        member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
+        member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
 
     type StaticModelFacet () =
         inherit Facet (false)
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.StaticModelRenderType StaticModelDeferred]
+             define Entity.RenderStyle Deferred]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView3d world then
@@ -1271,15 +1271,15 @@ module StaticModelFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
                 let renderType =
-                    match entity.GetStaticModelRenderType world with
-                    | StaticModelDeferred -> RenderDeferred
-                    | StaticModelForward None -> RenderForward ValueNone
-                    | StaticModelForward (Some callbackName) ->
+                    match entity.GetRenderStyle world with
+                    | Deferred -> DeferredRenderType
+                    | Forward None -> ForwardRenderType ValueNone
+                    | Forward (Some callbackName) ->
                         match World.tryGetForwardRenderCallback callbackName world with
-                        | ValueSome callback -> RenderForward (ValueSome callback)
+                        | ValueSome callback -> ForwardRenderType (ValueSome callback)
                         | ValueNone ->
                             Log.debug ("Failed to actualize StaticModelFacet due to missing forward render callback '" + callbackName + "'. Using canonical forward rendering instance")
-                            RenderForward ValueNone
+                            ForwardRenderType ValueNone
                 World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
             else world
 
