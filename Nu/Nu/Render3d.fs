@@ -15,34 +15,35 @@ open Nu
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
 /// A callback for one-off forward rendering of a surface.
+/// TODO: 3D: consider turning this into a delegate for byref params.
 type ForwardRenderCallback =
-    Matrix4x4 * Matrix4x4 * Vector3 * Vector3 * Vector3 -> unit
+    Vector3 * Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * Vector3 array * Color array -> Renderer3d -> unit
 
 /// The type of rendering used on a surface.
-type [<StructuralEquality; NoComparison; Struct>] RenderType =
-    | Deferred
-    | Forward of obj voption
+and [<StructuralEquality; NoComparison; Struct>] RenderType =
+    | RenderDeferred
+    | RenderForward of obj voption
 
     static member makeForwardCallback (callback : ForwardRenderCallback)  =
-        Forward (ValueSome (callback :> obj))
+        RenderForward (ValueSome (callback :> obj))
 
     static member tryGetCallback renderType =
         match renderType with
-        | Deferred -> ValueNone
-        | Forward callbackObjOpt ->
+        | RenderDeferred -> ValueNone
+        | RenderForward callbackObjOpt ->
             match callbackObjOpt with
             | ValueSome (:? ForwardRenderCallback as callback) -> ValueSome callback
             | _ -> ValueNone
 
 /// A collection of render surfaces in a pass.
-type [<NoEquality; NoComparison>] RenderSurfaces =
+and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
 /// Describes a 3d render pass.
-type [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
+and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
       RenderPass3d : RenderSurfaces * Matrix4x4 * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
     interface IComparable with
@@ -225,7 +226,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
                     match modelRenderType with
-                    | Deferred ->
+                    | RenderDeferred ->
                         if modelAbsolute then
                             match surfacesDeferredAbsolute.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
@@ -234,7 +235,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             match surfacesDeferredRelative.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
                             | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
-                    | Forward _ ->
+                    | RenderForward _ ->
                         failwithnie ()
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
@@ -261,7 +262,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedShader
 
-    static member inline renderSurfacesDeferred
+    static member inline private renderSurfacesDeferred
         eyePosition
         viewArray
         projectionArray

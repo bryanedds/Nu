@@ -1245,23 +1245,37 @@ module TmxMapFacetModule =
 [<AutoOpen>]
 module StaticModelFacetModule =
 
+    type StaticModelRenderType =
+        | StaticModelDeferred
+        | StaticModelForward of string option
+
     type Entity with
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
         member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
+        member this.GetStaticModelRenderType world : StaticModelRenderType = this.Get Property? StaticModelRenderType world
+        member this.SetStaticModelRenderType (value : StaticModelRenderType) world = this.Set Property? StaticModelRenderType value world
+        member this.StaticModelRenderType = lens Property? StaticModelRenderType this.GetStaticModelRenderType this.SetStaticModelRenderType this
 
     type StaticModelFacet () =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel]
+            [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.StaticModelRenderType StaticModelDeferred]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView3d world then
                 let mutable transform = entity.GetTransform world
+                let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
-                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (entity.GetAbsolute world, affineMatrix, staticModel)) world
+                let renderType =
+                    match entity.GetStaticModelRenderType world with
+                    | StaticModelDeferred -> RenderDeferred
+                    | StaticModelForward None -> RenderForward ValueNone
+                    | StaticModelForward (Some _) -> failwithnie () // TODO: 3D: implement by fetching callback from NuPlugin.
+                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
             else world
 
         override this.GetQuickSize (entity, world) =
