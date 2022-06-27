@@ -1,4 +1,30 @@
+#shader vertex
 #version 410 core
+
+uniform mat4 view;
+uniform mat4 projection;
+
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 texCoords;
+layout (location = 3) in mat4 model;
+
+out vec3 positionOut;
+out vec3 normalOut;
+out vec2 texCoordsOut;
+
+void main()
+{
+    positionOut = vec3(model * vec4(position, 1.0));
+    normalOut = transpose(inverse(mat3(model))) * normal;
+    texCoordsOut = texCoords;
+    gl_Position = projection * view * vec4(positionOut, 1.0);
+}
+
+#shader fragment
+#version 410 core
+
+const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
 uniform sampler2D albedoTexture;
@@ -6,6 +32,8 @@ uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
+uniform vec3 lightPositions[LIGHTS_MAX]; // NOTE: unused, but kept in to preserve interface.
+uniform vec3 lightColors[LIGHTS_MAX]; // NOTE: unused, but kept in to preserve interface.
 
 in vec3 positionOut;
 in vec3 normalOut;

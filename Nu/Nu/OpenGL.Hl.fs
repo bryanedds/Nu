@@ -116,6 +116,17 @@ module Hl =
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
 
+    /// Describes a deferred physically-based shader that's loaded into GPU.
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedDeferred2Shader =
+        { EyePositionUniform : int
+          PositionTextureUniform : int
+          NormalTextureUniform : int
+          AlbedoTextureUniform : int
+          MaterialTextureUniform : int
+          LightPositionsUniform : int
+          LightColorsUniform : int
+          PhysicallyBasedDeferred2Shader : uint }
+
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
 #if DEBUG_RENDERING_ASSERT
@@ -814,6 +825,35 @@ module Hl =
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
+
+    let CreatePhysicallyBasedDeferred2Shader (shaderFilePath : string) =
+
+        // create shader
+        let shader = CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
+        let positionTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "positionTexture")
+        let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
+        let albedoTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoTexture")
+        let materialTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "materialTexture")
+        let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
+        let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
+
+        // make shader record
+        { EyePositionUniform = eyePositionUniform
+          PositionTextureUniform = positionTextureUniform
+          NormalTextureUniform = normalTextureUniform
+          AlbedoTextureUniform = albedoTextureUniform
+          MaterialTextureUniform = materialTextureUniform
+          LightPositionsUniform = lightPositionsUniform
+          LightColorsUniform = lightColorsUniform
+          PhysicallyBasedDeferred2Shader = shader }
+
+    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shader2FilePath) =
+        let shader = CreatePhysicallyBasedShader shaderFilePath // deferred shader 1 uses the same API as physically based shader
+        let shader2 = CreatePhysicallyBasedDeferred2Shader shader2FilePath
+        (shader, shader2)
 
     /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
