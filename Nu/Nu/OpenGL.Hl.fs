@@ -2,39 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
-open Prime
-open Nu
-
-////////////////////////////////////////////////
-// TODO: find a better place for these types! //
-////////////////////////////////////////////////
-
-/// The flipness of a texture.
-[<Syntax
-    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
-
-/// A texture's metadata.
-type TextureMetadata =
-    { TextureWidth : int
-      TextureHeight : int
-      TextureTexelWidth : single
-      TextureTexelHeight : single
-      TextureInternalFormat : OpenGL.InternalFormat }
-
-    /// Unpopulated texture data.
-    static member empty =
-        { TextureWidth = 0
-          TextureHeight = 0
-          TextureTexelWidth = 0.0f
-          TextureTexelHeight = 0.0f
-          TextureInternalFormat = Unchecked.defaultof<_> }
 
 /// Force qualification of OpenGL namespace in Nu unless opened explicitly.
 [<RequireQualifiedAccess>]
@@ -51,6 +18,22 @@ open Nu
 
 [<RequireQualifiedAccess>]
 module Hl =
+
+    /// A texture's metadata.
+    type TextureMetadata =
+        { TextureWidth : int
+          TextureHeight : int
+          TextureTexelWidth : single
+          TextureTexelHeight : single
+          TextureInternalFormat : OpenGL.InternalFormat }
+
+        /// Unpopulated texture data.
+        static member empty =
+            { TextureWidth = 0
+              TextureHeight = 0
+              TextureTexelWidth = 0.0f
+              TextureTexelHeight = 0.0f
+              TextureInternalFormat = Unchecked.defaultof<_> }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =

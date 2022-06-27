@@ -243,7 +243,19 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         renderer.RenderTextQuad
 
     static member inline private batchSprite
-        absolute position size pivot rotation (insetOpt : Box2 voption) textureMetadata texture (color : Color) blend (glow : Color) flip renderer =
+        absolute
+        position
+        size
+        pivot
+        rotation
+        (insetOpt : Box2 voption)
+        (textureMetadata : OpenGL.Hl.TextureMetadata)
+        texture
+        (color : Color)
+        blend
+        (glow : Color)
+        flip
+        renderer =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
