@@ -96,7 +96,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderPhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
-          RenderGeometryFramebuffer : uint * uint * uint * uint // TODO: 3D: create a record for this.
+          RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed

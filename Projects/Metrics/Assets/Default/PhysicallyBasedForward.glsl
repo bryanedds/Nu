@@ -97,7 +97,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 }
 
 void main()
-{		
+{
     // compute material properties
     vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(2.2));
     float metalness = texture(metalnessTexture, texCoordsOut).r;

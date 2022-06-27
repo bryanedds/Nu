@@ -623,13 +623,13 @@ module Hl =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         Assert ()
 
-        // create color buffer
-        let color = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, color)
+        // create position buffer
+        let position = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, position)
         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, color, 0)
+        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, position, 0)
         Assert ()
 
         // create normal buffer
@@ -641,14 +641,30 @@ module Hl =
         OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, normal, 0)
         Assert ()
 
+        // create albedo buffer
+        let albedo = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedo)
+        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
+        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, albedo, 0)
+        Assert ()
+
         // create material buffer
         let material = OpenGL.Gl.GenTexture ()
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, material)
         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, material, 0)
+        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, material, 0)
         Assert ()
+
+        // associate draw buffers
+        OpenGL.Gl.DrawBuffers
+            [|int OpenGL.FramebufferAttachment.ColorAttachment0
+              int OpenGL.FramebufferAttachment.ColorAttachment1
+              int OpenGL.FramebufferAttachment.ColorAttachment2
+              int OpenGL.FramebufferAttachment.ColorAttachment3|]
 
         // create depth and stencil buffers
         let depthStencilBuffer = OpenGL.Gl.GenRenderbuffer ()
@@ -659,7 +675,7 @@ module Hl =
         
         // ensure framebuffer is complete
         if OpenGL.Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
-        then Right (color, normal, material, framebuffer)
+        then Right (position, normal, albedo, material, framebuffer)
         else Left ("Could not create complete geometry framebuffer.")
 
     /// Create a shader from vertex and fragment code strings.
