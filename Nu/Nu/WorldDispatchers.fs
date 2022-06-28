@@ -392,7 +392,7 @@ module TextFacetModule =
              define Entity.Font Assets.Default.Font
              define Entity.Margins v3Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextColor Color.Black
+             define Entity.TextColor Color.White
              define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
              define Entity.TextOffset v3Zero]
 

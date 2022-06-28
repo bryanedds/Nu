@@ -1,24 +1,17 @@
 #shader vertex
 #version 410 core
 
-uniform mat4 view;
-uniform mat4 projection;
-
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoords;
 layout (location = 3) in mat4 model;
 
-out vec3 positionOut;
-out vec3 normalOut;
 out vec2 texCoordsOut;
 
 void main()
 {
-    positionOut = vec3(model * vec4(position, 1.0));
-    normalOut = mat3(model) * normal;
     texCoordsOut = texCoords;
-    gl_Position = projection * view * vec4(positionOut, 1.0);
+    gl_Position = vec4(position, 1.0);
 }
 
 #shader fragment
@@ -29,33 +22,16 @@ const float REFLECTION_LOD_MAX = 4.0;
 const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
-uniform sampler2D albedoTexture;
-uniform sampler2D metalnessTexture;
-uniform sampler2D roughnessTexture;
+uniform sampler2D positionTexture;
 uniform sampler2D normalTexture;
-uniform sampler2D ambientOcclusionTexture;
-uniform vec3 lightPositions[4];
-uniform vec3 lightColors[4];
+uniform sampler2D albedoTexture;
+uniform sampler2D materialTexture;
+uniform vec3 lightPositions[LIGHTS_MAX];
+uniform vec3 lightColors[LIGHTS_MAX];
 
-in vec3 positionOut;
-in vec3 normalOut;
 in vec2 texCoordsOut;
 
 out vec4 frag;
-
-vec3 getNormal()
-{
-    vec3 tangentNormal = texture(normalTexture, texCoordsOut).xyz * 2.0 - 1.0;
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1*st2.t - q2*st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 tbn = mat3(tangent, binormal, normal);
-    return normalize(tbn * tangentNormal);
-}
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -97,17 +73,21 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 }
 
 void main()
-{		
-    // compute material properties
-    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(2.2));
-    float metalness = texture(metalnessTexture, texCoordsOut).r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
+{
+    // retrieve data from geometry buffer
+    vec3 position = texture(positionTexture, texCoordsOut).rgb;
+    vec3 normal = texture(normalTexture, texCoordsOut).rgb;
+    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+    vec3 material = texture(materialTexture, texCoordsOut).rgb;
+
+    // compute materials
+    float metalness = material.r;
+    float roughness = material.g;
+    float ambientOcclusion = material.b;
 
     // compute lighting profile
-    vec3 n = getNormal();
-    vec3 v = normalize(eyePosition - positionOut);
-    vec3 r = reflect(-v, n);
+    vec3 v = normalize(eyePosition - position);
+    vec3 r = reflect(-v, normal);
 
     // compute reflectance term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
@@ -116,20 +96,20 @@ void main()
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
-        vec3 l = normalize(lightPositions[i] - positionOut);
+        vec3 l = normalize(lightPositions[i] - position);
         vec3 h = normalize(v + l);
-        float distance = length(lightPositions[i] - positionOut);
+        float distance = length(lightPositions[i] - position);
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = lightColors[i] * attenuation;
 
         // cook-torrance brdf
-        float ndf = distributionGGX(n, h, roughness);
-        float g = geometrySchlick(n, v, l, roughness);
+        float ndf = distributionGGX(normal, h, roughness);
+        float g = geometrySchlick(normal, v, l, roughness);
         vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
 
         // compute specularity
         vec3 numerator = ndf * g * f;
-        float denominator = 4.0 * max(dot(n, v), 0.0) * max(dot(n, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
+        float denominator = 4.0 * max(dot(normal, v), 0.0) * max(dot(normal, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
         vec3 specular = numerator / denominator;
 
         // compute diffusion
@@ -138,7 +118,7 @@ void main()
         kD *= 1.0 - metalness;
 
         // compute light scalar
-        float nDotL = max(dot(n, l), 0.0);
+        float nDotL = max(dot(normal, l), 0.0);
 
         // add to outgoing reflectance
         reflectance += (kD * albedo / PI + specular) * radiance * nDotL;

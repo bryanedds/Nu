@@ -75,7 +75,7 @@ module Render =
     let [<Literal>] NearPlaneDistance = 0.03f
     let [<Literal>] FarPlaneDistance = 256.0f
     let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 2.0f, 4.0f)
-    let (*Literal*) WindowClearColor = Color.White
+    let (*Literal*) WindowClearColor = Color.Black // NOTE: since we're using deferred rendering, black is the only color that will work.
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1
     let [<Literal>] OpenGlCore = true
@@ -136,6 +136,6 @@ module Ecs =
 [<RequireQualifiedAccess>]
 module Paths =
 
-    let [<Literal>] PhysicallyBasedShaderFilePath = "Assets/Default/PhysicallyBased.glsl"
     let [<Literal>] PhysicallyBasedDeferredShaderFilePath = "Assets/Default/PhysicallyBasedDeferred.glsl"
     let [<Literal>] PhysicallyBasedDeferred2ShaderFilePath = "Assets/Default/PhysicallyBasedDeferred2.glsl"
+    let [<Literal>] PhysicallyBasedForwardShaderFilePath = "Assets/Default/PhysicallyBasedForward.glsl"

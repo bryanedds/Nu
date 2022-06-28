@@ -196,7 +196,7 @@ module Hl =
 
         // clear inner viewport
         OpenGL.Gl.DepthMask true
-        OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+        OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.DepthMask false
         Assert ()
