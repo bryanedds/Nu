@@ -17,7 +17,7 @@ open Nu
 /// A callback for one-off forward rendering of a surface.
 /// TODO: 3D: consider turning this into a delegate for byref params.
 type ForwardRenderCallback =
-    Vector3 * Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * Vector3 array * Color array -> Renderer3d -> unit
+    Vector3 * Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * Vector3 array * Color array -> Renderer3d -> unit
 
 /// The type of rendering used on a surface.
 and [<NoEquality; NoComparison; Struct>] RenderType =
@@ -26,10 +26,10 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
 
 /// A collection of render surfaces in a pass.
 and [<NoEquality; NoComparison>] RenderSurfaces =
-    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSurfacesDeferredRelative : Dictionary<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
-      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.Hl.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
+    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
+      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
 /// Describes a 3d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
@@ -67,7 +67,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
 and Renderer3d =
     inherit Renderer
     /// The physically-based shader.
-    abstract PhysicallyBasedShader : OpenGL.Hl.PhysicallyBasedShader
+    abstract PhysicallyBasedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
     /// Render a frame of the game.
     abstract Render : Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
@@ -94,11 +94,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     private
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
-          RenderPhysicallyBasedForwardShader : OpenGL.Hl.PhysicallyBasedShader
-          RenderPhysicallyBasedDeferredShader : OpenGL.Hl.PhysicallyBasedShader
-          RenderPhysicallyBasedDeferred2Shader : OpenGL.Hl.PhysicallyBasedDeferred2Shader
+          RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
-          RenderPhysicallyBasedQuad : OpenGL.Hl.PhysicallyBasedGeometry
+          RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -114,7 +114,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer3d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, texture) -> OpenGL.Hl.DeleteTexture texture
+        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
@@ -122,14 +122,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            match OpenGL.Hl.TryCreateSpriteTexture asset.FilePath with
+            match OpenGL.Texture.TryCreateTexture2dUnfiltered asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".obj" ->
-            match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None
@@ -259,7 +259,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         viewArray
         projectionArray
         (models : Matrix4x4 SegmentedList)
-        (surface : OpenGL.Hl.PhysicallyBasedSurface)
+        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface)
         lightAmbient
         lightPositions
         lightColors
@@ -280,7 +280,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 models.[i].ToArray (renderer.RenderModelsFields, i * 16)
 
             // draw surfaces
-            OpenGL.Hl.DrawPhysicallyBasedSurfaces
+            OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
                  lightAmbient, lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
@@ -301,24 +301,24 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create forward shader
-        let forwardShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
+        let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
         let (deferredShader, deferred2Shader) =
-            OpenGL.Hl.CreatePhysicallyBasedDeferredShaders
+            OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
                 (Constants.Paths.PhysicallyBasedDeferredShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create geometry framebuffer
         let geometryFramebuffer =
-            match OpenGL.Hl.TryCreateGeometryFramebuffer () with
+            match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
         // create deferred lighting quad
-        let physicallyBasedQuad = OpenGL.Hl.CreatePhysicallyBasedQuad true
+        let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
 
         // make renderer
         let renderer =
@@ -370,8 +370,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // categorize messages
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let surfacesDeferredAbsolute = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
-            let surfacesDeferredRelative = dictPlus<OpenGL.Hl.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfacesDeferredAbsolute = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfacesDeferredRelative = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
@@ -456,7 +456,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render deferred lighting quad
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
-            OpenGL.Hl.DrawPhysicallyBasedDeferred2Surface
+            OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (positionTexture, normalTexture, albedoTexture, materialTexture,
                  lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()

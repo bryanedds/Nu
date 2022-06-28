@@ -86,6 +86,7 @@
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
     <Compile Include="OpenGL.Hl.fs" />
+    <Compile Include="OpenGL.Hl.2.fs" />
     <Compile Include="OpenGL.SpriteBatch.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="AetherPhysics.fs" />

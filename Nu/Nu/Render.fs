@@ -22,9 +22,9 @@ type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
 type [<NoEquality; NoComparison>] RenderAsset =
-    | TextureAsset of OpenGL.Hl.TextureMetadata * uint
+    | TextureAsset of OpenGL.Texture.TextureMetadata * uint
     | FontAsset of int * nativeint
-    | StaticModelAsset of OpenGL.Hl.PhysicallyBasedStaticModel
+    | StaticModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
 
 /// The blend mode of a sprite.
 [<Syntax

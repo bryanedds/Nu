@@ -1,4 +1,7 @@
-﻿namespace OpenGL
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace OpenGL
 open System
 open System.Numerics
 open Prime
@@ -7,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    type [<NoEquality; NoComparison; Struct>] private State =
+    type [<NoEquality; NoComparison; Struct>] private SpriteBatchState =
         { Absolute : bool
           BlendingFactorSrc : OpenGL.BlendingFactor
           BlendingFactorDst : OpenGL.BlendingFactor
@@ -25,9 +28,9 @@ module SpriteBatch =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
         static member defaultState =
-            State.make false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+            SpriteBatchState.make false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
 
-    type [<NoEquality; NoComparison>] Env =
+    type [<NoEquality; NoComparison>] SpriteBatchEnv =
         private
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
@@ -46,10 +49,10 @@ module SpriteBatch =
               TexCoordses : single array
               Colors : single array
               Vao : uint
-              mutable State : State }
+              mutable State : SpriteBatchState }
 
     /// Create a batched sprite shader.
-    let private CreateShader () =
+    let private CreateSpriteBatchShader () =
 
         // vertex shader code
         let samplerVertexShaderStr =
@@ -117,7 +120,7 @@ module SpriteBatch =
              "}"] |> String.join "\n"
 
         // create shader
-        let shader = OpenGL.Hl.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
+        let shader = OpenGL.Shader.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
         OpenGL.Hl.Assert ()
 
         // grab uniform locations
@@ -133,10 +136,10 @@ module SpriteBatch =
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
 
-    let private BeginBatch state env =
+    let private BeginSpriteBatch state env =
         env.State <- state
 
-    let private EndBatch env =
+    let private EndSpriteBatch env =
 
         // ensure something to draw
         if env.SpriteIndex > 0 then
@@ -187,25 +190,25 @@ module SpriteBatch =
             // next batch
             env.SpriteIndex <- 0
 
-    let private RestartBatch state env =
-        OpenGL.Hl.Assert (EndBatch env)
-        BeginBatch state env
+    let private RestartSpriteBatch state env =
+        OpenGL.Hl.Assert (EndSpriteBatch env)
+        BeginSpriteBatch state env
 
-    let BeginFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+    let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
-        BeginBatch State.defaultState env
+        BeginSpriteBatch SpriteBatchState.defaultState env
 
-    let EndFrame env =
-        EndBatch env
+    let EndSpriteBatchFrame env =
+        EndSpriteBatch env
 
-    let InterruptFrame fn env =
+    let InterruptSpriteBatchFrame fn env =
         let state = env.State
-        OpenGL.Hl.Assert (EndBatch env)
+        OpenGL.Hl.Assert (EndSpriteBatch env)
         OpenGL.Hl.Assert (fn ())
-        BeginBatch state env
+        BeginSpriteBatch state env
 
-    let inline private PopulateVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
+    let inline private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
         env.Perimeters.[perimeterOffset] <- perimeter.Position.X
         env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y
@@ -227,29 +230,29 @@ module SpriteBatch =
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
-    let SubmitSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
+    let SubmitSpriteBatchSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
-        let state = State.make absolute bfs bfd beq texture
-        if State.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartBatch state env
+        let state = SpriteBatchState.make absolute bfs bfd beq texture
+        if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
+            RestartSpriteBatch state env
             OpenGL.Hl.Assert ()
 
         // populate vertices
         let perimeter = box2 position size
-        PopulateVertex perimeter pivot rotation texCoords color env
+        PopulateSpriteBatchVertex perimeter pivot rotation texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
 
-    let CreateEnv () =
+    let CreateSpriteBatchEnv () =
 
         // create vao
         let vao = OpenGL.Gl.GenVertexArray ()
         OpenGL.Hl.Assert ()
 
         // create shader
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateShader ()
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader ()
         OpenGL.Hl.Assert ()
 
         // create env
@@ -263,7 +266,7 @@ module SpriteBatch =
           TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Colors = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Vao = vao
-          State = State.defaultState }
+          State = SpriteBatchState.defaultState }
 
-    let DestroyEnv env =
+    let DestroySpriteBatchEnv env =
         env.SpriteIndex <- 0

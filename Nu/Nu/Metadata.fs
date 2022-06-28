@@ -19,7 +19,7 @@ exception TileSetPropertyNotFoundException of string
 type [<NoEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
-    | StaticModelMetadata of OpenGL.Hl.PhysicallyBasedStaticModel
+    | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -86,7 +86,7 @@ module Metadata =
     let private tryGenerateStaticModelMetadata asset =
         if File.Exists asset.FilePath then
             use assimp = new Assimp.AssimpContext ()
-            match OpenGL.Hl.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, assimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, assimp) with
             | Right model -> Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
