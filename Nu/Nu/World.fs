@@ -446,6 +446,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
+                 SkyboxFacet () :> Facet
                  StaticModelFacet () :> Facet]
 
         /// Make an empty world.
