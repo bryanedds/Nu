@@ -14,15 +14,6 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
-/// Describes assets used to create a cube map.
-type [<NoEquality; NoComparison>] CubeMapAssetTags =
-    { FpxAssetTag : Image AssetTag
-      FnxAssetTag : Image AssetTag
-      FpyAssetTag : Image AssetTag
-      FnyAssetTag : Image AssetTag
-      FpzAssetTag : Image AssetTag
-      FnzAssetTag : Image AssetTag }
-
 /// A callback for one-off forward rendering of a surface.
 /// TODO: 3D: consider turning this into a delegate for byref params.
 type ForwardRenderCallback =
@@ -37,7 +28,7 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
 and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSkybox : CubeMapAssetTags SegmentedList
+      RenderSkybox : CubeMap AssetTag
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
@@ -68,7 +59,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
-    | RenderSkyboxDescriptor of CubeMapAssetTags
+    | RenderSkyboxDescriptor of CubeMap AssetTag
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -105,10 +96,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     private
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
+          RenderSkyboxShader : OpenGL.Skybox.SkyboxShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
+          RenderSkyboxGeometry : OpenGL.Skybox.SkyboxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
@@ -139,6 +132,19 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
+        | ".cbm" ->
+            match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+            | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
+                let dirPath = Path.GetDirectoryName asset.FilePath
+                let faceRightFilePath = Path.Combine (dirPath, faceRightFilePath) |> fun str -> str.Trim ()
+                let faceLeftFilePath = Path.Combine (dirPath, faceLeftFilePath) |> fun str -> str.Trim ()
+                let faceTopFilePath = Path.Combine (dirPath, faceTopFilePath) |> fun str -> str.Trim ()
+                let faceBottomFilePath = Path.Combine (dirPath, faceBottomFilePath) |> fun str -> str.Trim ()
+                let faceBackFilePath = Path.Combine (dirPath, faceBackFilePath) |> fun str -> str.Trim ()
+                let faceFrontFilePath = Path.Combine (dirPath, faceFrontFilePath) |> fun str -> str.Trim ()
+                let cubeMap = OpenGL.Texture.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+                Some (asset.AssetTag.AssetName, CubeMapAsset cubeMap)
+            | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
         | ".obj" ->
             match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
@@ -311,6 +317,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
+        // create skybox shader
+        let skyboxShader = OpenGL.Skybox.CreateSkyboxShader Constants.Paths.SkyboxShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create forward shader
         let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
@@ -328,6 +338,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
+        // create skybox geometry
+        let skyboxGeometry = OpenGL.Skybox.CreateSkybox true
+
         // create deferred lighting quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
 
@@ -335,10 +348,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let renderer =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
+              RenderSkyboxShader = skyboxShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderGeometryFramebuffer = geometryFramebuffer
+              RenderSkyboxGeometry = skyboxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -476,9 +491,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                  lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
-            // render last skybox
+            // attempt to render last skybox
             match Seq.tryLast skyboxes with
-            | Some skybox -> OpenGL.Skybox.DrawSkybox (viewAbsoluteArray, projectionArray, (), (), ())
+            | Some cubeMap ->
+                match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
+                | ValueSome asset ->
+                    match asset with
+                    | CubeMapAsset cubeMap ->
+                         OpenGL.Skybox.DrawSkybox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyboxGeometry, renderer.RenderSkyboxShader)
+                         OpenGL.Hl.Assert ()
+                    | _ -> Log.debug "Could not draw skybox due to mismatched cube map asset."
+                | ValueNone -> Log.debug "Could not draw skybox due to non-existent cube map asset."
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces

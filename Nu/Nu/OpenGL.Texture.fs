@@ -103,14 +103,14 @@ module Texture =
         TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, filePath)
         
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMap (fpxFilePath, fnxFilePath, fpyFilePath, fnyFilePath, fpzFilePath, fnzFilePath) =
+    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
         let cubeMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
 
         // load faces into cube map
-        let faceFilePaths = [|fpxFilePath; fnxFilePath; fpyFilePath; fnyFilePath; fpzFilePath; fnzFilePath|]
+        let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
             let faceFilePath = faceFilePaths.[i]
             match TryCreateImageSurface faceFilePath with

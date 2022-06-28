@@ -136,6 +136,7 @@ module Ecs =
 [<RequireQualifiedAccess>]
 module Paths =
 
+    let [<Literal>] SkyboxShaderFilePath = "Assets/Default/Skybox.glsl"
     let [<Literal>] PhysicallyBasedDeferredShaderFilePath = "Assets/Default/PhysicallyBasedDeferred.glsl"
     let [<Literal>] PhysicallyBasedDeferred2ShaderFilePath = "Assets/Default/PhysicallyBasedDeferred2.glsl"
     let [<Literal>] PhysicallyBasedForwardShaderFilePath = "Assets/Default/PhysicallyBasedForward.glsl"

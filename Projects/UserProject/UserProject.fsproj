@@ -111,6 +111,13 @@
     <None Include="Assets\Default\SideViewCharacterWalk.png" />
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />
+    <None Include="Assets\Default\SkyboxCubeMap.cbm" />
+    <None Include="Assets\Default\SkyboxBack.png" />
+    <None Include="Assets\Default\SkyboxBottom.png" />
+    <None Include="Assets\Default\SkyboxFront.png" />
+    <None Include="Assets\Default\SkyboxLeft.png" />
+    <None Include="Assets\Default\SkyboxRight.png" />
+    <None Include="Assets\Default\SkyboxTop.png" />
     <None Include="Assets\Default\StaticModel.mtl" />
     <None Include="Assets\Default\StaticModel.obj" />
     <None Include="Assets\Default\StaticModelAlbedo.png" />
