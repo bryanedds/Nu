@@ -14,7 +14,7 @@ module Skybox =
     /// Describes some skybox geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] SkyboxGeometry =
         { Bounds : Box3
-          PrimitiveType : OpenGL.PrimitiveType
+          PrimitiveType : PrimitiveType
           ElementCount : int
           Vertices : Vector3 array
           VertexBuffer : uint
@@ -25,6 +25,11 @@ module Skybox =
     type [<NoEquality; NoComparison; Struct>] SkyboxSurface =
         { CubeMap : uint
           SkyboxGeometry : SkyboxGeometry }
+
+    /// Describes a skybox shader that's loaded into GPU.
+    type [<StructuralEquality; NoComparison>] SkyboxShader =
+        { ViewUniform : int
+          SkyboxShader : uint }
 
     /// Create a mesh for a skybox.
     let CreateSkyboxMesh () =
@@ -96,33 +101,33 @@ module Skybox =
             if renderable then
 
                 // initialize vao
-                let vao = OpenGL.Gl.GenVertexArray ()
-                OpenGL.Gl.BindVertexArray vao
-                OpenGL.Hl.Assert ()
+                let vao = Gl.GenVertexArray ()
+                Gl.BindVertexArray vao
+                Hl.Assert ()
 
                 // create vertex buffer
-                let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                let vertexBuffer = Gl.GenBuffer ()
                 let vertexSize = (3 (*position*)) * sizeof<single>
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
                 finally vertexDataPtr.Free ()
-                OpenGL.Gl.EnableVertexAttribArray 0u
-                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-                OpenGL.Hl.Assert ()
+                Gl.EnableVertexAttribArray 0u
+                Gl.VertexAttribPointer (0u, 3, VertexAttribType.Float, false, vertexSize, nativeint 0)
+                Hl.Assert ()
 
                 // create index buffer
-                let indexBuffer = OpenGL.Gl.GenBuffer ()
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                try Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
                 finally indexDataPtr.Free ()
-                OpenGL.Hl.Assert ()
+                Hl.Assert ()
 
                 // finalize vao
-                OpenGL.Gl.BindVertexArray 0u
-                OpenGL.Hl.Assert ()
+                Gl.BindVertexArray 0u
+                Hl.Assert ()
 
                 // fin
                 ([||], vertexBuffer, indexBuffer, vao)
@@ -143,7 +148,7 @@ module Skybox =
         // make skybox geometry
         let geometry =
             { Bounds = bounds
-              PrimitiveType = OpenGL.PrimitiveType.Triangles
+              PrimitiveType = PrimitiveType.Triangles
               ElementCount = indexData.Length
               Vertices = vertices
               VertexBuffer = vertexBuffer
@@ -157,3 +162,72 @@ module Skybox =
     let CreateSkybox renderable =
         let (vertexData, indexData, bounds) = CreateSkyboxMesh ()
         CreateSkyboxGeometry (renderable, vertexData, indexData, bounds)
+
+    /// Create a skybox shader.
+    let CreateSkyboxShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+
+        // make shader record
+        { ViewUniform = viewUniform
+          SkyboxShader = shader }
+
+    /// Draw a skybox.
+    let DrawSkybox
+        (positionTexture : uint,
+         normalTexture : uint,
+         albedoTexture : uint,
+         materialTexture : uint,
+         lightAmbient : single,
+         lightPositions : single array,
+         lightColors : single array,
+         geometry : SkyboxGeometry,
+         shader : SkyboxShader) =
+
+        // setup shader
+        Gl.UseProgram shader.SkyboxShader
+        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.NormalTextureUniform, 1)
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
+        Gl.Uniform1 (shader.MaterialTextureUniform, 3)
+        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
+        Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.SkyboxVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u

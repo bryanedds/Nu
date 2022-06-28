@@ -13,25 +13,25 @@ module Framebuffer =
     let CreateTextureFramebuffer () =
 
         // create frame buffer object
-        let framebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Hl.Assert ()
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
 
         // create texture buffer
-        let texture = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, OpenGL.TextureTarget.Texture2d, texture, 0)
-        OpenGL.Hl.Assert ()
+        let texture = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0)
+        Hl.Assert ()
 
         // create depth and stencil buffers
-        let depthStencilBuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        OpenGL.Hl.Assert ()
+        let depthStencilBuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Hl.Assert ()
 
         // fin
         (texture, framebuffer)
@@ -40,61 +40,61 @@ module Framebuffer =
     let TryCreateGeometryFramebuffer () =
 
         // create frame buffer object
-        let framebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Hl.Assert ()
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
 
         // create position buffer
-        let position = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, position)
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, OpenGL.TextureTarget.Texture2d, position, 0)
-        OpenGL.Hl.Assert ()
+        let position = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, position)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, position, 0)
+        Hl.Assert ()
 
         // create normal buffer
-        let normal = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normal)
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment1, OpenGL.TextureTarget.Texture2d, normal, 0)
-        OpenGL.Hl.Assert ()
+        let normal = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, normal)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, normal, 0)
+        Hl.Assert ()
 
         // create albedo buffer
-        let albedo = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedo)
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment2, OpenGL.TextureTarget.Texture2d, albedo, 0)
-        OpenGL.Hl.Assert ()
+        let albedo = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, albedo)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, albedo, 0)
+        Hl.Assert ()
 
         // create material buffer
-        let material = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, material)
-        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-        OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment3, OpenGL.TextureTarget.Texture2d, material, 0)
-        OpenGL.Hl.Assert ()
+        let material = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, material)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, material, 0)
+        Hl.Assert ()
 
         // associate draw buffers
-        OpenGL.Gl.DrawBuffers
-            [|int OpenGL.FramebufferAttachment.ColorAttachment0
-              int OpenGL.FramebufferAttachment.ColorAttachment1
-              int OpenGL.FramebufferAttachment.ColorAttachment2
-              int OpenGL.FramebufferAttachment.ColorAttachment3|]
+        Gl.DrawBuffers
+            [|int FramebufferAttachment.ColorAttachment0
+              int FramebufferAttachment.ColorAttachment1
+              int FramebufferAttachment.ColorAttachment2
+              int FramebufferAttachment.ColorAttachment3|]
 
         // create depth and stencil buffers
-        let depthStencilBuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        OpenGL.Hl.Assert ()
+        let depthStencilBuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth32fStencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Hl.Assert ()
     
         // ensure framebuffer is complete
-        if OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer = OpenGL.FramebufferStatus.FramebufferComplete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
         then Right (position, normal, albedo, material, framebuffer)
             else Left ("Could not create complete geometry framebuffer.")

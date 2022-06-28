@@ -13,25 +13,25 @@ module Shader =
     let CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr) =
 
         // construct gl shader
-        let shader = OpenGL.Gl.CreateProgram ()
-        OpenGL.Hl.Assert ()
+        let shader = Gl.CreateProgram ()
+        Hl.Assert ()
 
         // add vertex shader
-        let vertexShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.VertexShader
-        OpenGL.Gl.ShaderSource (vertexShader, [|vertexShaderStr|], null)
-        OpenGL.Gl.CompileShader vertexShader
-        OpenGL.Gl.AttachShader (shader, vertexShader)
-        OpenGL.Hl.Assert ()
+        let vertexShader = Gl.CreateShader ShaderType.VertexShader
+        Gl.ShaderSource (vertexShader, [|vertexShaderStr|], null)
+        Gl.CompileShader vertexShader
+        Gl.AttachShader (shader, vertexShader)
+        Hl.Assert ()
 
         // add fragement shader to program
-        let fragmentShader = OpenGL.Gl.CreateShader OpenGL.ShaderType.FragmentShader
-        OpenGL.Gl.ShaderSource (fragmentShader, [|fragmentShaderStr|], null)
-        OpenGL.Gl.CompileShader fragmentShader
-        OpenGL.Gl.AttachShader (shader, fragmentShader)
-        OpenGL.Hl.Assert ()
+        let fragmentShader = Gl.CreateShader ShaderType.FragmentShader
+        Gl.ShaderSource (fragmentShader, [|fragmentShaderStr|], null)
+        Gl.CompileShader fragmentShader
+        Gl.AttachShader (shader, fragmentShader)
+        Hl.Assert ()
 
         // link shader
-        OpenGL.Gl.LinkProgram shader
+        Gl.LinkProgram shader
         shader
 
     /// Create a shader from a vertex stream and a fragment stream.

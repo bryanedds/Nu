@@ -12,9 +12,9 @@ module SpriteBatch =
 
     type [<NoEquality; NoComparison; Struct>] private SpriteBatchState =
         { Absolute : bool
-          BlendingFactorSrc : OpenGL.BlendingFactor
-          BlendingFactorDst : OpenGL.BlendingFactor
-          BlendingEquation : OpenGL.BlendEquationMode
+          BlendingFactorSrc : BlendingFactor
+          BlendingFactorDst : BlendingFactor
+          BlendingEquation : BlendEquationMode
           Texture : uint }
 
         static member inline changed state state2 =
@@ -28,7 +28,7 @@ module SpriteBatch =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
 
         static member defaultState =
-            SpriteBatchState.make false OpenGL.BlendingFactor.SrcAlpha OpenGL.BlendingFactor.OneMinusSrcAlpha OpenGL.BlendEquationMode.FuncAdd 0u
+            SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
 
     type [<NoEquality; NoComparison>] SpriteBatchEnv =
         private
@@ -120,18 +120,18 @@ module SpriteBatch =
              "}"] |> String.join "\n"
 
         // create shader
-        let shader = OpenGL.Shader.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
-        OpenGL.Hl.Assert ()
+        let shader = Shader.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
+        Hl.Assert ()
 
         // grab uniform locations
-        let perimetersUniform = OpenGL.Gl.GetUniformLocation (shader, "perimeters")
-        let pivotsUniform = OpenGL.Gl.GetUniformLocation (shader, "pivots")
-        let rotationsUniform = OpenGL.Gl.GetUniformLocation (shader, "rotations")
-        let texCoordsesUniform = OpenGL.Gl.GetUniformLocation (shader, "texCoordses")
-        let colorsUniform = OpenGL.Gl.GetUniformLocation (shader, "colors")
-        let viewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "viewProjection")
-        let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
-        OpenGL.Hl.Assert ()
+        let perimetersUniform = Gl.GetUniformLocation (shader, "perimeters")
+        let pivotsUniform = Gl.GetUniformLocation (shader, "pivots")
+        let rotationsUniform = Gl.GetUniformLocation (shader, "rotations")
+        let texCoordsesUniform = Gl.GetUniformLocation (shader, "texCoordses")
+        let colorsUniform = Gl.GetUniformLocation (shader, "colors")
+        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
+        let texUniform = Gl.GetUniformLocation (shader, "tex")
+        Hl.Assert ()
 
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
@@ -145,53 +145,53 @@ module SpriteBatch =
         if env.SpriteIndex > 0 then
 
             // setup state
-            OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-            OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-            OpenGL.Hl.Assert ()
+            Gl.Enable EnableCap.Blend
+            Gl.Enable EnableCap.CullFace
+            Hl.Assert ()
         
             // setup vao
-            OpenGL.Gl.BindVertexArray env.Vao
-            OpenGL.Hl.Assert ()
+            Gl.BindVertexArray env.Vao
+            Hl.Assert ()
 
             // setup shader
-            OpenGL.Gl.UseProgram env.Shader
-            OpenGL.Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
-            OpenGL.Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
-            OpenGL.Gl.Uniform2 (env.PivotsUniform, env.Pivots)
-            OpenGL.Gl.Uniform1 (env.RotationsUniform, env.Rotations)
-            OpenGL.Gl.Uniform4 (env.ColorsUniform, env.Colors)
-            OpenGL.Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
-            OpenGL.Gl.Uniform1 (env.TexUniform, 0)
-            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, env.State.Texture)
-            OpenGL.Gl.BlendEquation env.State.BlendingEquation
-            OpenGL.Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
-            OpenGL.Hl.Assert ()
+            Gl.UseProgram env.Shader
+            Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
+            Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
+            Gl.Uniform2 (env.PivotsUniform, env.Pivots)
+            Gl.Uniform1 (env.RotationsUniform, env.Rotations)
+            Gl.Uniform4 (env.ColorsUniform, env.Colors)
+            Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
+            Gl.Uniform1 (env.TexUniform, 0)
+            Gl.ActiveTexture TextureUnit.Texture0
+            Gl.BindTexture (TextureTarget.Texture2d, env.State.Texture)
+            Gl.BlendEquation env.State.BlendingEquation
+            Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
+            Hl.Assert ()
 
             // draw geometry
-            OpenGL.Gl.DrawArrays (OpenGL.PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
-            OpenGL.Hl.Assert ()
+            Gl.DrawArrays (PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
+            Hl.Assert ()
 
             // teardown shader
-            OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
-            OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-            OpenGL.Gl.UseProgram 0u
-            OpenGL.Hl.Assert ()
+            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Gl.UseProgram 0u
+            Hl.Assert ()
         
             // teardown vao
-            OpenGL.Gl.BindVertexArray 0u
-            OpenGL.Hl.Assert ()
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
 
             // teardown state
-            OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-            OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+            Gl.Disable EnableCap.CullFace
+            Gl.Disable EnableCap.Blend
 
             // next batch
             env.SpriteIndex <- 0
 
     let private RestartSpriteBatch state env =
-        OpenGL.Hl.Assert (EndSpriteBatch env)
+        Hl.Assert (EndSpriteBatch env)
         BeginSpriteBatch state env
 
     let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
@@ -204,8 +204,8 @@ module SpriteBatch =
 
     let InterruptSpriteBatchFrame fn env =
         let state = env.State
-        OpenGL.Hl.Assert (EndSpriteBatch env)
-        OpenGL.Hl.Assert (fn ())
+        Hl.Assert (EndSpriteBatch env)
+        Hl.Assert (fn ())
         BeginSpriteBatch state env
 
     let inline private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
@@ -236,7 +236,7 @@ module SpriteBatch =
         let state = SpriteBatchState.make absolute bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state env
-            OpenGL.Hl.Assert ()
+            Hl.Assert ()
 
         // populate vertices
         let perimeter = box2 position size
@@ -248,12 +248,12 @@ module SpriteBatch =
     let CreateSpriteBatchEnv () =
 
         // create vao
-        let vao = OpenGL.Gl.GenVertexArray ()
-        OpenGL.Hl.Assert ()
+        let vao = Gl.GenVertexArray ()
+        Hl.Assert ()
 
         // create shader
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader ()
-        OpenGL.Hl.Assert ()
+        Hl.Assert ()
 
         // create env
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
