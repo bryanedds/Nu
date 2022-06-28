@@ -107,7 +107,7 @@ module PhysicallyBased =
           LightColorsUniform : int
           PhysicallyBasedDeferred2Shader : uint }
 
-    /// Attempt to create physically-based from an Assimp mesh.
+    /// Attempt to create physically-based from an assimp mesh.
     let TryCreatePhysicallyBasedMesh (mesh : Assimp.Mesh) =
 
         // ensure required data is available

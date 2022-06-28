@@ -37,6 +37,7 @@ module Assets =
         let [<Literal>] SideViewCharacterWalkImageName = "SideViewCharacterWalk"
         let [<Literal>] TileMapName = "TileMap"
         let [<Literal>] TileMapEmptyName = "TileMapEmpty"
+        let [<Literal>] SkyboxCubeMapName = "SkyboxCubeMap"
         let [<Literal>] StaticModelName = "StaticModel"
         let [<Literal>] SoundName = "Sound"
         let [<Literal>] SongName = "Song"
