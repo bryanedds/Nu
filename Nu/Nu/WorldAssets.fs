@@ -39,6 +39,7 @@ module Assets =
         let (*Literal*) SideViewCharacterWalkImage = asset<Image> PackageName Assets.Default.SideViewCharacterWalkImageName
         let (*Literal*) TileMap = asset<TileMap> PackageName Assets.Default.TileMapName
         let (*Literal*) TileMapEmpty = asset<TileMap> PackageName Assets.Default.TileMapEmptyName
+        let (*Literal*) SkyboxCubeMap = asset<CubeMap> PackageName Assets.Default.SkyboxCubeMapName
         let (*Literal*) StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
         let (*Literal*) Sound = asset<Sound> PackageName Assets.Default.SoundName
         let (*Literal*) Song = asset<Song> PackageName Assets.Default.SongName

@@ -430,6 +430,7 @@ module WorldModule3 =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
+                 SkyboxDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =

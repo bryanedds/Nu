@@ -4,7 +4,9 @@
   [Name Level]
   [Persistent True]
   [Visible True]]
- [[StaticModelDispatcher
+ [[SkyboxDispatcher
+   []]
+  [StaticModelDispatcher
    [[Position [-2 2.5 0]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
