@@ -103,7 +103,9 @@
     <None Include="Assets\Default\Image8.png" />
     <None Include="Assets\Default\Image9.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
-    <None Include="Assets\Default\PhysicallyBased.glsl" />
+    <None Include="Assets\Default\PhysicallyBasedDeferred.glsl" />
+    <None Include="Assets\Default\PhysicallyBasedDeferred2.glsl" />
+    <None Include="Assets\Default\PhysicallyBasedForward.glsl" />
     <None Include="Assets\Default\SideViewCharacterIdle.png" />
     <None Include="Assets\Default\SideViewCharacterJump.png" />
     <None Include="Assets\Default\SideViewCharacterWalk.png" />

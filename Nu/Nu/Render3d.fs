@@ -300,7 +300,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create forward shader
-        let forwardShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedShaderFilePath
+        let forwardShader = OpenGL.Hl.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
@@ -411,12 +411,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                   RenderSurfacesForwardRelative = SegmentedList.make () }
 
             // setup geometry buffer
-            let (positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+            let (positionTexture, normalTexture, albedoTexture, materialTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.DepthMask true
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
-            OpenGL.Gl.ClearColor (0.0f, 0.0f, 0.0f, 1.0f)
+            OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.DepthMask false
@@ -453,7 +453,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
             OpenGL.Hl.DrawPhysicallyBasedDeferred2Surface
-                (positionTextureUniform, normalTextureUniform, albedoTextureUniform, materialTextureUniform,
+                (positionTexture, normalTexture, albedoTexture, materialTexture,
                  lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
