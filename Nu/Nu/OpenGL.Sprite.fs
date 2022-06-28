@@ -57,13 +57,13 @@ module Sprite =
 
         // create shader
         let shader = Shader.CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr)
-        let modelViewProjectionUniform = OpenGL.Gl.GetUniformLocation (shader, "modelViewProjection")
-        let texCoords4Uniform = OpenGL.Gl.GetUniformLocation (shader, "texCoords4")
-        let colorUniform = OpenGL.Gl.GetUniformLocation (shader, "color")
-        let texUniform = OpenGL.Gl.GetUniformLocation (shader, "tex")
+        let modelViewProjectionUniform = Gl.GetUniformLocation (shader, "modelViewProjection")
+        let texCoords4Uniform = Gl.GetUniformLocation (shader, "texCoords4")
+        let colorUniform = Gl.GetUniformLocation (shader, "color")
+        let texUniform = Gl.GetUniformLocation (shader, "tex")
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
 
-    /// Create a sprite quad for rendering to a shader matching the one created with OpenGL.Hl.CreateSpriteShader.
+    /// Create a sprite quad for rendering to a shader matching the one created with Hl.CreateSpriteShader.
     let CreateSpriteQuad onlyUpperRightQuadrant =
 
         // build vertex data
@@ -80,40 +80,40 @@ module Sprite =
                   -1.0f; +1.0f|]
 
         // initialize vao
-        let vao = OpenGL.Gl.GenVertexArray ()
-        OpenGL.Gl.BindVertexArray vao
-        OpenGL.Hl.Assert ()
+        let vao = Gl.GenVertexArray ()
+        Gl.BindVertexArray vao
+        Hl.Assert ()
 
         // create vertex buffer
-        let vertexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+        let vertexBuffer = Gl.GenBuffer ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        try Gl.BufferData (BufferTarget.ArrayBuffer, uint vertexDataSize, vertexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
         finally vertexDataPtr.Free ()
-        OpenGL.Hl.Assert ()
+        Hl.Assert ()
 
         // create index buffer
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
-        let indexBuffer = OpenGL.Gl.GenBuffer ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+        let indexBuffer = Gl.GenBuffer ()
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
         let indexDataSize = uint (indexData.Length * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+        try Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
         finally indexDataPtr.Free ()
-        OpenGL.Hl.Assert ()
+        Hl.Assert ()
 
         // finalize vao
-        OpenGL.Gl.EnableVertexAttribArray 0u
-        OpenGL.Gl.VertexAttribPointer (0u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Hl.Assert ()
+        Gl.EnableVertexAttribArray 0u
+        Gl.VertexAttribPointer (0u, 2, VertexAttribType.Float, false, vertexSize, nativeint 0)
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
 
         // fin
         (vertexBuffer, indexBuffer, vao)
 
-    /// Draw a sprite whose indices and vertices were created by OpenGL.Gl.CreateSpriteQuad and whose uniforms and shader match those of OpenGL.CreateSpriteShader.
+    /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
     let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
 
         // compute unflipped tex coords
@@ -150,42 +150,42 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // setup state
-        OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-        OpenGL.Hl.Assert ()
+        Gl.Enable EnableCap.Blend
+        Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
 
         // setup shader
-        OpenGL.Gl.UseProgram shader
-        OpenGL.Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
-        OpenGL.Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
-        OpenGL.Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
-        OpenGL.Gl.Uniform1 (texUniform, 0)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
-        OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
-        OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
-        OpenGL.Hl.Assert ()
+        Gl.UseProgram shader
+        Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
+        Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
+        Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
+        Gl.Uniform1 (texUniform, 0)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        Gl.BlendEquation BlendEquationMode.FuncAdd
+        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+        Hl.Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray vao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertices)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indices)
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray vao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, vertices)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indices)
+        Hl.Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawElements (OpenGL.PrimitiveType.Triangles, 6, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
-        OpenGL.Hl.Assert ()
+        Gl.DrawElements (PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
 
         // teardown geometry
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
 
         // teardown shader
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.UseProgram 0u
-        OpenGL.Hl.Assert ()
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u
+        Hl.Assert ()
 
         // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.Disable OpenGL.EnableCap.Blend
+        Gl.Disable EnableCap.CullFace
+        Gl.Disable EnableCap.Blend

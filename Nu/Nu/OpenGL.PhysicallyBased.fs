@@ -15,7 +15,7 @@ module PhysicallyBased =
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
         { Bounds : Box3
-          PrimitiveType : OpenGL.PrimitiveType
+          PrimitiveType : PrimitiveType
           ElementCount : int
           Vertices : Vector3 array
           VertexBuffer : uint
@@ -263,59 +263,59 @@ module PhysicallyBased =
             if renderable then
 
                 // initialize vao
-                let vao = OpenGL.Gl.GenVertexArray ()
-                OpenGL.Gl.BindVertexArray vao
-                OpenGL.Hl.Assert ()
+                let vao = Gl.GenVertexArray ()
+                Gl.BindVertexArray vao
+                Hl.Assert ()
 
                 // create vertex buffer
-                let vertexBuffer = OpenGL.Gl.GenBuffer ()
+                let vertexBuffer = Gl.GenBuffer ()
                 let normalOffset =      (3 (*position*)) * sizeof<single>
                 let texCoordsOffset =   (3 (*position*) + 3 (*normal*)) * sizeof<single>
                 let vertexSize =        (3 (*position*) + 3 (*normal*) + 2 (*texCoords*)) * sizeof<single>
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
                 finally vertexDataPtr.Free ()
-                OpenGL.Gl.EnableVertexAttribArray 0u
-                OpenGL.Gl.VertexAttribPointer (0u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint 0)
-                OpenGL.Gl.EnableVertexAttribArray 1u
-                OpenGL.Gl.VertexAttribPointer (1u, 3, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
-                OpenGL.Gl.EnableVertexAttribArray 2u
-                OpenGL.Gl.VertexAttribPointer (2u, 2, OpenGL.VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
-                OpenGL.Hl.Assert ()
+                Gl.EnableVertexAttribArray 0u
+                Gl.VertexAttribPointer (0u, 3, VertexAttribType.Float, false, vertexSize, nativeint 0)
+                Gl.EnableVertexAttribArray 1u
+                Gl.VertexAttribPointer (1u, 3, VertexAttribType.Float, false, vertexSize, nativeint normalOffset)
+                Gl.EnableVertexAttribArray 2u
+                Gl.VertexAttribPointer (2u, 2, VertexAttribType.Float, false, vertexSize, nativeint texCoordsOffset)
+                Hl.Assert ()
 
                 // create model buffer
-                let modelBuffer = OpenGL.Gl.GenBuffer ()
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, modelBuffer)
+                let modelBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, modelBuffer)
                 let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StreamDraw)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally modelDataPtr.Free ()
-                OpenGL.Gl.EnableVertexAttribArray 3u
-                OpenGL.Gl.VertexAttribPointer (3u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
-                OpenGL.Gl.VertexAttribDivisor (3u, 1u)
-                OpenGL.Gl.EnableVertexAttribArray 4u
-                OpenGL.Gl.VertexAttribPointer (4u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
-                OpenGL.Gl.VertexAttribDivisor (4u, 1u)
-                OpenGL.Gl.EnableVertexAttribArray 5u
-                OpenGL.Gl.VertexAttribPointer (5u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
-                OpenGL.Gl.VertexAttribDivisor (5u, 1u)
-                OpenGL.Gl.EnableVertexAttribArray 6u
-                OpenGL.Gl.VertexAttribPointer (6u, 4, OpenGL.VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
-                OpenGL.Gl.VertexAttribDivisor (6u, 1u)
-                OpenGL.Hl.Assert ()
+                Gl.EnableVertexAttribArray 3u
+                Gl.VertexAttribPointer (3u, 4, VertexAttribType.Float, false, 16 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (3u, 1u)
+                Gl.EnableVertexAttribArray 4u
+                Gl.VertexAttribPointer (4u, 4, VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                Gl.VertexAttribDivisor (4u, 1u)
+                Gl.EnableVertexAttribArray 5u
+                Gl.VertexAttribPointer (5u, 4, VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribDivisor (5u, 1u)
+                Gl.EnableVertexAttribArray 6u
+                Gl.VertexAttribPointer (6u, 4, VertexAttribType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribDivisor (6u, 1u)
+                Hl.Assert ()
 
                 // create index buffer
-                let indexBuffer = OpenGL.Gl.GenBuffer ()
-                OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                try OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.StaticDraw)
+                try Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
                 finally indexDataPtr.Free ()
-                OpenGL.Hl.Assert ()
+                Hl.Assert ()
 
                 // finalize vao
-                OpenGL.Gl.BindVertexArray 0u
-                OpenGL.Hl.Assert ()
+                Gl.BindVertexArray 0u
+                Hl.Assert ()
 
                 // fin
                 ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
@@ -336,7 +336,7 @@ module PhysicallyBased =
         // make physically-based geometry
         let geometry =
             { Bounds = bounds
-              PrimitiveType = OpenGL.PrimitiveType.Triangles
+              PrimitiveType = PrimitiveType.Triangles
               ElementCount = indexData.Length
               Vertices = vertices
               VertexBuffer = vertexBuffer
@@ -386,15 +386,15 @@ module PhysicallyBased =
             let roughnessFilePath = Path.Combine (dirPath, roughness.FilePath)
             let normalFilePath = Path.Combine (dirPath, normal.FilePath)
             let ambientOcclusionFilePath = Path.Combine (dirPath, ambientOcclusion.FilePath)
-            match Texture.TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, albedoFilePath) with
+            match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, albedoFilePath) with
             | Right albedoTexture ->
-                match Texture.TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, metalnessFilePath) with
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, metalnessFilePath) with
                 | Right metalnessTexture ->
-                    match Texture.TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, roughnessFilePath) with
+                    match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, roughnessFilePath) with
                     | Right roughnessTexture ->
-                        match Texture.TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, normalFilePath) with
+                        match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, normalFilePath) with
                         | Right normalTexture ->
-                            match Texture.TryCreateTexture2d (OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, ambientOcclusionFilePath) with
+                            match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, ambientOcclusionFilePath) with
                             | Right ambientOcclusionTexture -> Right (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)
                             | Left error -> Left ("Could not load texture '" + ambientOcclusionFilePath + "' due to '" + error + "'.")
                         | Left error -> Left ("Could not load texture '" + normalFilePath + "' due to '" + error + "'.")
@@ -469,17 +469,17 @@ module PhysicallyBased =
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
 
         // retrieve uniforms
-        let viewUniform = OpenGL.Gl.GetUniformLocation (shader, "view")
-        let projectionUniform = OpenGL.Gl.GetUniformLocation (shader, "projection")
-        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
-        let albedoTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoTexture")
-        let metalnessTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "metalnessTexture")
-        let roughnessTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessTexture")
-        let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
-        let ambientOcclusionTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
-        let lightAmbientUniform = OpenGL.Gl.GetUniformLocation (shader, "lightAmbient")
-        let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
-        let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let eyePositionUniform = Gl.GetUniformLocation (shader, "eyePosition")
+        let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
+        let metalnessTextureUniform = Gl.GetUniformLocation (shader, "metalnessTexture")
+        let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
+        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
+        let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
+        let lightAmbientUniform = Gl.GetUniformLocation (shader, "lightAmbient")
+        let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
+        let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
         // make shader record
         { ViewUniform = viewUniform
@@ -501,14 +501,14 @@ module PhysicallyBased =
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
 
         // retrieve uniforms
-        let eyePositionUniform = OpenGL.Gl.GetUniformLocation (shader, "eyePosition")
-        let positionTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "positionTexture")
-        let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
-        let albedoTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoTexture")
-        let materialTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "materialTexture")
-        let lightAmbientUniform = OpenGL.Gl.GetUniformLocation (shader, "lightAmbient")
-        let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
-        let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
+        let eyePositionUniform = Gl.GetUniformLocation (shader, "eyePosition")
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
+        let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
+        let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
+        let lightAmbientUniform = Gl.GetUniformLocation (shader, "lightAmbient")
+        let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
+        let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
         // make shader record
         { EyePositionUniform = eyePositionUniform
@@ -545,78 +545,78 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup state
-        OpenGL.Gl.DepthMask true
-        OpenGL.Gl.DepthFunc OpenGL.DepthFunction.Lequal
-        OpenGL.Gl.Enable OpenGL.EnableCap.DepthTest
-        OpenGL.Gl.Enable OpenGL.EnableCap.CullFace
-        OpenGL.Hl.Assert ()
+        Gl.DepthMask true
+        Gl.DepthFunc DepthFunction.Lequal
+        Gl.Enable EnableCap.DepthTest
+        Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
 
         // setup shader
-        OpenGL.Gl.UseProgram shader.PhysicallyBasedShader
-        OpenGL.Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        OpenGL.Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        OpenGL.Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
-        OpenGL.Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        OpenGL.Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
-        OpenGL.Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
-        OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 3)
-        OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
-        OpenGL.Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
-        OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
-        OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, metalnessTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, roughnessTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ambientOcclusionTexture)
-        OpenGL.Hl.Assert ()
+        Gl.UseProgram shader.PhysicallyBasedShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
+        Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
+        Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
+        Gl.Uniform1 (shader.NormalTextureUniform, 3)
+        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
+        Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, metalnessTexture)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, roughnessTexture)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, ambientOcclusionTexture)
+        Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), OpenGL.BufferUsage.DynamicDraw)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
-        OpenGL.Hl.Assert ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, OpenGL.DrawElementsType.UnsignedInt, nativeint 0, modelsCount)
-        OpenGL.Hl.Assert ()
+        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, modelsCount)
+        Hl.Assert ()
 
         // teardown geometry
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
 
         // teardown shader
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture4
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.UseProgram 0u
-        OpenGL.Hl.Assert ()
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u
+        Hl.Assert ()
 
         // teardown state
-        OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-        OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
-        OpenGL.Gl.DepthFunc OpenGL.DepthFunction.Less
-        OpenGL.Gl.DepthMask false
+        Gl.Disable EnableCap.CullFace
+        Gl.Disable EnableCap.DepthTest
+        Gl.DepthFunc DepthFunction.Less
+        Gl.DepthMask false
 
     /// Draw a the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface
@@ -631,45 +631,45 @@ module PhysicallyBased =
          shader : PhysicallyBasedDeferred2Shader) =
 
         // setup shader
-        OpenGL.Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
-        OpenGL.Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 1)
-        OpenGL.Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
-        OpenGL.Gl.Uniform1 (shader.MaterialTextureUniform, 3)
-        OpenGL.Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
-        OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
-        OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, positionTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, normalTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, albedoTexture)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, materialTexture)
-        OpenGL.Hl.Assert ()
+        Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
+        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.NormalTextureUniform, 1)
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
+        Gl.Uniform1 (shader.MaterialTextureUniform, 3)
+        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
+        Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
+        Hl.Assert ()
 
         // setup geometry
-        OpenGL.Gl.BindVertexArray geometry.PhysicallyBasedVao
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
 
         // draw geometry
-        OpenGL.Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, OpenGL.DrawElementsType.UnsignedInt, nativeint 0)
-        OpenGL.Hl.Assert ()
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
 
         // teardown geometry
-        OpenGL.Gl.BindVertexArray 0u
-        OpenGL.Hl.Assert ()
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
 
         // teardown shader
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture1
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture2
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture3
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-        OpenGL.Gl.UseProgram 0u
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u
