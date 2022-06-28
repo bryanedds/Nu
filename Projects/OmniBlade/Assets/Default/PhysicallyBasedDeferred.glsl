@@ -24,8 +24,6 @@ void main()
 #shader fragment
 #version 410 core
 
-const int LIGHTS_MAX = 4;
-
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
