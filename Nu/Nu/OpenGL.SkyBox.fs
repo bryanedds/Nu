@@ -9,32 +9,32 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Skybox =
+module SkyBox =
 
-    /// Describes some skybox geometry that's loaded into VRAM.
-    type [<StructuralEquality; NoComparison>] SkyboxGeometry =
+    /// Describes some sky box geometry that's loaded into VRAM.
+    type [<StructuralEquality; NoComparison>] SkyBoxGeometry =
         { Bounds : Box3
           PrimitiveType : PrimitiveType
           ElementCount : int
           Vertices : Vector3 array
           VertexBuffer : uint
           IndexBuffer : uint
-          SkyboxVao : uint }
+          SkyBoxVao : uint }
 
-    /// Describes a renderable skybox surface.
-    type [<NoEquality; NoComparison; Struct>] SkyboxSurface =
+    /// Describes a renderable sky box surface.
+    type [<NoEquality; NoComparison; Struct>] SkyBoxSurface =
         { CubeMap : uint
-          SkyboxGeometry : SkyboxGeometry }
+          SkyBoxGeometry : SkyBoxGeometry }
 
-    /// Describes a skybox shader that's loaded into GPU.
-    type [<StructuralEquality; NoComparison>] SkyboxShader =
+    /// Describes a sky box shader that's loaded into GPU.
+    type [<StructuralEquality; NoComparison>] SkyBoxShader =
         { ViewUniform : int
           ProjectionUniform : int
           CubeMapUniform : int
-          SkyboxShader : uint }
+          SkyBoxShader : uint }
 
-    /// Create a mesh for a skybox.
-    let CreateSkyboxMesh () =
+    /// Create a mesh for a sky box.
+    let CreateSkyBoxMesh () =
 
         // make vertex data
         let vertexData =
@@ -93,8 +93,8 @@ module Skybox =
         // fin
         (vertexData, indexData, bounds)
 
-    /// Create physically-based geometry from a mesh.
-    let CreateSkyboxGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
+    /// Create sky geometry from a mesh.
+    let CreateSkyBoxGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
 
         // make buffers
         let (vertices, vertexBuffer, indexBuffer, vao) =
@@ -147,7 +147,7 @@ module Skybox =
                 // fin
                 (vertices, 0u, 0u, 0u)
 
-        // make skybox geometry
+        // make sky box geometry
         let geometry =
             { Bounds = bounds
               PrimitiveType = PrimitiveType.Triangles
@@ -155,18 +155,18 @@ module Skybox =
               Vertices = vertices
               VertexBuffer = vertexBuffer
               IndexBuffer = indexBuffer
-              SkyboxVao = vao }
+              SkyBoxVao = vao }
 
         // fin
         geometry
 
-    /// Create skybox geometry.
-    let CreateSkybox renderable =
-        let (vertexData, indexData, bounds) = CreateSkyboxMesh ()
-        CreateSkyboxGeometry (renderable, vertexData, indexData, bounds)
+    /// Create sky box geometry.
+    let CreateSkyBox renderable =
+        let (vertexData, indexData, bounds) = CreateSkyBoxMesh ()
+        CreateSkyBoxGeometry (renderable, vertexData, indexData, bounds)
 
-    /// Create a skybox shader.
-    let CreateSkyboxShader (shaderFilePath : string) =
+    /// Create a sky box shader.
+    let CreateSkyBoxShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -180,15 +180,15 @@ module Skybox =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           CubeMapUniform = cubeMapUniform
-          SkyboxShader = shader }
+          SkyBoxShader = shader }
 
-    /// Draw a skybox.
-    let DrawSkybox
+    /// Draw a sky box.
+    let DrawSkyBox
         (view : single array,
          projection : single array,
          cubeMap : uint,
-         geometry : SkyboxGeometry,
-         shader : SkyboxShader) =
+         geometry : SkyBoxGeometry,
+         shader : SkyBoxShader) =
 
         // setup state
         Gl.DepthFunc DepthFunction.Lequal
@@ -196,7 +196,7 @@ module Skybox =
         Hl.Assert ()
 
         // setup shader
-        Gl.UseProgram shader.SkyboxShader
+        Gl.UseProgram shader.SkyBoxShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -204,7 +204,7 @@ module Skybox =
         Hl.Assert ()
 
         // setup geometry
-        Gl.BindVertexArray geometry.SkyboxVao
+        Gl.BindVertexArray geometry.SkyBoxVao
         Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
         Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
         Hl.Assert ()

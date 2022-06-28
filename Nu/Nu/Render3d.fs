@@ -28,7 +28,7 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
 and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSkyboxes : CubeMap AssetTag SegmentedList
+      RenderSkyBoxes : CubeMap AssetTag SegmentedList
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
@@ -59,7 +59,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
-    | RenderSkyboxDescriptor of CubeMap AssetTag
+    | RenderSkyBoxDescriptor of CubeMap AssetTag
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -96,12 +96,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     private
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
-          RenderSkyboxShader : OpenGL.Skybox.SkyboxShader
+          RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
-          RenderSkyboxGeometry : OpenGL.Skybox.SkyboxGeometry
+          RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
@@ -317,8 +317,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
 
-        // create skybox shader
-        let skyboxShader = OpenGL.Skybox.CreateSkyboxShader Constants.Paths.SkyboxShaderFilePath
+        // create sky box shader
+        let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -338,8 +338,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
-        // create skybox geometry
-        let skyboxGeometry = OpenGL.Skybox.CreateSkybox true
+        // create sky box geometry
+        let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBox true
 
         // create deferred lighting quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
@@ -348,12 +348,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let renderer =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
-              RenderSkyboxShader = skyboxShader
+              RenderSkyBoxShader = skyBoxShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderGeometryFramebuffer = geometryFramebuffer
-              RenderSkyboxGeometry = skyboxGeometry
+              RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -398,7 +398,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let surfacesDeferredAbsolute = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             let surfacesDeferredRelative = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
-            let skyboxes = SegmentedList.make ()
+            let skyBoxes = SegmentedList.make ()
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
@@ -429,8 +429,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
                          renderer)
-                | RenderSkyboxDescriptor cubeMap ->
-                    SegmentedList.add cubeMap skyboxes
+                | RenderSkyBoxDescriptor cubeMap ->
+                    SegmentedList.add cubeMap skyBoxes
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
@@ -438,7 +438,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let surfaces =
                 { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
                   RenderSurfacesDeferredRelative = surfacesDeferredRelative
-                  RenderSkyboxes = skyboxes
+                  RenderSkyBoxes = skyBoxes
                   RenderSurfacesForwardAbsolute = SegmentedList.make ()
                   RenderSurfacesForwardRelative = SegmentedList.make () }
 
@@ -491,17 +491,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                  lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
-            // attempt to render last skybox
-            match Seq.tryLast skyboxes with
+            // attempt to render last sky box
+            match Seq.tryLast skyBoxes with
             | Some cubeMap ->
                 match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
                 | ValueSome asset ->
                     match asset with
                     | CubeMapAsset cubeMap ->
-                         OpenGL.Skybox.DrawSkybox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyboxGeometry, renderer.RenderSkyboxShader)
+                         OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                          OpenGL.Hl.Assert ()
-                    | _ -> Log.debug "Could not draw skybox due to mismatched cube map asset."
-                | ValueNone -> Log.debug "Could not draw skybox due to non-existent cube map asset."
+                    | _ -> Log.debug "Could not draw sky box due to mismatched cube map asset."
+                | ValueNone -> Log.debug "Could not draw sky box due to non-existent cube map asset."
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces

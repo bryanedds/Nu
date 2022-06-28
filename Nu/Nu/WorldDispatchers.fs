@@ -1243,23 +1243,23 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
-module SkyboxFacetModule =
+module SkyBoxFacetModule =
 
     type Entity with
         member this.GetCubeMap world : CubeMap AssetTag = this.Get Property? CubeMap world
         member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set Property? CubeMap value world
         member this.CubeMap = lens Property? CubeMap this.GetCubeMap this.SetCubeMap this
 
-    type SkyboxFacet () =
+    type SkyBoxFacet () =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.CubeMap Assets.Default.SkyboxCubeMap]
+            [define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let cubeMap = entity.GetCubeMap world
-                World.enqueueRenderMessage3d (RenderSkyboxDescriptor cubeMap) world
+                World.enqueueRenderMessage3d (RenderSkyBoxDescriptor cubeMap) world
             else world
 
 [<AutoOpen>]
@@ -2373,16 +2373,16 @@ module TmxMapDispatcherModule =
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
-module SkyboxDispatcherModule =
+module SkyBoxDispatcherModule =
 
-    type SkyboxDispatcher () =
+    type SkyBoxDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
         static member Facets =
-            [typeof<SkyboxFacet>]
+            [typeof<SkyBoxFacet>]
 
         static member Properties =
-            [define Entity.CubeMap Assets.Default.SkyboxCubeMap]
+            [define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
 
 [<AutoOpen>]
 module StaticModelDispatcherModule =
