@@ -25,5 +25,5 @@ uniform samplerCube cubeMap;
 
 void main()
 {    
-    frag = texture(skybox, texCoordsOut);
+    frag = texture(cubeMap, texCoordsOut);
 }
