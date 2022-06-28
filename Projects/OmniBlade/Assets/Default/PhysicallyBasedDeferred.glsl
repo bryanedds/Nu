@@ -26,14 +26,11 @@ void main()
 
 const int LIGHTS_MAX = 4;
 
-uniform vec3 eyePosition; // NOTE: unused, but kept in to preserve interface.
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
-uniform vec3 lightPositions[LIGHTS_MAX]; // NOTE: unused, but kept in to preserve interface.
-uniform vec3 lightColors[LIGHTS_MAX]; // NOTE: unused, but kept in to preserve interface.
 
 in vec3 positionOut;
 in vec3 normalOut;

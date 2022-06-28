@@ -112,6 +112,7 @@ module Hl =
           RoughnessTextureUniform : int
           NormalTextureUniform : int
           AmbientOcclusionTextureUniform : int
+          LightAmbientUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
@@ -123,6 +124,7 @@ module Hl =
           NormalTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
+          LightAmbientUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedDeferred2Shader : uint }
@@ -844,6 +846,7 @@ module Hl =
         let roughnessTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "roughnessTexture")
         let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
         let ambientOcclusionTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
+        let lightAmbientUniform = OpenGL.Gl.GetUniformLocation (shader, "lightAmbient")
         let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
 
@@ -856,6 +859,7 @@ module Hl =
           RoughnessTextureUniform = roughnessTextureUniform
           NormalTextureUniform = normalTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
+          LightAmbientUniform = lightAmbientUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
@@ -871,6 +875,7 @@ module Hl =
         let normalTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "normalTexture")
         let albedoTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = OpenGL.Gl.GetUniformLocation (shader, "materialTexture")
+        let lightAmbientUniform = OpenGL.Gl.GetUniformLocation (shader, "lightAmbient")
         let lightPositionsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = OpenGL.Gl.GetUniformLocation (shader, "lightColors")
 
@@ -880,6 +885,7 @@ module Hl =
           NormalTextureUniform = normalTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
+          LightAmbientUniform = lightAmbientUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedDeferred2Shader = shader }
@@ -1028,6 +1034,7 @@ module Hl =
          roughnessTexture : uint,
          normalTexture : uint,
          ambientOcclusionTexture : uint,
+         lightAmbient : single,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -1050,6 +1057,7 @@ module Hl =
         OpenGL.Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 3)
         OpenGL.Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        OpenGL.Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
         OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
@@ -1112,6 +1120,7 @@ module Hl =
          normalTexture : uint,
          albedoTexture : uint,
          materialTexture : uint,
+         lightAmbient : single,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -1123,6 +1132,7 @@ module Hl =
         OpenGL.Gl.Uniform1 (shader.NormalTextureUniform, 1)
         OpenGL.Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
         OpenGL.Gl.Uniform1 (shader.MaterialTextureUniform, 3)
+        OpenGL.Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
         OpenGL.Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         OpenGL.Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
