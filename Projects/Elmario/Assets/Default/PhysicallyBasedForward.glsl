@@ -34,6 +34,7 @@ uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
+uniform float lightAmbient;
 uniform vec3 lightPositions[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
 
@@ -145,7 +146,7 @@ void main()
     }
 
     // compute ambient term
-    vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
+    vec3 ambient = lightAmbient * albedo * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;

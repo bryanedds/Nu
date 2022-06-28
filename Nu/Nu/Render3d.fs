@@ -260,6 +260,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         projectionArray
         (models : Matrix4x4 SegmentedList)
         (surface : OpenGL.Hl.PhysicallyBasedSurface)
+        lightAmbient
         lightPositions
         lightColors
         shader
@@ -282,7 +283,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
-                 lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
+                 lightAmbient, lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -363,6 +364,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // just use constant lights for now
+            let lightAmbient = 0.025f
             let lightPositions = [|-5.0f; 2.0f; 5.0f; 5.0f; 2.0f; 5.0f; -5.0f; 2.0f; -5.0f; 5.0f; 2.0f; -5.0f|]
             let lightColors = [|100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f; 100.0f; 0.0f; 100.0f; 0.0f; 100.0f|]
 
@@ -430,6 +432,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     entry.Key
+                    lightAmbient
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
@@ -444,6 +447,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     entry.Key
+                    lightAmbient
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
@@ -454,7 +458,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
             OpenGL.Hl.DrawPhysicallyBasedDeferred2Surface
                 (positionTexture, normalTexture, albedoTexture, materialTexture,
-                 lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+                 lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
             // render forward pass w/ absolute-transformed surfaces
@@ -465,6 +469,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton model)
                     surface
+                    lightAmbient
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
@@ -479,6 +484,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton model)
                     surface
+                    lightAmbient
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
