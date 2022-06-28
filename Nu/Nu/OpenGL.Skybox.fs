@@ -159,7 +159,7 @@ module Skybox =
         // fin
         geometry
 
-    /// Create skybox.
+    /// Create skybox geometry.
     let CreateSkybox renderable =
         let (vertexData, indexData, bounds) = CreateSkyboxMesh ()
         CreateSkyboxGeometry (renderable, vertexData, indexData, bounds)
