@@ -430,7 +430,7 @@ module WorldModule3 =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
-                 SkyboxDispatcher () :> EntityDispatcher
+                 SkyBoxDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
@@ -446,7 +446,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
-                 SkyboxFacet () :> Facet
+                 SkyBoxFacet () :> Facet
                  StaticModelFacet () :> Facet]
 
         /// Make an empty world.
