@@ -29,6 +29,7 @@ module Skybox =
     /// Describes a skybox shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] SkyboxShader =
         { ViewUniform : int
+          ProjectionUniform : int
           SkyboxShader : uint }
 
     /// Create a mesh for a skybox.
@@ -171,40 +172,32 @@ module Skybox =
 
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
 
         // make shader record
         { ViewUniform = viewUniform
+          ProjectionUniform = projectionUniform
           SkyboxShader = shader }
 
     /// Draw a skybox.
     let DrawSkybox
-        (positionTexture : uint,
-         normalTexture : uint,
-         albedoTexture : uint,
-         materialTexture : uint,
-         lightAmbient : single,
-         lightPositions : single array,
-         lightColors : single array,
+        (view : single array,
+         projection : single array,
+         cubeMapTexture : uint,
          geometry : SkyboxGeometry,
          shader : SkyboxShader) =
 
+        // setup state
+        Gl.DepthFunc DepthFunction.Lequal
+        Gl.Enable EnableCap.DepthTest
+        Hl.Assert ()
+
         // setup shader
         Gl.UseProgram shader.SkyboxShader
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.NormalTextureUniform, 1)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
-        Gl.Uniform1 (shader.MaterialTextureUniform, 3)
-        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
-        Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
-        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMapTexture)
         Hl.Assert ()
 
         // setup geometry
@@ -231,3 +224,7 @@ module Skybox =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+
+        // teardown state
+        Gl.DepthFunc DepthFunction.Less
+        Gl.Disable EnableCap.DepthTest

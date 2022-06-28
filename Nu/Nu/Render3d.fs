@@ -14,6 +14,15 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
+/// Describes assets used to create a cube map.
+type [<NoEquality; NoComparison>] CubeMapAssetTags =
+    { FpxAssetTag : Image AssetTag
+      FnxAssetTag : Image AssetTag
+      FpyAssetTag : Image AssetTag
+      FnyAssetTag : Image AssetTag
+      FpzAssetTag : Image AssetTag
+      FnzAssetTag : Image AssetTag }
+
 /// A callback for one-off forward rendering of a surface.
 /// TODO: 3D: consider turning this into a delegate for byref params.
 type ForwardRenderCallback =
@@ -28,6 +37,7 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
 and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
+      RenderSkybox : CubeMapAssetTags SegmentedList
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
@@ -58,6 +68,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
+    | RenderSkyboxDescriptor of CubeMapAssetTags
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -372,6 +383,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let surfacesDeferredAbsolute = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             let surfacesDeferredRelative = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let skyboxes = SegmentedList.make ()
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
@@ -402,6 +414,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
                          renderer)
+                | RenderSkyboxDescriptor assetTags ->
+                    SegmentedList.add assetTags skyboxes
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
@@ -409,6 +423,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let surfaces =
                 { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
                   RenderSurfacesDeferredRelative = surfacesDeferredRelative
+                  RenderSkybox = skyboxes
                   RenderSurfacesForwardAbsolute = SegmentedList.make ()
                   RenderSurfacesForwardRelative = SegmentedList.make () }
 
@@ -460,6 +475,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 (positionTexture, normalTexture, albedoTexture, materialTexture,
                  lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
+
+            // render last skybox
+            match Seq.tryLast skyboxes with
+            | Some skybox -> OpenGL.Skybox.DrawSkybox (viewAbsoluteArray, projectionArray, (), (), ())
+            | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
