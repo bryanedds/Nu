@@ -90,7 +90,7 @@
     <Compile Include="OpenGL.Shader.fs" />
     <Compile Include="OpenGL.Framebuffer.fs" />
     <Compile Include="OpenGL.Sprite.fs" />
-    <Compile Include="OpenGL.Skybox.fs" />
+    <Compile Include="OpenGL.Sky.Box.fs" />
     <Compile Include="OpenGL.PhysicallyBased.fs" />
     <Compile Include="OpenGL.SpriteBatch.fs" />
     <Compile Include="Physics.fs" />
