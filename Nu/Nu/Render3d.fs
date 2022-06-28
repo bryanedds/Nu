@@ -28,7 +28,7 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
 and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSkybox : CubeMap AssetTag
+      RenderSkyboxes : CubeMap AssetTag SegmentedList
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
@@ -429,8 +429,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
                          renderer)
-                | RenderSkyboxDescriptor assetTags ->
-                    SegmentedList.add assetTags skyboxes
+                | RenderSkyboxDescriptor cubeMap ->
+                    SegmentedList.add cubeMap skyboxes
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
@@ -438,7 +438,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let surfaces =
                 { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
                   RenderSurfacesDeferredRelative = surfacesDeferredRelative
-                  RenderSkybox = skyboxes
+                  RenderSkyboxes = skyboxes
                   RenderSurfacesForwardAbsolute = SegmentedList.make ()
                   RenderSurfacesForwardRelative = SegmentedList.make () }
 
