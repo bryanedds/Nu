@@ -440,7 +440,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for entry in surfaces.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
-                    viewAbsoluteArray
+                    viewRelativeArray
                     projectionArray
                     entry.Value
                     entry.Key
