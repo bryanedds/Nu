@@ -42,7 +42,7 @@ and [<NoEquality; NoComparison>] RenderMessage2d =
 and Renderer2d =
     inherit Renderer
     /// The sprite batch operational environment if it exists for this implementation.
-    abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.Env option
+    abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.SpriteBatchEnv option
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
     /// Swap a rendered frame of the game.
@@ -84,7 +84,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
           RenderSpriteShader : int * int * int * int * uint
           RenderSpriteQuad : uint * uint * uint
           RenderTextQuad : uint * uint * uint
-          mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.Env
+          mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -99,7 +99,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, texture) -> OpenGL.Hl.DeleteTexture texture
+        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
@@ -107,7 +107,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
-            match OpenGL.Hl.TryCreateSpriteTexture asset.FilePath with
+            match OpenGL.Texture.TryCreateTexture2dUnfiltered asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
@@ -249,7 +249,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         pivot
         rotation
         (insetOpt : Box2 voption)
-        (textureMetadata : OpenGL.Hl.TextureMetadata)
+        (textureMetadata : OpenGL.Texture.TextureMetadata)
         texture
         (color : Color)
         blend
@@ -299,11 +299,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -450,7 +450,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
         let (transform, color) = (transform, color) // make visible from lambda
-        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () ->
+        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () ->
             let mutable transform = transform
             let absolute = transform.Absolute
             let perimeter = transform.Perimeter
@@ -538,7 +538,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // NOTE: we allocate an array here, too.
                         let (vertices, indices, vao) = renderer.RenderTextQuad
                         let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Hl.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                        OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
                         // destroy texture
@@ -552,7 +552,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         OpenGL.Hl.Assert ()
 
     static member inline private renderCallback callback eyePosition eyeSize renderer =
-        flip OpenGL.SpriteBatch.InterruptFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, renderer)
+        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, renderer)
         OpenGL.Hl.Assert ()
 
     static member private renderDescriptor descriptor eyePosition eyeSize renderer =
@@ -604,13 +604,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             OpenGL.Hl.AttachDebugMessageCallback ()
 
         // create one-off sprite and text resources
-        let spriteShader = OpenGL.Hl.CreateSpriteShader ()
-        let spriteQuad = OpenGL.Hl.CreateSpriteQuad false
-        let textQuad = OpenGL.Hl.CreateSpriteQuad true
+        let spriteShader = OpenGL.Sprite.CreateSpriteShader ()
+        let spriteQuad = OpenGL.Sprite.CreateSpriteQuad false
+        let textQuad = OpenGL.Sprite.CreateSpriteQuad true
         OpenGL.Hl.Assert ()
 
         // create sprite batch env
-        let spriteBatchEnv = OpenGL.SpriteBatch.CreateEnv ()
+        let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv ()
         OpenGL.Hl.Assert ()
 
         // make renderer
@@ -647,7 +647,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let projection = GlRenderer2d.computeProjection viewport renderer
             let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
             let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
-            OpenGL.SpriteBatch.BeginFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
 
             // render frame
@@ -657,7 +657,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             renderer.RenderLayeredMessages.Clear ()
 
             // end sprite batch frame
-            OpenGL.SpriteBatch.EndFrame renderer.RenderSpriteBatchEnv
+            OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.RenderSpriteBatchEnv
             OpenGL.Hl.Assert ()
 
             // end frame
@@ -671,7 +671,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | WfglWindow window -> window.WfglSwapWindow ()
 
         member renderer.CleanUp () =
-            OpenGL.SpriteBatch.DestroyEnv renderer.RenderSpriteBatchEnv
+            OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.RenderSpriteBatchEnv
             OpenGL.Hl.Assert ()
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
