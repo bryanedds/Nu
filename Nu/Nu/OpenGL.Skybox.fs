@@ -30,6 +30,7 @@ module Skybox =
     type [<StructuralEquality; NoComparison>] SkyboxShader =
         { ViewUniform : int
           ProjectionUniform : int
+          CubeMapUniform : int
           SkyboxShader : uint }
 
     /// Create a mesh for a skybox.
@@ -173,17 +174,19 @@ module Skybox =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          CubeMapUniform = cubeMapUniform
           SkyboxShader = shader }
 
     /// Draw a skybox.
     let DrawSkybox
         (view : single array,
          projection : single array,
-         cubeMapTexture : uint,
+         cubeMap : uint,
          geometry : SkyboxGeometry,
          shader : SkyboxShader) =
 
@@ -197,7 +200,7 @@ module Skybox =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMapTexture)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
         Hl.Assert ()
 
         // setup geometry
