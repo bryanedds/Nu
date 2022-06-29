@@ -9,7 +9,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Framebuffer =
 
-    /// Create a texture frame buffer.
+    /// Create a texture framebuffer.
     let CreateTextureFramebuffer () =
 
         // create frame buffer object
@@ -35,6 +35,35 @@ module Framebuffer =
 
         // fin
         (texture, framebuffer)
+
+    /// Create an hdr framebuffer.
+    let TryCreateHdrFramebuffer () =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create position buffer
+        let position = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, position)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, position, 0)
+        Hl.Assert ()
+
+        // create depth and stencil buffers
+        let depthStencilBuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, depthStencilBuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
+        then Right (position, framebuffer)
+        else Left ("Could not create complete geometry framebuffer.")
 
     /// Create a geometry frame buffer.
     let TryCreateGeometryFramebuffer () =
@@ -97,4 +126,4 @@ module Framebuffer =
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
         then Right (position, normal, albedo, material, framebuffer)
-            else Left ("Could not create complete geometry framebuffer.")
+        else Left ("Could not create complete geometry framebuffer.")
