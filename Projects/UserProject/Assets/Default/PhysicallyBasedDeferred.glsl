@@ -24,8 +24,8 @@ void main()
 #shader fragment
 #version 410 core
 
-const float TONE_SQRT = 1.5;
-const float TONE = TONE_SQRT * TONE_SQRT;
+const float GAMMA_SQRT = 1.5;
+const float TONE = GAMMA_SQRT * GAMMA_SQRT;
 
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;

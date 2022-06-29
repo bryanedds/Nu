@@ -26,8 +26,8 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 4.0;
-const float TONE_SQRT = 1.5;
-const float TONE = TONE_SQRT * TONE_SQRT;
+const float GAMMA_SQRT = 1.5;
+const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
 const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
@@ -102,7 +102,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void main()
 {
     // compute material properties
-    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(TONE));
+    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(GAMMA));
     float metalness = texture(metalnessTexture, texCoordsOut).r;
     float roughness = texture(roughnessTexture, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
@@ -153,7 +153,7 @@ void main()
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / TONE));
+    color = pow(color, vec3(1.0 / GAMMA));
 
     // write
     frag = vec4(color, 1.0);
