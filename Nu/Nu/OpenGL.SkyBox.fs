@@ -231,6 +231,7 @@ module SkyBox =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
+        Hl.Assert ()
 
         // teardown state
         Gl.DepthFunc DepthFunction.Less
@@ -246,7 +247,7 @@ module SkyBox =
         // setup irradiated cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -258,9 +259,11 @@ module SkyBox =
         // setup framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
 
         // mutate viewport
         Gl.Viewport (0, 0, renderbufferWidth, renderbufferHeight)
+        Hl.Assert ()
 
         // render faces to irradiant map
         let views =
@@ -276,12 +279,12 @@ module SkyBox =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
             Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
             DrawSkyBox (views.[i], projection, skyBoxSurface.CubeMap, skyBoxSurface.SkyBoxGeometry, irradianceShader)
+            Hl.Assert ()
 
         // restore viewport
         Gl.Viewport (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
+        Hl.Assert ()
 
         // teardown framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
-
-        // fin
         irradianceMap

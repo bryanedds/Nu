@@ -103,6 +103,7 @@
     <None Include="Assets\Default\Image11.png" />
     <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
+    <None Include="Assets\Default\Irradiance.glsl" />
     <None Include="Assets\Default\PhysicallyBasedDeferred.glsl" />
     <None Include="Assets\Default\PhysicallyBasedDeferred2.glsl" />
     <None Include="Assets\Default\PhysicallyBasedForward.glsl" />
@@ -112,7 +113,6 @@
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />
     <None Include="Assets\Default\SkyBox.glsl" />
-    <None Include="Assets\Default\SkyBoxIrradiance.glsl" />
     <None Include="Assets\Default\SkyBoxCubeMap.cbm" />
     <None Include="Assets\Default\SkyBoxCubeBack.png" />
     <None Include="Assets\Default\SkyBoxCubeBottom.png" />

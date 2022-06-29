@@ -326,7 +326,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create irradiance shader
-        let irradianceShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxIrradianceShaderFilePath
+        let irradianceShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.IrradianceShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -346,31 +346,37 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.SkyBoxIrradianceMapResolutionX, Constants.Render.SkyBoxIrradianceMapResolutionY)
+        OpenGL.Hl.Assert ()
 
         // create geometry framebuffer
         let geometryFramebuffer =
             match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
 
         // create sky box geometry
         let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
+        OpenGL.Hl.Assert ()
 
         // create physically-based quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
+        OpenGL.Hl.Assert ()
 
         // create sky box cube map
+        // TODO: 3D: load this from SkyBoxCubeMap.cbm file?
         let skyBoxCubeMap =
             match 
                 OpenGL.Texture.TryCreateCubeMap
-                    (Assets.Default.SkyBoxCubeBackName,
-                     Assets.Default.SkyBoxCubeBottomName,
-                     Assets.Default.SkyBoxCubeFrontName,
-                     Assets.Default.SkyBoxCubeLeftName,
-                     Assets.Default.SkyBoxCubeRightName,
-                     Assets.Default.SkyBoxCubeTopName) with
+                    ("Assets/Default/SkyBoxCubeRight.png",
+                     "Assets/Default/SkyBoxCubeLeft.png",
+                     "Assets/Default/SkyBoxCubeBottom.png",
+                     "Assets/Default/SkyBoxCubeTop.png",
+                     "Assets/Default/SkyBoxCubeBack.png",
+                     "Assets/Default/SkyBoxCubeFront.png") with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
+        OpenGL.Hl.Assert ()
 
         // create default irradiance map
         let irradianceMap =
@@ -378,11 +384,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     (box2iZero,
                      Constants.Render.SkyBoxIrradianceMapResolutionX,
                      Constants.Render.SkyBoxIrradianceMapResolutionY,
-                     irradianceFramebuffer,
+                     irradianceRenderbuffer,
                      irradianceFramebuffer,
                      irradianceShader,
                      OpenGL.SkyBox.SkyBoxSurface.make skyBoxCubeMap skyBoxGeometry)
             finally OpenGL.Texture.DeleteTexture skyBoxCubeMap
+        OpenGL.Hl.Assert ()
 
         // make renderer
         let renderer =
