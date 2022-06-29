@@ -12,7 +12,7 @@ void main()
 {
     texCoordsOut = position;
     gl_Position = projection * view * vec4(position, 1.0);
-    gl_Position.z = 1.0; // infinite depth
+    gl_Position.z = 1.0; // maximum depth
 }
 
 #shader fragment
