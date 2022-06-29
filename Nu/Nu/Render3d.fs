@@ -97,10 +97,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
-          RenderSkyBoxIrradiationShader : OpenGL.SkyBox.SkyBoxShader
+          RenderSkyBoxIrradianceShader : OpenGL.SkyBox.SkyBoxShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
+          RenderSkyBoxIrradianceFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -338,6 +339,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
+        // crete irradiance framebuffer
+        let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.SkyBoxIrradianceMapResolutionX, Constants.Render.SkyBoxIrradianceMapResolutionY)
+
         // create geometry framebuffer
         let geometryFramebuffer =
             match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
@@ -355,10 +363,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
               RenderSkyBoxShader = skyBoxShader
-              RenderSkyBoxIrradiationShader = skyBoxIrradiationShader
+              RenderSkyBoxIrradianceShader = skyBoxIrradiationShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
+              RenderSkyBoxIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
@@ -518,10 +527,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | ValueSome asset ->
                     match asset with
                     | CubeMapAsset (cubeMap, cubeMapIrradianceOptRef) ->
-                        let cubeMapIrradiance =
-                            match cubeMapIrradianceOptRef.Value with
-                            | None -> OpenGL.SkyBox.DrawSkyBox cubeMap
-                            | Some cubeMapIrradiance -> cubeMapIrradiance
+                        if Option.isNone cubeMapIrradianceOptRef.Value then
+                            let irradianceMap =
+                                OpenGL.SkyBox.CreateIrradianceMap
+                                    (viewportOffset,
+                                     Constants.Render.SkyBoxIrradianceMapResolutionX,
+                                     Constants.Render.SkyBoxIrradianceMapResolutionY,
+                                     fst renderer.RenderSkyBoxIrradianceFramebuffer,
+                                     snd renderer.RenderSkyBoxIrradianceFramebuffer,
+                                     renderer.RenderSkyBoxIrradianceShader,
+                                     OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                            cubeMapIrradianceOptRef := Some irradianceMap
                         OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                         OpenGL.Hl.Assert ()
                     | _ -> Log.debug "Could not draw sky box due to mismatched cube map asset."
