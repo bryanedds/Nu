@@ -9,8 +9,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Framebuffer =
 
-    /// Create a texture framebuffer.
-    let CreateTextureFramebuffer () =
+    /// Attempt to create a texture framebuffer.
+    let TryCreateTextureFramebuffer () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -33,10 +33,12 @@ module Framebuffer =
         Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, depthStencilBuffer)
         Hl.Assert ()
 
-        // fin
-        (texture, framebuffer)
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
+        then Right (texture, framebuffer)
+        else Left ("Could not create complete texture framebuffer.")
 
-    /// Create an hdr framebuffer.
+    /// Attempt to create an hdr framebuffer.
     let TryCreateHdrFramebuffer () =
 
         // create frame buffer object
@@ -63,7 +65,7 @@ module Framebuffer =
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
         then Right (position, framebuffer)
-        else Left ("Could not create complete geometry framebuffer.")
+        else Left ("Could not create complete HDR framebuffer.")
 
     /// Create a geometry frame buffer.
     let TryCreateGeometryFramebuffer () =
