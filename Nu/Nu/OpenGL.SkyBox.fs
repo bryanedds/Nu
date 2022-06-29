@@ -100,7 +100,7 @@ module SkyBox =
         (vertexData, indexData, bounds)
 
     /// Create sky geometry from a mesh.
-    let CreateSkyBoxGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
+    let CreateSkyBoxGeometryFromMesh (renderable, vertexData : single array, indexData : int array, bounds) =
 
         // make buffers
         let (vertices, vertexBuffer, indexBuffer, vao) =
@@ -167,9 +167,9 @@ module SkyBox =
         geometry
 
     /// Create sky box geometry.
-    let CreateSkyBox renderable =
+    let CreateSkyBoxGeometry renderable =
         let (vertexData, indexData, bounds) = CreateSkyBoxMesh ()
-        CreateSkyBoxGeometry (renderable, vertexData, indexData, bounds)
+        CreateSkyBoxGeometryFromMesh (renderable, vertexData, indexData, bounds)
 
     /// Create a sky box shader.
     let CreateSkyBoxShader (shaderFilePath : string) =
