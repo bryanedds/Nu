@@ -339,7 +339,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
 
         // create sky box geometry
-        let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBox true
+        let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
 
         // create deferred lighting quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
