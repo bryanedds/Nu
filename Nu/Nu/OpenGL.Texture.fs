@@ -108,22 +108,30 @@ module Texture =
         // bind new cube map
         let cubeMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Hl.Assert ()
 
         // load faces into cube map
+        let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
-            let faceFilePath = faceFilePaths.[i]
-            match TryCreateImageSurface faceFilePath with
-            | Some (surfacePtr, surface) ->
-                try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, InternalFormat.Rgba8, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
-                finally SDL.SDL_FreeSurface surfacePtr
-            | None ->
-                Log.debug ("Could not create surface for image from '" + faceFilePath + "'")
+            if Option.isNone errorOpt then
+                let faceFilePath = faceFilePaths.[i]
+                match TryCreateImageSurface faceFilePath with
+                | Some (surfacePtr, surface) ->
+                    try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, InternalFormat.Rgba8, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
+                    finally SDL.SDL_FreeSurface surfacePtr
+                    Hl.Assert ()
+                | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
-        // finalize cube map
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
-        cubeMap
+        // attempt to finalize cube map
+        match errorOpt with
+        | None ->
+            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+            Right cubeMap
+        | Some error ->
+            DeleteTexture cubeMap
+            Left error
