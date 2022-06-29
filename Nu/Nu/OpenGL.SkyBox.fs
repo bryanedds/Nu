@@ -273,7 +273,7 @@ module SkyBox =
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Backward, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-        let projection = (Matrix4x4.CreatePerspective (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
+        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
