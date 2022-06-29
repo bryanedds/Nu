@@ -253,7 +253,7 @@ module StaticSpriteFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4
+            [define Entity.StaticImage Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
@@ -328,7 +328,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.Default.Image4
+             define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Glow Color.Zero
@@ -1458,7 +1458,7 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4
+            [define Entity.StaticImage Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1478,7 +1478,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.Default.Image4
+             define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -2116,7 +2116,7 @@ module FillBarDispatcherModule =
              define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
              define Entity.FillImage Assets.Default.Image9
              define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
-             define Entity.BorderImage Assets.Default.Image12]
+             define Entity.BorderImage Assets.Default.Image4]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2227,7 +2227,7 @@ module Block2dDispatcherModule =
 
         static member Properties =
             [define Entity.BodyType Static
-             define Entity.StaticImage Assets.Default.Image4]
+             define Entity.StaticImage Assets.Default.Image6]
 
 [<AutoOpen>]
 module Box2dDispatcherModule =
@@ -2240,7 +2240,7 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image4]
+            [define Entity.StaticImage Assets.Default.Image6]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =

@@ -97,14 +97,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
-          RenderSkyBoxIrradianceShader : OpenGL.SkyBox.SkyBoxShader
+          RenderIrradianceShader : OpenGL.SkyBox.SkyBoxShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderSkyBoxIrradianceFramebuffer : uint * uint
+          RenderIrradianceFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
+          RenderIrradianceMap : uint
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -324,8 +325,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
         OpenGL.Hl.Assert ()
 
-        // create sky box irradiation shader
-        let skyBoxIrradiationShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxIrradiationShaderFilePath
+        // create irradiance shader
+        let irradianceShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxIrradianceShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -358,19 +359,45 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         // create physically-based quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
 
+        // create sky box cube map
+        let skyBoxCubeMap =
+            match 
+                OpenGL.Texture.TryCreateCubeMap
+                    (Assets.Default.SkyBoxCubeBackName,
+                     Assets.Default.SkyBoxCubeBottomName,
+                     Assets.Default.SkyBoxCubeFrontName,
+                     Assets.Default.SkyBoxCubeLeftName,
+                     Assets.Default.SkyBoxCubeRightName,
+                     Assets.Default.SkyBoxCubeTopName) with
+            | Right cubeMap -> cubeMap
+            | Left error -> failwith error
+
+        // create default irradiance map
+        let irradianceMap =
+            try OpenGL.SkyBox.CreateIrradianceMap
+                    (box2iZero,
+                     Constants.Render.SkyBoxIrradianceMapResolutionX,
+                     Constants.Render.SkyBoxIrradianceMapResolutionY,
+                     irradianceFramebuffer,
+                     irradianceFramebuffer,
+                     irradianceShader,
+                     OpenGL.SkyBox.SkyBoxSurface.make skyBoxCubeMap skyBoxGeometry)
+            finally OpenGL.Texture.DeleteTexture skyBoxCubeMap
+
         // make renderer
         let renderer =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
               RenderSkyBoxShader = skyBoxShader
-              RenderSkyBoxIrradianceShader = skyBoxIrradiationShader
+              RenderIrradianceShader = irradianceShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderSkyBoxIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
+              RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
+              RenderIrradianceMap = irradianceMap
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -491,14 +518,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                                 (viewportOffset,
                                  Constants.Render.SkyBoxIrradianceMapResolutionX,
                                  Constants.Render.SkyBoxIrradianceMapResolutionY,
-                                 fst renderer.RenderSkyBoxIrradianceFramebuffer,
-                                 snd renderer.RenderSkyBoxIrradianceFramebuffer,
-                                 renderer.RenderSkyBoxIrradianceShader,
+                                 fst renderer.RenderIrradianceFramebuffer,
+                                 snd renderer.RenderIrradianceFramebuffer,
+                                 renderer.RenderIrradianceShader,
                                  OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
                         cubeMapIrradianceOptRef := Some irradianceMap
                         irradianceMap
                     else Option.get cubeMapIrradianceOptRef.Value
-                | None -> ()
+                | None -> renderer.RenderIrradianceMap
 
             // render deferred pass w/ absolute-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredAbsolute do

@@ -376,7 +376,7 @@ module WorldModule2 =
                     let world = splashSprite.SetVisible true world
                     world
                 | None ->
-                    let world = splashSprite.SetStaticImage Assets.Default.Image10 world
+                    let world = splashSprite.SetStaticImage Assets.Default.Image8 world
                     let world = splashSprite.SetVisible false world
                     world
             world
