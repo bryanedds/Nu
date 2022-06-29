@@ -26,6 +26,10 @@ module SkyBox =
         { CubeMap : uint
           SkyBoxGeometry : SkyBoxGeometry }
 
+        static member make cubeMap geometry =
+            { CubeMap = cubeMap;
+              SkyBoxGeometry = geometry }
+
     /// Describes a sky box shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] SkyBoxShader =
         { ViewUniform : int
@@ -232,20 +236,14 @@ module SkyBox =
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
 
-    let f () =
-        
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, resolutionX, resolutionY)
-
     let CreateIrradianceMap (viewportOffset : Box2i, renderbufferWidth, renderbufferHeight, renderbuffer, framebuffer, irradianceShader, skyBoxSurface) =
 
         // create irradiance map
         let irradianceMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Hl.Assert ()
-        
-        // setup irradiated cube map for rendering
+
+        // setup irradiated cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.UnsignedByte, nativeint 0)
@@ -257,18 +255,14 @@ module SkyBox =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        // setup shader
-        Gl.UseProgram irradianceShader.SkyBoxShader
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, skyBoxSurface.CubeMap)
-        Hl.Assert ()
-
         // setup framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
 
-        // compute views
+        // mutate viewport
+        Gl.Viewport (0, 0, renderbufferWidth, renderbufferHeight)
+
+        // render faces to irradiant map
         let views =
             [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
@@ -276,19 +270,18 @@ module SkyBox =
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Backward, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-
-        // mutate viewport
-        Gl.Viewport (0, 0, renderbufferWidth, renderbufferHeight)
-
-        // render ...
+        let projection = (Matrix4x4.CreatePerspective (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
             Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
-            DrawSkyBox (views.[i], projection, (), skyBoxSurface.SkyBoxGeometry, irradianceShader)
+            DrawSkyBox (views.[i], projection, skyBoxSurface.CubeMap, skyBoxSurface.SkyBoxGeometry, irradianceShader)
 
         // restore viewport
         Gl.Viewport (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
 
         // teardown framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
+
+        // fin
+        irradianceMap
