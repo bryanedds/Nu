@@ -90,7 +90,7 @@ module PhysicallyBased =
           RoughnessTextureUniform : int
           NormalTextureUniform : int
           AmbientOcclusionTextureUniform : int
-          LightAmbientUniform : int
+          IrradianceMapUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
@@ -102,7 +102,7 @@ module PhysicallyBased =
           NormalTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
-          LightAmbientUniform : int
+          IrradianceMapUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedDeferred2Shader : uint }
@@ -477,7 +477,7 @@ module PhysicallyBased =
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
-        let lightAmbientUniform = Gl.GetUniformLocation (shader, "lightAmbient")
+        let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
@@ -490,7 +490,7 @@ module PhysicallyBased =
           RoughnessTextureUniform = roughnessTextureUniform
           NormalTextureUniform = normalTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
-          LightAmbientUniform = lightAmbientUniform
+          IrradianceMapUniform = irradianceMapUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
@@ -506,7 +506,7 @@ module PhysicallyBased =
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
-        let lightAmbientUniform = Gl.GetUniformLocation (shader, "lightAmbient")
+        let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
@@ -516,7 +516,7 @@ module PhysicallyBased =
           NormalTextureUniform = normalTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
-          LightAmbientUniform = lightAmbientUniform
+          IrradianceMapUniform = irradianceMapUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedDeferred2Shader = shader }
@@ -538,7 +538,7 @@ module PhysicallyBased =
          roughnessTexture : uint,
          normalTexture : uint,
          ambientOcclusionTexture : uint,
-         lightAmbient : single,
+         irradianceMap : uint,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -561,7 +561,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         Gl.Uniform1 (shader.NormalTextureUniform, 3)
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
-        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
+        Gl.Uniform1 (shader.IrradianceMapUniform, irradianceMap)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -624,7 +624,7 @@ module PhysicallyBased =
          normalTexture : uint,
          albedoTexture : uint,
          materialTexture : uint,
-         lightAmbient : single,
+         irradianceMap : uint,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -636,7 +636,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.NormalTextureUniform, 1)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
         Gl.Uniform1 (shader.MaterialTextureUniform, 3)
-        Gl.Uniform1 (shader.LightAmbientUniform, lightAmbient)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 4)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -647,6 +647,8 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Hl.Assert ()
 
         // setup geometry
@@ -672,4 +674,6 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u

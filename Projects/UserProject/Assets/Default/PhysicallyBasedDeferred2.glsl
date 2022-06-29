@@ -28,7 +28,7 @@ uniform sampler2D positionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
-uniform float lightAmbient;
+uniform samplerCube irradianceMap;
 uniform vec3 lightPositions[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
 
@@ -128,7 +128,12 @@ void main()
     }
 
     // compute ambient term
-    vec3 ambient = lightAmbient * albedo * ambientOcclusion;
+    vec3 kS = fresnelSchlick(max(dot(n, v), 0.0), f0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metalness;
+    vec3 irradiance = texture(irradianceMap, n).rgb;
+    vec3 diffuse = irradiance * albedo;
+    vec3 ambient = kD * diffuse * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;
