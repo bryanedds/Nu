@@ -277,7 +277,6 @@ module SkyBox =
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
-            Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
             DrawSkyBox (views.[i], projection, skyBoxSurface.CubeMap, skyBoxSurface.SkyBoxGeometry, irradianceShader)
             Hl.Assert ()
 
