@@ -484,8 +484,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // render deferred lighting quad
+            // copy depths from geometry framebuffer to main framebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, 0u)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
+                 0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
+                 OpenGL.ClearBufferMask.DepthBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // switch to main framebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
+            OpenGL.Hl.Assert ()
+
+            // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (positionTexture, normalTexture, albedoTexture, materialTexture,
                  lightAmbient, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
