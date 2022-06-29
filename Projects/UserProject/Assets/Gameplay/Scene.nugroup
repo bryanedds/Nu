@@ -1,7 +1,7 @@
 [GroupDispatcher
  [[Model
    ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
-  [Name Level]
+  [Name Scene]
   [Persistent True]
   [Visible True]]
  [[SkyBoxDispatcher
