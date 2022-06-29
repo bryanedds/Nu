@@ -97,6 +97,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         { RenderWindow : Window
           RenderAssimp : Assimp.AssimpContext
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
+          RenderSkyBoxIrradiationShader : OpenGL.SkyBox.SkyBoxShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
@@ -142,8 +143,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let faceBottomFilePath = Path.Combine (dirPath, faceBottomFilePath) |> fun str -> str.Trim ()
                 let faceBackFilePath = Path.Combine (dirPath, faceBackFilePath) |> fun str -> str.Trim ()
                 let faceFrontFilePath = Path.Combine (dirPath, faceFrontFilePath) |> fun str -> str.Trim ()
-                let cubeMap = OpenGL.Texture.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                Some (asset.AssetTag.AssetName, CubeMapAsset cubeMap)
+                match OpenGL.Texture.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+                | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMap, ref None))
+                | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
         | ".obj" ->
             match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
@@ -321,6 +323,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
         OpenGL.Hl.Assert ()
 
+        // create sky box irradiation shader
+        let skyBoxIrradiationShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxIrradiationShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create forward shader
         let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
@@ -341,7 +347,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         // create sky box geometry
         let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
 
-        // create deferred lighting quad
+        // create physically-based quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
 
         // make renderer
@@ -349,6 +355,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             { RenderWindow = window
               RenderAssimp = new Assimp.AssimpContext ()
               RenderSkyBoxShader = skyBoxShader
+              RenderSkyBoxIrradiationShader = skyBoxIrradiationShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
@@ -510,9 +517,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
                 | ValueSome asset ->
                     match asset with
-                    | CubeMapAsset cubeMap ->
-                         OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
-                         OpenGL.Hl.Assert ()
+                    | CubeMapAsset (cubeMap, cubeMapIrradianceOptRef) ->
+                        let cubeMapIrradiance =
+                            match cubeMapIrradianceOptRef.Value with
+                            | None -> OpenGL.SkyBox.DrawSkyBox cubeMap
+                            | Some cubeMapIrradiance -> cubeMapIrradiance
+                        OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+                        OpenGL.Hl.Assert ()
                     | _ -> Log.debug "Could not draw sky box due to mismatched cube map asset."
                 | ValueNone -> Log.debug "Could not draw sky box due to non-existent cube map asset."
             | None -> ()
