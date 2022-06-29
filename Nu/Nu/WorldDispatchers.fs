@@ -1254,7 +1254,9 @@ module SkyBoxFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
+            [define Entity.Absolute true
+             define Entity.Omnipresent true
+             define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2382,7 +2384,9 @@ module SkyBoxDispatcherModule =
             [typeof<SkyBoxFacet>]
 
         static member Properties =
-            [define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
+            [define Entity.Absolute true
+             define Entity.Omnipresent true
+             define Entity.CubeMap Assets.Default.SkyBoxCubeMap]
 
 [<AutoOpen>]
 module StaticModelDispatcherModule =
