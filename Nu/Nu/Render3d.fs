@@ -468,6 +468,37 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.DepthMask false
             OpenGL.Hl.Assert ()
+            
+            // attempt to locate last sky box
+            let skyBoxOpt =
+                match Seq.tryLast skyBoxes with
+                | Some cubeMap ->
+                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
+                    | ValueSome asset ->
+                        match asset with
+                        | CubeMapAsset (cubeMap, cubeMapIrradianceOptRef) -> Some (cubeMap, cubeMapIrradianceOptRef)
+                        | _ -> Log.debug "Could not utilize sky box due to mismatched cube map asset."; None
+                    | ValueNone -> Log.debug "Could not utilize sky box due to non-existent cube map asset."; None
+                | None -> None
+
+            // retrieve an irradiance map, preferably from the sky box
+            let irradianceMap =
+                match skyBoxOpt with
+                | Some (cubeMap, cubeMapIrradianceOptRef) ->
+                    if Option.isNone cubeMapIrradianceOptRef.Value then
+                        let irradianceMap =
+                            OpenGL.SkyBox.CreateIrradianceMap
+                                (viewportOffset,
+                                 Constants.Render.SkyBoxIrradianceMapResolutionX,
+                                 Constants.Render.SkyBoxIrradianceMapResolutionY,
+                                 fst renderer.RenderSkyBoxIrradianceFramebuffer,
+                                 snd renderer.RenderSkyBoxIrradianceFramebuffer,
+                                 renderer.RenderSkyBoxIrradianceShader,
+                                 OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                        cubeMapIrradianceOptRef := Some irradianceMap
+                        irradianceMap
+                    else Option.get cubeMapIrradianceOptRef.Value
+                | None -> ()
 
             // render deferred pass w/ absolute-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredAbsolute do
@@ -519,28 +550,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                  irradianceMap, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
-            // attempt to render last sky box
-            match Seq.tryLast skyBoxes with
-            | Some cubeMap ->
-                match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
-                | ValueSome asset ->
-                    match asset with
-                    | CubeMapAsset (cubeMap, cubeMapIrradianceOptRef) ->
-                        if Option.isNone cubeMapIrradianceOptRef.Value then
-                            let irradianceMap =
-                                OpenGL.SkyBox.CreateIrradianceMap
-                                    (viewportOffset,
-                                     Constants.Render.SkyBoxIrradianceMapResolutionX,
-                                     Constants.Render.SkyBoxIrradianceMapResolutionY,
-                                     fst renderer.RenderSkyBoxIrradianceFramebuffer,
-                                     snd renderer.RenderSkyBoxIrradianceFramebuffer,
-                                     renderer.RenderSkyBoxIrradianceShader,
-                                     OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
-                            cubeMapIrradianceOptRef := Some irradianceMap
-                        OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
-                        OpenGL.Hl.Assert ()
-                    | _ -> Log.debug "Could not draw sky box due to mismatched cube map asset."
-                | ValueNone -> Log.debug "Could not draw sky box due to non-existent cube map asset."
+            // attempt to render sky box
+            match skyBoxOpt with
+            | Some (cubeMap, _) ->
+                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+                OpenGL.Hl.Assert ()
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces
