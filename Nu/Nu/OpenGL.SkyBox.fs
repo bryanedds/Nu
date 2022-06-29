@@ -225,13 +225,7 @@ module SkyBox =
 
         // teardown shader
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
 
         // teardown state
