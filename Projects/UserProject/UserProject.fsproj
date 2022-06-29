@@ -112,6 +112,7 @@
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />
     <None Include="Assets\Default\SkyBox.glsl" />
+    <None Include="Assets\Default\SkyBoxIrradiation.glsl" />
     <None Include="Assets\Default\SkyBoxCubeMap.cbm" />
     <None Include="Assets\Default\SkyBoxCubeBack.png" />
     <None Include="Assets\Default\SkyBoxCubeBottom.png" />
