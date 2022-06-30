@@ -19,6 +19,8 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 4.0;
+const float GAMMA_SQRT = 1.5;
+const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
 const int LIGHTS_MAX = 4;
 
 uniform vec3 eyePosition;
@@ -26,7 +28,7 @@ uniform sampler2D positionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
-uniform float lightAmbient;
+uniform samplerCube irradianceMap;
 uniform vec3 lightPositions[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
 
@@ -126,12 +128,17 @@ void main()
     }
 
     // compute ambient term
-    vec3 ambient = lightAmbient * albedo * ambientOcclusion;
+    vec3 kS = fresnelSchlick(max(dot(normal, v), 0.0), f0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metalness;
+    vec3 irradiance = texture(irradianceMap, normal).rgb;
+    vec3 diffuse = irradiance * albedo;
+    vec3 ambient = kD * diffuse * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
+    color = pow(color, vec3(1.0 / GAMMA));
 
     // write
     frag = vec4(color, 1.0);

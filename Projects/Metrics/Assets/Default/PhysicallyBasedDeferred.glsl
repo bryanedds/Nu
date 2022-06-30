@@ -24,6 +24,9 @@ void main()
 #shader fragment
 #version 410 core
 
+const float GAMMA_SQRT = 1.5;
+const float TONE = GAMMA_SQRT * GAMMA_SQRT;
+
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
@@ -47,7 +50,7 @@ vec3 getNormal()
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
     vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1*st2.t - q2*st1.t);
+    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
     mat3 tbn = mat3(tangent, binormal, normal);
     return normalize(tbn * tangentNormal);
@@ -62,7 +65,7 @@ void main()
     normal = getNormal();
 
     // compute albedo
-    albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(2.2));
+    albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(TONE));
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r;
