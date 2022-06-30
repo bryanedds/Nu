@@ -182,6 +182,9 @@ module ScriptFacetModule =
         member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
         member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set Property? PostUpdateScript value world
         member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
+        member this.GetActualizeScript world : Scripting.Expr = this.Get Property? ActualizeScript world
+        member this.SetActualizeScript (value : Scripting.Expr) world = this.Set Property? ActualizeScript value world
+        member this.ActualizeScript = lens Property? ActualizeScript this.GetActualizeScript this.SetActualizeScript this
 
     type ScriptFacet () =
         inherit Facet (false)
@@ -207,7 +210,8 @@ module ScriptFacetModule =
              define Entity.RegisterScript Scripting.Unit
              define Entity.UnregisterScript Scripting.Unit
              define Entity.UpdateScript Scripting.Unit
-             define Entity.PostUpdateScript Scripting.Unit]
+             define Entity.PostUpdateScript Scripting.Unit
+             define Entity.ActualizeScript Scripting.Unit]
 
         override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
@@ -225,6 +229,9 @@ module ScriptFacetModule =
         override this.PostUpdate (entity, world) =
             World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
 #endif
+
+        override this.Actualize (entity, world) =
+            World.evalWithLogging (entity.GetActualizeScript world) (entity.GetScriptFrame world) entity world |> snd'
 
 [<AutoOpen>]
 module StaticSpriteFacetModule =
@@ -641,11 +648,13 @@ module BasicEmitter2dFacetModule =
             entity.SetParticleSystem particleSystem world
 
         override this.Update (entity, world) =
-            let time = World.getUpdateTime world
-            let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = ParticleSystem.run time particleSystem
-            let world = entity.SetParticleSystem particleSystem world
-            processOutput output entity world
+            if entity.GetEnabled world then
+                let time = World.getUpdateTime world
+                let particleSystem = entity.GetParticleSystem world
+                let (particleSystem, output) = ParticleSystem.run time particleSystem
+                let world = entity.SetParticleSystem particleSystem world
+                processOutput output entity world
+            else world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -758,20 +767,22 @@ module Effect2dFacetModule =
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
 
         override this.Update (entity, world) =
-            let time = World.getUpdateTime world
-            let effect = entity.GetEffect world
-            let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = ParticleSystem.run time particleSystem
-            let world = entity.SetParticleSystem particleSystem world
-            let world = processOutput output entity world
-            match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
-            | (true, Some lifetime) ->
-                let effectTime = entity.GetEffectTime world
-                if  effectTime >= dec lifetime && // NOTE: dec keeps effect from actualizing past the last frame when it is created mid-frame
-                    (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true) then
-                    World.destroyEntity entity world
-                else world
-            | (_, _) -> world
+            if entity.GetEnabled world then
+                let time = World.getUpdateTime world
+                let effect = entity.GetEffect world
+                let particleSystem = entity.GetParticleSystem world
+                let (particleSystem, output) = ParticleSystem.run time particleSystem
+                let world = entity.SetParticleSystem particleSystem world
+                let world = processOutput output entity world
+                match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
+                | (true, Some lifetime) ->
+                    let effectTime = entity.GetEffectTime world
+                    if  effectTime >= dec lifetime && // NOTE: dec keeps effect from actualizing past the last frame when it is created mid-frame
+                        (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true) then
+                        World.destroyEntity entity world
+                    else world
+                | (_, _) -> world
+            else world
 
         override this.Actualize (entity, world) =
 
@@ -1806,6 +1817,8 @@ module ToggleButtonDispatcherModule =
             world
 
         override this.Update (entity, world) =
+
+            // update text offset regardless of enabled state
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetToggled world then entity.GetToggledTextOffset world
@@ -1930,6 +1943,8 @@ module RadioButtonDispatcherModule =
             world
 
         override this.Update (entity, world) =
+
+            // update text offset regardless of enabled state
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetDialed world then entity.GetDialedTextOffset world
@@ -1993,15 +2008,17 @@ module FpsDispatcherModule =
              define Entity.StartDateTime DateTime.UtcNow]
 
         override this.Update (entity, world) =
-            let world = resetIntermittent entity world
-            let startDateTime = entity.GetStartDateTime world
-            let currentDateTime = DateTime.UtcNow
-            let elapsedDateTime = currentDateTime - startDateTime
-            let time = double (World.getUpdateTime world - entity.GetStartTime world)
-            let frames = time / elapsedDateTime.TotalSeconds
-            if not (Double.IsNaN frames) then
-                let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
-                entity.SetText framesStr world
+            if entity.GetEnabled world then
+                let world = resetIntermittent entity world
+                let startDateTime = entity.GetStartDateTime world
+                let currentDateTime = DateTime.UtcNow
+                let elapsedDateTime = currentDateTime - startDateTime
+                let time = double (World.getUpdateTime world - entity.GetStartTime world)
+                let frames = time / elapsedDateTime.TotalSeconds
+                if not (Double.IsNaN frames) then
+                    let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
+                    entity.SetText framesStr world
+                else world
             else world
 
 [<AutoOpen>]
@@ -2074,11 +2091,13 @@ module FeelerDispatcherModule =
             world
 
         override this.Update (entity, world) =
-            if entity.GetTouched world then
-                let mousePosition = World.getMousePosition2d world
-                let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
-                world
+            if entity.GetEnabled world then
+                if entity.GetTouched world then
+                    let mousePosition = World.getMousePosition2d world
+                    let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
+                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
+                    world
+                else world
             else world
 
         override this.GetQuickSize (_, _) =
@@ -2286,12 +2305,14 @@ module SideViewCharacterDispatcherModule =
              define Entity.SideViewCharacterFacingLeft false]
 
         override this.Update (entity, world) =
-            // we have to use a bit of hackery to remember whether the character is facing left or
-            // right when there is no velocity
-            let facingLeft = entity.GetSideViewCharacterFacingLeft world
-            let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
-            if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
-            elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
+            if entity.GetEnabled world then
+                // we have to use a bit of hackery to remember whether the character is facing left or
+                // right when there is no velocity
+                let facingLeft = entity.GetSideViewCharacterFacingLeft world
+                let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
+                if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
+                elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
+                else world
             else world
 
         override this.Actualize (entity, world) =
