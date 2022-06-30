@@ -55,6 +55,7 @@ module WorldModule2 =
 
     (* Cached HashSet *)
     let private CachedHashSet3d = HashSet HashIdentity.Structural
+    let private CachedHashSet2d = HashSet HashIdentity.Structural
 
     type World with
 
@@ -701,21 +702,21 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all omnipresent (non-cullable) 2d entities.
-        static member getEntitiesOmnipresent2d world =
-            World.getEntities2dBy Quadtree.getElementsOmnipresent world
+        static member getEntitiesOmnipresent2d set world =
+            World.getEntities2dBy (Quadtree.getElementsOmnipresent set) world
 
         /// Get all 2d entities in the current 2d view, including all omnipresent entities.
-        static member getEntitiesInView2d world =
+        static member getEntitiesInView2d set world =
             let viewBounds = World.getViewBoundsRelative2d world
-            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds) world
+            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
 
         /// Get all 2d entities in the given bounds, including all omnipresent entities.
-        static member getEntitiesInBounds2d bounds world =
-            World.getEntities2dBy (Quadtree.getElementsInBounds bounds) world
+        static member getEntitiesInBounds2d bounds set world =
+            World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
 
         /// Get all 2d entities at the given point, including all omnipresent entities.
-        static member getEntitiesAtPoint2d point world =
-            World.getEntities2dBy (Quadtree.getElementsAtPoint point) world
+        static member getEntitiesAtPoint2d point set world =
+            World.getEntities2dBy (Quadtree.getElementsAtPoint point set) world
 
         static member private getEntities3dBy getElementsFromQuadtree world =
             let octree = World.getOctree world
@@ -751,7 +752,7 @@ module WorldModule2 =
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
-            let (entities2d, world) = World.getEntitiesInView2d world
+            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
             UpdateGatherTimer.Stop ()
 
@@ -781,8 +782,9 @@ module WorldModule2 =
                     entities
             UpdateEntitiesTimer.Stop ()
 
-            // clear cached hash set
+            // clear cached hash sets
             CachedHashSet3d.Clear ()
+            CachedHashSet2d.Clear ()
 
             // fin
             world
@@ -798,7 +800,7 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_POST_UPDATE
             let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
-            let (entities2d, world) = World.getEntitiesInView2d world
+            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
 #endif
             PostUpdateGatherTimer.Stop ()
@@ -830,8 +832,9 @@ module WorldModule2 =
                     entities
             PostUpdateEntitiesTimer.Stop ()
 
-            // clear cached hash set
+            // clear cached hash sets
             CachedHashSet3d.Clear ()
+            CachedHashSet2d.Clear ()
 #endif
 
             // fin
@@ -882,7 +885,7 @@ module WorldModule2 =
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (octelements, world) = World.getEntitiesInView3d ActualizeIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
-            let (entities2d, world) = World.getEntitiesInView2d world
+            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
             ActualizeGatherTimer.Stop ()
 
@@ -908,8 +911,9 @@ module WorldModule2 =
                         world entities
             ActualizeEntitiesTimer.Stop ()
 
-            // clear cached hash set
+            // clear cached hash sets
             CachedHashSet3d.Clear ()
+            CachedHashSet2d.Clear ()
 
             // fin
             world

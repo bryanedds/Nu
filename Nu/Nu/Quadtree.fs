@@ -196,17 +196,14 @@ module Quadtree =
             // staying out of bounds
             ()
 
-    let getElementsOmnipresent tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsOmnipresent set tree =
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
-    let getElementsAtPoint point tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point tree.Node set
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
-    let getElementsInBounds bounds tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds tree.Node set
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
