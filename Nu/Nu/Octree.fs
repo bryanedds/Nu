@@ -32,17 +32,19 @@ open OctelementMasks
 /// Static will elide Updates.
 /// Enclosed will discriminate on occluders for both Update and Actualize.
 type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> = 
-    { Flags : uint
+    { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
+      Flags : uint
       Entry : 'e }
     member this.Static with get () = this.Flags &&& StaticMask <> 0u
     member this.Enclosed with get () = this.Flags &&& EnclosedMask <> 0u
-    override this.GetHashCode () = this.Entry.GetHashCode ()
+    override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
     static member make static_ enclosed (entry : 'e) =
+        let hashCode = entry.GetHashCode ()
         let flags =
             (if static_ then StaticMask else 0u) |||
             (if enclosed then EnclosedMask else 0u)
-        { Flags = flags; Entry = entry }
+        { HashCode = hashCode; Flags = flags; Entry = entry }
 
 [<RequireQualifiedAccess>]
 module internal Octnode =
