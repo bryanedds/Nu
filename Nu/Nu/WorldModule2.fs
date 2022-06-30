@@ -3,8 +3,9 @@
 
 namespace Nu
 open System
-open System.Numerics
+open System.Collections.Generic
 open System.IO
+open System.Numerics
 open System.Threading
 open System.Threading.Tasks
 open FSharpx.Collections
@@ -51,6 +52,9 @@ module WorldModule2 =
     let private ScreenTransitionMouseX1Id = Gen.id
     let private ScreenTransitionMouseX2Id = Gen.id
     let private ScreenTransitionKeyboardKeyId = Gen.id
+
+    (* Cached HashSet *)
+    let private CachedHashSet3d = HashSet HashIdentity.Structural
 
     type World with
 
@@ -721,21 +725,21 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all omnipresent (non-cullable) 3d entities.
-        static member getEntitiesOmnipresent3d world =
-            World.getEntities3dBy Octree.getElementsOmnipresent world
+        static member getEntitiesOmnipresent3d set world =
+            World.getEntities3dBy (Octree.getElementsOmnipresent set) world
 
         /// Get all 3d entities in the current 3d view, including all omnipresent entities.
-        static member getEntitiesInView3d discriminatingIntent world =
+        static member getEntitiesInView3d discriminatingIntent set world =
             let viewBounds = World.getViewBounds3d world
-            World.getEntities3dBy (Octree.getElementsInDiscriminatingFrustum discriminatingIntent { Unenclosed = viewBounds; Enclosed = viewBounds }) world // TODO: 3D: proper enclosed frustum.
+            World.getEntities3dBy (Octree.getElementsInDiscriminatingFrustum discriminatingIntent { Unenclosed = viewBounds; Enclosed = viewBounds } set) world // TODO: 3D: proper enclosed frustum.
 
         /// Get all 3d entities in the given bounds, including all omnipresent entities.
-        static member getEntitiesInBounds3d bounds world =
-            World.getEntities3dBy (Octree.getElementsInBounds bounds) world
+        static member getEntitiesInBounds3d bounds set world =
+            World.getEntities3dBy (Octree.getElementsInBounds bounds set) world
 
         /// Get all 3d entities at the given point, including all omnipresent entities.
-        static member getEntitiesAtPoint3d point world =
-            World.getEntities3dBy (Octree.getElementsAtPoint point) world
+        static member getEntitiesAtPoint3d point set world =
+            World.getEntities3dBy (Octree.getElementsAtPoint point set) world
 
         static member private updateSimulants world =
 
@@ -745,7 +749,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInView3d UpdateIntent world
+            let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
             let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
@@ -777,6 +781,9 @@ module WorldModule2 =
                     entities
             UpdateEntitiesTimer.Stop ()
 
+            // clear cached hash set
+            CachedHashSet3d.Clear ()
+
             // fin
             world
 
@@ -789,7 +796,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (octelements, world) = World.getEntitiesInView3d UpdateIntent world
+            let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
             let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
@@ -822,6 +829,9 @@ module WorldModule2 =
                     world
                     entities
             PostUpdateEntitiesTimer.Stop ()
+
+            // clear cached hash set
+            CachedHashSet3d.Clear ()
 #endif
 
             // fin
@@ -870,7 +880,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInView3d ActualizeIntent world
+            let (octelements, world) = World.getEntitiesInView3d ActualizeIntent CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
             let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
@@ -897,6 +907,9 @@ module WorldModule2 =
                         else world)
                         world entities
             ActualizeEntitiesTimer.Stop ()
+
+            // clear cached hash set
+            CachedHashSet3d.Clear ()
 
             // fin
             world
