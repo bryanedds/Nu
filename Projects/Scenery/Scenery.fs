@@ -57,7 +57,7 @@ type SceneryDispatcher () =
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
         let density = 60
-        let spread = 10.0f
+        let spread = 12.0f
         let offset = v3Dup spread * single density * 0.5f
         let positions = List ()
         for i in 0 .. density do
@@ -67,5 +67,7 @@ type SceneryDispatcher () =
                     positions.Add position
         Seq.fold (fun world position ->
             let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Default.Group world
-            staticModel.SetPosition position world)
+            let world = staticModel.SetPosition position world
+            let world = staticModel.SetScale (v3Dup 1.5f) world
+            world)
             world positions
