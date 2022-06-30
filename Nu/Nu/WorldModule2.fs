@@ -53,8 +53,12 @@ module WorldModule2 =
     let private ScreenTransitionMouseX2Id = Gen.id
     let private ScreenTransitionKeyboardKeyId = Gen.id
 
-    (* Cached HashSet *)
-    let private CachedHashSet3d = HashSet HashIdentity.Structural
+    (* Cached HashSets *)
+    type OctelementComparer () =
+        interface IEqualityComparer<Octelement<Entity>> with
+            member this.GetHashCode element = element.HashCode
+            member this.Equals (element, element2) = Address.equals element.Entry.EntityAddress element2.Entry.EntityAddress
+    let private CachedHashSet3d = HashSet (OctelementComparer ())
     let private CachedHashSet2d = HashSet HashIdentity.Structural
 
     type World with
