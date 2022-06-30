@@ -173,7 +173,7 @@ module AvatarDispatcher =
             just avatar
 
         override this.View (avatar, entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                     SpriteDescriptor

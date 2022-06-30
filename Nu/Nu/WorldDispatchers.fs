@@ -261,7 +261,7 @@ module StaticSpriteFacetModule =
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let staticImage = entity.GetStaticImage world
@@ -335,7 +335,7 @@ module AnimatedSpriteFacetModule =
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let animationSheet = entity.GetAnimationSheet world
@@ -648,7 +648,7 @@ module BasicEmitter2dFacetModule =
             processOutput output entity world
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let time = World.getUpdateTime world
                 let particleSystem = entity.GetParticleSystem world
                 let particlesMessages =
@@ -776,7 +776,7 @@ module Effect2dFacetModule =
         override this.Actualize (entity, world) =
 
             // evaluate effect if visible
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 
                 // set up effect system to evaluate effect
                 let time = World.getUpdateTime world
@@ -1287,7 +1287,7 @@ module StaticModelFacetModule =
              define Entity.RenderStyle Deferred]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView3d world then
+            if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
@@ -2295,7 +2295,7 @@ module SideViewCharacterDispatcherModule =
             else world
 
         override this.Actualize (entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let time = World.getUpdateTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetSideViewCharacterFacingLeft world
