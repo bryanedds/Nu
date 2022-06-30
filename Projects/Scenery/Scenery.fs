@@ -1,4 +1,5 @@
 ﻿namespace Scenery
+open System.Collections.Generic
 open Prime
 open Nu
 open Nu.Declarative
@@ -33,7 +34,7 @@ type SceneryDispatcher () =
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let speed = 0.5f
+        let speed = 0.5f // ~67.1mph
         let world =
             match command with
             | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + v3Left * speed) world
@@ -50,14 +51,21 @@ type SceneryDispatcher () =
                 [Content.skyBox Simulants.SkyBox.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
-                    [Entity.Position == v3 200.0f -150.0f 0.0f]]]]
+                    [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
-        let max = 1000.0f
-        let positions = Array.init 100000 (fun _ -> v3 (Gen.randomf1 max) (Gen.randomf1 max) (Gen.randomf1 max) - v3Dup (max * 0.5f))
-        Array.fold (fun world position ->
-            let (staticModel, world) = World.createEntity<StaticModelDispatcher> None DefaultOverlay Simulants.Default.Group world
+        let density = 60
+        let spread = 10.0f
+        let offset = v3Dup spread * single density * 0.5f
+        let positions = List ()
+        for i in 0 .. density do
+            for j in 0 .. density do
+                for k in 0 .. density do
+                    let position = v3 (single i) (single j) (single k) * spread - offset
+                    positions.Add position
+        Seq.fold (fun world position ->
+            let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Default.Group world
             staticModel.SetPosition position world)
             world positions
