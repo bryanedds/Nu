@@ -237,7 +237,15 @@ module SkyBox =
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
 
-    let CreateIrradianceMap (viewportOffset : Box2i, renderbufferWidth, renderbufferHeight, renderbuffer, framebuffer, irradianceShader, skyBoxSurface) =
+    let CreateIrradianceMap
+        (currentViewportOffset : Box2i,
+         currentFramebuffer : uint,
+         renderbufferWidth,
+         renderbufferHeight,
+         renderbuffer,
+         framebuffer,
+         irradianceShader,
+         skyBoxSurface) =
 
         // create irradiance map
         let irradianceMap = Gl.GenTexture ()
@@ -281,9 +289,9 @@ module SkyBox =
             Hl.Assert ()
 
         // restore viewport
-        Gl.Viewport (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
+        Gl.Viewport (currentViewportOffset.Position.X, currentViewportOffset.Position.Y, currentViewportOffset.Size.X, currentViewportOffset.Size.Y)
         Hl.Assert ()
 
         // teardown framebuffer
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         irradianceMap
