@@ -2,7 +2,6 @@
 open System
 open System.Collections.Generic
 open System.Numerics
-open FSharp.Quotations
 open Prime
 open Nu
 open Nu.Declarative
