@@ -64,11 +64,11 @@ type SceneryDispatcher () =
         for i in 0 .. density do
             for j in 0 .. density do
                 for k in 0 .. density do
-                    let position = v3 (single i) (single j) (single k) * spread - offset
+                    let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
+                    let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
         Seq.fold (fun world position ->
             let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Default.Group world
             let world = staticModel.SetPosition position world
-            let world = staticModel.SetScale (v3Dup 1.5f) world
             world)
             world positions
