@@ -265,22 +265,18 @@ module Octree =
             // staying out of bounds
             ()
 
-    let getElementsOmnipresent tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsOmnipresent (set : _ HashSet)tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsAtPoint point tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsAtPoint point (set : _ HashSet)tree =
         Octnode.getElementsAtPoint point tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInBounds bounds tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsInBounds bounds (set : _ HashSet)tree =
         Octnode.getElementsInBounds bounds tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInDiscriminatingFrustum intent frustum tree =
-        let set = HashSet HashIdentity.Structural
+    let getElementsInDiscriminatingFrustum intent frustum (set : _ HashSet) tree =
         Octnode.getElementsInDiscriminatingFrustum intent frustum tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
