@@ -745,9 +745,9 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities2d, world) = World.getEntitiesInView2d world
             let (octelements, world) = World.getEntitiesInView3d UpdateIntent world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
             UpdateGatherTimer.Stop ()
 
@@ -791,6 +791,7 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_POST_UPDATE
             let (octelements, world) = World.getEntitiesInView3d UpdateIntent world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
 #endif
             PostUpdateGatherTimer.Stop ()
@@ -869,9 +870,9 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities2d, world) = World.getEntitiesInView2d world
             let (octelements, world) = World.getEntitiesInView3d ActualizeIntent world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities2d, world) = World.getEntitiesInView2d world
             let entities = Seq.append entities3d entities2d
             ActualizeGatherTimer.Stop ()
 
