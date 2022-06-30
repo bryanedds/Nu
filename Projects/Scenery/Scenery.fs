@@ -54,10 +54,11 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
+    // NOTE: performance goal: 60fps, current: 43fps.
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
         let density = 60
-        let spread = 12.0f
+        let spread = 10.0f
         let offset = v3Dup spread * single density * 0.5f
         let positions = List ()
         for i in 0 .. density do
