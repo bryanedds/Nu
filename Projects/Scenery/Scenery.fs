@@ -43,7 +43,7 @@ type SceneryDispatcher () =
             | Nop -> world
         just world
 
-    // here we describe the content of the game including Scenery, the ground he walks on, and a rock.
+    // here we describe the content of the game
     override this.Content (_, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
@@ -52,6 +52,7 @@ type SceneryDispatcher () =
                  Content.fps Gen.name
                     [Entity.Position == v3 200.0f -150.0f 0.0f]]]]
 
+    // here we create the scenery in an imperative fashion
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
         let max = 1000.0f

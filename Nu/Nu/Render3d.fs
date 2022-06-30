@@ -382,6 +382,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let irradianceMap =
             try OpenGL.SkyBox.CreateIrradianceMap
                     (box2iZero,
+                     0u,
                      Constants.Render.SkyBoxIrradianceMapResolutionX,
                      Constants.Render.SkyBoxIrradianceMapResolutionY,
                      irradianceRenderbuffer,
@@ -502,7 +503,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.DepthMask false
             OpenGL.Hl.Assert ()
-            
+
             // attempt to locate last sky box
             let skyBoxOpt =
                 match Seq.tryLast skyBoxes with
@@ -523,6 +524,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         let irradianceMap =
                             OpenGL.SkyBox.CreateIrradianceMap
                                 (viewportOffset,
+                                 geometryFramebuffer,
                                  Constants.Render.SkyBoxIrradianceMapResolutionX,
                                  Constants.Render.SkyBoxIrradianceMapResolutionY,
                                  fst renderer.RenderIrradianceFramebuffer,
