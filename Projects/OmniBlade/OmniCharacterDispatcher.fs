@@ -102,7 +102,7 @@ module CharacterDispatcher =
              Entity.Perimeter <== character --> fun character -> character.Perimeter]
 
         override this.View (character, entity, world) =
-            if entity.GetVisible world && entity.GetInView2d world then
+            if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let characterView =
