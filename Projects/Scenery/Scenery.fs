@@ -91,7 +91,6 @@ type SceneryDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-                let world = staticModel.SetRenderStyle (Forward None) world
                 let world = staticModel.SetScale (v3Dup 1.5f) world
                 staticModel.SetPosition position world)
                 world positions
@@ -99,6 +98,6 @@ type SceneryDispatcher () =
 
     override this.Update (entity, world) =
         let world = base.Update (entity, world)
-        let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
-        let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
+        //let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
+        //let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
         world

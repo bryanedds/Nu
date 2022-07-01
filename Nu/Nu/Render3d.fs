@@ -666,7 +666,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-                (positionTexture, normalTexture, albedoTexture, materialTexture,
+                (eyePosition, positionTexture, normalTexture, albedoTexture, materialTexture,
                  irradianceMap, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
