@@ -146,7 +146,8 @@ module internal Octnode =
                 if isIntersectingFrustum frustumEnclosed node then
                     getElementsInFrustumFiltered true true frustumEnclosed node set
         | ValueRight elements ->
-            if isIntersectingFrustum frustumEnclosed node then
+            if  isIntersectingBox box node ||
+                isIntersectingFrustum frustumEnclosed node then
                 for element in elements do
                     if not element.Static then
                         set.Add element |> ignore
