@@ -547,7 +547,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 surfacesForwardAbsolute |>
                 Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
                 Seq.toArray |>
-                Array.sortBy (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
                 Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
                 SegmentedList.ofSeq
 
@@ -557,7 +557,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 surfacesForwardRelative |>
                 Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
                 Seq.toArray |>
-                Array.sortBy (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
                 Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
                 SegmentedList.ofSeq
 
