@@ -561,7 +561,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         Gl.Uniform1 (shader.NormalTextureUniform, 3)
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
-        Gl.Uniform1 (shader.IrradianceMapUniform, irradianceMap)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 5)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -574,6 +574,8 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.Texture2d, ambientOcclusionTexture)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Hl.Assert ()
 
         // update models buffer
@@ -609,6 +611,8 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
