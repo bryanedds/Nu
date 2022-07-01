@@ -468,7 +468,7 @@ module WorldModuleEntity =
         static member internal setEntityOmnipresent value entity world =
             World.updateEntityStatePlus (fun entityState ->
                 if value <> entityState.Omnipresent then
-                    if not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
+                    if value || not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
                         let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                         entityState.Omnipresent <- value
                         entityState
