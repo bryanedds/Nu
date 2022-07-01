@@ -349,23 +349,15 @@ module WorldModuleGame =
                 (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
                 (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
-        /// Get the bounds of the 2d eye's sight.
-        [<FunctionBinding>]
-        static member getViewBounds2d world =
-            let gameState = World.getGameState world
-            box2
-                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
-                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
-
         /// Get the bounds of the 2d play zone.
         [<FunctionBinding>]
         static member getPlayBounds2d world =
-            World.getViewBounds2d world
+            World.getViewBoundsRelative2d world
 
         /// Check that the given bounds is within the 2d eye's sight.
         [<FunctionBinding>]
         static member isBoundsInView2d (bounds : Box2) world =
-            let viewBounds = World.getViewBounds2d world
+            let viewBounds = World.getViewBoundsRelative2d world
             Math.isBoundsIntersectingBounds2d bounds viewBounds
 
         /// Get the view bounds of the 3d eye's sight.
