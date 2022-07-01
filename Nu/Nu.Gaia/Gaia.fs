@@ -5,6 +5,7 @@ namespace Nu.Gaia
 open System
 open System.IO
 open System.Collections
+open System.Collections.Generic
 open System.ComponentModel
 open System.Drawing
 open System.Linq
@@ -35,7 +36,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedGroup = (getEditorState world).SelectedGroup
-        let (entities, world) = World.getEntitiesInView2d world
+        let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
         let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
