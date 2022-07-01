@@ -145,6 +145,8 @@ module SpriteBatch =
         if env.SpriteIndex > 0 then
 
             // setup state
+            Gl.BlendEquation env.State.BlendingEquation
+            Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
             Gl.Enable EnableCap.Blend
             Gl.Enable EnableCap.CullFace
             Hl.Assert ()
@@ -164,8 +166,6 @@ module SpriteBatch =
             Gl.Uniform1 (env.TexUniform, 0)
             Gl.ActiveTexture TextureUnit.Texture0
             Gl.BindTexture (TextureTarget.Texture2d, env.State.Texture)
-            Gl.BlendEquation env.State.BlendingEquation
-            Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
             Hl.Assert ()
 
             // draw geometry
@@ -173,8 +173,6 @@ module SpriteBatch =
             Hl.Assert ()
 
             // teardown shader
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Gl.UseProgram 0u
             Hl.Assert ()
@@ -186,6 +184,8 @@ module SpriteBatch =
             // teardown state
             Gl.Disable EnableCap.CullFace
             Gl.Disable EnableCap.Blend
+            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+            Gl.BlendEquation BlendEquationMode.FuncAdd
 
             // next batch
             env.SpriteIndex <- 0

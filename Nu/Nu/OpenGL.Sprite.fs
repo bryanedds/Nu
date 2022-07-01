@@ -150,6 +150,8 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // setup state
+        Gl.BlendEquation BlendEquationMode.FuncAdd
+        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
         Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
@@ -162,8 +164,6 @@ module Sprite =
         Gl.Uniform1 (texUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, texture)
-        Gl.BlendEquation BlendEquationMode.FuncAdd
-        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
         Hl.Assert ()
 
         // setup geometry
@@ -189,3 +189,5 @@ module Sprite =
         // teardown state
         Gl.Disable EnableCap.CullFace
         Gl.Disable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+        Gl.BlendEquation BlendEquationMode.FuncAdd

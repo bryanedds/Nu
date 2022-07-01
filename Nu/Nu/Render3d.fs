@@ -540,6 +540,26 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
+            // sort absolute forward surfaces
+            // TODO: 3D: use persistent buffers to elide allocation.
+            let surfacesForwardAbsolute =
+                surfacesForwardAbsolute |>
+                Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.toArray |>
+                Array.sortBy (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
+                SegmentedList.ofSeq
+
+            // sort relative forward surfaces
+            // TODO: 3D: use persistent buffers to elide allocation.
+            let surfacesForwardRelative =
+                surfacesForwardRelative |>
+                Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.toArray |>
+                Array.sortBy (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
+                SegmentedList.ofSeq
+
             // make render surfaces
             let surfaces =
                 { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
