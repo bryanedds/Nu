@@ -1260,7 +1260,8 @@ module PointLightFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
+            [define Entity.Omnipresent true
+             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2421,7 +2422,8 @@ module PointLightDispatcherModule =
             [typeof<PointLightFacet>]
 
         static member Properties =
-            [define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
+            [define Entity.Omnipresent true
+             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
 
 [<AutoOpen>]
 module SkyBoxDispatcherModule =
