@@ -220,6 +220,9 @@ module Content =
     /// Describe static scenery with the given initializers.
     let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
+    /// Describe point light with the given initializers.
+    let pointLight entityName initializers = entity<PointLightDispatcher> entityName initializers
+
     /// Describe sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
 

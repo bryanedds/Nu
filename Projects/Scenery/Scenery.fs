@@ -9,7 +9,7 @@ module Simulants =
 
     // here we create an entity reference for SkyBox. This is useful for simulants that you want
     // to refer to from multiple places
-    let SkyBox = Simulants.Default.Group / "SkyBox"
+    let PointLight = Simulants.Default.Group / "PointLight"
 
 // this is a custom entity for performance testing
 type RotatingModelDispatcher () =
@@ -61,7 +61,10 @@ type SceneryDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
-                [Content.skyBox Simulants.SkyBox.Name
+                [Content.pointLight Simulants.PointLight.Name
+                    [Entity.Position == v3 0.0f 0.0f 0.0f
+                     Entity.Color == (color 0.0f 10000.0f 10000.0f 1.0f)]
+                 Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
@@ -70,7 +73,11 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 33fps.
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
+#if DEBUG
+        let population = 10
+#else
         let population = 50
+#endif
         let spread = 16.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()

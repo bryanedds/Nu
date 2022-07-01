@@ -21,7 +21,7 @@ const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 4.0;
 const float GAMMA_SQRT = 1.5;
 const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
-const int LIGHTS_MAX = 4;
+const int LIGHTS_MAX = 32;
 
 uniform vec3 eyePosition;
 uniform sampler2D positionTexture;
@@ -30,7 +30,7 @@ uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform samplerCube irradianceMap;
 uniform vec3 lightPositions[LIGHTS_MAX];
-uniform vec3 lightColors[LIGHTS_MAX];
+uniform vec4 lightColors[LIGHTS_MAX];
 
 in vec2 texCoordsOut;
 
@@ -92,10 +92,10 @@ void main()
     vec3 v = normalize(eyePosition - position);
     vec3 r = reflect(-v, normal);
 
-    // compute reflectance term
+    // compute light ouput term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 f0 = mix(vec3(0.04), albedo, metalness);
-    vec3 reflectance = vec3(0.0);
+    vec3 lightOutput = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
@@ -103,7 +103,7 @@ void main()
         vec3 h = normalize(v + l);
         float distance = length(lightPositions[i] - position);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors[i] * attenuation;
+        vec3 radiance = lightColors[i].rgb * attenuation;
 
         // cook-torrance brdf
         float ndf = distributionGGX(normal, h, roughness);
@@ -123,8 +123,8 @@ void main()
         // compute light scalar
         float nDotL = max(dot(normal, l), 0.0);
 
-        // add to outgoing reflectance
-        reflectance += (kD * albedo / PI + specular) * radiance * nDotL;
+        // add to outgoing lightOutput
+        lightOutput += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
     // compute ambient term
@@ -136,7 +136,7 @@ void main()
     vec3 ambient = kD * diffuse * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
-    vec3 color = ambient + reflectance;
+    vec3 color = ambient + lightOutput;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 

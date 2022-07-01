@@ -1254,6 +1254,22 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
+module PointLightFacetModule =
+
+    type PointLightFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let position = entity.GetPosition world
+                let color = entity.GetColor world
+                World.enqueueRenderMessage3d (RenderPointLightDescriptor (position, color)) world
+            else world
+
+[<AutoOpen>]
 module SkyBoxFacetModule =
 
     type Entity with
@@ -2394,6 +2410,18 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
+
+[<AutoOpen>]
+module PointLightDispatcherModule =
+
+    type PointLightDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<PointLightFacet>]
+
+        static member Properties =
+            [define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
 
 [<AutoOpen>]
 module SkyBoxDispatcherModule =

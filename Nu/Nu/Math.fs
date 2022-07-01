@@ -936,9 +936,7 @@ module Matrix4x4 =
         trs.M11 <- trs.M11 * scale.X
         trs.M22 <- trs.M22 * scale.Y
         trs.M33 <- trs.M33 * scale.Z
-        trs.M41 <- translation.X
-        trs.M42 <- translation.Y
-        trs.M43 <- translation.Z
+        trs.Translation <- translation
         trs
 
 [<AutoOpen>]
