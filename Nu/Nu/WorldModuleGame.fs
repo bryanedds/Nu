@@ -125,8 +125,8 @@ module WorldModuleGame =
         static member internal setEyePosition3dPlus (value : Vector3) world =
             World.updateGameState (fun gameState ->
                 if v3Neq value gameState.EyePosition3d then
-                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true value gameState.EyeRotation3d
-                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false value gameState.EyeRotation3d
+                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed value gameState.EyeRotation3d
+                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed value gameState.EyeRotation3d
                     { gameState with
                         EyePosition3d = value
                         EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
@@ -147,8 +147,8 @@ module WorldModuleGame =
         static member internal setEyeRotation3dPlus value world =
             World.updateGameState (fun gameState ->
                 if quatNeq value gameState.EyeRotation3d then
-                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true gameState.EyePosition3d value
-                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false gameState.EyePosition3d value
+                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed gameState.EyePosition3d value
+                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed gameState.EyePosition3d value
                     { gameState with
                         EyeRotation3d = value
                         EyeFrustumEnclosed3d = eyeFrustumEnclosed3d

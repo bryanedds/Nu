@@ -14,6 +14,13 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
+/// Describe the type of projection matrix to construct.
+/// TODO: 3D: expose this elsewhere.
+type [<Struct>] ProjectionType =
+    | Enclosed
+    | Unenclosed
+    | Afatecs
+
 /// A callback for one-off forward rendering of a surface.
 /// TODO: 3D: consider turning this into a delegate for byref params.
 type ForwardRenderCallback =
@@ -255,11 +262,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Compute the 3d projection matrix.
     /// TODO: 3D: expose this elsewhere.
-    static member computeProjection enclosed =
+    static member computeProjection projectionType =
         let farPlaneDistance =
-            if enclosed
-            then Constants.Render.FarPlaneDistanceEnclosed
-            else Constants.Render.FarPlaneDistanceUnenclosed
+            match projectionType with
+            | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
+            | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
+            | Afatecs -> Constants.Render.FarPlaneDistanceAfatics
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
              Constants.Render.AspectRatio,
@@ -440,8 +448,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewAbsoluteArray = viewAbsolute.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
-            let projectionUnenclosed = GlRenderer3d.computeProjection true
-            let projectionUnenclosedArray = projectionUnenclosed.ToArray ()
+            let projection = GlRenderer3d.computeProjection Afatecs
+            let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
             // just use constant lights for now
@@ -545,7 +553,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
-                    projectionUnenclosedArray
+                    projectionArray
                     entry.Value
                     entry.Key
                     irradianceMap
@@ -560,7 +568,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
-                    projectionUnenclosedArray
+                    projectionArray
                     entry.Value
                     entry.Key
                     irradianceMap
@@ -593,7 +601,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // attempt to render sky box
             match skyBoxOpt with
             | Some (cubeMap, _) ->
-                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionUnenclosedArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                 OpenGL.Hl.Assert ()
             | None -> ()
 
@@ -602,7 +610,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
-                    projectionUnenclosedArray
+                    projectionArray
                     (SegmentedList.singleton model)
                     surface
                     irradianceMap
@@ -617,7 +625,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
-                    projectionUnenclosedArray
+                    projectionArray
                     (SegmentedList.singleton model)
                     surface
                     irradianceMap
@@ -629,7 +637,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projectionUnenclosed, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
 
             // end frame

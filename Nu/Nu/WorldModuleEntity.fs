@@ -440,6 +440,7 @@ module WorldModuleEntity =
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
+        static member internal getEntityStatic entity world = (World.getEntityState entity world).Static
         static member internal getEntityEnclosed entity world = (World.getEntityState entity world).Enclosed
         static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
@@ -460,6 +461,7 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
+        static member internal setEntityStatic value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Static then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Static <- value; entityState) else Unchecked.defaultof<_>) Property? Static value entity world
         static member internal setEntityEnclosed value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enclosed then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Enclosed <- value; entityState) else Unchecked.defaultof<_>) Property? Enclosed value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
@@ -1798,7 +1800,7 @@ module WorldModuleEntity =
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let element = Octelement.make false entityState.Enclosed entity // TODO: 3D: populate flags correctly.
+                                        let element = Octelement.make entityState.Static entityState.Enclosed entity
                                         Octree.addElement entityState.Omnipresent entityState.Bounds element entityTree
                                         entityTree)
                                     (World.getOctree world)
@@ -1856,7 +1858,7 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
                                     (fun octree ->
                                         let entityState = World.getEntityState entity oldWorld
-                                        let element = Octelement.make false entityState.Enclosed entity // TODO: 3D: populate flags correctly.
+                                        let element = Octelement.make entityState.Static entityState.Enclosed entity
                                         Octree.removeElement entityState.Omnipresent entityState.Bounds element octree
                                         octree)
                                     (World.getOctree world)
@@ -2110,6 +2112,8 @@ module WorldModuleEntity =
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world
                 let oldOmnipresent = oldOmnipresent
+                let newStatic = entityState.Static
+                let newEnclosed = entityState.Enclosed
                 let newOmnipresent = entityState.Omnipresent
                 if newOmnipresent <> oldOmnipresent then
 
@@ -2130,7 +2134,7 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
-                                    let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                    let element = Octelement.make newStatic newEnclosed entity
                                     Octree.removeElement oldOmnipresent oldBounds element octree
                                     Octree.addElement newOmnipresent newBounds element octree
                                     octree)
@@ -2142,6 +2146,8 @@ module WorldModuleEntity =
 
                     // OPTIMIZATION: only update when entity bounds has changed.
                     let newBounds = entityState.Bounds
+                    let newStatic = entityState.Static
+                    let newEnclosed = entityState.Enclosed
                     if not (oldBounds.Equals newBounds) then
 
                         // update entity in entity tree
@@ -2157,7 +2163,7 @@ module WorldModuleEntity =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                     (fun octree ->
-                                        let element = Octelement.make false false entity // TODO: 3D: populate flags correctly.
+                                        let element = Octelement.make newStatic newEnclosed entity
                                         Octree.updateElement oldBounds newBounds element octree
                                         octree)
                                     (World.getOctree world)
@@ -2249,6 +2255,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
         EntityGetters.Assign ("Centered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world })
+        EntityGetters.Assign ("Static", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStatic entity world })
         EntityGetters.Assign ("Enclosed", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnclosed entity world })
         EntityGetters.Assign ("Physical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPhysical entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
@@ -2292,6 +2299,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Centered", fun property entity world -> World.setEntityCentered (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("Static", fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Enclosed", fun property entity world -> World.setEntityEnclosed (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
