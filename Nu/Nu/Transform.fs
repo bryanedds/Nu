@@ -65,7 +65,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Omnipresent
         with get () = this.Flags_ &&& OmnipresentMask <> 0u
         and set value =
-            if not this.Absolute then // a transform that is Absolute must remain Omnipresent
+            if value || not this.Absolute then // a transform that is Absolute must remain Omnipresent
                 this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
     member this.Absolute
         with get () = this.Flags_ &&& AbsoluteMask <> 0u
