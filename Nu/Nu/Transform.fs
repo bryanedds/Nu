@@ -11,30 +11,31 @@ open Nu
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =                    0b00000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b00000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
-    let [<Literal>] OmnipresentMask =               0b00000000000000000001000u
-    let [<Literal>] AbsoluteMask =                  0b00000000000000000010000u
-    let [<Literal>] ImperativeMask =                0b00000000000000000100000u
-    let [<Literal>] PublishChangeBindingsMask =     0b00000000000000001000000u
-    let [<Literal>] PublishChangeEventsMask =       0b00000000000000010000000u
-    let [<Literal>] EnabledMask =                   0b00000000000000100000000u
-    let [<Literal>] VisibleMask =                   0b00000000000001000000000u
-    let [<Literal>] AlwaysUpdateMask =              0b00000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b00000000000100000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b00000000001000000000000u
-    let [<Literal>] PersistentMask =                0b00000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b00000000100000000000000u
-    let [<Literal>] MountedMask =                   0b00000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b00000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b00000100000000000000000u
-    let [<Literal>] CenteredMask =                  0b00001000000000000000000u
-    let [<Literal>] EnclosedMask =                  0b00010000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b00100000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b00101110010001100100001u
+    let [<Literal>] ActiveMask =                    0b000000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b000000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b000000000000000000000100u
+    let [<Literal>] OmnipresentMask =               0b000000000000000000001000u
+    let [<Literal>] AbsoluteMask =                  0b000000000000000000010000u
+    let [<Literal>] ImperativeMask =                0b000000000000000000100000u
+    let [<Literal>] PublishChangeBindingsMask =     0b000000000000000001000000u
+    let [<Literal>] PublishChangeEventsMask =       0b000000000000000010000000u
+    let [<Literal>] EnabledMask =                   0b000000000000000100000000u
+    let [<Literal>] VisibleMask =                   0b000000000000001000000000u
+    let [<Literal>] AlwaysUpdateMask =              0b000000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b000000000000100000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b000000000001000000000000u
+    let [<Literal>] PersistentMask =                0b000000000010000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b000000000100000000000000u
+    let [<Literal>] MountedMask =                   0b000000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b000000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b000000100000000000000000u
+    let [<Literal>] CenteredMask =                  0b000001000000000000000000u
+    let [<Literal>] StaticMask =                    0b000010000000000000000000u
+    let [<Literal>] EnclosedMask =                  0b000100000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b010000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b100000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b011001110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
