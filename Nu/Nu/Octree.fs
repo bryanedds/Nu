@@ -78,10 +78,8 @@ module internal Octnode =
                 if isIntersectingBox oldBounds node || isIntersectingBox newBounds node then
                     updateElement oldBounds newBounds element node
         | ValueRight elements ->
-            if isIntersectingBox oldBounds node then
-                if not (isIntersectingBox newBounds node) then elements.Remove element |> ignore
-            elif isIntersectingBox newBounds node then
-                elements.Add element |> ignore
+            if isIntersectingBox oldBounds node then elements.Remove element |> ignore
+            if isIntersectingBox newBounds node then elements.Add element |> ignore
 
     let rec internal getElementsAtPoint point node (set : 'e Octelement HashSet) =
         match node.Children with
