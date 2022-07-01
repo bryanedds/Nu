@@ -333,6 +333,22 @@ module WorldModuleGame =
         static member getViewRelative2d world =
             Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
+        /// Get the bounds of the 2d eye's sight relative to its position.
+        [<FunctionBinding>]
+        static member getViewBoundsRelative2d world =
+            let gameState = World.getGameState world
+            box2
+                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+
+        /// Get the bounds of the 2d eye's sight not relative to its position.
+        [<FunctionBinding>]
+        static member getViewBoundsAbsolute2d world =
+            let gameState = World.getGameState world
+            box2
+                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+
         /// Get the bounds of the 2d eye's sight.
         [<FunctionBinding>]
         static member getViewBounds2d world =
