@@ -110,7 +110,6 @@ void main()
     // compute lighting profile
     vec3 n = getNormal();
     vec3 v = normalize(eyePosition - positionOut);
-    vec3 r = reflect(-v, n);
 
     // compute reflectance term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.

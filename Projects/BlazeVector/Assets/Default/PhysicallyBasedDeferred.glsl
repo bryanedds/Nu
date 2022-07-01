@@ -42,27 +42,13 @@ layout (location = 1) out vec3 normal;
 layout (location = 2) out vec3 albedo;
 layout (location = 3) out vec3 material;
 
-vec3 getNormal()
-{
-    vec3 tangentNormal = texture(normalTexture, texCoordsOut).xyz * 2.0 - 1.0;
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 tbn = mat3(tangent, binormal, normal);
-    return normalize(tbn * tangentNormal);
-}
-
 void main()
 {
     // forward position
     position = positionOut;
 
-    // compute normal
-    normal = getNormal();
+    // forward normal
+    normal = normalize(normalOut);
 
     // compute albedo
     albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(TONE));
