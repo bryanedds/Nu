@@ -415,6 +415,7 @@ module WorldTypes =
              Define? Visible true
              Define? VisibleLocal true
              Define? Centered true
+             Define? Enclosed false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
@@ -537,7 +538,8 @@ module WorldTypes =
           EyeSize2d : Vector2
           EyePosition3d : Vector3
           EyeRotation3d : Quaternion
-          EyeFrustum3d : Frustum
+          EyeFrustumEnclosed3d : Frustum
+          EyeFrustumUnenclosed3d : Frustum
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -549,7 +551,8 @@ module WorldTypes =
         static member make (dispatcher : GameDispatcher) =
             let eyePosition3d = Constants.Render.EyePosition3dDefault
             let eyeRotation3d = quatIdentity
-            let eyeFrustum3d = GlRenderer3d.computeFrustum eyePosition3d eyeRotation3d
+            let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true eyePosition3d eyeRotation3d
+            let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -561,7 +564,8 @@ module WorldTypes =
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               EyePosition3d = eyePosition3d
               EyeRotation3d = eyeRotation3d
-              EyeFrustum3d = eyeFrustum3d
+              EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
+              EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
@@ -860,6 +864,7 @@ module WorldTypes =
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
+        member this.Enclosed with get () = this.Transform.Enclosed and set value = this.Transform.Enclosed <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix

@@ -7,11 +7,6 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
-/// The type of operation planned for elements gathered from tree.
-type [<Struct>] DiscriminatingIntent =
-    | UpdateIntent
-    | ActualizeIntent
-
 /// A frustum with conditional intersection.
 type [<StructuralEquality; NoComparison>] DiscriminatingFrustum =
     { Unenclosed : Frustum
@@ -98,27 +93,64 @@ module internal Octnode =
         | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getElementsInDiscriminatingFrustum intent frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInFrustum frustum node (set : 'e Octelement HashSet) =
         match node.Children with
-        | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum.Unenclosed node then getElementsInDiscriminatingFrustum intent frustum node set
+        | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum node then getElementsInFrustum frustum node set
+        | ValueRight elements -> for element in elements do set.Add element |> ignore
+
+    let rec internal getElementsInBoundsFiltered updating bounds node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                if isIntersectingBounds bounds node then
+                    getElementsInBoundsFiltered updating bounds node set
         | ValueRight elements ->
-            match intent with
-            | UpdateIntent ->
-                if not (isIntersectingFrustum frustum.Enclosed node) then
-                    for element in elements do
-                        if not element.Static && not element.Enclosed then
-                            set.Add element |> ignore
-                else
-                    for element in elements do
-                        if not element.Static then
-                            set.Add element |> ignore
-            | ActualizeIntent ->
-                if not (isIntersectingFrustum frustum.Enclosed node) then
-                    for element in elements do
-                        if not element.Enclosed then
-                            set.Add element |> ignore
-                else
-                    for element in elements do
+            for element in elements do
+                if updating
+                then if not element.Static then set.Add element |> ignore
+                else set.Add element |> ignore
+
+    let rec internal getElementsInFrustumFiltered enclosed updating frustum node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                if isIntersectingFrustum frustum node then
+                    getElementsInFrustumFiltered enclosed updating frustum node set
+        | ValueRight elements ->
+            for element in elements do
+                if not enclosed || element.Enclosed then
+                    if updating
+                    then if not element.Static then set.Add element |> ignore
+                    else set.Add element |> ignore
+
+    let rec internal getElementsInView frustumEnclosed frustumUnenclosed node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                if isIntersectingFrustum frustumEnclosed node then
+                    getElementsInFrustumFiltered true false frustumEnclosed node set
+                if isIntersectingFrustum frustumUnenclosed node then
+                    getElementsInFrustumFiltered false false frustumUnenclosed node set
+        | ValueRight elements ->
+            if isIntersectingFrustum frustumUnenclosed node then
+                for element in elements do
+                    set.Add element |> ignore
+            elif isIntersectingFrustum frustumEnclosed node then
+                for element in elements do
+                    set.Add element |> ignore
+
+    let rec internal getElementsInPlay bounds frustumEnclosed node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                if isIntersectingBounds bounds node then
+                    getElementsInBoundsFiltered true bounds node set
+                if isIntersectingFrustum frustumEnclosed node then
+                    getElementsInFrustumFiltered true true frustumEnclosed node set
+        | ValueRight elements ->
+            if isIntersectingFrustum frustumEnclosed node then
+                for element in elements do
+                    if not element.Static then
                         set.Add element |> ignore
 
     let rec internal clone node =
@@ -265,19 +297,27 @@ module Octree =
             // staying out of bounds
             ()
 
-    let getElementsOmnipresent (set : _ HashSet)tree =
+    let getElementsOmnipresent (set : _ HashSet) tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsAtPoint point (set : _ HashSet)tree =
+    let getElementsAtPoint point (set : _ HashSet) tree =
         Octnode.getElementsAtPoint point tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInBounds bounds (set : _ HashSet)tree =
+    let getElementsInBounds bounds (set : _ HashSet) tree =
         Octnode.getElementsInBounds bounds tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInDiscriminatingFrustum intent frustum (set : _ HashSet) tree =
-        Octnode.getElementsInDiscriminatingFrustum intent frustum tree.Node set
+    let getElementsInFrustum frustum (set : _ HashSet) tree =
+        Octnode.getElementsInFrustum frustum tree.Node set
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+
+    let getElementsInView frustumEnclosed frustumUnenclosed (set : _ HashSet) tree =
+        Octnode.getElementsInView frustumEnclosed frustumUnenclosed tree.Node set
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+
+    let getElementsInPlay bounds frustumEnclosed (set : _ HashSet) tree =
+        Octnode.getElementsInPlay bounds frustumEnclosed tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =

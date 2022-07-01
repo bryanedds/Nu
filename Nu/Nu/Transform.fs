@@ -30,10 +30,11 @@ module TransformMasks =
     let [<Literal>] EnabledLocalMask =              0b00000010000000000000000u
     let [<Literal>] VisibleLocalMask =              0b00000100000000000000000u
     let [<Literal>] CenteredMask =                  0b00001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b00100000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b01000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b00111110010001100100001u
+    let [<Literal>] EnclosedMask =                  0b00010000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00100000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b00101110010001100100001u
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -76,6 +77,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
+    member this.Enclosed with get () = this.Flags_ &&& EnclosedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnclosedMask else this.Flags_ &&& ~~~EnclosedMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
