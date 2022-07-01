@@ -726,7 +726,7 @@ module WorldModule2 =
 
         /// Get all 2d entities in the current 2d view, including all omnipresent entities.
         static member getEntitiesInView2d set world =
-            let viewBounds = World.getViewBoundsRelative2d world
+            let viewBounds = World.getViewBounds2d world
             World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
 
         static member private getEntities3dBy getElementsFromQuadtree world =

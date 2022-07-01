@@ -324,24 +324,16 @@ module WorldModuleGame =
                 world
 
         /// Get the view of the 2d eye in absolute terms (world space).
+        [<FunctionBinding>]
         static member getViewAbsolute2d world =
             Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
         
-        /// The relative view of the 2d eye with original single values. Due to the problems with
-        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
-        /// coordinates is very, very bad for rendering.
+        /// The relative view of the 2d eye with original single values.
+        [<FunctionBinding>]
         static member getViewRelative2d world =
             Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
-        /// Get the bounds of the 2d eye's sight relative to its position.
-        [<FunctionBinding>]
-        static member getViewBoundsRelative2d world =
-            let gameState = World.getGameState world
-            box2
-                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
-                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
-
-        /// Get the bounds of the 2d eye's sight not relative to its position.
+        /// Get the bounds of the 2d eye's sight irrespective of its position.
         [<FunctionBinding>]
         static member getViewBoundsAbsolute2d world =
             let gameState = World.getGameState world
@@ -349,15 +341,28 @@ module WorldModuleGame =
                 (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
                 (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
+        /// Get the bounds of the 2d play zone irrespective of eye position.
+        [<FunctionBinding>]
+        static member getPlayBoundsAbsolute2d world =
+            World.getViewBounds2d world
+
+        /// Get the bounds of the 2d eye's sight relative to its position.
+        [<FunctionBinding>]
+        static member getViewBounds2d world =
+            let gameState = World.getGameState world
+            box2
+                (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+
         /// Get the bounds of the 2d play zone.
         [<FunctionBinding>]
         static member getPlayBounds2d world =
-            World.getViewBoundsRelative2d world
+            World.getViewBounds2d world
 
         /// Check that the given bounds is within the 2d eye's sight.
         [<FunctionBinding>]
         static member isBoundsInView2d (bounds : Box2) world =
-            let viewBounds = World.getViewBoundsRelative2d world
+            let viewBounds = World.getViewBounds2d world
             Math.isBoundsIntersectingBounds2d bounds viewBounds
 
         /// Get the view bounds of the 3d eye's sight.

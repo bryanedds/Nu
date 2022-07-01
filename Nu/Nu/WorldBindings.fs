@@ -47,7 +47,8 @@ module WorldBindings =
         "getEyeBounds2d getEyePosition3d setEyePosition3d getEyeRotation3d " +
         "setEyeRotation3d getEyeFrustumEnclosed3d getEyeFrustumUnenclosed3d getOmniScreenOpt " +
         "setOmniScreenOpt getOmniScreen setOmniScreen getSelectedScreenOpt " +
-        "constrainEyeBounds2d getSelectedScreen setSelectedScreen getViewBounds2d " +
+        "constrainEyeBounds2d getSelectedScreen setSelectedScreen getViewAbsolute2d " +
+        "getViewRelative2d getViewBoundsAbsolute2d getPlayBoundsAbsolute2d getViewBounds2d " +
         "getPlayBounds2d isBoundsInView2d getViewBounds3d getPlayBounds3d " +
         "isBoundsInView3d isBoundsInPlay3d mouseToScreen2d mouseToWorld2d " +
         "mouseToEntity2d reloadSymbols getImperative getStandAlone " +
@@ -2248,6 +2249,50 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setSelectedScreen' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getViewAbsolute2d world =
+        let oldWorld = world
+        try
+            let result = World.getViewAbsolute2d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Matrix4x4> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewAbsolute2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getViewRelative2d world =
+        let oldWorld = world
+        try
+            let result = World.getViewRelative2d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Matrix4x4> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewRelative2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getViewBoundsAbsolute2d world =
+        let oldWorld = world
+        try
+            let result = World.getViewBoundsAbsolute2d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Box2> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBoundsAbsolute2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getPlayBoundsAbsolute2d world =
+        let oldWorld = world
+        try
+            let result = World.getPlayBoundsAbsolute2d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Box2> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBoundsAbsolute2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getViewBounds2d world =
         let oldWorld = world
         try
@@ -3993,6 +4038,50 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetViewAbsolute2dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewAbsolute2d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetViewRelative2dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewRelative2d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetViewBoundsAbsolute2dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewBoundsAbsolute2d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetPlayBoundsAbsolute2dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getPlayBoundsAbsolute2d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetViewBounds2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4484,6 +4573,10 @@ module WorldBindings =
              ("constrainEyeBounds2d", { Fn = evalConstrainEyeBounds2dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getSelectedScreen", { Fn = evalGetSelectedScreenBinding; Pars = [||]; DocOpt = None })
              ("setSelectedScreen", { Fn = evalSetSelectedScreenBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getViewAbsolute2d", { Fn = evalGetViewAbsolute2dBinding; Pars = [||]; DocOpt = None })
+             ("getViewRelative2d", { Fn = evalGetViewRelative2dBinding; Pars = [||]; DocOpt = None })
+             ("getViewBoundsAbsolute2d", { Fn = evalGetViewBoundsAbsolute2dBinding; Pars = [||]; DocOpt = None })
+             ("getPlayBoundsAbsolute2d", { Fn = evalGetPlayBoundsAbsolute2dBinding; Pars = [||]; DocOpt = None })
              ("getViewBounds2d", { Fn = evalGetViewBounds2dBinding; Pars = [||]; DocOpt = None })
              ("getPlayBounds2d", { Fn = evalGetPlayBounds2dBinding; Pars = [||]; DocOpt = None })
              ("isBoundsInView2d", { Fn = evalIsBoundsInView2dBinding; Pars = [|"bounds"|]; DocOpt = None })
