@@ -22,7 +22,7 @@ type RotatingModelDispatcher () =
         [define Entity.StaticModel Assets.Default.StaticModel]
 
     override this.Update (entity, world) =
-        entity.SetAngles (entity.GetAngles world + v3 0.0f 0.01f 0.0f) world
+        entity.SetAngles (entity.GetAngles world + v3Dup 0.01f) world
 
 // this is our Elm-style command type
 type Command =
