@@ -329,6 +329,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         projectionArray
         (models : Matrix4x4 SegmentedList)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface)
+        blending
         irradianceMap
         lightPositions
         lightColors
@@ -352,7 +353,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture,
-                 irradianceMap, lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
+                 blending, irradianceMap, lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -623,6 +624,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     entry.Key
+                    false
                     irradianceMap
                     lightPositions
                     lightColors
@@ -638,6 +640,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     entry.Key
+                    false
                     irradianceMap
                     lightPositions
                     lightColors
@@ -681,6 +684,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton model)
                     surface
+                    true
                     irradianceMap
                     lightPositions
                     lightColors
@@ -697,6 +701,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton model)
                     surface
+                    true
                     irradianceMap
                     lightPositions
                     lightColors
