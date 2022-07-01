@@ -116,9 +116,7 @@ type [<NoEquality; NoComparison>] Transform =
         and set (value : Vector3) =
             this.Angles_ <- value
             this.AnglesDirty <- false
-            if value.X = 0.0f && value.Y = 0.0f // OPTIMIZATION: apply rotation constructively in the z-only case.
-            then this.Rotation_ <- Quaternion.CreateFromAxisAngle (v3Forward, value.Z)
-            else this.Rotation_ <- value.RollPitchYaw
+            this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
             this.PerimeterOrientedDirty <- true
 
@@ -127,10 +125,9 @@ type [<NoEquality; NoComparison>] Transform =
         this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
-        let mutable affineMatrix = this.RotationMatrix
-        affineMatrix.M11 <- affineMatrix.M11 * this.Scale_.X
-        affineMatrix.M22 <- affineMatrix.M22 * this.Scale_.Y
-        affineMatrix.M33 <- affineMatrix.M33 * this.Scale_.Z
+        let rotationMatrix = this.RotationMatrix
+        let scaleMatrix = Matrix4x4.CreateScale this.Scale_
+        let mutable affineMatrix = Matrix4x4.Multiply (scaleMatrix, rotationMatrix)
         affineMatrix.M41 <- this.Position_.X
         affineMatrix.M42 <- this.Position_.Y
         affineMatrix.M43 <- this.Position_.Z
