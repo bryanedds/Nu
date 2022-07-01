@@ -714,6 +714,10 @@ module WorldModule2 =
             let viewBounds = World.getViewBoundsRelative2d world
             World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
 
+        /// Get all 2d entities in needing to update for the current 2d view, including all omnipresent entities.
+        static member getEntitiesInPlay2d set world =
+            World.getEntities2dBy (Quadtree.getElementsOmnipresent set) world
+
         /// Get all 2d entities in the given bounds, including all omnipresent entities.
         static member getEntitiesInBounds2d bounds set world =
             World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
@@ -734,9 +738,16 @@ module WorldModule2 =
             World.getEntities3dBy (Octree.getElementsOmnipresent set) world
 
         /// Get all 3d entities in the current 3d view, including all omnipresent entities.
-        static member getEntitiesInView3d discriminatingIntent set world =
-            let viewBounds = World.getViewBounds3d world
-            World.getEntities3dBy (Octree.getElementsInDiscriminatingFrustum discriminatingIntent { Unenclosed = viewBounds; Enclosed = viewBounds } set) world // TODO: 3D: proper enclosed frustum.
+        static member getEntitiesInView3d set world =
+            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
+            let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
+            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed set) world
+
+        /// Get all 3d entities in the current 3d view, including all omnipresent entities.
+        static member getEntitiesInPlay3d set world =
+            let playBounds = World.getPlayBounds3d false world
+            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
+            World.getEntities3dBy (Octree.getElementsInPlay playBounds frustumEnclosed set) world // TODO: 3D: proper enclosed frustum.
 
         /// Get all 3d entities in the given bounds, including all omnipresent entities.
         static member getEntitiesInBounds3d bounds set world =
@@ -754,9 +765,9 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
+            let (octelements, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
-            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
+            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
             UpdateGatherTimer.Stop ()
 
@@ -802,9 +813,9 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (octelements, world) = World.getEntitiesInView3d UpdateIntent CachedHashSet3d world
+            let (octelements, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
-            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
+            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
 #endif
             PostUpdateGatherTimer.Stop ()
@@ -887,7 +898,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInView3d ActualizeIntent CachedHashSet3d world
+            let (octelements, world) = World.getEntitiesInView3d CachedHashSet3d world
             let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
             let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d

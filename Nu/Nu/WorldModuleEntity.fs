@@ -441,6 +441,7 @@ module WorldModuleEntity =
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
+        static member internal getEntityEnclosed entity world = (World.getEntityState entity world).Enclosed
         static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
@@ -462,6 +463,7 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
+        static member internal setEntityEnclosed value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enclosed then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Enclosed <- value; entityState) else Unchecked.defaultof<_>) Property? Enclosed value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
         static member inline internal getEntityRotationMatrix entity world =
@@ -1645,7 +1647,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             if not transform.Omnipresent
-            then World.isBoundsInView3d transform.Bounds world
+            then World.isBoundsInView3d transform.Absolute transform.Enclosed transform.Bounds world
             else true
 
         static member internal getEntityQuickSize (entity : Entity) world =
@@ -2230,6 +2232,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
         EntityGetters.Assign ("Centered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world })
+        EntityGetters.Assign ("Enclosed", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnclosed entity world })
         EntityGetters.Assign ("Physical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPhysical entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         EntityGetters.Assign ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
@@ -2272,6 +2275,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Centered", fun property entity world -> World.setEntityCentered (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("Enclosed", fun property entity world -> World.setEntityEnclosed (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("IgnorePropertyBindings", fun property entity world -> World.setEntityIgnorePropertyBindings (property.PropertyValue :?> bool) entity world)

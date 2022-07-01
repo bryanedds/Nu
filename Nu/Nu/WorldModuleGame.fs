@@ -125,8 +125,12 @@ module WorldModuleGame =
         static member internal setEyePosition3dPlus (value : Vector3) world =
             World.updateGameState (fun gameState ->
                 if v3Neq value gameState.EyePosition3d then
-                    let eyeFrustum3d = GlRenderer3d.computeFrustum value gameState.EyeRotation3d
-                    { gameState with EyePosition3d = value; EyeFrustum3d = eyeFrustum3d }
+                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true value gameState.EyeRotation3d
+                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false value gameState.EyeRotation3d
+                    { gameState with
+                        EyePosition3d = value
+                        EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
+                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -143,8 +147,12 @@ module WorldModuleGame =
         static member internal setEyeRotation3dPlus value world =
             World.updateGameState (fun gameState ->
                 if quatNeq value gameState.EyeRotation3d then
-                    let eyeFrustum3d = GlRenderer3d.computeFrustum gameState.EyePosition3d value
-                    { gameState with EyeRotation3d = value; EyeFrustum3d = eyeFrustum3d }
+                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true gameState.EyePosition3d value
+                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false gameState.EyePosition3d value
+                    { gameState with
+                        EyeRotation3d = value
+                        EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
+                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.
@@ -152,10 +160,15 @@ module WorldModuleGame =
         static member setEyeRotation3d value world =
             World.setEyeRotation3dPlus value world |> snd'
 
-        /// Get the current 3d eye frustum.
+        /// Get the current enclosed 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustum3d world =
-            (World.getGameState world).EyeFrustum3d
+        static member getEyeFrustumEnclosed3d world =
+            (World.getGameState world).EyeFrustumEnclosed3d
+
+        /// Get the current unenclosed 3d eye frustum.
+        [<FunctionBinding>]
+        static member getEyeFrustumUnenclosed3d world =
+            (World.getGameState world).EyeFrustumUnenclosed3d
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -351,13 +364,23 @@ module WorldModuleGame =
 
         /// Get the bounds of the 3d eye's sight.
         [<FunctionBinding>]
-        static member getViewBounds3d world =
-            World.getEyeFrustum3d world
+        static member getViewBounds3d absolute enclosed world =
+            if absolute then failwithnie ()
+            if enclosed
+            then World.getEyeFrustumEnclosed3d world
+            else World.getEyeFrustumUnenclosed3d world
+
+        /// Get the bounds of the 3d eye's sight.
+        [<FunctionBinding>]
+        static member getPlayBounds3d absolute world =
+            if absolute then failwithnie ()
+            let eyePosition = World.getEyePosition3d world
+            box3 (eyePosition - Constants.Engine.PlayBoundsSize3d * 0.5f) Constants.Engine.PlayBoundsSize3d
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView3d (bounds : Box3) world =
-            let viewBounds = World.getViewBounds3d world
+        static member isBoundsInView3d absolute enclosed (bounds : Box3) world =
+            let viewBounds = World.getViewBounds3d absolute enclosed world
             let containment = viewBounds.Contains bounds
             containment = ContainmentType.Contains ||
             containment = ContainmentType.Intersects

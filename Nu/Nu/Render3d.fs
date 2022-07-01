@@ -255,19 +255,23 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Compute the 3d projection matrix.
     /// TODO: 3D: expose this elsewhere.
-    static member computeProjection () =
+    static member computeProjection enclosed =
+        let farPlaneDistance =
+            if enclosed
+            then Constants.Render.FarPlaneDistanceEnclosed
+            else Constants.Render.FarPlaneDistanceUnenclosed
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
              Constants.Render.AspectRatio,
              Constants.Render.NearPlaneDistance,
-             Constants.Render.FarPlaneDistance)
+             farPlaneDistance)
 
     /// Compute the 3d view frustum.
     /// TODO: 3D: expose this elsewhere.
-    static member computeFrustum eyePosition (eyeRotation : Quaternion) =
+    static member computeFrustum enclosed eyePosition (eyeRotation : Quaternion) =
         let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
         let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
-        let projection = GlRenderer3d.computeProjection ()
+        let projection = GlRenderer3d.computeProjection enclosed
         let viewProjection = view * projection
         Frustum viewProjection
 
@@ -436,8 +440,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewAbsoluteArray = viewAbsolute.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
-            let projection = GlRenderer3d.computeProjection ()
-            let projectionArray = projection.ToArray ()
+            let projectionUnenclosed = GlRenderer3d.computeProjection true
+            let projectionUnenclosedArray = projectionUnenclosed.ToArray ()
             OpenGL.Hl.Assert ()
 
             // just use constant lights for now
@@ -541,7 +545,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
-                    projectionArray
+                    projectionUnenclosedArray
                     entry.Value
                     entry.Key
                     irradianceMap
@@ -556,7 +560,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
-                    projectionArray
+                    projectionUnenclosedArray
                     entry.Value
                     entry.Key
                     irradianceMap
@@ -589,7 +593,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // attempt to render sky box
             match skyBoxOpt with
             | Some (cubeMap, _) ->
-                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionUnenclosedArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                 OpenGL.Hl.Assert ()
             | None -> ()
 
@@ -598,7 +602,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
-                    projectionArray
+                    projectionUnenclosedArray
                     (SegmentedList.singleton model)
                     surface
                     irradianceMap
@@ -613,7 +617,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
-                    projectionArray
+                    projectionUnenclosedArray
                     (SegmentedList.singleton model)
                     surface
                     irradianceMap
@@ -625,7 +629,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projectionUnenclosed, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
 
             // end frame
