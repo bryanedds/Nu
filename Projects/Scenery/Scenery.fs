@@ -69,5 +69,6 @@ type SceneryDispatcher () =
                     positions.Add position
         Seq.fold (fun world position ->
             let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Default.Group world
+            let world = staticModel.SetEnclosed true world
             staticModel.SetPosition position world)
             world positions
