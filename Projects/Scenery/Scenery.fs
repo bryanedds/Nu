@@ -57,8 +57,8 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 43fps.
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
-        let population = 30
-        let spread = 15.0f
+        let population = 60
+        let spread = 12.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
