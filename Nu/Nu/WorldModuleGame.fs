@@ -333,57 +333,57 @@ module WorldModuleGame =
         static member getViewRelative2d world =
             Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
 
-        /// Get the bounds of the 2d eye's sight relative to its position.
+        /// Get the bounds of the 2d eye's sight.
         [<FunctionBinding>]
-        static member getViewBoundsRelative2d world =
+        static member getViewBounds2d world =
             let gameState = World.getGameState world
             box2
                 (v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f))
                 (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
-        /// Get the bounds of the eye2d 's sight not relative to its position.
+        /// Get the bounds of the 2d play zone.
         [<FunctionBinding>]
-        static member getViewBoundsAbsolute2d world =
-            let gameState = World.getGameState world
-            box2
-                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
-                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
-
-        /// Get the bounds of the 2d eye's sight.
-        [<FunctionBinding>]
-        static member getViewBounds2d absolute world =
-            if absolute
-            then World.getViewBoundsAbsolute2d world
-            else World.getViewBoundsRelative2d world
+        static member getPlayBounds2d world =
+            World.getViewBounds2d world
 
         /// Check that the given bounds is within the 2d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView2d absolute (bounds : Box2) world =
-            let viewBounds = World.getViewBounds2d absolute world
+        static member isBoundsInView2d (bounds : Box2) world =
+            let viewBounds = World.getViewBounds2d world
             Math.isBoundsIntersectingBounds2d bounds viewBounds
 
-        /// Get the bounds of the 3d eye's sight.
+        /// Get the view bounds of the 3d eye's sight.
         [<FunctionBinding>]
-        static member getViewBounds3d absolute enclosed world =
-            if absolute then failwithnie ()
+        static member getViewBounds3d enclosed world =
             if enclosed
             then World.getEyeFrustumEnclosed3d world
             else World.getEyeFrustumUnenclosed3d world
 
-        /// Get the bounds of the 3d eye's sight.
+        /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
-        static member getPlayBounds3d absolute world =
-            if absolute then failwithnie ()
+        static member getPlayBounds3d world =
             let eyePosition = World.getEyePosition3d world
-            box3 (eyePosition - Constants.Engine.PlayBoundsSize3d * 0.5f) Constants.Engine.PlayBoundsSize3d
+            let eyeBox = box3 (eyePosition - Constants.Engine.PlayBoundsSize3d * 0.5f) Constants.Engine.PlayBoundsSize3d
+            let eyeFrustum = World.getEyeFrustumEnclosed3d world
+            struct (eyeBox, eyeFrustum)
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView3d absolute enclosed (bounds : Box3) world =
-            let viewBounds = World.getViewBounds3d absolute enclosed world
+        static member isBoundsInView3d enclosed (bounds : Box3) world =
+            let viewBounds = World.getViewBounds3d enclosed world
             let containment = viewBounds.Contains bounds
             containment = ContainmentType.Contains ||
             containment = ContainmentType.Intersects
+
+        /// Check that the given bounds is within the 3d eye's play bounds.
+        [<FunctionBinding>]
+        static member isBoundsInPlay3d (bounds : Box3) world =
+            let struct (viewBox, viewFrustum) = World.getPlayBounds3d world
+            if Math.isBoundsInBounds3d viewBox bounds then true
+            else
+                let containment = viewFrustum.Contains bounds
+                containment = ContainmentType.Contains ||
+                containment = ContainmentType.Intersects
 
         /// Transform the given mouse position to 2d screen space.
         [<FunctionBinding>]

@@ -453,8 +453,6 @@ module WorldModuleEntity =
         static member internal getEntityId entity world = (World.getEntityState entity world).IdRef.Value
         static member internal getEntitySurnames entity world = (World.getEntityState entity world).Surnames
         static member internal getEntityName entity world = (World.getEntityState entity world).Surnames |> Array.last
-        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
-        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
         static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeBindings value entity world
         static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) Property? AlwaysUpdate value entity world
@@ -465,6 +463,27 @@ module WorldModuleEntity =
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
         static member internal setEntityEnclosed value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enclosed then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Enclosed <- value; entityState) else Unchecked.defaultof<_>) Property? Enclosed value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
+
+        static member internal setEntityOmnipresent value entity world =
+            World.updateEntityStatePlus (fun entityState ->
+                if value <> entityState.Omnipresent then
+                    if not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
+                        let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                        entityState.Omnipresent <- value
+                        entityState
+                    else entityState
+                else Unchecked.defaultof<_>)
+                Property? Omnipresent value entity world
+
+        static member internal setEntityAbsolute value entity world =
+            World.updateEntityStatePlus (fun entityState ->
+                if value <> entityState.Absolute then
+                    let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
+                    entityState.Absolute <- value
+                    if value then entityState.Omnipresent <- true // setting a transform to Absolute requires that it also be Omnipresent
+                    entityState
+                else Unchecked.defaultof<_>)
+                Property? Absolute value entity world
 
         static member inline internal getEntityRotationMatrix entity world =
             (World.getEntityState entity world).Transform.RotationMatrix
@@ -1640,14 +1659,24 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             if not transform.Omnipresent
-            then World.isBoundsInView2d transform.Absolute transform.Bounds.Box2 world
+            then World.isBoundsInView2d transform.Bounds.Box2 world
+            else true
+
+        static member internal getEntityInPlay2d entity world =
+            World.getEntityInView2d entity world
+
+        static member internal getEntityInPlay3d entity world =
+            let entityState = World.getEntityState entity world
+            let mutable transform = &entityState.Transform
+            if not transform.Omnipresent
+            then World.isBoundsInPlay3d transform.Bounds world
             else true
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             if not transform.Omnipresent
-            then World.isBoundsInView3d transform.Absolute transform.Enclosed transform.Bounds world
+            then World.isBoundsInView3d transform.Enclosed transform.Bounds world
             else true
 
         static member internal getEntityQuickSize (entity : Entity) world =

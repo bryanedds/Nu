@@ -61,8 +61,17 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
     member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
-    member this.Omnipresent with get () = this.Flags_ &&& OmnipresentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
-    member this.Absolute with get () = this.Flags_ &&& AbsoluteMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
+    member this.Omnipresent
+        with get () = this.Flags_ &&& OmnipresentMask <> 0u
+        and set value =
+            if not this.Absolute then // a transform that is Absolute must remain Omnipresent
+                this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
+    member this.Absolute
+        with get () = this.Flags_ &&& AbsoluteMask <> 0u
+        and set value =
+            this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
+            if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
+                this.Omnipresent <- true
     member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
     member this.PublishChangeBindings with get () = this.Flags_ &&& PublishChangeBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeBindingsMask else this.Flags_ &&& ~~~PublishChangeBindingsMask
     member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
