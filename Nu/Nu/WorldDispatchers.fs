@@ -1137,7 +1137,7 @@ module TileMapFacetModule =
                 | Some tileMap ->
                     let mutable transform = entity.GetTransform world
                     let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
-                    let viewBounds = World.getViewBounds2d world
+                    let viewBounds = World.getViewBoundsRelative2d world
                     let tileMapMessages =
                         TmxMap.getLayeredMessages2d
                             (World.getUpdateTime world)
@@ -1231,7 +1231,7 @@ module TmxMapFacetModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
-                let viewBounds = World.getViewBounds2d world
+                let viewBounds = World.getViewBoundsRelative2d world
                 let tmxMap = entity.GetTmxMap world
                 let tmxMapMessages =
                     TmxMap.getLayeredMessages2d
