@@ -628,7 +628,8 @@ module PhysicallyBased =
 
     /// Draw a the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface
-        (positionTexture : uint,
+        (eyePosition : Vector3,
+         positionTexture : uint,
          normalTexture : uint,
          albedoTexture : uint,
          materialTexture : uint,
@@ -640,6 +641,7 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
+        Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.NormalTextureUniform, 1)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
