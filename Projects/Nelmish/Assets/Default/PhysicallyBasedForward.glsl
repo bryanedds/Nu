@@ -28,7 +28,7 @@ const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 4.0;
 const float GAMMA_SQRT = 1.5;
 const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
-const int LIGHTS_MAX = 4;
+const int LIGHTS_MAX = 32;
 
 uniform vec3 eyePosition;
 uniform sampler2D albedoTexture;
@@ -38,7 +38,7 @@ uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform samplerCube irradianceMap;
 uniform vec3 lightPositions[LIGHTS_MAX];
-uniform vec3 lightColors[LIGHTS_MAX];
+uniform vec4 lightColors[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec3 normalOut;
@@ -123,7 +123,7 @@ void main()
         vec3 h = normalize(v + l);
         float distance = length(lightPositions[i] - positionOut);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors[i] * attenuation;
+        vec3 radiance = lightColors[i].rgb * attenuation;
 
         // cook-torrance brdf
         float ndf = distributionGGX(n, h, roughness);

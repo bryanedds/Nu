@@ -89,6 +89,7 @@ module Render =
     let [<Literal>] SpriteBorderTexelScalar = 0.01f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
+    let [<Literal>] ShaderLightsMax = 32
 
 [<RequireQualifiedAccess>]
 module Audio =

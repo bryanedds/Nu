@@ -563,7 +563,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
         Gl.Uniform1 (shader.IrradianceMapUniform, irradianceMap)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
-        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
         Gl.ActiveTexture TextureUnit.Texture1
@@ -638,7 +638,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.MaterialTextureUniform, 3)
         Gl.Uniform1 (shader.IrradianceMapUniform, 4)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
-        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
         Gl.ActiveTexture TextureUnit.Texture1

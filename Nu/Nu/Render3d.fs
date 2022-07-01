@@ -39,10 +39,13 @@ and [<NoEquality; NoComparison>] RenderSurfaces =
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
       RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
 
+/// A collection of lights in a pass.
+and RenderLights = SortableLight SegmentedList
+
 /// Describes a 3d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : RenderSurfaces * Matrix4x4 * Matrix4x4 * Matrix4x4 * Renderer3d -> unit }
+      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderLights * RenderSurfaces * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -67,10 +70,39 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderSkyBoxDescriptor of CubeMap AssetTag
+    | RenderPointLightDescriptor of Vector3 * Color
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
     | ReloadRenderAssetsMessage3d
+
+/// A sortable light.
+and [<NoEquality; NoComparison>] SortableLight =
+    { SortableLightPosition : Vector3
+      SortableLightColor : Color
+      mutable SortableLightDistanceSquared : single }
+
+    /// Sort lights into array for uploading to OpenGL.
+    /// TODO: 3D: consider getting rid of allocation here.
+    static member sortLightsIntoArrays position lights =
+        let lightPositions = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
+        let lightColors = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 4)
+        for light in lights do
+            light.SortableLightDistanceSquared <- (light.SortableLightPosition - position).MagnitudeSquared
+        let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
+        for i in 0 .. dec Constants.Render.ShaderLightsMax do
+            if i < lightsSorted.Length then
+                let p = i * 3
+                let c = i * 4
+                let light = lightsSorted.[i]
+                lightPositions.[p] <- light.SortableLightPosition.X
+                lightPositions.[p+1] <- light.SortableLightPosition.Y
+                lightPositions.[p+2] <- light.SortableLightPosition.Z
+                lightColors.[c] <- light.SortableLightColor.R
+                lightColors.[c+1] <- light.SortableLightColor.G
+                lightColors.[c+2] <- light.SortableLightColor.B
+                lightColors.[c+3] <- light.SortableLightColor.A
+        (lightPositions, lightColors)
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
 and Renderer3d =
@@ -239,6 +271,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
          modelAssetTag,
          surfacesDeferredAbsolute : Dictionary<_, _>,
          surfacesDeferredRelative : Dictionary<_, _>,
+         surfacesForwardAbsolute : SegmentedList<_>,
+         surfacesForwardRelative : SegmentedList<_>,
          renderer) =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
         | ValueSome renderAsset ->
@@ -255,8 +289,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             match surfacesDeferredRelative.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
                             | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
-                    | ForwardRenderType _ ->
-                        failwithnie ()
+                    | ForwardRenderType callbackOpt ->
+                        if modelAbsolute
+                        then SegmentedList.add struct (modelMatrix, surface, callbackOpt) surfacesForwardAbsolute
+                        else SegmentedList.add struct (modelMatrix, surface, callbackOpt) surfacesForwardRelative
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -452,15 +488,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
-            // just use constant lights for now
-            let lightPositions = [|-5.0f; 2.0f; 5.0f; 5.0f; 2.0f; 5.0f; -5.0f; 2.0f; -5.0f; 5.0f; 2.0f; -5.0f|]
-            let lightColors = [|0.0f; 50.0f; 100.0f; 50.0f; 100.0f; 50.0f; 0.0f; 100.0f; 50.0f; 50.0f; 50.0f; 50.0f|]
-
             // categorize messages
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             let surfacesDeferredAbsolute = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
             let surfacesDeferredRelative = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
+            let surfacesForwardAbsolute = SegmentedList.make ()
+            let surfacesForwardRelative = SegmentedList.make ()
             let skyBoxes = SegmentedList.make ()
+            let lights = SegmentedList.make ()
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
@@ -471,6 +506,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          modelAssetTag,
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
+                         surfacesForwardAbsolute,
+                         surfacesForwardRelative,
                          renderer)
                 | RenderStaticModelsDescriptor (modelAbsolute, modelMatrices, modelRenderType, modelAssetTag) ->
                     for modelMatrix in modelMatrices do
@@ -481,6 +518,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                              modelAssetTag,
                              surfacesDeferredAbsolute,
                              surfacesDeferredRelative,
+                             surfacesForwardAbsolute,
+                             surfacesForwardRelative,
                              renderer)
                 | RenderCachedStaticModelDescriptor descriptor ->
                     GlRenderer3d.categorizeStaticModel
@@ -490,9 +529,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          descriptor.CachedStaticModel,
                          surfacesDeferredAbsolute,
                          surfacesDeferredRelative,
+                         surfacesForwardAbsolute,
+                         surfacesForwardRelative,
                          renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
                     SegmentedList.add cubeMap skyBoxes
+                | RenderPointLightDescriptor (position, color) ->
+                    let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightDistanceSquared = Single.MaxValue }
+                    SegmentedList.add light lights
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
 
@@ -501,8 +545,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
                   RenderSurfacesDeferredRelative = surfacesDeferredRelative
                   RenderSkyBoxes = skyBoxes
-                  RenderSurfacesForwardAbsolute = SegmentedList.make ()
-                  RenderSurfacesForwardRelative = SegmentedList.make () }
+                  RenderSurfacesForwardAbsolute = surfacesForwardAbsolute
+                  RenderSurfacesForwardRelative = surfacesForwardRelative }
 
             // setup geometry buffer
             let (positionTexture, normalTexture, albedoTexture, materialTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
@@ -547,6 +591,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         irradianceMap
                     else Option.get cubeMapIrradianceOptRef.Value
                 | None -> renderer.RenderIrradianceMap
+
+            // sort lights for deferred relative to eye position
+            let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays eyePosition lights
 
             // render deferred pass w/ absolute-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredAbsolute do
@@ -607,6 +654,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render forward pass w/ absolute-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
+                let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
@@ -622,6 +670,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render forward pass w/ relative-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
+                let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
@@ -637,7 +686,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (surfaces, viewAbsolute, viewRelative, projection, renderer :> Renderer3d)
+                pass.RenderPass3d (viewAbsolute, viewRelative, projection, lights, surfaces, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
 
             // end frame

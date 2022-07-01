@@ -421,6 +421,7 @@ module WorldModule3 =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
+                 PointLightDispatcher () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher]
 
@@ -437,6 +438,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
+                 PointLightFacet () :> Facet
                  SkyBoxFacet () :> Facet
                  StaticModelFacet () :> Facet]
 

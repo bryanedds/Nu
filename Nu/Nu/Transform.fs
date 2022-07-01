@@ -128,9 +128,7 @@ type [<NoEquality; NoComparison>] Transform =
         let rotationMatrix = this.RotationMatrix
         let scaleMatrix = Matrix4x4.CreateScale this.Scale_
         let mutable affineMatrix = Matrix4x4.Multiply (scaleMatrix, rotationMatrix)
-        affineMatrix.M41 <- this.Position_.X
-        affineMatrix.M42 <- this.Position_.Y
-        affineMatrix.M43 <- this.Position_.Z
+        affineMatrix.Translation <- this.Position_
         affineMatrix
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
