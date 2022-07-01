@@ -87,6 +87,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
+    member this.Static with get () = this.Flags_ &&& StaticMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| StaticMask else this.Flags_ &&& ~~~StaticMask
     member this.Enclosed with get () = this.Flags_ &&& EnclosedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnclosedMask else this.Flags_ &&& ~~~EnclosedMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask

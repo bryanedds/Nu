@@ -415,6 +415,7 @@ module WorldTypes =
              Define? Visible true
              Define? VisibleLocal true
              Define? Centered true
+             Define? Static false
              Define? Enclosed false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
@@ -551,8 +552,8 @@ module WorldTypes =
         static member make (dispatcher : GameDispatcher) =
             let eyePosition3d = Constants.Render.EyePosition3dDefault
             let eyeRotation3d = quatIdentity
-            let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum true eyePosition3d eyeRotation3d
-            let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum false eyePosition3d eyeRotation3d
+            let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed eyePosition3d eyeRotation3d
+            let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -864,6 +865,7 @@ module WorldTypes =
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
+        member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
         member this.Enclosed with get () = this.Transform.Enclosed and set value = this.Transform.Enclosed <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
