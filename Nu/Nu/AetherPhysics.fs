@@ -90,14 +90,14 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             bodyShape.Restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> cc | None -> enum<Category> bodyProperties.CollisionCategories
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> cm | None -> enum<Category> bodyProperties.CollisionMask
-            bodyShape.IsSensor <- match bodyShapeProperties.IsSensorOpt with Some isSensor -> isSensor | None -> bodyProperties.IsSensor
+            bodyShape.IsSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
             bodyShape
         | None ->
             bodyShape.Friction <- bodyProperties.Friction
             bodyShape.Restitution <- bodyProperties.Restitution
             bodyShape.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
             bodyShape.CollidesWith <- enum<Category> bodyProperties.CollisionMask
-            bodyShape.IsSensor <- bodyProperties.IsSensor
+            bodyShape.IsSensor <- bodyProperties.Sensor
             bodyShape
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
@@ -117,8 +117,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
         body.IgnoreCCD <- bodyProperties.IgnoreCCD
-        body.IsBullet <- bodyProperties.IsBullet
-        body.SetIsSensor bodyProperties.IsSensor
+        body.IsBullet <- bodyProperties.Bullet
+        body.SetIsSensor bodyProperties.Sensor
         body.SleepingAllowed <- true
 
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =

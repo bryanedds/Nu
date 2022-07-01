@@ -170,6 +170,12 @@ module WorldModuleGame =
         static member getEyeFrustumUnenclosed3d world =
             (World.getGameState world).EyeFrustumUnenclosed3d
 
+        /// Get the current 3d light box.
+        [<FunctionBinding>]
+        static member getLightbox3d world =
+            let lightBoxSize = Constants.Render.LightBoxSize3d * 0.5f
+            box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
+
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
         static member getOmniScreenOpt world =
@@ -368,25 +374,28 @@ module WorldModuleGame =
         /// Get the view bounds of the 3d eye's sight.
         [<FunctionBinding>]
         static member getViewBounds3d enclosed world =
+            let lightBox = World.getLightbox3d world
             if enclosed
-            then World.getEyeFrustumEnclosed3d world
-            else World.getEyeFrustumUnenclosed3d world
+            then struct (World.getEyeFrustumEnclosed3d world, lightBox)
+            else struct (World.getEyeFrustumUnenclosed3d world, lightBox)
 
         /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
         static member getPlayBounds3d world =
             let eyePosition = World.getEyePosition3d world
-            let eyeBox = box3 (eyePosition - Constants.Render.PlayBoundsSize3d * 0.5f) Constants.Render.PlayBoundsSize3d
+            let eyeBox = box3 (eyePosition - Constants.Render.PlayBoxSize3d * 0.5f) Constants.Render.PlayBoxSize3d
             let eyeFrustum = World.getEyeFrustumEnclosed3d world
             struct (eyeBox, eyeFrustum)
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView3d enclosed (bounds : Box3) world =
-            let viewBounds = World.getViewBounds3d enclosed world
-            let containment = viewBounds.Contains bounds
-            containment = ContainmentType.Contains ||
-            containment = ContainmentType.Intersects
+        static member isBoundsInView3d enclosed light (bounds : Box3) world =
+            let struct (frustum, lightBox) = World.getViewBounds3d enclosed world
+            if light && lightBox.Intersects bounds then true
+            else
+                let containment = frustum.Contains bounds
+                containment = ContainmentType.Contains ||
+                containment = ContainmentType.Intersects
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         [<FunctionBinding>]

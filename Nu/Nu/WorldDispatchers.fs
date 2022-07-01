@@ -931,12 +931,12 @@ module RigidBodyFacetModule =
         member this.GetIgnoreCCD world : bool = this.Get Property? IgnoreCCD world
         member this.SetIgnoreCCD (value : bool) world = this.Set Property? IgnoreCCD value world
         member this.IgnoreCCD = lens Property? IgnoreCCD this.GetIgnoreCCD this.SetIgnoreCCD this
-        member this.GetIsBullet world : bool = this.Get Property? IsBullet world
-        member this.SetIsBullet (value : bool) world = this.Set Property? IsBullet value world
-        member this.IsBullet = lens Property? IsBullet this.GetIsBullet this.SetIsBullet this
-        member this.GetIsSensor world : bool = this.Get Property? IsSensor world
-        member this.SetIsSensor (value : bool) world = this.Set Property? IsSensor value world
-        member this.IsSensor = lens Property? IsSensor this.GetIsSensor this.SetIsSensor this
+        member this.GetBullet world : bool = this.Get Property? Bullet world
+        member this.SetBullet (value : bool) world = this.Set Property? Bullet value world
+        member this.Bullet = lens Property? Bullet this.GetBullet this.SetBullet this
+        member this.GetSensor world : bool = this.Get Property? Sensor world
+        member this.SetSensor (value : bool) world = this.Set Property? Sensor value world
+        member this.Sensor = lens Property? Sensor this.GetSensor this.SetSensor this
         member this.GetPhysicsId world : PhysicsId = this.Get Property? PhysicsId world
         member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.BodyCollisionEvent = Events.BodyCollision --> this
@@ -966,8 +966,8 @@ module RigidBodyFacetModule =
              define Entity.CollisionMask "@"
              define Entity.BodyShape (BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None })
              define Entity.IgnoreCCD false
-             define Entity.IsBullet false
-             define Entity.IsSensor false
+             define Entity.Bullet false
+             define Entity.Sensor false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -989,8 +989,8 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyShape) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IgnoreCCD) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsBullet) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsSensor) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Bullet) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Sensor) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -1017,8 +1017,8 @@ module RigidBodyFacetModule =
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   IgnoreCCD = entity.GetIgnoreCCD world
-                  IsBullet = entity.GetIsBullet world
-                  IsSensor = entity.GetIsSensor world }
+                  Bullet = entity.GetBullet world
+                  Sensor = entity.GetSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
@@ -1260,7 +1260,7 @@ module PointLightFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Light true
              define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
 
         override this.Actualize (entity, world) =
@@ -2422,7 +2422,7 @@ module PointLightDispatcherModule =
             [typeof<PointLightFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Light true
              define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
 
 [<AutoOpen>]

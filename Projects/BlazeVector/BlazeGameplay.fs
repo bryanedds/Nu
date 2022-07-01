@@ -34,7 +34,7 @@ module Bullet =
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
              define Entity.GravityScale 0.0f
-             define Entity.IsBullet true
+             define Entity.Bullet true
              define Entity.BodyShape (BodySphere { Radius = 0.5f; Center = v3Zero; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
@@ -78,8 +78,8 @@ module Enemy =
             let world =
                 if World.isAdvancing world then
                     let collidee = evt.Data.BodyCollidee.Entity
-                    let isBullet = collidee.Is<BulletDispatcher> world
-                    if isBullet then
+                    let bullet = collidee.Is<BulletDispatcher> world
+                    if bullet then
                         let world = enemy.SetHealth (enemy.GetHealth world - 1) world
                         let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                         world
