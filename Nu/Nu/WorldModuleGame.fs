@@ -363,7 +363,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getPlayBounds3d world =
             let eyePosition = World.getEyePosition3d world
-            let eyeBox = box3 (eyePosition - Constants.Engine.PlayBoundsSize3d * 0.5f) Constants.Engine.PlayBoundsSize3d
+            let eyeBox = box3 (eyePosition - Constants.Render.PlayBoundsSize3d * 0.5f) Constants.Render.PlayBoundsSize3d
             let eyeFrustum = World.getEyeFrustumEnclosed3d world
             struct (eyeBox, eyeFrustum)
 
