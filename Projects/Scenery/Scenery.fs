@@ -11,6 +11,19 @@ module Simulants =
     // to refer to from multiple places
     let SkyBox = Simulants.Default.Group / "SkyBox"
 
+// this is a custom entity for performance testing
+type RotatingModelDispatcher () =
+    inherit EntityDispatcher3d (true, false)
+
+    static member Facets =
+        [typeof<StaticModelFacet>]
+
+    static member Properties =
+        [define Entity.StaticModel Assets.Default.StaticModel]
+
+    override this.Update (entity, world) =
+        entity.SetAngles (entity.GetAngles world + v3 0.0f 0.01f 0.0f) world
+
 // this is our Elm-style command type
 type Command =
     | MoveLeft
@@ -54,11 +67,11 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
-    // NOTE: performance goal: 60fps, current: 43fps.
+    // NOTE: performance goal: 60fps, current: 33fps.
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
-        let population = 60
-        let spread = 12.0f
+        let population = 50
+        let spread = 16.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
@@ -68,7 +81,7 @@ type SceneryDispatcher () =
                     let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
         Seq.fold (fun world position ->
-            let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Default.Group world
-            let world = staticModel.SetEnclosed true world
+            let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
+            let world = staticModel.SetScale (v3Dup 1.5f) world
             staticModel.SetPosition position world)
             world positions
