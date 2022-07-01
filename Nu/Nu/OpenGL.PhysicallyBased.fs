@@ -548,6 +548,9 @@ module PhysicallyBased =
         Gl.DepthMask true
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
+        Gl.BlendEquation BlendEquationMode.FuncAdd
+        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+        Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
@@ -614,6 +617,9 @@ module PhysicallyBased =
 
         // teardown state
         Gl.Disable EnableCap.CullFace
+        Gl.Disable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+        Gl.BlendEquation BlendEquationMode.FuncAdd
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
         Gl.DepthMask false
