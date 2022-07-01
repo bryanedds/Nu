@@ -709,15 +709,6 @@ module WorldModule2 =
         static member getEntitiesOmnipresent2d set world =
             World.getEntities2dBy (Quadtree.getElementsOmnipresent set) world
 
-        /// Get all 2d entities in the current 2d view, including all omnipresent entities.
-        static member getEntitiesInView2d set world =
-            let viewBounds = World.getViewBoundsRelative2d world
-            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
-
-        /// Get all 2d entities in needing to update for the current 2d view, including all omnipresent entities.
-        static member getEntitiesInPlay2d set world =
-            World.getEntities2dBy (Quadtree.getElementsOmnipresent set) world
-
         /// Get all 2d entities in the given bounds, including all omnipresent entities.
         static member getEntitiesInBounds2d bounds set world =
             World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
@@ -725,6 +716,16 @@ module WorldModule2 =
         /// Get all 2d entities at the given point, including all omnipresent entities.
         static member getEntitiesAtPoint2d point set world =
             World.getEntities2dBy (Quadtree.getElementsAtPoint point set) world
+
+        /// Get all 2d entities needing to update for the current 2d play zone, including all omnipresent entities.
+        static member getEntitiesInPlay2d set world =
+            let playBounds = World.getPlayBounds2d world
+            World.getEntities2dBy (Quadtree.getElementsInBounds playBounds set) world
+
+        /// Get all 2d entities in the current 2d view, including all omnipresent entities.
+        static member getEntitiesInView2d set world =
+            let viewBounds = World.getViewBounds2d world
+            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
 
         static member private getEntities3dBy getElementsFromQuadtree world =
             let octree = World.getOctree world
@@ -737,18 +738,6 @@ module WorldModule2 =
         static member getEntitiesOmnipresent3d set world =
             World.getEntities3dBy (Octree.getElementsOmnipresent set) world
 
-        /// Get all 3d entities in the current 3d view, including all omnipresent entities.
-        static member getEntitiesInView3d set world =
-            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
-            let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
-            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed set) world
-
-        /// Get all 3d entities in the current 3d view, including all omnipresent entities.
-        static member getEntitiesInPlay3d set world =
-            let playBounds = World.getPlayBounds3d false world
-            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
-            World.getEntities3dBy (Octree.getElementsInPlay playBounds frustumEnclosed set) world // TODO: 3D: proper enclosed frustum.
-
         /// Get all 3d entities in the given bounds, including all omnipresent entities.
         static member getEntitiesInBounds3d bounds set world =
             World.getEntities3dBy (Octree.getElementsInBounds bounds set) world
@@ -756,6 +745,17 @@ module WorldModule2 =
         /// Get all 3d entities at the given point, including all omnipresent entities.
         static member getEntitiesAtPoint3d point set world =
             World.getEntities3dBy (Octree.getElementsAtPoint point set) world
+
+        /// Get all 3d entities in the current 3d play zone, including all omnipresent entities.
+        static member getEntitiesInPlay3d set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            World.getEntities3dBy (Octree.getElementsInPlay playBox playFrustum set) world
+
+        /// Get all 3d entities in the current 3d view, including all omnipresent entities.
+        static member getEntitiesInView3d set world =
+            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
+            let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
+            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed set) world
 
         static member private updateSimulants world =
 
