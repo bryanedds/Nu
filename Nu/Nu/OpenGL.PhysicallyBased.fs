@@ -26,7 +26,6 @@ module PhysicallyBased =
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedSurface =
         { mutable HashCode : int
-          Transparent : bool
           AlbedoTexture : uint
           MetalnessTexture : uint
           RoughnessTexture : uint
@@ -35,14 +34,12 @@ module PhysicallyBased =
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            hash surface.Transparent ^^^
             hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make transparent albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
+        static member inline make albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
             let mutable result =
                 { HashCode = 0
-                  Transparent = transparent
                   AlbedoTexture = albedoTexture
                   MetalnessTexture = metalnessTexture
                   RoughnessTexture = roughnessTexture
@@ -54,7 +51,6 @@ module PhysicallyBased =
 
         static member inline equals left right =
             left.HashCode = right.HashCode &&
-            left.Transparent = right.Transparent &&
             left.AlbedoTexture = right.AlbedoTexture &&
             left.MetalnessTexture = right.MetalnessTexture &&
             left.RoughnessTexture = right.RoughnessTexture &&
@@ -446,7 +442,6 @@ module PhysicallyBased =
                             | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
                                 let surface =
                                     PhysicallyBasedSurface.make
-                                        false // TODO: 3D: deal with transparencies.
                                         (snd albedoTexture)
                                         (snd metalnessTexture)
                                         (snd roughnessTexture)
@@ -538,6 +533,7 @@ module PhysicallyBased =
          roughnessTexture : uint,
          normalTexture : uint,
          ambientOcclusionTexture : uint,
+         blending,
          irradianceMap : uint,
          lightPositions : single array,
          lightColors : single array,
@@ -548,9 +544,10 @@ module PhysicallyBased =
         Gl.DepthMask true
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
-        Gl.BlendEquation BlendEquationMode.FuncAdd
-        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-        Gl.Enable EnableCap.Blend
+        if blending then
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+            Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
@@ -617,9 +614,10 @@ module PhysicallyBased =
 
         // teardown state
         Gl.Disable EnableCap.CullFace
-        Gl.Disable EnableCap.Blend
-        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-        Gl.BlendEquation BlendEquationMode.FuncAdd
+        if blending then
+            Gl.Disable EnableCap.Blend
+            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+            Gl.BlendEquation BlendEquationMode.FuncAdd
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
         Gl.DepthMask false
