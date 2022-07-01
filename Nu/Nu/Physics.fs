@@ -60,7 +60,7 @@ type [<StructuralEquality; NoComparison>] BodyShapeProperties =
       RestitutionOpt : single option
       CollisionCategoriesOpt : int option
       CollisionMaskOpt : int option
-      IsSensorOpt : bool option }
+      SensorOpt : bool option }
 
 [<RequireQualifiedAccess>]
 module BodyShapeProperties =
@@ -71,7 +71,7 @@ module BodyShapeProperties =
           RestitutionOpt = None
           CollisionCategoriesOpt = None
           CollisionMaskOpt = None
-          IsSensorOpt = None }
+          SensorOpt = None }
 
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
@@ -156,8 +156,8 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       CollisionCategories : int
       CollisionMask : int
       IgnoreCCD : bool
-      IsBullet : bool
-      IsSensor : bool }
+      Bullet : bool
+      Sensor : bool }
 
 [<RequireQualifiedAccess>]
 module BodyProperties =
@@ -183,8 +183,8 @@ module BodyProperties =
           CollisionCategories = 1
           CollisionMask = -1
           IgnoreCCD = false
-          IsBullet = false
-          IsSensor = false }
+          Bullet = false
+          Sensor = false }
 
 type [<StructuralEquality; NoComparison>] JointAngle =
     { TargetId : PhysicsId

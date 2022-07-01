@@ -30,7 +30,7 @@ module PropDispatcher =
              entity.GravityScale == 0.0f
              entity.BodyType == Static
              entity.Perimeter <== prop --> fun prop -> prop.Perimeter
-             entity.IsSensor <== prop --> fun prop ->
+             entity.Sensor <== prop --> fun prop ->
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
                 | _ -> false

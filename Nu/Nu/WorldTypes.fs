@@ -417,6 +417,7 @@ module WorldTypes =
              Define? Centered true
              Define? Static false
              Define? Enclosed false
+             Define? Light false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
@@ -867,6 +868,7 @@ module WorldTypes =
         member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
         member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
         member this.Enclosed with get () = this.Transform.Enclosed and set value = this.Transform.Enclosed <- value
+        member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.AffineMatrix with get () = this.Transform.AffineMatrix

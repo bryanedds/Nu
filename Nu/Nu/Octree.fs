@@ -18,6 +18,7 @@ module OctelementMasks =
     // OPTIMIZATION: Octelement flag bit-masks for performance.
     let [<Literal>] StaticMask =    0b00000001u
     let [<Literal>] EnclosedMask =  0b00000010u
+    let [<Literal>] LightMask =     0b00000100u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
@@ -32,13 +33,15 @@ type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> 
       Entry : 'e }
     member this.Static with get () = this.Flags &&& StaticMask <> 0u
     member this.Enclosed with get () = this.Flags &&& EnclosedMask <> 0u
+    member this.Light with get () = this.Flags &&& LightMask <> 0u
     override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make static_ enclosed (entry : 'e) =
+    static member make static_ enclosed light (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
             (if static_ then StaticMask else 0u) |||
-            (if enclosed then EnclosedMask else 0u)
+            (if enclosed then EnclosedMask else 0u) |||
+            (if light then LightMask else 0u)
         { HashCode = hashCode; Flags = flags; Entry = entry }
 
 [<RequireQualifiedAccess>]
@@ -104,7 +107,7 @@ module internal Octnode =
                     getElementsInBoxFiltered updating box node set
         | ValueRight elements ->
             for element in elements do
-                if updating
+                if updating || element.Light
                 then if not element.Static then set.Add element |> ignore
                 else set.Add element |> ignore
 
@@ -121,7 +124,7 @@ module internal Octnode =
                     then if not element.Static then set.Add element |> ignore
                     else set.Add element |> ignore
 
-    let rec internal getElementsInView frustumEnclosed frustumUnenclosed node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInView frustumEnclosed frustumUnenclosed lightBox node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
@@ -129,6 +132,8 @@ module internal Octnode =
                     getElementsInFrustumFiltered true false frustumEnclosed node set
                 if isIntersectingFrustum frustumUnenclosed node then
                     getElementsInFrustumFiltered false false frustumUnenclosed node set
+                if isIntersectingBox lightBox node then
+                    getElementsInBoxFiltered false lightBox node set
         | ValueRight elements ->
             if isIntersectingFrustum frustumUnenclosed node then
                 for element in elements do
@@ -136,17 +141,21 @@ module internal Octnode =
             elif isIntersectingFrustum frustumEnclosed node then
                 for element in elements do
                     set.Add element |> ignore
+            elif isIntersectingBox lightBox node then
+                for element in elements do
+                    if element.Light then
+                        set.Add element |> ignore
 
-    let rec internal getElementsInPlay box frustumEnclosed node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlay playBox frustumEnclosed node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
-                if isIntersectingBox box node then
-                    getElementsInBoxFiltered true box node set
+                if isIntersectingBox playBox node then
+                    getElementsInBoxFiltered true playBox node set
                 if isIntersectingFrustum frustumEnclosed node then
                     getElementsInFrustumFiltered true true frustumEnclosed node set
         | ValueRight elements ->
-            if  isIntersectingBox box node ||
+            if  isIntersectingBox playBox node ||
                 isIntersectingFrustum frustumEnclosed node then
                 for element in elements do
                     if not element.Static then
@@ -311,12 +320,12 @@ module Octree =
         Octnode.getElementsInFrustum frustum tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInView frustumEnclosed frustumUnenclosed (set : _ HashSet) tree =
-        Octnode.getElementsInView frustumEnclosed frustumUnenclosed tree.Node set
+    let getElementsInView frustumEnclosed frustumUnenclosed lightBox (set : _ HashSet) tree =
+        Octnode.getElementsInView frustumEnclosed frustumUnenclosed lightBox tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInPlay bounds frustumEnclosed (set : _ HashSet) tree =
-        Octnode.getElementsInPlay bounds frustumEnclosed tree.Node set
+    let getElementsInPlay playBox frustumEnclosed (set : _ HashSet) tree =
+        Octnode.getElementsInPlay playBox frustumEnclosed tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =

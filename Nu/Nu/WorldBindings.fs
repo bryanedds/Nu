@@ -19,33 +19,33 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse2d hintRenderPackageDisuse2d reloadRenderAssets2d localizeBodyShape " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies createJoint " +
-        "createJoints destroyJoint destroyJoints setBodyEnabled " +
-        "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
-        "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce isMouseButtonDown " +
-        "getMousePosition2d isKeyboardKeyDown expandContent destroyImmediate " +
-        "destroy tryGetParent getParent getChildren " +
-        "getExists isSelected ignorePropertyBindings getEntities0 " +
-        "getGroups0 writeGameToFile readGameFromFile getScreens " +
-        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
-        "writeScreenToFile readScreenFromFile getGroups createGroup " +
-        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
-        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
-        "destroyEntities tryPickEntity writeEntityToFile readEntityFromFile " +
-        "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
-        "getEyePosition2d setEyePosition2d getEyeSize2d setEyeSize2d " +
-        "getEyeBounds2d getEyePosition3d setEyePosition3d getEyeRotation3d " +
-        "setEyeRotation3d getEyeFrustumEnclosed3d getEyeFrustumUnenclosed3d getOmniScreenOpt " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
+        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
+        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
+        "playSound playSound3 fadeOutSong stopSong " +
+        "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse2d " +
+        "hintRenderPackageDisuse2d reloadRenderAssets2d localizeBodyShape bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies createJoint createJoints " +
+        "destroyJoint destroyJoints setBodyEnabled setBodyPosition " +
+        "setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity " +
+        "applyBodyAngularImpulse applyBodyForce isMouseButtonDown getMousePosition2d " +
+        "isKeyboardKeyDown expandContent destroyImmediate destroy " +
+        "tryGetParent getParent getChildren getExists " +
+        "isSelected ignorePropertyBindings getEntities0 getGroups0 " +
+        "writeGameToFile readGameFromFile getScreens setScreenDissolve " +
+        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
+        "readScreenFromFile getGroups createGroup destroyGroup " +
+        "destroyGroups writeGroupToFile readGroupFromFile getEntitiesFlattened " +
+        "getEntities getEntitiesSovereign destroyEntity destroyEntities " +
+        "tryPickEntity writeEntityToFile readEntityFromFile createEntity " +
+        "renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyePosition2d " +
+        "setEyePosition2d getEyeSize2d setEyeSize2d getEyeBounds2d " +
+        "getEyePosition3d setEyePosition3d getEyeRotation3d setEyeRotation3d " +
+        "getEyeFrustumEnclosed3d getEyeFrustumUnenclosed3d getLightbox3d getOmniScreenOpt " +
         "setOmniScreenOpt getOmniScreen setOmniScreen getSelectedScreenOpt " +
         "constrainEyeBounds2d getSelectedScreen setSelectedScreen getViewAbsolute2d " +
         "getViewRelative2d getViewBoundsAbsolute2d getPlayBoundsAbsolute2d getViewBounds2d " +
@@ -2141,6 +2141,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustumUnenclosed3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getLightbox3d world =
+        let oldWorld = world
+        try
+            let result = World.getLightbox3d world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Box3> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLightbox3d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getOmniScreenOpt world =
         let oldWorld = world
         try
@@ -2339,7 +2350,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'enclosed'; expecting a value convertable to Boolean."
             let result = World.getViewBounds3d enclosed world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Frustum> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<ValueTuple<Frustum, Box3>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds3d' due to: " + scstring exn, ValueNone)
@@ -2356,18 +2367,22 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isBoundsInView3d enclosed bounds world =
+    let isBoundsInView3d enclosed light bounds world =
         let oldWorld = world
         try
             let enclosed =
                 match ScriptingSystem.tryExport typeof<Boolean> enclosed world with
                 | Some value -> value :?> Boolean
                 | None -> failwith "Invalid argument type for 'enclosed'; expecting a value convertable to Boolean."
+            let light =
+                match ScriptingSystem.tryExport typeof<Boolean> light world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'light'; expecting a value convertable to Boolean."
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box3> bounds world with
                 | Some value -> value :?> Box3
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box3."
-            let result = World.isBoundsInView3d enclosed bounds world
+            let result = World.isBoundsInView3d enclosed light bounds world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
@@ -3950,6 +3965,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetLightbox3dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getLightbox3d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetOmniScreenOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4142,7 +4168,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|enclosed; bounds|] -> isBoundsInView3d enclosed bounds world
+            | [|enclosed; light; bounds|] -> isBoundsInView3d enclosed light bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4565,6 +4591,7 @@ module WorldBindings =
              ("setEyeRotation3d", { Fn = evalSetEyeRotation3dBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeFrustumEnclosed3d", { Fn = evalGetEyeFrustumEnclosed3dBinding; Pars = [||]; DocOpt = None })
              ("getEyeFrustumUnenclosed3d", { Fn = evalGetEyeFrustumUnenclosed3dBinding; Pars = [||]; DocOpt = None })
+             ("getLightbox3d", { Fn = evalGetLightbox3dBinding; Pars = [||]; DocOpt = None })
              ("getOmniScreenOpt", { Fn = evalGetOmniScreenOptBinding; Pars = [||]; DocOpt = None })
              ("setOmniScreenOpt", { Fn = evalSetOmniScreenOptBinding; Pars = [|"value"|]; DocOpt = None })
              ("getOmniScreen", { Fn = evalGetOmniScreenBinding; Pars = [||]; DocOpt = None })
@@ -4582,7 +4609,7 @@ module WorldBindings =
              ("isBoundsInView2d", { Fn = evalIsBoundsInView2dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getViewBounds3d", { Fn = evalGetViewBounds3dBinding; Pars = [|"enclosed"|]; DocOpt = None })
              ("getPlayBounds3d", { Fn = evalGetPlayBounds3dBinding; Pars = [||]; DocOpt = None })
-             ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"enclosed"; "bounds"|]; DocOpt = None })
+             ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"enclosed"; "light"; "bounds"|]; DocOpt = None })
              ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("mouseToScreen2d", { Fn = evalMouseToScreen2dBinding; Pars = [|"mousePosition"|]; DocOpt = None })
              ("mouseToWorld2d", { Fn = evalMouseToWorld2dBinding; Pars = [|"absolute"; "mousePosition"|]; DocOpt = None })

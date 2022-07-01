@@ -101,8 +101,9 @@ module WorldModule2 =
                 let bounds = entity.GetBounds world
                 let static_ = entity.GetStatic world
                 let enclosed = entity.GetEnclosed world
+                let light = entity.GetLight world
                 if not (entity.GetIs2d world) then
-                    let element = Octelement.make static_ enclosed entity
+                    let element = Octelement.make static_ enclosed light entity
                     Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds element octree
             octree
 
@@ -757,7 +758,8 @@ module WorldModule2 =
         static member getEntitiesInView3d set world =
             let frustumEnclosed = World.getEyeFrustumEnclosed3d world
             let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
-            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed set) world
+            let lightBox = World.getLightbox3d world
+            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed lightBox set) world
 
         static member private updateSimulants world =
 
