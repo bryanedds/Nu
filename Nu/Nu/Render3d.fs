@@ -267,7 +267,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match projectionType with
             | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
             | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
-            | Afatecs -> Constants.Render.FarPlaneDistanceAfatics
+            | Afatecs -> Constants.Render.FarPlaneDistanceAfatecs
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
              Constants.Render.AspectRatio,
