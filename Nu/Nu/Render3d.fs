@@ -45,7 +45,7 @@ and RenderLights = SortableLight SegmentedList
 /// Describes a 3d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderLights * RenderSurfaces * Renderer3d -> unit }
+      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderLights * RenderSurfaces * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -483,6 +483,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
             let viewAbsolute = m4Identity
             let viewAbsoluteArray = viewAbsolute.ToArray ()
+            let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
+            let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
             let projection = GlRenderer3d.computeProjection Afatecs
@@ -671,7 +673,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // attempt to render sky box
             match skyBoxOpt with
             | Some (cubeMap, _) ->
-                OpenGL.SkyBox.DrawSkyBox (viewAbsoluteArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+                OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                 OpenGL.Hl.Assert ()
             | None -> ()
 
@@ -711,7 +713,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (viewAbsolute, viewRelative, projection, lights, surfaces, renderer :> Renderer3d)
+                pass.RenderPass3d (viewAbsolute, viewSkyBox, viewRelative, projection, lights, surfaces, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
 
             // end frame

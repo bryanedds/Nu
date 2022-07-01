@@ -1,5 +1,6 @@
 ﻿namespace Scenery
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
@@ -87,8 +88,17 @@ type SceneryDispatcher () =
                     let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
                     let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
-        Seq.fold (fun world position ->
-            let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-            let world = staticModel.SetScale (v3Dup 1.5f) world
-            staticModel.SetPosition position world)
-            world positions
+        let world =
+            Seq.fold (fun world position ->
+                let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
+                let world = staticModel.SetRenderStyle (Forward None) world
+                let world = staticModel.SetScale (v3Dup 1.5f) world
+                staticModel.SetPosition position world)
+                world positions
+        world
+
+    override this.Update (entity, world) =
+        let world = base.Update (entity, world)
+        let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
+        let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
+        world
