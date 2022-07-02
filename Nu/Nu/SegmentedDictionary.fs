@@ -21,6 +21,14 @@ module SegmentedDictionary =
                 length <- length + set.Count
             length
 
+        member this.Item (key : 'k) : 'v =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = hashCode % 32
+            this.Dictionaries.[index].[key]
+
+        member this.GetEnumerator () =
+            (Seq.concat this.Dictionaries).GetEnumerator ()
+
         interface IEnumerable<KeyValuePair<'k, 'v>> with
             member this.GetEnumerator () = (Seq.concat this.Dictionaries).GetEnumerator ()
             member this.GetEnumerator () = (Seq.concat this.Dictionaries).GetEnumerator () :> IEnumerator
@@ -33,18 +41,36 @@ module SegmentedDictionary =
     let length (sdict : SegmentedDictionary<'k, 'v>) =
         sdict.Length
 
+    let isEmpty sdict =
+        length sdict = 0
+
+    let notEmpty sdict =
+        length sdict > 0
+
     let containsKey key sdict =
-        let hashCode = hash key
+        let hashCode = sdict.Comparer.GetHashCode key
         let index = hashCode % 32
         sdict.Dictionaries.[index].ContainsKey key
 
+    let tryFind (key, sdict) =
+        let hashCode = sdict.Comparer.GetHashCode key
+        let index = hashCode % 32
+        match sdict.Dictionaries.[index].TryGetValue key with
+        | (true, value) -> Some value
+        | (false, _) -> None
+
+    let tryGetValue (key, sdict, valueRef : _ outref) =
+        let hashCode = sdict.Comparer.GetHashCode key
+        let index = hashCode % 32
+        sdict.Dictionaries.[index].TryGetValue (key, &valueRef)
+
     let add key value sdict =
-        let hashCode = hash key
+        let hashCode = sdict.Comparer.GetHashCode key
         let index = hashCode % 32
         sdict.Dictionaries.[index].Add (key, value)
 
     let remove key sdict =
-        let hashCode = hash key
+        let hashCode = sdict.Comparer.GetHashCode key
         let index = hashCode % 32
         sdict.Dictionaries.[index].Remove key
 
