@@ -109,6 +109,9 @@ module SegmentedList =
     let notEmpty slist =
         slist.TotalLength > 0
 
+    let length slist =
+        slist.TotalLength
+
     let item index (slist : 'a SegmentedList) =
         slist.[index]
 
