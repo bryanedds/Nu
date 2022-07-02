@@ -146,7 +146,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
-          RenderSkyBoxSurface : OpenGL.SkyBox.SkyBoxSurface
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
           mutable RenderModelsFields : single array
@@ -494,7 +493,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
-              RenderSkyBoxSurface = skyBoxSurface
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
