@@ -37,6 +37,15 @@ module SkyBox =
           CubeMapUniform : int
           SkyBoxShader : uint }
 
+    /// Describes a environment shader that's loaded into GPU.
+    type [<StructuralEquality; NoComparison>] EnvironmentShader =
+        { ViewUniform : int
+          ProjectionUniform : int
+          RoughnessUniform : int
+          ResolutionUniform : int
+          CubeMapUniform : int
+          EnvironmentShader : uint }
+
     /// Create a mesh for a sky box.
     let CreateSkyBoxMesh () =
 
@@ -192,6 +201,27 @@ module SkyBox =
           CubeMapUniform = cubeMapUniform
           SkyBoxShader = shader }
 
+    /// Create a environment shader.
+    let CreateEnvironmentShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let roughnessUniform = Gl.GetUniformLocation (shader, "roughness")
+        let resolutionUniform = Gl.GetUniformLocation (shader, "resolution")
+        let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
+
+        // make shader record
+        { ViewUniform = viewUniform
+          ProjectionUniform = projectionUniform
+          RoughnessUniform = roughnessUniform
+          ResolutionUniform = resolutionUniform
+          CubeMapUniform = cubeMapUniform
+          EnvironmentShader = shader }
+
     /// Draw a sky box.
     let DrawSkyBox
         (view : single array,
@@ -236,6 +266,46 @@ module SkyBox =
         // teardown state
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
+
+    /// Draw a environment.
+    let DrawEnvironment
+        (view : single array,
+         projection : single array,
+         roughness : single,
+         resolution : single,
+         cubeMap : uint,
+         geometry : SkyBoxGeometry,
+         shader : EnvironmentShader) =
+
+        // setup shader
+        Gl.UseProgram shader.EnvironmentShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform1 (shader.RoughnessUniform, roughness)
+        Gl.Uniform1 (shader.ResolutionUniform, resolution)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.SkyBoxVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.UseProgram 0u
+        Hl.Assert ()
 
     let CreateIrradianceMap
         (currentViewportOffset : Box2i,
@@ -297,3 +367,66 @@ module SkyBox =
         // teardown framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         irradianceMap
+
+    let CreateEnvironmentMap
+        (currentViewportOffset : Box2i,
+         currentFramebuffer : uint,
+         renderbufferWidth,
+         renderbufferHeight,
+         renderbuffer,
+         framebuffer,
+         environmentShader,
+         environmentSurface) =
+
+        // create environment map
+        let environmentMap = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentMap)
+        Hl.Assert ()
+
+        // setup irradiated cube map for rendering to
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Hl.Assert ()
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Gl.GenerateMipmap TextureTarget.TextureCubeMap
+        Hl.Assert ()
+
+        // setup framebuffer
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // compute views and projection
+        let views =
+            [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Backward)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Backward, v3Down)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
+        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
+
+        // render environment map mips
+        for i in 0 .. dec Constants.Render.EnvironmentMipLevels do
+            let roughness = single i / single (dec Constants.Render.EnvironmentMipLevels)
+            let resolution = single Constants.Render.EnvironmentMip0Resolution * 2.0f * pown 0.5f i
+            Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, int resolution, int resolution)
+            Gl.Viewport (0, 0, int resolution, int resolution)
+            for j in 0 .. dec 6 do
+                let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + j)
+                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentMap, i)
+                DrawEnvironment (views.[j], projection, roughness, resolution, environmentSurface.CubeMap, environmentSurface.SkyBoxGeometry, environmentShader)
+                Hl.Assert ()
+
+        // restore viewport
+        Gl.Viewport (currentViewportOffset.Position.X, currentViewportOffset.Position.Y, currentViewportOffset.Size.X, currentViewportOffset.Size.Y)
+        Hl.Assert ()
+
+        // teardown framebuffer
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        environmentMap
