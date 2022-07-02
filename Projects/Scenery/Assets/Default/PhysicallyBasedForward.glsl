@@ -26,8 +26,7 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
-const float GAMMA_SQRT = 1.5;
-const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
+const float GAMMA = 2.2;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyePosition;
