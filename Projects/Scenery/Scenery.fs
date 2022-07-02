@@ -64,7 +64,7 @@ type SceneryDispatcher () =
             [Content.group Simulants.Default.Group.Name []
                 [Content.pointLight Simulants.PointLight.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Color == (color 0.0f 0.0f 10000.0f 1.0f)]
+                     Entity.Color == (color 0.0f 10000.0f 10000.0f 1.0f)]
                  Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
@@ -101,4 +101,5 @@ type SceneryDispatcher () =
         let world = base.Update (entity, world)
         let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
         let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
+        let world = Simulants.PointLight.SetPosition (World.getEyePosition3d world) world
         world
