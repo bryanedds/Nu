@@ -91,7 +91,9 @@ module Render =
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] ShaderLightsMax = 32
+    let [<Literal>] EnvironmentMip0Resolution = 64
     let [<Literal>] EnvironmentMipLevels = 5
+    let (*Literal*) EnvironmentResolution = EnvironmentMip0Resolution * EnvironmentMipLevels
 
 [<RequireQualifiedAccess>]
 module Audio =
@@ -146,6 +148,7 @@ module Paths =
 
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox.glsl"
     let [<Literal>] IrradianceShaderFilePath = "Assets/Default/Irradiance.glsl"
+    let [<Literal>] EnvironmentShaderFilePath = "Assets/Default/Environment.glsl"
     let [<Literal>] PhysicallyBasedDeferredShaderFilePath = "Assets/Default/PhysicallyBasedDeferred.glsl"
     let [<Literal>] PhysicallyBasedDeferred2ShaderFilePath = "Assets/Default/PhysicallyBasedDeferred2.glsl"
     let [<Literal>] PhysicallyBasedForwardShaderFilePath = "Assets/Default/PhysicallyBasedForward.glsl"

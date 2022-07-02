@@ -378,6 +378,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let irradianceShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.IrradianceShaderFilePath
         OpenGL.Hl.Assert ()
 
+        // create environment shader
+        let environmentShader = OpenGL.Environment.CreateEnvironmentShader Constants.Paths.EnvironmentShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create forward shader
         let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
@@ -389,12 +393,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // crete irradiance framebuffer
+        // crete environment framebuffer
         let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.SkyBoxIrradianceMapResolutionX, Constants.Render.SkyBoxIrradianceMapResolutionY)
+        OpenGL.Hl.Assert ()
+
+        // crete environment framebuffer
+        let environmentFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        let environmentRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFramebuffer)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentResolution, Constants.Render.EnvironmentResolution)
         OpenGL.Hl.Assert ()
 
         // create geometry framebuffer
@@ -406,6 +418,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create sky box geometry
         let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
+        OpenGL.Hl.Assert ()
+
+        // create environment geometry
+        let environmentGeometry = OpenGL.Environment.CreateEnvironmentGeometry true
         OpenGL.Hl.Assert ()
 
         // create physically-based quad
@@ -428,16 +444,28 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap =
-            try OpenGL.SkyBox.CreateIrradianceMap
-                    (box2iZero,
-                     0u,
-                     Constants.Render.SkyBoxIrradianceMapResolutionX,
-                     Constants.Render.SkyBoxIrradianceMapResolutionY,
-                     irradianceRenderbuffer,
-                     irradianceFramebuffer,
-                     irradianceShader,
-                     OpenGL.SkyBox.SkyBoxSurface.make skyBoxCubeMap skyBoxGeometry)
+        let (irradianceMap, environmentMap) =
+            try let irradianceMap =
+                    OpenGL.SkyBox.CreateIrradianceMap
+                        (box2iZero,
+                         0u,
+                         Constants.Render.SkyBoxIrradianceMapResolutionX,
+                         Constants.Render.SkyBoxIrradianceMapResolutionY,
+                         irradianceRenderbuffer,
+                         irradianceFramebuffer,
+                         irradianceShader,
+                         OpenGL.SkyBox.SkyBoxSurface.make skyBoxCubeMap skyBoxGeometry)
+                let environmentMap =
+                    OpenGL.Environment.CreateEnvironmentMap
+                        (box2iZero,
+                         0u,
+                         Constants.Render.EnvironmentResolution,
+                         Constants.Render.EnvironmentResolution,
+                         environmentRenderbuffer,
+                         environmentFramebuffer,
+                         environmentShader,
+                         OpenGL.Environment.EnvironmentSurface.make skyBoxCubeMap environmentGeometry)
+                (irradianceMap, environmentMap)
             finally OpenGL.Texture.DeleteTexture skyBoxCubeMap
         OpenGL.Hl.Assert ()
 
