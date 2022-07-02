@@ -66,10 +66,12 @@ module Texture =
 
             // upload the texture to gl
             let texture = Gl.GenTexture ()
+            let internalFormat = InternalFormat.Rgba8
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-            let internalFormat = InternalFormat.Rgba8
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
 
             // teardown surface
