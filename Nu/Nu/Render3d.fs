@@ -148,6 +148,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
+          RenderBdrfTexture : uint
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -478,6 +479,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap box2iZero 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
+        // create brdf texture
+        let brdfTexture =
+            match OpenGL.Texture.TryCreateTexture2dLinear Constants.Paths.BrdfTextureFilePath with
+            | Right (_, texture) -> texture
+            | Left error -> failwith ("Could not load Brdf texture due to: " + error)
+
         // make renderer
         let renderer =
             { RenderWindow = window
@@ -495,6 +502,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
+              RenderBdrfTexture = brdfTexture
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
