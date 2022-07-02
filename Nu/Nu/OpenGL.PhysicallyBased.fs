@@ -87,6 +87,8 @@ module PhysicallyBased =
           NormalTextureUniform : int
           AmbientOcclusionTextureUniform : int
           IrradianceMapUniform : int
+          EnvironmentFilterMapUniform : int
+          BrdfTextureUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedShader : uint }
@@ -99,6 +101,8 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           IrradianceMapUniform : int
+          EnvironmentFilterMapUniform : int
+          BrdfTextureUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
           PhysicallyBasedDeferred2Shader : uint }
@@ -473,6 +477,8 @@ module PhysicallyBased =
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
+        let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
+        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
@@ -486,6 +492,8 @@ module PhysicallyBased =
           NormalTextureUniform = normalTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           IrradianceMapUniform = irradianceMapUniform
+          EnvironmentFilterMapUniform = environmentFilterMapUniform
+          BrdfTextureUniform = brdfTextureUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
@@ -502,6 +510,8 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
+        let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
+        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
@@ -512,6 +522,8 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           IrradianceMapUniform = irradianceMapUniform
+          EnvironmentFilterMapUniform = environmentFilterMapUniform
+          BrdfTextureUniform = brdfTextureUniform
           LightPositionsUniform = lightPositionsUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedDeferred2Shader = shader }
@@ -535,6 +547,8 @@ module PhysicallyBased =
          ambientOcclusionTexture : uint,
          blending,
          irradianceMap : uint,
+         environmentFilterMap : uint,
+         brdfTexture : uint,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -563,6 +577,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.NormalTextureUniform, 3)
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
         Gl.Uniform1 (shader.IrradianceMapUniform, 5)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -577,6 +593,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, ambientOcclusionTexture)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
         Hl.Assert ()
 
         // update models buffer
@@ -614,6 +634,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -636,6 +660,8 @@ module PhysicallyBased =
          albedoTexture : uint,
          materialTexture : uint,
          irradianceMap : uint,
+         environmentFilterMap : uint,
+         brdfTexture : uint,
          lightPositions : single array,
          lightColors : single array,
          geometry : PhysicallyBasedGeometry,
@@ -652,6 +678,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
         Gl.Uniform1 (shader.MaterialTextureUniform, 3)
         Gl.Uniform1 (shader.IrradianceMapUniform, 4)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 6)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
@@ -664,6 +692,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
         Hl.Assert ()
 
         // setup geometry
@@ -691,6 +723,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
 
         // teardown state
