@@ -90,7 +90,7 @@ module Render =
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] ShaderLightsMax = 32
     let [<Literal>] IrradianceMapResolution = 32
-    let [<Literal>] EnvironmentFilterResolution = 64
+    let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5
 
 [<RequireQualifiedAccess>]

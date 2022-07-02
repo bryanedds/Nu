@@ -414,7 +414,7 @@ module SkyBox =
         // render environment filter map mips
         for i in 0 .. dec Constants.Render.EnvironmentFilterMips do
             let roughness = single i / single (dec Constants.Render.EnvironmentFilterMips)
-            let resolution = single Constants.Render.EnvironmentFilterResolution * 2.0f * pown 0.5f i
+            let resolution = single Constants.Render.EnvironmentFilterResolution * pown 0.5f i
             Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, int resolution, int resolution)
             Gl.Viewport (0, 0, int resolution, int resolution)
             for j in 0 .. dec 6 do
