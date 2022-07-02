@@ -25,9 +25,8 @@ void main()
 #version 410 core
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 4.0;
-const float GAMMA_SQRT = 1.5;
-const float GAMMA = GAMMA_SQRT * GAMMA_SQRT;
+const float REFLECTION_LOD_MAX = 7.0;
+const float GAMMA = 2.2;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyePosition;
@@ -37,6 +36,8 @@ uniform sampler2D roughnessTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform samplerCube irradianceMap;
+uniform samplerCube environmentFilterMap;
+uniform sampler2D brdfTexture;
 uniform vec3 lightPositions[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 
@@ -110,6 +111,7 @@ void main()
     // compute lighting profile
     vec3 n = getNormal();
     vec3 v = normalize(eyePosition - positionOut);
+    vec3 r = reflect(-v, n);
 
     // compute reflectance term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
@@ -146,13 +148,21 @@ void main()
         reflectance += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-    // compute ambient term
-    vec3 kS = fresnelSchlick(max(dot(n, v), 0.0), f0);
+    // compute diffuse term
+    vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
+    vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metalness;
     vec3 irradiance = texture(irradianceMap, n).rgb;
     vec3 diffuse = irradiance * albedo;
-    vec3 ambient = kD * diffuse * ambientOcclusion;
+
+    // compute specular term
+    vec3 environmentFilterColor = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
+    vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
+    vec3 specular = environmentFilterColor * (f * environmentBrdf.x + environmentBrdf.y);
+
+    // compute ambient term
+    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + reflectance;
