@@ -145,6 +145,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
+          RenderEnvironmentMap : uint
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -323,6 +324,30 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedForwardShader
 
+    /// Create an irradiance map for a sky box.
+    static member createIrradianceMap skyBoxSurface renderbuffer framebuffer shader =
+        OpenGL.SkyBox.CreateIrradianceMap
+            (box2iZero,
+             0u,
+             Constants.Render.SkyBoxIrradianceMapResolutionX,
+             Constants.Render.SkyBoxIrradianceMapResolutionY,
+             renderbuffer,
+             framebuffer,
+             shader,
+             skyBoxSurface)
+
+    /// Create an environment map for a sky box.
+    static member createEnvironmentMap skyBoxSurface renderbuffer framebuffer shader =
+        OpenGL.SkyBox.CreateEnvironmentMap
+            (box2iZero,
+             0u,
+             Constants.Render.EnvironmentResolution,
+             Constants.Render.EnvironmentResolution,
+             renderbuffer,
+             framebuffer,
+             shader,
+             skyBoxSurface)
+
     static member inline private renderPhysicallyBasedSurfaces
         eyePosition
         viewArray
@@ -379,7 +404,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create environment shader
-        let environmentShader = OpenGL.Environment.CreateEnvironmentShader Constants.Paths.EnvironmentShaderFilePath
+        let environmentShader = OpenGL.SkyBox.CreateEnvironmentShader Constants.Paths.EnvironmentShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -416,57 +441,39 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create sky box geometry
-        let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
+        // create sky box cube map
+        // TODO: 3D: load this from SkyBoxMap.cbm file?
+        let skyBoxMap =
+            match 
+                OpenGL.Texture.TryCreateCubeMap
+                    ("Assets/Default/SkyBoxRight.png",
+                     "Assets/Default/SkyBoxLeft.png",
+                     "Assets/Default/SkyBoxBottom.png",
+                     "Assets/Default/SkyBoxTop.png",
+                     "Assets/Default/SkyBoxBack.png",
+                     "Assets/Default/SkyBoxFront.png") with
+            | Right cubeMap -> cubeMap
+            | Left error -> failwith error
         OpenGL.Hl.Assert ()
 
-        // create environment geometry
-        let environmentGeometry = OpenGL.Environment.CreateEnvironmentGeometry true
+        // create sky box geometry
+        let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
         OpenGL.Hl.Assert ()
 
         // create physically-based quad
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
         OpenGL.Hl.Assert ()
 
-        // create sky box cube map
-        // TODO: 3D: load this from SkyBoxCubeMap.cbm file?
-        let skyBoxCubeMap =
-            match 
-                OpenGL.Texture.TryCreateCubeMap
-                    ("Assets/Default/SkyBoxCubeRight.png",
-                     "Assets/Default/SkyBoxCubeLeft.png",
-                     "Assets/Default/SkyBoxCubeBottom.png",
-                     "Assets/Default/SkyBoxCubeTop.png",
-                     "Assets/Default/SkyBoxCubeBack.png",
-                     "Assets/Default/SkyBoxCubeFront.png") with
-            | Right cubeMap -> cubeMap
-            | Left error -> failwith error
+        // create sky box surface
+        let skyBoxSurface = OpenGL.SkyBox.SkyBoxSurface.make skyBoxMap skyBoxGeometry
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let (irradianceMap, environmentMap) =
-            try let irradianceMap =
-                    OpenGL.SkyBox.CreateIrradianceMap
-                        (box2iZero,
-                         0u,
-                         Constants.Render.SkyBoxIrradianceMapResolutionX,
-                         Constants.Render.SkyBoxIrradianceMapResolutionY,
-                         irradianceRenderbuffer,
-                         irradianceFramebuffer,
-                         irradianceShader,
-                         OpenGL.SkyBox.SkyBoxSurface.make skyBoxCubeMap skyBoxGeometry)
-                let environmentMap =
-                    OpenGL.Environment.CreateEnvironmentMap
-                        (box2iZero,
-                         0u,
-                         Constants.Render.EnvironmentResolution,
-                         Constants.Render.EnvironmentResolution,
-                         environmentRenderbuffer,
-                         environmentFramebuffer,
-                         environmentShader,
-                         OpenGL.Environment.EnvironmentSurface.make skyBoxCubeMap environmentGeometry)
-                (irradianceMap, environmentMap)
-            finally OpenGL.Texture.DeleteTexture skyBoxCubeMap
+        let irradianceMap = GlRenderer3d.createIrradianceMap skyBoxSurface irradianceRenderbuffer irradianceFramebuffer irradianceShader
+        OpenGL.Hl.Assert ()
+
+        // create default environment map
+        let environmentMap = GlRenderer3d.createEnvironmentMap skyBoxSurface environmentRenderbuffer environmentFramebuffer environmentShader
         OpenGL.Hl.Assert ()
 
         // make renderer
@@ -483,6 +490,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderIrradianceMap = irradianceMap
+              RenderEnvironmentMap = environmentMap
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
