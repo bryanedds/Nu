@@ -27,7 +27,7 @@ type StaticModel = private { __ : unit }
 type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of OpenGL.Texture.TextureMetadata * uint
     | FontAsset of int * nativeint
-    | CubeMapAsset of uint * uint option ref
+    | CubeMapAsset of uint * (uint * uint) option ref
     | StaticModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
 
 /// The blend mode of a sprite.
