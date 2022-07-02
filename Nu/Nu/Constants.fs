@@ -91,6 +91,7 @@ module Render =
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] ShaderLightsMax = 32
+    let [<Literal>] EnvironmentMipLevels = 5
 
 [<RequireQualifiedAccess>]
 module Audio =

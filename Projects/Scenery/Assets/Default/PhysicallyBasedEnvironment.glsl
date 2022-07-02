@@ -20,9 +20,9 @@ void main()
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;
 
-uniform samplerCube cubeMap;
 uniform float roughness;
 uniform float resolution; // resolution of cube map face
+uniform samplerCube cubeMap;
 
 in vec3 positionOut;
 
