@@ -21,6 +21,9 @@ module SegmentedHashSet =
                 length <- length + set.Count
             length
 
+        member this.GetEnumerator () =
+            (Seq.concat this.HashSets).GetEnumerator ()
+
         interface 'a IEnumerable with
             member this.GetEnumerator () = (Seq.concat this.HashSets).GetEnumerator ()
             member this.GetEnumerator () = (Seq.concat this.HashSets).GetEnumerator () :> IEnumerator
@@ -32,6 +35,12 @@ module SegmentedHashSet =
 
     let length (sset : 'a SegmentedHashSet) =
         sset.Length
+
+    let isEmpty sset =
+        length sset = 0
+
+    let notEmpty sset =
+        length sset > 0
 
     let contains item sset =
         let hashCode = hash item
