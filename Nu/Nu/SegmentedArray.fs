@@ -102,6 +102,9 @@ module SegmentedArray =
     let notEmpty sarray =
         sarray.TotalLength > 0
 
+    let length sarray =
+        sarray.TotalLength
+
     let item index (sarray : 'a SegmentedArray) =
         sarray.[index]
 
