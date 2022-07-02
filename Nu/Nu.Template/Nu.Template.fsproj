@@ -87,13 +87,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="packages.config" />
+    <None Include="Assets\Default\Brdf.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
+    <None Include="Assets\Default\EnvironmentFilter.glsl" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />
     <None Include="Assets\Default\Image.png" />
-    <None Include="Assets\Default\Image10.png" />
-    <None Include="Assets\Default\Image11.png" />
-    <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\Image2.png" />
     <None Include="Assets\Default\Image3.png" />
     <None Include="Assets\Default\Image4.png" />
@@ -102,6 +101,9 @@
     <None Include="Assets\Default\Image7.png" />
     <None Include="Assets\Default\Image8.png" />
     <None Include="Assets\Default\Image9.png" />
+    <None Include="Assets\Default\Image10.png" />
+    <None Include="Assets\Default\Image11.png" />
+    <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
     <None Include="Assets\Default\PhysicallyBasedDeferred.glsl" />
     <None Include="Assets\Default\PhysicallyBasedDeferred2.glsl" />
@@ -109,6 +111,14 @@
     <None Include="Assets\Default\SideViewCharacterIdle.png" />
     <None Include="Assets\Default\SideViewCharacterJump.png" />
     <None Include="Assets\Default\SideViewCharacterWalk.png" />
+    <None Include="Assets\Default\SkyBox.glsl" />
+    <None Include="Assets\Default\SkyBoxBack.png" />
+    <None Include="Assets\Default\SkyBoxBottom.png" />
+    <None Include="Assets\Default\SkyBoxFront.png" />
+    <None Include="Assets\Default\SkyBoxLeft.png" />
+    <None Include="Assets\Default\SkyBoxMap.cbm" />
+    <None Include="Assets\Default\SkyBoxRight.png" />
+    <None Include="Assets\Default\SkyBoxTop.png" />
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />
     <None Include="Assets\Default\StaticModel.mtl" />
