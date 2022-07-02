@@ -101,7 +101,7 @@ void main()
         float nDotL = max(dot(normal, l), 0.0);
         if (nDotL > 0.0)
         {
-            // sample from the environment's mip level based on roughness/pdf
+            // sample from the environment filter's mip level based on roughness / pdf
             float d = distributionGGX(normal, h, roughness);
             float nDotH = max(dot(normal, h), 0.0);
             float hDotV = max(dot(h, v), 0.0);

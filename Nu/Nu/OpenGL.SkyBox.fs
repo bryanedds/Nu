@@ -37,14 +37,14 @@ module SkyBox =
           CubeMapUniform : int
           SkyBoxShader : uint }
 
-    /// Describes a environment shader that's loaded into GPU.
-    type [<StructuralEquality; NoComparison>] EnvironmentShader =
+    /// Describes a environment filter shader that's loaded into GPU.
+    type [<StructuralEquality; NoComparison>] EnvironmentFilterShader =
         { ViewUniform : int
           ProjectionUniform : int
           RoughnessUniform : int
           ResolutionUniform : int
           CubeMapUniform : int
-          EnvironmentShader : uint }
+          EnvironmentFilterShader : uint }
 
     /// Create a mesh for a sky box.
     let CreateSkyBoxMesh () =
@@ -201,8 +201,8 @@ module SkyBox =
           CubeMapUniform = cubeMapUniform
           SkyBoxShader = shader }
 
-    /// Create a environment shader.
-    let CreateEnvironmentShader (shaderFilePath : string) =
+    /// Create a environment filter shader.
+    let CreateEnvironmentFilterShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -220,7 +220,7 @@ module SkyBox =
           RoughnessUniform = roughnessUniform
           ResolutionUniform = resolutionUniform
           CubeMapUniform = cubeMapUniform
-          EnvironmentShader = shader }
+          EnvironmentFilterShader = shader }
 
     /// Draw a sky box.
     let DrawSkyBox
@@ -267,18 +267,18 @@ module SkyBox =
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
 
-    /// Draw a environment.
-    let DrawEnvironment
+    /// Draw an environment filter.
+    let DrawEnvironmentFilter
         (view : single array,
          projection : single array,
          roughness : single,
          resolution : single,
          cubeMap : uint,
          geometry : SkyBoxGeometry,
-         shader : EnvironmentShader) =
+         shader : EnvironmentFilterShader) =
 
         // setup shader
-        Gl.UseProgram shader.EnvironmentShader
+        Gl.UseProgram shader.EnvironmentFilterShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.RoughnessUniform, roughness)
@@ -368,22 +368,22 @@ module SkyBox =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         irradianceMap
 
-    let CreateEnvironmentMap
+    let CreateEnvironmentFilterMap
         (currentViewportOffset : Box2i,
          currentFramebuffer : uint,
          renderbufferWidth,
          renderbufferHeight,
          renderbuffer,
          framebuffer,
-         environmentShader,
-         environmentSurface) =
+         environmentFilterShader,
+         environmentFilterSurface) =
 
-        // create environment map
-        let environmentMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentMap)
+        // create environment filter map
+        let environmentFilterMap = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
         Hl.Assert ()
 
-        // setup irradiated cube map for rendering to
+        // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
@@ -411,16 +411,16 @@ module SkyBox =
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
-        // render environment map mips
-        for i in 0 .. dec Constants.Render.EnvironmentMipLevels do
-            let roughness = single i / single (dec Constants.Render.EnvironmentMipLevels)
-            let resolution = single Constants.Render.EnvironmentMip0Resolution * 2.0f * pown 0.5f i
+        // render environment filter map mips
+        for i in 0 .. dec Constants.Render.EnvironmentFilterMips do
+            let roughness = single i / single (dec Constants.Render.EnvironmentFilterMips)
+            let resolution = single Constants.Render.EnvironmentFilterResolution * 2.0f * pown 0.5f i
             Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, int resolution, int resolution)
             Gl.Viewport (0, 0, int resolution, int resolution)
             for j in 0 .. dec 6 do
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + j)
-                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentMap, i)
-                DrawEnvironment (views.[j], projection, roughness, resolution, environmentSurface.CubeMap, environmentSurface.SkyBoxGeometry, environmentShader)
+                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentFilterMap, i)
+                DrawEnvironmentFilter (views.[j], projection, roughness, resolution, environmentFilterSurface.CubeMap, environmentFilterSurface.SkyBoxGeometry, environmentFilterShader)
                 Hl.Assert ()
 
         // restore viewport
@@ -429,4 +429,4 @@ module SkyBox =
 
         // teardown framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
-        environmentMap
+        environmentFilterMap
