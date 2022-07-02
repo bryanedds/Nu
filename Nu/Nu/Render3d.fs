@@ -137,13 +137,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderAssimp : Assimp.AssimpContext
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.SkyBox.SkyBoxShader
+          RenderEnvironmentShader : OpenGL.SkyBox.EnvironmentShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderIrradianceFramebuffer : uint * uint
+          RenderEnvironmentFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
+          RenderSkyBoxSurface : OpenGL.SkyBox.SkyBoxSurface
           RenderIrradianceMap : uint
           RenderEnvironmentMap : uint
           mutable RenderModelsFields : single array
@@ -325,22 +328,22 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         renderer.RenderPhysicallyBasedForwardShader
 
     /// Create an irradiance map for a sky box.
-    static member createIrradianceMap skyBoxSurface renderbuffer framebuffer shader =
+    static member createIrradianceMap currentViewportOffset currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateIrradianceMap
-            (box2iZero,
-             0u,
-             Constants.Render.SkyBoxIrradianceMapResolutionX,
-             Constants.Render.SkyBoxIrradianceMapResolutionY,
+            (currentViewportOffset,
+             currentFramebuffer,
+             Constants.Render.IrradianceMapResolution,
+             Constants.Render.IrradianceMapResolution,
              renderbuffer,
              framebuffer,
              shader,
              skyBoxSurface)
 
     /// Create an environment map for a sky box.
-    static member createEnvironmentMap skyBoxSurface renderbuffer framebuffer shader =
+    static member createEnvironmentMap currentViewportOffset currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateEnvironmentMap
-            (box2iZero,
-             0u,
+            (currentViewportOffset,
+             currentFramebuffer,
              Constants.Render.EnvironmentResolution,
              Constants.Render.EnvironmentResolution,
              renderbuffer,
@@ -423,7 +426,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.SkyBoxIrradianceMapResolutionX, Constants.Render.SkyBoxIrradianceMapResolutionY)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
         OpenGL.Hl.Assert ()
 
         // crete environment framebuffer
@@ -469,11 +472,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = GlRenderer3d.createIrradianceMap skyBoxSurface irradianceRenderbuffer irradianceFramebuffer irradianceShader
+        let irradianceMap = GlRenderer3d.createIrradianceMap box2iZero 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create default environment map
-        let environmentMap = GlRenderer3d.createEnvironmentMap skyBoxSurface environmentRenderbuffer environmentFramebuffer environmentShader
+        let environmentMap = GlRenderer3d.createEnvironmentMap box2iZero 0u environmentRenderbuffer environmentFramebuffer environmentShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // make renderer
@@ -482,13 +485,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderAssimp = new Assimp.AssimpContext ()
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
+              RenderEnvironmentShader = environmentShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
+              RenderEnvironmentFramebuffer = (environmentRenderbuffer, environmentFramebuffer)
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
+              RenderSkyBoxSurface = skyBoxSurface
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentMap = environmentMap
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
@@ -632,24 +638,31 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | None -> None
 
             // retrieve an irradiance map, preferably from the sky box
-            let irradianceMap =
+            let (irradianceMap, environmentMap) =
                 match skyBoxOpt with
-                | Some (cubeMap, cubeMapIrradianceOptRef) ->
-                    if Option.isNone cubeMapIrradianceOptRef.Value then
+                | Some (cubeMap, irradianceAndEnviconmentMapsOptRef) ->
+                    if Option.isNone irradianceAndEnviconmentMapsOptRef.Value then
                         let irradianceMap =
-                            OpenGL.SkyBox.CreateIrradianceMap
-                                (viewportOffset,
-                                 geometryFramebuffer,
-                                 Constants.Render.SkyBoxIrradianceMapResolutionX,
-                                 Constants.Render.SkyBoxIrradianceMapResolutionY,
-                                 fst renderer.RenderIrradianceFramebuffer,
-                                 snd renderer.RenderIrradianceFramebuffer,
-                                 renderer.RenderIrradianceShader,
-                                 OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
-                        cubeMapIrradianceOptRef := Some irradianceMap
-                        irradianceMap
-                    else Option.get cubeMapIrradianceOptRef.Value
-                | None -> renderer.RenderIrradianceMap
+                            GlRenderer3d.createIrradianceMap
+                                viewportOffset
+                                geometryFramebuffer
+                                (fst renderer.RenderIrradianceFramebuffer)
+                                (snd renderer.RenderIrradianceFramebuffer)
+                                renderer.RenderIrradianceShader
+                                (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                        let environmentMap =
+                            GlRenderer3d.createEnvironmentMap
+                                viewportOffset
+                                geometryFramebuffer
+                                (fst renderer.RenderEnvironmentFramebuffer)
+                                (snd renderer.RenderEnvironmentFramebuffer)
+                                renderer.RenderEnvironmentShader
+                                (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                        let result = (irradianceMap, environmentMap)
+                        irradianceAndEnviconmentMapsOptRef := Some result
+                        result
+                    else Option.get irradianceAndEnviconmentMapsOptRef.Value
+                | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentMap)
 
             // sort lights for deferred relative to eye position
             let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays eyePosition lights
