@@ -351,7 +351,8 @@ module PhysicallyBased =
     let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
         let meshOpt =
 #if DEBUG_RENDERING_CUBE
-            Right CreatePhysicallyBasedCubeMesh ()
+            ignore<Assimp.Mesh> mesh
+            Right (CreatePhysicallyBasedCubeMesh ())
 #else
             TryCreatePhysicallyBasedMesh mesh
 #endif
