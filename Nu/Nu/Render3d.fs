@@ -148,7 +148,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
-          RenderBdrfTexture : uint
+          RenderBrdfTexture : uint
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -504,7 +504,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
-              RenderBdrfTexture = brdfTexture
+              RenderBrdfTexture = brdfTexture
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -686,7 +686,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     false
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBdrfTexture
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
@@ -704,7 +704,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     false
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBdrfTexture
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedDeferredShader
@@ -728,7 +728,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyePosition, positionTexture, normalTexture, albedoTexture, materialTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBdrfTexture, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
             // attempt to render sky box
@@ -750,7 +750,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     true
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBdrfTexture
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
@@ -769,7 +769,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     true
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBdrfTexture
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     renderer.RenderPhysicallyBasedForwardShader
