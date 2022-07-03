@@ -113,10 +113,10 @@ void main()
     vec3 v = normalize(eyePosition - positionOut);
     vec3 r = reflect(-v, n);
 
-    // compute reflectance term
+    // compute lightOutput term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 f0 = mix(vec3(0.04), albedo, metalness);
-    vec3 reflectance = vec3(0.0);
+    vec3 lightOutput = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
@@ -144,8 +144,8 @@ void main()
         // compute light scalar
         float nDotL = max(dot(n, l), 0.0);
 
-        // add to outgoing reflectance
-        reflectance += (kD * albedo / PI + specular) * radiance * nDotL;
+        // add to outgoing lightOutput
+        lightOutput += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
     // compute diffuse term
@@ -165,7 +165,7 @@ void main()
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
-    vec3 color = ambient + reflectance;
+    vec3 color = ambient + lightOutput;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 
