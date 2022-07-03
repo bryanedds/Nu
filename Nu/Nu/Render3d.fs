@@ -19,7 +19,7 @@ open Nu
 type [<Struct>] ProjectionType =
     | Enclosed
     | Unenclosed
-    | Afatecs
+    | Afatecs // TODO: 3D: can we think of a better name here?
 
 /// The type of rendering used on a surface.
 and [<NoEquality; NoComparison; Struct>] RenderType =
@@ -146,7 +146,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderIrradianceFramebuffer : uint * uint
           RenderEnvironmentFilterFramebuffer : uint * uint
-          RenderGeometryFramebuffer : uint * uint * uint * uint * uint // TODO: 3D: create a record for this.
+          RenderGeometryFramebuffer : uint * uint * uint * uint * uint
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
@@ -452,7 +452,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create sky box cube map
-        // TODO: 3D: load this from SkyBoxMap.cbm file?
         let skyBoxMap =
             match 
                 OpenGL.Texture.TryCreateCubeMap
@@ -596,7 +595,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light lights
                 | RenderPostPassDescriptor3d postPass ->
-                    postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
+                    postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement post-pass handling.
 
             // sort absolute forward surfaces
             // TODO: 3D: use persistent buffers to elide allocation.
