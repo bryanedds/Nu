@@ -75,7 +75,7 @@ module Hl =
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Box2i) =
-    
+
         // set viewport
         Gl.Viewport (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
         Assert ()
