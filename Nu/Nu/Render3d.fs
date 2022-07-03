@@ -70,7 +70,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderSkyBoxDescriptor of CubeMap AssetTag
-    | RenderLightDescriptor of Vector3 * Color * LightType
+    | RenderLightDescriptor of Vector3 * Color * single * single * LightType
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -80,6 +80,8 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
 and [<NoEquality; NoComparison>] SortableLight =
     { SortableLightPosition : Vector3
       SortableLightColor : Color
+      SortableLightBrightness : single
+      SortableLightIntensity : single
       mutable SortableLightDistanceSquared : single }
 
     /// Sort lights into array for uploading to OpenGL.
@@ -87,6 +89,8 @@ and [<NoEquality; NoComparison>] SortableLight =
     static member sortLightsIntoArrays position lights =
         let lightPositions = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
         let lightColors = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 4)
+        let lightBrightnesses = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
+        let lightIntensities = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
         for light in lights do
             light.SortableLightDistanceSquared <- (light.SortableLightPosition - position).MagnitudeSquared
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
@@ -94,15 +98,19 @@ and [<NoEquality; NoComparison>] SortableLight =
             if i < lightsSorted.Length then
                 let p = i * 3
                 let c = i * 4
+                let b = i
+                let n = i
                 let light = lightsSorted.[i]
                 lightPositions.[p] <- light.SortableLightPosition.X
                 lightPositions.[p+1] <- light.SortableLightPosition.Y
                 lightPositions.[p+2] <- light.SortableLightPosition.Z
+                lightBrightnesses.[b] <- light.SortableLightBrightness
+                lightIntensities.[n] <- light.SortableLightIntensity
                 lightColors.[c] <- light.SortableLightColor.R
                 lightColors.[c+1] <- light.SortableLightColor.G
                 lightColors.[c+2] <- light.SortableLightColor.B
                 lightColors.[c+3] <- light.SortableLightColor.A
-        (lightPositions, lightColors)
+        (lightPositions, lightColors, lightBrightnesses, lightIntensities)
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
 and Renderer3d =
@@ -363,6 +371,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         brdfTexture
         lightPositions
         lightColors
+        lightBrightnesses
+        lightIntensities
         shader
         renderer =
 
@@ -383,7 +393,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
                  surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture, blending,
-                 irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, surface.PhysicallyBasedGeometry, shader)
+                 irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -587,8 +597,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
                     SegmentedList.add cubeMap skyBoxes
-                | RenderLightDescriptor (position, color, _) ->
-                    let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightDistanceSquared = Single.MaxValue }
+                | RenderLightDescriptor (position, color, brightness, intensity, _) ->
+                    let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light lights
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement pre-pass handling.
@@ -673,7 +683,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
 
             // sort lights for deferred relative to eye position
-            let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays eyePosition lights
+            let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays eyePosition lights
 
             // render deferred pass w/ absolute-transformed surfaces
             for entry in surfaces.RenderSurfacesDeferredAbsolute do
@@ -689,6 +699,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
+                    lightBrightnesses
+                    lightIntensities
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
                 OpenGL.Hl.Assert ()
@@ -707,6 +719,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
+                    lightBrightnesses
+                    lightIntensities
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
                 OpenGL.Hl.Assert ()
@@ -728,7 +742,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyePosition, positionTexture, normalTexture, albedoTexture, materialTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
             // attempt to render sky box
@@ -740,7 +754,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render forward pass w/ absolute-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
-                let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays model.Translation lights
+                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
@@ -751,15 +765,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightPositions
                     lightColors
+                    lightPositions
+                    lightBrightnesses
+                    lightIntensities
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
                 OpenGL.Hl.Assert ()
 
             // render forward pass w/ relative-transformed surfaces
             for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
-                let (lightPositions, lightColors) = SortableLight.sortLightsIntoArrays model.Translation lights
+                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
@@ -772,6 +788,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
+                    lightBrightnesses
+                    lightIntensities
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
                 OpenGL.Hl.Assert ()

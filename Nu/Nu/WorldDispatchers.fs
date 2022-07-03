@@ -1260,21 +1260,31 @@ module LightFacetModule =
         member this.GetLightType world : LightType = this.Get Property? LightType world
         member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
         member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
+        member this.GetBrightness world : single = this.Get Property? Brightness world
+        member this.SetBrightness (value : single) world = this.Set Property? Brightness value world
+        member this.Brightness = lens Property? Brightness this.GetBrightness this.SetBrightness this
+        member this.GetIntensity world : single = this.Get Property? Intensity world
+        member this.SetIntensity (value : single) world = this.Set Property? Intensity value world
+        member this.Intensity = lens Property? Intensity this.GetIntensity this.SetIntensity this
 
     type LightFacet () =
         inherit Facet (false)
 
         static member Properties =
             [define Entity.Light true
-             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)
-             define Entity.LightType Point]
+             define Entity.Color Color.White
+             define Entity.LightType Point
+             define Entity.Brightness 1000.0f
+             define Entity.Intensity 1.0f]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let position = entity.GetPosition world
                 let color = entity.GetColor world
+                let brightness = entity.GetBrightness world
+                let intensity = entity.GetIntensity world
                 let lightType = entity.GetLightType world
-                World.enqueueRenderMessage3d (RenderLightDescriptor (position, color, lightType)) world
+                World.enqueueRenderMessage3d (RenderLightDescriptor (position, color, brightness, intensity, lightType)) world
             else world
 
 [<AutoOpen>]
@@ -2430,8 +2440,10 @@ module LightDispatcherModule =
 
         static member Properties =
             [define Entity.Light true
-             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)
-             define Entity.LightType Point]
+             define Entity.Color Color.White
+             define Entity.LightType Point
+             define Entity.Brightness 100.0f
+             define Entity.Intensity 1.0f]
 
 [<AutoOpen>]
 module SkyBoxDispatcherModule =

@@ -30,6 +30,8 @@ uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
 uniform vec3 lightPositions[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
+uniform float lightBrightnesses[LIGHTS_MAX];
+uniform float lightIntensities[LIGHTS_MAX];
 
 in vec2 texCoordsOut;
 
@@ -105,7 +107,8 @@ void main()
         vec3 h = normalize(v + l);
         float distance = length(lightPositions[i] - position);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors[i].rgb * attenuation;
+        attenuation = pow(attenuation, 1.0 / lightIntensities[i]);
+        vec3 radiance = lightColors[i].rgb * lightBrightnesses[i] * attenuation;
 
         // cook-torrance brdf
         float ndf = distributionGGX(normal, h, roughness);
