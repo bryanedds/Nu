@@ -94,7 +94,7 @@ type SceneryDispatcher () =
             Seq.fold (fun world position ->
                 let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
                 let world = staticModel.SetScale (v3Dup 1.5f) world
-                //let world = staticModel.SetRenderStyle (Forward None) world
+                //let world = staticModel.SetRenderStyle Forward world
                 staticModel.SetPosition position world)
                 world positions
         world
