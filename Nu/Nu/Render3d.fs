@@ -453,8 +453,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Texture.TryCreateCubeMap
                     ("Assets/Default/SkyBoxRight.png",
                      "Assets/Default/SkyBoxLeft.png",
-                     "Assets/Default/SkyBoxBottom.png",
                      "Assets/Default/SkyBoxTop.png",
+                     "Assets/Default/SkyBoxBottom.png",
                      "Assets/Default/SkyBoxBack.png",
                      "Assets/Default/SkyBoxFront.png") with
             | Right cubeMap -> cubeMap
