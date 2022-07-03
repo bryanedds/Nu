@@ -100,6 +100,6 @@ type SceneryDispatcher () =
     override this.Update (entity, world) =
         let world = base.Update (entity, world)
         let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
-        //let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
-        let world = Simulants.PointLight.SetPosition (World.getEyePosition3d world) world
+        let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
+        //let world = Simulants.PointLight.SetPosition (World.getEyePosition3d world) world
         world

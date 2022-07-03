@@ -19,6 +19,7 @@ void main()
 
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;
+const float TONE_UNMAP_SCALAR = 1.6225;
 
 uniform float roughness;
 uniform float resolution; // resolution of cube map face
@@ -87,8 +88,8 @@ void main()
     vec3 r = normal;
     vec3 v = r;
 
-    // compute prefiltered color and total weight
-    vec3 prefilteredColor = vec3(0.0);
+    // compute filter color and total weight
+    vec3 filterColor = vec3(0.0);
     float totalWeight = 0.0;
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
@@ -97,7 +98,7 @@ void main()
         vec3 h = importanceSampleGGX(xi, normal, roughness);
         vec3 l = normalize(2.0 * dot(v, h) * h - v);
 
-        // accumulate prefiltered color and total weight
+        // accumulate filter color and total weight
         float nDotL = max(dot(normal, l), 0.0);
         if (nDotL > 0.0)
         {
@@ -109,14 +110,17 @@ void main()
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
-            prefilteredColor += textureLod(cubeMap, l, mipLevel).rgb * nDotL;
+            vec3 sampleColor = textureLod(cubeMap, l, mipLevel).rgb;
+            vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR;
+            vec3 sampleSquared = sampleScaled * sampleScaled;
+            filterColor += sampleSquared * nDotL;
             totalWeight += nDotL;
         }
     }
 
-    // normalize prefiltered color
-    prefilteredColor = prefilteredColor / totalWeight;
+    // normalize filtered color
+    filterColor = filterColor / totalWeight;
 
     // fin
-    frag = vec4(prefilteredColor, 1.0);
+    frag = vec4(filterColor, 1.0);
 }

@@ -19,7 +19,7 @@ void main()
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
-const float TONE_UNMAP_SCALAR = 1.5;
+const float TONE_UNMAP_SCALAR = 1.6225;
 
 in vec3 outPosition;
 
