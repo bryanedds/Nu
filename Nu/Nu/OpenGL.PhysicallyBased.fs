@@ -91,6 +91,8 @@ module PhysicallyBased =
           BrdfTextureUniform : int
           LightPositionsUniform : int
           LightColorsUniform : int
+          LightBrightnessesUniform : int
+          LightIntensitiesUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
@@ -104,6 +106,8 @@ module PhysicallyBased =
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
           LightPositionsUniform : int
+          LightBrightnessesUniform : int
+          LightIntensitiesUniform : int
           LightColorsUniform : int
           PhysicallyBasedDeferred2Shader : uint }
 
@@ -481,6 +485,8 @@ module PhysicallyBased =
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
+        let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
+        let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
         // make shader record
@@ -496,6 +502,8 @@ module PhysicallyBased =
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
           LightPositionsUniform = lightPositionsUniform
+          LightBrightnessesUniform = lightBrightnessesUniform
+          LightIntensitiesUniform = lightIntensitiesUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
 
@@ -514,6 +522,8 @@ module PhysicallyBased =
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let lightPositionsUniform = Gl.GetUniformLocation (shader, "lightPositions")
+        let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
+        let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
 
         // make shader record
@@ -526,6 +536,8 @@ module PhysicallyBased =
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
           LightPositionsUniform = lightPositionsUniform
+          LightBrightnessesUniform = lightBrightnessesUniform
+          LightIntensitiesUniform = lightIntensitiesUniform
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedDeferred2Shader = shader }
 
@@ -552,6 +564,8 @@ module PhysicallyBased =
          brdfTexture : uint,
          lightPositions : single array,
          lightColors : single array,
+         lightBrightnesses : single array,
+         lightIntensities : single array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
@@ -581,6 +595,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
         Gl.Uniform1 (shader.BrdfTextureUniform, 7)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
+        Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
@@ -665,6 +681,8 @@ module PhysicallyBased =
          brdfTexture : uint,
          lightPositions : single array,
          lightColors : single array,
+         lightBrightnesses : single array,
+         lightIntensities : single array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferred2Shader) =
 
@@ -682,6 +700,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
         Gl.Uniform1 (shader.BrdfTextureUniform, 6)
         Gl.Uniform3 (shader.LightPositionsUniform, lightPositions)
+        Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
+        Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
