@@ -10,7 +10,7 @@ module Simulants =
 
     // here we create an entity reference for SkyBox. This is useful for simulants that you want
     // to refer to from multiple places
-    let PointLight = Simulants.Default.Group / "PointLight"
+    let Light = Simulants.Default.Group / "Light"
 
 // this is a custom entity for performance testing
 type RotatingModelDispatcher () =
@@ -62,7 +62,7 @@ type SceneryDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
-                [Content.pointLight Simulants.PointLight.Name
+                [Content.light Simulants.light.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
                      Entity.Color == (color 0.0f 100.0f 100.0f 1.0f)]
                  //Content.skyBox Gen.name
@@ -101,5 +101,5 @@ type SceneryDispatcher () =
         let world = base.Update (entity, world)
         let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
         let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
-        //let world = Simulants.PointLight.SetPosition (World.getEyePosition3d world) world
+        //let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
         world

@@ -70,7 +70,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderSkyBoxDescriptor of CubeMap AssetTag
-    | RenderPointLightDescriptor of Vector3 * Color
+    | RenderLightDescriptor of Vector3 * Color * LightType
     | RenderPostPassDescriptor3d of RenderPassDescriptor3d
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -587,7 +587,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
                     SegmentedList.add cubeMap skyBoxes
-                | RenderPointLightDescriptor (position, color) ->
+                | RenderLightDescriptor (position, color, _) ->
                     let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light lights
                 | RenderPostPassDescriptor3d postPass ->

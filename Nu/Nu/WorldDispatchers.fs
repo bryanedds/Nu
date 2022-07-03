@@ -1254,20 +1254,27 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
-module PointLightFacetModule =
+module LightFacetModule =
 
-    type PointLightFacet () =
+    type Entity with
+        member this.GetLightType world : LightType = this.Get Property? LightType world
+        member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
+        member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
+
+    type LightFacet () =
         inherit Facet (false)
 
         static member Properties =
             [define Entity.Light true
-             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
+             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)
+             define Entity.LightType Point]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let position = entity.GetPosition world
                 let color = entity.GetColor world
-                World.enqueueRenderMessage3d (RenderPointLightDescriptor (position, color)) world
+                let lightType = entity.GetLightType world
+                World.enqueueRenderMessage3d (RenderLightDescriptor (position, color, lightType)) world
             else world
 
 [<AutoOpen>]
@@ -2413,17 +2420,18 @@ module TmxMapDispatcherModule =
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
-module PointLightDispatcherModule =
+module LightDispatcherModule =
 
-    type PointLightDispatcher () =
+    type LightDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
         static member Facets =
-            [typeof<PointLightFacet>]
+            [typeof<LightFacet>]
 
         static member Properties =
             [define Entity.Light true
-             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)]
+             define Entity.Color (color 10.0f 10.0f 10.0f 1.0f)
+             define Entity.LightType Point]
 
 [<AutoOpen>]
 module SkyBoxDispatcherModule =
