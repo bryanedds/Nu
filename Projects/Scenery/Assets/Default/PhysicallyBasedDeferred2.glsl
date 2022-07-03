@@ -76,9 +76,12 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // retrieve data from geometry buffer
-    vec3 position = texture(positionTexture, texCoordsOut).rgb;
+    // discard if geometry pixel was not written
     vec3 normal = texture(normalTexture, texCoordsOut).rgb;
+    if (normal == vec3(0.0, 0.0, 0.0)) discard;
+
+    // retrieve remaining data from geometry buffer
+    vec3 position = texture(positionTexture, texCoordsOut).rgb;
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec3 material = texture(materialTexture, texCoordsOut).rgb;
 
