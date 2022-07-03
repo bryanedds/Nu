@@ -78,7 +78,7 @@ void main()
 {
     // discard if geometry pixel was not written
     vec3 normal = texture(normalTexture, texCoordsOut).rgb;
-    if (normal == vec3(0.0, 0.0, 0.0)) discard;
+    if (normal == vec3(1.0, 1.0, 1.0)) discard;
 
     // retrieve remaining data from geometry buffer
     vec3 position = texture(positionTexture, texCoordsOut).rgb;

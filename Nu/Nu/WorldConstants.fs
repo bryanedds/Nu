@@ -12,7 +12,7 @@ module Dissolve =
     let Default =
         { IncomingTime = 20L
           OutgoingTime = 40L
-          DissolveImage = Assets.Default.Image8 }
+          DissolveImage = Assets.Default.Image9 }
 
 [<RequireQualifiedAccess>]
 module Splash =
