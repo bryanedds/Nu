@@ -19,6 +19,7 @@ void main()
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
+const float TONE_UNMAP_SCALAR = 1.5;
 
 in vec3 outPosition;
 
@@ -45,8 +46,10 @@ void main()
         {
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
-            vec3 sampleNormalized = texture(cubeMap, sampleVector).rgb;
-            irradiance += sampleNormalized * cos(theta) * sin(theta);
+            vec3 sampleColor = texture(cubeMap, sampleVector).rgb;
+            vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR;
+            vec3 sampleSquared = sampleScaled * sampleScaled;
+            irradiance += sampleSquared * cos(theta) * sin(theta);
             ++sampleCount;
         }
     }
