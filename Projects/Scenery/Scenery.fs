@@ -64,7 +64,7 @@ type SceneryDispatcher () =
             [Content.group Simulants.Default.Group.Name []
                 [Content.pointLight Simulants.PointLight.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Color == (color 0.0f 10.0f 10.0f 1.0f)]
+                     Entity.Color == (color 0.0f 100.0f 100.0f 1.0f)]
                  Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
