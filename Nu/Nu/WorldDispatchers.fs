@@ -1314,7 +1314,7 @@ module StaticModelFacetModule =
 
     type RenderStyle =
         | Deferred
-        | Forward of string option
+        | Forward
 
     type Entity with
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
@@ -1340,13 +1340,7 @@ module StaticModelFacetModule =
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
-                    | Forward None -> ForwardRenderType ValueNone
-                    | Forward (Some callbackName) ->
-                        match World.tryGetForwardRenderCallback callbackName world with
-                        | ValueSome callback -> ForwardRenderType (ValueSome callback)
-                        | ValueNone ->
-                            Log.debug ("Failed to actualize StaticModelFacet due to missing forward render callback '" + callbackName + "'. Using canonical forward rendering instance")
-                            ForwardRenderType ValueNone
+                    | Forward -> ForwardRenderType
                 World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
             else world
 

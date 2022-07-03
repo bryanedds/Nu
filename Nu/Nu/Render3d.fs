@@ -21,23 +21,18 @@ type [<Struct>] ProjectionType =
     | Unenclosed
     | Afatecs
 
-/// A callback for one-off forward rendering of a surface.
-/// TODO: 3D: consider turning this into a delegate for byref params.
-type ForwardRenderCallback =
-    Vector3 * Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * Vector3 array * Color array -> Renderer3d -> unit
-
 /// The type of rendering used on a surface.
 and [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
-    | ForwardRenderType of ForwardRenderCallback voption
+    | ForwardRenderType
 
 /// A collection of render surfaces in a pass.
 and [<NoEquality; NoComparison>] RenderSurfaces =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSkyBoxes : CubeMap AssetTag SegmentedList
-      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList
-      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface * ForwardRenderCallback voption) SegmentedList }
+      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
 
 /// A collection of lights in a pass.
 and RenderLights = SortableLight SegmentedList
@@ -301,10 +296,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             match surfacesDeferredRelative.TryGetValue surface with
                             | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
                             | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
-                    | ForwardRenderType callbackOpt ->
+                    | ForwardRenderType ->
                         if modelAbsolute
-                        then SegmentedList.add struct (modelMatrix, surface, callbackOpt) surfacesForwardAbsolute
-                        else SegmentedList.add struct (modelMatrix, surface, callbackOpt) surfacesForwardRelative
+                        then SegmentedList.add struct (modelMatrix, surface) surfacesForwardAbsolute
+                        else SegmentedList.add struct (modelMatrix, surface) surfacesForwardRelative
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -607,20 +602,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // TODO: 3D: use persistent buffers to elide allocation.
             let surfacesForwardAbsolute =
                 surfacesForwardAbsolute |>
-                Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
                 Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
+                Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
                 SegmentedList.ofSeq
 
             // sort relative forward surfaces
             // TODO: 3D: use persistent buffers to elide allocation.
             let surfacesForwardRelative =
                 surfacesForwardRelative |>
-                Seq.map (fun struct (model, surface, callbackOpt) -> struct (model, surface, callbackOpt, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
                 Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, surface, callbackOpt, _) -> struct (model, surface, callbackOpt)) |>
+                Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
                 SegmentedList.ofSeq
 
             // make render surfaces
@@ -753,7 +748,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces
-            for (model, surface, _) in surfaces.RenderSurfacesForwardAbsolute do // TODO: 3D: implement callback use.
+            for (model, surface) in surfaces.RenderSurfacesForwardAbsolute do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -774,7 +769,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // render forward pass w/ relative-transformed surfaces
-            for (model, surface, _) in surfaces.RenderSurfacesForwardRelative do // TODO: 3D: implement callback use.
+            for (model, surface) in surfaces.RenderSurfacesForwardRelative do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
