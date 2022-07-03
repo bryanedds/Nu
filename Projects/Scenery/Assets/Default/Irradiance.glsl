@@ -19,7 +19,7 @@ void main()
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
-const float TONE = 1.5;
+const float TONE_UNMAPPER = 1.5;
 
 in vec3 outPosition;
 
@@ -47,7 +47,7 @@ void main()
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
             vec3 sampleNormalized = texture(cubeMap, sampleVector).rgb;
-            vec3 sampleScaled = sampleNormalized * TONE;
+            vec3 sampleScaled = sampleNormalized * TONE_UNMAPPER;
             vec3 sampleSquared = sampleScaled * sampleScaled;
             irradiance += sampleSquared * cos(theta) * sin(theta);
             sampleCount++;
