@@ -19,7 +19,6 @@ void main()
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
-const float TONE = 1.5;
 
 in vec3 outPosition;
 
@@ -40,17 +39,15 @@ void main()
     // compute irradiance
     float sampleCount = 0.0;
     vec3 irradiance = vec3(0.0);
-    for(float phi = 0.0; phi < 2.0 * PI; phi += SAMPLE_DELTA)
+    for (float phi = 0.0; phi < 2.0 * PI; phi += SAMPLE_DELTA)
     {
-        for(float theta = 0.0; theta < 0.5 * PI; theta += SAMPLE_DELTA)
+        for (float theta = 0.0; theta < 0.5 * PI; theta += SAMPLE_DELTA)
         {
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
-            vec3 sampleNormalized = texture(cubeMap, sampleVector).rgb;
-            vec3 sampleScaled = sampleNormalized * TONE;
-            vec3 sampleSquared = sampleScaled * sampleScaled;
-            irradiance += sampleSquared * cos(theta) * sin(theta);
-            sampleCount++;
+            vec3 sampleColor = texture(cubeMap, sampleVector).rgb;
+            irradiance += sampleColor * cos(theta) * sin(theta);
+            ++sampleCount;
         }
     }
 
