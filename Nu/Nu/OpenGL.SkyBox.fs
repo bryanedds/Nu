@@ -324,7 +324,7 @@ module SkyBox =
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Hl.Assert ()
 
-        // setup irradiated cube map for rendering to
+        // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, renderbufferWidth, renderbufferHeight, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
