@@ -1449,10 +1449,6 @@ module WorldTypes =
             | "BasicEmitter2d" -> Particles.BasicEmitter2d.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
             | _ -> None
 
-        /// Attempt to get a forward render callback with the given names.
-        abstract TryGetForwardRenderCallback : string -> ForwardRenderCallback voption
-        default this.TryGetForwardRenderCallback _ = ValueNone
-
         /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
         /// successfully converted.
         abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World

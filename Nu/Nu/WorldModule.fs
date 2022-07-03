@@ -968,9 +968,6 @@ module WorldModule =
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
-        static member tryGetForwardRenderCallback callbackName world =
-            world.WorldExtension.Plugin.TryGetForwardRenderCallback callbackName
-
         static member internal preFrame world =
             world.WorldExtension.Plugin.PreFrame world
 

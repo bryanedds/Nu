@@ -5,7 +5,6 @@ namespace Nu.Constants
 open System
 open System.Numerics
 open System.Configuration
-open SDL2
 open Nu
 open Prime
 
