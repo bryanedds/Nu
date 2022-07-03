@@ -69,6 +69,14 @@ type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
+/// Type of light.
+[<Syntax
+    ("Point", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison>] LightType =
+    | Point
+
 /// A mutable sprite value.
 type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
