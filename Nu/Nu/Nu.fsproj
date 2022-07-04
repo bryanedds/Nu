@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" />
-  <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.props" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -66,84 +64,83 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="Core.fs" />
-    <Compile Include="Assets.fs" />
-    <Compile Include="Log.fs" />
-    <Compile Include="Gen.fs" />
-    <Compile Include="Constants.fs" />
-    <Compile Include="ListTree.fs" />
-    <Compile Include="KeyedArray.fs" />
-    <Compile Include="SegmentedArray.fs" />
-    <Compile Include="SegmentedList.fs" />
-    <Compile Include="SegmentedHashSet.fs" />
-    <Compile Include="SegmentedDictionary.fs" />
-    <Compile Include="Math.fs" />
-    <Compile Include="EcsTypes.fs" />
-    <Compile Include="Ecs.fs" />
-    <Compile Include="Transform.fs" />
-    <Compile Include="Quadtree.fs" />
-    <Compile Include="Octree.fs" />
-    <Compile Include="Reflection.fs" />
-    <Compile Include="Overlayer.fs" />
-    <Compile Include="OverlayRouter.fs" />
-    <Compile Include="AssetGraph.fs" />
-    <Compile Include="OpenGL.Hl.fs" />
-    <Compile Include="OpenGL.Texture.fs" />
-    <Compile Include="OpenGL.Shader.fs" />
-    <Compile Include="OpenGL.Framebuffer.fs" />
-    <Compile Include="OpenGL.Sprite.fs" />
-    <Compile Include="OpenGL.SkyBox.fs" />
-    <Compile Include="OpenGL.PhysicallyBased.fs" />
-    <Compile Include="OpenGL.SpriteBatch.fs" />
-    <Compile Include="Physics.fs" />
-    <Compile Include="AetherPhysics.fs" />
-    <Compile Include="BepuPhysics.fs" />
-    <Compile Include="Render.fs" />
-    <Compile Include="Render2d.fs" />
-    <Compile Include="Render3d.fs" />
-    <Compile Include="RenderProcess.fs" />
-    <Compile Include="Audio.fs" />
-    <Compile Include="SymbolStore.fs" />
-    <Compile Include="Particles.fs" />
-    <Compile Include="View.fs" />
-    <Compile Include="Effects.fs" />
-    <Compile Include="Metadata.fs" />
-    <Compile Include="InputBindings.fs" />
-    <Compile Include="Input.fs" />
-    <Compile Include="Sdl.fs" />
-    <Compile Include="AmbientState.fs" />
-    <Compile Include="WorldTypes.fs" />
-    <Compile Include="WorldAssets.fs" />
-    <Compile Include="WorldConstants.fs" />
-    <Compile Include="WorldEvents.fs" />
-    <Compile Include="WorldDescriptive.fs" />
-    <Compile Include="WorldModule.fs" />
-    <Compile Include="WorldModuleGame.fs" />
-    <Compile Include="WorldModuleScreen.fs" />
-    <Compile Include="WorldModuleGroup.fs" />
-    <Compile Include="WorldModuleEntity.fs" />
-    <Compile Include="WorldDeclarative.fs" />
-    <Compile Include="WorldEntity.fs" />
-    <Compile Include="WorldGroup.fs" />
-    <Compile Include="WorldScreen.fs" />
-    <Compile Include="WorldGame.fs" />
-    <Compile Include="WorldSimulant.fs" />
-    <Compile Include="WorldInput.fs" />
-    <Compile Include="WorldPhysics.fs" />
-    <Compile Include="WorldRender.fs" />
-    <Compile Include="WorldAudio.fs" />
-    <Compile Include="WorldTmxMap.fs" />
-    <Compile Include="WorldDispatchers.fs" />
-    <Compile Include="WorldContent.fs" />
-    <Compile Include="WorldScripting.fs" />
-    <Compile Include="WorldModule2.fs" />
-    <Compile Include="WorldConsole.fs" />
-    <Compile Include="WorldBindings.fs" />
-    <Compile Include="WorldStream.fs" />
-    <Compile Include="World.fs" />
-    <Compile Include="ReflectionTests.fs" />
-    <Compile Include="QuadtreeTests.fs" />
-    <Compile Include="WorldTests.fs" />
+    <Compile Include="Core\Core.fs" />
+    <Compile Include="Core\Log.fs" />
+    <Compile Include="Core\Gen.fs" />
+    <Compile Include="Core\Math.fs" />
+    <Compile Include="Core\Assets.fs" />
+    <Compile Include="Core\Constants.fs" />
+    <Compile Include="Collections\ListTree.fs" />
+    <Compile Include="Collections\KeyedArray.fs" />
+    <Compile Include="Collections\SegmentedArray.fs" />
+    <Compile Include="Collections\SegmentedList.fs" />
+    <Compile Include="Collections\SegmentedHashSet.fs" />
+    <Compile Include="Collections\SegmentedDictionary.fs" />
+    <Compile Include="Collections\Quadtree.fs" />
+    <Compile Include="Collections\Octree.fs" />
+    <Compile Include="Ecs\EcsPrelude.fs" />
+    <Compile Include="Ecs\Ecs.fs" />
+    <Compile Include="OpenGL\OpenGL.Hl.fs" />
+    <Compile Include="OpenGL\OpenGL.Texture.fs" />
+    <Compile Include="OpenGL\OpenGL.Shader.fs" />
+    <Compile Include="OpenGL\OpenGL.Framebuffer.fs" />
+    <Compile Include="OpenGL\OpenGL.Sprite.fs" />
+    <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
+    <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
+    <Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
+    <Compile Include="Sdl\SdlInputBindings.fs" />
+    <Compile Include="Sdl\SdlInput.fs" />
+    <Compile Include="Sdl\Sdl.fs" />
+    <Compile Include="Transform\TransformMasks.fs" />
+    <Compile Include="Transform\Transform.fs" />
+    <Compile Include="Reflection\Reflection.fs" />
+    <Compile Include="Reflection\Overlayer.fs" />
+    <Compile Include="Reflection\OverlayRouter.fs" />
+    <Compile Include="AssetGraph\AssetTag.fs" />
+    <Compile Include="AssetGraph\AssetGraph.fs" />
+    <Compile Include="Physics\Physics.fs" />
+    <Compile Include="Physics\AetherPhysics.fs" />
+    <Compile Include="Physics\BepuPhysics.fs" />
+    <Compile Include="Render\Render.fs" />
+    <Compile Include="Render\Render2d.fs" />
+    <Compile Include="Render\Render3d.fs" />
+    <Compile Include="Render\RenderProcess.fs" />
+    <Compile Include="Audio\Audio.fs" />
+    <Compile Include="Symbolics\Symbolics.fs" />
+    <Compile Include="Metadata\Metadata.fs" />
+    <Compile Include="View\View.fs" />
+    <Compile Include="Particles\Particles.fs" />
+    <Compile Include="Effects\Effects.fs" />
+    <Compile Include="World\WorldPrelude.fs" />
+    <Compile Include="World\WorldTypes.fs" />
+    <Compile Include="World\WorldAssets.fs" />
+    <Compile Include="World\WorldConstants.fs" />
+    <Compile Include="World\WorldEvents.fs" />
+    <Compile Include="World\WorldDescriptive.fs" />
+    <Compile Include="World\WorldModule.fs" />
+    <Compile Include="World\WorldModuleGame.fs" />
+    <Compile Include="World\WorldModuleScreen.fs" />
+    <Compile Include="World\WorldModuleGroup.fs" />
+    <Compile Include="World\WorldModuleEntity.fs" />
+    <Compile Include="World\WorldDeclarative.fs" />
+    <Compile Include="World\WorldEntity.fs" />
+    <Compile Include="World\WorldGroup.fs" />
+    <Compile Include="World\WorldScreen.fs" />
+    <Compile Include="World\WorldGame.fs" />
+    <Compile Include="World\WorldSimulant.fs" />
+    <Compile Include="World\WorldInput.fs" />
+    <Compile Include="World\WorldPhysics.fs" />
+    <Compile Include="World\WorldRender.fs" />
+    <Compile Include="World\WorldAudio.fs" />
+    <Compile Include="World\WorldTmxMap.fs" />
+    <Compile Include="World\WorldDispatchers.fs" />
+    <Compile Include="World\WorldContent.fs" />
+    <Compile Include="World\WorldScripting.fs" />
+    <Compile Include="World\WorldModule2.fs" />
+    <Compile Include="World\WorldConsole.fs" />
+    <Compile Include="World\WorldBindings.fs" />
+    <Compile Include="World\WorldStream.fs" />
+    <Compile Include="World\World.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="GenerateInputBindings.fsx" />
@@ -257,12 +254,6 @@
     <Reference Include="FParsecCS">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsecCS.dll</HintPath>
     </Reference>
-    <Reference Include="FsCheck">
-      <HintPath>..\..\packages\FsCheck.2.11.0\lib\net452\FsCheck.dll</HintPath>
-    </Reference>
-    <Reference Include="FsCheck.Xunit">
-      <HintPath>..\..\packages\FsCheck.Xunit.2.11.0\lib\net452\FsCheck.Xunit.dll</HintPath>
-    </Reference>
     <Reference Include="FSharp.Core">
       <HintPath>..\..\packages\FSharp.Core.4.7.2\lib\net45\FSharp.Core.dll</HintPath>
     </Reference>
@@ -316,18 +307,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="xunit.abstractions">
-      <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.assert">
-      <HintPath>..\..\packages\xunit.assert.2.4.0\lib\netstandard2.0\xunit.assert.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.core">
-      <HintPath>..\..\packages\xunit.extensibility.core.2.4.0\lib\net452\xunit.core.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.execution.desktop">
-      <HintPath>..\..\packages\xunit.extensibility.execution.2.4.0\lib\net452\xunit.execution.desktop.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nu.AStar\Nu.AStar.csproj">
@@ -345,12 +324,8 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.props'))" />
-    <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.targets'))" />
-    <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props'))" />
     <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
   </Target>
-  <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
   <Target Name="BeforeBuild">
     <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
   </Target>

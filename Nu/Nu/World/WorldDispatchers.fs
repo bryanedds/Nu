@@ -835,17 +835,20 @@ module Effect2dFacetModule =
                 let particleSystem =
                     views |>
                     Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
-                    Seq.choose (fun (name : string, descriptor : Particles.BasicEmitterDescriptor) ->
-                        match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
-                        | Some (:? Particles.BasicEmitter as emitter) ->
-                            let emitter =
-                                { emitter with
-                                    Body = descriptor.Body
-                                    Blend = descriptor.Blend
-                                    Image = descriptor.Image
-                                    ParticleSeed = descriptor.ParticleSeed
-                                    Constraint = descriptor.Constraint }
-                            Some (name, emitter)
+                    Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
+                        match descriptor with
+                        | :? Particles.BasicEmitterDescriptor as descriptor ->
+                            match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
+                            | Some (:? Particles.BasicEmitter as emitter) ->
+                                let emitter =
+                                    { emitter with
+                                        Body = descriptor.Body
+                                        Blend = descriptor.Blend
+                                        Image = descriptor.Image
+                                        ParticleSeed = descriptor.ParticleSeed
+                                        Constraint = descriptor.Constraint }
+                                Some (name, emitter)
+                            | _ -> None
                         | _ -> None) |>
                     Seq.fold (fun particleSystem (name, emitter) ->
                         ParticleSystem.add name emitter particleSystem)

@@ -16,10 +16,10 @@ type [<StructuralEquality; StructuralComparison; Struct>] SymbolLoadMetadata =
       StripCsvHeader : bool }
 
 [<RequireQualifiedAccess>]
-module SymbolStore =
+module Symbolics =
 
-    /// Provides references to Symbols that are loaded from files.
-    type [<ReferenceEquality; NoComparison>] SymbolStore =
+    /// Provides references to symbols that are loaded from files.
+    type [<ReferenceEquality; NoComparison>] Symbolics =
         private
             { SymbolPackages : (SymbolLoadMetadata * Symbol) Packages }
 
@@ -46,8 +46,8 @@ module SymbolStore =
             Log.info ("Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn)
             None
 
-    /// Try to load a symbol store package with the given name.
-    let tryLoadSymbolPackage packageName metadata symbolStore =
+    /// Try to load a symbol package with the given name.
+    let tryLoadSymbolPackage packageName metadata symbolics =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
@@ -55,60 +55,60 @@ module SymbolStore =
                 let assets = List.map Asset.specialize<Symbol> assets
                 let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) assets
                 let symbols = List.definitize symbolOpts
-                match Dictionary.tryFind packageName symbolStore.SymbolPackages with
+                match Dictionary.tryFind packageName symbolics.SymbolPackages with
                 | Some symbolDict ->
                     for (key, value) in symbols do symbolDict.Assign (key, value)
-                    symbolStore.SymbolPackages.Assign (packageName, symbolDict)
+                    symbolics.SymbolPackages.Assign (packageName, symbolDict)
                 | None ->
                     let symbolDict = dictPlus StringComparer.Ordinal symbols
-                    symbolStore.SymbolPackages.Assign (packageName, symbolDict)
+                    symbolics.SymbolPackages.Assign (packageName, symbolDict)
             | Left error ->
-                Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
+                Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
-            Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
+            Log.info ("Symbol package load failed due to unloadable asset graph due to: '" + error)
 
-    let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolStore =
-        match Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages with
+    let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolics =
+        match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
         | Some assets -> Dictionary.tryFind assetTag.AssetName assets
         | None ->
             Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-            tryLoadSymbolPackage assetTag.PackageName metadata symbolStore
-            match Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages with
+            tryLoadSymbolPackage assetTag.PackageName metadata symbolics
+            match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
             | Some assets -> Dictionary.tryFind assetTag.AssetName assets
             | None -> None
 
-    /// Unload a symbolStore package with the given name.
-    let unloadSymbolPackage packageName symbolStore =
-        symbolStore.SymbolPackages.Remove packageName |> ignore
+    /// Unload a symbol package with the given name.
+    let unloadSymbolPackage packageName symbolics =
+        symbolics.SymbolPackages.Remove packageName |> ignore
 
     /// Try to find a symbol with the given asset tag.
-    let tryFindSymbol assetTag metadata symbolStore =
-        tryLoadSymbol assetTag metadata symbolStore |> Option.map snd
+    let tryFindSymbol assetTag metadata symbolics =
+        tryLoadSymbol assetTag metadata symbolics |> Option.map snd
         
     /// Try to find the symbols with the given asset tags.
-    let tryFindSymbols metadata assetTags symbolStore =
+    let tryFindSymbols metadata assetTags symbolics =
         List.foldBack
-            (fun assetTag (symbolOpts, symbolStore) ->
-                match tryFindSymbol metadata assetTag symbolStore with
-                | Some symbol -> (Some symbol :: symbolOpts, symbolStore)
-                | None -> (None :: symbolOpts, symbolStore))
+            (fun assetTag (symbolOpts, symbolics) ->
+                match tryFindSymbol metadata assetTag symbolics with
+                | Some symbol -> (Some symbol :: symbolOpts, symbolics)
+                | None -> (None :: symbolOpts, symbolics))
             assetTags
-            ([], symbolStore)
+            ([], symbolics)
 
-    /// Reload all the assets in the symbol store.
-    let reloadSymbols symbolStore =
-        let symbolPackages = Dictionary<_, _> symbolStore.SymbolPackages
-        symbolStore.SymbolPackages.Clear ()
+    /// Reload all the symbols in symbolics.
+    let reloadSymbols symbolics =
+        let symbolPackages = Dictionary<_, _> symbolics.SymbolPackages
+        symbolics.SymbolPackages.Clear ()
         for packageEntry in symbolPackages do
             let packageName = packageEntry.Key
             let packageValue = packageEntry.Value
             for assetEntry in packageValue do
                 let metadata = fst assetEntry.Value
-                tryLoadSymbolPackage packageName metadata symbolStore
+                tryLoadSymbolPackage packageName metadata symbolics
 
-    /// The empty symbol store.
+    /// Empty symbolics.
     let makeEmpty () =
         { SymbolPackages = dictPlus StringComparer.Ordinal [] }
 
-/// Provides references to Symbols that are loaded from files.
-type SymbolStore = SymbolStore.SymbolStore
+/// Provides references to symbols that are loaded from files.
+type Symbolics = Symbolics.Symbolics

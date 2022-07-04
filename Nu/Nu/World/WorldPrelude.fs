@@ -1,17 +1,224 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
+namespace Debug
+open System
+module internal World =
+
+#if DEBUG
+    let mutable internal Chosen = obj ()
+#endif
+    let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
+open FSharpx.Collections
 open SDL2
+open TiledSharp
 open Prime
 open Nu
+
+/// Describes a Tiled tile.
+type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
+    { mutable Tile : TmxLayerTile
+      mutable TileI : int
+      mutable TileJ : int
+      mutable TilePositionI : Vector2i
+      mutable TilePositionF : Vector2
+      mutable TileSetTileOpt : TmxTilesetTile option }
+
+/// Describes a Tiled tile animation.
+type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
+    { TileAnimationRun : int
+      TileAnimationDelay : int64 }
+
+/// Describes a Tiled tile map.
+type [<StructuralEquality; NoComparison>] TileMapDescriptor =
+    { TileMap : TmxMap
+      TileSizeI : Vector2i
+      TileSizeF : Vector2
+      TileMapSizeM : Vector2i
+      TileMapSizeI : Vector2i
+      TileMapSizeF : Vector2
+      TileMapPosition : Vector2 }
+
+/// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
+/// means an existing screen being hidden.
+type [<StructuralEquality; NoComparison; Struct>] TransitionType =
+    | Incoming
+    | Outgoing
+
+/// The state of a screen's transition.
+type [<StructuralEquality; NoComparison; Struct>] TransitionState =
+    | IncomingState
+    | OutgoingState
+    | IdlingState
+
+/// Describes one of a screen's transition processes.
+/// TODO: figure out if this really needs to be CLIMutable.
+type [<NoEquality; NoComparison; CLIMutable>] Transition =
+    { TransitionType : TransitionType
+      TransitionLifeTime : int64
+      DissolveImageOpt : Image AssetTag option
+      SongOpt : SongDescriptor option }
+
+    /// Make a screen transition.
+    static member make transitionType =
+        { TransitionType = transitionType
+          TransitionLifeTime = 0L
+          DissolveImageOpt = None
+          SongOpt = None }
+
+/// Describes the behavior of the screen dissolving algorithm.
+type [<NoEquality; NoComparison>] DissolveDescriptor =
+    { IncomingTime : int64
+      OutgoingTime : int64
+      DissolveImage : Image AssetTag }
+
+/// Describes the behavior of the screen splash algorithm.
+type [<NoEquality; NoComparison>] SplashDescriptor =
+    { DissolveDescriptor : DissolveDescriptor
+      IdlingTime : int64
+      SplashImageOpt : Image AssetTag option }
+
+/// Describes the shape of a desired overlay.
+type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
+    | NoOverlay
+    | RoutedOverlay
+    | DefaultOverlay
+    | ExplicitOverlay of string
+
+/// Describes the origin of a piece of simulant content.
+type [<StructuralEquality; NoComparison>] ContentOrigin =
+    | SimulantOrigin of Simulant
+    | FacetOrigin of Simulant * string
+
+    /// Get the originating simulant.
+    static member getSimulant origin =
+        match origin with
+        | SimulantOrigin simulant
+        | FacetOrigin (simulant, _) -> simulant
+
+/// Describes the content of a simulant.
+type SimulantContent =
+    interface end
 
 /// A tasklet to be completed at the scheduled update time.
 type [<NoEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
       ScheduledOp : 'w -> 'w }
+
+/// Specifies that a module contains functions that need to be considered for binding generation.
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
+    ModuleBindingAttribute () =
+    inherit Attribute ()
+
+/// Specifies that a module contains functions that need to be considered for binding generation.
+type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
+    FunctionBindingAttribute (bindingName : string) =
+    inherit Attribute ()
+    member this.BindingName = bindingName
+    new () = FunctionBindingAttribute ""
+
+/// Configuration parameters for Nu.
+type [<NoEquality; NoComparison>] NuConfig =
+    { RunSynchronously : bool }
+
+    /// The default configuration for Nu.
+    static member defaultConfig =
+        let runSynchronously =
+#if SYNCHRONOUS
+            true
+#else
+            false
+#endif
+        { RunSynchronously = runSynchronously }
+
+/// Configuration parameters for the world.
+type [<NoEquality; NoComparison>] WorldConfig =
+    { Imperative : bool
+      StandAlone : bool
+      UpdateRate : int64
+      SdlConfig : SdlConfig
+      NuConfig : NuConfig }
+
+    /// The default configuration of the world.
+    static member defaultConfig =
+        { Imperative = true
+          StandAlone = true
+          UpdateRate = 1L
+          SdlConfig = SdlConfig.defaultConfig
+          NuConfig = NuConfig.defaultConfig }
+
+/// Efficiently emulates root type casting of a Map.
+type [<CustomEquality; NoComparison>] MapGeneralized =
+    { MapObj : obj
+      Keys : IComparable List
+      Equality : MapGeneralized -> obj -> bool
+      ContainsKey : IComparable -> bool
+      GetValue : IComparable -> obj
+      TryGetValue : IComparable -> struct (bool * obj) }
+
+    override this.GetHashCode () =
+        this.MapObj.GetHashCode ()
+
+    override this.Equals (that : obj) =
+        this.Equality this that
+
+    /// Make a generalized map.
+    static member make (map : Map<'k, 'v>) =
+        { MapObj =
+            map
+          Keys =
+            let list = List ()
+            for entry in map do list.Add (entry.Key :> IComparable)
+            list
+          Equality = fun this (that : obj) ->
+            match that with
+            | :? MapGeneralized as that ->
+                if this.MapObj = that.MapObj then
+#if ELMISH_MAP_GENERALIZED_DEEP_EQUALITY
+                    match that.MapObj with
+                    | :? Map<'k, 'v> as map2 -> System.Linq.Enumerable.SequenceEqual (map, map2)
+                    | _ -> false
+#else
+                    true
+#endif
+                else false
+            | _ -> false
+          ContainsKey = fun (key : IComparable) ->
+            Map.containsKey (key :?> 'k) map
+          GetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> value :> obj
+            | (false, _) -> failwithumf ()
+          TryGetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> struct (true, value :> obj)
+            | (false, _) -> struct (false, null) }
+
+[<RequireQualifiedAccess>]
+module EventTrace =
+
+    /// Record event only in debug mode.
+    let debug (moduleName : string) (functionName : string) (moreInfo : string) (eventTrace : EventTrace) =
+#if DEBUG
+        EventTrace.record moduleName functionName moreInfo eventTrace
+#else
+        ignore moduleName
+        ignore functionName
+        ignore moreInfo
+        eventTrace
+#endif
+
+    /// Record event only in all modes.
+    let trace moduleName functionName moreInfo eventTrace =
+        EventTrace.record moduleName functionName moreInfo eventTrace
 
 [<AutoOpen>]
 module AmbientState =
@@ -39,7 +246,7 @@ module AmbientState =
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
-              SymbolStore : SymbolStore
+              Symbolics : Symbolics
               Overlayer : Overlayer
               // cache line 3 (oof!) - TODO: P1: see if we can reduce the size of this type to fit in 2 cache lines.
               OverlayRouter : OverlayRouter }
@@ -66,7 +273,7 @@ module AmbientState =
 
     /// Set the update rate.
     let setUpdateRateImmediate updateRate state =
-        { state with UpdateRate = updateRate }
+        { state with AmbientState.UpdateRate = updateRate }
 
     /// Check that update rate is non-zero.
     let isAdvancing state =
@@ -121,8 +328,8 @@ module AmbientState =
         getKeyValueStoreBy id state
 
     /// Set the key-value store.
-    let setKeyValueStore symbolStore state =
-        { state with KeyValueStore = symbolStore }
+    let setKeyValueStore store state =
+        { state with KeyValueStore = store }
 
     /// Update the key-value store.
     let updateKeyValueStore updater state =
@@ -203,22 +410,22 @@ module AmbientState =
             minimized || not focused && fullScreen
         | None -> false
 
-    /// Get the symbol store with the by map.
-    let getSymbolStoreBy by state =
-        by state.SymbolStore
+    /// Get symbolics with the by map.
+    let getSymbolicsBy by state =
+        by state.Symbolics
 
-    /// Get the symbol store.
-    let getSymbolStore state =
-        getSymbolStoreBy id state
+    /// Get symbolics.
+    let getSymbolics state =
+        getSymbolicsBy id state
 
-    /// Set the symbol store.
-    let setSymbolStore symbolStore state =
-        { state with SymbolStore = symbolStore }
+    /// Set symbolics.
+    let setSymbolics symbolics state =
+        { state with Symbolics = symbolics }
 
-    /// Update the symbol store.
-    let updateSymbolStore updater state =
-        let store = updater (getSymbolStore state)
-        { state with SymbolStore = store }
+    /// Update symbolics.
+    let updateSymbolics updater state =
+        let store = updater (getSymbolics state)
+        { state with Symbolics = store }
 
     /// Get the overlayer.
     let getOverlayer state =
@@ -241,7 +448,7 @@ module AmbientState =
         { state with OverlayRouter = router }
 
     /// Make an ambient state value.
-    let make imperative standAlone updateRate assetMetadataMap symbolStore overlayer overlayRouter sdlDepsOpt =
+    let make imperative standAlone updateRate assetMetadataMap symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
         StandAlone <- standAlone
         let config = if imperative then TConfig.Imperative else TConfig.Functional
@@ -254,7 +461,7 @@ module AmbientState =
           ClockTime = DateTimeOffset.Now
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
-          SymbolStore = symbolStore
+          Symbolics = symbolics
           Overlayer = overlayer
           OverlayRouter = overlayRouter }
 

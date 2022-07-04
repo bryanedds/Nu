@@ -377,8 +377,8 @@ module WorldModule =
         static member internal getKeyValueStore world =
             World.getAmbientStateBy AmbientState.getKeyValueStore world
 
-        static member internal setKeyValueStore symbolStore world =
-            World.updateAmbientState (AmbientState.setKeyValueStore symbolStore) world
+        static member internal setKeyValueStore symbolics world =
+            World.updateAmbientState (AmbientState.setKeyValueStore symbolics) world
 
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
@@ -484,40 +484,40 @@ module WorldModule =
         static member shouldSleep world =
             World.getAmbientStateBy AmbientState.shouldSleep world
 
-        static member internal getSymbolStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world
+        static member internal getSymbolicsBy by world =
+            World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
 
-        static member internal getSymbolStore world =
-            World.getAmbientStateBy AmbientState.getSymbolStore world
+        static member internal getSymbolics world =
+            World.getAmbientStateBy AmbientState.getSymbolics world
 
-        static member internal setSymbolStore symbolStore world =
-            World.updateAmbientState (AmbientState.setSymbolStore symbolStore) world
+        static member internal setSymbolics symbolics world =
+            World.updateAmbientState (AmbientState.setSymbolics symbolics) world
 
-        static member internal updateSymbolStore updater world =
-            World.updateAmbientState (AmbientState.updateSymbolStore updater) world
+        static member internal updateSymbolics updater world =
+            World.updateAmbientState (AmbientState.updateSymbolics updater) world
 
-        /// Try to load a symbol store package with the given name.
-        static member tryLoadSymbolStorePackage implicitDelimiters packageName world =
-            World.getSymbolStoreBy (SymbolStore.tryLoadSymbolPackage implicitDelimiters packageName) world
+        /// Try to load a symbol package with the given name.
+        static member tryLoadSymbolPackage implicitDelimiters packageName world =
+            World.getSymbolicsBy (Symbolics.tryLoadSymbolPackage implicitDelimiters packageName) world
 
-        /// Unload a symbol store package with the given name.
-        static member unloadSymbolStorePackage packageName world =
-            World.getSymbolStoreBy (SymbolStore.unloadSymbolPackage packageName) world
+        /// Unload a symbol package with the given name.
+        static member unloadSymbolPackage packageName world =
+            World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
         static member tryFindSymbol assetTag metadata world =
-            let symbolStore = World.getSymbolStore world
-            SymbolStore.tryFindSymbol assetTag metadata symbolStore
+            let symbolics = World.getSymbolics world
+            Symbolics.tryFindSymbol assetTag metadata symbolics
 
         /// Try to find symbols with the given asset tags.
         static member tryFindSymbols implicitDelimiters assetTags world =
-            let symbolStore = World.getSymbolStore world
-            SymbolStore.tryFindSymbols implicitDelimiters assetTags symbolStore
+            let symbolics = World.getSymbolics world
+            Symbolics.tryFindSymbols implicitDelimiters assetTags symbolics
 
-        /// Reload all the symbols in the symbol store.
+        /// Reload all the symbols in symbolics.
         [<FunctionBinding>]
         static member reloadSymbols world =
-            World.getSymbolStoreBy SymbolStore.reloadSymbols world
+            World.getSymbolicsBy Symbolics.reloadSymbols world
 
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world

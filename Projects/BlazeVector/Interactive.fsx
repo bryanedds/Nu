@@ -6,8 +6,6 @@
 #r "../../packages/Csv.1.0.58/lib/net40/Csv.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
-#r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
-#r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
 #r "../../packages/Prime.7.11.0/lib/net472/Prime.dll"
 #r "../../packages/Prime.Scripting.7.11.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/FSharpx.Core.1.8.32/lib/40/FSharpx.Core.dll"
