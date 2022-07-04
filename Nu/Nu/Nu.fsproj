@@ -91,7 +91,6 @@
     <Compile Include="Sdl\SdlInputBindings.fs" />
     <Compile Include="Sdl\SdlInput.fs" />
     <Compile Include="Sdl\Sdl.fs" />
-    <Compile Include="Transform\TransformMasks.fs" />
     <Compile Include="Transform\Transform.fs" />
     <Compile Include="Reflection\Reflection.fs" />
     <Compile Include="Reflection\Overlayer.fs" />
