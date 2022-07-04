@@ -8,8 +8,7 @@ open SDL2
 open Prime
 open Nu
 
-// HACK: I had to remove the [<RequireQualifiedAccess>] attribute from here because it was being interpreted in an
-// ambiguous way by F# Interactive.
+[<RequireQualifiedAccess>]
 module Nu =
 
     let mutable private Initialized = false
@@ -491,8 +490,8 @@ module WorldModule3 =
             // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
-                let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolStore Overlayer.empty overlayRouter None
+                let symbolics = Symbolics.makeEmpty ()
+                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -608,8 +607,8 @@ module WorldModule3 =
                             List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
-                        let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolStore overlayer overlayRouter (Some sdlDeps)
+                        let symbolics = Symbolics.makeEmpty ()
+                        AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()

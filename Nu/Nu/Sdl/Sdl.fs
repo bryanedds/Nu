@@ -7,6 +7,20 @@ open SDL2
 open Prime
 open Nu
 
+/// A window for rendering in SDL OpenGL.
+type [<NoEquality; NoComparison>] SglWindow =
+    { SglWindow : nativeint }
+
+/// A window for rendering in Windows Forms.
+type [<NoEquality; NoComparison>] WfglWindow =
+    { WfglSwapWindow : unit -> unit
+      WfglWindow : nativeint }
+
+/// A window for rendering.
+type [<NoEquality; NoComparison>] Window =
+    | SglWindow of SglWindow
+    | WfglWindow of WfglWindow
+
 /// Describes the initial configuration of a window created via SDL.
 type [<StructuralEquality; NoComparison>] SdlWindowConfig =
     { WindowTitle : string

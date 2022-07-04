@@ -2,7 +2,10 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
-open System
+open Nu
+
+/// A tag interface for describing an emitter.
+type EmitterDescriptor = interface end
 
 /// IO artifacts passively produced and consumed by Nu.
 type [<NoEquality; NoComparison>] View =
@@ -12,7 +15,7 @@ type [<NoEquality; NoComparison>] View =
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
     | StopSong
-    | SpawnEmitter of string * Particles.BasicEmitterDescriptor
+    | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj
     | Views of View array
     | SegmentedViews of View SegmentedArray

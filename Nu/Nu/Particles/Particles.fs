@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
+open Nu
 module Particles =
 
     /// Describes the life of an instance value.
@@ -646,6 +647,7 @@ module Particles =
           ParticleSeed : 'a
           Constraint : Constraint
           Style : string }
+        interface EmitterDescriptor
 
     /// Describes a map of basic emitters.
     and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
