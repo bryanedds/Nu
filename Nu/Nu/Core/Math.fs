@@ -786,6 +786,26 @@ module Box3 =
         member this.BottomLeft = v3 this.Position.X this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
         member this.BottomRight = v3 (this.Position.X + this.Size.X) this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
         member this.Translate translation = Box3 (this.Position + translation, this.Size)
+        member this.Transform (transformation : Matrix4x4) =
+            if not transformation.IsIdentity then
+                let corners = this.Corners
+                let mutable minX = Single.MaxValue
+                let mutable minY = Single.MaxValue
+                let mutable minZ = Single.MaxValue
+                let mutable maxX = Single.MinValue
+                let mutable maxY = Single.MinValue
+                let mutable maxZ = Single.MinValue
+                for i in 0 .. corners.Length - 1 do
+                    let corner = &corners.[i]
+                    corner <- Vector3.Transform (corner, transformation)
+                    minX <- min minX corner.X
+                    minY <- min minY corner.Y
+                    minZ <- min minZ corner.Z
+                    maxX <- max maxX corner.X
+                    maxY <- max maxY corner.Y
+                    maxZ <- max maxZ corner.Z
+                Box3 (minX, minY, minZ, maxX- minX, maxY - minY, maxZ - minZ)
+            else this
         member this.WithPosition position = Box3 (position, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
