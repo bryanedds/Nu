@@ -59,6 +59,7 @@ and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
+    | RenderStaticModelSurfaceDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag * int
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
@@ -269,12 +270,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
-    static member private categorizeSurface
+    static member private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          modelRenderType : RenderType,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
-         surfaces) =
+         renderTasks) =
         let surfaceMatrix =
             if not surface.SurfaceMatrixIsIdentity
             then modelMatrix * surface.SurfaceMatrix
@@ -282,38 +283,49 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         match modelRenderType with
         | DeferredRenderType ->
             if modelAbsolute then
-                match surfaces.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
-                | (false, _) -> surfaces.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
+                match renderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
+                | (true, renderTasks) -> SegmentedList.add surfaceMatrix renderTasks
+                | (false, _) -> renderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
             else
-                match surfaces.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
-                | (false, _) -> surfaces.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
+                match renderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
+                | (true, renderTasks) -> SegmentedList.add surfaceMatrix renderTasks
+                | (false, _) -> renderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
         | ForwardRenderType ->
             if modelAbsolute
-            then SegmentedList.add struct (surfaceMatrix, surface) surfaces.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (surfaceMatrix, surface) surfaces.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (surfaceMatrix, surface) renderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (surfaceMatrix, surface) renderTasks.RenderSurfacesForwardRelative
+
+    static member private categorizeStaticModelSurfaceByIndex
+        (modelAbsolute,
+         modelMatrix : Matrix4x4 inref,
+         modelRenderType : RenderType,
+         modelAssetTag : StaticModel AssetTag,
+         surfaceIndex,
+         renderTasks,
+         renderer) =
+        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | StaticModelAsset modelAsset ->
+                GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, modelAsset.Surfaces.[surfaceIndex], renderTasks)
+            | _ -> Log.trace "Cannot render static model surface with a non-model asset."
+        | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
     static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          modelRenderType,
-         modelAssetTag,
-         surfaces,
+         modelAssetTag : StaticModel AssetTag,
+         renderTasks,
          renderer) =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeSurface
-                        (modelAbsolute,
-                         &modelMatrix,
-                         modelRenderType,
-                         surface,
-                         surfaces)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
-        | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
+        | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
     /// Compute the 3d projection matrix.
     /// TODO: 3D: expose this elsewhere.
@@ -568,31 +580,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
+                | RenderStaticModelSurfaceDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag, modelSurfaceIndex) ->
+                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, modelSurfaceIndex, renderTasks, renderer)
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
-                    GlRenderer3d.categorizeStaticModel
-                        (modelAbsolute,
-                         &modelMatrix,
-                         modelRenderType,
-                         modelAssetTag,
-                         renderTasks,
-                         renderer)
+                    GlRenderer3d.categorizeStaticModel (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, renderTasks, renderer)
                 | RenderStaticModelsDescriptor (modelAbsolute, modelMatrices, modelRenderType, modelAssetTag) ->
                     for modelMatrix in modelMatrices do
-                        GlRenderer3d.categorizeStaticModel
-                            (modelAbsolute,
-                             &modelMatrix,
-                             modelRenderType,
-                             modelAssetTag,
-                             renderTasks,
-                             renderer)
-                | RenderCachedStaticModelDescriptor descriptor ->
-                    GlRenderer3d.categorizeStaticModel
-                        (descriptor.CachedStaticModelAbsolute,
-                         &descriptor.CachedStaticModelMatrix,
-                         descriptor.CachedStaticModelRenderType,
-                         descriptor.CachedStaticModel,
-                         renderTasks,
-                         renderer)
+                        GlRenderer3d.categorizeStaticModel (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, renderTasks, renderer)
+                | RenderCachedStaticModelDescriptor d ->
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, d.CachedStaticModelRenderType, d.CachedStaticModel, renderTasks, renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
                     SegmentedList.add cubeMap renderTasks.RenderSkyBoxes
                 | RenderLightDescriptor (position, color, brightness, intensity, _) ->
@@ -733,7 +729,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyePosition, positionTexture, normalTexture, albedoTexture, materialTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
+                 renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
             // attempt to render sky box
