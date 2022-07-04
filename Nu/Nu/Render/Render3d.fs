@@ -307,7 +307,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
-                GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, modelAsset.Surfaces.[surfaceIndex], renderTasks)
+                if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
+                    let surface = modelAsset.Surfaces.[surfaceIndex]
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring modelAssetTag + "'.")
 

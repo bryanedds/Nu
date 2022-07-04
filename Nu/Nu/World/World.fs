@@ -398,7 +398,7 @@ module WorldModule3 =
             Map.ofList [World.pairWithName (GroupDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
-            // TODO: consider if we should reflectively generate these
+            // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher2d (false, false) :> EntityDispatcher
                  EntityDispatcher3d (true, false) :> EntityDispatcher
@@ -422,10 +422,11 @@ module WorldModule3 =
                  TmxMapDispatcher () :> EntityDispatcher
                  LightDispatcher () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
+                 StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
-            // TODO: consider if we should reflectively generate these
+            // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [ScriptFacet () :> Facet
                  StaticSpriteFacet () :> Facet
@@ -439,6 +440,7 @@ module WorldModule3 =
                  TmxMapFacet () :> Facet
                  LightFacet () :> Facet
                  SkyBoxFacet () :> Facet
+                 StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet]
 
         /// Make an empty world.
