@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Diagnostics
 #if !PLATFORM_AGNOSTIC_TIMESTAMPING
 open System.Runtime.InteropServices

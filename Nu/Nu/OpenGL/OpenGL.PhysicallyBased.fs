@@ -12,6 +12,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
 
+    /// Describes a physically-based material.
+    type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
+        { AlbedoTexture : uint
+          MetalnessTexture : uint
+          RoughnessTexture : uint
+          NormalTexture : uint
+          AmbientOcclusionTexture : uint }
+
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
         { Bounds : Box3
@@ -26,39 +34,31 @@ module PhysicallyBased =
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedSurface =
         { mutable HashCode : int
-          AlbedoTexture : uint
-          MetalnessTexture : uint
-          RoughnessTexture : uint
-          NormalTexture : uint
-          AmbientOcclusionTexture : uint
+          SurfaceMatrixIsIdentity : bool
+          SurfaceMatrix : Matrix4x4
+          PhysicallyBasedMaterial : PhysicallyBasedMaterial // OPTIMIZATION: avoid matrix multiply when unecessary.
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            hash surface.AlbedoTexture * hash surface.MetalnessTexture * hash surface.RoughnessTexture * hash surface.NormalTexture * hash surface.AmbientOcclusionTexture ^^^
+            hash surface.SurfaceMatrix ^^^
+            hash surface.PhysicallyBasedMaterial ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make albedoTexture metalnessTexture roughnessTexture normalTexture ambientOcclusionTexture geometry =
+        static member inline make (surfaceMatrix : Matrix4x4) physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
-                  AlbedoTexture = albedoTexture
-                  MetalnessTexture = metalnessTexture
-                  RoughnessTexture = roughnessTexture
-                  NormalTexture = normalTexture
-                  AmbientOcclusionTexture = ambientOcclusionTexture
-                  PhysicallyBasedGeometry = geometry }
+                  SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
+                  SurfaceMatrix = surfaceMatrix
+                  PhysicallyBasedMaterial = physicallyBasedMaterial
+                  PhysicallyBasedGeometry = physicallyBasedGeometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
 
         static member inline equals left right =
             left.HashCode = right.HashCode &&
-            left.AlbedoTexture = right.AlbedoTexture &&
-            left.MetalnessTexture = right.MetalnessTexture &&
-            left.RoughnessTexture = right.RoughnessTexture &&
-            left.NormalTexture = right.NormalTexture &&
-            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
-            left.PhysicallyBasedGeometry.IndexBuffer = right.PhysicallyBasedGeometry.IndexBuffer &&
-            left.PhysicallyBasedGeometry.VertexBuffer = right.PhysicallyBasedGeometry.VertexBuffer &&
-            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
+            left.SurfaceMatrix = right.SurfaceMatrix &&
+            left.PhysicallyBasedMaterial = right.PhysicallyBasedMaterial &&
+            left.PhysicallyBasedGeometry = right.PhysicallyBasedGeometry
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that
@@ -409,61 +409,57 @@ module PhysicallyBased =
         else Left ("Could not create physically-based material due to missing diffuse/albedo, metalness, roughness, normal, or ambientOcclusion texture.")
 
     /// Attempt to create physically-based material from an assimp scene.
-    let TryCreatePhysicallyBasedMaterials (dirPath : string, scene : Assimp.Scene) =
+    let TryCreatePhysicallyBasedMaterials (renderable, dirPath : string, scene : Assimp.Scene) =
+        if renderable then
+            let mutable errorOpt = None
+            let materials = Array.zeroCreate scene.Materials.Count
+            for i in 0 .. dec scene.Materials.Count do
+                if Option.isNone errorOpt then
+                    match TryCreatePhysicallyBasedMaterial (dirPath, scene.Materials.[i]) with
+                    | Right ((_, albedoTexture), (_, metalnessTexture), (_, roughnessTexture), (_, normalTexture), (_, ambientOcclusion)) ->
+                        materials.[i] <-
+                            { AlbedoTexture = albedoTexture
+                              MetalnessTexture = metalnessTexture
+                              RoughnessTexture = roughnessTexture
+                              NormalTexture = normalTexture
+                              AmbientOcclusionTexture = ambientOcclusion }
+                    | Left error -> errorOpt <- Some error
+            match errorOpt with
+            | Some error -> Left error
+            | None -> Right materials
+        else Right [||]
+
+    let TryCreatePhysicallyBasedGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
-        let materials = dictPlus<int, _> HashIdentity.Structural []
-        for i in 0 .. dec scene.Materials.Count do
+        let geometries = SegmentedList.make ()
+        for mesh in scene.Meshes do
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedMaterial (dirPath, scene.Materials.[i]) with
-                | Right material -> materials.Add (i, material)
-                | Left error -> errorOpt <- Some error
+                match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
+                | Right geometry -> SegmentedList.add geometry geometries
+                | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
         | Some error -> Left error
-        | None -> Right materials
+        | None -> Right geometries
 
     let TryCreatePhysicallyBasedStaticModel (renderable, filePath, assimp : Assimp.AssimpContext) =
         try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
             let dirPath = Path.GetDirectoryName filePath
-            let materialsOpt =
-                if renderable
-                then TryCreatePhysicallyBasedMaterials (dirPath, scene)
-                else Right (dictPlus HashIdentity.Structural [])
-            match materialsOpt with
+            match TryCreatePhysicallyBasedMaterials (renderable, dirPath, scene) with
             | Right materials ->
-                let mutable errorOpt = None
-                let model = SegmentedList.make ()
-                let mutable bounds = box3Zero
-                for mesh in scene.Meshes do
-                    if Option.isNone errorOpt then
-                        match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
-                        | Right geometry ->
-                            let materialOpt =
-                                if renderable
-                                then materials.TryGetValue mesh.MaterialIndex
-                                else
-                                    (true,
-                                        ((Texture.TextureMetadata.empty, 0u),
-                                         (Texture.TextureMetadata.empty, 0u),
-                                         (Texture.TextureMetadata.empty, 0u),
-                                         (Texture.TextureMetadata.empty, 0u),
-                                         (Texture.TextureMetadata.empty, 0u)))
-                            match materialOpt with
-                            | (true, (albedoTexture, metalnessTexture, roughnessTexture, normalTexture, ambientOcclusionTexture)) ->
-                                let surface =
-                                    PhysicallyBasedSurface.make
-                                        (snd albedoTexture)
-                                        (snd metalnessTexture)
-                                        (snd roughnessTexture)
-                                        (snd normalTexture)
-                                        (snd ambientOcclusionTexture)
-                                        geometry
-                                SegmentedList.add surface model
-                                bounds <- bounds.Combine geometry.Bounds
-                            | (false, _) -> errorOpt <- Some ("Could not locate associated materials for mesh in file name '" + filePath + "'.")
-                        | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
-                match errorOpt with
-                | None -> Right { Bounds = bounds; Surfaces = Array.ofSeq model }
-                | Some error -> Left error
+                match TryCreatePhysicallyBasedGeometries (renderable, filePath, scene) with
+                | Right geometries ->
+                    let surfaces = SegmentedList.make ()
+                    let mutable bounds = box3Zero
+                    for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms m4Identity do
+                        for meshIndex in node.MeshIndices do
+                            let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                            let material = if renderable then materials.[materialIndex] else Unchecked.defaultof<_>
+                            let geometry = geometries.[meshIndex]
+                            let surface = PhysicallyBasedSurface.make nodeTransform material geometry
+                            SegmentedList.add surface surfaces
+                            bounds <- bounds.Combine (geometry.Bounds.Transform nodeTransform)
+                    Right { Bounds = bounds; Surfaces = Array.ofSeq surfaces }
+                | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
 
@@ -553,11 +549,6 @@ module PhysicallyBased =
          modelsCount : int,
          view : single array,
          projection : single array,
-         albedoTexture : uint,
-         metalnessTexture : uint,
-         roughnessTexture : uint,
-         normalTexture : uint,
-         ambientOcclusionTexture : uint,
          blending,
          irradianceMap : uint,
          environmentFilterMap : uint,
@@ -566,6 +557,7 @@ module PhysicallyBased =
          lightColors : single array,
          lightBrightnesses : single array,
          lightIntensities : single array,
+         material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
@@ -599,15 +591,15 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, metalnessTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.MetalnessTexture)
         Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, roughnessTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
         Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, ambientOcclusionTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture6

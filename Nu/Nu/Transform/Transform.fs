@@ -127,7 +127,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AffineMatrix =
         let rotationMatrix = this.RotationMatrix
         let scaleMatrix = Matrix4x4.CreateScale this.Scale_
-        let mutable affineMatrix = Matrix4x4.Multiply (scaleMatrix, rotationMatrix)
+        let mutable affineMatrix = scaleMatrix * rotationMatrix
         affineMatrix.Translation <- this.Position_
         affineMatrix
 

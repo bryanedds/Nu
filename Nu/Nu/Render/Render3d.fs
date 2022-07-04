@@ -286,20 +286,24 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
+                    let surfaceMatrix =
+                        if not surface.SurfaceMatrixIsIdentity
+                        then modelMatrix * surface.SurfaceMatrix
+                        else modelMatrix
                     match modelRenderType with
                     | DeferredRenderType ->
                         if modelAbsolute then
                             match surfacesDeferredAbsolute.TryGetValue surface with
-                            | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
-                            | (false, _) -> surfacesDeferredAbsolute.Add (surface, SegmentedList.singleton modelMatrix)
+                            | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
+                            | (false, _) -> surfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
                         else
                             match surfacesDeferredRelative.TryGetValue surface with
-                            | (true, surfaces) -> SegmentedList.add modelMatrix surfaces
-                            | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton modelMatrix)
+                            | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
+                            | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
                     | ForwardRenderType ->
                         if modelAbsolute
-                        then SegmentedList.add struct (modelMatrix, surface) surfacesForwardAbsolute
-                        else SegmentedList.add struct (modelMatrix, surface) surfacesForwardRelative
+                        then SegmentedList.add struct (surfaceMatrix, surface) surfacesForwardAbsolute
+                        else SegmentedList.add struct (surfaceMatrix, surface) surfacesForwardRelative
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -359,7 +363,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         viewArray
         projectionArray
         (models : Matrix4x4 SegmentedList)
-        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface)
         blending
         irradianceMap
         environmentFilterMap
@@ -368,6 +371,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         lightColors
         lightBrightnesses
         lightIntensities
+        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface)
         shader
         renderer =
 
@@ -387,8 +391,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
-                 surface.AlbedoTexture, surface.MetalnessTexture, surface.RoughnessTexture, surface.NormalTexture, surface.AmbientOcclusionTexture, blending,
-                 irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities, surface.PhysicallyBasedGeometry, shader)
+                 blending, irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
+                 surface.PhysicallyBasedMaterial, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
     static member make window config =
@@ -686,7 +690,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     viewAbsoluteArray
                     projectionArray
                     entry.Value
-                    entry.Key
                     false
                     irradianceMap
                     environmentFilterMap
@@ -695,6 +698,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
+                    entry.Key
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
                 OpenGL.Hl.Assert ()
@@ -706,7 +710,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     viewRelativeArray
                     projectionArray
                     entry.Value
-                    entry.Key
                     false
                     irradianceMap
                     environmentFilterMap
@@ -715,6 +718,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
+                    entry.Key
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
                 OpenGL.Hl.Assert ()
@@ -754,7 +758,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     viewAbsoluteArray
                     projectionArray
                     (SegmentedList.singleton model)
-                    surface
                     true
                     irradianceMap
                     environmentFilterMap
@@ -763,6 +766,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightPositions
                     lightBrightnesses
                     lightIntensities
+                    surface
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
                 OpenGL.Hl.Assert ()
@@ -775,7 +779,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     viewRelativeArray
                     projectionArray
                     (SegmentedList.singleton model)
-                    surface
                     true
                     irradianceMap
                     environmentFilterMap
@@ -784,6 +787,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
+                    surface
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
                 OpenGL.Hl.Assert ()
