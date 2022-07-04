@@ -26,21 +26,19 @@ and [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType
 
-/// A collection of render surfaces in a pass.
-and [<NoEquality; NoComparison>] RenderSurfaces =
+/// A collection of render tasks in a pass.
+and [<NoEquality; NoComparison>] RenderTasks =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSkyBoxes : CubeMap AssetTag SegmentedList
       RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
-
-/// A collection of lights in a pass.
-and RenderLights = SortableLight SegmentedList
+      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSkyBoxes : CubeMap AssetTag SegmentedList
+      RenderLights : SortableLight SegmentedList }
 
 /// Describes a 3d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderLights * RenderSurfaces * Renderer3d -> unit }
+      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderTasks * Renderer3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -271,39 +269,49 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
-    static member private categorizeStaticModel
+    static member private categorizeSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          modelRenderType : RenderType,
+         surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
+         surfaces) =
+        let surfaceMatrix =
+            if not surface.SurfaceMatrixIsIdentity
+            then modelMatrix * surface.SurfaceMatrix
+            else modelMatrix
+        match modelRenderType with
+        | DeferredRenderType ->
+            if modelAbsolute then
+                match surfaces.RenderSurfacesDeferredAbsolute.TryGetValue surface with
+                | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
+                | (false, _) -> surfaces.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
+            else
+                match surfaces.RenderSurfacesDeferredRelative.TryGetValue surface with
+                | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
+                | (false, _) -> surfaces.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
+        | ForwardRenderType ->
+            if modelAbsolute
+            then SegmentedList.add struct (surfaceMatrix, surface) surfaces.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (surfaceMatrix, surface) surfaces.RenderSurfacesForwardRelative
+
+    static member private categorizeStaticModel
+        (modelAbsolute,
+         modelMatrix : Matrix4x4 inref,
+         modelRenderType,
          modelAssetTag,
-         surfacesDeferredAbsolute : Dictionary<_, _>,
-         surfacesDeferredRelative : Dictionary<_, _>,
-         surfacesForwardAbsolute : SegmentedList<_>,
-         surfacesForwardRelative : SegmentedList<_>,
+         surfaces,
          renderer) =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
-                    let surfaceMatrix =
-                        if not surface.SurfaceMatrixIsIdentity
-                        then modelMatrix * surface.SurfaceMatrix
-                        else modelMatrix
-                    match modelRenderType with
-                    | DeferredRenderType ->
-                        if modelAbsolute then
-                            match surfacesDeferredAbsolute.TryGetValue surface with
-                            | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
-                            | (false, _) -> surfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
-                        else
-                            match surfacesDeferredRelative.TryGetValue surface with
-                            | (true, surfaces) -> SegmentedList.add surfaceMatrix surfaces
-                            | (false, _) -> surfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
-                    | ForwardRenderType ->
-                        if modelAbsolute
-                        then SegmentedList.add struct (surfaceMatrix, surface) surfacesForwardAbsolute
-                        else SegmentedList.add struct (surfaceMatrix, surface) surfacesForwardRelative
+                    GlRenderer3d.categorizeSurface
+                        (modelAbsolute,
+                         &modelMatrix,
+                         modelRenderType,
+                         surface,
+                         surfaces)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Descriptor failed to render due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -550,13 +558,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // categorize messages
+            let renderTasks =
+                { RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
+                  RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
+                  RenderSurfacesForwardAbsolute = SegmentedList.make ()
+                  RenderSurfacesForwardRelative = SegmentedList.make ()
+                  RenderSkyBoxes = SegmentedList.make ()
+                  RenderLights = SegmentedList.make () }
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
-            let surfacesDeferredAbsolute = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
-            let surfacesDeferredRelative = dictPlus<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList> HashIdentity.Structural []
-            let surfacesForwardAbsolute = SegmentedList.make ()
-            let surfacesForwardRelative = SegmentedList.make ()
-            let skyBoxes = SegmentedList.make ()
-            let lights = SegmentedList.make ()
             for message in renderMessages do
                 match message with
                 | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
@@ -565,10 +574,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          &modelMatrix,
                          modelRenderType,
                          modelAssetTag,
-                         surfacesDeferredAbsolute,
-                         surfacesDeferredRelative,
-                         surfacesForwardAbsolute,
-                         surfacesForwardRelative,
+                         renderTasks,
                          renderer)
                 | RenderStaticModelsDescriptor (modelAbsolute, modelMatrices, modelRenderType, modelAssetTag) ->
                     for modelMatrix in modelMatrices do
@@ -577,10 +583,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                              &modelMatrix,
                              modelRenderType,
                              modelAssetTag,
-                             surfacesDeferredAbsolute,
-                             surfacesDeferredRelative,
-                             surfacesForwardAbsolute,
-                             surfacesForwardRelative,
+                             renderTasks,
                              renderer)
                 | RenderCachedStaticModelDescriptor descriptor ->
                     GlRenderer3d.categorizeStaticModel
@@ -588,46 +591,35 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                          &descriptor.CachedStaticModelMatrix,
                          descriptor.CachedStaticModelRenderType,
                          descriptor.CachedStaticModel,
-                         surfacesDeferredAbsolute,
-                         surfacesDeferredRelative,
-                         surfacesForwardAbsolute,
-                         surfacesForwardRelative,
+                         renderTasks,
                          renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
-                    SegmentedList.add cubeMap skyBoxes
+                    SegmentedList.add cubeMap renderTasks.RenderSkyBoxes
                 | RenderLightDescriptor (position, color, brightness, intensity, _) ->
                     let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
-                    SegmentedList.add light lights
+                    SegmentedList.add light renderTasks.RenderLights
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement post-pass handling.
 
             // sort absolute forward surfaces
             // TODO: 3D: use persistent buffers to elide allocation.
-            let surfacesForwardAbsolute =
-                surfacesForwardAbsolute |>
-                Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-                Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
-                SegmentedList.ofSeq
-
-            // sort relative forward surfaces
-            // TODO: 3D: use persistent buffers to elide allocation.
-            let surfacesForwardRelative =
-                surfacesForwardRelative |>
-                Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-                Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
-                SegmentedList.ofSeq
-
-            // make render surfaces
-            let surfaces =
-                { RenderSurfacesDeferredAbsolute = surfacesDeferredAbsolute
-                  RenderSurfacesDeferredRelative = surfacesDeferredRelative
-                  RenderSkyBoxes = skyBoxes
-                  RenderSurfacesForwardAbsolute = surfacesForwardAbsolute
-                  RenderSurfacesForwardRelative = surfacesForwardRelative }
+            // TODO: 3D: extract sorting function from this mess.
+            let renderTasks =
+                { renderTasks with
+                    RenderSurfacesForwardAbsolute =
+                        renderTasks.RenderSurfacesForwardAbsolute |>
+                        Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                        Seq.toArray |>
+                        Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
+                        Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
+                        SegmentedList.ofSeq;
+                    RenderSurfacesForwardRelative =
+                        renderTasks.RenderSurfacesForwardRelative |>
+                        Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                        Seq.toArray |>
+                        Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
+                        Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
+                        SegmentedList.ofSeq }
 
             // setup geometry buffer
             let (positionTexture, normalTexture, albedoTexture, materialTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
@@ -643,7 +635,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // attempt to locate last sky box
             let skyBoxOpt =
-                match Seq.tryLast skyBoxes with
+                match Seq.tryLast renderTasks.RenderSkyBoxes with
                 | Some cubeMap ->
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
                     | ValueSome asset ->
@@ -681,10 +673,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
 
             // sort lights for deferred relative to eye position
-            let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays eyePosition lights
+            let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
+                SortableLight.sortLightsIntoArrays eyePosition renderTasks.RenderLights
 
             // render deferred pass w/ absolute-transformed surfaces
-            for entry in surfaces.RenderSurfacesDeferredAbsolute do
+            for entry in renderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
@@ -704,7 +697,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // render deferred pass w/ relative-transformed surfaces
-            for entry in surfaces.RenderSurfacesDeferredRelative do
+            for entry in renderTasks.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
@@ -751,8 +744,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces
-            for (model, surface) in surfaces.RenderSurfacesForwardAbsolute do
-                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
+            for (model, surface) in renderTasks.RenderSurfacesForwardAbsolute do
+                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
+                    SortableLight.sortLightsIntoArrays model.Translation renderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
@@ -772,8 +766,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // render forward pass w/ relative-transformed surfaces
-            for (model, surface) in surfaces.RenderSurfacesForwardRelative do
-                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) = SortableLight.sortLightsIntoArrays model.Translation lights
+            for (model, surface) in renderTasks.RenderSurfacesForwardRelative do
+                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
+                    SortableLight.sortLightsIntoArrays model.Translation renderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
@@ -794,7 +789,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render pre-passes
             for pass in postPasses do
-                pass.RenderPass3d (viewAbsolute, viewSkyBox, viewRelative, projection, lights, surfaces, renderer :> Renderer3d)
+                pass.RenderPass3d (viewAbsolute, viewSkyBox, viewRelative, projection, renderTasks, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
 
             // end frame
