@@ -151,6 +151,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
           RenderBrdfTexture : uint
+          RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable RenderModelsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -197,7 +198,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
         | ".fbx"
         | ".obj" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (renderer.RenderPhysicallyBasedMaterial, true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None
@@ -519,6 +520,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load Brdf texture due to: " + error)
 
+        // create default physically-based material
+        let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+            { AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAlbedo.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelMetalness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelRoughness.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelNormal.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAbientOcclusion.png") |> Either.getRight |> snd }
+
         // make renderer
         let renderer =
             { RenderWindow = window
@@ -537,6 +546,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture = brdfTexture
+              RenderPhysicallyBasedMaterial = physicallyBasedMaterial
               RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
