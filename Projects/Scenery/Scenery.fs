@@ -93,6 +93,7 @@ type SceneryDispatcher () =
                 // 3) put all desired objects in empty root GameObject
                 // 4) export root GameObject
                 // 5) delete all fbx files except the one you exported
+                // 6) instantiate entities into scene like so -
                 Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                     let (staticModelSurface, world) = World.createEntity<StaticModelSurfaceDispatcher> None NoOverlay Simulants.Default.Group world
                     let bounds = surface.SurfaceBounds
@@ -103,9 +104,7 @@ type SceneryDispatcher () =
                     let transform = surface.SurfaceMatrix
                     let position = transform.Translation
                     let mutable rotation = transform
-                    rotation.M41 <- 0.0f
-                    rotation.M42 <- 0.0f
-                    rotation.M43 <- 0.0f
+                    rotation.Translation <- v3Zero
                     let rotation = Quaternion.CreateFromRotationMatrix rotation
                     let world = staticModelSurface.SetPosition position world
                     let world = staticModelSurface.SetRotation rotation world
