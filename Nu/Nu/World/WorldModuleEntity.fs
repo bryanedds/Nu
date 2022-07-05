@@ -2128,7 +2128,7 @@ module WorldModuleEntity =
                         let quadree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
+                                (fun quadree -> Quadtree.updateElement oldPresence oldBounds.Box2 newPresence newBounds.Box2 entity quadree; quadree)
                                 (World.getQuadtree world)
                         World.setQuadtree quadree world
                     else
