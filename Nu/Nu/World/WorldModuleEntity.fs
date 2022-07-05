@@ -2149,7 +2149,7 @@ module WorldModuleEntity =
                     newStatic <> oldStatic ||
                     newEnclosed <> oldEnclosed ||
                     newLight <> oldLight ||
-                    not (oldBounds.Equals newBounds) then
+                    box3Neq oldBounds newBounds then
 
                     // update entity in entity tree
                     if entityState.Is2d then
