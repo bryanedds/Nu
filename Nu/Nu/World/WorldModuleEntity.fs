@@ -2130,6 +2130,7 @@ module WorldModuleEntity =
                 | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
+        // TODO: 3D: consider passing these booleans as a packed int.
         static member internal updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
