@@ -2142,37 +2142,38 @@ module WorldModuleEntity =
                 let newStatic = entityState.Static
                 let newEnclosed = entityState.Enclosed
                 let newLight = entityState.Light
+                let newBounds = entityState.Bounds
 
                 // OPTIMIZATION: only update when relevant entity state has changed.
                 if  newOmnipresent <> oldOmnipresent ||
                     newStatic <> oldStatic ||
                     newEnclosed <> oldEnclosed ||
-                    newLight <> oldLight then
-                    let newBounds = entityState.Bounds
-                    if not (oldBounds.Equals newBounds) then
+                    newLight <> oldLight ||
+                    not (oldBounds.Equals newBounds) then
 
-                        // update entity in entity tree
-                        if entityState.Is2d then
-                            let quadree =
-                                MutantCache.mutateMutant
-                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                    (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadree world
-                        else
-                            let octree =
-                                MutantCache.mutateMutant
-                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
-                                    (fun octree ->
-                                        let element = Octelement.make newStatic newEnclosed newLight entity
-                                        Octree.updateElement oldBounds newBounds element octree
-                                        octree)
-                                    (World.getOctree world)
-                            World.setOctree octree world
+                    // update entity in entity tree
+                    if entityState.Is2d then
+                        let quadree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
+                                (World.getQuadtree world)
+                        World.setQuadtree quadree world
+                    else
+                        let octree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                                (fun octree ->
+                                    let element = Octelement.make newStatic newEnclosed newLight entity
+                                    Octree.updateElement oldBounds newBounds element octree
+                                    octree)
+                                (World.getOctree world)
+                        World.setOctree octree world
 
-                    // fin
-                    else world
+                // fin
                 else world
+
+            // fin
             else world
 
         /// Attempt to get the dispatcher name for an entity currently on the world's clipboard.
