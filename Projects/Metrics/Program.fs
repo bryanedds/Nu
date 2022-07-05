@@ -163,7 +163,7 @@ type ElmishEntityDispatcher () =
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetStaticModel world
-        let bounds = World.getBounds staticModel world
+        let bounds = (World.getStaticModelMetadata staticModel world).Bounds
         let boundsExtended = bounds.Combine bounds.Mirror
         boundsExtended.Size
 
