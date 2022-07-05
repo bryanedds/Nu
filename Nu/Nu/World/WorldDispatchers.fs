@@ -1349,7 +1349,7 @@ module StaticModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
-            let staticModelMetadata = World.getStaticModel staticModel world
+            let staticModelMetadata = World.getStaticModelMetadata staticModel world
             let bounds = staticModelMetadata.Bounds
             let boundsExtended = bounds.Combine bounds.Mirror
             boundsExtended.Size
@@ -1387,7 +1387,7 @@ module StaticModelSurfaceFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            let staticModel = World.getStaticModel (entity.GetStaticModel world) world
+            let staticModel = World.getStaticModelMetadata (entity.GetStaticModel world) world
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
                 let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds

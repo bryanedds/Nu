@@ -352,7 +352,7 @@ module WorldModule =
             Metadata.tryGetStaticModelMetadata assetTag (World.getMetadata world)
 
         /// Forcibly get the static model metadata of the given asset (throwing on failure).
-        static member getStaticModel assetTag world =
+        static member getStaticModelMetadata assetTag world =
             Metadata.getStaticModelMetadata assetTag (World.getMetadata world)
 
         /// Get a copy of the metadata map.
