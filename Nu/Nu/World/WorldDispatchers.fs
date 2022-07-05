@@ -1276,7 +1276,7 @@ module LightFacetModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.LightType Point
+             define Entity.LightType PointLight
              define Entity.Brightness 1000.0f
              define Entity.Intensity 1.0f]
 
@@ -1340,13 +1340,13 @@ module StaticModelSurfaceFacetModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let absolute = transform.Absolute
-                let affineMatrix = transform.AffineMatrix
-                let staticModel = entity.GetStaticModel world
                 match entity.GetSurfaceIndex world with
                 | -1 -> world
                 | surfaceIndex ->
+                    let mutable transform = entity.GetTransform world
+                    let absolute = transform.Absolute
+                    let affineMatrix = transform.AffineMatrix
+                    let staticModel = entity.GetStaticModel world
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
@@ -1355,10 +1355,13 @@ module StaticModelSurfaceFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            let staticModel = entity.GetStaticModel world
-            let bounds = World.getBounds staticModel world
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
+            let staticModel = World.getStaticModel (entity.GetStaticModel world) world
+            let surfaceIndex = entity.GetSurfaceIndex world
+            if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
+                let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
+                let boundsExtended = bounds.Combine bounds.Mirror
+                boundsExtended.Size
+            else Constants.Engine.EntitySize3dDefault
 
 [<AutoOpen>]
 module StaticModelFacetModule =
@@ -1385,7 +1388,8 @@ module StaticModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
-            let bounds = World.getBounds staticModel world
+            let staticModelMetadata = World.getStaticModel staticModel world
+            let bounds = staticModelMetadata.Bounds
             let boundsExtended = bounds.Combine bounds.Mirror
             boundsExtended.Size
 
@@ -2474,7 +2478,7 @@ module LightDispatcherModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.LightType Point
+             define Entity.LightType PointLight
              define Entity.Brightness 100.0f
              define Entity.Intensity 1.0f]
 
