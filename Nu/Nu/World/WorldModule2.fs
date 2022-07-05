@@ -82,8 +82,9 @@ module WorldModule2 =
             let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
+                let presence = entity.GetPresence world
                 if entity.GetIs2d world then
-                    Quadtree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds.Box2 entity quadtree
+                    Quadtree.addElement presence bounds.Box2 entity quadtree
             quadtree
 
         static member internal rebuildOctree world =
@@ -100,11 +101,11 @@ module WorldModule2 =
             for entity in entities do
                 let bounds = entity.GetBounds world
                 let static_ = entity.GetStatic world
-                let enclosed = entity.GetEnclosed world
                 let light = entity.GetLight world
+                let presence = entity.GetPresence world
                 if not (entity.GetIs2d world) then
-                    let element = Octelement.make static_ enclosed light entity
-                    Octree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) bounds element octree
+                    let element = Octelement.make static_ light presence entity
+                    Octree.addElement bounds element octree
             octree
 
         /// Resolve a relation to an address in the current script context.
@@ -759,7 +760,9 @@ module WorldModule2 =
             let frustumEnclosed = World.getEyeFrustumEnclosed3d world
             let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
             let lightBox = World.getLightbox3d world
-            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed lightBox set) world
+            let (elements, world) = World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed lightBox set) world
+            let entities = Seq.map (fun element -> element.Entry) elements
+            (entities, world)
 
         static member private updateSimulants world =
 
@@ -817,8 +820,7 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (octelements, world) = World.getEntitiesInPlay3d CachedHashSet3d world
-            let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
 #endif
@@ -902,8 +904,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInView3d CachedHashSet3d world
-            let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities3d, world) = World.getEntitiesInView3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
             ActualizeGatherTimer.Stop ()

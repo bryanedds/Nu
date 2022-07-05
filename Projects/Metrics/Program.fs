@@ -144,7 +144,7 @@ type MyGameDispatcher () =
         let world =
             Seq.foldi (fun i world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.Default.Group world
-                let world = entity.SetOmnipresent true world
+                let world = entity.SetPresence Omnipresent world
                 let world = entity.SetPosition (position + v3 -118.0f -118.0f 0.0f) world
                 world)
                 world positions
@@ -198,7 +198,7 @@ type ElmishGameDispatcher () =
                 Content.group (string i) []
                     [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
-                            [Entity.Omnipresent == true
+                            [Entity.Presence == Omnipresent
                              Entity.Position == v3 (single i * 5.0f - 200.0f) (single j * 2.5f - 100.0f) -250.0f
                              Entity.Scale <== int --> fun int -> v3Dup (single (int % 10)) * 0.5f]]
              Content.group Gen.name []
