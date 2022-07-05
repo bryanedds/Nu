@@ -348,20 +348,12 @@ module WorldModule =
             Metadata.getTileMapMetadata assetTag (World.getMetadata world)
 
         /// Try to get the static model metadata of the given asset.
-        static member tryGetStaticModel assetTag world =
-            Metadata.tryGetStaticModel assetTag (World.getMetadata world)
+        static member tryGetStaticModelMetadata assetTag world =
+            Metadata.tryGetStaticModelMetadata assetTag (World.getMetadata world)
 
         /// Forcibly get the static model metadata of the given asset (throwing on failure).
         static member getStaticModel assetTag world =
-            Metadata.getStaticModel assetTag (World.getMetadata world)
-
-        /// Try to get the bounds metadata of the given asset.
-        static member tryGetBounds assetTag world =
-            Metadata.tryGetBounds assetTag (World.getMetadata world)
-
-        /// Forcibly get the bounds metadata of the given asset (throwing on failure).
-        static member getBounds assetTag world =
-            Metadata.getBounds assetTag (World.getMetadata world)
+            Metadata.getStaticModelMetadata assetTag (World.getMetadata world)
 
         /// Get a copy of the metadata map.
         static member getMetadataMap world =

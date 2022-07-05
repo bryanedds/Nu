@@ -36,6 +36,7 @@ module PhysicallyBased =
         { mutable HashCode : int
           SurfaceMatrixIsIdentity : bool
           SurfaceMatrix : Matrix4x4
+          SurfaceBounds : Box3
           PhysicallyBasedMaterial : PhysicallyBasedMaterial // OPTIMIZATION: avoid matrix multiply when unecessary.
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
@@ -44,11 +45,12 @@ module PhysicallyBased =
             hash surface.PhysicallyBasedMaterial ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make (surfaceMatrix : Matrix4x4) physicallyBasedMaterial physicallyBasedGeometry =
+        static member inline make (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
                   SurfaceMatrix = surfaceMatrix
+                  SurfaceBounds = surfaceBounds
                   PhysicallyBasedMaterial = physicallyBasedMaterial
                   PhysicallyBasedGeometry = physicallyBasedGeometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
@@ -455,7 +457,7 @@ module PhysicallyBased =
                             let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                             let material = if renderable then materials.[materialIndex] else Unchecked.defaultof<_>
                             let geometry = geometries.[meshIndex]
-                            let surface = PhysicallyBasedSurface.make nodeTransform material geometry
+                            let surface = PhysicallyBasedSurface.make nodeTransform geometry.Bounds material geometry
                             SegmentedList.add surface surfaces
                             bounds <- bounds.Combine (geometry.Bounds.Transform nodeTransform)
                     Right { Bounds = bounds; Surfaces = Array.ofSeq surfaces }

@@ -180,26 +180,16 @@ module Metadata =
     let getTileMapMetadata assetTag metadata =
         Option.get (tryGetTileMapMetadata assetTag metadata)
 
-    /// Try to get the static model of the given asset.
-    let tryGetStaticModel (assetTag : StaticModel AssetTag) metadata =
+    /// Try to get the static model metadata of the given asset.
+    let tryGetStaticModelMetadata (assetTag : StaticModel AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
         | Some (StaticModelMetadata model) -> Some model
         | None -> None
         | _ -> None
 
-    /// Forcibly get the static model of the given asset (throwing on failure).
-    let getStaticModel assetTag metadata =
-        Option.get (tryGetStaticModel assetTag metadata)
-
-    /// Try to get the bounds metadata of the given asset.
-    let tryGetBounds assetTag metadata =
-        match tryGetStaticModel assetTag metadata with
-        | Some model -> Some model.Bounds
-        | None -> None
-
-    /// Forcibly get the bounds metadata of the given asset (throwing on failure).
-    let getBounds assetTag metadata =
-        Option.get (tryGetBounds assetTag metadata)
+    /// Forcibly get the static model metadata of the given asset (throwing on failure).
+    let getStaticModelMetadata assetTag metadata =
+        Option.get (tryGetStaticModelMetadata assetTag metadata)
 
     /// Get a copy of the metadata map.
     let getMetadataMap metadata =
