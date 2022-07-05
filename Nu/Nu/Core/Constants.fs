@@ -93,6 +93,11 @@ module Render =
     let [<Literal>] EnvironmentFilterMips = 8
 
 [<RequireQualifiedAccess>]
+module Assimp =
+
+    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate
+
+[<RequireQualifiedAccess>]
 module Audio =
 
     let [<Literal>] Frequency = 44100
