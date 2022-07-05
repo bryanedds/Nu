@@ -131,12 +131,12 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.Translation <- this.Position_
         affineMatrix
 
-    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
+    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: 3D: implement Row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
     member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
     member this.Left = -this.Right
     member this.Down = -this.Up
-    member this.Backward = -this.Forward
+    member this.Back = -this.Forward
 
     member this.PerimeterUnscaled
         with get () =
