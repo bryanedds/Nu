@@ -22,9 +22,6 @@ type RotatingModelDispatcher () =
     static member Properties =
         [define Entity.StaticModel Assets.Default.StaticModel]
 
-    override this.Update (entity, world) =
-        entity.SetAngles (entity.GetAngles world + v3Dup 0.01f) world
-
 // this is our Elm-style command type
 type Command =
     | MoveLeft
@@ -56,18 +53,19 @@ type SceneryDispatcher () =
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let speed = 0.25f // ~33.5mph
+        let moveSpeed = 0.1f
+        let turnSpeed = 0.05f
         let rotation = World.getEyeRotation3d world
         let world =
             match command with
-            | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Left, rotation) * speed) world
-            | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Right, rotation) * speed) world
-            | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Forward, rotation) * speed) world
-            | MoveBack -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Back, rotation) * speed) world
-            | MoveUpward -> World.setEyePosition3d (World.getEyePosition3d world + v3Up * speed) world
-            | MoveDown -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * speed) world
-            | TurnLeft -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, 0.1f)) world
-            | TurnRight -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, -0.1f)) world
+            | TurnLeft -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
+            | TurnRight -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
+            | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+            | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+            | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+            | MoveBack -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+            | MoveUpward -> World.setEyePosition3d (World.getEyePosition3d world + v3Up * moveSpeed) world
+            | MoveDown -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * moveSpeed) world
             | Nop -> world
         just world
 
@@ -123,9 +121,9 @@ type SceneryDispatcher () =
 #if DEBUG
         let population = 10
 #else
-        let population = 50
+        let population = 40
 #endif
-        let spread = 16.0f
+        let spread = 25.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
