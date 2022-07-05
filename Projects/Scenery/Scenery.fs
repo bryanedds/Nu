@@ -31,6 +31,8 @@ type Command =
     | MoveRight
     | MoveForward
     | MoveBackward
+    | MoveUpward
+    | MoveDownward
     | Nop
 
 // this is our Elm-style game dispatcher
@@ -44,17 +46,21 @@ type SceneryDispatcher () =
             elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
             elif KeyboardState.isKeyDown KeyboardKey.Up then cmd MoveForward
             elif KeyboardState.isKeyDown KeyboardKey.Down then cmd MoveBackward
+            elif KeyboardState.isKeyDown KeyboardKey.W then cmd MoveUpward
+            elif KeyboardState.isKeyDown KeyboardKey.S then cmd MoveDownward
             else cmd Nop]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let speed = 0.5f // ~67.1mph
+        let speed = 1.0f // 2 * ~67.1mph
         let world =
             match command with
             | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + v3Left * speed) world
             | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + v3Right * speed) world
             | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + v3Forward * speed) world
             | MoveBackward -> World.setEyePosition3d (World.getEyePosition3d world + v3Backward * speed) world
+            | MoveUpward -> World.setEyePosition3d (World.getEyePosition3d world + v3Up * speed) world
+            | MoveDownward -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * speed) world
             | Nop -> world
         just world
 
@@ -91,8 +97,9 @@ type SceneryDispatcher () =
                     let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
         let world =
-            match World.tryGetStaticModelMetadata (asset "Default" "GameObject") world with
-            | Some staticModel ->
+            let staticModel = asset "Default" "GameObject"
+            match World.tryGetStaticModelMetadata staticModel world with
+            | Some staticModelMetadata ->
                 // Unity Scene Export Instruction:
                 //
                 // 1) have FBX Exporter package installed
@@ -104,24 +111,25 @@ type SceneryDispatcher () =
                     let (staticModelSurface, world) = World.createEntity<StaticModelSurfaceDispatcher> None NoOverlay Simulants.Default.Group world
                     let bounds = surface.SurfaceBounds
                     let boundsExtended = bounds.Combine bounds.Mirror
+                    let world = staticModelSurface.SetStaticModel staticModel world
                     let world = staticModelSurface.SetSize boundsExtended.Size world
                     let world = staticModelSurface.SetPosition surface.SurfaceMatrix.Translation world
                     world)
-                    world staticModel.Surfaces
+                    world staticModelMetadata.Surfaces
             | None -> world
-        let world =
-            Seq.fold (fun world position ->
-                let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-                let world = staticModel.SetScale (v3Dup 1.5f) world
-                //let world = staticModel.SetRenderStyle Forward world
-                let world = staticModel.SetPosition position world
-                world)
-                world positions
+        //let world =
+        //    Seq.fold (fun world position ->
+        //        let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
+        //        let world = staticModel.SetScale (v3Dup 1.5f) world
+        //        //let world = staticModel.SetRenderStyle Forward world
+        //        let world = staticModel.SetPosition position world
+        //        world)
+        //        world positions
         world
 
     override this.Update (entity, world) =
         let world = base.Update (entity, world)
-        let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
-        let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
+        //let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
+        //let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
         let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
         world
