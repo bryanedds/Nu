@@ -178,34 +178,9 @@ module Quadtree =
                 tree.OmnipresentElements.Remove element |> ignore
             else Quadnode.removeElement bounds element tree.Node
 
-    let updateElement oldBounds newBounds element tree =
-        let oldInBounds = Quadnode.isIntersectingBounds oldBounds tree.Node
-        let newInBounds = Quadnode.isIntersectingBounds newBounds tree.Node
-        if oldInBounds && not newInBounds then
-            // going out of bounds
-            Log.info "Element is outside the quadtree's containment area."
-            if not newInBounds then tree.OmnipresentElements.Add element |> ignore
-            Quadnode.updateElement oldBounds newBounds element tree.Node
-        elif not oldInBounds && newInBounds then
-            // going back in bounds
-            if not oldInBounds then tree.OmnipresentElements.Remove element |> ignore
-            Quadnode.updateElement oldBounds newBounds element tree.Node
-        elif oldInBounds && newInBounds then
-            // staying in bounds
-            let rootBounds = tree.Bounds
-            let rootDepth = pown tree.Granularity tree.Depth
-            let leafSize = rootBounds.Size / single rootDepth
-            let leafPosition =
-                v2
-                    (oldBounds.Position.X - (rootBounds.Position.X + oldBounds.Position.X) % leafSize.X)
-                    (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
-            let leafBounds = box2 leafPosition leafSize
-            if  not (Math.isBoundsInBounds2d oldBounds leafBounds) ||
-                not (Math.isBoundsInBounds2d newBounds leafBounds) then
-                Quadnode.updateElement oldBounds newBounds element tree.Node
-        else
-            // staying out of bounds
-            ()
+    let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
+        removeElement oldPresence oldBounds element tree
+        addElement newPresence newBounds element tree
 
     let getElementsOmnipresent set tree =
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable

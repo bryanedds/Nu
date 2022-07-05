@@ -273,34 +273,8 @@ module Octree =
             else Octnode.removeElement bounds element tree.Node
 
     let updateElement oldBounds newBounds element tree =
-        let oldInBounds = Octnode.isIntersectingBox oldBounds tree.Node
-        let newInBounds = Octnode.isIntersectingBox newBounds tree.Node
-        if oldInBounds && not newInBounds then
-            // going out of bounds
-            Log.info "Element is outside the octree's containment area."
-            if not newInBounds then tree.OmnipresentElements.Add element |> ignore
-            Octnode.updateElement oldBounds newBounds element tree.Node
-        elif not oldInBounds && newInBounds then
-            // going back in bounds
-            if not oldInBounds then tree.OmnipresentElements.Remove element |> ignore
-            Octnode.updateElement oldBounds newBounds element tree.Node
-        elif oldInBounds && newInBounds then
-            // staying in bounds
-            let rootBounds = tree.Bounds
-            let rootDepth = pown tree.Granularity tree.Depth
-            let leafSize = rootBounds.Size / single rootDepth
-            let leafPosition =
-                v3
-                    (oldBounds.Position.X - (rootBounds.Position.X + oldBounds.Position.X) % leafSize.X)
-                    (oldBounds.Position.Y - (rootBounds.Position.Y + oldBounds.Position.Y) % leafSize.Y)
-                    (oldBounds.Position.Z - (rootBounds.Position.Z + oldBounds.Position.Z) % leafSize.Z)
-            let leafBounds = box3 leafPosition leafSize
-            if  not (Math.isBoundsInBounds3d oldBounds leafBounds) ||
-                not (Math.isBoundsInBounds3d newBounds leafBounds) then
-                Octnode.updateElement oldBounds newBounds element tree.Node
-        else
-            // staying out of bounds
-            ()
+        removeElement oldBounds element tree
+        addElement newBounds element tree
 
     let getElementsOmnipresent (set : _ HashSet) tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
