@@ -56,9 +56,9 @@ module PhysicallyBased =
             result
 
         static member inline equals left right =
-            left.HashCode = right.HashCode &&
-            left.PhysicallyBasedMaterial = right.PhysicallyBasedMaterial &&
-            left.PhysicallyBasedGeometry = right.PhysicallyBasedGeometry
+            left.PhysicallyBasedMaterial = right.PhysicallyBasedMaterial && // TODO: 3D: make sure no boxing happens here.
+            left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
+            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that
@@ -69,7 +69,7 @@ module PhysicallyBased =
             | _ -> false
 
         override this.GetHashCode () =
-            PhysicallyBasedSurface.hash this
+            this.HashCode
 
     /// A physically-based static model.
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
