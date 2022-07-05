@@ -91,8 +91,7 @@ type SceneryDispatcher () =
             let staticModel = asset "Default" "GameObject"
             match World.tryGetStaticModelMetadata staticModel world with
             | Some staticModelMetadata ->
-                // Unity Scene Export Instruction:
-                //
+                // Unity Scene Export Instructions:
                 // 1) have FBX Exporter package installed
                 // 2) be in PBR Unity Project	
                 // 3) put all desired objects in empty root GameObject
@@ -115,7 +114,7 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetPosition position world
                     let world = staticModelSurface.SetRotation rotation world
                     let world = staticModelSurface.SetScale scale world
-                    //let world = staticModelSurface.SetStatic true world
+                    let world = staticModelSurface.SetStatic true world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
