@@ -1077,7 +1077,7 @@ module TileMapFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1175,7 +1175,7 @@ module TmxMapFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1303,7 +1303,7 @@ module SkyBoxFacetModule =
 
         static member Properties =
             [define Entity.Absolute true
-             define Entity.Omnipresent true
+             define Entity.Presence Omnipresent
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
         override this.Actualize (entity, world) =
@@ -1579,20 +1579,20 @@ module GuiDispatcherModule =
         inherit EntityDispatcher2d (false, false)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.Omnipresent true
-             define Entity.Absolute true
+            [define Entity.Absolute true
              define Entity.AlwaysUpdate true
+             define Entity.Presence Omnipresent
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.Omnipresent true
+            [define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
 [<AutoOpen>]
@@ -2434,7 +2434,7 @@ module TileMapDispatcherModule =
             [typeof<TileMapFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -2457,7 +2457,7 @@ module TmxMapDispatcherModule =
             [typeof<TmxMapFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
+            [define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -2495,7 +2495,7 @@ module SkyBoxDispatcherModule =
 
         static member Properties =
             [define Entity.Absolute true
-             define Entity.Omnipresent true
+             define Entity.Presence Omnipresent
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]

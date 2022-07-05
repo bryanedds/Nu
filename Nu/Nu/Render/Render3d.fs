@@ -14,15 +14,8 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
-/// Describe the type of projection matrix to construct.
-/// TODO: 3D: expose this elsewhere.
-type [<Struct>] ProjectionType =
-    | Enclosed
-    | Unenclosed
-    | Afatecs // TODO: 3D: can we think of a better name here?
-
 /// The type of rendering used on a surface.
-and [<NoEquality; NoComparison; Struct>] RenderType =
+type [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType
 
@@ -338,12 +331,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Compute the 3d projection matrix.
     /// TODO: 3D: expose this elsewhere.
-    static member computeProjection projectionType =
+    static member computeProjection presence =
         let farPlaneDistance =
-            match projectionType with
+            match presence with
             | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
             | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
             | Afatecs -> Constants.Render.FarPlaneDistanceAfatecs
+            | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
              Constants.Render.AspectRatio,

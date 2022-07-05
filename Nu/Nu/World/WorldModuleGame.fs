@@ -127,10 +127,12 @@ module WorldModuleGame =
                 if v3Neq value gameState.EyePosition3d then
                     let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed value gameState.EyeRotation3d
                     let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed value gameState.EyeRotation3d
+                    let eyeFrustumAfatecs3d = GlRenderer3d.computeFrustum Afatecs value gameState.EyeRotation3d
                     { gameState with
                         EyePosition3d = value
                         EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
-                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d }
+                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
+                        EyeFrustumAfatecs3d = eyeFrustumAfatecs3d }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -149,10 +151,12 @@ module WorldModuleGame =
                 if quatNeq value gameState.EyeRotation3d then
                     let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed gameState.EyePosition3d value
                     let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed gameState.EyePosition3d value
+                    let eyeFrustumAfatecs3d = GlRenderer3d.computeFrustum Afatecs gameState.EyePosition3d value
                     { gameState with
                         EyeRotation3d = value
                         EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
-                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d }
+                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
+                        EyeFrustumAfatecs3d = eyeFrustumAfatecs3d }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.
@@ -170,10 +174,21 @@ module WorldModuleGame =
         static member getEyeFrustumUnenclosed3d world =
             (World.getGameState world).EyeFrustumUnenclosed3d
 
+        /// Get the current afatecs 3d eye frustum.
+        [<FunctionBinding>]
+        static member getEyeFrustumAfatecs3d world =
+            (World.getGameState world).EyeFrustumAfatecs3d
+
         /// Get the current 3d light box.
         [<FunctionBinding>]
         static member getLightbox3d world =
-            let lightBoxSize = Constants.Render.LightBoxSize3d * 0.5f
+            let lightBoxSize = Constants.Render.LightBoxSize3d
+            box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
+
+        /// Get the current 3d light box prime.
+        [<FunctionBinding>]
+        static member getLightbox3d' world =
+            let lightBoxSize = Constants.Render.LightBoxSize3d'
             box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
 
         /// Get the omni-screen, if any.
@@ -373,11 +388,12 @@ module WorldModuleGame =
 
         /// Get the view bounds of the 3d eye's sight.
         [<FunctionBinding>]
-        static member getViewBounds3d enclosed world =
-            let lightBox = World.getLightbox3d world
-            if enclosed
-            then struct (World.getEyeFrustumEnclosed3d world, lightBox)
-            else struct (World.getEyeFrustumUnenclosed3d world, lightBox)
+        static member getViewBounds3d presence world =
+            match presence with
+            | Enclosed -> struct (World.getEyeFrustumEnclosed3d world, World.getLightbox3d world)
+            | Unenclosed -> struct (World.getEyeFrustumUnenclosed3d world, World.getLightbox3d world)
+            | Afatecs -> struct (World.getEyeFrustumAfatecs3d world, World.getLightbox3d' world)
+            | Omnipresent -> failwith "Cannot get the view bounds of an Omnipresent thing."
 
         /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
@@ -389,8 +405,8 @@ module WorldModuleGame =
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView3d enclosed light (bounds : Box3) world =
-            let struct (frustum, lightBox) = World.getViewBounds3d enclosed world
+        static member isBoundsInView3d light presence (bounds : Box3) world =
+            let struct (frustum, lightBox) = World.getViewBounds3d presence world
             if light && lightBox.Intersects bounds then true
             else
                 let containment = frustum.Contains bounds

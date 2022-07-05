@@ -7,18 +7,12 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
-/// A frustum with conditional intersection.
-type [<StructuralEquality; NoComparison>] DiscriminatingFrustum =
-    { Unenclosed : Frustum
-      Enclosed : Frustum }
-
 /// Masks for Octelement flags.
 module OctelementMasks =
 
     // OPTIMIZATION: Octelement flag bit-masks for performance.
     let [<Literal>] StaticMask =    0b00000001u
-    let [<Literal>] EnclosedMask =  0b00000010u
-    let [<Literal>] LightMask =     0b00000100u
+    let [<Literal>] LightMask =     0b00000010u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
@@ -30,19 +24,22 @@ open OctelementMasks
 type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> = 
     { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
       Flags : uint
+      Presence : Presence
       Entry : 'e }
     member this.Static with get () = this.Flags &&& StaticMask <> 0u
-    member this.Enclosed with get () = this.Flags &&& EnclosedMask <> 0u
     member this.Light with get () = this.Flags &&& LightMask <> 0u
+    member this.Enclosed with get () = this.Presence.ISEnclosed
+    member this.Unenclosed with get () = this.Presence.ISUnenclosed
+    member this.Afatecs with get () = this.Presence.ISAfatecs
+    member this.Omnipresent with get () = this.Presence.ISOmnipresent
     override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make static_ enclosed light (entry : 'e) =
+    static member make static_ light presence (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
             (if static_ then StaticMask else 0u) |||
-            (if enclosed then EnclosedMask else 0u) |||
             (if light then LightMask else 0u)
-        { HashCode = hashCode; Flags = flags; Entry = entry }
+        { HashCode = hashCode; Flags = flags; Presence = presence; Entry = entry }
 
 [<RequireQualifiedAccess>]
 module internal Octnode =
@@ -257,8 +254,8 @@ module Octree =
               Granularity : int
               Bounds : Box3 }
 
-    let addElement omnipresent bounds element tree =
-        if omnipresent then
+    let addElement bounds element tree =
+        if element.Presence.ISOmnipresent then
             tree.OmnipresentElements.Add element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
@@ -266,8 +263,8 @@ module Octree =
                 tree.OmnipresentElements.Add element |> ignore
             else Octnode.addElement bounds element tree.Node
 
-    let removeElement omnipresent bounds element tree =
-        if omnipresent then 
+    let removeElement bounds element tree =
+        if element.Presence.ISOmnipresent then 
             tree.OmnipresentElements.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then

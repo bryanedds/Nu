@@ -257,7 +257,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                Quadtree.addElement entityState.Omnipresent entityState.Bounds.Box2 entity quadtree
+                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
@@ -267,8 +267,8 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let element = Octelement.make entityState.Static entityState.Enclosed entityState.Light entity
-                                Octree.addElement entityState.Omnipresent entityState.Bounds element octree
+                                let element = Octelement.make entityState.Static entityState.Light entityState.Presence entity
+                                Octree.addElement entityState.Bounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
@@ -285,7 +285,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                Quadtree.removeElement entityState.Omnipresent entityState.Bounds.Box2 entity quadtree
+                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
@@ -295,8 +295,8 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let element = Octelement.make entityState.Static entityState.Enclosed entityState.Light entity
-                                Octree.removeElement entityState.Omnipresent entityState.Bounds element octree
+                                let element = Octelement.make entityState.Static entityState.Light entityState.Presence entity
+                                Octree.removeElement entityState.Bounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world

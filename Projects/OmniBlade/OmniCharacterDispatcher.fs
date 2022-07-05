@@ -98,7 +98,7 @@ module CharacterDispatcher =
             else None
 
         override this.Initializers (character, _) =
-            [Entity.Omnipresent == true
+            [Entity.Presence == Omnipresent
              Entity.Perimeter <== character --> fun character -> character.Perimeter]
 
         override this.View (character, entity, world) =

@@ -115,7 +115,7 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetPosition position world
                     let world = staticModelSurface.SetRotation rotation world
                     let world = staticModelSurface.SetScale scale world
-                    let world = staticModelSurface.SetStatic true world
+                    //let world = staticModelSurface.SetStatic true world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
@@ -138,7 +138,7 @@ type SceneryDispatcher () =
                 let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
                 //let world = staticModel.SetRenderStyle Forward world
                 let world = staticModel.SetPosition position world
-                let world = staticModel.SetStatic true world
+                //let world = staticModel.SetStatic true world
                 world)
                 world positions
         world

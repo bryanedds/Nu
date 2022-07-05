@@ -7,6 +7,17 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
+/// Describes the form of an element's presence.
+type [<StructuralEquality; NoComparison; Struct>] Presence =
+    | Enclosed
+    | Unenclosed
+    | Afatecs // TODO: 3D: can we think of a better name here?
+    | Omnipresent
+    member this.ISEnclosed with get () = match this with Enclosed -> true | _ -> false // TODO: 3D: come up with better getter names.
+    member this.ISUnenclosed with get () = match this with Unenclosed -> true | _ -> false
+    member this.ISAfatecs with get () = match this with Afatecs -> true | _ -> false
+    member this.ISOmnipresent with get () = match this with Omnipresent -> true | _ -> false
+
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
@@ -149,8 +160,8 @@ module Quadtree =
               Granularity : int
               Bounds : Box2 }
 
-    let addElement omnipresent bounds element tree =
-        if omnipresent then
+    let addElement (presence : Presence) bounds element tree =
+        if presence.ISOmnipresent then
             tree.OmnipresentElements.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
@@ -158,8 +169,8 @@ module Quadtree =
                 tree.OmnipresentElements.Add element |> ignore
             else Quadnode.addElement bounds element tree.Node
 
-    let removeElement omnipresent bounds element tree =
-        if omnipresent then 
+    let removeElement (presence : Presence) bounds element tree =
+        if presence.ISOmnipresent then 
             tree.OmnipresentElements.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then

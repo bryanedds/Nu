@@ -248,23 +248,17 @@ module WorldModuleEntity =
             // cache old values
             let oldWorld = world
             let oldEntityState = World.getEntityState entity oldWorld
-            let oldOmnipresent = oldEntityState.Omnipresent
+            let oldStatic = oldEntityState.Static
+            let oldLight = oldEntityState.Light
+            let oldPresence = oldEntityState.Presence
+            let oldBounds = oldEntityState.Bounds
 
-            // OPTIMIZATION: don't update entity tree if entity is omnipresent
-            let struct (changed, world) =
-                if not oldOmnipresent then
-                    let oldOmnipresent = oldEntityState.Omnipresent
-                    let oldStatic = oldEntityState.Static
-                    let oldEnclosed = oldEntityState.Enclosed
-                    let oldLight = oldEntityState.Light
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
-                    let struct (changed, world) = World.updateEntityStateInternal updater oldEntityState entity world
-                    let world =
-                        if changed
-                        then World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
-                        else world
-                    struct (changed, world)
-                else World.updateEntityStateInternal updater oldEntityState entity world
+            // update entity, updating in entity also if changed
+            let struct (changed, world) = World.updateEntityStateInternal updater oldEntityState entity world
+            let world =
+                if changed
+                then World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
+                else world
 
             // publish entity change event if needed
             let world =
@@ -427,7 +421,7 @@ module WorldModuleEntity =
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
         static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
-        static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
+        static member internal getEntityPresence entity world = (World.getEntityState entity world).Presence
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChangeBindings entity world = (World.getEntityState entity world).PublishChangeBindings
         static member internal getEntityPublishChangeEvents entity world = (World.getEntityState entity world).PublishChangeEvents
@@ -444,7 +438,6 @@ module WorldModuleEntity =
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
         static member internal getEntityStatic entity world = (World.getEntityState entity world).Static
-        static member internal getEntityEnclosed entity world = (World.getEntityState entity world).Enclosed
         static member internal getEntityLight entity world = (World.getEntityState entity world).Light
         static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
@@ -466,16 +459,16 @@ module WorldModuleEntity =
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
         static member internal setEntityStatic value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Static then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Static <- value; entityState) else Unchecked.defaultof<_>) Property? Static value entity world
-        static member internal setEntityEnclosed value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Enclosed then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Enclosed <- value; entityState) else Unchecked.defaultof<_>) Property? Enclosed value entity world
         static member internal setEntityLight value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Light then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Light <- value; entityState) else Unchecked.defaultof<_>) Property? Light value entity world
         static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
 
-        static member internal setEntityOmnipresent value entity world =
+        static member internal setEntityPresence (value : Presence) entity world =
             World.updateEntityStatePlus (fun entityState ->
-                if value <> entityState.Omnipresent then
-                    if value || not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
+                if not (value.Equals entityState.Presence) then // TODO: 3D: ensure this does not box.
+                    let omnipresent = value.ISOmnipresent
+                    if omnipresent || not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
                         let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                        entityState.Omnipresent <- value
+                        entityState.Presence <- value
                         entityState
                     else entityState
                 else Unchecked.defaultof<_>)
@@ -486,7 +479,7 @@ module WorldModuleEntity =
                 if value <> entityState.Absolute then
                     let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                     entityState.Absolute <- value
-                    if value then entityState.Omnipresent <- true // setting a transform to Absolute requires that it also be Omnipresent
+                    if value then entityState.Presence <- Omnipresent // setting a transform to Absolute requires that it also be Omnipresent
                     entityState
                 else Unchecked.defaultof<_>)
                 Property? Absolute value entity world
@@ -622,11 +615,10 @@ module WorldModuleEntity =
         static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
             let oldEntityState = entityState
-            let oldOmnipresent = oldEntityState.Omnipresent
             let oldStatic = oldEntityState.Static
-            let oldEnclosed = oldEntityState.Enclosed
             let oldLight = oldEntityState.Light
-            let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+            let oldPresence = oldEntityState.Presence
+            let oldBounds = oldEntityState.Bounds
             let struct (changed, world) =
                 let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier, even if this is inlined...
                 World.updateEntityStateWithoutEvent
@@ -636,38 +628,28 @@ module WorldModuleEntity =
                         else Unchecked.defaultof<_>)
                     entity world
             if changed
-            then World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+            then World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
             else world
 
         static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
             let oldEntityState = entityState
-            let oldOmnipresent = oldEntityState.Omnipresent
-            let oldStatic = oldEntityState.Static
-            let oldEnclosed = oldEntityState.Enclosed
-            let oldLight = oldEntityState.Light
             let mutable oldTransform = oldEntityState.Transform
+            let oldStatic = oldTransform.Static
+            let oldLight = oldTransform.Light
+            let oldPresence = oldTransform.Presence
+            let oldBounds = oldTransform.Bounds
             let struct (changed, world) =
-                if oldOmnipresent then
-                    let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                let struct (changed, world) =
                     World.updateEntityStateWithoutEvent
                         (fun entityState ->
                             if not (Transform.equalsByRef (&value, &entityState.Transform))
                             then EntityState.setTransformByRef (&value, entityState)
                             else Unchecked.defaultof<_>)
                         entity world
-                else
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
-                    let (value : Transform) = value // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
-                    let struct (changed, world) =
-                        World.updateEntityStateWithoutEvent
-                            (fun entityState ->
-                                if not (Transform.equalsByRef (&value, &entityState.Transform))
-                                then EntityState.setTransformByRef (&value, entityState)
-                                else Unchecked.defaultof<_>)
-                            entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
-                    struct (changed, world)
+                let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
+                struct (changed, world)
             if changed then
                 let publishChangeBindings = oldEntityState.PublishChangeBindings
                 let publishChangeEvents = oldEntityState.PublishChangeEvents
@@ -1321,13 +1303,12 @@ module WorldModuleEntity =
                 | Some entity ->
                     let oldWorld = world
                     let oldEntityState = entityState
-                    let oldOmnipresent = oldEntityState.Omnipresent
                     let oldStatic = oldEntityState.Static
-                    let oldEnclosed = oldEntityState.Enclosed
                     let oldLight = oldEntityState.Light
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+                    let oldPresence = oldEntityState.Presence
+                    let oldBounds = oldEntityState.Bounds
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -1349,13 +1330,12 @@ module WorldModuleEntity =
                     | Some entity ->
                         let oldWorld = world
                         let oldEntityState = entityState
-                        let oldOmnipresent = oldEntityState.Omnipresent
                         let oldStatic = oldEntityState.Static
-                        let oldEnclosed = oldEntityState.Enclosed
                         let oldLight = oldEntityState.Light
-                        let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+                        let oldPresence = oldEntityState.Presence
+                        let oldBounds = oldEntityState.Bounds
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+                        let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.isSelected entity world
@@ -1427,15 +1407,14 @@ module WorldModuleEntity =
                 | Right (entityState, world) ->
                     let oldWorld = world
                     let oldEntityState = entityState
-                    let oldOmnipresent = oldEntityState.Omnipresent
                     let oldStatic = oldEntityState.Static
-                    let oldEnclosed = oldEntityState.Enclosed
                     let oldLight = oldEntityState.Light
-                    let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+                    let oldPresence = oldEntityState.Presence
+                    let oldBounds = oldEntityState.Bounds
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+                    World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
@@ -1674,26 +1653,23 @@ module WorldModuleEntity =
         static member internal getEntityInView2d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
-            if not transform.Omnipresent
-            then World.isBoundsInView2d transform.Bounds.Box2 world
-            else true
+            let presence = transform.Presence
+            presence.ISOmnipresent || World.isBoundsInView2d transform.Bounds.Box2 world
 
         static member internal getEntityInPlay2d entity world =
-            World.getEntityInView2d entity world
+            World.getEntityInView2d entity world // same meaning as in view for 2d
 
         static member internal getEntityInPlay3d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
-            if not transform.Omnipresent
-            then World.isBoundsInPlay3d transform.Bounds world
-            else true
+            let presence = transform.Presence
+            presence.ISOmnipresent || World.isBoundsInPlay3d transform.Bounds world
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
-            if not transform.Omnipresent
-            then World.isBoundsInView3d transform.Enclosed transform.Light transform.Bounds world
-            else true
+            let presence = transform.Presence
+            presence.ISOmnipresent || World.isBoundsInView3d transform.Light presence transform.Bounds world
 
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world
@@ -1810,7 +1786,7 @@ module WorldModuleEntity =
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        Quadtree.addElement entityState.Omnipresent entityState.Bounds.Box2 entity entityTree
+                                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity entityTree
                                         entityTree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -1820,8 +1796,8 @@ module WorldModuleEntity =
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let element = Octelement.make entityState.Static entityState.Enclosed entityState.Light entity
-                                        Octree.addElement entityState.Omnipresent entityState.Bounds element entityTree
+                                        let element = Octelement.make entityState.Static entityState.Light entityState.Presence entity
+                                        Octree.addElement entityState.Bounds element entityTree
                                         entityTree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -1868,7 +1844,7 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity oldWorld
-                                        Quadtree.removeElement entityState.Omnipresent entityState.Bounds.Box2 entity quadtree
+                                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
                                         quadtree)
                                     (World.getQuadtree world)
                             World.setQuadtree quadtree world
@@ -1878,8 +1854,8 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
                                     (fun octree ->
                                         let entityState = World.getEntityState entity oldWorld
-                                        let element = Octelement.make entityState.Static entityState.Enclosed entityState.Light entity
-                                        Octree.removeElement entityState.Omnipresent entityState.Bounds element octree
+                                        let element = Octelement.make entityState.Static entityState.Light entityState.Presence entity
+                                        Octree.removeElement entityState.Bounds element octree
                                         octree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -2068,13 +2044,12 @@ module WorldModuleEntity =
                 let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
                 let oldEntityState = entityState
-                let oldOmnipresent = oldEntityState.Omnipresent
                 let oldStatic = oldEntityState.Static
-                let oldEnclosed = oldEntityState.Enclosed
                 let oldLight = oldEntityState.Light
-                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+                let oldPresence = oldEntityState.Presence
+                let oldBounds = oldEntityState.Bounds
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+                let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | (None, None) ->
@@ -2096,13 +2071,12 @@ module WorldModuleEntity =
             | Right (entityState, world) ->
                 let oldWorld = world
                 let oldEntityState = entityState
-                let oldOmnipresent = oldEntityState.Omnipresent
                 let oldStatic = oldEntityState.Static
-                let oldEnclosed = oldEntityState.Enclosed
                 let oldLight = oldEntityState.Light
-                let oldBounds = if not oldEntityState.Omnipresent then oldEntityState.Bounds else box3Zero
+                let oldPresence = oldEntityState.Presence
+                let oldBounds = oldEntityState.Bounds
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds entity oldWorld world
+                let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | Left error -> (Left error, world)
@@ -2131,24 +2105,22 @@ module WorldModuleEntity =
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
         // TODO: 3D: consider passing these booleans as a packed int.
-        static member internal updateEntityInEntityTree oldOmnipresent oldStatic oldEnclosed oldLight oldBounds (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree oldStatic oldLight (oldPresence : Presence) oldBounds (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
             if WorldModule.isSelected entity world then
 
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world
-                let newOmnipresent = entityState.Omnipresent
                 let newStatic = entityState.Static
-                let newEnclosed = entityState.Enclosed
                 let newLight = entityState.Light
+                let newPresence = entityState.Presence
                 let newBounds = entityState.Bounds
 
                 // OPTIMIZATION: only update when relevant entity state has changed.
-                if  newOmnipresent <> oldOmnipresent ||
-                    newStatic <> oldStatic ||
-                    newEnclosed <> oldEnclosed ||
+                if  newStatic <> oldStatic ||
                     newLight <> oldLight ||
+                    not (newPresence.Equals oldPresence) || // TODO: 3D: ensure this does not box.
                     box3Neq oldBounds newBounds then
 
                     // update entity in entity tree
@@ -2164,7 +2136,7 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
-                                    let element = Octelement.make newStatic newEnclosed newLight entity
+                                    let element = Octelement.make newStatic newLight newPresence entity
                                     Octree.updateElement oldBounds newBounds element octree
                                     octree)
                                 (World.getOctree world)
@@ -2238,7 +2210,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
         EntityGetters.Assign ("ElevationLocal", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevationLocal entity world })
         EntityGetters.Assign ("Overflow", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityOverflow entity world })
-        EntityGetters.Assign ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
+        EntityGetters.Assign ("Presence", fun entity world -> { PropertyType = typeof<Presence>; PropertyValue = World.getEntityPresence entity world })
         EntityGetters.Assign ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         EntityGetters.Assign ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         EntityGetters.Assign ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
@@ -2258,7 +2230,6 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
         EntityGetters.Assign ("Centered", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world })
         EntityGetters.Assign ("Static", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStatic entity world })
-        EntityGetters.Assign ("Enclosed", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnclosed entity world })
         EntityGetters.Assign ("Light", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityLight entity world })
         EntityGetters.Assign ("Physical", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPhysical entity world })
         EntityGetters.Assign ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
@@ -2292,7 +2263,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world)
-        EntitySetters.Assign ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
         EntitySetters.Assign ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
         EntitySetters.Assign ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world)
@@ -2303,7 +2274,6 @@ module WorldModuleEntity =
         EntitySetters.Assign ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Centered", fun property entity world -> World.setEntityCentered (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Static", fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Assign ("Enclosed", fun property entity world -> World.setEntityEnclosed (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Light", fun property entity world -> World.setEntityLight (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
         EntitySetters.Assign ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)

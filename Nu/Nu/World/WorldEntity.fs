@@ -81,15 +81,15 @@ module WorldEntityModule =
         member this.GetElevation world = World.getEntityElevation this world
         member this.SetElevation value world = World.setEntityElevation value this world |> snd'
         member this.Elevation = lens Property? Elevation this.GetElevation this.SetElevation this
-        member this.GetOverflow world = World.getEntityOverflow this world
-        member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
-        member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
         member this.GetElevationLocal world = World.getEntityElevationLocal this world
         member this.SetElevationLocal value world = World.setEntityElevationLocal value this world |> snd'
         member this.ElevationLocal = lens Property? ElevationLocal this.GetElevationLocal this.SetElevationLocal this
-        member this.GetOmnipresent world = World.getEntityOmnipresent this world
-        member this.SetOmnipresent value world = World.setEntityOmnipresent value this world |> snd'
-        member this.Omnipresent = lens Property? Omnipresent this.GetOmnipresent this.SetOmnipresent this
+        member this.GetOverflow world = World.getEntityOverflow this world
+        member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
+        member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
+        member this.GetPresence world = World.getEntityPresence this world
+        member this.SetPresence value world = World.setEntityPresence value this world |> snd'
+        member this.Presence = lens Property? Presence this.GetPresence this.SetPresence this
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
         member this.Absolute = lens Property? Absolute this.GetAbsolute this.SetAbsolute this
@@ -128,9 +128,6 @@ module WorldEntityModule =
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
         member this.Static = lens Property? Static this.GetStatic this.SetStatic this
-        member this.GetEnclosed world = World.getEntityEnclosed this world
-        member this.SetEnclosed value world = World.setEntityEnclosed value this world |> snd'
-        member this.Enclosed = lens Property? Enclosed this.GetEnclosed this.SetEnclosed this
         member this.GetLight world = World.getEntityLight this world
         member this.SetLight value world = World.setEntityLight value this world |> snd'
         member this.Light = lens Property? Light this.GetLight this.SetLight this
@@ -179,7 +176,7 @@ module WorldEntityModule =
         /// Optimize an entity by setting { Imperative = true; Omnipresent = true }.
         member this.Optimize world =
             let world = this.SetImperative true world
-            let world = this.SetOmnipresent true world
+            let world = this.SetPresence Omnipresent world
             world
 
         /// Set the transform of an entity.

@@ -9,32 +9,30 @@ open Nu
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b0000000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b0000000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b0000000000000000000000100u
-    let [<Literal>] OmnipresentMask =               0b0000000000000000000001000u
-    let [<Literal>] AbsoluteMask =                  0b0000000000000000000010000u
-    let [<Literal>] ImperativeMask =                0b0000000000000000000100000u
-    let [<Literal>] PublishChangeBindingsMask =     0b0000000000000000001000000u
-    let [<Literal>] PublishChangeEventsMask =       0b0000000000000000010000000u
-    let [<Literal>] EnabledMask =                   0b0000000000000000100000000u
-    let [<Literal>] VisibleMask =                   0b0000000000000001000000000u
-    let [<Literal>] AlwaysUpdateMask =              0b0000000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b0000000000000100000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b0000000000001000000000000u
-    let [<Literal>] PersistentMask =                0b0000000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b0000000000100000000000000u
-    let [<Literal>] MountedMask =                   0b0000000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b0000000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b0000000100000000000000000u
-    let [<Literal>] CenteredMask =                  0b0000001000000000000000000u
-    let [<Literal>] StaticMask =                    0b0000010000000000000000000u
-    let [<Literal>] EnclosedMask =                  0b0000100000000000000000000u
-    let [<Literal>] LightMask =                     0b0001000000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b0100000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b1000000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b0110001110010001100100001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b00000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b00000000000000000010000u
+    let [<Literal>] PublishChangeBindingsMask =     0b00000000000000000100000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000000000001000000u
+    let [<Literal>] EnabledMask =                   0b00000000000000010000000u
+    let [<Literal>] VisibleMask =                   0b00000000000000100000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000001000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000000010000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b00000000000100000000000u
+    let [<Literal>] PersistentMask =                0b00000000001000000000000u
+    let [<Literal>] IgnorePropertyBindingsMask =    0b00000000010000000000000u
+    let [<Literal>] MountedMask =                   0b00000000100000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000001000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00000010000000000000000u
+    let [<Literal>] CenteredMask =                  0b00000100000000000000000u
+    let [<Literal>] StaticMask =                    0b00001000000000000000000u
+    let [<Literal>] LightMask =                     0b00010000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00100000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b01100111001000110010001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
@@ -42,36 +40,23 @@ open TransformMasks
 /// Carries transformation data specific to an Entity.
 type [<NoEquality; NoComparison>] Transform =
     struct
-        // cache line 1
         val mutable private Flags_ : uint
         val mutable private Position_ : Vector3
         val mutable private Rotation_ : Quaternion
-        // cache line 2
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
         val mutable private PerimeterOrientedOpt_ : Box3 ref
-        // cache line 3
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
-        val mutable private Overflow_ : single
         val mutable private Elevation_ : single
+        val mutable private Overflow_ : single
+        val mutable private Presence_ : Presence
         end
 
     member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
     member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
-    member this.Omnipresent
-        with get () = this.Flags_ &&& OmnipresentMask <> 0u
-        and set value =
-            if value || not this.Absolute then // a transform that is Absolute must remain Omnipresent
-                this.Flags_ <- if value then this.Flags_ ||| OmnipresentMask else this.Flags_ &&& ~~~OmnipresentMask
-    member this.Absolute
-        with get () = this.Flags_ &&& AbsoluteMask <> 0u
-        and set value =
-            this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
-            if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
-                this.Omnipresent <- true
     member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
     member this.PublishChangeBindings with get () = this.Flags_ &&& PublishChangeBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeBindingsMask else this.Flags_ &&& ~~~PublishChangeBindingsMask
     member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
@@ -87,19 +72,32 @@ type [<NoEquality; NoComparison>] Transform =
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
     member this.Centered with get () = this.Flags_ &&& CenteredMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
     member this.Static with get () = this.Flags_ &&& StaticMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| StaticMask else this.Flags_ &&& ~~~StaticMask
-    member this.Enclosed with get () = this.Flags_ &&& EnclosedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnclosedMask else this.Flags_ &&& ~~~LightMask
     member this.Light with get () = this.Flags_ &&& LightMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| LightMask else this.Flags_ &&& ~~~LightMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
-    member this.Optimized with get () = this.Imperative && this.Omnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents // TODO: see if I can remove all conditionals from here.
+    member this.Optimized with get () = this.Imperative && this.Presence_.ISOmnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents
 
     member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.PerimeterOrientedDirty <- true
     member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.PerimeterOrientedDirty <- true
     member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.PerimeterOrientedDirty <- true
     member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.PerimeterOrientedDirty <- true
-    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.PerimeterOrientedDirty <- true
     member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
+    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.PerimeterOrientedDirty <- true
+
+    member this.Absolute
+        with get () = this.Flags_ &&& AbsoluteMask <> 0u
+        and set value =
+            this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
+            if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
+                this.Presence_ <- Omnipresent
+
+    member this.Presence
+        with get () = this.Presence_
+        and set (value : Presence) =
+            let omnipresent = value.ISOmnipresent
+            if omnipresent || not this.Absolute then // a transform that is Absolute must remain Omnipresent
+                this.Presence_ <- if omnipresent then Omnipresent else Afatecs
 
     member this.Rotation
         with get () = this.Rotation_

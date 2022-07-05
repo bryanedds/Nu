@@ -199,7 +199,7 @@ module WorldTypes =
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Overflow 1.0f
-             Define? Omnipresent false
+             Define? Presence Unenclosed
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? MountOpt Option<Entity Relation>.None
@@ -211,7 +211,6 @@ module WorldTypes =
              Define? VisibleLocal true
              Define? Centered true
              Define? Static false
-             Define? Enclosed false
              Define? Light false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
@@ -337,6 +336,7 @@ module WorldTypes =
           EyeRotation3d : Quaternion
           EyeFrustumEnclosed3d : Frustum
           EyeFrustumUnenclosed3d : Frustum
+          EyeFrustumAfatecs3d : Frustum
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -350,6 +350,7 @@ module WorldTypes =
             let eyeRotation3d = quatIdentity
             let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed eyePosition3d eyeRotation3d
             let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed eyePosition3d eyeRotation3d
+            let eyeFrustumAfatecs3d = GlRenderer3d.computeFrustum Afatecs eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -363,6 +364,7 @@ module WorldTypes =
               EyeRotation3d = eyeRotation3d
               EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
               EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
+              EyeFrustumAfatecs3d = eyeFrustumAfatecs3d
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
@@ -640,10 +642,10 @@ module WorldTypes =
         member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
+        member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
         member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
-        member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
         member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
         member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
@@ -662,7 +664,6 @@ module WorldTypes =
         member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
         member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-        member this.Enclosed with get () = this.Transform.Enclosed and set value = this.Transform.Enclosed <- value
         member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.RotationMatrix with get () = this.Transform.RotationMatrix
@@ -1067,7 +1068,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Box3 -> Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
           RebuildQuadtree : World -> Entity Quadtree
           RebuildOctree : World -> Entity Octree }
 

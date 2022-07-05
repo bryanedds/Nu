@@ -29,7 +29,7 @@ module Bullet =
 
         static member Properties =
             [define Entity.Size (v3 20.0f 20.0f 0.0f)
-             define Entity.Omnipresent true
+             define Entity.Presence Omnipresent
              define Entity.Density 0.1f
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
