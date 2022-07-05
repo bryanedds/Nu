@@ -284,9 +284,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderTasks) =
         let surfaceMatrix =
-            if ignoreSurfaceMatrix || not surface.SurfaceMatrixIsIdentity
-            then modelMatrix * surface.SurfaceMatrix
-            else modelMatrix
+            if ignoreSurfaceMatrix || surface.SurfaceMatrixIsIdentity
+            then modelMatrix
+            else modelMatrix * surface.SurfaceMatrix
         match modelRenderType with
         | DeferredRenderType ->
             if modelAbsolute then
