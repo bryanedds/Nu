@@ -153,10 +153,9 @@ module PhysicallyBased =
                 for face in mesh.Faces do
                     let indices = face.Indices
                     if indices.Count = 3 then
-                        // NOTE: .obj files exported from blender seem to have reverse winding order, so we add indices in reverse
-                        SegmentedList.add indices.[2] indexList
-                        SegmentedList.add indices.[1] indexList
                         SegmentedList.add indices.[0] indexList
+                        SegmentedList.add indices.[1] indexList
+                        SegmentedList.add indices.[2] indexList
                 let indexData = Seq.toArray indexList
 
                 // fin
@@ -445,7 +444,7 @@ module PhysicallyBased =
         | None -> Right geometries
 
     let TryCreatePhysicallyBasedStaticModel (defaultMaterial, renderable, unitType, filePath, assimp : Assimp.AssimpContext) =
-        try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
+        try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene) with
             | Right materials ->

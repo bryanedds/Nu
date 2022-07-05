@@ -50,3 +50,8 @@ packages/
 # VSCode #
 ##########
 .vscode
+
+###############
+# Local Items #
+###############
+/Projects/Scenery/Assets/Default/QA_HoldingCells
