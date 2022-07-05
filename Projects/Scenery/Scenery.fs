@@ -82,20 +82,6 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 33fps.
     override this.Register (entity, world) =
         let world = base.Register (entity, world)
-#if DEBUG
-        let population = 10
-#else
-        let population = 50
-#endif
-        let spread = 16.0f
-        let offset = v3Dup spread * single population * 0.5f
-        let positions = List ()
-        for i in 0 .. population do
-            for j in 0 .. population do
-                for k in 0 .. population do
-                    let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
-                    let position = v3 (single i) (single j) (single k) * spread + random - offset
-                    positions.Add position
         let world =
             let staticModel = asset "Default" "GameObject"
             match World.tryGetStaticModelMetadata staticModel world with
@@ -126,14 +112,28 @@ type SceneryDispatcher () =
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
-        //let world =
-        //    Seq.fold (fun world position ->
-        //        let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-        //        let world = staticModel.SetScale (v3Dup 1.5f) world
-        //        //let world = staticModel.SetRenderStyle Forward world
-        //        let world = staticModel.SetPosition position world
-        //        world)
-        //        world positions
+#if DEBUG
+        let population = 10
+#else
+        let population = 50
+#endif
+        let spread = 16.0f
+        let offset = v3Dup spread * single population * 0.5f
+        let positions = List ()
+        for i in 0 .. population do
+            for j in 0 .. population do
+                for k in 0 .. population do
+                    let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
+                    let position = v3 (single i) (single j) (single k) * spread + random - offset
+                    positions.Add position
+        let world =
+            Seq.fold (fun world position ->
+                let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
+                let world = staticModel.SetScale (v3Dup 1.5f) world
+                //let world = staticModel.SetRenderStyle Forward world
+                let world = staticModel.SetPosition position world
+                world)
+                world positions
         world
 
     override this.Update (entity, world) =
