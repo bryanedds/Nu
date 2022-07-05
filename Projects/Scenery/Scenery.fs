@@ -115,15 +115,16 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetPosition position world
                     let world = staticModelSurface.SetRotation rotation world
                     let world = staticModelSurface.SetScale scale world
+                    let world = staticModelSurface.SetStatic true world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
 #if DEBUG
         let population = 10
 #else
-        let population = 40
+        let population = 42
 #endif
-        let spread = 25.0f
+        let spread = 17.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
