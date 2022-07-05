@@ -226,11 +226,11 @@ module Content =
     /// Describe sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
 
-    /// Describe static model surface with the given initializers.
-    let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
-
     /// Describe static model with the given initializers.
     let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
+
+    /// Describe static model surface with the given initializers.
+    let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
 
 [<AutoOpen>]
 module ContentOperators =

@@ -1313,22 +1313,54 @@ module SkyBoxFacetModule =
             else world
 
 [<AutoOpen>]
-module StaticModelSurfaceFacetModule =
+module StaticModelFacetModule =
 
     type RenderStyle =
         | Deferred
         | Forward
 
     type Entity with
-        member this.GetSurfaceIndex world : int = this.Get Property? SurfaceIndex world
-        member this.SetSurfaceIndex (value : int) world = this.Set Property? SurfaceIndex value world
-        member this.SurfaceIndex = lens Property? SurfaceIndex this.GetSurfaceIndex this.SetSurfaceIndex this
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
         member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
         member this.GetRenderStyle world : RenderStyle = this.Get Property? RenderStyle world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
         member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
+
+    type StaticModelFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.RenderStyle Deferred]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let absolute = transform.Absolute
+                let affineMatrix = transform.AffineMatrix
+                let staticModel = entity.GetStaticModel world
+                let renderType =
+                    match entity.GetRenderStyle world with
+                    | Deferred -> DeferredRenderType
+                    | Forward -> ForwardRenderType
+                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            let staticModel = entity.GetStaticModel world
+            let staticModelMetadata = World.getStaticModel staticModel world
+            let bounds = staticModelMetadata.Bounds
+            let boundsExtended = bounds.Combine bounds.Mirror
+            boundsExtended.Size
+
+[<AutoOpen>]
+module StaticModelSurfaceFacetModule =
+
+    type Entity with
+        member this.GetSurfaceIndex world : int = this.Get Property? SurfaceIndex world
+        member this.SetSurfaceIndex (value : int) world = this.Set Property? SurfaceIndex value world
+        member this.SurfaceIndex = lens Property? SurfaceIndex this.GetSurfaceIndex this.SetSurfaceIndex this
 
     type StaticModelSurfaceFacet () =
         inherit Facet (false)
@@ -1362,36 +1394,6 @@ module StaticModelSurfaceFacetModule =
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
             else Constants.Engine.EntitySize3dDefault
-
-[<AutoOpen>]
-module StaticModelFacetModule =
-
-    type StaticModelFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred]
-
-        override this.Actualize (entity, world) =
-            if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let absolute = transform.Absolute
-                let affineMatrix = transform.AffineMatrix
-                let staticModel = entity.GetStaticModel world
-                let renderType =
-                    match entity.GetRenderStyle world with
-                    | Deferred -> DeferredRenderType
-                    | Forward -> ForwardRenderType
-                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
-            else world
-
-        override this.GetQuickSize (entity, world) =
-            let staticModel = entity.GetStaticModel world
-            let staticModelMetadata = World.getStaticModel staticModel world
-            let bounds = staticModelMetadata.Bounds
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
 
 [<AutoOpen>]
 module EntityDispatcherModule =
@@ -2497,6 +2499,19 @@ module SkyBoxDispatcherModule =
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
+module StaticModelDispatcherModule =
+
+    type StaticModelDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<StaticModelFacet>]
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
 module StaticModelSurfaceDispatcherModule =
 
     type StaticModelSurfaceDispatcher () =
@@ -2508,19 +2523,6 @@ module StaticModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred]
-
-[<AutoOpen>]
-module StaticModelDispatcherModule =
-
-    type StaticModelDispatcher () =
-        inherit EntityDispatcher3d (true, false)
-
-        static member Facets =
-            [typeof<StaticModelFacet>]
-
-        static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
 [<AutoOpen>]
