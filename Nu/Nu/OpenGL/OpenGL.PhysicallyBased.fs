@@ -41,7 +41,6 @@ module PhysicallyBased =
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            hash surface.SurfaceMatrix ^^^
             hash surface.PhysicallyBasedMaterial ^^^
             hash surface.PhysicallyBasedGeometry
 
@@ -58,7 +57,6 @@ module PhysicallyBased =
 
         static member inline equals left right =
             left.HashCode = right.HashCode &&
-            left.SurfaceMatrix = right.SurfaceMatrix &&
             left.PhysicallyBasedMaterial = right.PhysicallyBasedMaterial &&
             left.PhysicallyBasedGeometry = right.PhysicallyBasedGeometry
 
