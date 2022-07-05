@@ -280,10 +280,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          modelRenderType : RenderType,
+         ignoreSurfaceMatrix,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderTasks) =
         let surfaceMatrix =
-            if not surface.SurfaceMatrixIsIdentity
+            if ignoreSurfaceMatrix || not surface.SurfaceMatrixIsIdentity
             then modelMatrix * surface.SurfaceMatrix
             else modelMatrix
         match modelRenderType with
@@ -315,7 +316,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | StaticModelAsset modelAsset ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, surface, renderTasks)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, true, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring modelAssetTag + "'.")
 
@@ -331,7 +332,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, surface, renderTasks)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, false, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring modelAssetTag + "'.")
 

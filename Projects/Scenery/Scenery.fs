@@ -70,8 +70,8 @@ type SceneryDispatcher () =
             [Content.group Simulants.Default.Group.Name []
                 [Content.light Simulants.Light.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Color == Color.Teal
-                     Entity.Brightness == 1000.0f
+                     Entity.Color == Color.Yellow
+                     Entity.Brightness == 100.0f
                      Entity.Intensity == 1.0f]
                  Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
@@ -114,15 +114,15 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetSurfaceIndex surfaceIndex world
                     let world = staticModelSurface.SetStaticModel staticModel world
                     let world = staticModelSurface.SetSize boundsExtended.Size world
-                    let mutable transform = surface.SurfaceMatrix
+                    let transform = surface.SurfaceMatrix
                     let position = transform.Translation
                     let mutable rotation = transform
                     rotation.M41 <- 0.0f
                     rotation.M42 <- 0.0f
                     rotation.M43 <- 0.0f
                     let rotation = Quaternion.CreateFromRotationMatrix rotation
-                    let world = staticModelSurface.SetPosition position world
-                    let world = staticModelSurface.SetRotation rotation world
+                    //let world = staticModelSurface.SetPosition position world
+                    //let world = staticModelSurface.SetRotation rotation world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
