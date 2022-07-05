@@ -185,12 +185,6 @@ module WorldModuleGame =
             let lightBoxSize = Constants.Render.LightBoxSize3d
             box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
 
-        /// Get the current 3d light box prime.
-        [<FunctionBinding>]
-        static member getLightbox3d' world =
-            let lightBoxSize = Constants.Render.LightBoxSize3d'
-            box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
-
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
         static member getOmniScreenOpt world =
@@ -392,7 +386,7 @@ module WorldModuleGame =
             match presence with
             | Enclosed -> struct (World.getEyeFrustumEnclosed3d world, World.getLightbox3d world)
             | Unenclosed -> struct (World.getEyeFrustumUnenclosed3d world, World.getLightbox3d world)
-            | Afatecs -> struct (World.getEyeFrustumAfatecs3d world, World.getLightbox3d' world)
+            | Afatecs -> struct (World.getEyeFrustumAfatecs3d world, World.getLightbox3d world)
             | Omnipresent -> failwith "Cannot get the view bounds of an Omnipresent thing."
 
         /// Get the bounds of the 3d play zone.
