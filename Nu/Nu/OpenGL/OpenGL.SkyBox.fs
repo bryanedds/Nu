@@ -349,9 +349,9 @@ module SkyBox =
         let views =
             [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Backward)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Backward, v3Down)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
@@ -407,9 +407,9 @@ module SkyBox =
         let views =
             [|(Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Backward)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
-              (Matrix4x4.CreateLookAt (v3Zero, v3Backward, v3Down)).ToArray ()
+              (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 

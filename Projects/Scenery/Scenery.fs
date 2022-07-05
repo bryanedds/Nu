@@ -30,9 +30,11 @@ type Command =
     | MoveLeft
     | MoveRight
     | MoveForward
-    | MoveBackward
+    | MoveBack
     | MoveUpward
-    | MoveDownward
+    | MoveDown
+    | TurnLeft
+    | TurnRight
     | Nop
 
 // this is our Elm-style game dispatcher
@@ -42,25 +44,30 @@ type SceneryDispatcher () =
     // here we channel from events to signals
     override this.Channel (_, game) =
         [game.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
-            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
+            if KeyboardState.isKeyDown KeyboardKey.Left then cmd TurnLeft
+            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd TurnRight
             elif KeyboardState.isKeyDown KeyboardKey.Up then cmd MoveForward
-            elif KeyboardState.isKeyDown KeyboardKey.Down then cmd MoveBackward
+            elif KeyboardState.isKeyDown KeyboardKey.Down then cmd MoveBack
             elif KeyboardState.isKeyDown KeyboardKey.W then cmd MoveUpward
-            elif KeyboardState.isKeyDown KeyboardKey.S then cmd MoveDownward
+            elif KeyboardState.isKeyDown KeyboardKey.S then cmd MoveDown
+            elif KeyboardState.isKeyDown KeyboardKey.A then cmd MoveLeft
+            elif KeyboardState.isKeyDown KeyboardKey.D then cmd MoveRight
             else cmd Nop]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let speed = 0.5f // ~67.1mph
+        let speed = 0.25f // ~33.5mph
+        let rotation = World.getEyeRotation3d world
         let world =
             match command with
-            | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + v3Left * speed) world
-            | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + v3Right * speed) world
-            | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + v3Forward * speed) world
-            | MoveBackward -> World.setEyePosition3d (World.getEyePosition3d world + v3Backward * speed) world
+            | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Left, rotation) * speed) world
+            | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Right, rotation) * speed) world
+            | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Forward, rotation) * speed) world
+            | MoveBack -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Back, rotation) * speed) world
             | MoveUpward -> World.setEyePosition3d (World.getEyePosition3d world + v3Up * speed) world
-            | MoveDownward -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * speed) world
+            | MoveDown -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * speed) world
+            | TurnLeft -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, 0.1f)) world
+            | TurnRight -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, -0.1f)) world
             | Nop -> world
         just world
 
@@ -106,8 +113,10 @@ type SceneryDispatcher () =
                     let mutable rotation = transform
                     rotation.Translation <- v3Zero
                     let rotation = Quaternion.CreateFromRotationMatrix rotation
+                    let scale = transform.Scale ()
                     let world = staticModelSurface.SetPosition position world
                     let world = staticModelSurface.SetRotation rotation world
+                    let world = staticModelSurface.SetScale scale world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
@@ -135,14 +144,7 @@ type SceneryDispatcher () =
                 world positions
         world
 
-    override this.Update (entity, world) =
-        let world = base.Update (entity, world)
-        let rotationY = single (World.getUpdateTime world) / 60.0f / MathHelper.TwoPi
-        let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
-        let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
-        world
-
     override this.PostUpdate (entity, world) =
         let world = base.PostUpdate (entity, world)
-        let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
+        let world = Simulants.Light.SetPosition (World.getEyePosition3d world + v3Up * 3.0f) world
         world
