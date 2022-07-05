@@ -122,9 +122,9 @@ type SceneryDispatcher () =
 #if DEBUG
         let population = 10
 #else
-        let population = 42
+        let population = 45
 #endif
-        let spread = 17.0f
+        let spread = 15.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do

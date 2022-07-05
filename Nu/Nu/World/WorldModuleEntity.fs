@@ -2141,18 +2141,21 @@ module WorldModuleEntity =
                 let newStatic = entityState.Static
                 let newEnclosed = entityState.Enclosed
                 let newLight = entityState.Light
-                if newOmnipresent <> oldOmnipresent then
+                let newBounds = entityState.Bounds
 
-                    // remove and add entity in respective spatial tree
-                    let newBounds = entityState.Bounds
+                // OPTIMIZATION: only update when relevant entity state has changed.
+                if  newOmnipresent <> oldOmnipresent ||
+                    newStatic <> oldStatic ||
+                    newEnclosed <> oldEnclosed ||
+                    newLight <> oldLight ||
+                    not (oldBounds.Equals newBounds) then
+
+                    // update entity in entity tree
                     if entityState.Is2d then
                         let quadree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                (fun quadree ->
-                                    Quadtree.removeElement oldOmnipresent oldBounds.Box2 entity quadree
-                                    Quadtree.addElement newOmnipresent newBounds.Box2 entity quadree
-                                    quadree)
+                                (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
                                 (World.getQuadtree world)
                         World.setQuadtree quadree world
                     else
@@ -2161,41 +2164,15 @@ module WorldModuleEntity =
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
                                     let element = Octelement.make newStatic newEnclosed newLight entity
-                                    Octree.removeElement oldOmnipresent oldBounds element octree
-                                    Octree.addElement newOmnipresent newBounds element octree
+                                    Octree.updateElement oldBounds newBounds element octree
                                     octree)
                                 (World.getOctree world)
                         World.setOctree octree world
 
-                // OPTIMIZATION: only update when entity is not omnipresent.
-                elif not newOmnipresent then
-
-                    // OPTIMIZATION: only update when relevant entity state has changed.
-                    let newBounds = entityState.Bounds
-                    if newStatic <> oldStatic || newEnclosed <> oldEnclosed || newLight <> oldLight || not (oldBounds.Equals newBounds) then
-
-                        // update entity in entity tree
-                        if entityState.Is2d then
-                            let quadree =
-                                MutantCache.mutateMutant
-                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                    (fun quadree -> Quadtree.updateElement oldBounds.Box2 newBounds.Box2 entity quadree; quadree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadree world
-                        else
-                            let octree =
-                                MutantCache.mutateMutant
-                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
-                                    (fun octree ->
-                                        let element = Octelement.make newStatic newEnclosed newLight entity
-                                        Octree.updateElement oldBounds newBounds element octree
-                                        octree)
-                                    (World.getOctree world)
-                            World.setOctree octree world
-
-                    // just world
-                    else world
+                // fin
                 else world
+
+            // fin
             else world
 
         /// Attempt to get the dispatcher name for an entity currently on the world's clipboard.
