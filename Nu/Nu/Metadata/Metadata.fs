@@ -86,7 +86,7 @@ module Metadata =
     let private tryGenerateStaticModelMetadata asset =
         if File.Exists asset.FilePath then
             use assimp = new Assimp.AssimpContext ()
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, assimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (Unchecked.defaultof<_>, false, asset.FilePath, assimp) with
             | Right model -> Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
