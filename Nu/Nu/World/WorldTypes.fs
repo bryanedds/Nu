@@ -1067,7 +1067,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> Box3 -> Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Box3 -> Entity -> World -> World -> World
           RebuildQuadtree : World -> Entity Quadtree
           RebuildOctree : World -> Entity Octree }
 

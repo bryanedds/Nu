@@ -139,6 +139,7 @@ type SceneryDispatcher () =
                 let world = staticModel.SetScale (v3Dup 1.5f) world
                 //let world = staticModel.SetRenderStyle Forward world
                 let world = staticModel.SetPosition position world
+                let world = staticModel.SetStatic true world
                 world)
                 world positions
         world
