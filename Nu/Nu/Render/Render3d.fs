@@ -526,7 +526,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelMetalness.png") |> Either.getRight |> snd
               RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelRoughness.png") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelNormal.png") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAbientOcclusion.png") |> Either.getRight |> snd }
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAmbientOcclusion.png") |> Either.getRight |> snd }
 
         // make renderer
         let renderer =
