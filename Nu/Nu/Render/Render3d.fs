@@ -196,9 +196,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMap, ref None))
                 | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
-        | ".fbx"
+        | ".fbx" ->
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (renderer.RenderPhysicallyBasedMaterial, true, UnitCentimeters, asset.FilePath, renderer.RenderAssimp) with
+            | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
+            | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | ".obj" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (renderer.RenderPhysicallyBasedMaterial, true, asset.FilePath, renderer.RenderAssimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (renderer.RenderPhysicallyBasedMaterial, true, UnitMeters, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None

@@ -83,10 +83,10 @@ module Metadata =
             Log.trace errorMessage
             None
 
-    let private tryGenerateStaticModelMetadata asset =
+    let private tryGenerateStaticModelMetadata unitType asset =
         if File.Exists asset.FilePath then
             use assimp = new Assimp.AssimpContext ()
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (Unchecked.defaultof<_>, false, asset.FilePath, assimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (Unchecked.defaultof<_>, false, unitType, asset.FilePath, assimp) with
             | Right model -> Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
@@ -105,8 +105,8 @@ module Metadata =
             | ".tif"
             | ".png" -> tryGenerateTextureMetadata asset
             | ".tmx" -> tryGenerateTileMapMetadata asset
-            | ".fbx"
-            | ".obj" -> tryGenerateStaticModelMetadata asset
+            | ".fbx" -> tryGenerateStaticModelMetadata UnitCentimeters asset
+            | ".obj" -> tryGenerateStaticModelMetadata UnitMeters asset
             | ".wav" -> Some SoundMetadata
             | ".ogg" -> Some SongMetadata
             | _ -> None

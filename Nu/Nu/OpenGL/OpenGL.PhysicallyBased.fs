@@ -114,7 +114,7 @@ module PhysicallyBased =
           PhysicallyBasedDeferred2Shader : uint }
 
     /// Attempt to create physically-based from an assimp mesh.
-    let TryCreatePhysicallyBasedMesh (mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedMesh (unitType, mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
@@ -125,12 +125,13 @@ module PhysicallyBased =
             if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
                 // populate vertex data and bounds
+                let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
                 let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
                 let mutable positionMin = v3Zero
                 let mutable positionMax = v3Zero
                 for i in 0 .. dec mesh.Vertices.Count do
                     let v = i * 8
-                    let position = mesh.Vertices.[i]
+                    let position = mesh.Vertices.[i] * scalar
                     let normal = mesh.Normals.[i]
                     let texCoords = mesh.TextureCoordinateChannels.[0].[i]
                     vertexData.[v] <- position.X
@@ -354,13 +355,13 @@ module PhysicallyBased =
         geometry
 
     /// Attempt to create physically-based geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedGeometry (renderable, unitType, mesh : Assimp.Mesh) =
         let meshOpt =
 #if DEBUG_RENDERING_CUBE
             ignore<Assimp.Mesh> mesh
             Right (CreatePhysicallyBasedCubeMesh ())
 #else
-            TryCreatePhysicallyBasedMesh mesh
+            TryCreatePhysicallyBasedMesh (unitType, mesh)
 #endif
         match meshOpt with
         | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds))
@@ -433,28 +434,28 @@ module PhysicallyBased =
             | None -> Right materials
         else Right [||]
 
-    let TryCreatePhysicallyBasedGeometries (renderable, filePath, scene : Assimp.Scene) =
+    let TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SegmentedList.make ()
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
+                match TryCreatePhysicallyBasedGeometry (renderable, unitType, mesh) with
                 | Right geometry -> SegmentedList.add geometry geometries
                 | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
         | Some error -> Left error
         | None -> Right geometries
 
-    let TryCreatePhysicallyBasedStaticModel (defaultMaterial, renderable, filePath, assimp : Assimp.AssimpContext) =
+    let TryCreatePhysicallyBasedStaticModel (defaultMaterial, renderable, unitType, filePath, assimp : Assimp.AssimpContext) =
         try let scene = assimp.ImportFile (filePath, Assimp.PostProcessSteps.CalculateTangentSpace ||| Assimp.PostProcessSteps.JoinIdenticalVertices ||| Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GenerateSmoothNormals ||| Assimp.PostProcessSteps.SplitLargeMeshes ||| Assimp.PostProcessSteps.LimitBoneWeights ||| Assimp.PostProcessSteps.RemoveRedundantMaterials ||| Assimp.PostProcessSteps.SortByPrimitiveType ||| Assimp.PostProcessSteps.FindDegenerates ||| Assimp.PostProcessSteps.FindInvalidData ||| Assimp.PostProcessSteps.GenerateUVCoords ||| Assimp.PostProcessSteps.FlipWindingOrder)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene) with
             | Right materials ->
-                match TryCreatePhysicallyBasedGeometries (renderable, filePath, scene) with
+                match TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene) with
                 | Right geometries ->
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
-                    for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms m4Identity do
+                    for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms (unitType, m4Identity) do
                         for meshIndex in node.MeshIndices do
                             let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                             let material = if renderable then materials.[materialIndex] else Unchecked.defaultof<_>
