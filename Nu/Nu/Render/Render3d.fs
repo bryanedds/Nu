@@ -526,11 +526,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAlbedo.png") |> Either.getRight |> snd
-              MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelMetalness.png") |> Either.getRight |> snd
-              RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelRoughness.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelNormal.png") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/StaticModelAmbientOcclusion.png") |> Either.getRight |> snd }
+            { AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd }
 
         // make renderer
         let renderer =

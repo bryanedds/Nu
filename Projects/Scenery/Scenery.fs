@@ -141,3 +141,8 @@ type SceneryDispatcher () =
         let world = World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, rotationY)) world
         let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
         world
+
+    override this.PostUpdate (entity, world) =
+        let world = base.PostUpdate (entity, world)
+        let world = Simulants.Light.SetPosition (World.getEyePosition3d world) world
+        world
