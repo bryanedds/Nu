@@ -91,8 +91,15 @@ type SceneryDispatcher () =
                     let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
         let world =
-            match World.tryGetStaticModelMetadata (asset "Default" "Demo_2") world with
+            match World.tryGetStaticModelMetadata (asset "Default" "GameObject") world with
             | Some staticModel ->
+                // Unity Scene Export Instruction:
+                //
+                // 1) have FBX Exporter package installed
+                // 2) be in PBR Unity Project	
+                // 3) put all desired objects in empty root GameObject
+                // 4) export root GameObject
+                // 5) delete all fbx files except the one you exported
                 Seq.fold (fun world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                     let (staticModelSurface, world) = World.createEntity<StaticModelSurfaceDispatcher> None NoOverlay Simulants.Default.Group world
                     let bounds = surface.SurfaceBounds
