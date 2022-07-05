@@ -91,11 +91,24 @@ type SceneryDispatcher () =
                     let position = v3 (single i) (single j) (single k) * spread + random - offset
                     positions.Add position
         let world =
+            match World.tryGetStaticModelMetadata (asset "Default" "Demo_2") world with
+            | Some staticModel ->
+                Seq.fold (fun world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                    let (staticModelSurface, world) = World.createEntity<StaticModelSurfaceDispatcher> None NoOverlay Simulants.Default.Group world
+                    let bounds = surface.SurfaceBounds
+                    let boundsExtended = bounds.Combine bounds.Mirror
+                    let world = staticModelSurface.SetSize boundsExtended.Size world
+                    let world = staticModelSurface.SetPosition surface.SurfaceMatrix.Translation world
+                    world)
+                    world staticModel.Surfaces
+            | None -> world
+        let world =
             Seq.fold (fun world position ->
                 let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
                 let world = staticModel.SetScale (v3Dup 1.5f) world
                 //let world = staticModel.SetRenderStyle Forward world
-                staticModel.SetPosition position world)
+                let world = staticModel.SetPosition position world
+                world)
                 world positions
         world
 

@@ -173,6 +173,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
+        | ".tif"
         | ".png" ->
             match OpenGL.Texture.TryCreateTexture2dUnfiltered asset.FilePath with
             | Right texture ->
@@ -194,6 +195,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMap, ref None))
                 | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
+        | ".fbx"
         | ".obj" ->
             match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
