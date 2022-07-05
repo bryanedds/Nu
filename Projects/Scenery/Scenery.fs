@@ -52,7 +52,7 @@ type SceneryDispatcher () =
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let speed = 1.0f // 2 * ~67.1mph
+        let speed = 0.5f // ~67.1mph
         let world =
             match command with
             | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + v3Left * speed) world
@@ -114,7 +114,15 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetSurfaceIndex surfaceIndex world
                     let world = staticModelSurface.SetStaticModel staticModel world
                     let world = staticModelSurface.SetSize boundsExtended.Size world
-                    let world = staticModelSurface.SetPosition surface.SurfaceMatrix.Translation world
+                    let mutable transform = surface.SurfaceMatrix
+                    let position = transform.Translation
+                    let mutable rotation = transform
+                    rotation.M41 <- 0.0f
+                    rotation.M42 <- 0.0f
+                    rotation.M43 <- 0.0f
+                    let rotation = Quaternion.CreateFromRotationMatrix rotation
+                    let world = staticModelSurface.SetPosition position world
+                    let world = staticModelSurface.SetRotation rotation world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
