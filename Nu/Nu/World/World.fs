@@ -61,6 +61,9 @@ module Nu =
             // init math module
             Math.init ()
 
+            // init OpenGL assert-ness
+            OpenGL.Hl.InitAssert nuConfig.StandAlone
+
             // init simulant modules
             WorldModuleGame.init ()
             WorldModuleScreen.init ()
@@ -494,7 +497,7 @@ module WorldModule3 =
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.NuConfig.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -561,7 +564,7 @@ module WorldModule3 =
                       RebuildOctree = World.rebuildOctree }
 
                 // look up the active game dispather
-                let activeGameDispatcherType = if config.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
+                let activeGameDispatcherType = if config.NuConfig.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
                 let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems
@@ -579,7 +582,7 @@ module WorldModule3 =
                             | Some window -> GlRenderer3d.make window config :> Renderer3d
                             | None -> MockRenderer3d.make () :> Renderer3d
                     let rendererProcess =
-                        if config.StandAlone
+                        if config.NuConfig.StandAlone
                         then RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
                         else RendererInline (createRenderer2d, createRenderer3d) :> RendererProcess
                     rendererProcess.Start ()
@@ -611,7 +614,7 @@ module WorldModule3 =
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.StandAlone config.UpdateRate assetMetadataMap symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.UpdateRate assetMetadataMap symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()

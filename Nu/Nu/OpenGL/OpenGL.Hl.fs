@@ -17,13 +17,19 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    let mutable private AssertEnabled =
+        false
+
+    /// Initialize OpenGL.Hl.
+    let InitAssert assertEnabled =
+        AssertEnabled <- assertEnabled
+
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =
-#if DEBUG_RENDERING_ASSERT
-        let error = Gl.GetError ()
-        if error <> ErrorCode.NoError then
-            Log.debug ("OpenGL assertion failed due to: " + string error)
-#endif
+        if AssertEnabled then
+            let error = Gl.GetError ()
+            if error <> ErrorCode.NoError then
+                Log.debug ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG_RENDERING_MESSAGE

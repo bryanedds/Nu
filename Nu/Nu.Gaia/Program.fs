@@ -9,6 +9,6 @@ module Program =
 
     // TODO: increase warning level to 5.
     let [<EntryPoint; STAThread>] main _ =
-        let nuConfig = NuConfig.defaultConfig
+        let nuConfig = { NuConfig.defaultConfig with StandAlone = false }
         Gaia.init nuConfig
         Gaia.run nuConfig

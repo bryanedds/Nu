@@ -127,7 +127,8 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 
 /// Configuration parameters for Nu.
 type [<NoEquality; NoComparison>] NuConfig =
-    { RunSynchronously : bool }
+    { RunSynchronously : bool
+      StandAlone : bool }
 
     /// The default configuration for Nu.
     static member defaultConfig =
@@ -137,12 +138,12 @@ type [<NoEquality; NoComparison>] NuConfig =
 #else
             false
 #endif
-        { RunSynchronously = runSynchronously }
+        { RunSynchronously = runSynchronously
+          StandAlone = true }
 
 /// Configuration parameters for the world.
 type [<NoEquality; NoComparison>] WorldConfig =
     { Imperative : bool
-      StandAlone : bool
       UpdateRate : int64
       SdlConfig : SdlConfig
       NuConfig : NuConfig }
@@ -150,7 +151,6 @@ type [<NoEquality; NoComparison>] WorldConfig =
     /// The default configuration of the world.
     static member defaultConfig =
         { Imperative = true
-          StandAlone = true
           UpdateRate = 1L
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
