@@ -2590,7 +2590,6 @@ module StaticSceneDispatcherModule =
                     let position = transform.Translation
                     let mutable rotation = transform
                     rotation.Translation <- v3Zero
-                    // TODO: 3D: get scale as well!!!
                     let rotation = Quaternion.CreateFromRotationMatrix rotation
                     let scale = transform.Scale ()
                     let world = child.SetSurfaceIndex surfaceIndex world
