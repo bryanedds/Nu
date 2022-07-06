@@ -193,6 +193,7 @@ type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 module Octree =
 
     /// Provides an enumerator interface to the octree queries.
+    /// TODO: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
     type internal OctreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e Octelement seq, localElements : 'e Octelement seq) =
 
         let omnipresentArray = SegmentedArray.ofSeq omnipresentElements // eagerly convert to segmented array to keep iteration valid
@@ -238,7 +239,7 @@ module Octree =
             member this.Dispose () =
                 localEnr <- Unchecked.defaultof<_>
                 omnipresentEnr <- Unchecked.defaultof<_>
-            
+
     /// Provides an enumerable interface to the octree queries.
     type internal OctreeEnumerable<'e when 'e : equality> (enr : 'e OctreeEnumerator) =
         interface IEnumerable<'e Octelement> with
