@@ -97,7 +97,7 @@ type [<NoEquality; NoComparison>] Transform =
         and set (value : Presence) =
             let omnipresent = value.ISOmnipresent
             if omnipresent || not this.Absolute then // a transform that is Absolute must remain Omnipresent
-                this.Presence_ <- if omnipresent then Omnipresent else Afatecs
+                this.Presence_ <- if omnipresent then Omnipresent else value
 
     member this.Rotation
         with get () = this.Rotation_
