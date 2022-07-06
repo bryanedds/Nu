@@ -398,7 +398,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member (*inline*) private renderPhysicallyBasedSurfaces
+    static member private renderPhysicallyBasedSurfaces
         eyePosition
         viewArray
         projectionArray

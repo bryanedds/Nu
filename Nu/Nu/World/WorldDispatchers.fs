@@ -2602,6 +2602,7 @@ module StaticSceneDispatcherModule =
                     let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
                     let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
                     let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
+                    let world = child.SetPersistent false world
                     let world = child.SetStatic (entity.GetStatic world) world
                     // TODO: 3D: set mount - let world = child.SetMountOpt ... world
                     world)
