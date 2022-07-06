@@ -8,15 +8,19 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
+layout (location = 7) in vec4 albedo;
+layout (location = 8) in vec3 material;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
+out vec4 albedoOut;
 out vec3 normalOut;
 
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
     texCoordsOut = texCoords;
+    albedoOut = albedo;
     normalOut = mat3(model) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
@@ -45,6 +49,7 @@ uniform float lightIntensities[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
+in vec4 albedoOut;
 in vec3 normalOut;
 
 out vec4 frag;
@@ -104,8 +109,13 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
+    // compute albedo with alpha
+    vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    vec4 albedo;
+    albedo.rgb = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
+    albedo.a = albedoSample.a * albedoOut.a;
+
     // compute material properties
-    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(GAMMA));
     float metalness = texture(metalnessTexture, texCoordsOut).r;
     float roughness = texture(roughnessTexture, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
@@ -117,7 +127,7 @@ void main()
 
     // compute lightOutput term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo, metalness);
+    vec3 f0 = mix(vec3(0.04), albedo.rgb, metalness);
     vec3 lightOutput = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -148,7 +158,7 @@ void main()
         float nDotL = max(dot(n, l), 0.0);
 
         // add to outgoing lightOutput
-        lightOutput += (kD * albedo / PI + specular) * radiance * nDotL;
+        lightOutput += (kD * albedo.rgb / PI + specular) * radiance * nDotL;
     }
 
     // compute diffuse term
@@ -157,7 +167,8 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metalness;
     vec3 irradiance = texture(irradianceMap, n).rgb;
-    vec3 diffuse = irradiance * albedo;
+    vec3 diffuse = irradiance * albedo.rgb;
+    float alpha = albedo.a;
 
     // compute specular term
     vec3 environmentFilterColor = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
@@ -165,7 +176,7 @@ void main()
     vec3 specular = environmentFilterColor * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = (kD * diffuse.rgb + specular) * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
     vec3 color = ambient + lightOutput;
@@ -173,5 +184,5 @@ void main()
     color = pow(color, vec3(1.0 / GAMMA));
 
     // write
-    frag = vec4(color, 1.0);
+    frag = vec4(color, alpha);
 }

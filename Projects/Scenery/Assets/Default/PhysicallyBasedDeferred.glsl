@@ -8,15 +8,19 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
+layout (location = 7) in vec4 albedo;
+layout (location = 8) in vec3 material;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
+out vec4 albedoOut;
 out vec3 normalOut;
 
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
     texCoordsOut = texCoords;
+    albedoOut = albedo;
     normalOut = transpose(inverse(mat3(model))) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
@@ -24,8 +28,7 @@ void main()
 #shader fragment
 #version 410 core
 
-const float GAMMA_SQRT = 1.5;
-const float TONE = GAMMA_SQRT * GAMMA_SQRT;
+const float GAMMA = 2.2;
 
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
@@ -36,6 +39,7 @@ uniform sampler2D normalTexture;
 in vec3 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
+in vec4 albedoOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 albedo;
@@ -61,8 +65,9 @@ void main()
     // forward position
     position = positionOut;
 
-    // compute albedo
-    albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(TONE));
+    // compute albedo without alpha
+    vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r;

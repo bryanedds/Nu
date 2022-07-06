@@ -14,17 +14,28 @@ open Nu
 // I may borrow some sky dome code from here or related - https://github.com/shff/opengl_sky/blob/master/main.mm
 // There appears to be a bias constant that can be used with VSMs to fix up light leaks, so consider that.
 
+/////////////////////////////////////////////////////////////////////////
+// TODO: 3D: introduce records for a bunch of the tuples in this file! //
+/////////////////////////////////////////////////////////////////////////
+
 /// The type of rendering used on a surface.
 type [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType
 
+/// Materials used for rendering models.
+and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
+    { AlbedoOpt : Color option
+      MetalnessOpt : single option
+      RoughnessOpt : single option
+      AmbientOcclusionOpt : single option }
+
 /// A collection of render tasks in a pass.
 and [<NoEquality; NoComparison>] RenderTasks =
-    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, Matrix4x4 SegmentedList>
-      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      RenderSurfacesForwardRelative : struct (Matrix4x4 * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * RenderMaterial) SegmentedList>
+      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * RenderMaterial) SegmentedList>
+      RenderSurfacesForwardAbsolute : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSurfacesForwardRelative : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       RenderSkyBoxes : CubeMap AssetTag SegmentedList
       RenderLights : SortableLight SegmentedList }
 
@@ -47,14 +58,15 @@ and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
 and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
+      mutable CachedStaticModelRenderMaterial : RenderMaterial
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderStaticModelSurfaceDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderType * StaticModel AssetTag
-    | RenderStaticModelsDescriptor of bool * Matrix4x4 array * RenderType * StaticModel AssetTag
+    | RenderStaticModelSurfaceDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModelsDescriptor of bool * (Matrix4x4 * RenderMaterial) array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderSkyBoxDescriptor of CubeMap AssetTag
     | RenderLightDescriptor of Vector3 * Color * single * single * LightType
@@ -146,6 +158,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable RenderModelsFields : single array
+          mutable RenderAlbedosFields : single array
+          mutable RenderMaterialsFields : single array
           RenderPackages : RenderAsset Packages
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
@@ -269,10 +283,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
-    static member private categorizeStaticModelSurface
+    static member inline private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         modelRenderType : RenderType,
+         renderMaterial : RenderMaterial inref,
+         renderType : RenderType,
          ignoreSurfaceMatrix,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderTasks) =
@@ -280,54 +295,56 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             if ignoreSurfaceMatrix || surface.SurfaceMatrixIsIdentity
             then modelMatrix
             else modelMatrix * surface.SurfaceMatrix
-        match modelRenderType with
+        match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
                 match renderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add surfaceMatrix renderTasks
-                | (false, _) -> renderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton surfaceMatrix)
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, renderMaterial) renderTasks
+                | (false, _) -> renderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton struct (surfaceMatrix, renderMaterial))
             else
                 match renderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add surfaceMatrix renderTasks
-                | (false, _) -> renderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton surfaceMatrix)
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, renderMaterial) renderTasks
+                | (false, _) -> renderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton struct (surfaceMatrix, renderMaterial))
         | ForwardRenderType ->
             if modelAbsolute
-            then SegmentedList.add struct (surfaceMatrix, surface) renderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (surfaceMatrix, surface) renderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (surfaceMatrix, renderMaterial, surface) renderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (surfaceMatrix, renderMaterial, surface) renderTasks.RenderSurfacesForwardRelative
 
-    static member private categorizeStaticModelSurfaceByIndex
+    static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         modelRenderType : RenderType,
-         modelAssetTag : StaticModel AssetTag,
+         renderMaterial : RenderMaterial inref,
+         renderType : RenderType,
+         staticModel : StaticModel AssetTag,
          surfaceIndex,
          renderTasks,
          renderer) =
-        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
+        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, true, surface, renderTasks)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, true, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
-        | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring modelAssetTag + "'.")
+        | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
-    static member private categorizeStaticModel
+    static member inline private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         modelRenderType,
-         modelAssetTag : StaticModel AssetTag,
+         renderMaterial : RenderMaterial inref,
+         renderType,
+         staticModel : StaticModel AssetTag,
          renderTasks,
          renderer) =
-        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize modelAssetTag) renderer with
+        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, modelRenderType, false, surface, renderTasks)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, false, surface, renderTasks)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
-        | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring modelAssetTag + "'.")
+        | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
     /// Compute the 3d projection matrix.
     /// TODO: 3D: expose this elsewhere.
@@ -381,11 +398,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member inline private renderPhysicallyBasedSurfaces
+    static member (*inline*) private renderPhysicallyBasedSurfaces
         eyePosition
         viewArray
         projectionArray
-        (models : Matrix4x4 SegmentedList)
+        (parameters : struct (Matrix4x4 * RenderMaterial) SegmentedList)
         blending
         irradianceMap
         environmentFilterMap
@@ -398,22 +415,47 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         shader
         renderer =
 
-        // ensure there are models to render
-        if models.Length > 0 then
+        // ensure there are surfaces to render
+        if parameters.Length > 0 then
 
-            // ensure we have a large enough field array
+            // ensure we have a large enough models fields array
             let mutable length = renderer.RenderModelsFields.Length
-            while models.Length * 16 * 16 > length do length <- length * 2
+            while parameters.Length * 16 > length do length <- length * 2
             if renderer.RenderModelsFields.Length < length then
                 renderer.RenderModelsFields <- Array.zeroCreate<single> length
 
-            // blit models to field array
-            for i in 0 .. dec models.Length do
-                models.[i].ToArray (renderer.RenderModelsFields, i * 16)
+            // ensure we have a large enough abledos fields array
+            let mutable length = renderer.RenderAlbedosFields.Length
+            while parameters.Length * 4 > length do length <- length * 2
+            if renderer.RenderAlbedosFields.Length < length then
+                renderer.RenderAlbedosFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough materials fields array
+            let mutable length = renderer.RenderMaterialsFields.Length
+            while parameters.Length * 3 > length do length <- length * 2
+            if renderer.RenderMaterialsFields.Length < length then
+                renderer.RenderMaterialsFields <- Array.zeroCreate<single> length
+
+            // blit parameters to field arrays
+            for i in 0 .. dec parameters.Length do
+                let struct (model, renderMaterial) = parameters.[i]
+                model.ToArray (renderer.RenderModelsFields, i * 16)
+                let (albedoScalar, metalnessScalar, roughnessScalar, ambientOcclusionScalar) =
+                    ((match renderMaterial.AlbedoOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.AlbedoScalar),
+                     (match renderMaterial.MetalnessOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.MetalnessScalar),
+                     (match renderMaterial.RoughnessOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.RoughnessScalar),
+                     (match renderMaterial.AmbientOcclusionOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.AmbientOcclusionScalar))
+                renderer.RenderAlbedosFields.[i * 4] <- albedoScalar.R
+                renderer.RenderAlbedosFields.[i * 4 + 1] <- albedoScalar.G
+                renderer.RenderAlbedosFields.[i * 4 + 2] <- albedoScalar.B
+                renderer.RenderAlbedosFields.[i * 4 + 3] <- albedoScalar.A
+                renderer.RenderMaterialsFields.[i * 3] <- metalnessScalar
+                renderer.RenderMaterialsFields.[i * 3 + 1] <- roughnessScalar
+                renderer.RenderMaterialsFields.[i * 3 + 2] <- ambientOcclusionScalar
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
-                (eyePosition, renderer.RenderModelsFields, models.Length, viewArray, projectionArray,
+                (eyePosition, parameters.Length, renderer.RenderModelsFields, renderer.RenderAlbedosFields, renderer.RenderMaterialsFields, viewArray, projectionArray,
                  blending, irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
                  surface.PhysicallyBasedMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -520,7 +562,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoColor = Color.White
+            { AlbedoScalar = Color.White
               AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
               MetalnessScalar = 1.0f
               MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
@@ -549,7 +591,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
-              RenderModelsFields = Array.zeroCreate<single> (16 * 1024)
+              RenderModelsFields = Array.zeroCreate<single> (16 * 1024) // TODO: 3D: use constant for these 1024's.
+              RenderAlbedosFields = Array.zeroCreate<single> (4 * 1024)
+              RenderMaterialsFields = Array.zeroCreate<single> (3 * 1024)
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
@@ -596,15 +640,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | RenderStaticModelSurfaceDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag, modelSurfaceIndex) ->
-                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, modelSurfaceIndex, renderTasks, renderer)
-                | RenderStaticModelDescriptor (modelAbsolute, modelMatrix, modelRenderType, modelAssetTag) ->
-                    GlRenderer3d.categorizeStaticModel (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, renderTasks, renderer)
-                | RenderStaticModelsDescriptor (modelAbsolute, modelMatrices, modelRenderType, modelAssetTag) ->
-                    for modelMatrix in modelMatrices do
-                        GlRenderer3d.categorizeStaticModel (modelAbsolute, &modelMatrix, modelRenderType, modelAssetTag, renderTasks, renderer)
+                | RenderStaticModelSurfaceDescriptor (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
+                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, surfaceIndex, renderTasks, renderer)
+                | RenderStaticModelDescriptor (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
+                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderTasks, renderer)
+                | RenderStaticModelsDescriptor (absolute, parameters, renderType, staticModel) ->
+                    for (modelMatrix, renderMaterial) in parameters do
+                        GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderTasks, renderer)
                 | RenderCachedStaticModelDescriptor d ->
-                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, d.CachedStaticModelRenderType, d.CachedStaticModel, renderTasks, renderer)
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderTasks, renderer)
                 | RenderSkyBoxDescriptor cubeMap ->
                     SegmentedList.add cubeMap renderTasks.RenderSkyBoxes
                 | RenderLightDescriptor (position, color, brightness, intensity, _) ->
@@ -620,17 +664,17 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 { renderTasks with
                     RenderSurfacesForwardAbsolute =
                         renderTasks.RenderSurfacesForwardAbsolute |>
-                        Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                        Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
                         Seq.toArray |>
-                        Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
-                        Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
+                        Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                        Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
                         SegmentedList.ofSeq;
                     RenderSurfacesForwardRelative =
                         renderTasks.RenderSurfacesForwardRelative |>
-                        Seq.map (fun struct (model, surface) -> struct (model, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                        Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
                         Seq.toArray |>
-                        Array.sortByDescending (fun struct (_, _, distanceSquared) -> distanceSquared) |>
-                        Array.map (fun struct (model, surface, _) -> struct (model, surface)) |>
+                        Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                        Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
                         SegmentedList.ofSeq }
 
             // setup geometry buffer
@@ -757,14 +801,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> ()
 
             // render forward pass w/ absolute-transformed surfaces
-            for (model, surface) in renderTasks.RenderSurfacesForwardAbsolute do
+            for (model, renderMaterial, surface) in renderTasks.RenderSurfacesForwardAbsolute do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
                     projectionArray
-                    (SegmentedList.singleton model)
+                    (SegmentedList.singleton struct (model, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap
@@ -779,14 +823,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // render forward pass w/ relative-transformed surfaces
-            for (model, surface) in renderTasks.RenderSurfacesForwardRelative do
+            for (model, renderMaterial, surface) in renderTasks.RenderSurfacesForwardRelative do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
                     projectionArray
-                    (SegmentedList.singleton model)
+                    (SegmentedList.singleton (model, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap
