@@ -14,7 +14,7 @@ module PhysicallyBased =
 
     /// Describes a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
-        { AlbedoColor : Color
+        { AlbedoScalar : Color
           AlbedoTexture : uint
           MetalnessScalar : single
           MetalnessTexture : uint
@@ -32,6 +32,8 @@ module PhysicallyBased =
           Vertices : Vector3 array
           VertexBuffer : uint
           ModelBuffer : uint
+          AlbedoBuffer : uint
+          MaterialBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
 
@@ -265,7 +267,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
 
         // make buffers
-        let (vertices, vertexBuffer, modelBuffer, indexBuffer, vao) =
+        let (vertices, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -312,6 +314,28 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (6u, 1u)
                 Hl.Assert ()
 
+                // create albedo buffer
+                let albedoBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, albedoBuffer)
+                let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally albedoDataPtr.Free ()
+                Gl.EnableVertexAttribArray 7u
+                Gl.VertexAttribPointer (7u, 4, VertexAttribType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (7u, 1u)
+                Hl.Assert ()
+
+                // create material buffer (used for metalness, roughness, and ambient occlusion in that order)
+                let materialBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
+                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (3 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally materialDataPtr.Free ()
+                Gl.EnableVertexAttribArray 8u
+                Gl.VertexAttribPointer (8u, 3, VertexAttribType.Float, false, 3 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (8u, 1u)
+                Hl.Assert ()
+
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -326,7 +350,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], vertexBuffer, modelBuffer, indexBuffer, vao)
+                ([||], vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -339,7 +363,7 @@ module PhysicallyBased =
                     vertices.[i] <- vertex
                 
                 // fin
-                (vertices, 0u, 0u, 0u, 0u)
+                (vertices, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -349,6 +373,8 @@ module PhysicallyBased =
               Vertices = vertices
               VertexBuffer = vertexBuffer
               ModelBuffer = modelBuffer
+              AlbedoBuffer = albedoBuffer
+              MaterialBuffer = materialBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -382,7 +408,7 @@ module PhysicallyBased =
     /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
     let CreatePhysicallyBasedMaterial (defaultMaterial, dirPath, material : Assimp.Material) =
         let (_, albedo) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
-        let albedoColor = material.ColorDiffuse
+        let albedoScalar = material.ColorDiffuse
         let albedoTexture =
             if notNull albedo.FilePath then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedo.FilePath)) with
@@ -420,7 +446,7 @@ module PhysicallyBased =
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
-        { AlbedoColor = color albedoColor.R albedoColor.G albedoColor.B albedoColor.A
+        { AlbedoScalar = color albedoScalar.R albedoScalar.G albedoScalar.B albedoScalar.A
           AlbedoTexture = albedoTexture
           MetalnessScalar = metalnessScalar
           MetalnessTexture = metalnessTexture
@@ -560,8 +586,10 @@ module PhysicallyBased =
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
         (eyePosition : Vector3,
+         surfacesCount : int,
          modelsFields : single array,
-         modelsCount : int,
+         albedosFields : single array,
+         materialsFields : single array,
          view : single array,
          projection : single array,
          blending,
@@ -626,8 +654,24 @@ module PhysicallyBased =
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (modelsCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
         finally modelsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update colors buffer
+        let colorsFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), colorsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+        finally colorsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update materials buffer
+        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 3 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+        finally materialsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -638,7 +682,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw geometry
-        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, modelsCount)
+        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
         Hl.Assert ()
 
         // teardown geometry

@@ -1340,11 +1340,12 @@ module StaticModelFacetModule =
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
+                let renderMaterial = { AlbedoOpt = None; MetalnessOpt = None; RoughnessOpt = None; AmbientOcclusionOpt = None } // TODO: 3D: implement.
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward -> ForwardRenderType
-                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
             else world
 
         override this.GetQuickSize (entity, world) =
@@ -1379,11 +1380,12 @@ module StaticModelSurfaceFacetModule =
                     let absolute = transform.Absolute
                     let affineMatrix = transform.AffineMatrix
                     let staticModel = entity.GetStaticModel world
+                    let renderMaterial = { AlbedoOpt = None; MetalnessOpt = None; RoughnessOpt = None; AmbientOcclusionOpt = None } // TODO: 3D: implement.
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
                         | Forward -> ForwardRenderType
-                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceDescriptor (absolute, affineMatrix, renderType, staticModel, surfaceIndex)) world
+                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
             else world
 
         override this.GetQuickSize (entity, world) =
