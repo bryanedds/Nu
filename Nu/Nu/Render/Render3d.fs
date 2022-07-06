@@ -440,18 +440,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for i in 0 .. dec parameters.Length do
                 let struct (model, renderMaterial) = parameters.[i]
                 model.ToArray (renderer.RenderModelsFields, i * 16)
-                let (albedoScalar, metalnessScalar, roughnessScalar, ambientOcclusionScalar) =
-                    ((match renderMaterial.AlbedoOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.AlbedoScalar),
-                     (match renderMaterial.MetalnessOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.MetalnessScalar),
-                     (match renderMaterial.RoughnessOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.RoughnessScalar),
-                     (match renderMaterial.AmbientOcclusionOpt with Some scalar -> scalar | None -> surface.PhysicallyBasedMaterial.AmbientOcclusionScalar))
-                renderer.RenderAlbedosFields.[i * 4] <- albedoScalar.R
-                renderer.RenderAlbedosFields.[i * 4 + 1] <- albedoScalar.G
-                renderer.RenderAlbedosFields.[i * 4 + 2] <- albedoScalar.B
-                renderer.RenderAlbedosFields.[i * 4 + 3] <- albedoScalar.A
-                renderer.RenderMaterialsFields.[i * 3] <- metalnessScalar
-                renderer.RenderMaterialsFields.[i * 3 + 1] <- roughnessScalar
-                renderer.RenderMaterialsFields.[i * 3 + 2] <- ambientOcclusionScalar
+                let (albedo, metalness, roughness, ambientOcclusion) =
+                    ((match renderMaterial.AlbedoOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Albedo),
+                     (match renderMaterial.MetalnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Metalness),
+                     (match renderMaterial.RoughnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Roughness),
+                     (match renderMaterial.AmbientOcclusionOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.AmbientOcclusion))
+                renderer.RenderAlbedosFields.[i * 4] <- albedo.R
+                renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
+                renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
+                renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
+                renderer.RenderMaterialsFields.[i * 3] <- metalness
+                renderer.RenderMaterialsFields.[i * 3 + 1] <- roughness
+                renderer.RenderMaterialsFields.[i * 3 + 2] <- ambientOcclusion
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
@@ -562,13 +562,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoScalar = Color.White
+            { Albedo = Color.White
               AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
-              MetalnessScalar = 1.0f
+              Metalness = 1.0f
               MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
-              RoughnessScalar = 1.0f
+              Roughness = 1.0f
               RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
-              AmbientOcclusionScalar = 1.0f
+              AmbientOcclusion = 1.0f
               AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd }
 
