@@ -14,6 +14,7 @@ layout (location = 8) in vec3 material;
 out vec3 positionOut;
 out vec2 texCoordsOut;
 out vec4 albedoOut;
+out vec3 materialOut;
 out vec3 normalOut;
 
 void main()
@@ -21,6 +22,7 @@ void main()
     positionOut = vec3(model * vec4(position, 1.0));
     texCoordsOut = texCoords;
     albedoOut = albedo;
+    materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
@@ -38,8 +40,9 @@ uniform sampler2D normalTexture;
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
-in vec3 normalOut;
 in vec4 albedoOut;
+in vec3 materialOut;
+in vec3 normalOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 albedo;
@@ -70,9 +73,9 @@ void main()
     albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
 
     // compute material properties
-    float metalness = texture(metalnessTexture, texCoordsOut).r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
+    float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
+    float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.b;
     material = vec3(metalness, roughness, ambientOcclusion);
 
     // forward normal

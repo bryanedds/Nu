@@ -14,6 +14,7 @@ layout (location = 8) in vec3 material;
 out vec3 positionOut;
 out vec2 texCoordsOut;
 out vec4 albedoOut;
+out vec3 materialOut;
 out vec3 normalOut;
 
 void main()
@@ -50,6 +51,7 @@ uniform float lightIntensities[LIGHTS_MAX];
 in vec3 positionOut;
 in vec2 texCoordsOut;
 in vec4 albedoOut;
+in vec3 materialOut;
 in vec3 normalOut;
 
 out vec4 frag;
@@ -116,9 +118,9 @@ void main()
     albedo.a = albedoSample.a * albedoOut.a;
 
     // compute material properties
-    float metalness = texture(metalnessTexture, texCoordsOut).r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
+    float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
+    float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.b;
 
     // compute lighting profile
     vec3 n = getNormal();
