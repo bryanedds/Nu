@@ -80,7 +80,7 @@ module PhysicallyBased =
     /// A physically-based static model.
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
-          Surfaces : PhysicallyBasedSurface array }
+          PhysicallyBasedSurfaces : PhysicallyBasedSurface array }
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -497,7 +497,7 @@ module PhysicallyBased =
                             let surface = PhysicallyBasedSurface.make nodeTransform geometry.Bounds material geometry
                             SegmentedList.add surface surfaces
                             bounds <- bounds.Combine (geometry.Bounds.Transform nodeTransform)
-                    Right { Bounds = bounds; Surfaces = Array.ofSeq surfaces }
+                    Right { Bounds = bounds; PhysicallyBasedSurfaces = Array.ofSeq surfaces }
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)

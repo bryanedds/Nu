@@ -1419,8 +1419,8 @@ module StaticModelSurfaceFacetModule =
         override this.GetQuickSize (entity, world) =
             let staticModel = World.getStaticModelMetadata (entity.GetStaticModel world) world
             let surfaceIndex = entity.GetSurfaceIndex world
-            if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
-                let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
+            if surfaceIndex > -1 && surfaceIndex < staticModel.PhysicallyBasedSurfaces.Length then
+                let bounds = staticModel.PhysicallyBasedSurfaces.[surfaceIndex].SurfaceBounds
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
             else Constants.Engine.EntitySize3dDefault
@@ -2554,6 +2554,82 @@ module StaticModelSurfaceDispatcherModule =
             [define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
+module StaticSceneDispatcherModule =
+
+    type Entity with
+        member this.GetStaticScene world : StaticModel AssetTag = this.Get Property? StaticScene world
+        member this.SetStaticScene (value : StaticModel AssetTag) world = this.Set Property? StaticScene value world
+        member this.StaticScene = lens Property? StaticScene this.GetStaticScene this.SetStaticScene this
+
+    type StaticSceneDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static let destroyChildren (entity : Entity) world =
+            Seq.fold (fun world child ->
+                World.destroyEntity child world)
+                world (entity.GetChildren world)
+
+        static let tryCreateChildren (entity : Entity) world =
+            let staticModel = entity.GetStaticScene world
+            match World.tryGetStaticModelMetadata staticModel world with
+            | Some staticModelMetadata ->
+                // Unity Scene Export Instructions:
+                // 1) have FBX Exporter package installed
+                // 2) be in PBR Unity Project
+                // 3) put all desired objects in empty root GameObject
+                // 4) export root GameObject
+                // 5) delete all fbx files except the one you exported
+                Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                    let childNames = Array.add Gen.name entity.Surnames
+                    let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childNames) DefaultOverlay Simulants.Default.Group world
+                    let bounds = surface.SurfaceBounds
+                    let boundsExtended = bounds.Combine bounds.Mirror
+                    let transform = surface.SurfaceMatrix
+                    let position = transform.Translation
+                    let mutable rotation = transform
+                    rotation.Translation <- v3Zero
+                    let rotation = Quaternion.CreateFromRotationMatrix rotation
+                    let scale = transform.Scale ()
+                    let world = child.SetSurfaceIndex surfaceIndex world
+                    let world = child.SetStaticModel staticModel world
+                    let world = child.SetSize boundsExtended.Size world
+                    let world = child.SetPositionLocal position world
+                    let world = child.SetRotationLocal rotation world
+                    let world = child.SetScaleLocal scale world
+                    let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
+                    let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
+                    let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
+                    let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
+                    let world = child.SetStatic (entity.GetStatic world) world
+                    world)
+                    world staticModelMetadata.PhysicallyBasedSurfaces
+            | None -> world
+
+        static let syncChildren evt world =
+            let entity = evt.Subscriber : Entity
+            let world = destroyChildren entity world
+            let world = tryCreateChildren entity world
+            (Cascade, world)
+
+        static let syncChildrenStatic evt world =
+            let entity = evt.Subscriber : Entity
+            let static_ = entity.GetStatic world
+            let world =
+                Seq.fold
+                    (fun world (child : Entity) -> child.SetStatic static_ world)
+                    world (entity.GetChildren world)
+            (Cascade, world)
+
+        static member Properties =
+            [define Entity.StaticScene Assets.Default.StaticModel]
+
+        override this.Register (entity, world) =
+            let world = tryCreateChildren entity world
+            let world = World.monitor syncChildren (entity.ChangeEvent Property? StaticScene) entity world
+            let world = World.monitor syncChildrenStatic (entity.ChangeEvent Property? Static) entity world
+            world
 
 [<AutoOpen>]
 module GroupDispatcherModule =

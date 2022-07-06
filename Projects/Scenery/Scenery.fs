@@ -85,45 +85,11 @@ type SceneryDispatcher () =
 
     // here we create the scenery in an imperative fashion
     // NOTE: performance goal: 60fps, current: 33fps.
-    override this.Register (entity, world) =
-        let world = base.Register (entity, world)
-        let world =
-            let staticModel = asset "Default" "GameObject"
-            match World.tryGetStaticModelMetadata staticModel world with
-            | Some staticModelMetadata ->
-                // Unity Scene Export Instructions:
-                // 1) have FBX Exporter package installed
-                // 2) be in PBR Unity Project	
-                // 3) put all desired objects in empty root GameObject
-                // 4) export root GameObject
-                // 5) delete all fbx files except the one you exported
-                // 6) instantiate entities into scene like so -
-                Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                    let (staticModelSurface, world) = World.createEntity<StaticModelSurfaceDispatcher> None NoOverlay Simulants.Default.Group world
-                    let bounds = surface.SurfaceBounds
-                    let boundsExtended = bounds.Combine bounds.Mirror
-                    let world = staticModelSurface.SetSurfaceIndex surfaceIndex world
-                    let world = staticModelSurface.SetStaticModel staticModel world
-                    let world = staticModelSurface.SetSize boundsExtended.Size world
-                    let transform = surface.SurfaceMatrix
-                    let position = transform.Translation
-                    let mutable rotation = transform
-                    rotation.Translation <- v3Zero
-                    let rotation = Quaternion.CreateFromRotationMatrix rotation
-                    let scale = transform.Scale ()
-                    let world = staticModelSurface.SetPosition position world
-                    let world = staticModelSurface.SetRotation rotation world
-                    let world = staticModelSurface.SetScale scale world
-                    let world = staticModelSurface.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
-                    let world = staticModelSurface.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
-                    let world = staticModelSurface.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
-                    let world = staticModelSurface.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
-                    //let world = staticModelSurface.SetRenderStyle Forward world
-                    world)
-                    world staticModelMetadata.Surfaces
-            | None -> world
+    override this.Register (game, world) =
+        let world = base.Register (game, world)
+        let (_, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
 #if DEBUG
-        let population = 1
+        let population = 5
 #else
         let population = 40
 #endif
@@ -139,8 +105,8 @@ type SceneryDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-                //let world = staticModel.SetRenderStyle Forward world
                 let world = staticModel.SetPosition position world
+                //let world = staticModel.SetRenderStyle Forward world
                 //let world = staticModel.SetStatic true world
                 world)
                 world positions

@@ -423,7 +423,8 @@ module WorldModule3 =
                  LightDispatcher () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
-                 StaticModelDispatcher () :> EntityDispatcher]
+                 StaticModelDispatcher () :> EntityDispatcher
+                 StaticSceneDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.
