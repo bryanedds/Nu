@@ -5,19 +5,19 @@ uniform mat4 view;
 uniform mat4 projection;
 
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec3 normal;
-layout (location = 2) in vec2 texCoords;
+layout (location = 1) in vec2 texCoords;
+layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
 
 out vec3 positionOut;
-out vec3 normalOut;
 out vec2 texCoordsOut;
+out vec3 normalOut;
 
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
-    normalOut = transpose(inverse(mat3(model))) * normal;
     texCoordsOut = texCoords;
+    normalOut = transpose(inverse(mat3(model))) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
 
@@ -34,8 +34,8 @@ uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 
 in vec3 positionOut;
-in vec3 normalOut;
 in vec2 texCoordsOut;
+in vec3 normalOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 albedo;
@@ -61,9 +61,6 @@ void main()
     // forward position
     position = positionOut;
 
-    // forward normal
-    normal = getNormal();
-
     // compute albedo
     albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(TONE));
 
@@ -72,4 +69,7 @@ void main()
     float roughness = texture(roughnessTexture, texCoordsOut).r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
     material = vec3(metalness, roughness, ambientOcclusion);
+
+    // forward normal
+    normal = getNormal();
 }
