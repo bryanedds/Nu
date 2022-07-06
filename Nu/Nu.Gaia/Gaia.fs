@@ -1681,7 +1681,6 @@ module Gaia =
         | Right (sdlConfig, sdlDeps) ->
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
-                  StandAlone = false
                   UpdateRate = 0L
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
