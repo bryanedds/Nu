@@ -8,15 +8,20 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
+layout (location = 7) in vec4 albedo;
+layout (location = 8) in vec3 material;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
+out vec4 albedoOut;
+out vec3 materialOut;
 out vec3 normalOut;
 
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
     texCoordsOut = texCoords;
+    albedoOut = albedo;
     normalOut = mat3(model) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
@@ -25,7 +30,7 @@ void main()
 #version 410 core
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 7.0;
+const float REFLECTION_LOD_MAX = 8.0;
 const float GAMMA = 2.2;
 const int LIGHTS_MAX = 32;
 
@@ -45,6 +50,8 @@ uniform float lightIntensities[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
+in vec4 albedoOut;
+in vec3 materialOut;
 in vec3 normalOut;
 
 out vec4 frag;
@@ -57,7 +64,7 @@ vec3 getNormal()
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
     vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1*st2.t - q2*st1.t);
+    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
     mat3 tbn = mat3(tangent, binormal, normal);
     return normalize(tbn * tangentNormal);
@@ -65,13 +72,14 @@ vec3 getNormal()
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
-    float rPow2 = roughness * roughness;
-    float rPow4 = rPow2 * rPow2;
+    float a = roughness * roughness;
+    float aPow2 = a * a;
     float nDotH = max(dot(normal, h), 0.0);
     float nDotHPow2 = nDotH * nDotH;
-    float nom = rPow4;
-    float denom = nDotHPow2 * (rPow4 - 1.0) + 1.0;
-    return nom / (PI * denom * denom);
+    float nom = aPow2;
+    float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+    return nom / denom;
 }
 
 float geometrySchlickGGX(float nDotV, float roughness)
@@ -94,31 +102,36 @@ float geometrySchlick(vec3 normal, vec3 v, vec3 l, float roughness)
 
 vec3 fresnelSchlick(float cosTheta, vec3 f0)
 {
-    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), REFLECTION_LOD_MAX);
 }
 
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 {
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), REFLECTION_LOD_MAX);
 }
 
 void main()
 {
+    // compute albedo with alpha
+    vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    vec4 albedo;
+    albedo.rgb = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
+    albedo.a = albedoSample.a * albedoOut.a;
+
     // compute material properties
-    vec3 albedo = pow(texture(albedoTexture, texCoordsOut).rgb, vec3(GAMMA));
-    float metalness = texture(metalnessTexture, texCoordsOut).r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r;
+    float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
+    float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.b;
 
     // compute lighting profile
     vec3 n = getNormal();
     vec3 v = normalize(eyePosition - positionOut);
     vec3 r = reflect(-v, n);
 
-    // compute lightOutput term
+    // compute lightAccum term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo, metalness);
-    vec3 lightOutput = vec3(0.0);
+    vec3 f0 = mix(vec3(0.04), albedo.rgb, metalness);
+    vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
@@ -126,7 +139,10 @@ void main()
         vec3 h = normalize(v + l);
         float distance = length(lightPositions[i] - positionOut);
         float attenuation = 1.0 / (distance * distance);
-        float intensity = pow(attenuation, 1.0 / lightIntensities[i]);
+        float intensity =
+            // TODO: 3D: figure out an algorithm for intensity that doesn't create a black hole at origin like this one -
+            // pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]);
+            attenuation;
         vec3 radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
 
         // cook-torrance brdf
@@ -147,8 +163,8 @@ void main()
         // compute light scalar
         float nDotL = max(dot(n, l), 0.0);
 
-        // add to outgoing lightOutput
-        lightOutput += (kD * albedo / PI + specular) * radiance * nDotL;
+        // add to outgoing lightAccum
+        lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL;
     }
 
     // compute diffuse term
@@ -157,21 +173,22 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metalness;
     vec3 irradiance = texture(irradianceMap, n).rgb;
-    vec3 diffuse = irradiance * albedo;
+    vec3 diffuse = irradiance * albedo.rgb;
+    float alpha = albedo.a;
 
     // compute specular term
-    vec3 environmentFilterColor = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
+    vec3 environmentFilterColor = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilterColor * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = (kD * diffuse.rgb + specular) * ambientOcclusion;
 
     // compute color w/ tone mapping and gamma correction
-    vec3 color = ambient + lightOutput;
+    vec3 color = ambient + lightAccum;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 
     // write
-    frag = vec4(color, 1.0);
+    frag = vec4(color, alpha);
 }
