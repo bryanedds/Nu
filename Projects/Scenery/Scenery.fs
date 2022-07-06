@@ -115,6 +115,7 @@ type SceneryDispatcher () =
                     let world = staticModelSurface.SetRotation rotation world
                     let world = staticModelSurface.SetScale scale world
                     let world = staticModelSurface.SetStatic true world
+                    //let world = staticModelSurface.SetRenderStyle Forward world
                     world)
                     world staticModelMetadata.Surfaces
             | None -> world
