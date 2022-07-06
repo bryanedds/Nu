@@ -1323,6 +1323,18 @@ module StaticModelFacetModule =
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
         member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
+        member this.GetAlbedoOpt world : Color option = this.Get Property? AlbedoOpt world
+        member this.SetAlbedoOpt (value : Color option) world = this.Set Property? AlbedoOpt value world
+        member this.AlbedoOpt = lens Property? AlbedoOpt this.GetAlbedoOpt this.SetAlbedoOpt this
+        member this.GetMetalnessOpt world : single option = this.Get Property? MetalnessOpt world
+        member this.SetMetalnessOpt (value : single option) world = this.Set Property? MetalnessOpt value world
+        member this.MetalnessOpt = lens Property? MetalnessOpt this.GetMetalnessOpt this.SetMetalnessOpt this
+        member this.GetRoughnessOpt world : single option = this.Get Property? RoughnessOpt world
+        member this.SetRoughnessOpt (value : single option) world = this.Set Property? RoughnessOpt value world
+        member this.RoughnessOpt = lens Property? RoughnessOpt this.GetRoughnessOpt this.SetRoughnessOpt this
+        member this.GetAmbientOcclusionOpt world : single option = this.Get Property? AmbientOcclusionOpt world
+        member this.SetAmbientOcclusionOpt (value : single option) world = this.Set Property? AmbientOcclusionOpt value world
+        member this.AmbientOcclusionOpt = lens Property? AmbientOcclusionOpt this.GetAmbientOcclusionOpt this.SetAmbientOcclusionOpt this
         member this.GetRenderStyle world : RenderStyle = this.Get Property? RenderStyle world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
         member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
@@ -1332,6 +1344,10 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.AlbedoOpt None
+             define Entity.MetalnessOpt None
+             define Entity.RoughnessOpt None
+             define Entity.AmbientOcclusionOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Actualize (entity, world) =
@@ -1340,7 +1356,11 @@ module StaticModelFacetModule =
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
-                let renderMaterial = { AlbedoOpt = None; MetalnessOpt = None; RoughnessOpt = None; AmbientOcclusionOpt = None } // TODO: 3D: implement.
+                let renderMaterial =
+                    { AlbedoOpt = entity.GetAlbedoOpt world
+                      MetalnessOpt = entity.GetMetalnessOpt world
+                      RoughnessOpt = entity.GetRoughnessOpt world
+                      AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
@@ -1369,6 +1389,10 @@ module StaticModelSurfaceFacetModule =
         static member Properties =
             [define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.AlbedoOpt None
+             define Entity.MetalnessOpt None
+             define Entity.RoughnessOpt None
+             define Entity.AmbientOcclusionOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Actualize (entity, world) =
@@ -1380,7 +1404,11 @@ module StaticModelSurfaceFacetModule =
                     let absolute = transform.Absolute
                     let affineMatrix = transform.AffineMatrix
                     let staticModel = entity.GetStaticModel world
-                    let renderMaterial = { AlbedoOpt = None; MetalnessOpt = None; RoughnessOpt = None; AmbientOcclusionOpt = None } // TODO: 3D: implement.
+                    let renderMaterial =
+                        { AlbedoOpt = entity.GetAlbedoOpt world
+                          MetalnessOpt = entity.GetMetalnessOpt world
+                          RoughnessOpt = entity.GetRoughnessOpt world
+                          AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType

@@ -14,13 +14,13 @@ module PhysicallyBased =
 
     /// Describes a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
-        { AlbedoScalar : Color
+        { Albedo : Color
           AlbedoTexture : uint
-          MetalnessScalar : single
+          Metalness : single
           MetalnessTexture : uint
-          RoughnessScalar : single
+          Roughness : single
           RoughnessTexture : uint
-          AmbientOcclusionScalar : single
+          AmbientOcclusion : single
           AmbientOcclusionTexture : uint
           NormalTexture : uint }
 
@@ -406,69 +406,67 @@ module PhysicallyBased =
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
-    let CreatePhysicallyBasedMaterial (defaultMaterial, dirPath, material : Assimp.Material) =
-        let (_, albedo) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
-        let albedoScalar = material.ColorDiffuse
+    let CreatePhysicallyBasedMaterial (defaultMaterial, renderable, dirPath, material : Assimp.Material) =
+        let albedo = material.ColorDiffuse
+        let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let albedoTexture =
-            if notNull albedo.FilePath then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedo.FilePath)) with
+            if renderable && notNull albedoTexture.FilePath then
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedoTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
-        let metalnessScalar = material.ColorSpecular.R
-        let (_, metalness) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
+        let metalness = material.ColorSpecular.R
+        let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
-            if notNull metalness.FilePath then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, metalness.FilePath)) with
+            if renderable && notNull metalnessTexture.FilePath then
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, metalnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
-        let roughnessScalar = 1.0f // TODO: 3D: see if we can figure out how to import this value.
-        let (_, roughness) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        let roughness = 1.0f // TODO: 3D: see if we can figure out how to import this value.
+        let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
-            if notNull roughness.FilePath then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, roughness.FilePath)) with
+            if renderable && notNull roughnessTexture.FilePath then
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, roughnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
-        let ambientOccludionScalar = material.ColorAmbient.R
-        let (_, ambientOcclusion) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
+        let ambientOcclusion = material.ColorAmbient.R
+        let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
-            if notNull ambientOcclusion.FilePath then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, ambientOcclusion.FilePath)) with
+            if renderable && notNull ambientOcclusionTexture.FilePath then
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, ambientOcclusionTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
-            if notNull normal.FilePath then
+            if renderable && notNull normal.FilePath then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, normal.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
-        { AlbedoScalar = color albedoScalar.R albedoScalar.G albedoScalar.B albedoScalar.A
+        { Albedo = color albedo.R albedo.G albedo.B albedo.A
           AlbedoTexture = albedoTexture
-          MetalnessScalar = metalnessScalar
+          Metalness = metalness
           MetalnessTexture = metalnessTexture
-          RoughnessScalar = roughnessScalar
+          Roughness = roughness
           RoughnessTexture = roughnessTexture
-          AmbientOcclusionScalar = ambientOccludionScalar
+          AmbientOcclusion = ambientOcclusion
           AmbientOcclusionTexture = ambientOcclusionTexture
           NormalTexture = normalTexture }
 
     /// Attempt to create physically-based material from an assimp scene.
     let TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene : Assimp.Scene) =
-        if renderable then
-            let mutable errorOpt = None
-            let materials = Array.zeroCreate scene.Materials.Count
-            for i in 0 .. dec scene.Materials.Count do
-                if Option.isNone errorOpt then
-                    let material = CreatePhysicallyBasedMaterial (defaultMaterial, dirPath, scene.Materials.[i])
-                    materials.[i] <- material
-            match errorOpt with
-            | Some error -> Left error
-            | None -> Right materials
-        else Right [||]
+        let mutable errorOpt = None
+        let materials = Array.zeroCreate scene.Materials.Count
+        for i in 0 .. dec scene.Materials.Count do
+            if Option.isNone errorOpt then
+                let material = CreatePhysicallyBasedMaterial (defaultMaterial, renderable, dirPath, scene.Materials.[i])
+                materials.[i] <- material
+        match errorOpt with
+        | Some error -> Left error
+        | None -> Right materials
 
     let TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
@@ -494,7 +492,7 @@ module PhysicallyBased =
                     for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms (unitType, m4Identity) do
                         for meshIndex in node.MeshIndices do
                             let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                            let material = if renderable then materials.[materialIndex] else Unchecked.defaultof<_>
+                            let material = materials.[materialIndex]
                             let geometry = geometries.[meshIndex]
                             let surface = PhysicallyBasedSurface.make nodeTransform geometry.Bounds material geometry
                             SegmentedList.add surface surfaces
