@@ -232,6 +232,9 @@ module Content =
     /// Describe static model surface with the given initializers.
     let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
 
+    /// Describe static scene with the given initializers.
+    let staticScene entityName initializers = entity<StaticSceneDispatcher> entityName initializers
+
 [<AutoOpen>]
 module ContentOperators =
 
