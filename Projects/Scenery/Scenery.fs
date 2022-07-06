@@ -76,7 +76,7 @@ type SceneryDispatcher () =
                 [Content.light Simulants.Light.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
                      Entity.Color == Color.White
-                     Entity.Brightness == 100.0f
+                     Entity.Brightness == 10.0f
                      Entity.Intensity == 1.0f]
                  Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
