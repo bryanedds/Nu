@@ -40,6 +40,7 @@ module PhysicallyBased =
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedSurface =
         { mutable HashCode : int
+          SurfaceName : string
           SurfaceMatrixIsIdentity : bool
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
@@ -47,12 +48,14 @@ module PhysicallyBased =
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
+            hash surface.SurfaceName ^^^
             hash surface.PhysicallyBasedMaterial ^^^
             hash surface.PhysicallyBasedGeometry
 
-        static member inline make (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
+        static member inline make surfaceName (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
+                  SurfaceName = surfaceName
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
                   SurfaceMatrix = surfaceMatrix
                   SurfaceBounds = surfaceBounds
@@ -491,10 +494,11 @@ module PhysicallyBased =
                     let mutable bounds = box3Zero
                     for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms (unitType, m4Identity) do
                         for meshIndex in node.MeshIndices do
+                            let nodeName = if String.IsNullOrEmpty node.Name then Gen.name else node.Name
                             let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                             let material = materials.[materialIndex]
                             let geometry = geometries.[meshIndex]
-                            let surface = PhysicallyBasedSurface.make nodeTransform geometry.Bounds material geometry
+                            let surface = PhysicallyBasedSurface.make nodeName nodeTransform geometry.Bounds material geometry
                             SegmentedList.add surface surfaces
                             bounds <- bounds.Combine (geometry.Bounds.Transform nodeTransform)
                     Right { Bounds = bounds; PhysicallyBasedSurfaces = Array.ofSeq surfaces }

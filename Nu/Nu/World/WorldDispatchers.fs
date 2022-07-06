@@ -2582,7 +2582,7 @@ module StaticSceneDispatcherModule =
                 // 4) export root GameObject
                 // 5) delete all fbx files except the one you exported
                 Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                    let childSurnames = Array.add Gen.name entity.Surnames
+                    let childSurnames = Array.add surface.SurfaceName entity.Surnames // NOTE: we may need to check if an entity with the same address already exists because surface name is non-unique.
                     let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                     let bounds = surface.SurfaceBounds
                     let boundsExtended = bounds.Combine bounds.Mirror
