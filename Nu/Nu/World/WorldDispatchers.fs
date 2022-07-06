@@ -2582,8 +2582,8 @@ module StaticSceneDispatcherModule =
                 // 4) export root GameObject
                 // 5) delete all fbx files except the one you exported
                 Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                    let childNames = Array.add Gen.name entity.Surnames
-                    let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childNames) DefaultOverlay Simulants.Default.Group world
+                    let childSurnames = Array.add Gen.name entity.Surnames
+                    let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                     let bounds = surface.SurfaceBounds
                     let boundsExtended = bounds.Combine bounds.Mirror
                     let transform = surface.SurfaceMatrix
@@ -2594,15 +2594,16 @@ module StaticSceneDispatcherModule =
                     let scale = transform.Scale ()
                     let world = child.SetSurfaceIndex surfaceIndex world
                     let world = child.SetStaticModel staticModel world
-                    let world = child.SetSize boundsExtended.Size world
                     let world = child.SetPositionLocal position world
                     let world = child.SetRotationLocal rotation world
                     let world = child.SetScaleLocal scale world
+                    let world = child.SetSize boundsExtended.Size world
                     let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
                     let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
                     let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
                     let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
                     let world = child.SetStatic (entity.GetStatic world) world
+                    //let world = child.SetMountOpt () world
                     world)
                     world staticModelMetadata.PhysicallyBasedSurfaces
             | None -> world
