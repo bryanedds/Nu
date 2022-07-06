@@ -85,7 +85,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="packages.config" />
-    <None Include="Assets\Default\Brdf.png" />
+	<None Include="Assets\Default\Brdf.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
     <None Include="Assets\Default\EnvironmentFilter.glsl" />
@@ -103,6 +103,11 @@
     <None Include="Assets\Default\Image11.png" />
     <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
+    <None Include="Assets\Default\MaterialAlbedo.png" />
+    <None Include="Assets\Default\MaterialAmbientOcclusion.png" />
+    <None Include="Assets\Default\MaterialMetalness.png" />
+    <None Include="Assets\Default\MaterialNormal.png" />
+    <None Include="Assets\Default\MaterialRoughness.png" />
     <None Include="Assets\Default\PhysicallyBasedDeferred.glsl" />
     <None Include="Assets\Default\PhysicallyBasedDeferred2.glsl" />
     <None Include="Assets\Default\PhysicallyBasedForward.glsl" />

@@ -30,17 +30,17 @@ const float TONE = GAMMA_SQRT * GAMMA_SQRT;
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
-uniform sampler2D normalTexture;
 uniform sampler2D ambientOcclusionTexture;
+uniform sampler2D normalTexture;
 
 in vec3 positionOut;
 in vec3 normalOut;
 in vec2 texCoordsOut;
 
 layout (location = 0) out vec3 position;
-layout (location = 1) out vec3 normal;
-layout (location = 2) out vec3 albedo;
-layout (location = 3) out vec3 material;
+layout (location = 1) out vec3 albedo;
+layout (location = 2) out vec3 material;
+layout (location = 3) out vec3 normal;
 
 vec3 getNormal()
 {

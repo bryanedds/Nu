@@ -22,9 +22,9 @@ const int LIGHTS_MAX = 32;
 
 uniform vec3 eyePosition;
 uniform sampler2D positionTexture;
-uniform sampler2D normalTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
+uniform sampler2D normalTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;

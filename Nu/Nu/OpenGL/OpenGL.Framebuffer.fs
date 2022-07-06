@@ -84,22 +84,13 @@ module Framebuffer =
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, position, 0)
         Hl.Assert ()
 
-        // create normal buffer
-        let normal = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, normal)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, normal, 0)
-        Hl.Assert ()
-
         // create albedo buffer
         let albedo = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, albedo)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, albedo, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, albedo, 0)
         Hl.Assert ()
 
         // create material buffer
@@ -108,7 +99,16 @@ module Framebuffer =
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, material, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, material, 0)
+        Hl.Assert ()
+
+        // create normal buffer
+        let normal = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, normal)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, normal, 0)
         Hl.Assert ()
 
         // associate draw buffers
@@ -127,5 +127,5 @@ module Framebuffer =
     
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
-        then Right (position, normal, albedo, material, framebuffer)
+        then Right (position, albedo, material, normal, framebuffer)
         else Left ("Could not create complete geometry framebuffer.")

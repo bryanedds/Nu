@@ -14,11 +14,15 @@ module PhysicallyBased =
 
     /// Describes a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
-        { AlbedoTexture : uint
+        { AlbedoColor : Color
+          AlbedoTexture : uint
+          MetalnessScalar : single
           MetalnessTexture : uint
+          RoughnessScalar : single
           RoughnessTexture : uint
-          NormalTexture : uint
-          AmbientOcclusionTexture : uint }
+          AmbientOcclusionScalar : single
+          AmbientOcclusionTexture : uint
+          NormalTexture : uint }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
@@ -84,8 +88,8 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MetalnessTextureUniform : int
           RoughnessTextureUniform : int
-          NormalTextureUniform : int
           AmbientOcclusionTextureUniform : int
+          NormalTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
@@ -99,9 +103,9 @@ module PhysicallyBased =
     type [<StructuralEquality; NoComparison>] PhysicallyBasedDeferred2Shader =
         { EyePositionUniform : int
           PositionTextureUniform : int
-          NormalTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
+          NormalTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
@@ -375,14 +379,17 @@ module PhysicallyBased =
         CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
+    /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
     let CreatePhysicallyBasedMaterial (defaultMaterial, dirPath, material : Assimp.Material) =
         let (_, albedo) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
+        let albedoColor = material.ColorDiffuse
         let albedoTexture =
             if notNull albedo.FilePath then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedo.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
+        let metalnessScalar = material.ColorSpecular.R
         let (_, metalness) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
             if notNull metalness.FilePath then
@@ -390,6 +397,7 @@ module PhysicallyBased =
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
+        let roughnessScalar = 1.0f // TODO: 3D: see if we can figure out how to import this value.
         let (_, roughness) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
             if notNull roughness.FilePath then
@@ -397,13 +405,7 @@ module PhysicallyBased =
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
-        let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
-        let normalTexture =
-            if notNull normal.FilePath then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, normal.FilePath)) with
-                | Right (_, texture) -> texture
-                | Left _ -> defaultMaterial.NormalTexture
-            else defaultMaterial.NormalTexture
+        let ambientOccludionScalar = material.ColorAmbient.R
         let (_, ambientOcclusion) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
             if notNull ambientOcclusion.FilePath then
@@ -411,11 +413,22 @@ module PhysicallyBased =
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
-        { AlbedoTexture = albedoTexture
+        let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
+        let normalTexture =
+            if notNull normal.FilePath then
+                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, normal.FilePath)) with
+                | Right (_, texture) -> texture
+                | Left _ -> defaultMaterial.NormalTexture
+            else defaultMaterial.NormalTexture
+        { AlbedoColor = color albedoColor.R albedoColor.G albedoColor.B albedoColor.A
+          AlbedoTexture = albedoTexture
+          MetalnessScalar = metalnessScalar
           MetalnessTexture = metalnessTexture
+          RoughnessScalar = roughnessScalar
           RoughnessTexture = roughnessTexture
-          NormalTexture = normalTexture
-          AmbientOcclusionTexture = ambientOcclusionTexture }
+          AmbientOcclusionScalar = ambientOccludionScalar
+          AmbientOcclusionTexture = ambientOcclusionTexture
+          NormalTexture = normalTexture }
 
     /// Attempt to create physically-based material from an assimp scene.
     let TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene : Assimp.Scene) =
@@ -477,8 +490,8 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let metalnessTextureUniform = Gl.GetUniformLocation (shader, "metalnessTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
-        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
+        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -494,8 +507,8 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MetalnessTextureUniform = metalnessTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
-          NormalTextureUniform = normalTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
+          NormalTextureUniform = normalTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -513,9 +526,9 @@ module PhysicallyBased =
         // retrieve uniforms
         let eyePositionUniform = Gl.GetUniformLocation (shader, "eyePosition")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
-        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
+        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -527,9 +540,9 @@ module PhysicallyBased =
         // make shader record
         { EyePositionUniform = eyePositionUniform
           PositionTextureUniform = positionTextureUniform
-          NormalTextureUniform = normalTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
+          NormalTextureUniform = normalTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -583,8 +596,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
-        Gl.Uniform1 (shader.NormalTextureUniform, 3)
-        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
+        Gl.Uniform1 (shader.NormalTextureUniform, 4)
         Gl.Uniform1 (shader.IrradianceMapUniform, 5)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
         Gl.Uniform1 (shader.BrdfTextureUniform, 7)
@@ -599,9 +612,9 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
         Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
-        Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture6
@@ -667,9 +680,9 @@ module PhysicallyBased =
     let DrawPhysicallyBasedDeferred2Surface
         (eyePosition : Vector3,
          positionTexture : uint,
-         normalTexture : uint,
          albedoTexture : uint,
          materialTexture : uint,
+         normalTexture : uint,
          irradianceMap : uint,
          environmentFilterMap : uint,
          brdfTexture : uint,
@@ -687,9 +700,9 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
         Gl.Uniform3 (shader.EyePositionUniform, eyePosition.X, eyePosition.Y, eyePosition.Z)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.NormalTextureUniform, 1)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 2)
-        Gl.Uniform1 (shader.MaterialTextureUniform, 3)
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
+        Gl.Uniform1 (shader.MaterialTextureUniform, 2)
+        Gl.Uniform1 (shader.NormalTextureUniform, 3)
         Gl.Uniform1 (shader.IrradianceMapUniform, 4)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
         Gl.Uniform1 (shader.BrdfTextureUniform, 6)
@@ -700,11 +713,11 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, normalTexture)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture5

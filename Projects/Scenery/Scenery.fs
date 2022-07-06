@@ -119,7 +119,7 @@ type SceneryDispatcher () =
                     world staticModelMetadata.Surfaces
             | None -> world
 #if DEBUG
-        let population = 10
+        let population = 1
 #else
         let population = 80
 #endif

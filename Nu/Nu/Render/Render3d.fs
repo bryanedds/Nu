@@ -520,11 +520,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+            { AlbedoColor = Color.White
+              AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              MetalnessScalar = 1.0f
               MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              RoughnessScalar = 1.0f
               RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd }
+              AmbientOcclusionScalar = 1.0f
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd }
 
         // make renderer
         let renderer =
@@ -630,7 +634,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         SegmentedList.ofSeq }
 
             // setup geometry buffer
-            let (positionTexture, normalTexture, albedoTexture, materialTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+            let (positionTexture, albedoTexture, materialTexture, normalTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.DepthMask true
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
@@ -740,7 +744,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-                (eyePosition, positionTexture, normalTexture, albedoTexture, materialTexture,
+                (eyePosition, positionTexture, albedoTexture, materialTexture, normalTexture,
                  irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
