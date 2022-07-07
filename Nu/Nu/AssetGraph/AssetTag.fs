@@ -6,7 +6,7 @@ open System
 open Nu
 
 /// Describes a means for looking up an asset.
-type [<NoEquality; NoComparison; Struct>] 'a AssetTag =
+type [<StructuralEquality; StructuralComparison; Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 

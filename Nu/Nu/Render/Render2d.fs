@@ -102,7 +102,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
 
-    static member private tryLoadRenderAsset (asset : obj Asset) renderer =
+    static member private tryLoadRender2dAsset (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
@@ -128,12 +128,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
-    static member private tryLoadRenderPackage packageName renderer =
+    static member private tryLoadRender2dPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render2d) packageName assetGraph with
+            match AssetGraph.tryCollectAssetsFromPackage true (Some Constants.Associations.Render2d) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer) assets
+                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRender2dAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
@@ -171,7 +171,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
+                GlRenderer2d.tryLoadRender2dPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, assets) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
@@ -182,28 +182,28 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private handleHintRenderPackageUse hintPackageName renderer =
-        GlRenderer2d.tryLoadRenderPackage hintPackageName renderer
+    static member private handleHintRenderPackage2dUse hintPackageName renderer =
+        GlRenderer2d.tryLoadRender2dPackage hintPackageName renderer
 
-    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+    static member private handleHintRenderPackage2dDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some assets ->
             for asset in assets do GlRenderer2d.freeRenderAsset asset.Value renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
-    static member private handleReloadRenderAssets renderer =
+    static member private handleReloadRender2dAssets renderer =
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         renderer.RenderPackages.Clear ()
         for packageName in packageNames do
-            GlRenderer2d.tryLoadRenderPackage packageName renderer
+            GlRenderer2d.tryLoadRender2dPackage packageName renderer
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | RenderLayeredMessage2d message -> renderer.RenderLayeredMessages.Add message
-        | HintRenderPackageUseMessage2d hintPackageUse -> GlRenderer2d.handleHintRenderPackageUse hintPackageUse renderer
-        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> GlRenderer2d.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage2d -> GlRenderer2d.handleReloadRenderAssets renderer
+        | HintRenderPackageUseMessage2d hintPackageUse -> GlRenderer2d.handleHintRenderPackage2dUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> GlRenderer2d.handleHintRenderPackage2dDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage2d -> GlRenderer2d.handleReloadRender2dAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do

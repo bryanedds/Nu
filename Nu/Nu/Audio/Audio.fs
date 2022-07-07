@@ -121,7 +121,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     static member private tryLoadAudioPackage packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
+            match AssetGraph.tryCollectAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
             | Right assets ->
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
                 let audioAssets = List.definitize audioAssetOpts
