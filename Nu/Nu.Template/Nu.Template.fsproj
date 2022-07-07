@@ -103,6 +103,7 @@
     <None Include="Assets\Default\Image11.png" />
     <None Include="Assets\Default\Image12.png" />
     <None Include="Assets\Default\ImageEmpty.png" />
+    <None Include="Assets\Default\Irradiance.glsl" />
     <None Include="Assets\Default\MaterialAlbedo.png" />
     <None Include="Assets\Default\MaterialAmbientOcclusion.png" />
     <None Include="Assets\Default\MaterialMetalness.png" />
