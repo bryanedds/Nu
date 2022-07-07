@@ -3,8 +3,9 @@
 
 newmtl Material
 Kd 1.000000 1.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-Ka 1.000000 1.000000 1.000000
+Ks 1.000000 0.000000 0.000000
+Ns 0.900000
+Ka 1.000000 0.000000 0.000000
 map_Kd StaticModelAlbedo.png
 map_Ks StaticModelMetalness.png
 map_Bump StaticModelRoughness.png

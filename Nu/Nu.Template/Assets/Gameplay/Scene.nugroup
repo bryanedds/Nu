@@ -4,15 +4,7 @@
   [Name Scene]
   [Persistent True]
   [Visible True]]
- [[StaticModelDispatcher
-   [[Position [-2 2.5 0]]
-    [Scale [1 1 1]]
-    [Size [3.833142 5.769598 5.354998]]]]
-  [StaticModelDispatcher
-   [[Position [2 2.5 0]]
-    [Scale [1 1 1]]
-    [Size [3.833142 5.769598 5.354998]]]]
-  [Block2dDispatcher
+ [[Block2dDispatcher
    [[Position [-320 -184 0]]
     [Size [200 200 0]]]]
   [Block2dDispatcher
@@ -35,4 +27,18 @@
     [Size [200 200 0]]]]
   [Block2dDispatcher
    [[Position [376 -192 0]]
-    [Size [200 200 0]]]]]]
+    [Size [200 200 0]]]]
+  [SkyBoxDispatcher
+   []]
+  [LightDispatcher
+   [[Position [0 5 2]]]]
+  [StaticModelDispatcher
+   [[Name SphereLeft]
+    [Position [-2 2.5 0]]
+    [Scale [1 1 1]]
+    [Size [3.833142 5.769598 5.354998]]]]
+  [StaticModelDispatcher
+   [[Name SphereRight]
+    [Position [2 2.5 0]]
+    [Scale [1 1 1]]
+    [Size [3.833142 5.769598 5.354998]]]]]]

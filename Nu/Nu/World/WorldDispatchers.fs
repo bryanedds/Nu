@@ -2511,7 +2511,7 @@ module LightDispatcherModule =
             [define Entity.Light true
              define Entity.Color Color.White
              define Entity.LightType PointLight
-             define Entity.Brightness 100.0f
+             define Entity.Brightness 10.0f
              define Entity.Intensity 1.0f]
 
 [<AutoOpen>]

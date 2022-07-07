@@ -57,5 +57,5 @@ module Simulants =
         module Scene =
 
             let Group = Screen / "Scene"
-            let BallLeft = Group / "BallLeft"
-            let BallRight = Group / "BallRight"
+            let SphereLeft = Group / "SphereLeft"
+            let SphereRight = Group / "SphereRight"
