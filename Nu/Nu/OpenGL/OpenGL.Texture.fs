@@ -68,11 +68,12 @@ module Texture =
             let texture = Gl.GenTexture ()
             let internalFormat = InternalFormat.Rgba8
             Gl.BindTexture (TextureTarget.Texture2d, texture)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
+            Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, 16.0f) // NOTE: while an extension, this is considered ubiquitous.
 
             // teardown surface
             SDL.SDL_FreeSurface surfacePtr
