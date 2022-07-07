@@ -99,7 +99,7 @@ type SceneryDispatcher () =
 #if DEBUG
         let population = 3
 #else
-        let population = 40
+        let population = 50
 #endif
         let spread = 20.0f
         let offset = v3Dup spread * single population * 0.5f
