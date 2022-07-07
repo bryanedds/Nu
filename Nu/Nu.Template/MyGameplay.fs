@@ -1,4 +1,5 @@
 ﻿namespace MyGame
+open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
@@ -98,3 +99,12 @@ module MyGameplay =
              // the scene group
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup"]
+
+        // as an example of using Nu's classic 'imperative' API, let's make the two balls spin in the background.
+        override this.Update (game, world) =
+            let world = base.Update (game, world)
+            let ballLeft = Simulants.Gameplay.Scene.BallLeft
+            let ballRight = Simulants.Gameplay.Scene.BallRight
+            let world = ballLeft.SetRotation (ballLeft.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
+            let world = ballRight.SetRotation (ballRight.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
+            world

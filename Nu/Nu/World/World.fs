@@ -403,7 +403,8 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher2d (false, false) :> EntityDispatcher
+                [EntityDispatcher (true, false, false)
+                 EntityDispatcher2d (false, false) :> EntityDispatcher
                  EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
@@ -432,7 +433,8 @@ module WorldModule3 =
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [ScriptFacet () :> Facet
+                [Facet false
+                 ScriptFacet () :> Facet
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
                  TextFacet () :> Facet

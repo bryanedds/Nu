@@ -256,10 +256,7 @@ module WorldGroupModule =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<GroupDispatcher>.Name
-                    Map.find dispatcherName dispatchers
+                | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
 
             // make the group state and populate its properties
             let groupState = GroupState.make None dispatcher

@@ -578,14 +578,7 @@ module WorldEntityModule =
             let (dispatcherName, dispatcher) =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
-                | None ->
-                    Log.info ("Could not locate dispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<EntityDispatcher>.Name
-                    let dispatcher =
-                        match Map.tryFind dispatcherName dispatchers with
-                        | Some dispatcher -> dispatcher
-                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
-                    (dispatcherName, dispatcher)
+                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // get the default overlay name option
             let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
