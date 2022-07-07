@@ -1557,9 +1557,7 @@
 			// 
 			// eye3d
 			// 
-			this.eye3d.Checked = true;
 			this.eye3d.CheckOnClick = true;
-			this.eye3d.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.eye3d.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
 			this.eye3d.Image = ((System.Drawing.Image)(resources.GetObject("eye3d.Image")));
 			this.eye3d.ImageTransparentColor = System.Drawing.Color.Magenta;
