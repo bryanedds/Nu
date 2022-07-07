@@ -48,9 +48,13 @@ module PhysicallyBased =
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            hash surface.SurfaceName ^^^
-            hash surface.PhysicallyBasedMaterial ^^^
-            hash surface.PhysicallyBasedGeometry
+            int surface.PhysicallyBasedMaterial.AlbedoTexture ^^^
+            int surface.PhysicallyBasedMaterial.MetalnessTexture ^^^
+            int surface.PhysicallyBasedMaterial.RoughnessTexture ^^^
+            int surface.PhysicallyBasedMaterial.AmbientOcclusionTexture ^^^
+            int surface.PhysicallyBasedMaterial.NormalTexture ^^^
+            int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
+            int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         static member inline make surfaceName (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
@@ -65,7 +69,11 @@ module PhysicallyBased =
             result
 
         static member inline equals left right =
-            left.PhysicallyBasedMaterial = right.PhysicallyBasedMaterial && // TODO: 3D: make sure no boxing happens here.
+            left.PhysicallyBasedMaterial.AlbedoTexture = right.PhysicallyBasedMaterial.AlbedoTexture &&
+            left.PhysicallyBasedMaterial.MetalnessTexture = right.PhysicallyBasedMaterial.MetalnessTexture &&
+            left.PhysicallyBasedMaterial.RoughnessTexture = right.PhysicallyBasedMaterial.RoughnessTexture &&
+            left.PhysicallyBasedMaterial.AmbientOcclusionTexture = right.PhysicallyBasedMaterial.AmbientOcclusionTexture &&
+            left.PhysicallyBasedMaterial.NormalTexture = right.PhysicallyBasedMaterial.NormalTexture &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
