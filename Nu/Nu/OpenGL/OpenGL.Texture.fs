@@ -102,9 +102,9 @@ module Texture =
     let TryCreateTexture2dUnfiltered filePath =
         TryCreateTexture2d (TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath)
 
-    /// Attempt to create an filtered 2d texture from a file.
+    /// Attempt to create a filtered 2d texture from a file.
     let TryCreateTexture2dFiltered filePath =
-        TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, true, filePath)
+        TryCreateTexture2d (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
         
     /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
