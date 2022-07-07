@@ -8,6 +8,10 @@ open System.Collections.Generic
 open Prime
 
 /// Describes the form of an element's presence.
+[<Syntax
+        ("Enclosed Unenclosed Afatecs Omnipresent", "", "", "", "",
+         Constants.PrettyPrinter.DefaultThresholdMin,
+         Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
     | Unenclosed

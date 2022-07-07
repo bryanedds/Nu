@@ -213,10 +213,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None
 
-    static member private tryLoadRenderPackage packageName renderer =
+    static member private tryLoadRender3dPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render3d) packageName assetGraph with
+            match AssetGraph.tryCollectAssetsFromPackage true (Some Constants.Associations.Render3d) packageName assetGraph with
             | Right assets ->
                 let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
@@ -256,7 +256,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
+                GlRenderer3d.tryLoadRender3dPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, assets) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
@@ -267,21 +267,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private handleHintRenderPackageUse hintPackageName renderer =
-        GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
+    static member private handleHintRenderPackage3dUse hintPackageName renderer =
+        GlRenderer3d.tryLoadRender3dPackage hintPackageName renderer
 
-    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+    static member private handleHintRenderPackage3dDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some assets ->
             for asset in assets do GlRenderer3d.freeRenderAsset asset.Value renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
-    static member private handleReloadRenderAssets renderer =
+    static member private handleReloadRender3dAssets renderer =
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         renderer.RenderPackages.Clear ()
         for packageName in packageNames do
-            GlRenderer3d.tryLoadRenderPackage packageName renderer
+            GlRenderer3d.tryLoadRender3dPackage packageName renderer
 
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,

@@ -22,6 +22,20 @@ type Refinement =
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a game asset, such as a texture, sound, or model in detail.
+///
+/// All assets must belong to an asset Package, which is a unit of asset loading.
+///
+/// In order for the renderer to render a single texture, that texture, along with all the other
+/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
+/// assets is to send an AssetPackageUnload message to the relevent subsystem, which unloads them all.
+/// There is an AssetPackageLoad message to load a package when convenient.
+///
+/// The use of a message system for the subsystem should enable streamed loading, optionally with
+/// smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
+/// but are still being loaded).
+///
+/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
+/// avoid unnecessary Large Object Heap fragmentation.
 type [<NoEquality; NoComparison>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
@@ -50,32 +64,15 @@ module Asset =
     let specialize<'a> (asset : obj Asset) : 'a Asset =
         convert<obj, 'a> asset
 
-/// All assets must belong to an asset Package, which is a unit of asset loading.
-///
-/// In order for the renderer to render a single texture, that texture, along with all the other
-/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
-/// assets is to send an AssetPackageUnload message to the relevent subsystem, which unloads them all.
-/// There is an AssetPackageLoad message to load a package when convenient.
-///
-/// The use of a message system for the subsystem should enable streamed loading, optionally with
-/// smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
-/// but are still being loaded).
-///
-/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
-/// avoid unnecessary Large Object Heap fragmentation.
-type [<StructuralEquality; NoComparison>] Package =
-    { Name : string
-      AssetNames : string list }
-
 /// A dictionary of asset packages.
 type 'a Packages = Dictionary<string, Dictionary<string, 'a>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =
     | Asset of string * string * string Set * Refinement list
-    | Assets of string * string * string Set * Refinement list
+    | Assets of string * string Set * string Set * Refinement list
 
-/// Describes assets packages.
+/// Describes asset packages.
 type PackageDescriptor = AssetDescriptor list
 
 [<RequireQualifiedAccess>]
@@ -185,33 +182,36 @@ module AssetGraph =
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
-    /// Load all the assets from a package descriptor.
-    let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
-        let assets =
-            List.fold (fun assetsRev assetDescriptor ->
+    /// Collect the associated assets from a package descriptor.
+    let private collectAssetsFromPackageDescriptor usingRawAssets (associationOpt : string option) packageName packageDescriptor =
+        seq {
+            for assetDescriptor in packageDescriptor do
                 match assetDescriptor with
                 | Asset (assetName, filePath, associations, refinements) ->
-                    let assetTag = AssetTag.make<obj> packageName assetName
-                    let asset = Asset.make assetTag filePath refinements associations
-                    asset :: assetsRev
-                | Assets (directory, rawExtension, associations, refinements) ->
-                    let extension = getAssetExtension usingRawAssets rawExtension refinements
-                    try let filePaths = Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories)
-                        let assets =
-                            Array.map
-                                (fun filePath ->
-                                    let assetTag = AssetTag.make<obj> packageName (Path.GetFileNameWithoutExtension filePath)
-                                    let asset = Asset.make assetTag filePath refinements associations
-                                    asset)
-                                filePaths |>
-                            List.ofArray
-                        assets @ assetsRev
-                    with _ -> Log.info ("Invalid directory '" + directory + "'."); [])
-                [] packageDescriptor |>
-            List.rev
-        match associationOpt with
-        | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
-        | None -> assets
+                    let tag = AssetTag.make<obj> packageName assetName
+                    let asset = Asset.make tag filePath refinements associations
+                    match associationOpt with
+                    | Some association -> if Set.contains association associations then yield asset
+                    | None -> yield asset
+                | Assets (directory, extensions, associations, refinements) ->
+                    if Directory.Exists directory then
+                        let filePaths =
+                            seq {
+                                for extension in extensions do
+                                    yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
+                        for filePath in filePaths do
+                            let extension = (Path.GetExtension filePath).Replace (".", "")
+                            let assetName = (Path.GetFileNameWithoutExtension filePath)
+                            let tag = AssetTag.make<obj> packageName assetName
+                            let asset = Asset.make tag filePath refinements associations
+                            match associationOpt with
+                            | Some association ->
+                                if  Set.contains association associations &&
+                                    Set.contains extension extensions then
+                                    yield asset
+                            | None -> yield asset
+                    else Log.info ("Invalid directory '" + directory + "'. when looking for assets.") } |>
+        Seq.toList
 
     /// Get package descriptors.
     let getPackageDescriptors assetGraph =
@@ -221,23 +221,27 @@ module AssetGraph =
     let getPackageNames assetGraph =
         Map.toKeyList assetGraph.PackageDescriptors
 
-    /// Attempt to load all the available assets from a package.
-    let tryLoadAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
+    /// Attempt to collect all the available assets from a package.
+    let tryCollectAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
         let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
         match Map.tryGetValue (packageName, assetGraph.PackageDescriptors, &packageDescriptor) with
         | true ->
-            let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
-            Right assets
+            collectAssetsFromPackageDescriptor usingRawAssets associationOpt packageName packageDescriptor |>
+            List.groupBy (fun asset -> asset.FilePath) |>
+            List.map (snd >> List.last) |>
+            Right
         | false -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
-    /// Load all the available assets from an asset graph document.
-    let loadAssets usingRawAssets associationOpt assetGraph =
-        Map.fold (fun assetListsRev packageName packageDescriptor ->
-            let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
-            assets :: assetListsRev)
-            [] assetGraph.PackageDescriptors |>
-        List.rev |>
-        List.concat
+    /// Collect all the available assets from an asset graph document.
+    let collectAssets usingRawAssets associationOpt assetGraph =
+        seq {
+            for entry in assetGraph.PackageDescriptors do
+                let packageName = entry.Key
+                let packageDescriptor = entry.Value
+                yield! collectAssetsFromPackageDescriptor usingRawAssets associationOpt packageName packageDescriptor } |>
+        Seq.toList |>
+        List.groupBy (fun asset -> asset.FilePath) |>
+        List.map (snd >> List.last)
 
     /// Build all the available assets found in the given asset graph.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
@@ -256,11 +260,11 @@ module AssetGraph =
             | (None, None) -> false
             | (_, _) -> failwithumf ()
 
-        // load assets
+        // collect assets
         let currentDirectory = Directory.GetCurrentDirectory ()
         let assets =
             try Directory.SetCurrentDirectory inputDirectory
-                loadAssets false None assetGraph
+                collectAssets false None assetGraph
             finally
                 Directory.SetCurrentDirectory currentDirectory
 

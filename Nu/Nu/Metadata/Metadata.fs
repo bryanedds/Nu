@@ -115,7 +115,7 @@ module Metadata =
         | None -> None
 
     let private tryGenerateMetadataSubmap imperative packageName assetGraph =
-        match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
+        match AssetGraph.tryCollectAssetsFromPackage true None packageName assetGraph with
         | Right assets ->
             let config = if imperative then Imperative else Functional
             let submap = assets |> List.map tryGenerateAssetMetadata |> List.definitize |> UMap.makeFromSeq HashIdentity.Structural config
