@@ -183,7 +183,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ".bmp"
         | ".tif"
         | ".png" ->
-            match OpenGL.Texture.TryCreateTexture2dUnfiltered asset.FilePath with
+            match OpenGL.Texture.TryCreateTexture2dFiltered asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
@@ -556,21 +556,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTexture2dLinear Constants.Paths.BrdfTextureFilePath with
+            match OpenGL.Texture.TryCreateTexture2dFiltered Constants.Paths.BrdfTextureFilePath with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load Brdf texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { Albedo = Color.White
-              AlbedoTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              AlbedoTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
               Metalness = 1.0f
-              MetalnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
-              RoughnessTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTexture2dLinear ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd }
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd }
 
         // make renderer
         let renderer =

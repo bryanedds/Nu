@@ -417,7 +417,7 @@ module PhysicallyBased =
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let albedoTexture =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedoTexture.FilePath)) with
+                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, albedoTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
@@ -428,7 +428,7 @@ module PhysicallyBased =
         let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
             if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, metalnessTexture.FilePath)) with
+                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, metalnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
@@ -439,7 +439,7 @@ module PhysicallyBased =
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
             if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, roughnessTexture.FilePath)) with
+                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, roughnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -450,14 +450,14 @@ module PhysicallyBased =
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
             if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, ambientOcclusionTexture.FilePath)) with
+                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, ambientOcclusionTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
             if renderable && not (String.IsNullOrEmpty normal.FilePath) then
-                match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, normal.FilePath)) with
+                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, normal.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture

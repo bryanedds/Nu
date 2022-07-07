@@ -309,8 +309,8 @@ module Gaia =
 
     let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
         if not form.advancingButton.Checked then
-            let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f else 0.1f
-            let turnSpeed = if KeyboardState.isCtrlDown () then 0.1f else 0.05f
+            let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.1f
+            let turnSpeed = if KeyboardState.isCtrlDown () then 0.1f elif KeyboardState.isShiftDown () then 0.025f else 0.05f
             let position = World.getEyePosition3d world
             let rotation = World.getEyeRotation3d world
             let world =
