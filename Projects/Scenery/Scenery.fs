@@ -24,15 +24,7 @@ type RotatingModelDispatcher () =
 
 // this is our Elm-style command type
 type Command =
-    | MoveLeft
-    | MoveRight
-    | MoveForward
-    | MoveBack
-    | MoveUpward
-    | MoveDown
-    | TurnLeft
-    | TurnRight
-    | Nop
+    | Update
 
 // this is our Elm-style game dispatcher
 type SceneryDispatcher () =
@@ -40,34 +32,49 @@ type SceneryDispatcher () =
 
     // here we channel from events to signals
     override this.Channel (_, game) =
-        [game.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown KeyboardKey.Left then cmd TurnLeft
-            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd TurnRight
-            elif KeyboardState.isKeyDown KeyboardKey.Up then cmd MoveForward
-            elif KeyboardState.isKeyDown KeyboardKey.Down then cmd MoveBack
-            elif KeyboardState.isKeyDown KeyboardKey.W then cmd MoveUpward
-            elif KeyboardState.isKeyDown KeyboardKey.S then cmd MoveDown
-            elif KeyboardState.isKeyDown KeyboardKey.A then cmd MoveLeft
-            elif KeyboardState.isKeyDown KeyboardKey.D then cmd MoveRight
-            else cmd Nop]
+        [game.UpdateEvent => cmd Update]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let moveSpeed = 0.1f
-        let turnSpeed = 0.05f
-        let rotation = World.getEyeRotation3d world
-        let world =
-            match command with
-            | TurnLeft -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
-            | TurnRight -> World.setEyeRotation3d (World.getEyeRotation3d world * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
-            | MoveLeft -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-            | MoveRight -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-            | MoveForward -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-            | MoveBack -> World.setEyePosition3d (World.getEyePosition3d world + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-            | MoveUpward -> World.setEyePosition3d (World.getEyePosition3d world + v3Up * moveSpeed) world
-            | MoveDown -> World.setEyePosition3d (World.getEyePosition3d world + v3Down * moveSpeed) world
-            | Nop -> world
-        just world
+        match command with
+        | Update ->
+            let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.1f
+            let turnSpeed = if KeyboardState.isCtrlDown () then 0.1f elif KeyboardState.isShiftDown () then 0.025f else 0.05f
+            let position = World.getEyePosition3d world
+            let rotation = World.getEyeRotation3d world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.W
+                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.S
+                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.A
+                then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.D
+                then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.Up
+                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.Down
+                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.Left
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
+                else world
+            let world =
+                if KeyboardState.isKeyDown KeyboardKey.Right
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
+                else world
+            just world
 
     // here we describe the content of the game
     override this.Content (_, _) =

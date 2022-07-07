@@ -58,7 +58,7 @@ module Texture =
         else None
 
     /// Attempt to create a 2d texture from a file.
-    let TryCreateTexture2d (minFilter, magFilter, filePath : string) =
+    let TryCreateTexture2d (minFilter, magFilter, generateMipmaps, filePath : string) =
 
         // attempt to create image surface
         match TryCreateImageSurface filePath with
@@ -74,6 +74,7 @@ module Texture =
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
+            if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
 
             // teardown surface
             SDL.SDL_FreeSurface surfacePtr
@@ -99,11 +100,11 @@ module Texture =
 
     /// Attempt to create an unfiltered 2d texture from a file.
     let TryCreateTexture2dUnfiltered filePath =
-        TryCreateTexture2d (TextureMinFilter.Nearest, TextureMagFilter.Nearest, filePath)
+        TryCreateTexture2d (TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath)
 
-    /// Attempt to create an linearly-filtered 2d texture from a file.
-    let TryCreateTexture2dLinear filePath =
-        TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, filePath)
+    /// Attempt to create an filtered 2d texture from a file.
+    let TryCreateTexture2dFiltered filePath =
+        TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, true, filePath)
         
     /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
