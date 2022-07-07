@@ -2236,7 +2236,7 @@ module FillBarDispatcherModule =
             [define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
-             define Entity.FillImage Assets.Default.Image9
+             define Entity.FillImage Assets.Default.Image11
              define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
              define Entity.BorderImage Assets.Default.Image4]
 

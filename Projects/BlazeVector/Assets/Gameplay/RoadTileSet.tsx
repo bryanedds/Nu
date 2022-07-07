@@ -3,7 +3,7 @@
  <properties>
   <property name="Image" value="[Gameplay RoadTileSet]"/>
  </properties>
- <image source="RoadTileSet.png" width="1024" height="1024"/>
+ <image source="RoadTileSet.bmp" width="1024" height="1024"/>
  <tile id="4">
   <properties>
    <property name="C" value="[BodyPolygon [[[-0.5 0.3 0.0] [-0.5 0.5 0.0] [0.5 0.5 0.0] [0.5 0.3 0.0]] [0.0 0.0 0.0]]]"/>

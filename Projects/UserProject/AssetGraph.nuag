@@ -1,7 +1,7 @@
 [[Default
   [[Asset Font "Assets/Default/FreeMonoBold.024.ttf" [Render2d] []]
-   [Assets Assets/Default bmp [Render2d] []]
    [Assets Assets/Default psd [Render2d] [PsdToPng]]
+   [Assets Assets/Default bmp [Render2d] []]
    [Assets Assets/Default png [Render3d] []]
    [Assets Assets/Default tif [Render3d] []]
    [Assets Assets/Default cbm [Render3d] []]
@@ -18,8 +18,8 @@
    [Assets Assets/Default tsx [] []]
    [Assets Assets/Default tmx [] []]]]
  [Gameplay
-  [[Assets Assets/Gameplay bmp [Render2d] []]
-   [Assets Assets/Gameplay psd [Render2d] [PsdToPng]]
+  [[Assets Assets/Gameplay psd [Render2d] [PsdToPng]]
+   [Assets Assets/Gameplay bmp [Render2d] []]
    [Assets Assets/Gameplay wav [Audio] []]
    [Assets Assets/Gameplay ogg [Audio] []]
    [Assets Assets/Gameplay nueffect [Symbol] []]
@@ -29,8 +29,8 @@
    [Assets Assets/Gameplay tsx [] []]
    [Assets Assets/Gameplay tmx [] []]]]
  [Gui
-  [[Assets Assets/Gui bmp [Render2d] []]
-   [Assets Assets/Gui psd [Render2d] [PsdToPng]]
+  [[Assets Assets/Gui psd [Render2d] [PsdToPng]]
+   [Assets Assets/Gui bmp [Render2d] []]
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]
    [Assets Assets/Gui nueffect [Symbol] []]

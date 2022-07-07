@@ -4,7 +4,7 @@
   <properties>
    <property name="Image" value="[Gameplay SkylineTileSet]"/>
   </properties>
-  <image source="SkylineTileSet.png" width="1024" height="1024"/>
+  <image source="SkylineTileSet.bmp" width="1024" height="1024"/>
  </tileset>
  <layer id="1" name="Scenery" width="32" height="9" parallaxx="0.25">
   <data encoding="base64" compression="zlib">

@@ -1295,7 +1295,7 @@ module FieldDispatcher =
                  // transition fade sprite
                  Content.staticSprite Gen.name
                     [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBoundsAbsolute2d world).Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.Default.Image9
+                     Entity.StaticImage == Assets.Default.Image8
                      Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                      Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
