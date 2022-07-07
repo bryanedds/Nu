@@ -556,7 +556,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTexture2dFiltered Constants.Paths.BrdfTextureFilePath with
+            match OpenGL.Texture.TryCreateTexture2dUnfiltered Constants.Paths.BrdfTextureFilePath with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load Brdf texture due to: " + error)
 
