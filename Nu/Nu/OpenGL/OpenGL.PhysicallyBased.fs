@@ -619,7 +619,6 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup state
-        Gl.Enable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
         Gl.DepthMask true
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
@@ -732,7 +731,6 @@ module PhysicallyBased =
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
         Gl.DepthMask false
-        Gl.Disable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
 
     /// Draw a the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface
@@ -750,9 +748,6 @@ module PhysicallyBased =
          lightIntensities : single array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferred2Shader) =
-
-        // setup state
-        Gl.Enable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
@@ -814,6 +809,3 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
-
-        // teardown state
-        Gl.Disable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
