@@ -38,7 +38,7 @@ module PhysicallyBased =
           PhysicallyBasedVao : uint }
 
     /// Describes a renderable physically-based surface.
-    type [<CustomEquality; NoComparison; Struct>] PhysicallyBasedSurface =
+    type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { mutable HashCode : int
           SurfaceName : string
           SurfaceMatrixIsIdentity : bool

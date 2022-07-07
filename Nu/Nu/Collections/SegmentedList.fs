@@ -138,6 +138,10 @@ module SegmentedList =
             slist.TotalCapacity <- slist.TotalCapacity + slist.SegmentSize
             slist.TotalLength <- inc slist.TotalLength
 
+    let addMany (seq : 'a seq) slist =
+        for item in seq do
+            add item slist
+
     let removeAt index slist =
         if index >= slist.TotalLength then raise (IndexOutOfRangeException "Index out of range.")
         let indexLast = dec slist.TotalLength
