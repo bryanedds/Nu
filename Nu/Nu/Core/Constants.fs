@@ -92,6 +92,7 @@ module Render =
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in the shader code.
+    let [<Literal>] TextureAnisotropyMax = 8.0f
 
 [<RequireQualifiedAccess>]
 module Assimp =
