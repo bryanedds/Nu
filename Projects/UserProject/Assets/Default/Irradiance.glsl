@@ -11,7 +11,7 @@ out vec3 outPosition;
 void main()
 {
     outPosition = position;  
-    gl_Position =  projection * view * vec4(outPosition, 1.0);
+    gl_Position = projection * view * vec4(outPosition, 1.0);
 }
 
 #shader fragment
