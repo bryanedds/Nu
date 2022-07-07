@@ -21,6 +21,7 @@ module MyGameplay =
         | Jump
         | MoveLeft
         | MoveRight
+        | RotateSpheres
         | UpdateEye
         | Nop
 
@@ -43,6 +44,7 @@ module MyGameplay =
                 if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
                 elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
                 else cmd Nop
+             Simulants.Gameplay.Screen.UpdateEvent => cmd RotateSpheres
              Simulants.Gameplay.Screen.PostUpdateEvent => cmd UpdateEye]
 
         // here we handle the above messages
@@ -70,6 +72,12 @@ module MyGameplay =
                     if World.isBodyOnGround physicsId world
                     then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
                     else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
+                | RotateSpheres ->
+                    let sphereLeft = Simulants.Gameplay.Scene.SphereLeft
+                    let sphereRight = Simulants.Gameplay.Scene.SphereRight
+                    let world = sphereLeft.SetRotation (sphereLeft.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
+                    let world = sphereRight.SetRotation (sphereRight.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
+                    world
                 | UpdateEye ->
                     if World.getUpdateRate world <> 0L then
                         let characterCenter = Simulants.Gameplay.Player.Character.GetCenter world
@@ -99,12 +107,3 @@ module MyGameplay =
              // the scene group
              Content.groupIfScreenSelected screen $ fun _ _ ->
                 Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup"]
-
-        // as an example of using Nu's classic 'imperative' API, let's make the two balls spin in the background.
-        override this.Update (game, world) =
-            let world = base.Update (game, world)
-            let ballLeft = Simulants.Gameplay.Scene.BallLeft
-            let ballRight = Simulants.Gameplay.Scene.BallRight
-            let world = ballLeft.SetRotation (ballLeft.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
-            let world = ballRight.SetRotation (ballRight.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
-            world

@@ -410,41 +410,53 @@ module PhysicallyBased =
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
     let CreatePhysicallyBasedMaterial (defaultMaterial, renderable, dirPath, material : Assimp.Material) =
-        let albedo = material.ColorDiffuse
+        let albedo =
+            if material.HasColorDiffuse
+            then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
+            else Color.White
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let albedoTexture =
-            if renderable && notNull albedoTexture.FilePath then
+            if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, albedoTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
-        let metalness = material.ColorSpecular.R
+        let metalness =
+            if material.HasColorSpecular
+            then material.ColorSpecular.R
+            else 0.0f
         let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
-            if renderable && notNull metalnessTexture.FilePath then
+            if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, metalnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
-        let roughness = 1.0f // TODO: 3D: see if we can figure out how to import this value.
+        let roughness =
+            if material.HasShininess
+            then material.Shininess
+            else 1.0f
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
-            if renderable && notNull roughnessTexture.FilePath then
+            if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, roughnessTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
-        let ambientOcclusion = if material.ColorAmbient.R = 0.0f then 1.0f else material.ColorAmbient.R // NOTE: presumes value is missing if 0.0f.
+        let ambientOcclusion =
+            if material.HasColorAmbient
+            then material.ColorAmbient.R
+            else 1.0f
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
-            if renderable && notNull ambientOcclusionTexture.FilePath then
+            if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, ambientOcclusionTexture.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
-            if renderable && notNull normal.FilePath then
+            if renderable && not (String.IsNullOrEmpty normal.FilePath) then
                 match Texture.TryCreateTexture2d (TextureMinFilter.Linear, TextureMagFilter.Linear, Path.Combine (dirPath, normal.FilePath)) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
