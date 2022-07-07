@@ -213,6 +213,6 @@ module Quadtree =
           Depth = depth
           Granularity = granularity
           Bounds = bounds }
-          
+
 /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
 type Quadtree<'e when 'e : equality> = Quadtree.Quadtree<'e>
