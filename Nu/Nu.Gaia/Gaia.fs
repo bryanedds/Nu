@@ -307,6 +307,49 @@ module Gaia =
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
+    let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
+        if not form.advancingButton.Checked then
+            if form.eye3d.Checked then
+                let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f else 0.1f
+                let turnSpeed = if KeyboardState.isCtrlDown () then 0.1f else 0.05f
+                let position = World.getEyePosition3d world
+                let rotation = World.getEyeRotation3d world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.W
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.S
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.A
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.D
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.Up
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.Down
+                    then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.Left
+                    then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
+                    else world
+                let world =
+                    if KeyboardState.isKeyDown KeyboardKey.Right
+                    then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
+                    else world
+                (Cascade, world)
+            else (Cascade, world)
+        else (Cascade, world)
+
     let private monitorLifeCycleEvents form world =
         let world = World.monitor (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
         let world = World.monitor (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Globals.Screen world
@@ -988,9 +1031,11 @@ module Gaia =
                 world
             | _ -> failwithumf ()
 
-    let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormResetCamera (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            World.setEyePosition2d v2Zero world
+            if form.eye3d.Checked
+            then World.setEyePosition3d v3Zero world
+            else World.setEyePosition2d v2Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1368,6 +1413,7 @@ module Gaia =
                         let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
+                        let world = World.subscribe (handleNuUpdate form) Events.Update Simulants.Game world
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
@@ -1537,7 +1583,7 @@ module Gaia =
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
-        form.resetCameraButton.Click.Add (handleFormResetCamera form)
+        form.resetEyeButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
