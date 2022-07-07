@@ -97,7 +97,7 @@ module Render =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.None
+    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate
 
 [<RequireQualifiedAccess>]
 module Audio =
