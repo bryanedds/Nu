@@ -231,7 +231,6 @@ module SkyBox =
          shader : SkyBoxShader) =
 
         // setup state
-        Gl.Enable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
         Hl.Assert ()
@@ -267,7 +266,6 @@ module SkyBox =
         // teardown state
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
-        Gl.Disable (LanguagePrimitives.EnumOfValue OpenGL.Gl.TEXTURE_CUBE_MAP_SEAMLESS)
 
     /// Draw an environment filter.
     let DrawEnvironmentFilter
