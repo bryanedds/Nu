@@ -444,7 +444,7 @@ module PhysicallyBased =
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
         let ambientOcclusion =
-            if material.HasColorAmbient
+            if material.HasColorAmbient && material.ColorAmbient.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.ColorAmbient.R
             else 1.0f
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
