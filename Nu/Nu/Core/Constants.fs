@@ -90,8 +90,8 @@ module Render =
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] ShaderLightsMax = 32
     let [<Literal>] IrradianceMapResolution = 32
-    let [<Literal>] EnvironmentFilterResolution = 1024
-    let [<Literal>] EnvironmentFilterMips = 8
+    let [<Literal>] EnvironmentFilterResolution = 128
+    let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in the shader code.
 
 [<RequireQualifiedAccess>]
 module Assimp =

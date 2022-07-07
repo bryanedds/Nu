@@ -16,7 +16,7 @@ void main()
 #version 410 core
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 8.0;
+const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const int LIGHTS_MAX = 32;
 
