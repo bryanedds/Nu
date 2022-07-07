@@ -47,7 +47,8 @@ module Engine =
 module Associations =
 
     let [<Literal>] Symbol = "Symbol"
-    let [<Literal>] Render = "Render"
+    let [<Literal>] Render2d = "Render2d"
+    let [<Literal>] Render3d = "Render3d"
     let [<Literal>] Audio = "Audio"
 
 [<RequireQualifiedAccess>]

@@ -102,8 +102,8 @@ module Metadata =
         let metadataOpt =
             match extension with
             | ".bmp"
-            | ".tif"
-            | ".png" -> tryGenerateTextureMetadata asset
+            | ".png"
+            | ".tif" -> tryGenerateTextureMetadata asset
             | ".tmx" -> tryGenerateTileMapMetadata asset
             | ".fbx" -> tryGenerateStaticModelMetadata UnitCentimeters asset
             | ".obj" -> tryGenerateStaticModelMetadata UnitMeters asset

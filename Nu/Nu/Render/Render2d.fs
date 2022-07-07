@@ -106,7 +106,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
-        | ".png" ->
+        | ".png"
+        | ".tif" ->
             match OpenGL.Texture.TryCreateTexture2dUnfiltered asset.FilePath with
             | Right texture ->
                 Some (asset.AssetTag.AssetName, TextureAsset texture)
@@ -130,7 +131,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private tryLoadRenderPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
+            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render2d) packageName assetGraph with
             | Right assets ->
                 let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
