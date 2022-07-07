@@ -231,10 +231,7 @@ module WorldGameModule =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'.")
-                    let dispatcherName = typeof<GameDispatcher>.Name
-                    Map.find dispatcherName dispatchers
+                | None -> failwith ("Could not find a GameDispatcher named '" + dispatcherName + "'.")
 
             // make the game state and populate its properties
             let gameState = GameState.make dispatcher
