@@ -127,7 +127,7 @@
 			this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
 			this.deleteEntityButton = new System.Windows.Forms.ToolStripButton();
 			this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-			this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
+			this.resetEyeButton = new System.Windows.Forms.ToolStripButton();
 			this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
 			this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
 			this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
@@ -161,6 +161,8 @@
 			this.changeGroupNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
 			this.songPlaybackButton = new System.Windows.Forms.ToolStripButton();
+			this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
+			this.eye3d = new System.Windows.Forms.ToolStripButton();
 			this.contextMenuStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
@@ -1260,14 +1262,14 @@
 			this.toolStripSeparator5.Name = "toolStripSeparator5";
 			this.toolStripSeparator5.Size = new System.Drawing.Size(6, 25);
 			// 
-			// resetCameraButton
+			// resetEyeButton
 			// 
-			this.resetCameraButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-			this.resetCameraButton.Image = ((System.Drawing.Image)(resources.GetObject("resetCameraButton.Image")));
-			this.resetCameraButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this.resetCameraButton.Name = "resetCameraButton";
-			this.resetCameraButton.Size = new System.Drawing.Size(67, 22);
-			this.resetCameraButton.Text = "Reset Cam";
+			this.resetEyeButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.resetEyeButton.Image = ((System.Drawing.Image)(resources.GetObject("resetEyeButton.Image")));
+			this.resetEyeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.resetEyeButton.Name = "resetEyeButton";
+			this.resetEyeButton.Size = new System.Drawing.Size(39, 22);
+			this.resetEyeButton.Text = "Reset";
 			// 
 			// toolStripSeparator8
 			// 
@@ -1336,7 +1338,9 @@
             this.toolStripSeparator4,
             this.deleteEntityButton,
             this.toolStripSeparator5,
-            this.resetCameraButton,
+            this.toolStripLabel2,
+            this.eye3d,
+            this.resetEyeButton,
             this.toolStripSeparator8,
             this.reloadAssetsButton,
             this.toolStripSeparator9,
@@ -1346,7 +1350,7 @@
             this.songPlaybackButton});
 			this.toolStrip.Location = new System.Drawing.Point(0, 0);
 			this.toolStrip.Name = "toolStrip";
-			this.toolStrip.Size = new System.Drawing.Size(1241, 25);
+			this.toolStrip.Size = new System.Drawing.Size(1293, 25);
 			this.toolStrip.TabIndex = 1;
 			this.toolStrip.Text = "toolStrip1";
 			// 
@@ -1545,6 +1549,24 @@
 			this.songPlaybackButton.Text = "toolStripButton1";
 			this.songPlaybackButton.ToolTipText = "Toggle Song Playback";
 			// 
+			// toolStripLabel2
+			// 
+			this.toolStripLabel2.Name = "toolStripLabel2";
+			this.toolStripLabel2.Size = new System.Drawing.Size(25, 22);
+			this.toolStripLabel2.Text = "Eye";
+			// 
+			// eye3d
+			// 
+			this.eye3d.Checked = true;
+			this.eye3d.CheckOnClick = true;
+			this.eye3d.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.eye3d.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.eye3d.Image = ((System.Drawing.Image)(resources.GetObject("eye3d.Image")));
+			this.eye3d.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.eye3d.Name = "eye3d";
+			this.eye3d.Size = new System.Drawing.Size(24, 22);
+			this.eye3d.Text = "3d";
+			// 
 			// GaiaForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1732,7 +1754,7 @@
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         public System.Windows.Forms.ToolStripButton deleteEntityButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
-        public System.Windows.Forms.ToolStripButton resetCameraButton;
+        public System.Windows.Forms.ToolStripButton resetEyeButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         public System.Windows.Forms.ToolStripButton reloadAssetsButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
@@ -1771,6 +1793,8 @@
         public System.Windows.Forms.CheckBox entityIgnorePropertyBindingsCheckBox;
 		private System.Windows.Forms.SplitContainer splitContainer8;
 		private System.Windows.Forms.SplitContainer splitContainer9;
+		private System.Windows.Forms.ToolStripLabel toolStripLabel2;
+		public System.Windows.Forms.ToolStripButton eye3d;
 	}
 }
 
