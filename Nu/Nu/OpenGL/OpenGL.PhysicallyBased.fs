@@ -368,9 +368,9 @@ module PhysicallyBased =
             else
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 3)
+                let vertices = Array.zeroCreate (vertexData.Length / 8)
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 3
+                    let j = i * 8
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
                     vertices.[i] <- vertex
 
