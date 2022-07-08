@@ -50,7 +50,7 @@ module Symbolics =
     let tryLoadSymbolPackage packageName metadata symbolics =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryCollectAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
+            match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Symbol) packageName assetGraph with
             | Right assets ->
                 let assets = List.map Asset.specialize<Symbol> assets
                 let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) assets

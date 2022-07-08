@@ -219,7 +219,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member private tryLoadRender3dPackage packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-            match AssetGraph.tryCollectAssetsFromPackage true (Some Constants.Associations.Render3d) packageName assetGraph with
+            match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
             | Right assets ->
                 let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
