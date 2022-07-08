@@ -475,7 +475,7 @@ module WorldModuleGame =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
-            let projection = GlRenderer3d.computeProjection Prominent
+            let projection = GlRenderer3d.computeProjection Omnipresent
             let (_, inverse) = Matrix4x4.Invert (view * projection)
             let near = v4 mouseNdc.X mouseNdc.Y -1.0f 1.0f
             let near = Vector4.Transform (near, inverse)

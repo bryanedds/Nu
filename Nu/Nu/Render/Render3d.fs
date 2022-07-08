@@ -364,10 +364,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     /// Compute the 3d view frustum.
     /// TODO: 3D: expose this elsewhere.
-    static member computeFrustum enclosed eyePosition (eyeRotation : Quaternion) =
+    static member computeFrustum presence eyePosition (eyeRotation : Quaternion) =
         let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
         let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
-        let projection = GlRenderer3d.computeProjection enclosed
+        let projection = GlRenderer3d.computeProjection presence
         let viewProjection = view * projection
         Frustum viewProjection
 
@@ -638,7 +638,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
-            let projection = GlRenderer3d.computeProjection Prominent
+            let projection = GlRenderer3d.computeProjection Omnipresent
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
