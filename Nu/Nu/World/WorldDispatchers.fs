@@ -1357,10 +1357,10 @@ module StaticModelFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
                 let renderMaterial =
-                    { AlbedoOpt = match entity.GetAlbedoOpt world with Some value -> ValueSome value | None -> ValueNone
-                      MetalnessOpt = match entity.GetMetalnessOpt world with Some value -> ValueSome value | None -> ValueNone
-                      RoughnessOpt = match entity.GetRoughnessOpt world with Some value -> ValueSome value | None -> ValueNone
-                      AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some value -> ValueSome value | None -> ValueNone }
+                    { AlbedoOpt = entity.GetAlbedoOpt world
+                      MetalnessOpt = entity.GetMetalnessOpt world
+                      RoughnessOpt = entity.GetRoughnessOpt world
+                      AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
@@ -1405,10 +1405,10 @@ module StaticModelSurfaceFacetModule =
                     let affineMatrix = transform.AffineMatrix
                     let staticModel = entity.GetStaticModel world
                     let renderMaterial =
-                        { AlbedoOpt = match entity.GetAlbedoOpt world with Some value -> ValueSome value | None -> ValueNone
-                          MetalnessOpt = match entity.GetMetalnessOpt world with Some value -> ValueSome value | None -> ValueNone
-                          RoughnessOpt = match entity.GetRoughnessOpt world with Some value -> ValueSome value | None -> ValueNone
-                          AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some value -> ValueSome value | None -> ValueNone }
+                        { AlbedoOpt = entity.GetAlbedoOpt world
+                          MetalnessOpt = entity.GetMetalnessOpt world
+                          RoughnessOpt = entity.GetRoughnessOpt world
+                          AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType

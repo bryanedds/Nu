@@ -91,7 +91,7 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
-    // NOTE: performance goal: 60fps, current: 33fps.
+    // NOTE: performance goal: 60fps, current: 47fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (staticScene, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
@@ -101,7 +101,7 @@ type SceneryDispatcher () =
 #else
         let population = 50
 #endif
-        let spread = 19.0f
+        let spread = 20.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
