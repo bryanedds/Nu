@@ -663,22 +663,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement post-pass handling.
 
-            // sort absolute forward surfaces
-            // TODO: 3D: use persistent buffers to elide allocation.
+            // sort forward surfaces
             // TODO: 3D: extract sorting function from this mess.
             renderer.RenderTasks.RenderSurfacesForwardAbsolute |>
-            Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-            Seq.toArray |>
-            Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-            Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
-            flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
+                Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.toArray |>
+                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
+                flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
             renderer.RenderTasks.RenderSurfacesForwardRelative |>
-            Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-            Seq.toArray |>
-            Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-            Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
-            flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
+                Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+                Seq.toArray |>
+                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+                Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
+                flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
             // setup geometry buffer
@@ -848,7 +847,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // render pre-passes
+            // render post-passes
             for pass in postPasses do
                 pass.RenderPass3d (viewAbsolute, viewSkyBox, viewRelative, projection, renderer.RenderTasks, renderer :> Renderer3d)
                 OpenGL.Hl.Assert ()
