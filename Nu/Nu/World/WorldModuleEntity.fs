@@ -464,7 +464,7 @@ module WorldModuleEntity =
 
         static member internal setEntityPresence (value : Presence) entity world =
             World.updateEntityStatePlus (fun entityState ->
-                if not (value.Equals entityState.Presence) then // TODO: 3D: ensure this does not box.
+                if presenceNeq value entityState.Presence then
                     let omnipresent = value.OmnipresentType
                     if omnipresent || not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
                         let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
@@ -2119,7 +2119,7 @@ module WorldModuleEntity =
                 // OPTIMIZATION: only update when relevant entity state has changed.
                 if  newStatic <> oldStatic ||
                     newLight <> oldLight ||
-                    not (newPresence.Equals oldPresence) || // TODO: 3D: ensure this does not box.
+                    presenceNeq newPresence oldPresence ||
                     box3Neq oldBounds newBounds then
 
                     // update entity in entity tree
@@ -2136,7 +2136,7 @@ module WorldModuleEntity =
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
                                 (fun octree ->
                                     let element = Octelement.make newStatic newLight newPresence entity
-                                    Octree.updateElement oldBounds newBounds element octree
+                                    Octree.updateElement oldPresence oldBounds newPresence newBounds element octree
                                     octree)
                                 (World.getOctree world)
                         World.setOctree octree world

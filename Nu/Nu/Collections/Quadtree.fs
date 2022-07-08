@@ -24,6 +24,22 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     member this.Cullable with get () = match this with Enclosed | Unenclosed -> true | _ -> false
     member this.Uncullable with get () = not this.Cullable
 
+[<AutoOpen>]
+module PresenceOperators =
+    
+    /// Test two presence values for equality.
+    let presenceEq left right =
+        match (left, right) with
+        | (Enclosed, Enclosed)
+        | (Unenclosed, Unenclosed)
+        | (Prominent, Prominent)
+        | (Omnipresent, Omnipresent) -> true
+        | (_, _) -> false
+
+    /// Test two presence values for inequality.
+    let presenceNeq left right =
+        not (presenceEq left right)
+
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
@@ -185,8 +201,20 @@ module Quadtree =
             else Quadnode.removeElement bounds element tree.Node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
-        removeElement oldPresence oldBounds element tree
-        addElement newPresence newBounds element tree
+        let wasInNode = oldPresence.Cullable && Quadnode.isIntersectingBounds oldBounds tree.Node
+        let isInNode = newPresence.Cullable && Quadnode.isIntersectingBounds newBounds tree.Node
+        if wasInNode then
+            if isInNode then
+                Quadnode.updateElement oldBounds newBounds element tree.Node
+            else
+                Quadnode.removeElement oldBounds element tree.Node |> ignore
+                tree.Uncullable.Add element |> ignore
+        else
+            if isInNode then
+                tree.Uncullable.Remove element |> ignore
+                Quadnode.addElement newBounds element tree.Node
+            else
+                tree.Uncullable.Add element |> ignore
 
     let getElementsUncullable set tree =
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable

@@ -79,8 +79,10 @@ module internal Octnode =
                 if isIntersectingBox oldBounds node || isIntersectingBox newBounds node then
                     updateElement oldBounds newBounds element node
         | ValueRight elements ->
-            if isIntersectingBox oldBounds node then elements.Remove element |> ignore
-            if isIntersectingBox newBounds node then elements.Add element |> ignore
+            if isIntersectingBox oldBounds node then
+                if not (isIntersectingBox newBounds node) then elements.Remove element |> ignore
+            elif isIntersectingBox newBounds node then
+                elements.Add element |> ignore
 
     let rec internal getElementsAtPoint point node (set : 'e Octelement HashSet) =
         match node.Children with
@@ -274,9 +276,21 @@ module Octree =
                 tree.Uncullable.Remove element |> ignore
             else Octnode.removeElement bounds element tree.Node
 
-    let updateElement oldBounds newBounds element tree =
-        removeElement oldBounds element tree
-        addElement newBounds element tree
+    let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
+        let wasInNode = oldPresence.Cullable && Octnode.isIntersectingBox oldBounds tree.Node
+        let isInNode = newPresence.Cullable && Octnode.isIntersectingBox newBounds tree.Node
+        if wasInNode then
+            if isInNode then
+                Octnode.updateElement oldBounds newBounds element tree.Node
+            else
+                Octnode.removeElement oldBounds element tree.Node |> ignore
+                tree.Uncullable.Add element |> ignore
+        else
+            if isInNode then
+                tree.Uncullable.Remove element |> ignore
+                Octnode.addElement newBounds element tree.Node
+            else
+                tree.Uncullable.Add element |> ignore
 
     let getElementsUncullable (set : _ HashSet) tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
