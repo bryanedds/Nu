@@ -223,6 +223,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
     /// Compute the 2d projection matrix.
+    /// TODO: 3D: put this in a more general place!
     static member computeProjection (viewport : Box2i) (_ : GlRenderer2d) =
         Matrix4x4.CreateOrthographicOffCenter
             (single (viewport.Position.X),

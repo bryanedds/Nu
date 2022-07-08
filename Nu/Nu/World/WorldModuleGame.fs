@@ -463,18 +463,28 @@ module WorldModuleGame =
                     -(mousePosition.Y / single Constants.Render.VirtualScalar) // negation for right-handedness
             positionScreen
 
-        /// Transform the given mouse position to 2d world space.
+        /// Transform the given mouse position to 3d world space.
         [<FunctionBinding>]
-        static member mouseToWorld3d absolute mousePosition world =
-            let positionScreen = World.mouseToScreen2d mousePosition world
-            Log.info ("Position Screen:" + scstring positionScreen) // TODO: 3D: don't forget to remove this!
+        static member mouseToWorld3d absolute (mousePosition : Vector2) world =
+            let mouseNormalized =
+                v2
+                    (mousePosition.X / single Constants.Render.VirtualResolutionX)
+                    (mousePosition.Y / single Constants.Render.VirtualResolutionY)
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
-            let positionWorld = (Vector3.Transform (positionScreen.V3, view))
-            Log.info ("Position World:" + scstring positionScreen) // TODO: 3D: don't forget to remove this!
-            positionWorld
+            let projection = GlRenderer3d.computeProjection Omnipresent
+            let (_, inverse) = Matrix4x4.Invert (projection * view)
+            let near = v4 mouseNormalized.X mouseNormalized.Y -1.0f 1.0f
+            let near = Vector4.Transform (near, inverse)
+            let near = near.V3 / near.W
+            let far = v4 mouseNormalized.X mouseNormalized.Y 1.0f 1.0f
+            let far = Vector4.Transform (far, inverse)
+            let far = far.V3 / far.W
+            let ray = Ray (near, Vector3.Normalize (far - near))
+            Log.info ("Position World:" + scstring ray) // TODO: 3D: don't forget to remove this!
+            ray
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =

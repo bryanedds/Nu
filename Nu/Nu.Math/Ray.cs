@@ -293,14 +293,14 @@ namespace Nu
         /// <summary>
         /// Get all of the ray intersections of a triangle.
         /// </summary>
-        public IEnumerable<(int, float)> GetIntersections(Vector3[] vertices)
+        public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
         {
             const float epsilon = 0.000001f;
-            for (var i = 0; i < vertices.Length; i += 3)
+            for (var i = 0; i < indices.Length; i += 3)
             {
-                var a = vertices[i * 3];
-                var b = vertices[i * 3 + 1];
-                var c = vertices[i * 3 + 2];
+                var a = vertices[indices[i * 3]];
+                var b = vertices[indices[i * 3 + 1]];
+                var c = vertices[indices[i * 3 + 2]];
                 var edgeA = b - a;
                 var edgeB = c - a;
                 var p = Vector3.Cross(Direction, edgeB);
@@ -327,9 +327,9 @@ namespace Nu
         /// <summary>
         /// Attempt to get the first found intersection from an array of triangle vertices.
         /// </summary>
-        public bool Intersects(Vector3[] vertices, out float? result)
+        public bool Intersects(int[] indices, Vector3[] vertices, out float? result)
 		{
-            var enr = GetIntersections(vertices).GetEnumerator();
+            var enr = GetIntersections(indices, vertices).GetEnumerator();
             if (enr.MoveNext())
             {
                 var (_, t) = enr.Current;
@@ -343,9 +343,9 @@ namespace Nu
         /// <summary>
         /// Check if ray intersects any of the given triangle vertices.
         /// </summary>
-        public bool Intersects(Vector3[] vertices)
+        public bool Intersects(int[] indices, Vector3[] vertices)
 		{
-            Intersects(vertices, out var resultOpt);
+            Intersects(indices, vertices, out var resultOpt);
             return resultOpt.HasValue;
 		}
 
