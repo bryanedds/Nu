@@ -1691,6 +1691,13 @@ module WorldModuleEntity =
               SortHorizon = entityState.Transform.Perimeter.Position.Y
               SortTarget = entity }
 
+        static member internal rayCastEntity ray (entity : Entity) world =
+            let facets = World.getEntityFacets entity world
+            let dispatcher = World.getEntityDispatcher entity world
+            let intersectionsFacets = facets |> Array.map (fun facet -> facet.RayCast (ray, entity, world)) |> Array.concat
+            let intersectionsDispatcher = dispatcher.RayCast (ray, entity, world)
+            Array.append intersectionsFacets intersectionsDispatcher
+
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
 

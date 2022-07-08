@@ -1375,6 +1375,23 @@ module StaticModelFacetModule =
             let boundsExtended = bounds.Combine bounds.Mirror
             boundsExtended.Size
 
+        override this.RayCast (ray, entity, world) =
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
+            | Some staticModel ->
+                Array.choose (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                    let geometry = surface.PhysicallyBasedGeometry
+                    let raySurface = Ray (Vector3.Transform (ray.Position, surface.SurfaceMatrix), Vector3.Transform (ray.Direction, surface.SurfaceMatrix))
+                    let mutable bounds = geometry.Bounds
+                    let boundsIntersectionOpt = raySurface.Intersects bounds
+                    if boundsIntersectionOpt.HasValue then
+                        let mutable intersection = 0.0f
+                        if raySurface.Intersects geometry.Vertices
+                        then Some intersection
+                        else None
+                    else None)
+                    staticModel.PhysicallyBasedSurfaces
+            | None -> [||]
+
 [<AutoOpen>]
 module StaticModelSurfaceFacetModule =
 
@@ -2196,7 +2213,7 @@ module FeelerDispatcherModule =
         override this.Update (entity, world) =
             if entity.GetEnabled world then
                 if entity.GetTouched world then
-                    let mousePosition = World.getMousePosition2d world
+                    let mousePosition = World.getMousePosition world
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
                     let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
                     world

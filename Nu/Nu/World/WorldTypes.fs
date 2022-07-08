@@ -252,12 +252,16 @@ module WorldTypes =
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Participate in getting the priority with which an entity is picked in the editor.
+        /// Get the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) =
             if this.Is2d
             then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.EntitySize3dDefault
+
+        /// Attempt to pick an entity with a ray.
+        abstract RayCast : Ray * Entity * World -> single array
+        default this.RayCast (_, _, _) = [||]
 
         /// Whether the dispatcher participates in a physics system.
         member this.Physical = physical
@@ -305,7 +309,11 @@ module WorldTypes =
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Participate in getting the priority with which an entity is picked in the editor.
+        /// Participate in attempting to pick an entity with a ray.
+        abstract RayCast : Ray * Entity * World -> single array
+        default this.RayCast (_, _, _) = [||]
+
+        /// Participate in getting the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (entity, world) =
             if getEntityIs2d entity world

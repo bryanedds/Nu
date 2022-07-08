@@ -34,13 +34,16 @@ module Gaia =
     let private updateEditorState updater world =
         World.updateKeyedValue<EditorState> updater Globals.EditorGuid world
 
-    let private getPickableEntities world =
+    let private getPickableEntities2d world =
         let selectedGroup = (getEditorState world).SelectedGroup
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
-        let entitiesInGroup =
-            Enumerable.ToList
-                (Enumerable.Where
-                    (entities, fun entity -> entity.GetVisible world && entity.Group = selectedGroup))
+        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
+        (entitiesInGroup, world)
+
+    let private getPickableEntities3d world =
+        let selectedGroup = (getEditorState world).SelectedGroup
+        let (entities, world) = World.getEntitiesInView3d (HashSet ()) world
+        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
         (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
@@ -206,13 +209,20 @@ module Gaia =
         not form.editWhileInteractiveCheckBox.Checked
 
     let private tryMousePickInner (form : GaiaForm) mousePosition world =
-        let (entities, world) = getPickableEntities world
-        let pickedOpt = World.tryPickEntity mousePosition entities world
+        let (entities2d, world) = getPickableEntities2d world
+        let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
         match pickedOpt with
         | Some entity ->
             selectEntity entity form world
             (Some entity, world)
-        | None -> (None, world)
+        | None ->
+            let (entities3d, world) = getPickableEntities3d world
+            let pickedOpt = World.tryPickEntity3d mousePosition entities2d world
+            match pickedOpt with
+            | Some entity ->
+                selectEntity entity form world
+                (Some entity, world)
+            | None -> (None, world)
 
     let private tryMousePick mousePosition (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with

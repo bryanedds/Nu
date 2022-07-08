@@ -342,11 +342,21 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewAbsolute2d world =
             Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-        
-        /// The relative view of the 2d eye with original single values.
+
+        /// The relative view of the 2d eye.
         [<FunctionBinding>]
         static member getViewRelative2d world =
             Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
+
+        /// Get the view of the 3d eye in absolute terms (world space).
+        [<FunctionBinding>]
+        static member getViewAbsolute3d world =
+            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
+
+        /// The relative view of the 3d eye.
+        [<FunctionBinding>]
+        static member getViewRelative3d world =
+            Math.getViewRelative3d (World.getEyePosition3d world) (World.getEyeRotation3d world)
 
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         [<FunctionBinding>]
@@ -443,6 +453,28 @@ module WorldModuleGame =
         static member mouseToEntity2d absolute entityPosition mousePosition world =
             let mousePositionWorld = World.mouseToWorld2d absolute mousePosition world
             entityPosition - mousePositionWorld
+
+        /// Transform the given mouse position to 3d screen space.
+        [<FunctionBinding>]
+        static member mouseToScreen3d (mousePosition : Vector2) (_ : World) =
+            let positionScreen =
+                v2
+                    +(mousePosition.X / single Constants.Render.VirtualScalar)
+                    -(mousePosition.Y / single Constants.Render.VirtualScalar) // negation for right-handedness
+            positionScreen
+
+        /// Transform the given mouse position to 2d world space.
+        [<FunctionBinding>]
+        static member mouseToWorld3d absolute mousePosition world =
+            let positionScreen = World.mouseToScreen2d mousePosition world
+            Log.info ("Position Screen:" + scstring positionScreen) // TODO: 3D: don't forget to remove this!
+            let view =
+                if absolute
+                then World.getViewAbsolute3d world
+                else World.getViewRelative3d world
+            let positionWorld = (Vector3.Transform (positionScreen.V3, view))
+            Log.info ("Position World:" + scstring positionScreen) // TODO: 3D: don't forget to remove this!
+            positionWorld
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =

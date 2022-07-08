@@ -3,6 +3,8 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Nu
@@ -287,6 +289,65 @@ namespace Nu
 
             result = (dist < 0) ? null : distanceAlongRay - (float?)Math.Sqrt(dist);
         }
+
+        /// <summary>
+        /// Get all of the ray intersections of a triangle.
+        /// </summary>
+        public IEnumerable<(int, float)> GetIntersections(Vector3[] vertices)
+        {
+            const float epsilon = 0.000001f;
+            for (var i = 0; i < vertices.Length; i += 3)
+            {
+                var a = vertices[i * 3];
+                var b = vertices[i * 3 + 1];
+                var c = vertices[i * 3 + 2];
+                var edgeA = b - a;
+                var edgeB = c - a;
+                var p = Vector3.Cross(Direction, edgeB);
+                var det = Vector3.Dot(edgeA, p);
+                if (det <= -epsilon || det >= epsilon)
+                {
+                    var detInv = 1.0f / det;
+                    var tvec = Position - a;
+                    var u = Vector3.Dot(tvec, p) * detInv;
+                    if (u >= 0f && u <= 1f)
+                    {
+                        var qvec = Vector3.Cross(tvec, edgeA);
+                        var v = Vector3.Dot(Direction, qvec) * detInv;
+                        if (v >= 0 && u + v <= 1f)
+                        {
+                            var t = Vector3.Dot(c, qvec) * detInv;
+                            yield return (i, t);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempt to get the first found intersection from an array of triangle vertices.
+        /// </summary>
+        public bool Intersects(Vector3[] vertices, out float? result)
+		{
+            var enr = GetIntersections(vertices).GetEnumerator();
+            if (enr.MoveNext())
+            {
+                var (_, t) = enr.Current;
+                result = t;
+                return true;
+            }
+            result = null;
+            return false;
+		}
+
+        /// <summary>
+        /// Check if ray intersects any of the given triangle vertices.
+        /// </summary>
+        public bool Intersects(Vector3[] vertices)
+		{
+            Intersects(vertices, out var resultOpt);
+            return resultOpt.HasValue;
+		}
 
         /// <summary>
         /// Check if two rays are not equal.
