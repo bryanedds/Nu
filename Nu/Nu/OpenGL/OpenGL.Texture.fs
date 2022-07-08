@@ -3,6 +3,8 @@
 
 namespace OpenGL
 open System
+open System.Drawing
+open System.Drawing.Imaging
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -41,9 +43,15 @@ module Texture =
             Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
             Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
+    let TryCreateImageBitmap (filePath : string) =
+        try let image = new Bitmap (filePath)
+            let data = image.LockBits (Rectangle (0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, Imaging.PixelFormat.Format32bppRgb)
+            Some (data.Scan0, image)
+        with _ -> None
+
     /// Attempt to create an SDL surface of an image from the give file path, converting its format if needed.
     /// NOTE: caller is reponsible for calling SDL.SDL_FreeSurface on return surface pointer.
-    let TryCreateImageSurface filePath =
+    let TryCreateImageSurface (filePath : string) =
         let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
         let unconvertedPtr = SDL_image.IMG_Load filePath
         if unconvertedPtr <> nativeint 0 then
@@ -61,14 +69,17 @@ module Texture =
     let TryCreateTexture2d (minFilter, magFilter, generateMipmaps, filePath : string) =
 
         // attempt to create image surface
-        match TryCreateImageSurface filePath with
-        | Some (surfacePtr, surface) ->
+        match TryCreateImageBitmap filePath with
+        | Some (bitmapData, bitmap) ->
+
+            // dispose bitmap automatically
+            use bitmap = bitmap
 
             // upload the texture to gl
             let texture = Gl.GenTexture ()
             let internalFormat = InternalFormat.Rgba8
             Gl.BindTexture (TextureTarget.Texture2d, texture)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -76,17 +87,14 @@ module Texture =
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
 
-            // teardown surface
-            SDL.SDL_FreeSurface surfacePtr
-
             // check for errors
             match Gl.GetError () with
             | ErrorCode.NoError ->
                 let metadata =
-                    { TextureWidth = surface.w
-                      TextureHeight = surface.h
-                      TextureTexelWidth = 1.0f / single surface.w
-                      TextureTexelHeight = 1.0f / single surface.h
+                    { TextureWidth = bitmap.Width
+                      TextureHeight = bitmap.Height
+                      TextureTexelWidth = 1.0f / single bitmap.Width
+                      TextureTexelHeight = 1.0f / single bitmap.Height
                       TextureInternalFormat = internalFormat }
                 Right (metadata, texture)
             | error -> Left (string error)
@@ -120,10 +128,10 @@ module Texture =
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
                 let faceFilePath = faceFilePaths.[i]
-                match TryCreateImageSurface faceFilePath with
-                | Some (surfacePtr, surface) ->
-                    try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, InternalFormat.Rgba8, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
-                    finally SDL.SDL_FreeSurface surfacePtr
+                match TryCreateImageBitmap faceFilePath with
+                | Some (bitmapData, bitmap) ->
+                    use bitmap = bitmap // dispose bitmap automatically
+                    Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, InternalFormat.Rgba8, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
                     Hl.Assert ()
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
