@@ -62,15 +62,15 @@ module Metadata =
 
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
-            // TODO: P1: find an efficient way to pull metadata from a bitmap file without loading its actual bitmap.
-            try use bitmap = new Bitmap (asset.FilePath)
-                Some (TextureMetadata (Vector2i (bitmap.Width, bitmap.Height), bitmap.PixelFormat))
+            try use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use image = Image.FromStream (fileStream, false, false)
+                Some (TextureMetadata (Vector2i (image.Width, image.Height), image.PixelFormat))
             with _ as exn ->
-                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to: " + scstring exn
+                let errorMessage = "Failed to load texture '" + asset.FilePath + "' due to: " + scstring exn
                 Log.trace errorMessage
                 None
         else
-            let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
+            let errorMessage = "Failed to load texture due to missing file '" + asset.FilePath + "'."
             Log.trace errorMessage
             None
 
