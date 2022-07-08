@@ -88,7 +88,7 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
-    // NOTE: performance goal: 60fps, current: 29fps.
+    // NOTE: performance goal: 60fps, current: 34fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (staticScene, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
