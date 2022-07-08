@@ -1039,10 +1039,10 @@ module Gaia =
                 world
             | _ -> failwithumf ()
 
-    let private handleFormResetCamera (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormResetEye (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if form.eye3d.Checked
-            then World.setEyePosition3d v3Zero world
+            then World.setEyePosition3d Constants.Render.EyePosition3dDefault world
             else World.setEyePosition2d v2Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
@@ -1493,7 +1493,10 @@ module Gaia =
     /// Select a target directory for the desired plugin and its assets.
     let selectTargetDirAndMakeNuPlugin () =
         let savedState =
-            try scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
+            try
+                if File.Exists Constants.Editor.SavedStateFilePath
+                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
+                else { BinaryFilePath = ""; UseGameplayScreen = false; UseImperativeExecution = false }
             with _ -> { BinaryFilePath = ""; UseGameplayScreen = false; UseImperativeExecution = false }
         use startForm = new StartForm ()
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
@@ -1591,7 +1594,7 @@ module Gaia =
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
-        form.resetEyeButton.Click.Add (handleFormResetCamera form)
+        form.resetEyeButton.Click.Add (handleFormResetEye form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
