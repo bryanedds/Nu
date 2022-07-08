@@ -97,7 +97,7 @@ type SceneryDispatcher () =
         let (staticScene, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
         let world = staticScene.SetStaticScene (asset "Default" "GameObject") world
 #if DEBUG
-        let population = 3
+        let population = 5
 #else
         let population = 50
 #endif

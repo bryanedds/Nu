@@ -62,7 +62,12 @@ module Nu =
             Math.init ()
 
             // init OpenGL assert-ness
-            OpenGL.Hl.InitAssert nuConfig.StandAlone
+            OpenGL.Hl.InitAssert
+#if DEBUG
+                nuConfig.StandAlone
+#else
+                false
+#endif
 
             // init simulant modules
             WorldModuleGame.init ()
