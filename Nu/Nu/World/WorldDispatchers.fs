@@ -1385,7 +1385,7 @@ module StaticModelFacetModule =
                         let mutable bounds = geometry.Bounds
                         let boundsIntersectionOpt = raySurface.Intersects bounds
                         if boundsIntersectionOpt.HasValue then
-                            let intersections = raySurface.GetIntersections geometry.Vertices
+                            let intersections = raySurface.GetIntersections (geometry.Indices, geometry.Vertices)
                             intersections |> Seq.map snd' |> Seq.toArray
                         else [||])
                         staticModel.PhysicallyBasedSurfaces
@@ -1452,7 +1452,7 @@ module StaticModelSurfaceFacetModule =
                 let mutable bounds = geometry.Bounds
                 let boundsIntersectionOpt = raySurface.Intersects bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = raySurface.GetIntersections geometry.Vertices
+                    let intersections = raySurface.GetIntersections (geometry.Indices, geometry.Vertices)
                     intersections |> Seq.map snd' |> Seq.toArray
                 else [||]
             | None -> [||]

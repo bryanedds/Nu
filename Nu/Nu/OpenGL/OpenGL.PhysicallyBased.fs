@@ -30,6 +30,7 @@ module PhysicallyBased =
           PrimitiveType : PrimitiveType
           ElementCount : int
           Vertices : Vector3 array
+          Indices : int array
           VertexBuffer : uint
           ModelBuffer : uint
           AlbedoBuffer : uint
@@ -278,7 +279,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
 
         // make buffers
-        let (vertices, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -361,7 +362,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
+                ([||], indexData, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -374,7 +375,7 @@ module PhysicallyBased =
                     vertices.[i] <- vertex
 
                 // fin
-                (vertices, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indexData, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -382,6 +383,7 @@ module PhysicallyBased =
               PrimitiveType = PrimitiveType.Triangles
               ElementCount = indexData.Length
               Vertices = vertices
+              Indices = indices
               VertexBuffer = vertexBuffer
               ModelBuffer = modelBuffer
               AlbedoBuffer = albedoBuffer

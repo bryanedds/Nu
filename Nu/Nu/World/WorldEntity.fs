@@ -500,8 +500,7 @@ module WorldEntityModule =
             let intersectionses =
                 Seq.map
                     (fun (entity : Entity) ->
-                        let positionWorld = World.mouseToWorld3d (entity.GetAbsolute world) position world
-                        let rayWorld = Ray (positionWorld, Vector3.Transform (v3Back, World.getEyeRotation3d world))
+                        let rayWorld = World.mouseToWorld3d (entity.GetAbsolute world) position world
                         Log.info ("Ray World:" + scstring rayWorld) // TODO: 3D: don't forget to remove this!
                         let intersectionOpt = rayWorld.Intersects (entity.GetBounds world)
                         if intersectionOpt.HasValue then
