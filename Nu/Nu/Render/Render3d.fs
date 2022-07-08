@@ -856,8 +856,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // clear render tasks
             renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Clear ()
             renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
-            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
+            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
+            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
             SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
             SegmentedList.clear renderer.RenderTasks.RenderLights
 
