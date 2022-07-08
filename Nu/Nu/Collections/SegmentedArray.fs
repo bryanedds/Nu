@@ -85,7 +85,7 @@ module SegmentedArray =
     let zeroCreate<'a> length =
         if length < 0 then raise (ArgumentException ("Invalid argument.", nameof length))
         let size = sizeof<'a>
-        let segmentSize = Constants.Engine.LohSizeMinusArraySlop / size
+        let segmentSize = Constants.Engine.LohSize / size / 2
         let (segmentCount, segmentRemainder) = Math.DivRem (length, segmentSize)
         let segments =
             Array.init
