@@ -21,7 +21,7 @@ open OctelementMasks
 /// Flags contains the following:
 /// Static will elide Updates.
 /// Enclosed will discriminate on occluders for both Update and Actualize.
-type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> = 
+type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> = 
     { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
       Flags : uint
       Presence : Presence
