@@ -32,7 +32,7 @@ module Hl =
                 Log.debug ("OpenGL assertion failed due to: " + string error)
         a
 
-#if DEBUG_RENDERING_MESSAGE
+#if DEBUG
     let private DebugMessageListener (_ : DebugSource) (_ : DebugType) (_ : uint) (severity : DebugSeverity) (length : int) (message : nativeint) (_ : nativeint) =
         let messageBytes = Array.zeroCreate<byte> length
         Marshal.Copy (message, messageBytes, 0, length)
@@ -65,7 +65,7 @@ module Hl =
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.Render.OpenGlVersionMinor) |> ignore<int>
         if Constants.Render.OpenGlCore then
             SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
-#if DEBUG_RENDERING_MESSAGE
+#if DEBUG
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
 #endif
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
