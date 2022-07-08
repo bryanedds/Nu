@@ -504,14 +504,15 @@ module WorldEntityModule =
                         Log.info ("Ray World:" + scstring rayWorld) // TODO: 3D: don't forget to remove this!
                         let intersectionOpt = rayWorld.Intersects (entity.GetBounds world)
                         if intersectionOpt.HasValue then
-                            let intersection = intersectionOpt.Value
-                            if intersection >= 0.0f then
-                                let affineMatrix = entity.GetAffineMatrix world
-                                let (_, affineMatrixInv) = Matrix4x4.Invert affineMatrix
-                                let rayEntity = Ray (Vector3.Transform (rayWorld.Position, affineMatrixInv), Vector3.Transform (rayWorld.Direction, affineMatrix))
-                                let intersections = entity.RayCast rayEntity world
-                                Array.map (fun intersection -> (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity)) intersections
-                            else [||]
+                            let affineMatrix = entity.GetAffineMatrix world
+                            let (_, affineMatrixInv) = Matrix4x4.Invert affineMatrix
+                            let rayEntity = Ray (Vector3.Transform (rayWorld.Position, affineMatrixInv), Vector3.Transform (rayWorld.Direction, affineMatrix))
+                            let intersections = entity.RayCast rayEntity world
+                            Array.choose (fun intersection ->
+                                if intersection >= 0.0f
+                                then Some (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity)
+                                else None)
+                                intersections
                         else [||])
                     entities
             let intersections = intersectionses |> Seq.concat |> Seq.toArray
