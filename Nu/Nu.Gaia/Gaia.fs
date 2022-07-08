@@ -217,7 +217,7 @@ module Gaia =
             (Some entity, world)
         | None ->
             let (entities3d, world) = getPickableEntities3d world
-            let pickedOpt = World.tryPickEntity3d mousePosition entities2d world
+            let pickedOpt = World.tryPickEntity3d mousePosition entities3d world
             match pickedOpt with
             | Some (_, entity) ->
                 selectEntity entity form world
