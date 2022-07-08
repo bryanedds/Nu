@@ -336,7 +336,7 @@ module WorldTypes =
           EyeRotation3d : Quaternion
           EyeFrustumEnclosed3d : Frustum
           EyeFrustumUnenclosed3d : Frustum
-          EyeFrustumAfatecs3d : Frustum
+          EyeFrustumProminent3d : Frustum
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -350,7 +350,7 @@ module WorldTypes =
             let eyeRotation3d = quatIdentity
             let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed eyePosition3d eyeRotation3d
             let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed eyePosition3d eyeRotation3d
-            let eyeFrustumAfatecs3d = GlRenderer3d.computeFrustum Afatecs eyePosition3d eyeRotation3d
+            let eyeFrustumProminent3d = GlRenderer3d.computeFrustum Prominent eyePosition3d eyeRotation3d
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -364,7 +364,7 @@ module WorldTypes =
               EyeRotation3d = eyeRotation3d
               EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
               EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
-              EyeFrustumAfatecs3d = eyeFrustumAfatecs3d
+              EyeFrustumProminent3d = eyeFrustumProminent3d
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }

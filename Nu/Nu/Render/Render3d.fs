@@ -354,7 +354,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match presence with
             | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
             | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
-            | Afatecs -> Constants.Render.FarPlaneDistanceAfatecs
+            | Prominent -> Constants.Render.FarPlaneDistanceProminent
             | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
         Matrix4x4.CreatePerspectiveFieldOfView
             (Constants.Render.FieldOfView,
@@ -638,7 +638,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
-            let projection = GlRenderer3d.computeProjection Afatecs
+            let projection = GlRenderer3d.computeProjection Prominent
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 

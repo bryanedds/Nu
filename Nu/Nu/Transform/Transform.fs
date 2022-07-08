@@ -76,7 +76,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
-    member this.Optimized with get () = this.Imperative && this.Presence_.ISOmnipresent && not this.PublishChangeBindings && not this.PublishChangeEvents
+    member this.Optimized with get () = this.Imperative && this.Presence_.OmnipresentType && not this.PublishChangeBindings && not this.PublishChangeEvents
 
     member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.PerimeterOrientedDirty <- true
     member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.PerimeterOrientedDirty <- true
@@ -95,7 +95,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Presence
         with get () = this.Presence_
         and set (value : Presence) =
-            let omnipresent = value.ISOmnipresent
+            let omnipresent = value.OmnipresentType
             if omnipresent || not this.Absolute then // a transform that is Absolute must remain Omnipresent
                 this.Presence_ <- if omnipresent then Omnipresent else value
 

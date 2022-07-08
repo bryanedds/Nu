@@ -465,7 +465,7 @@ module WorldModuleEntity =
         static member internal setEntityPresence (value : Presence) entity world =
             World.updateEntityStatePlus (fun entityState ->
                 if not (value.Equals entityState.Presence) then // TODO: 3D: ensure this does not box.
-                    let omnipresent = value.ISOmnipresent
+                    let omnipresent = value.OmnipresentType
                     if omnipresent || not entityState.Absolute then // a transform that is Absolute must remain Omnipresent
                         let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
                         entityState.Presence <- value
@@ -1654,7 +1654,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.ISOmnipresent || World.isBoundsInView2d transform.Bounds.Box2 world
+            presence.OmnipresentType || World.isBoundsInView2d transform.Bounds.Box2 world
 
         static member internal getEntityInPlay2d entity world =
             World.getEntityInView2d entity world // same meaning as in view for 2d
@@ -1663,13 +1663,13 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.ISOmnipresent || World.isBoundsInPlay3d transform.Bounds world
+            presence.OmnipresentType || World.isBoundsInPlay3d transform.Bounds world
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.ISOmnipresent || World.isBoundsInView3d transform.Light presence transform.Bounds world
+            presence.OmnipresentType || World.isBoundsInView3d transform.Light presence transform.Bounds world
 
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world

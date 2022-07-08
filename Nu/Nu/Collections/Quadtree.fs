@@ -9,18 +9,20 @@ open Prime
 
 /// Describes the form of an element's presence.
 [<Syntax
-        ("Enclosed Unenclosed Afatecs Omnipresent", "", "", "", "",
+        ("Enclosed Unenclosed Prominent Omnipresent", "", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
     | Unenclosed
-    | Afatecs // TODO: 3D: can we think of a better name here?
+    | Prominent
     | Omnipresent
-    member this.ISEnclosed with get () = match this with Enclosed -> true | _ -> false // TODO: 3D: come up with better getter names.
-    member this.ISUnenclosed with get () = match this with Unenclosed -> true | _ -> false
-    member this.ISAfatecs with get () = match this with Afatecs -> true | _ -> false
-    member this.ISOmnipresent with get () = match this with Omnipresent -> true | _ -> false
+    member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false // TODO: 3D: come up with better getter names.
+    member this.UnenclosedType with get () = match this with Unenclosed -> true | _ -> false
+    member this.ProminentType with get () = match this with Prominent -> true | _ -> false
+    member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
+    member this.Cullable with get () = match this with Enclosed | Unenclosed -> true | _ -> false
+    member this.Uncullable with get () = not this.Cullable
 
 [<RequireQualifiedAccess>]
 module internal Quadnode =
@@ -103,51 +105,51 @@ type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 module Quadtree =
 
     /// Provides an enumerator interface to the quadtree queries.
-    type internal QuadtreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e HashSet, localElements : 'e HashSet) =
+    type internal QuadtreeEnumerator<'e when 'e : equality> (uncullable : 'e HashSet, cullable : 'e HashSet) =
 
-        let omnipresentArray = SegmentedArray.ofSeq omnipresentElements // eagerly convert to segmented array to keep iteration valid
-        let localArray = SegmentedArray.ofSeq localElements // eagerly convert to segmented array to keep iteration valid
-        let mutable localEnrValid = false
-        let mutable omnipresentEnrValid = false
-        let mutable localEnr = Unchecked.defaultof<_>
-        let mutable omnipresentEnr = Unchecked.defaultof<_>
+        let uncullableArray = SegmentedArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
+        let cullableArray = SegmentedArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
+        let mutable cullableEnrValid = false
+        let mutable uncullableEnrValid = false
+        let mutable cullableEnr = Unchecked.defaultof<_>
+        let mutable uncullableEnr = Unchecked.defaultof<_>
 
         interface 'e IEnumerator with
             member this.MoveNext () =
-                if not localEnrValid then
-                    localEnr <- localArray.GetEnumerator ()
-                    localEnrValid <- true
-                    if not (localEnr.MoveNext ()) then
-                        omnipresentEnr <- omnipresentArray.GetEnumerator ()
-                        omnipresentEnrValid <- true
-                        omnipresentEnr.MoveNext ()
+                if not cullableEnrValid then
+                    cullableEnr <- cullableArray.GetEnumerator ()
+                    cullableEnrValid <- true
+                    if not (cullableEnr.MoveNext ()) then
+                        uncullableEnr <- uncullableArray.GetEnumerator ()
+                        uncullableEnrValid <- true
+                        uncullableEnr.MoveNext ()
                     else true
                 else
-                    if not (localEnr.MoveNext ()) then
-                        if not omnipresentEnrValid then
-                            omnipresentEnr <- omnipresentArray.GetEnumerator ()
-                            omnipresentEnrValid <- true
-                            omnipresentEnr.MoveNext ()
-                        else omnipresentEnr.MoveNext ()
+                    if not (cullableEnr.MoveNext ()) then
+                        if not uncullableEnrValid then
+                            uncullableEnr <- uncullableArray.GetEnumerator ()
+                            uncullableEnrValid <- true
+                            uncullableEnr.MoveNext ()
+                        else uncullableEnr.MoveNext ()
                     else true
 
             member this.Current =
-                if omnipresentEnrValid then omnipresentEnr.Current
-                elif localEnrValid then localEnr.Current
+                if uncullableEnrValid then uncullableEnr.Current
+                elif cullableEnrValid then cullableEnr.Current
                 else failwithumf ()
 
             member this.Current =
                 (this :> 'e IEnumerator).Current :> obj
 
             member this.Reset () =
-                localEnrValid <- false
-                omnipresentEnrValid <- false
-                localEnr <- Unchecked.defaultof<_>
-                omnipresentEnr <- Unchecked.defaultof<_>
+                cullableEnrValid <- false
+                uncullableEnrValid <- false
+                cullableEnr <- Unchecked.defaultof<_>
+                uncullableEnr <- Unchecked.defaultof<_>
 
             member this.Dispose () =
-                localEnr <- Unchecked.defaultof<_>
-                omnipresentEnr <- Unchecked.defaultof<_>
+                cullableEnr <- Unchecked.defaultof<_>
+                uncullableEnr <- Unchecked.defaultof<_>
             
     /// Provides an enumerable interface to the quadtree queries.
     type internal QuadtreeEnumerable<'e when 'e : equality> (enr : 'e QuadtreeEnumerator) =
@@ -159,57 +161,57 @@ module Quadtree =
     type [<NoEquality; NoComparison>] Quadtree<'e when 'e : equality> =
         private
             { Node : 'e Quadnode
-              OmnipresentElements : 'e HashSet
+              Uncullable : 'e HashSet
               Depth : int
               Granularity : int
               Bounds : Box2 }
 
     let addElement (presence : Presence) bounds element tree =
-        if presence.ISOmnipresent then
-            tree.OmnipresentElements.Add element |> ignore
+        if presence.Uncullable then
+            tree.Uncullable.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is being added redundantly."
-                tree.OmnipresentElements.Add element |> ignore
+                tree.Uncullable.Add element |> ignore
             else Quadnode.addElement bounds element tree.Node
 
     let removeElement (presence : Presence) bounds element tree =
-        if presence.ISOmnipresent then 
-            tree.OmnipresentElements.Remove element |> ignore
+        if presence.Uncullable then 
+            tree.Uncullable.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is not present for removal."
-                tree.OmnipresentElements.Remove element |> ignore
+                tree.Uncullable.Remove element |> ignore
             else Quadnode.removeElement bounds element tree.Node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         removeElement oldPresence oldBounds element tree
         addElement newPresence newBounds element tree
 
-    let getElementsOmnipresent set tree =
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+    let getElementsUncullable set tree =
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
 
     let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
 
     let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
 
     let getDepth tree =
         tree.Depth
 
     let clone tree =
         { Node = Quadnode.clone tree.Node
-          OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural)
+          Uncullable = HashSet (tree.Uncullable, HashIdentity.Structural)
           Depth = tree.Depth
           Granularity = tree.Granularity
           Bounds = tree.Bounds }
 
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = Quadnode.make<'e> granularity depth bounds
-          OmnipresentElements = HashSet HashIdentity.Structural
+          Uncullable = HashSet HashIdentity.Structural
           Depth = depth
           Granularity = granularity
           Bounds = bounds }
