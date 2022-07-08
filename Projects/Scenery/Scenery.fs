@@ -13,14 +13,11 @@ module Simulants =
     let Light = Simulants.Default.Group / "Light"
 
 // this is a custom entity for performance testing
-type RotatingModelDispatcher () =
-    inherit EntityDispatcher3d (true, false)
+type CustomModelDispatcher () =
+    inherit StaticModelDispatcher ()
 
-    static member Facets =
-        [typeof<StaticModelFacet>]
-
-    static member Properties =
-        [define Entity.StaticModel Assets.Default.StaticModel]
+    override this.Update (entity, world) =
+        entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.1f)) world
 
 // this is our Elm-style command type
 type Command =
@@ -91,13 +88,13 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
 
     // here we create the scenery in an imperative fashion
-    // NOTE: performance goal: 60fps, current: 47fps.
+    // NOTE: performance goal: 60fps, current: 29fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (staticScene, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
         let world = staticScene.SetStaticScene (asset "Default" "GameObject") world
 #if DEBUG
-        let population = 5
+        let population = 30
 #else
         let population = 50
 #endif
@@ -112,11 +109,8 @@ type SceneryDispatcher () =
                     positions.Add position
         let world =
             Seq.fold (fun world position ->
-                let (staticModel, world) = World.createEntity<RotatingModelDispatcher> None NoOverlay Simulants.Default.Group world
-                let world = staticModel.SetPosition position world
-                //let world = staticModel.SetRenderStyle Forward world
-                //let world = staticModel.SetStatic true world
-                world)
+                let (staticModel, world) = World.createEntity<CustomModelDispatcher> None NoOverlay Simulants.Default.Group world
+                staticModel.SetPosition position world)
                 world positions
         world
 
