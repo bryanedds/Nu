@@ -1378,18 +1378,18 @@ module StaticModelFacetModule =
         override this.RayCast (ray, entity, world) =
             match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
             | Some staticModel ->
-                Array.choose (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                    let geometry = surface.PhysicallyBasedGeometry
-                    let raySurface = Ray (Vector3.Transform (ray.Position, surface.SurfaceMatrix), Vector3.Transform (ray.Direction, surface.SurfaceMatrix))
-                    let mutable bounds = geometry.Bounds
-                    let boundsIntersectionOpt = raySurface.Intersects bounds
-                    if boundsIntersectionOpt.HasValue then
-                        let mutable intersection = 0.0f
-                        if raySurface.Intersects geometry.Vertices
-                        then Some intersection
-                        else None
-                    else None)
-                    staticModel.PhysicallyBasedSurfaces
+                let intersectionses =
+                    Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                        let geometry = surface.PhysicallyBasedGeometry
+                        let raySurface = Ray (Vector3.Transform (ray.Position, surface.SurfaceMatrix), Vector3.Transform (ray.Direction, surface.SurfaceMatrix))
+                        let mutable bounds = geometry.Bounds
+                        let boundsIntersectionOpt = raySurface.Intersects bounds
+                        if boundsIntersectionOpt.HasValue then
+                            let intersections = raySurface.GetIntersections geometry.Vertices
+                            intersections |> Seq.map snd' |> Seq.toArray
+                        else [||])
+                        staticModel.PhysicallyBasedSurfaces
+                Array.concat intersectionses
             | None -> [||]
 
 [<AutoOpen>]
@@ -1441,6 +1441,21 @@ module StaticModelSurfaceFacetModule =
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
             else Constants.Engine.EntitySize3dDefault
+
+        override this.RayCast (ray, entity, world) =
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
+            | Some staticModel ->
+                let surfaceIndex = entity.GetSurfaceIndex world
+                let surface = staticModel.PhysicallyBasedSurfaces.[surfaceIndex]
+                let geometry = surface.PhysicallyBasedGeometry
+                let raySurface = Ray (Vector3.Transform (ray.Position, surface.SurfaceMatrix), Vector3.Transform (ray.Direction, surface.SurfaceMatrix))
+                let mutable bounds = geometry.Bounds
+                let boundsIntersectionOpt = raySurface.Intersects bounds
+                if boundsIntersectionOpt.HasValue then
+                    let intersections = raySurface.GetIntersections geometry.Vertices
+                    intersections |> Seq.map snd' |> Seq.toArray
+                else [||]
+            | None -> [||]
 
 [<AutoOpen>]
 module EntityDispatcherModule =
