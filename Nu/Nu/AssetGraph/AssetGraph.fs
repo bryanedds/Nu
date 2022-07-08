@@ -183,7 +183,7 @@ module AssetGraph =
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from a package descriptor.
-    let private collectAssetsFromPackageDescriptor usingRawAssets (associationOpt : string option) packageName packageDescriptor =
+    let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor =
         seq {
             for assetDescriptor in packageDescriptor do
                 match assetDescriptor with
@@ -222,23 +222,23 @@ module AssetGraph =
         Map.toKeyList assetGraph.PackageDescriptors
 
     /// Attempt to collect all the available assets from a package.
-    let tryCollectAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
+    let tryCollectAssetsFromPackage associationOpt packageName assetGraph =
         let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
         match Map.tryGetValue (packageName, assetGraph.PackageDescriptors, &packageDescriptor) with
         | true ->
-            collectAssetsFromPackageDescriptor usingRawAssets associationOpt packageName packageDescriptor |>
+            collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor |>
             List.groupBy (fun asset -> asset.FilePath) |>
             List.map (snd >> List.last) |>
             Right
         | false -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
     /// Collect all the available assets from an asset graph document.
-    let collectAssets usingRawAssets associationOpt assetGraph =
+    let collectAssets associationOpt assetGraph =
         seq {
             for entry in assetGraph.PackageDescriptors do
                 let packageName = entry.Key
                 let packageDescriptor = entry.Value
-                yield! collectAssetsFromPackageDescriptor usingRawAssets associationOpt packageName packageDescriptor } |>
+                yield! collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor } |>
         Seq.toList |>
         List.groupBy (fun asset -> asset.FilePath) |>
         List.map (snd >> List.last)
@@ -264,7 +264,7 @@ module AssetGraph =
         let currentDirectory = Directory.GetCurrentDirectory ()
         let assets =
             try Directory.SetCurrentDirectory inputDirectory
-                collectAssets false None assetGraph
+                collectAssets None assetGraph
             finally
                 Directory.SetCurrentDirectory currentDirectory
 
