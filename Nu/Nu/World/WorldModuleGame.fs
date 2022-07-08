@@ -468,14 +468,14 @@ module WorldModuleGame =
         static member mouseToWorld3d absolute (mousePosition : Vector2) world =
             let mouseNormalized =
                 v2
-                    (mousePosition.X / single Constants.Render.VirtualResolutionX)
-                    (mousePosition.Y / single Constants.Render.VirtualResolutionY)
+                    (mousePosition.X / single Constants.Render.ResolutionX)
+                    (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
             let projection = GlRenderer3d.computeProjection Omnipresent
-            let (_, inverse) = Matrix4x4.Invert (projection * view)
+            let (_, inverse) = Matrix4x4.Invert (view * projection)
             let near = v4 mouseNormalized.X mouseNormalized.Y -1.0f 1.0f
             let near = Vector4.Transform (near, inverse)
             let near = near.V3 / near.W
