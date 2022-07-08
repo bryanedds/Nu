@@ -55,7 +55,7 @@ module SegmentedList =
         if lastList.Count < slist.ListCapacity then
             lastList.Add item
         else
-            let newList = List ()
+            let newList = List slist.ListCapacity // since we filled one list, let's presume to fill another
             newList.Add item
             slist.Lists.Add newList
         slist.TotalLength <- inc slist.TotalLength
