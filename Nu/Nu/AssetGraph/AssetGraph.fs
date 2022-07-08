@@ -182,6 +182,24 @@ module AssetGraph =
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
+    /// Collect the associated assets from package descriptor assets value.
+    let private collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements =
+        seq {
+            if Directory.Exists directory then
+                let filePaths =
+                    seq {
+                        for extension in extensions do
+                            yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
+                for filePath in filePaths do
+                    let extension = (Path.GetExtension filePath).Replace (".", "")
+                    let assetName = (Path.GetFileNameWithoutExtension filePath)
+                    let tag = AssetTag.make<obj> packageName assetName
+                    let asset = Asset.make tag filePath refinements associations
+                    if Option.isSome associationOpt
+                    then if Set.contains extension extensions then yield asset
+                    else yield asset
+            else Log.info ("Invalid directory '" + directory + "'. when looking for assets.") }
+
     /// Collect the associated assets from a package descriptor.
     let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor =
         seq {
@@ -194,23 +212,12 @@ module AssetGraph =
                     | Some association -> if Set.contains association associations then yield asset
                     | None -> yield asset
                 | Assets (directory, extensions, associations, refinements) ->
-                    if Directory.Exists directory then
-                        let filePaths =
-                            seq {
-                                for extension in extensions do
-                                    yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
-                        for filePath in filePaths do
-                            let extension = (Path.GetExtension filePath).Replace (".", "")
-                            let assetName = (Path.GetFileNameWithoutExtension filePath)
-                            let tag = AssetTag.make<obj> packageName assetName
-                            let asset = Asset.make tag filePath refinements associations
-                            match associationOpt with
-                            | Some association ->
-                                if  Set.contains association associations &&
-                                    Set.contains extension extensions then
-                                    yield asset
-                            | None -> yield asset
-                    else Log.info ("Invalid directory '" + directory + "'. when looking for assets.") } |>
+                    match associationOpt with
+                    | Some association when Set.contains association associations ->
+                        yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
+                    | None ->
+                        yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
+                    | _ -> () } |>
         Seq.toList
 
     /// Get package descriptors.
