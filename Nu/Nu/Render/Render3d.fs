@@ -25,10 +25,10 @@ type [<NoEquality; NoComparison; Struct>] RenderType =
 
 /// Materials used for rendering models.
 and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
-    { AlbedoOpt : Color voption
-      MetalnessOpt : single voption
-      RoughnessOpt : single voption
-      AmbientOcclusionOpt : single voption }
+    { AlbedoOpt : Color option
+      MetalnessOpt : single option
+      RoughnessOpt : single option
+      AmbientOcclusionOpt : single option }
 
 /// A collection of render tasks in a pass.
 and [<NoEquality; NoComparison>] RenderTasks =
@@ -442,10 +442,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let struct (model, renderMaterial) = parameters.[i]
                 model.ToArray (renderer.RenderModelsFields, i * 16)
                 let (albedo, metalness, roughness, ambientOcclusion) =
-                    ((match renderMaterial.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Albedo),
-                     (match renderMaterial.MetalnessOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Metalness),
-                     (match renderMaterial.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Roughness),
-                     (match renderMaterial.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.AmbientOcclusion))
+                    ((match renderMaterial.AlbedoOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Albedo),
+                     (match renderMaterial.MetalnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Metalness),
+                     (match renderMaterial.RoughnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Roughness),
+                     (match renderMaterial.AmbientOcclusionOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.AmbientOcclusion))
                 renderer.RenderAlbedosFields.[i * 4] <- albedo.R
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
