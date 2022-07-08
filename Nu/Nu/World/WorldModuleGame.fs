@@ -470,16 +470,17 @@ module WorldModuleGame =
                 v2
                     (mousePosition.X / single Constants.Render.ResolutionX)
                     (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
+            let mouseNdc = mouseNormalized * 2.0f - v2One
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
             let projection = GlRenderer3d.computeProjection Omnipresent
             let (_, inverse) = Matrix4x4.Invert (view * projection)
-            let near = v4 mouseNormalized.X mouseNormalized.Y -1.0f 1.0f
+            let near = v4 mouseNdc.X mouseNdc.Y -1.0f 1.0f
             let near = Vector4.Transform (near, inverse)
             let near = near.V3 / near.W
-            let far = v4 mouseNormalized.X mouseNormalized.Y 1.0f 1.0f
+            let far = v4 mouseNdc.X mouseNdc.Y 1.0f 1.0f
             let far = Vector4.Transform (far, inverse)
             let far = far.V3 / far.W
             let ray = Ray (near, Vector3.Normalize (far - near))
