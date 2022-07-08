@@ -296,7 +296,8 @@ namespace Nu
         public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
         {
             const float epsilon = 0.000001f;
-            for (var i = 0; i < indices.Length; i += 3)
+            var faceCount = indices.Length / 3;
+            for (var i = 0; i < faceCount; i += 3)
             {
                 var a = vertices[indices[i * 3]];
                 var b = vertices[indices[i * 3 + 1]];
