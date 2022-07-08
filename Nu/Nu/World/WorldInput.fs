@@ -27,7 +27,7 @@ module WorldInputModule =
 
         /// Get the position of the mouse.
         [<FunctionBinding>]
-        static member getMousePosition2d world =
+        static member getMousePosition world =
             match World.tryGetWindowSize world with
             | Some windowSize ->
                 let marginI = Constants.Render.ViewportMargin windowSize

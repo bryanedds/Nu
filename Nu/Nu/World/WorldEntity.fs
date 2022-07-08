@@ -87,6 +87,10 @@ module WorldEntityModule =
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
+        member this.GetAffineMatrix world = World.getEntityAffineMatrix this world
+        member this.AffineMatrix = lensReadOnly Property? AffineMatrix this.GetAffineMatrix this
+        member this.GetAffineMatrixLocal world = World.getEntityAffineMatrixLocal this world
+        member this.AffineMatrixLocal = lensReadOnly Property? AffineMatrixLocal this.GetAffineMatrixLocal this
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> snd'
         member this.Presence = lens Property? Presence this.GetPresence this.SetPresence this
@@ -273,6 +277,9 @@ module WorldEntityModule =
 
         /// Check that an entity exists in the world.
         member this.Exists world = World.getEntityExists this world
+
+        /// Check if an entity is intersected by a ray.
+        member this.RayCast ray world = World.rayCastEntity ray this world
 
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
@@ -466,9 +473,9 @@ module WorldEntityModule =
         static member destroyEntities entities world =
             World.frame (World.destroyEntitiesImmediate entities) Simulants.Game world
 
-        /// Sort the given entities.
+        /// Sort the given 2d entities.
         /// If there are a lot of entities, this may allocate in the LOH.
-        static member sortEntities entities world =
+        static member sortEntities2d entities world =
             entities |>
             Array.ofSeq |>
             Array.rev |>
@@ -478,15 +485,38 @@ module WorldEntityModule =
 
         /// Try to pick an entity at the given position.
         [<FunctionBinding>]
-        static member tryPickEntity position entities world =
-            // OPTIMIZATION: using arrays for speed
-            let entitiesSorted = World.sortEntities entities world
+        static member tryPickEntity2d position entities world =
+            let entitiesSorted = World.sortEntities2d entities world
             Array.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.mouseToWorld2d (entity.GetAbsolute world) position world
                     let picked = Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).Box2
                     picked)
                 entitiesSorted
+
+        /// Try to pick a 3d entity with the given ray.
+        [<FunctionBinding>]
+        static member tryPickEntity3d position entities world =
+            let intersectionses =
+                Seq.map
+                    (fun (entity : Entity) ->
+                        let positionWorld = World.mouseToWorld3d (entity.GetAbsolute world) position world
+                        let rayWorld = Ray (positionWorld, Vector3.Transform (v3Back, World.getEyeRotation3d world))
+                        Log.info ("Ray World:" + scstring rayWorld) // TODO: 3D: don't forget to remove this!
+                        let intersectionOpt = rayWorld.Intersects (entity.GetBounds world)
+                        if intersectionOpt.HasValue then
+                            let intersection = intersectionOpt.Value
+                            if intersection >= 0.0f then
+                                let affineMatrix = entity.GetAffineMatrix world
+                                let (_, affineMatrixInv) = Matrix4x4.Invert affineMatrix
+                                let rayEntity = Ray (Vector3.Transform (rayWorld.Position, affineMatrixInv), Vector3.Transform (rayWorld.Direction, affineMatrix))
+                                let intersections = entity.RayCast rayEntity world
+                                Array.map (flip Pair.make entity) intersections
+                            else [||]
+                        else [||])
+                    entities
+            let intersections = intersectionses |> Seq.concat |> Seq.toArray
+            Array.sortBy snd intersections
 
         /// Try to find the entity in the given entity's group with the closest previous order.
         static member tryFindPreviousEntity (entity : Entity) world =

@@ -32,7 +32,7 @@ module WorldBindings =
         "destroyBodies createJoint createJoints destroyJoint " +
         "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
         "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
-        "applyBodyForce isMouseButtonDown getMousePosition2d isKeyboardKeyDown " +
+        "applyBodyForce isMouseButtonDown getMousePosition isKeyboardKeyDown " +
         "expandContent destroyImmediate destroy tryGetParent " +
         "getParent getChildren getExists isSelected " +
         "ignorePropertyBindings getEntities0 getGroups0 writeGameToFile " +
@@ -40,7 +40,7 @@ module WorldBindings =
         "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
         "getGroups createGroup destroyGroup destroyGroups " +
         "writeGroupToFile readGroupFromFile getEntitiesFlattened getEntities " +
-        "getEntitiesSovereign destroyEntity destroyEntities tryPickEntity " +
+        "getEntitiesSovereign destroyEntity destroyEntities tryPickEntity2d " +
         "writeEntityToFile readEntityFromFile createEntity renameEntity " +
         "trySetEntityOverlayNameOpt trySetEntityFacetNames getEyePosition2d setEyePosition2d " +
         "getEyeSize2d setEyeSize2d getEyeBounds2d getEyePosition3d " +
@@ -1131,15 +1131,15 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isMouseButtonDown' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getMousePosition2d world =
+    let getMousePosition world =
         let oldWorld = world
         try
-            let result = World.getMousePosition2d world
+            let result = World.getMousePosition world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition2d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let isKeyboardKeyDown key world =
@@ -1818,7 +1818,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntities' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let tryPickEntity position entities world =
+    let tryPickEntity2d position entities world =
         let oldWorld = world
         try
             let position =
@@ -1842,12 +1842,12 @@ module WorldBindings =
                         simulants
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Expecting a list of relations."
-            let result = World.tryPickEntity position entities world
+            let result = World.tryPickEntity2d position entities world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Entity>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let writeEntityToFile filePath enity world =
@@ -3415,12 +3415,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetMousePosition2dBinding fnName exprs originOpt world =
+    let evalGetMousePositionBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getMousePosition2d world
+            | [||] -> getMousePosition world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3778,12 +3778,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalTryPickEntityBinding fnName exprs originOpt world =
+    let evalTryPickEntity2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|position; entities|] -> tryPickEntity position entities world
+            | [|position; entities|] -> tryPickEntity2d position entities world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4562,7 +4562,7 @@ module WorldBindings =
              ("applyBodyAngularImpulse", { Fn = evalApplyBodyAngularImpulseBinding; Pars = [|"angularImpulse"; "physicsId"|]; DocOpt = None })
              ("applyBodyForce", { Fn = evalApplyBodyForceBinding; Pars = [|"force"; "physicsId"|]; DocOpt = None })
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
-             ("getMousePosition2d", { Fn = evalGetMousePosition2dBinding; Pars = [||]; DocOpt = None })
+             ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
              ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "content"; "origin"; "owner"; "parent"|]; DocOpt = None })
              ("destroyImmediate", { Fn = evalDestroyImmediateBinding; Pars = [|"simulant"|]; DocOpt = None })
@@ -4595,7 +4595,7 @@ module WorldBindings =
              ("getEntitiesSovereign", { Fn = evalGetEntitiesSovereignBinding; Pars = [|"group"|]; DocOpt = None })
              ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
-             ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
+             ("tryPickEntity2d", { Fn = evalTryPickEntity2dBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })

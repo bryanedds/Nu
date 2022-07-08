@@ -365,14 +365,14 @@ module PhysicallyBased =
 
             // fake buffers
             else
-                
+
                 // compute vertices
                 let vertices = Array.zeroCreate (vertexData.Length / 3)
                 for i in 0 .. dec vertices.Length do
                     let j = i * 3
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
                     vertices.[i] <- vertex
-                
+
                 // fin
                 (vertices, 0u, 0u, 0u, 0u, 0u, 0u)
 
