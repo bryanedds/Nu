@@ -28,10 +28,11 @@ type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
       Entry : 'e }
     member this.Static with get () = this.Flags &&& StaticMask <> 0u
     member this.Light with get () = this.Flags &&& LightMask <> 0u
-    member this.Enclosed with get () = this.Presence.ISEnclosed
-    member this.Unenclosed with get () = this.Presence.ISUnenclosed
-    member this.Afatecs with get () = this.Presence.ISAfatecs
-    member this.Omnipresent with get () = this.Presence.ISOmnipresent
+    member this.Enclosed with get () = this.Presence.EnclosedType
+    member this.Unenclosed with get () = this.Presence.UnenclosedType
+    member this.Prominent with get () = this.Presence.ProminentType
+    member this.Omnipresent with get () = this.Presence.OmnipresentType
+    member this.Uncullable with get () = this.Presence.Uncullable
     override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
     static member make static_ light presence (entry : 'e) =
@@ -194,51 +195,51 @@ module Octree =
 
     /// Provides an enumerator interface to the octree queries.
     /// TODO: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
-    type internal OctreeEnumerator<'e when 'e : equality> (omnipresentElements : 'e Octelement seq, localElements : 'e Octelement seq) =
+    type internal OctreeEnumerator<'e when 'e : equality> (uncullable : 'e Octelement seq, cullable : 'e Octelement seq) =
 
-        let omnipresentArray = SegmentedArray.ofSeq omnipresentElements // eagerly convert to segmented array to keep iteration valid
-        let localArray = SegmentedArray.ofSeq localElements // eagerly convert to segmented array to keep iteration valid
-        let mutable localEnrValid = false
-        let mutable omnipresentEnrValid = false
-        let mutable localEnr = Unchecked.defaultof<_>
-        let mutable omnipresentEnr = Unchecked.defaultof<_>
+        let uncullableArray = SegmentedArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
+        let cullableArray = SegmentedArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
+        let mutable cullableEnrValid = false
+        let mutable uncullableEnrValid = false
+        let mutable cullableEnr = Unchecked.defaultof<_>
+        let mutable uncullableEnr = Unchecked.defaultof<_>
 
         interface Octelement<'e> IEnumerator with
             member this.MoveNext () =
-                if not localEnrValid then
-                    localEnr <- localArray.GetEnumerator ()
-                    localEnrValid <- true
-                    if not (localEnr.MoveNext ()) then
-                        omnipresentEnr <- omnipresentArray.GetEnumerator ()
-                        omnipresentEnrValid <- true
-                        omnipresentEnr.MoveNext ()
+                if not cullableEnrValid then
+                    cullableEnr <- cullableArray.GetEnumerator ()
+                    cullableEnrValid <- true
+                    if not (cullableEnr.MoveNext ()) then
+                        uncullableEnr <- uncullableArray.GetEnumerator ()
+                        uncullableEnrValid <- true
+                        uncullableEnr.MoveNext ()
                     else true
                 else
-                    if not (localEnr.MoveNext ()) then
-                        if not omnipresentEnrValid then
-                            omnipresentEnr <- omnipresentArray.GetEnumerator ()
-                            omnipresentEnrValid <- true
-                            omnipresentEnr.MoveNext ()
-                        else omnipresentEnr.MoveNext ()
+                    if not (cullableEnr.MoveNext ()) then
+                        if not uncullableEnrValid then
+                            uncullableEnr <- uncullableArray.GetEnumerator ()
+                            uncullableEnrValid <- true
+                            uncullableEnr.MoveNext ()
+                        else uncullableEnr.MoveNext ()
                     else true
 
             member this.Current =
-                if omnipresentEnrValid then omnipresentEnr.Current
-                elif localEnrValid then localEnr.Current
+                if uncullableEnrValid then uncullableEnr.Current
+                elif cullableEnrValid then cullableEnr.Current
                 else failwithumf ()
 
             member this.Current =
                 (this :> 'e Octelement IEnumerator).Current :> obj
 
             member this.Reset () =
-                localEnrValid <- false
-                omnipresentEnrValid <- false
-                localEnr <- Unchecked.defaultof<_>
-                omnipresentEnr <- Unchecked.defaultof<_>
+                cullableEnrValid <- false
+                uncullableEnrValid <- false
+                cullableEnr <- Unchecked.defaultof<_>
+                uncullableEnr <- Unchecked.defaultof<_>
 
             member this.Dispose () =
-                localEnr <- Unchecked.defaultof<_>
-                omnipresentEnr <- Unchecked.defaultof<_>
+                cullableEnr <- Unchecked.defaultof<_>
+                uncullableEnr <- Unchecked.defaultof<_>
 
     /// Provides an enumerable interface to the octree queries.
     type internal OctreeEnumerable<'e when 'e : equality> (enr : 'e OctreeEnumerator) =
@@ -250,72 +251,72 @@ module Octree =
     type [<NoEquality; NoComparison>] Octree<'e when 'e : equality> =
         private
             { Node : 'e Octnode
-              OmnipresentElements : 'e Octelement HashSet
+              Uncullable : 'e Octelement HashSet
               Depth : int
               Granularity : int
               Bounds : Box3 }
 
     let addElement bounds element tree =
-        if element.Presence.ISOmnipresent then
-            tree.OmnipresentElements.Add element |> ignore
+        if element.Presence.Uncullable then
+            tree.Uncullable.Add element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is being added redundantly."
-                tree.OmnipresentElements.Add element |> ignore
+                tree.Uncullable.Add element |> ignore
             else Octnode.addElement bounds element tree.Node
 
     let removeElement bounds element tree =
-        if element.Presence.ISOmnipresent then 
-            tree.OmnipresentElements.Remove element |> ignore
+        if element.Presence.Uncullable then 
+            tree.Uncullable.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is not present for removal."
-                tree.OmnipresentElements.Remove element |> ignore
+                tree.Uncullable.Remove element |> ignore
             else Octnode.removeElement bounds element tree.Node
 
     let updateElement oldBounds newBounds element tree =
         removeElement oldBounds element tree
         addElement newBounds element tree
 
-    let getElementsOmnipresent (set : _ HashSet) tree =
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+    let getElementsUncullable (set : _ HashSet) tree =
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getElementsAtPoint point (set : _ HashSet) tree =
         Octnode.getElementsAtPoint point tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getElementsInBounds bounds (set : _ HashSet) tree =
         Octnode.getElementsInBox bounds tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getElementsInFrustum frustum (set : _ HashSet) tree =
         Octnode.getElementsInFrustum frustum tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getElementsInView frustumEnclosed frustumUnenclosed lightBox (set : _ HashSet) tree =
         Octnode.getElementsInView frustumEnclosed frustumUnenclosed lightBox tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getElementsInPlay playBox frustumEnclosed (set : _ HashSet) tree =
         Octnode.getElementsInPlay playBox frustumEnclosed tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =
         tree.Depth
 
     let clone tree =
         { Node = Octnode.clone tree.Node
-          OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural)
+          Uncullable = HashSet (tree.Uncullable, HashIdentity.Structural)
           Depth = tree.Depth
           Granularity = tree.Granularity
           Bounds = tree.Bounds }
 
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = Octnode.make<'e> granularity depth bounds
-          OmnipresentElements = HashSet HashIdentity.Structural
+          Uncullable = HashSet HashIdentity.Structural
           Depth = depth
           Granularity = granularity
           Bounds = bounds }
-          
+
 /// A spatial structure that organizes elements in a 3d grid.
 type Octree<'e when 'e : equality> = Octree.Octree<'e>
