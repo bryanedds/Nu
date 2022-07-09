@@ -71,6 +71,26 @@ namespace Nu
             return Position.GetHashCode() ^ Direction.GetHashCode();
         }
 
+        /// <summary>
+        /// Transform this <see cref="Ray"/> by a matrix.
+        /// </summary>
+        public Ray Transform(Matrix4x4 m)
+		{
+            var a = Vector3.Transform(Position, m);
+            var b = Vector3.Transform(Position + Direction, m);
+            return new Ray(a, Vector3.Normalize(b - a));
+		}
+
+        /// <summary>
+        /// Transform this <see cref="Ray"/> by a quaternion.
+        /// </summary>
+        public Ray Transform(Quaternion q)
+		{
+            var a = Vector3.Transform(Position, q);
+            var b = Vector3.Transform(Position + Direction, q);
+            return new Ray(a, Vector3.Normalize(b - a));
+		}
+
         // adapted from http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-box-intersection/
         /// <summary>
         /// Check if this <see cref="Ray"/> intersects the specified <see cref="BoundingBox"/>.
@@ -295,71 +315,6 @@ namespace Nu
         /// </summary>
         public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
         {
-            //const float epsilon = 0.00000001f;
-            //var faceCount = indices.Length / 3;
-            //for (var i = 0; i < faceCount; i += 3)
-			//{
-            //    Vector3 intersection;
-            //    Vector3 a = vertices[indices[i * 3]];
-            //    Vector3 b = vertices[indices[i * 3 + 1]];
-            //    Vector3 c = vertices[indices[i * 3 + 2]];
-            //    Vector3 u, v, n; // triangle vectors
-            //    Vector3 w0, w; // ray vectors
-            //    float r, j, k; // params to calc ray-plane intersect
-            //
-            //    // get triangle edge vectors and plane normal
-            //    u = b - a;
-            //    v = c - a;
-            //    n = u * v;
-            //    if (n == Vector3.Zero)
-            //        continue; // triangle is degenerate
-            //
-            //    w0 = Position - a;
-            //    j = -Vector3.Dot(n, w0);
-            //    k = Vector3.Dot(n, Direction);
-            //    if (Math.Abs(k) < epsilon)
-            //    {
-            //        // ray is  parallel to triangle plane
-            //        if (j == 0) yield return (i, float.MaxValue); // ray lies in triangle plane
-            //        continue; // ray disjoint from plane
-            //    }
-            //
-            //    // get intersect point of ray with triangle plane
-            //    r = j / k;
-            //    if (r < 0.0)
-            //    {
-            //        // ray goes away from triangle
-            //        // => no intersect
-            //        // for a segment, also test if (r > 1.0) => no intersect
-            //        continue;
-            //    }             
-            //
-            //    intersection = Position + r * Direction; // intersect point of ray and plane
-            //
-            //    // is intersection inside face?
-            //    float uu, uv, vv, wu, wv, D;
-            //    uu = Vector3.Dot(u, u);
-            //    uv = Vector3.Dot(u, v);
-            //    vv = Vector3.Dot(v, v);
-            //    w = intersection - a;
-            //    wu = Vector3.Dot(w, u);
-            //    wv = Vector3.Dot(w, v);
-            //    D = uv * uv - uu * vv;
-            //
-            //    // get and test parametric coords
-            //    float s, t;
-            //    s = (uv * wv - vv * wu) / D;
-            //    if (s < 0.0 || s > 1.0)        
-            //        continue; // intersection is outside face
-            //    t = (uv * wu - uu * wv) / D;
-            //    if (t < 0.0 || (s + t) > 1.0)
-            //        continue; // intersection is outside face
-            //
-            //    // intersection is inside face
-            //    float T = (intersection - Position).Length();
-            //    yield return (i, T);
-            //}
-
             const float epsilon = 0.000001f;
             var faceCount = indices.Length / 3;
             for (var i = 0; i < faceCount; i += 3)

@@ -506,10 +506,7 @@ module WorldEntityModule =
                         if intersectionOpt.HasValue then
                             let affineMatrix = entity.GetAffineMatrix world
                             let (_, inverse) = Matrix4x4.Invert affineMatrix
-                            let rayEntity =
-                                Ray
-                                    (Vector3.Transform (rayWorld.Position, inverse),
-                                     Vector3.Normalize (Vector3.TransformNormal (rayWorld.Direction, inverse)))
+                            let rayEntity = rayWorld.Transform inverse
                             let intersections = entity.RayCast rayEntity world
                             Array.map
                                 (fun intersection -> (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity))
