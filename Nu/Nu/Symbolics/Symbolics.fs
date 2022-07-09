@@ -71,7 +71,7 @@ module Symbolics =
         match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
         | Some assets -> Dictionary.tryFind assetTag.AssetName assets
         | None ->
-            Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+            Log.info ("Loading Symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             tryLoadSymbolPackage assetTag.PackageName metadata symbolics
             match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
             | Some assets -> Dictionary.tryFind assetTag.AssetName assets

@@ -141,7 +141,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
         | Some assets -> Dictionary.tryFind assetTag.AssetName assets
         | None ->
-            Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+            Log.info ("Loading Audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
             match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
             | Some assets -> Dictionary.tryFind assetTag.AssetName assets
