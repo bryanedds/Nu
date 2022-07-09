@@ -431,61 +431,51 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member mouseToScreen2d (mousePosition : Vector2) world =
             let gameState = World.getGameState world
-            let positionScreen =
-                v2
-                    +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize2d.X * 0.5f)
-                    -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize2d.Y * 0.5f) // negation for right-handedness
-            positionScreen
+            v2
+                +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize2d.X * 0.5f)
+                -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize2d.Y * 0.5f) // negation for right-handedness
 
         /// Transform the given mouse position to 2d world space.
         [<FunctionBinding>]
         static member mouseToWorld2d absolute mousePosition world =
-            let positionScreen = World.mouseToScreen2d mousePosition world
+            let mouseScreen = World.mouseToScreen2d mousePosition world
             let view =
                 if absolute
                 then World.getViewAbsolute2d world
                 else World.getViewRelative2d world
-            let positionWorld = (Vector3.Transform (positionScreen.V3, view)).V2
-            positionWorld
+            (Vector3.Transform (mouseScreen.V3, view)).V2
 
         /// Transform the given mouse position to 2d entity space.
         [<FunctionBinding>]
         static member mouseToEntity2d absolute entityPosition mousePosition world =
-            let mousePositionWorld = World.mouseToWorld2d absolute mousePosition world
-            entityPosition - mousePositionWorld
+            let mouseWorld = World.mouseToWorld2d absolute mousePosition world
+            entityPosition - mouseWorld
 
         /// Transform the given mouse position to 3d screen space.
         [<FunctionBinding>]
         static member mouseToScreen3d (mousePosition : Vector2) (_ : World) =
-            let positionScreen =
-                v2
-                    +(mousePosition.X / single Constants.Render.VirtualScalar)
-                    -(mousePosition.Y / single Constants.Render.VirtualScalar) // negation for right-handedness
-            positionScreen
+            v2
+                (mousePosition.X / single Constants.Render.ResolutionX)
+                (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
 
         /// Transform the given mouse position to 3d world space.
         [<FunctionBinding>]
         static member mouseToWorld3d absolute (mousePosition : Vector2) world =
-            let mouseNormalized =
-                v2
-                    (mousePosition.X / single Constants.Render.ResolutionX)
-                    (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
-            let mouseNdc = mouseNormalized * 2.0f - v2One
+            let mouseScreen = World.mouseToScreen3d mousePosition world
+            let mouseClip = mouseScreen * 2.0f - v2One
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
             let projection = GlRenderer3d.computeProjection Omnipresent
             let (_, inverse) = Matrix4x4.Invert (view * projection)
-            let near = v4 mouseNdc.X mouseNdc.Y -1.0f 1.0f
+            let near = v4 mouseClip.X mouseClip.Y 0.0f 1.0f
             let near = Vector4.Transform (near, inverse)
             let near = near.V3 / near.W
-            let far = v4 mouseNdc.X mouseNdc.Y 1.0f 1.0f
+            let far = v4 mouseClip.X mouseClip.Y 1.0f 1.0f
             let far = Vector4.Transform (far, inverse)
             let far = far.V3 / far.W
-            let ray = Ray (near, Vector3.Normalize (far - near))
-            Log.info ("Position World:" + scstring ray) // TODO: 3D: don't forget to remove this!
-            ray
+            Ray (near, Vector3.Normalize (far - near))
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =

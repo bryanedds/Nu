@@ -295,99 +295,99 @@ namespace Nu
         /// </summary>
         public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
         {
-            const float epsilon = 0.00000001f;
-            var faceCount = indices.Length / 3;
-            for (var i = 0; i < faceCount; i += 3)
-			{
-                Vector3 intersection;
-                Vector3 a = vertices[indices[i * 3]];
-                Vector3 b = vertices[indices[i * 3 + 1]];
-                Vector3 c = vertices[indices[i * 3 + 2]];
-                Vector3 u, v, n; // triangle vectors
-                Vector3 w0, w; // ray vectors
-                float r, j, k; // params to calc ray-plane intersect
-
-                // get triangle edge vectors and plane normal
-                u = b - a;
-                v = c - a;
-                n = u * v;
-                if (n == Vector3.Zero)
-                    continue; // triangle is degenerate
-
-                w0 = Position - a;
-                j = -Vector3.Dot(n, w0);
-                k = Vector3.Dot(n, Direction);
-                if (Math.Abs(k) < epsilon)
-                {
-                    // ray is  parallel to triangle plane
-                    if (j == 0) yield return (i, float.MaxValue); // ray lies in triangle plane
-                    continue; // ray disjoint from plane
-                }
-
-                // get intersect point of ray with triangle plane
-                r = j / k;
-                if (r < 0.0)
-                {
-                    // ray goes away from triangle
-                    // => no intersect
-                    // for a segment, also test if (r > 1.0) => no intersect
-                    continue;
-                }             
-
-                intersection = Position + r * Direction; // intersect point of ray and plane
-
-                // is intersection inside face?
-                float uu, uv, vv, wu, wv, D;
-                uu = Vector3.Dot(u, u);
-                uv = Vector3.Dot(u, v);
-                vv = Vector3.Dot(v, v);
-                w = intersection - a;
-                wu = Vector3.Dot(w, u);
-                wv = Vector3.Dot(w, v);
-                D = uv * uv - uu * vv;
-
-                // get and test parametric coords
-                float s, t;
-                s = (uv * wv - vv * wu) / D;
-                if (s < 0.0 || s > 1.0)        
-                    continue; // intersection is outside face
-                t = (uv * wu - uu * wv) / D;
-                if (t < 0.0 || (s + t) > 1.0)
-                    continue; // intersection is outside face
-
-                // intersection is inside face
-                float T = (intersection - Position).Length();
-                yield return (i, T);
-            }
-
-            //const float epsilon = 0.000001f;
+            //const float epsilon = 0.00000001f;
             //var faceCount = indices.Length / 3;
             //for (var i = 0; i < faceCount; i += 3)
-            //{
-            //    var a = vertices[indices[i * 3]];
-            //    var b = vertices[indices[i * 3 + 1]];
-            //    var c = vertices[indices[i * 3 + 2]];
-            //    var edgeA = b - a;
-            //    var edgeB = c - a;
-            //    var p = Vector3.Cross(Direction, edgeB);
-            //    var det = Vector3.Dot(edgeA, p);
-            //    if (det <= -epsilon || det >= epsilon)
+			//{
+            //    Vector3 intersection;
+            //    Vector3 a = vertices[indices[i * 3]];
+            //    Vector3 b = vertices[indices[i * 3 + 1]];
+            //    Vector3 c = vertices[indices[i * 3 + 2]];
+            //    Vector3 u, v, n; // triangle vectors
+            //    Vector3 w0, w; // ray vectors
+            //    float r, j, k; // params to calc ray-plane intersect
+            //
+            //    // get triangle edge vectors and plane normal
+            //    u = b - a;
+            //    v = c - a;
+            //    n = u * v;
+            //    if (n == Vector3.Zero)
+            //        continue; // triangle is degenerate
+            //
+            //    w0 = Position - a;
+            //    j = -Vector3.Dot(n, w0);
+            //    k = Vector3.Dot(n, Direction);
+            //    if (Math.Abs(k) < epsilon)
             //    {
-            //        var detInv = 1.0f / det;
-            //        var tvec = Position - a;
-            //        var u = Vector3.Dot(tvec, p) * detInv;
-            //        if (u >= 0f && u <= 1f)
-            //        {
-            //            var qvec = Vector3.Cross(tvec, edgeA);
-            //            var v = Vector3.Dot(Direction, qvec) * detInv;
-            //            if (v >= 0 && u + v <= 1f)
-            //            {
-            //                var t = Vector3.Dot(c, qvec) * detInv;
-            //                yield return (i, t);
-            //            }
-            //        }
+            //        // ray is  parallel to triangle plane
+            //        if (j == 0) yield return (i, float.MaxValue); // ray lies in triangle plane
+            //        continue; // ray disjoint from plane
             //    }
+            //
+            //    // get intersect point of ray with triangle plane
+            //    r = j / k;
+            //    if (r < 0.0)
+            //    {
+            //        // ray goes away from triangle
+            //        // => no intersect
+            //        // for a segment, also test if (r > 1.0) => no intersect
+            //        continue;
+            //    }             
+            //
+            //    intersection = Position + r * Direction; // intersect point of ray and plane
+            //
+            //    // is intersection inside face?
+            //    float uu, uv, vv, wu, wv, D;
+            //    uu = Vector3.Dot(u, u);
+            //    uv = Vector3.Dot(u, v);
+            //    vv = Vector3.Dot(v, v);
+            //    w = intersection - a;
+            //    wu = Vector3.Dot(w, u);
+            //    wv = Vector3.Dot(w, v);
+            //    D = uv * uv - uu * vv;
+            //
+            //    // get and test parametric coords
+            //    float s, t;
+            //    s = (uv * wv - vv * wu) / D;
+            //    if (s < 0.0 || s > 1.0)        
+            //        continue; // intersection is outside face
+            //    t = (uv * wu - uu * wv) / D;
+            //    if (t < 0.0 || (s + t) > 1.0)
+            //        continue; // intersection is outside face
+            //
+            //    // intersection is inside face
+            //    float T = (intersection - Position).Length();
+            //    yield return (i, T);
             //}
+
+            const float epsilon = 0.000001f;
+            var faceCount = indices.Length / 3;
+            for (var i = 0; i < faceCount; i += 3)
+            {
+                var a = vertices[indices[i * 3]];
+                var b = vertices[indices[i * 3 + 1]];
+                var c = vertices[indices[i * 3 + 2]];
+                var edgeA = b - a;
+                var edgeB = c - a;
+                var p = Vector3.Cross(Direction, edgeB);
+                var det = Vector3.Dot(edgeA, p);
+                if (det <= -epsilon || det >= epsilon)
+                {
+                    var detInv = 1.0f / det;
+                    var tvec = Position - a;
+                    var u = Vector3.Dot(tvec, p) * detInv;
+                    if (u >= 0f && u <= 1f)
+                    {
+                        var qvec = Vector3.Cross(tvec, edgeA);
+                        var v = Vector3.Dot(Direction, qvec) * detInv;
+                        if (v >= 0 && u + v <= 1f)
+                        {
+                            var t = Vector3.Dot(c, qvec) * detInv;
+                            yield return (i, t);
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
