@@ -1449,12 +1449,10 @@ module StaticModelSurfaceFacetModule =
                 let surfaceIndex = entity.GetSurfaceIndex world
                 let surface = staticModel.PhysicallyBasedSurfaces.[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
-                let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
-                let raySurface = ray.Transform inverse
                 let mutable bounds = geometry.Bounds
-                let boundsIntersectionOpt = raySurface.Intersects bounds
+                let boundsIntersectionOpt = ray.Intersects bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = raySurface.GetIntersections (geometry.Indices, geometry.Vertices)
+                    let intersections = ray.GetIntersections (geometry.Indices, geometry.Vertices)
                     intersections |> Seq.map snd' |> Seq.toArray
                 else [||]
             | None -> [||]
