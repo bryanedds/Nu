@@ -1382,10 +1382,7 @@ module StaticModelFacetModule =
                     Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                         let geometry = surface.PhysicallyBasedGeometry
                         let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
-                        let raySurface =
-                            Ray
-                                (Vector3.Transform (ray.Position, inverse),
-                                 Vector3.Normalize (Vector3.TransformNormal (ray.Direction, surface.SurfaceMatrix)))
+                        let raySurface = ray.Transform inverse
                         let mutable bounds = geometry.Bounds
                         let boundsIntersectionOpt = raySurface.Intersects bounds
                         if boundsIntersectionOpt.HasValue then
@@ -1453,10 +1450,7 @@ module StaticModelSurfaceFacetModule =
                 let surface = staticModel.PhysicallyBasedSurfaces.[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
-                let raySurface =
-                    Ray
-                        (Vector3.Transform (ray.Position, inverse),
-                         Vector3.Normalize (Vector3.TransformNormal (ray.Direction, inverse)))
+                let raySurface = ray.Transform inverse
                 let mutable bounds = geometry.Bounds
                 let boundsIntersectionOpt = raySurface.Intersects bounds
                 if boundsIntersectionOpt.HasValue then
