@@ -705,5 +705,31 @@ namespace Nu
         {
             return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
         }
+
+        /// <summary>
+        /// Unproject from the given frame.
+        /// </summary>
+        public static Vector3 Unproject(Box2i viewportOffset, float minDepth, float maxDepth, Vector3 source, Matrix4x4 frame)
+        {
+            Matrix4x4.Invert(frame, out Matrix4x4 matrix);
+		    source.X = (source.X - viewportOffset.Position.X) / viewportOffset.Size.X * 2f - 1f;
+		    source.Y = -((source.Y - viewportOffset.Position.Y) / viewportOffset.Size.Y * 2f - 1f);
+		    source.Z = (source.Z - minDepth) / (maxDepth - minDepth);
+		    Vector3 vector = Vector3.Transform(source, matrix);
+		    float a = source.X * matrix.M14 + source.Y * matrix.M24 + source.Z * matrix.M34 + matrix.M44;
+		    if (!WithinEpsilon(a, 1f))
+		    {
+		        vector.X /= a;
+		        vector.Y /= a;
+		        vector.Z /= a;
+		    }
+		    return vector;
+        }
+
+        private static bool WithinEpsilon(float a, float b)
+        {
+            float num = a - b;
+            return ((-1.401298E-45f <= num) && (num <= float.Epsilon));
+        }
     }
 }

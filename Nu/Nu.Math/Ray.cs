@@ -315,34 +315,82 @@ namespace Nu
         /// </summary>
         public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
         {
-            const float epsilon = 0.000001f;
             var faceCount = indices.Length / 3;
             for (var i = 0; i < faceCount; i += 3)
             {
-                var a = vertices[indices[i * 3]];
-                var b = vertices[indices[i * 3 + 1]];
-                var c = vertices[indices[i * 3 + 2]];
-                var edgeA = b - a;
-                var edgeB = c - a;
-                var p = Vector3.Cross(Direction, edgeB);
-                var det = Vector3.Dot(edgeA, p);
-                if (det <= -epsilon || det >= epsilon)
-                {
-                    var detInv = 1.0f / det;
-                    var tvec = Position - a;
-                    var u = Vector3.Dot(tvec, p) * detInv;
-                    if (u >= 0f && u <= 1f)
-                    {
-                        var qvec = Vector3.Cross(tvec, edgeA);
-                        var v = Vector3.Dot(Direction, qvec) * detInv;
-                        if (v >= 0 && u + v <= 1f)
-                        {
-                            var t = Vector3.Dot(c, qvec) * detInv;
-                            yield return (i, t);
-                        }
-                    }
-                }
+                // Retrieve vertex.
+                Vector3 a = vertices[indices[i * 3]];
+                Vector3 b = vertices[indices[i * 3 + 1]];
+                Vector3 c = vertices[indices[i * 3 + 2]];
+                
+                // Compute vectors along two edges of the triangle.
+                Vector3 edge1 = b - a;
+                Vector3 edge2 = c - a;
+
+                // Compute the determinant.
+                Vector3 directionCrossEdge2 = Vector3.Cross(Direction, edge2);
+                float determinant = Vector3.Dot(edge1, directionCrossEdge2);
+
+                // If the ray is parallel to the triangle plane, there is no collision.
+                if (determinant > -float.Epsilon && determinant < float.Epsilon)
+                    continue;
+
+                // Calculate the U parameter of the intersection point.
+                float inverseDeterminant = 1.0f / determinant;
+                Vector3 distanceVector = Position - a;
+                float triangleU = Vector3.Dot(distanceVector, directionCrossEdge2);
+                triangleU *= inverseDeterminant;
+
+                // Make sure it is inside the triangle.
+                if (triangleU < 0 || triangleU > 1)
+                    continue;
+
+                // Calculate the V parameter of the intersection point.
+                Vector3 distanceCrossEdge1 = Vector3.Cross(distanceVector, edge1);
+                float triangleV = Vector3.Dot(Direction, distanceCrossEdge1);
+                triangleV *= inverseDeterminant;
+
+                // Make sure it is inside the triangle.
+                if (triangleV < 0 || triangleU + triangleV > 1)
+                    continue;
+
+                // Compute the distance along the ray to the triangle.
+                float rayDistance = Vector3.Dot(edge2, distanceCrossEdge1);
+                rayDistance *= inverseDeterminant;
+
+                // Is the triangle behind the ray origin?
+                if (rayDistance >= 0)
+                    yield return (i, rayDistance);
             }
+
+            //const float epsilon = 0.000001f;
+            //var faceCount = indices.Length / 3;
+            //for (var i = 0; i < faceCount; i += 3)
+            //{
+            //    var a = vertices[indices[i * 3]];
+            //    var b = vertices[indices[i * 3 + 1]];
+            //    var c = vertices[indices[i * 3 + 2]];
+            //    var edgeA = b - a;
+            //    var edgeB = c - a;
+            //    var p = Vector3.Cross(Direction, edgeB);
+            //    var det = Vector3.Dot(edgeA, p);
+            //    if (det <= -epsilon || det >= epsilon)
+            //    {
+            //        var detInv = 1.0f / det;
+            //        var tvec = Position - a;
+            //        var u = Vector3.Dot(tvec, p) * detInv;
+            //        if (u >= 0f && u <= 1f)
+            //        {
+            //            var qvec = Vector3.Cross(tvec, edgeA);
+            //            var v = Vector3.Dot(Direction, qvec) * detInv;
+            //            if (v >= 0 && u + v <= 1f)
+            //            {
+            //                var t = Vector3.Dot(c, qvec) * detInv;
+            //                yield return (i, t);
+            //            }
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>

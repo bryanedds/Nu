@@ -462,19 +462,19 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member mouseToWorld3d absolute (mousePosition : Vector2) world =
             let mouseScreen = World.mouseToScreen3d mousePosition world
-            let mouseClip = mouseScreen * 2.0f - v2One
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
                 else World.getViewRelative3d world
             let projection = GlRenderer3d.computeProjection Omnipresent
-            let (_, inverse) = Matrix4x4.Invert (view * projection)
-            let near = v4 mouseClip.X mouseClip.Y 0.0f 1.0f
-            let near = Vector4.Transform (near, inverse)
-            let near = near.V3 / near.W
-            let far = v4 mouseClip.X mouseClip.Y 1.0f 1.0f
-            let far = Vector4.Transform (far, inverse)
-            let far = far.V3 / far.W
+            let windowSize =
+                match World.tryGetWindowSize world with
+                | Some windowsSize -> windowsSize
+                | None -> Constants.Render.Resolution
+            let viewportOffset = Constants.Render.ViewportOffset windowSize
+            let viewProjection = view * projection
+            let near = MathHelper.Unproject(viewportOffset, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, mousePosition.V3.WithZ 0.0f, viewProjection)
+            let far = MathHelper.Unproject(viewportOffset, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, mousePosition.V3.WithZ 1.0f, viewProjection)
             Ray (near, Vector3.Normalize (far - near))
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.

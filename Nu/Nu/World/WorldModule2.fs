@@ -1031,6 +1031,7 @@ module WorldModule2 =
                                                         let rendererProcess = World.getRendererProcess world
                                                         if not firstFrame then rendererProcess.Swap ()
                                                         let windowSize =
+                                                            // TODO: 3D: extract this to widely available function.
                                                             match World.tryGetWindowSize world with
                                                             | Some windowsSize -> windowsSize
                                                             | None -> Constants.Render.Resolution
