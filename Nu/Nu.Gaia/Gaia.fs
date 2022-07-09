@@ -1041,8 +1041,9 @@ module Gaia =
 
     let private handleFormResetEye (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            if form.eye3d.Checked
-            then World.setEyePosition3d Constants.Render.EyePosition3dDefault world
+            if form.eye3d.Checked then
+                let world = World.setEyePosition3d Constants.Render.EyePosition3dDefault world
+                World.setEyeRotation3d quatIdentity world
             else World.setEyePosition2d v2Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
