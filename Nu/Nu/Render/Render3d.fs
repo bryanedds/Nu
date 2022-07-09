@@ -258,7 +258,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
-                Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+                Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer3d.tryLoadRender3dPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, assets) ->
