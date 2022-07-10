@@ -59,7 +59,9 @@ module internal Quadnode =
         if isIntersectingBounds bounds node then
             match node.Children with
             | ValueLeft nodes -> for node in nodes do addElement bounds element node
-            | ValueRight elements -> elements.Add element |> ignore
+            | ValueRight elements ->
+                elements.Remove element |> ignore
+                elements.Add element |> ignore
 
     let rec internal removeElement bounds element node =
         if isIntersectingBounds bounds node then
@@ -74,10 +76,11 @@ module internal Quadnode =
                 if isIntersectingBounds oldBounds node || isIntersectingBounds newBounds node then
                     updateElement oldBounds newBounds element node
         | ValueRight elements ->
-            if isIntersectingBounds oldBounds node then
-                if not (isIntersectingBounds newBounds node) then elements.Remove element |> ignore
-            elif isIntersectingBounds newBounds node then
+            if isIntersectingBounds newBounds node then
+                elements.Remove element |> ignore
                 elements.Add element |> ignore
+            elif isIntersectingBounds oldBounds node then
+                elements.Remove element |> ignore
 
     let rec internal getElementsAtPoint point node (set : 'e HashSet) =
         match node.Children with
@@ -184,10 +187,12 @@ module Quadtree =
 
     let addElement (presence : Presence) bounds element tree =
         if presence.Uncullable then
+            tree.Uncullable.Remove element |> ignore
             tree.Uncullable.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is being added redundantly."
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
             else Quadnode.addElement bounds element tree.Node
 
@@ -208,12 +213,14 @@ module Quadtree =
                 Quadnode.updateElement oldBounds newBounds element tree.Node
             else
                 Quadnode.removeElement oldBounds element tree.Node |> ignore
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
         else
             if isInNode then
                 tree.Uncullable.Remove element |> ignore
                 Quadnode.addElement newBounds element tree.Node
             else
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
 
     let getElementsUncullable set tree =
