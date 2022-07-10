@@ -287,10 +287,7 @@ module Gaia =
                         else
                             let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) mousePosition world
                             let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                            let eyeRotation = World.getEyeRotation3d world
-                            let eyeRotationRight = Vector3.Transform (v3Right, eyeRotation)
-                            let eyeRotationUp = Vector3.Transform (v3Up, eyeRotation)
-                            { editorState with DragEntityState = DragEntityPosition3d (mouseRay, entityPosition, eyeRotationRight, eyeRotationUp, entity) })
+                            { editorState with DragEntityState = DragEntityPosition3d (entityPosition, mouseRay, entity) })
                         world
                 (handled, world)
             | (None, world) -> (handled, world)
@@ -1342,7 +1339,7 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
-            | DragEntityPosition3d (mouseRayOrigin, entityPositionOrigin, eyeRotationRight, eyeRotationUp, entity) ->
+            | DragEntityPosition3d (mouseRayOrigin, entityPositionOrigin, entity) ->
                 if entity.Exists world then
 
                     // compute mouse ray
@@ -1359,8 +1356,6 @@ module Gaia =
                         if entity.MountExists world
                         then entity.SetPositionLocal entityPosition world
                         else entity.SetPosition entityPosition world
-
-                    Log.info ("MP: " + scstring mousePosition.Y + "\t MRP: " + scstring mouseRay.Position.Y + "\t EP: " + scstring entityPosition.Y)
 
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()
