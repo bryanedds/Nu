@@ -59,6 +59,7 @@
     <Compile Include="Vector3i.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="Vector4i.cs" />
+    <Compile Include="Viewport.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
