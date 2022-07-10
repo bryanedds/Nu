@@ -571,7 +571,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RoughnessTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
               AmbientOcclusionTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd }
+              NormalTexture = OpenGL.Texture.TryCreateTexture2dFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              TwoSided = false }
 
         // create render tasks
         let renderTasks =
