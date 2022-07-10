@@ -110,6 +110,7 @@ type SceneryDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (staticModel, world) = World.createEntity<CustomModelDispatcher> None NoOverlay Simulants.Default.Group world
+                let world = staticModel.SetStatic true world
                 staticModel.SetPosition position world)
                 world positions
         world
