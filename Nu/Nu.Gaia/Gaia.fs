@@ -1339,7 +1339,7 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
-            | DragEntityPosition3d (mouseRayOrigin, entityPositionOrigin, entity) ->
+            | DragEntityPosition3d (entityPositionOrigin, mouseRayOrigin, entity) ->
                 if entity.Exists world then
 
                     // compute mouse ray
