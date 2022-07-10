@@ -508,16 +508,12 @@ module WorldEntityModule =
                             let (_, inverse) = Matrix4x4.Invert affineMatrix
                             let rayEntity = rayWorld.Transform inverse
                             let intersections = entity.RayCast rayEntity world
-                            Array.map
-                                (fun intersection -> (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity))
-                                intersections
+                            Array.map (fun intersection -> (intersection, entity)) intersections
                         else [||])
                     entities
             let intersections = intersectionses |> Seq.concat |> Seq.toArray
-            let sorted = Array.sortBy Triple.fst intersections
-            match Array.tryHead sorted with
-            | Some (_, position, entity) -> Some (position, entity)
-            | None -> None
+            let sorted = Array.sortBy fst intersections
+            Array.tryHead sorted
 
         /// Try to find the entity in the given entity's group with the closest previous order.
         static member tryFindPreviousEntity (entity : Entity) world =

@@ -1696,7 +1696,8 @@ module WorldModuleEntity =
             let dispatcher = World.getEntityDispatcher entity world
             let intersectionsFacets = facets |> Array.map (fun facet -> facet.RayCast (ray, entity, world)) |> Array.concat
             let intersectionsDispatcher = dispatcher.RayCast (ray, entity, world)
-            Array.append intersectionsFacets intersectionsDispatcher
+            let intersections = Array.append intersectionsFacets intersectionsDispatcher
+            Array.sort intersections
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
