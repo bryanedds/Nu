@@ -550,7 +550,7 @@ module WorldModuleEntity =
             if World.isHalted world || not mounterState.Physical then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
-                let affineMatrix = affineMatrixWorld * affineMatrixLocal
+                let affineMatrix = affineMatrixLocal * affineMatrixWorld
                 let position = affineMatrix.Translation
                 let rotation = affineMatrix.Rotation ()
                 let scale = affineMatrix.Scale ()
@@ -726,11 +726,13 @@ module WorldModuleEntity =
             if quatNeq value entityState.Rotation then
                 if entityState.Optimized then
                     entityState.Rotation <- value
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Rotation <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -891,11 +893,13 @@ module WorldModuleEntity =
             if v3Neq value entityState.Angles then
                 if entityState.Optimized then
                     entityState.Angles <- value
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Angles <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 

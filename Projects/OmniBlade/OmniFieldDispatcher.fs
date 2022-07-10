@@ -638,7 +638,7 @@ module FieldDispatcher =
                 if  Dialog.canAdvance (flip detokenize field) dialog &&
                     not
                         (Dialog.isExhausted (flip detokenize field) dialog &&
-                            Option.isSome dialog.DialogPromptOpt)
+                         Option.isSome dialog.DialogPromptOpt)
                 then Some "Next"
                 else None
             | None ->
