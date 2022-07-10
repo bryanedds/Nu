@@ -64,7 +64,6 @@ module Render =
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
-    let (*Literal*) ViewportFull windowSize = Box2i (Vector2i.Zero, windowSize)
     let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
     let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
@@ -77,7 +76,7 @@ module Render =
     let (*Literal*) FarPlaneDistanceOmnipresent = 6400.0f // ~4 miles
     let (*Literal*) PlayBoxSize3d = Vector3 200.0f
     let (*Literal*) LightBoxSize3d = Vector3 400.0f
-    let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 2.0f, 4.0f)
+    let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let (*Literal*) WindowClearColor = Color.White // NOTE: do not change this color as the deferred2 renderer checks if normal color is equal to [1;1;1] to discard fragment.
     let [<Literal>] OpenGlVersionMajor = 4
     let [<Literal>] OpenGlVersionMinor = 1

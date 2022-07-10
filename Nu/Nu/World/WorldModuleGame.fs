@@ -445,13 +445,13 @@ module WorldModuleGame =
                 else World.getViewRelative2d world
             (Vector3.Transform (mouseScreen.V3, view)).V2
 
-        /// Transform the given mouse position to 2d entity space.
+        /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
         [<FunctionBinding>]
         static member mouseToEntity2d absolute entityPosition mousePosition world =
             let mouseWorld = World.mouseToWorld2d absolute mousePosition world
             entityPosition - mouseWorld
 
-        /// Transform the given mouse position to 3d screen space.
+        /// Transform the given mouse position to 3d screen space (normalized device coordinates).
         [<FunctionBinding>]
         static member mouseToScreen3d (mousePosition : Vector2) (_ : World) =
             v2
@@ -461,7 +461,6 @@ module WorldModuleGame =
         /// Transform the given mouse position to 3d world space.
         [<FunctionBinding>]
         static member mouseToWorld3d absolute (mousePosition : Vector2) world =
-            let mouseScreen = World.mouseToScreen3d mousePosition world
             let view =
                 if absolute
                 then World.getViewAbsolute3d world
@@ -473,8 +472,8 @@ module WorldModuleGame =
                 | None -> Constants.Render.Resolution
             let viewportOffset = Constants.Render.ViewportOffset windowSize
             let viewProjection = view * projection
-            let near = MathHelper.Unproject(viewportOffset, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, mousePosition.V3.WithZ 0.0f, viewProjection)
-            let far = MathHelper.Unproject(viewportOffset, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, mousePosition.V3.WithZ 1.0f, viewProjection)
+            let near = MathHelper.Unproject(Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, viewportOffset, mousePosition.V3.WithZ 0.0f, viewProjection)
+            let far = MathHelper.Unproject(Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, viewportOffset, mousePosition.V3.WithZ 1.0f, viewProjection)
             Ray (near, Vector3.Normalize (far - near))
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.

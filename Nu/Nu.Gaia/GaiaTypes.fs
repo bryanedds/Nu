@@ -14,19 +14,20 @@ type WorldChanger = World -> World
 type WorldChangers = WorldChanger List
 
 type DragEntityState =
-    | DragEntityPosition of Vector2 * Vector2 * Entity
-    | DragEntityRotation of Vector2 * Vector2 * Entity
-    | DragEntityNone
+    | DragEntityPosition2d of Vector2 * Vector2 * Entity
+    | DragEntityRotation2d of Vector2 * Vector2 * Entity
+    | DragEntityPosition3d of mouseRayOrigin : Ray * entityPositionOrigin : Vector3 * eyeRotationRight : Vector3 * eyeRotationUp : Vector3 * Entity
+    | DragEntityInactive
 
-type DragCameraState =
-    | DragCameraPosition of Vector2 * Vector2
-    | DragCameraNone
+type DragEyeState =
+    | DragEyePosition2d of Vector2 * Vector2
+    | DragEyeInactive
 
 type EditorState =
     { TargetDir : string
       RightClickPosition : Vector2
       DragEntityState : DragEntityState
-      DragCameraState : DragCameraState
+      DragEyeState : DragEyeState
       SelectedGroup : Group
       FilePaths : Map<Group Address, string>
       RefreshHierarchyViewRequested : bool } // HACK: make sure hierarchy view isn't updated more than once per frame.
