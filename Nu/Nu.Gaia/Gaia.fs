@@ -208,31 +208,21 @@ module Gaia =
         World.isAdvancing world &&
         not form.editWhileInteractiveCheckBox.Checked
 
-    let private tryMousePickInner (form : GaiaForm) mousePosition world =
+    let private tryMousePick mousePosition (form : GaiaForm) world =
         let (entities2d, world) = getPickableEntities2d world
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
         match pickedOpt with
         | Some entity ->
             selectEntity entity form world
-            (Some entity, world)
+            (Some (0.0f, entity), world)
         | None ->
             let (entities3d, world) = getPickableEntities3d world
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d world
             match pickedOpt with
-            | Some (_, entity) ->
+            | Some (intersection, entity) ->
                 selectEntity entity form world
-                (Some entity, world)
+                (Some (intersection, entity), world)
             | None -> (None, world)
-
-    let private tryMousePick mousePosition (form : GaiaForm) world =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            let entity = entityTds.DescribedEntity
-            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
-            if Math.isPointInBounds2d mousePositionWorld (entity.GetPerimeterOriented world).Box2
-            then (Some entity, world)
-            else tryMousePickInner form mousePosition world
-        | _ -> tryMousePickInner form mousePosition world
 
     let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
         Globals.World <- world // handle re-entry
@@ -276,7 +266,7 @@ module Gaia =
             let handled = if World.isAdvancing world then Cascade else Resolve
             let mousePosition = World.getMousePosition world
             match tryMousePick mousePosition form world with
-            | (Some entity, world) ->
+            | (Some (_, entity), world) ->
                 Globals.pushPastWorld world
                 let world =
                     updateEditorState (fun editorState ->
