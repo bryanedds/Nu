@@ -35,17 +35,17 @@ type SceneryDispatcher () =
     override this.Command (_, command, _, world) =
         match command with
         | Update ->
-            let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.1f
+            let moveSpeed = if KeyboardState.isCtrlDown () then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
             let turnSpeed = if KeyboardState.isCtrlDown () then 0.1f elif KeyboardState.isShiftDown () then 0.025f else 0.05f
             let position = World.getEyePosition3d world
             let rotation = World.getEyeRotation3d world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.W
-                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.S
-                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.A
@@ -57,11 +57,11 @@ type SceneryDispatcher () =
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Up
-                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Down
-                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Left
