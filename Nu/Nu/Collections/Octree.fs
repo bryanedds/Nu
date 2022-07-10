@@ -18,9 +18,6 @@ module OctelementMasks =
 open OctelementMasks
 
 /// An element in an octree.
-/// Flags contains the following:
-/// Static will elide Updates.
-/// Enclosed will discriminate on occluders for both Update and Actualize.
 type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> = 
     { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
       Flags : uint
@@ -64,7 +61,9 @@ module internal Octnode =
         if isIntersectingBox bounds node then
             match node.Children with
             | ValueLeft nodes -> for node in nodes do addElement bounds element node
-            | ValueRight elements -> elements.Add element |> ignore
+            | ValueRight elements ->
+                elements.Remove element |> ignore
+                elements.Add element |> ignore
 
     let rec internal removeElement bounds element node =
         if isIntersectingBox bounds node then
@@ -79,10 +78,11 @@ module internal Octnode =
                 if isIntersectingBox oldBounds node || isIntersectingBox newBounds node then
                     updateElement oldBounds newBounds element node
         | ValueRight elements ->
-            if isIntersectingBox oldBounds node then
-                if not (isIntersectingBox newBounds node) then elements.Remove element |> ignore
-            elif isIntersectingBox newBounds node then
+            if isIntersectingBox newBounds node then
+                elements.Remove element |> ignore
                 elements.Add element |> ignore
+            elif isIntersectingBox oldBounds node then
+                elements.Remove element |> ignore
 
     let rec internal getElementsAtPoint point node (set : 'e Octelement HashSet) =
         match node.Children with
@@ -146,17 +146,17 @@ module internal Octnode =
                     if element.Light then
                         set.Add element |> ignore
 
-    let rec internal getElementsInPlay playBox frustumEnclosed node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlay playBox playFrustum node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingBox playBox node then
                     getElementsInBoxFiltered true playBox node set
-                if isIntersectingFrustum frustumEnclosed node then
-                    getElementsInFrustumFiltered true true frustumEnclosed node set
+                if isIntersectingFrustum playFrustum node then
+                    getElementsInFrustumFiltered true true playFrustum node set
         | ValueRight elements ->
             if  isIntersectingBox playBox node ||
-                isIntersectingFrustum frustumEnclosed node then
+                isIntersectingFrustum playFrustum node then
                 for element in elements do
                     if not element.Static then
                         set.Add element |> ignore
@@ -260,10 +260,12 @@ module Octree =
 
     let addElement bounds element tree =
         if element.Presence.Uncullable then
+            tree.Uncullable.Remove element |> ignore
             tree.Uncullable.Add element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is being added redundantly."
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
             else Octnode.addElement bounds element tree.Node
 
@@ -284,12 +286,14 @@ module Octree =
                 Octnode.updateElement oldBounds newBounds element tree.Node
             else
                 Octnode.removeElement oldBounds element tree.Node |> ignore
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
         else
             if isInNode then
                 tree.Uncullable.Remove element |> ignore
                 Octnode.addElement newBounds element tree.Node
             else
+                tree.Uncullable.Remove element |> ignore
                 tree.Uncullable.Add element |> ignore
 
     let getElementsUncullable (set : _ HashSet) tree =
@@ -311,8 +315,8 @@ module Octree =
         Octnode.getElementsInView frustumEnclosed frustumUnenclosed lightBox tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
-    let getElementsInPlay playBox frustumEnclosed (set : _ HashSet) tree =
-        Octnode.getElementsInPlay playBox frustumEnclosed tree.Node set
+    let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
+        Octnode.getElementsInPlay playBox playFrustum tree.Node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =
