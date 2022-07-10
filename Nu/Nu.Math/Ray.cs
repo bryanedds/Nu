@@ -91,6 +91,18 @@ namespace Nu
             return new Ray(a, Vector3.Normalize(b - a));
 		}
 
+        /// <summary>
+        /// Project a point onto the ray.
+        /// </summary>
+        public Vector3 Project(Vector3 p)
+		{
+            var a = Position;
+            var b = Position + Direction;
+            var c = p - a;
+            var d = b - a;
+            return a + Vector3.Dot(c, d) / Vector3.Dot(d, d) * d;
+        }
+
         // adapted from http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-box-intersection/
         /// <summary>
         /// Check if this <see cref="Ray"/> intersects the specified <see cref="BoundingBox"/>.
