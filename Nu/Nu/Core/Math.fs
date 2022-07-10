@@ -1101,6 +1101,10 @@ module Plane =
             let bm = b.Magnitude
             Vector3.Cross(b, (Vector3.Cross(a, b) / bm) / bm)
 
+        /// Attempt to find the intersection of the given ray with the plane.
+        member this.Intersection (ray : Ray) =
+            ray.Intersection this
+
 /// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
     { RayBegin : Vector2

@@ -103,7 +103,6 @@ namespace Nu
             return a + Vector3.Dot(c, d) / Vector3.Dot(d, d) * d;
         }
 
-        // adapted from http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-box-intersection/
         /// <summary>
         /// Check if this <see cref="Ray"/> intersects the specified <see cref="BoundingBox"/>.
         /// </summary>
@@ -323,9 +322,24 @@ namespace Nu
         }
 
         /// <summary>
+        /// Attempt to find the intersection of the <see cref="Ray"/> with a <see cref="Plane"/>.
+        /// </summary>
+        public Vector3? Intersection(Plane plane)
+        {
+            const float epsilon = 1e-6f;
+            float denom = Vector3.Dot(plane.Normal, plane.Normal);
+            // Prevent divide by zero.
+            // NOTE: If you want to ensure the ray reflects off only the "top" half of the plane, use this instead -
+            // if (-denom <= 0.000001f) return null;
+            if (Math.Abs(denom) <= epsilon) return null;
+            float t = -(Vector3.Dot(plane.Normal, Position) + plane.D) / Vector3.Dot(plane.Normal, plane.Normal);
+            return t < 0 ? (Vector3?)null : Position + t * plane.Normal;
+        }
+
+        /// <summary>
         /// Get all of the ray intersections of a triangle.
         /// </summary>
-        public IEnumerable<(int, float)> GetIntersections(int[] indices, Vector3[] vertices)
+        public IEnumerable<(int, float)> Intersections(int[] indices, Vector3[] vertices)
         {
             var faceCount = indices.Length / 3;
             for (var i = 0; i < faceCount; ++i)
@@ -374,35 +388,6 @@ namespace Nu
                 if (rayDistance >= 0)
                     yield return (i, rayDistance);
             }
-
-            //const float epsilon = 0.000001f;
-            //var faceCount = indices.Length / 3;
-            //for (var i = 0; i < faceCount; i += 3)
-            //{
-            //    var a = vertices[indices[i * 3]];
-            //    var b = vertices[indices[i * 3 + 1]];
-            //    var c = vertices[indices[i * 3 + 2]];
-            //    var edgeA = b - a;
-            //    var edgeB = c - a;
-            //    var p = Vector3.Cross(Direction, edgeB);
-            //    var det = Vector3.Dot(edgeA, p);
-            //    if (det <= -epsilon || det >= epsilon)
-            //    {
-            //        var detInv = 1.0f / det;
-            //        var tvec = Position - a;
-            //        var u = Vector3.Dot(tvec, p) * detInv;
-            //        if (u >= 0f && u <= 1f)
-            //        {
-            //            var qvec = Vector3.Cross(tvec, edgeA);
-            //            var v = Vector3.Dot(Direction, qvec) * detInv;
-            //            if (v >= 0 && u + v <= 1f)
-            //            {
-            //                var t = Vector3.Dot(c, qvec) * detInv;
-            //                yield return (i, t);
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         /// <summary>
@@ -410,7 +395,7 @@ namespace Nu
         /// </summary>
         public bool Intersects(int[] indices, Vector3[] vertices, out float? result)
 		{
-            var enr = GetIntersections(indices, vertices).GetEnumerator();
+            var enr = Intersections(indices, vertices).GetEnumerator();
             if (enr.MoveNext())
             {
                 var (_, t) = enr.Current;
