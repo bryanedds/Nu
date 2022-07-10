@@ -508,11 +508,8 @@ module WorldEntityModule =
                             let (_, inverse) = Matrix4x4.Invert affineMatrix
                             let rayEntity = rayWorld.Transform inverse
                             let intersections = entity.RayCast rayEntity world
-                            Array.choose
-                                (fun intersection ->
-                                    if intersection >= 0.0f
-                                    then Some (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity)
-                                    else None)
+                            Array.map
+                                (fun intersection -> (intersection, rayWorld.Position + rayWorld.Direction * intersection, entity))
                                 intersections
                         else [||])
                     entities

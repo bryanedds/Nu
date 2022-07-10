@@ -330,7 +330,7 @@ namespace Nu
             var t =
                 -(d + Position.Z * plane.Normal.Z + Position.Y * plane.Normal.Y + Position.X * plane.Normal.X) /
                 +(Direction.Z * plane.Normal.Z + Direction.Y * plane.Normal.Y + Direction.X * plane.Normal.X);
-            return t < 0 ? (Vector3?)null : Position + t * Direction;
+            return Position + t * Direction;
         }
 
         /// <summary>
