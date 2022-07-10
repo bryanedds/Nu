@@ -22,7 +22,8 @@ module PhysicallyBased =
           RoughnessTexture : uint
           AmbientOcclusion : single
           AmbientOcclusionTexture : uint
-          NormalTexture : uint }
+          NormalTexture : uint
+          TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedGeometry =
@@ -54,6 +55,7 @@ module PhysicallyBased =
             int surface.PhysicallyBasedMaterial.RoughnessTexture ^^^
             int surface.PhysicallyBasedMaterial.AmbientOcclusionTexture ^^^
             int surface.PhysicallyBasedMaterial.NormalTexture ^^^
+            hash surface.PhysicallyBasedMaterial.TwoSided ^^^
             int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
             int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
@@ -75,6 +77,7 @@ module PhysicallyBased =
             left.PhysicallyBasedMaterial.RoughnessTexture = right.PhysicallyBasedMaterial.RoughnessTexture &&
             left.PhysicallyBasedMaterial.AmbientOcclusionTexture = right.PhysicallyBasedMaterial.AmbientOcclusionTexture &&
             left.PhysicallyBasedMaterial.NormalTexture = right.PhysicallyBasedMaterial.NormalTexture &&
+            left.PhysicallyBasedMaterial.TwoSided = right.PhysicallyBasedMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
@@ -479,7 +482,8 @@ module PhysicallyBased =
           RoughnessTexture = roughnessTexture
           AmbientOcclusion = ambientOcclusion
           AmbientOcclusionTexture = ambientOcclusionTexture
-          NormalTexture = normalTexture }
+          NormalTexture = normalTexture
+          TwoSided = material.IsTwoSided }
 
     /// Attempt to create physically-based material from an assimp scene.
     let TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene : Assimp.Scene) =
@@ -636,7 +640,7 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
             Gl.Enable EnableCap.Blend
-        Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // setup shader
@@ -733,7 +737,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown state
-        Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
         if blending then
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
