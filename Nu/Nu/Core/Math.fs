@@ -1080,6 +1080,26 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
+[<AutoOpen>]
+module Plane =
+
+    /// Create a plane at the specified position and normal.
+    let CreateFromPositionAndNormal (position : Vector3, normal : Vector3) =
+        let d = Vector3.Dot(position, normal)
+        Plane(normal, -d)
+
+    type Plane with
+
+        /// Calculate a position on the plane.
+        member this.Position = this.Normal * -this.D;
+
+        /// Project a point onto the plane.
+        /// Formula: A || B = B x (A x B / |B|) / |B|
+        member this.Project point =  
+            let b = this.Position
+            let c = b.Magnitude
+            Vector3.Cross(b, (Vector3.Cross(a, b) / c) / c)
+
 /// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
     { RayBegin : Vector2
