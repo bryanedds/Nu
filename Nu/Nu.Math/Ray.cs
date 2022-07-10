@@ -326,14 +326,11 @@ namespace Nu
         /// </summary>
         public Vector3? Intersection(Plane plane)
         {
-            const float epsilon = 1e-6f;
-            float denom = Vector3.Dot(plane.Normal, plane.Normal);
-            // Prevent divide by zero.
-            // NOTE: If you want to ensure the ray reflects off only the "top" half of the plane, use this instead -
-            // if (-denom <= 0.000001f) return null;
-            if (Math.Abs(denom) <= epsilon) return null;
-            float t = -(Vector3.Dot(plane.Normal, Position) + plane.D) / Vector3.Dot(plane.Normal, plane.Normal);
-            return t < 0 ? (Vector3?)null : Position + t * plane.Normal;
+            var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
+            var t =
+                -(d + Position.Z * plane.Normal.Z + Position.Y * plane.Normal.Y + Position.X * plane.Normal.X) /
+                +(Direction.Z * plane.Normal.Z + Direction.Y * plane.Normal.Y + Direction.X * plane.Normal.X);
+            return t < 0 ? (Vector3?)null : Position + t * Direction;
         }
 
         /// <summary>
