@@ -1347,14 +1347,17 @@ module Gaia =
             | DragEntityPosition3d (entityDragOffset, entityPlane, entity) ->
                 if entity.Exists world then
                     let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) (World.getMousePosition world) world
-                    let entityPosition = (mouseRay.Intersection entityPlane).Value - entityDragOffset
-                    let world =
-                        if entity.MountExists world
-                        then entity.SetPositionLocal entityPosition world
-                        else entity.SetPosition entityPosition world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
+                    let intersectionOpt = mouseRay.Intersection entityPlane
+                    if intersectionOpt.HasValue then
+                        let entityPosition = intersectionOpt.Value - entityDragOffset
+                        let world =
+                            if entity.MountExists world
+                            then entity.SetPositionLocal entityPosition world
+                            else entity.SetPosition entityPosition world
+                        // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
+                        // form.entityPropertyGrid.Refresh ()
+                        world
+                    else world
                 else world
             | DragEntityRotation2d _ -> world
             | DragEntityInactive -> world
