@@ -288,7 +288,11 @@ module Gaia =
                             let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) mousePosition world
                             let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
                             let entityPlane = Plane.CreateFromPositionAndNormal (entityPosition, Vector3.Transform (v3Forward, World.getEyeRotation3d world))
-                            { editorState with DragEntityState = DragEntityPosition3d (mouseRay, entityPosition, entityPlane, entity) })
+                            let intersectionOpt = mouseRay.Intersection entityPlane
+                            if intersectionOpt.HasValue then
+                                let entityDragOffset = intersectionOpt.Value - entityPosition
+                                { editorState with DragEntityState = DragEntityPosition3d (entityDragOffset, entityPlane, entity) }
+                            else editorState)
                         world
                 (handled, world)
             | (None, world) -> (handled, world)
@@ -1325,12 +1329,12 @@ module Gaia =
     let private updateEntityDrag (form : GaiaForm) world =
         if not (canEditWithMouse form world) then
             match (getEditorState world).DragEntityState with
-            | DragEntityPosition2d (mousePositionWorldOrig, dragOffset, entity) ->
+            | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
                     let mousePosition = World.getMousePosition world
                     let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
-                    let entityPosition = (dragOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
+                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
                         if entity.MountExists world
@@ -1340,24 +1344,16 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
-            | DragEntityPosition3d (mouseRayOrigin, entityPositionOrigin, entityPlane, entity) ->
+            | DragEntityPosition3d (entityDragOffset, entityPlane, entity) ->
                 if entity.Exists world then
-
-                    // compute mouse ray
                     let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) (World.getMousePosition world) world
-
-                    // unproject entity position
-                    let entityPosition = mouseRay.Position + (mouseRayOrigin.Position - entityPositionOrigin).Magnitude * mouseRay.Direction
-
-                    // update entity position
+                    let entityPosition = (mouseRay.Intersection entityPlane).Value - entityDragOffset
                     let world =
                         if entity.MountExists world
                         then entity.SetPositionLocal entityPosition world
                         else entity.SetPosition entityPosition world
-
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()
-
                     world
                 else world
             | DragEntityRotation2d _ -> world
@@ -1366,13 +1362,13 @@ module Gaia =
 
     let private updateEyeDrag (_ : GaiaForm) world =
         match (getEditorState world).DragEyeState with
-        | DragEyePosition2d (dragOffset, mousePositionScreenOrig) ->
+        | DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) ->
             let mousePosition = World.getMousePosition world
             let mousePositionScreen = World.mouseToScreen2d mousePosition world
-            let eyePosition = (dragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let eyePosition = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyePosition2d eyePosition world
             updateEditorState (fun editorState ->
-                { editorState with DragEyeState = DragEyePosition2d (dragOffset, mousePositionScreenOrig) })
+                { editorState with DragEyeState = DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) })
                 world
         | DragEyeInactive -> world
 

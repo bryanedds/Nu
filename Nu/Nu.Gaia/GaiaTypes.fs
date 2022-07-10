@@ -14,9 +14,9 @@ type WorldChanger = World -> World
 type WorldChangers = WorldChanger List
 
 type DragEntityState =
-    | DragEntityPosition2d of Vector2 * Vector2 * Entity
-    | DragEntityRotation2d of Vector2 * Vector2 * Entity
-    | DragEntityPosition3d of MouseRayOrigin : Ray * EntityPositionOrigin : Vector3 * EntityPlane : Plane * Entity : Entity
+    | DragEntityPosition2d of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
+    | DragEntityRotation2d of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
+    | DragEntityPosition3d of EntityDragOffset : Vector3 * EntityPlane : Plane * Entity : Entity
     | DragEntityInactive
 
 type DragEyeState =
