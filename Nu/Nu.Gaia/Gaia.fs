@@ -276,7 +276,7 @@ module Gaia =
                             { editorState with DragEntityState = DragEntityPosition2d (mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity) }
                         else
                             let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) mousePosition world
-                            let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
+                            let entityPosition = entity.GetPosition world
                             let entityPlane = Plane.CreateFromPositionAndNormal (entityPosition, Vector3.Transform (v3Forward, World.getEyeRotation3d world))
                             let intersectionOpt = mouseRay.Intersection entityPlane
                             if intersectionOpt.HasValue then
@@ -1327,8 +1327,10 @@ module Gaia =
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
-                        if entity.MountExists world
-                        then entity.SetPositionLocal entityPositionSnapped world
+                        if entity.MountExists world then
+                            let entityPositionDelta = entityPosition - entity.GetPosition world
+                            let entityPositionLocal = entity.GetPositionLocal world + entityPositionDelta
+                            entity.SetPositionLocal entityPositionLocal world
                         else entity.SetPosition entityPositionSnapped world
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()
@@ -1341,8 +1343,10 @@ module Gaia =
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
                         let world =
-                            if entity.MountExists world
-                            then entity.SetPositionLocal entityPosition world
+                            if entity.MountExists world then
+                                let entityPositionDelta = entityPosition - entity.GetPosition world
+                                let entityPositionLocal = entity.GetPositionLocal world + entityPositionDelta
+                                entity.SetPositionLocal entityPositionLocal world
                             else entity.SetPosition entityPosition world
                         // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                         // form.entityPropertyGrid.Refresh ()
