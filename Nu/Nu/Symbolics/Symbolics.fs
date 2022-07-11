@@ -21,7 +21,7 @@ module Symbolics =
     /// Provides references to symbols that are loaded from files.
     type [<ReferenceEquality; NoComparison>] Symbolics =
         private
-            { SymbolPackages : (SymbolLoadMetadata * Symbol) Packages }
+            { SymbolPackages : Packages<SymbolLoadMetadata * Symbol, unit> }
 
     let private tryLoadSymbol3 metadata packageName (asset : Symbol Asset) =
         try let text = File.ReadAllText asset.FilePath
@@ -52,16 +52,18 @@ module Symbolics =
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Symbol) packageName assetGraph with
             | Right assets ->
-                let assets = List.map Asset.specialize<Symbol> assets
-                let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) assets
+                let symbolPackage =
+                    match Dictionary.tryFind packageName symbolics.SymbolPackages with
+                    | Some symbolPackage -> symbolPackage
+                    | None ->
+                        let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
+                        symbolics.SymbolPackages.Assign (packageName, symbolPackage)
+                        symbolPackage
+                let symbolAssets = List.map Asset.specialize<Symbol> assets
+                let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) symbolAssets
                 let symbols = List.definitize symbolOpts
-                match Dictionary.tryFind packageName symbolics.SymbolPackages with
-                | Some symbolDict ->
-                    for (key, value) in symbols do symbolDict.Assign (key, value)
-                    symbolics.SymbolPackages.Assign (packageName, symbolDict)
-                | None ->
-                    let symbolDict = dictPlus StringComparer.Ordinal symbols
-                    symbolics.SymbolPackages.Assign (packageName, symbolDict)
+                for (key, value) in symbols do
+                    symbolPackage.Assets.Assign (key, value)
             | Left error ->
                 Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
@@ -69,12 +71,12 @@ module Symbolics =
 
     let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolics =
         match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
-        | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+        | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
         | None ->
             Log.info ("Loading Symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             tryLoadSymbolPackage assetTag.PackageName metadata symbolics
             match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
-            | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+            | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
             | None -> None
 
     /// Unload a symbol package with the given name.
@@ -102,8 +104,8 @@ module Symbolics =
         for packageEntry in symbolPackages do
             let packageName = packageEntry.Key
             let packageValue = packageEntry.Value
-            for assetEntry in packageValue do
-                let metadata = fst assetEntry.Value
+            for entry in packageValue.Assets do
+                let metadata = fst entry.Value
                 tryLoadSymbolPackage packageName metadata symbolics
 
     /// Empty symbolics.

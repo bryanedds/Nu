@@ -87,7 +87,7 @@ type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
 type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
-          AudioPackages : AudioAsset Packages
+          AudioPackages : Packages<AudioAsset, unit>
           mutable AudioMessages : AudioMessage List
           mutable MasterAudioVolume : single
           mutable MasterSoundVolume : single
@@ -123,15 +123,17 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
             | Right assets ->
+                let audioPackage =
+                    match Dictionary.tryFind packageName audioPlayer.AudioPackages with
+                    | Some audioPackage -> audioPackage
+                    | None ->
+                        let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
+                        audioPlayer.AudioPackages.Assign (packageName, audioPackage)
+                        audioPackage
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
                 let audioAssets = List.definitize audioAssetOpts
-                match Dictionary.tryFind packageName audioPlayer.AudioPackages with
-                | Some audioAssetDict ->
-                    for (key, value) in audioAssets do audioAssetDict.Assign (key, value)
-                    audioPlayer.AudioPackages.Assign (packageName, audioAssetDict)
-                | None ->
-                    let audioAssetDict = dictPlus StringComparer.Ordinal audioAssets
-                    audioPlayer.AudioPackages.Assign (packageName, audioAssetDict)
+                for (key, value) in audioAssets do
+                    audioPackage.Assets.Assign (key, value)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
@@ -139,12 +141,12 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private tryFindAudioAsset (assetTag : obj AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-        | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+        | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
         | None ->
             Log.info ("Loading Audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
             match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-            | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+            | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
             | None -> None
 
     static member private playSong playSongMessage audioPlayer =
@@ -177,11 +179,11 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     
     static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
         match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackages with
-        | Some assets ->
+        | Some package ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
             SdlAudioPlayer.haltSound ()
-            for asset in assets do
+            for asset in package.Assets do
                 match asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset

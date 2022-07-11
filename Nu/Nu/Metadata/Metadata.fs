@@ -17,7 +17,7 @@ exception TileSetPropertyNotFoundException of string
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type [<NoEquality; NoComparison>] AssetMetadata =
-    | TextureMetadata of Vector2i * PixelFormat
+    | Texture2dMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
     | SoundMetadata
@@ -60,17 +60,17 @@ module Metadata =
         private
             { MetadataMap : UMap<string, UMap<string, AssetMetadata>> }
 
-    let private tryGenerateTextureMetadata asset =
+    let private tryGenerateTexture2dMetadata asset =
         if File.Exists asset.FilePath then
             try use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (Vector2i (image.Width, image.Height), image.PixelFormat))
+                Some (Texture2dMetadata (Vector2i (image.Width, image.Height), image.PixelFormat))
             with _ as exn ->
-                let errorMessage = "Failed to load texture '" + asset.FilePath + "' due to: " + scstring exn
+                let errorMessage = "Failed to load 2d texture '" + asset.FilePath + "' due to: " + scstring exn
                 Log.trace errorMessage
                 None
         else
-            let errorMessage = "Failed to load texture due to missing file '" + asset.FilePath + "'."
+            let errorMessage = "Failed to load 2d texture due to missing file '" + asset.FilePath + "'."
             Log.trace errorMessage
             None
 
@@ -85,8 +85,9 @@ module Metadata =
 
     let private tryGenerateStaticModelMetadata unitType asset =
         if File.Exists asset.FilePath then
+            let textureMemo = OpenGL.Texture2d.Texture2dMemo.make () // unused
             use assimp = new Assimp.AssimpContext ()
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (Unchecked.defaultof<_>, false, unitType, asset.FilePath, assimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (false, unitType, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimp) with
             | Right model -> Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
@@ -103,7 +104,7 @@ module Metadata =
             match extension with
             | ".bmp"
             | ".png"
-            | ".tif" -> tryGenerateTextureMetadata asset
+            | ".tif" -> tryGenerateTexture2dMetadata asset
             | ".tmx" -> tryGenerateTileMapMetadata asset
             | ".fbx" -> tryGenerateStaticModelMetadata UnitCentimeters asset
             | ".obj" -> tryGenerateStaticModelMetadata UnitMeters asset
@@ -143,33 +144,33 @@ module Metadata =
             | None -> None
         | None -> None
 
-    /// Try to get the texture metadata of the given asset.
-    let tryGetTextureSize (assetTag : Image AssetTag) metadata =
+    /// Try to get the 2d texture metadata of the given asset.
+    let tryGetTexture2dSize (assetTag : Image AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
-        | Some (TextureMetadata (size, _)) -> Some size
+        | Some (Texture2dMetadata (size, _)) -> Some size
         | None -> None
         | _ -> None
 
-    /// Try to get the texture metadata of the given asset.
-    let tryGetTextureFormat (assetTag : Image AssetTag) metadata =
+    /// Try to get the 2d texture metadata of the given asset.
+    let tryGetTexture2dFormat (assetTag : Image AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
-        | Some (TextureMetadata (_, format)) -> Some format
+        | Some (Texture2dMetadata (_, format)) -> Some format
         | None -> None
         | _ -> None
 
-    /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSize assetTag metadata =
-        Option.get (tryGetTextureSize assetTag metadata)
+    /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
+    let getTexture2dSize assetTag metadata =
+        Option.get (tryGetTexture2dSize assetTag metadata)
 
-    /// Try to get the texture size metadata of the given asset.
-    let tryGetTextureSizeF assetTag metadata =
-        match tryGetTextureSize assetTag metadata with
+    /// Try to get the 2d texture size metadata of the given asset.
+    let tryGetTexture2dSizeF assetTag metadata =
+        match tryGetTexture2dSize assetTag metadata with
         | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
-    /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSizeF assetTag metadata =
-        Option.get (tryGetTextureSizeF assetTag metadata)
+    /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
+    let getTexture2dSizeF assetTag metadata =
+        Option.get (tryGetTexture2dSizeF assetTag metadata)
 
     /// Try to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =

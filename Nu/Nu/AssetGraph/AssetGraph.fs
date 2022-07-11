@@ -64,8 +64,13 @@ module Asset =
     let specialize<'a> (asset : obj Asset) : 'a Asset =
         convert<obj, 'a> asset
 
+/// An asset package with additional user-defined state.
+type [<NoEquality; NoComparison>] Package<'a, 's> =
+    { Assets : Dictionary<string, 'a>
+      PackageState : 's }
+
 /// A dictionary of asset packages.
-type 'a Packages = Dictionary<string, Dictionary<string, 'a>>
+type Packages<'a, 's> = Dictionary<string, Package<'a, 's>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =

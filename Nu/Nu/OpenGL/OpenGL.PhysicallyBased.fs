@@ -423,7 +423,7 @@ module PhysicallyBased =
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
-    let CreatePhysicallyBasedMaterial (defaultMaterial, renderable, dirPath, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
         let albedo =
             if material.HasColorDiffuse
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
@@ -431,7 +431,7 @@ module PhysicallyBased =
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let albedoTexture =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
-                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, albedoTexture.FilePath)) with
+                match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, albedoTexture.FilePath), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
@@ -442,7 +442,7 @@ module PhysicallyBased =
         let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
             if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
-                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, metalnessTexture.FilePath)) with
+                match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, metalnessTexture.FilePath), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
@@ -453,7 +453,7 @@ module PhysicallyBased =
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
             if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
-                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, roughnessTexture.FilePath)) with
+                match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, roughnessTexture.FilePath), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -464,14 +464,14 @@ module PhysicallyBased =
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
             if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then
-                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, ambientOcclusionTexture.FilePath)) with
+                match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, ambientOcclusionTexture.FilePath), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
             if renderable && not (String.IsNullOrEmpty normal.FilePath) then
-                match Texture.TryCreateTexture2dFiltered (Path.Combine (dirPath, normal.FilePath)) with
+                match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, normal.FilePath), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
@@ -487,12 +487,12 @@ module PhysicallyBased =
           TwoSided = material.IsTwoSided }
 
     /// Attempt to create physically-based material from an assimp scene.
-    let TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene : Assimp.Scene) =
+    let TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let materials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let material = CreatePhysicallyBasedMaterial (defaultMaterial, renderable, dirPath, scene.Materials.[i])
+                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, scene.Materials.[i])
                 materials.[i] <- material
         match errorOpt with
         | Some error -> Left error
@@ -510,10 +510,10 @@ module PhysicallyBased =
         | Some error -> Left error
         | None -> Right geometries
 
-    let TryCreatePhysicallyBasedStaticModel (defaultMaterial, renderable, unitType, filePath, assimp : Assimp.AssimpContext) =
+    let TryCreatePhysicallyBasedStaticModel (renderable, unitType, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
         try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
             let dirPath = Path.GetDirectoryName filePath
-            match TryCreatePhysicallyBasedMaterials (defaultMaterial, renderable, dirPath, scene) with
+            match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
                 match TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene) with
                 | Right geometries ->

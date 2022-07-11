@@ -3,6 +3,7 @@
 
 namespace OpenGL
 open System
+open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
 open System.Runtime.InteropServices
@@ -11,23 +12,32 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Texture =
+module Texture2d =
 
-    /// A texture's metadata.
-    type TextureMetadata =
-        { TextureWidth : int
-          TextureHeight : int
-          TextureTexelWidth : single
-          TextureTexelHeight : single
-          TextureInternalFormat : InternalFormat }
+    /// A 2d texture's metadata.
+    type Texture2dMetadata =
+        { Texture2dWidth : int
+          Texture2dHeight : int
+          Texture2dTexelWidth : single
+          Texture2dTexelHeight : single
+          Texture2dInternalFormat : InternalFormat }
 
-        /// Unpopulated texture data.
+        /// Unpopulated 2d texture data.
         static member empty =
-            { TextureWidth = 0
-              TextureHeight = 0
-              TextureTexelWidth = 0.0f
-              TextureTexelHeight = 0.0f
-              TextureInternalFormat = Unchecked.defaultof<_> }
+            { Texture2dWidth = 0
+              Texture2dHeight = 0
+              Texture2dTexelWidth = 0.0f
+              Texture2dTexelHeight = 0.0f
+              Texture2dInternalFormat = Unchecked.defaultof<_> }
+
+    /// Memoizes 2d texture loads.
+    type [<NoEquality; NoComparison>] Texture2dMemo =
+        private
+            { Texture2ds : Dictionary<TextureMinFilter * TextureMagFilter * bool * string, Texture2dMetadata * uint> }
+
+        /// Make a 2d texture memoizer.
+        static member make () =
+            { Texture2ds = Dictionary HashIdentity.Structural }
 
     /// Vertically flip an SDL surface.
     let FlipSurface (surface : SDL.SDL_Surface inref) =
@@ -75,10 +85,10 @@ module Texture =
             // dispose bitmap automatically
             use bitmap = bitmap
 
-            // upload the texture to gl
-            let texture = Gl.GenTexture ()
+            // upload the 2d texture to gl
+            let texture2d = Gl.GenTexture ()
             let internalFormat = InternalFormat.Rgba8
-            Gl.BindTexture (TextureTarget.Texture2d, texture)
+            Gl.BindTexture (TextureTarget.Texture2d, texture2d)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -91,20 +101,16 @@ module Texture =
             match Gl.GetError () with
             | ErrorCode.NoError ->
                 let metadata =
-                    { TextureWidth = bitmap.Width
-                      TextureHeight = bitmap.Height
-                      TextureTexelWidth = 1.0f / single bitmap.Width
-                      TextureTexelHeight = 1.0f / single bitmap.Height
-                      TextureInternalFormat = internalFormat }
-                Right (metadata, texture)
+                    { Texture2dWidth = bitmap.Width
+                      Texture2dHeight = bitmap.Height
+                      Texture2dTexelWidth = 1.0f / single bitmap.Width
+                      Texture2dTexelHeight = 1.0f / single bitmap.Height
+                      Texture2dInternalFormat = internalFormat }
+                Right (metadata, texture2d)
             | error -> Left (string error)
 
         // load error
         | None -> Left ("Missing file or unloadable image '" + filePath + "'.")
-
-    /// Delete a texture.
-    let DeleteTexture (texture : uint) =
-        Gl.DeleteTextures texture
 
     /// Attempt to create an unfiltered 2d texture from a file.
     let TryCreateTexture2dUnfiltered filePath =
@@ -113,37 +119,39 @@ module Texture =
     /// Attempt to create a filtered 2d texture from a file.
     let TryCreateTexture2dFiltered filePath =
         TryCreateTexture2d (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
-        
-    /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
-        // bind new cube map
-        let cubeMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
-        Hl.Assert ()
+    /// Delete a 2d texture.
+    let DeleteTexture2d (texture2d : uint) =
+        Gl.DeleteTextures texture2d
 
-        // load faces into cube map
-        let mutable errorOpt = None
-        let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
-        for i in 0 .. dec faceFilePaths.Length do
-            if Option.isNone errorOpt then
-                let faceFilePath = faceFilePaths.[i]
-                match TryCreateImageBitmap faceFilePath with
-                | Some (bitmapData, bitmap) ->
-                    use bitmap = bitmap // dispose bitmap automatically
-                    Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, InternalFormat.Rgba8, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
-                    Hl.Assert ()
-                | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
+    /// Attempt to create a memoized 2d texture from a file.
+    let TryCreateTexture2dMemoized (minFilter, magFilter, generateMipmaps, filePath : string, texture2dMemo) =
 
-        // attempt to finalize cube map
-        match errorOpt with
-        | None ->
-            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-            Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
-            Right cubeMap
-        | Some error ->
-            DeleteTexture cubeMap
-            Left error
+        // memoize 2d texture
+        let textureKey = (minFilter, magFilter, generateMipmaps, filePath)
+        match texture2dMemo.Texture2ds.TryGetValue textureKey with
+        | (false, _) ->
+
+            // attempt to create 2d texture
+            match TryCreateTexture2d (minFilter, magFilter, generateMipmaps, filePath) with
+            | Right texture2d ->
+                texture2dMemo.Texture2ds.Add (textureKey, texture2d)
+                Right texture2d
+            | Left error -> Left error
+
+        // already exists
+        | (true, texture2d) -> Right texture2d
+
+    /// Attempt to create a memoized unfiltered 2d texture from a file.
+    let TryCreateTexture2dMemoizedUnfiltered (filePath, texture2dMemo) =
+        TryCreateTexture2dMemoized (TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, texture2dMemo)
+
+    /// Attempt to create a memoized filtered 2d texture from a file.
+    let TryCreateTexture2dMemoizedFiltered (filePath, texture2dMemo) =
+        TryCreateTexture2dMemoized (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath, texture2dMemo)
+
+    /// Delete memoized 2d textures.
+    let DeleteTexture2dsMemoized (texture2dMemo) =
+        for entry in texture2dMemo.Texture2ds do
+            DeleteTexture2d (snd entry.Value)
+        texture2dMemo.Texture2ds.Clear ()

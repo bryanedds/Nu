@@ -289,7 +289,7 @@ module StaticSpriteFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetStaticImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 
@@ -1763,7 +1763,7 @@ module ButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetUpImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetUpImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -1803,7 +1803,7 @@ module LabelDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetLabelImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -1851,7 +1851,7 @@ module TextDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
             | Some image ->
-                match World.tryGetTextureSizeF image world with
+                match World.tryGetTexture2dSizeF image world with
                 | Some size -> size.V3
                 | None -> Constants.Engine.EntitySizeGuiDefault
             | None -> Constants.Engine.EntitySizeGuiDefault
@@ -1981,7 +1981,7 @@ module ToggleButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetUntoggledImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetUntoggledImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -2105,7 +2105,7 @@ module RadioButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetUndialedImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetUndialedImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 
@@ -2334,7 +2334,7 @@ module FillBarDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
+            match World.tryGetTexture2dSizeF (entity.GetBorderImage world) world with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 

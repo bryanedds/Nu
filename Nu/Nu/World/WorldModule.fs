@@ -318,25 +318,25 @@ module WorldModule =
         static member internal setMetadata assetMetadataMap world =
             World.updateAmbientState (AmbientState.setMetadata assetMetadataMap) world
 
-        /// Try to get the texture metadata of the given asset.
+        /// Try to get the 2d texture metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTextureSize assetTag world =
-            Metadata.tryGetTextureSize assetTag (World.getMetadata world)
+        static member tryGetTexture2dSize assetTag world =
+            Metadata.tryGetTexture2dSize assetTag (World.getMetadata world)
 
-        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
+        /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTextureSize assetTag world =
-            Metadata.getTextureSize assetTag (World.getMetadata world)
+        static member getTexture2dSize assetTag world =
+            Metadata.getTexture2dSize assetTag (World.getMetadata world)
 
-        /// Try to get the texture size metadata of the given asset.
+        /// Try to get the 2d texture size metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTextureSizeF assetTag world =
-            Metadata.tryGetTextureSizeF assetTag (World.getMetadata world)
+        static member tryGetTexture2dSizeF assetTag world =
+            Metadata.tryGetTexture2dSizeF assetTag (World.getMetadata world)
 
-        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
+        /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTextureSizeF assetTag world =
-            Metadata.getTextureSizeF assetTag (World.getMetadata world)
+        static member getTexture2dSizeF assetTag world =
+            Metadata.getTexture2dSizeF assetTag (World.getMetadata world)
 
         /// Try to get the tile map metadata of the given asset.
         static member tryGetTileMapMetadata assetTag world =
