@@ -42,11 +42,13 @@ module AssimpExtensions =
                     yield! child.CollectNodesAndTransforms (unitType, worldTransform) }
 
         /// Map to a TreeNode.
-        member this.Map<'a> (unitType, parentTransform : Matrix4x4, mapper : Assimp.Node -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
+        member this.Map<'a> (unitType, parentNames : string array, parentTransform : Matrix4x4, mapper : Assimp.Node -> string array -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
+            let localName = this.Name
             let localTransform = this.ImportMatrix (unitType, this.Transform)
+            let worldNames = Array.append parentNames [|localName|]
             let worldTransform = localTransform * parentTransform
-            let node = mapper this worldTransform
+            let node = mapper this worldNames worldTransform
             for child in this.Children do
-                let child = child.Map<'a> (unitType, worldTransform, mapper)
+                let child = child.Map<'a> (unitType, worldNames, worldTransform, mapper)
                 node.Add child
             node

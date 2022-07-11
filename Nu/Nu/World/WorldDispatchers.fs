@@ -2613,32 +2613,45 @@ module StaticSceneDispatcherModule =
                 // 3) put all desired objects in empty root GameObject
                 // 4) export root GameObject
                 // 5) delete all fbx files except the one you exported
-                Seq.foldi (fun surfaceIndex world (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                    let childSurnames = Array.add surface.SurfaceName entity.Surnames // NOTE: we may need to check if an entity with the same address already exists because surface name is non-unique.
-                    let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
-                    let bounds = surface.SurfaceBounds
-                    let boundsExtended = bounds.Combine bounds.Mirror
-                    let transform = surface.SurfaceMatrix
-                    let position = transform.Translation
-                    let mutable rotation = transform
-                    rotation.Translation <- v3Zero
-                    let rotation = Quaternion.CreateFromRotationMatrix rotation
-                    let scale = transform.Scale ()
-                    let world = child.SetSurfaceIndex surfaceIndex world
-                    let world = child.SetStaticModel staticModel world
-                    let world = child.SetPositionLocal position world
-                    let world = child.SetRotationLocal rotation world
-                    let world = child.SetScaleLocal scale world
-                    let world = child.SetSize boundsExtended.Size world
-                    let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
-                    let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
-                    let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
-                    let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
-                    let world = child.SetPersistent false world
-                    let world = child.SetStatic (entity.GetStatic world) world
-                    let world = child.SetMountOpt (Some (Relation.makeParent ())) world
-                    world)
-                    world staticModelMetadata.Surfaces
+                let mutable i = 0
+                let mutable world = world
+                staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
+                    for node in nodes do
+                        match node with
+                        | Left names ->
+                            let childSurnames = Array.append entity.Surnames names // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let (child, world') = World.createEntity<EntityDispatcher3d> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            world <- world' // using mutable world here to interface w/ imperative API
+                            world <- child.SetPersistent false world
+                            world <- child.SetStatic (entity.GetStatic world) world
+                            world <- child.SetMountOpt (Some (Relation.makeParent ())) world
+                        | Right surface ->
+                            let childSurnames = Array.append entity.Surnames surface.SurfaceNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let (child, world') = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            world <- world' // using mutable world here to interface w/ imperative API
+                            let bounds = surface.SurfaceBounds
+                            let boundsExtended = bounds.Combine bounds.Mirror
+                            let transform = surface.SurfaceMatrix
+                            let position = transform.Translation
+                            let mutable rotation = transform
+                            rotation.Translation <- v3Zero
+                            let rotation = Quaternion.CreateFromRotationMatrix rotation
+                            let scale = transform.Scale ()
+                            world <- child.SetSurfaceIndex i world
+                            world <- child.SetStaticModel staticModel world
+                            world <- child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
+                            world <- child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
+                            world <- child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
+                            world <- child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
+                            world <- child.SetPositionLocal position world
+                            world <- child.SetRotationLocal rotation world
+                            world <- child.SetScaleLocal scale world
+                            world <- child.SetSize boundsExtended.Size world
+                            world <- child.SetPersistent false world
+                            world <- child.SetStatic (entity.GetStatic world) world
+                            world <- child.SetMountOpt (Some (Relation.makeParent ())) world
+                            i <- inc i)
+                world
             | None -> world
 
         static let syncChildren evt world =
