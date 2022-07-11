@@ -1030,17 +1030,12 @@ module WorldModule2 =
                                                         // process rendering
                                                         let rendererProcess = World.getRendererProcess world
                                                         if not firstFrame then rendererProcess.Swap ()
-                                                        let windowSize =
-                                                            // TODO: 3D: extract this to widely available function.
-                                                            match World.tryGetWindowSize world with
-                                                            | Some windowsSize -> windowsSize
-                                                            | None -> Constants.Render.Resolution
                                                         rendererProcess.SubmitMessages
                                                             (World.getEyePosition2d world)
                                                             (World.getEyeSize2d world)
                                                             (World.getEyePosition3d world)
                                                             (World.getEyeRotation3d world)
-                                                            windowSize
+                                                            (World.getWindowSize world)
 
                                                         // post-process the world
                                                         PostFrameTimer.Start ()
