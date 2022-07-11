@@ -59,7 +59,7 @@ module PhysicallyBased =
             int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
             int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member inline make surfaceName (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
+        static member make surfaceName (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
                   SurfaceName = surfaceName
@@ -95,7 +95,8 @@ module PhysicallyBased =
     /// A physically-based static model.
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
-          PhysicallyBasedSurfaces : PhysicallyBasedSurface array }
+          Surfaces : PhysicallyBasedSurface array
+          PhysicallyBasedSurfaceHierarchy : PhysicallyBasedSurface array TreeNode }
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -518,16 +519,21 @@ module PhysicallyBased =
                 | Right geometries ->
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
-                    for (node, nodeTransform) in scene.RootNode.CollectNodesAndTransforms (unitType, m4Identity) do
-                        for meshIndex in node.MeshIndices do
-                            let nodeName = if String.IsNullOrEmpty node.Name then Gen.name else node.Name
-                            let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                            let material = materials.[materialIndex]
-                            let geometry = geometries.[meshIndex]
-                            let surface = PhysicallyBasedSurface.make nodeName nodeTransform geometry.Bounds material geometry
-                            SegmentedList.add surface surfaces
-                            bounds <- bounds.Combine (geometry.Bounds.Transform nodeTransform)
-                    Right { Bounds = bounds; PhysicallyBasedSurfaces = Array.ofSeq surfaces }
+                    let hierarchy =
+                        scene.RootNode.Map (unitType, m4Identity, fun node transform ->
+                            seq {
+                                for meshIndex in node.MeshIndices do
+                                    let nodeName = if String.IsNullOrEmpty node.Name then Gen.name else node.Name
+                                    let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                    let material = materials.[materialIndex]
+                                    let geometry = geometries.[meshIndex]
+                                    let surface = PhysicallyBasedSurface.make nodeName transform geometry.Bounds material geometry
+                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                    SegmentedList.add surface surfaces
+                                    yield surface } |>
+                            Seq.toArray |>
+                            TreeNode)
+                    Right { Bounds = bounds; PhysicallyBasedSurfaceHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)

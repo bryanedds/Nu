@@ -17,6 +17,14 @@ module AssimpExtensions =
     /// Node extensions.
     type Assimp.Node with
 
+        member this.ImportMatrix (unitType, m : Assimp.Matrix4x4) =
+            let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
+            Matrix4x4
+                (m.A1, m.B1, m.C1, m.D1,
+                 m.A2, m.B2, m.C2, m.D2,
+                 m.A3, m.B3, m.C3, m.D3,
+                 m.A4 * scalar, m.B4 * scalar, m.C4 * scalar, m.D4)
+
         /// Collect all the child nodes of a node, including the node itself.
         member this.CollectNodes () =
             seq {
@@ -27,14 +35,18 @@ module AssimpExtensions =
         /// Collect all the child nodes and transforms of a node, including the node itself.
         member this.CollectNodesAndTransforms (unitType, parentTransform : Matrix4x4) =
             seq {
-                let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
-                let nodeTransform =
-                    Matrix4x4
-                        (this.Transform.A1, this.Transform.B1, this.Transform.C1, this.Transform.D1,
-                         this.Transform.A2, this.Transform.B2, this.Transform.C2, this.Transform.D2,
-                         this.Transform.A3, this.Transform.B3, this.Transform.C3, this.Transform.D3,
-                         this.Transform.A4 * scalar, this.Transform.B4 * scalar, this.Transform.C4 * scalar, this.Transform.D4)
-                let transform = nodeTransform * parentTransform
-                yield (this, transform)
+                let localTransform = this.ImportMatrix (unitType, this.Transform)
+                let worldTransform = localTransform * parentTransform
+                yield (this, worldTransform)
                 for child in this.Children do
-                    yield! child.CollectNodesAndTransforms (unitType, transform) }
+                    yield! child.CollectNodesAndTransforms (unitType, worldTransform) }
+
+        /// Map to a TreeNode.
+        member this.Map<'a> (unitType, parentTransform : Matrix4x4, mapper : Assimp.Node -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
+            let localTransform = this.ImportMatrix (unitType, this.Transform)
+            let worldTransform = localTransform * parentTransform
+            let node = mapper this worldTransform
+            for child in this.Children do
+                let child = child.Map<'a> (unitType, worldTransform, mapper)
+                node.Add child
+            node

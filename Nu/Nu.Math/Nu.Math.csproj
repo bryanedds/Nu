@@ -51,6 +51,7 @@
     <Compile Include="ReadOnlySet.cs" />
     <Compile Include="Sphere.cs" />
     <Compile Include="TopoSort.cs" />
+    <Compile Include="TreeNode.cs" />
     <Compile Include="ValueSort.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="OrderedDictionary.cs" />
