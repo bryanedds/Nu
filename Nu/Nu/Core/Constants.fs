@@ -64,16 +64,15 @@ module Render =
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
     let (*Literal*) Resolution = Vector2i (ResolutionX, ResolutionY)
-    let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
-    let (*Literal*) ViewportOffset windowSize = Box2i (ViewportMargin windowSize, Resolution)
-    let (*Literal*) Viewport = Box2i (Vector2i.Zero, Vector2i (ResolutionX, ResolutionY))
     let (*Literal*) FieldOfView = single (Math.PI / 3.0) // 60 degrees
-    let (*Literal*) AspectRatio = ResolutionF.X / ResolutionF.Y
     let [<Literal>] NearPlaneDistance = 0.1f
     let (*Literal*) FarPlaneDistanceEnclosed = 200.0f
     let (*Literal*) FarPlaneDistanceUnenclosed = 400.0f
     let (*Literal*) FarPlaneDistanceProminent = 800.0f
     let (*Literal*) FarPlaneDistanceOmnipresent = 1600.0f
+    let (*Literal*) ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
+    let (*Literal*) ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistance, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
+    let (*Literal*) Viewport = Viewport (NearPlaneDistance, FarPlaneDistanceOmnipresent, Box2i(v2iZero, Resolution))
     let (*Literal*) PlayBoxSize3d = Vector3 200.0f
     let (*Literal*) LightBoxSize3d = Vector3 400.0f
     let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 1.0f, 4.0f)

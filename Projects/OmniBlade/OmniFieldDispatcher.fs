@@ -1183,8 +1183,11 @@ module FieldDispatcher =
                     KeyboardState.isKeyUp KeyboardKey.Down && KeyboardState.isKeyUp KeyboardKey.S then
                     let avatar = Simulants.Field.Scene.Avatar
                     let lowerCenter = field.Avatar.LowerCenter
-                    let positionAbsolute = World.mouseToWorld2d false position world
-                    let heading = positionAbsolute.V3 - lowerCenter
+                    let viewport = World.getViewport world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
+                    let position = viewport.MouseToWorld2d (false, position, eyePosition, eyeSize)
+                    let heading = position.V3 - lowerCenter
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector3.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse

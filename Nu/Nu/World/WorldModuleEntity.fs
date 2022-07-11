@@ -2177,15 +2177,19 @@ module WorldModuleEntity =
 
         /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap surnamesOpt (group : Group) world =
+            // TODO: 3D: implement this for 3d.
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
                 let entityState = { entityState with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
                 let position2d =
+                    let viewport = World.getViewport world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
                     if atMouse
-                    then World.mouseToWorld2d entityState.Absolute rightClickPosition world
-                    else World.mouseToWorld2d entityState.Absolute (World.getEyeSize2d world * 0.5f) world
+                    then viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)
+                    else viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)
                 let mutable transform = entityState.Transform
                 transform.Position <- position2d.V3
                 transform.Snap (positionSnap, rotationSnap)

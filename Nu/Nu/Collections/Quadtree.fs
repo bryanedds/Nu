@@ -7,39 +7,6 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
-/// Describes the form of an element's presence.
-[<Syntax
-        ("Enclosed Unenclosed Prominent Omnipresent", "", "", "", "",
-         Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Presence =
-    | Enclosed
-    | Unenclosed
-    | Prominent
-    | Omnipresent
-    member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false // TODO: 3D: come up with better getter names.
-    member this.UnenclosedType with get () = match this with Unenclosed -> true | _ -> false
-    member this.ProminentType with get () = match this with Prominent -> true | _ -> false
-    member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
-    member this.Cullable with get () = match this with Enclosed | Unenclosed -> true | _ -> false
-    member this.Uncullable with get () = not this.Cullable
-
-[<AutoOpen>]
-module PresenceOperators =
-    
-    /// Test two presence values for equality.
-    let presenceEq left right =
-        match (left, right) with
-        | (Enclosed, Enclosed)
-        | (Unenclosed, Unenclosed)
-        | (Prominent, Prominent)
-        | (Omnipresent, Omnipresent) -> true
-        | (_, _) -> false
-
-    /// Test two presence values for inequality.
-    let presenceNeq left right =
-        not (presenceEq left right)
-
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 

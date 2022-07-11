@@ -271,14 +271,20 @@ module Gaia =
                 let world =
                     updateEditorState (fun editorState ->
                         if entity.GetIs2d world then
-                            let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
+                            let viewport = World.getViewport world
+                            let eyePosition = World.getEyePosition2d world
+                            let eyeSize = World.getEyeSize2d world
+                            let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
                             let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
                             { editorState with DragEntityState = DragEntityPosition2d (mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity) }
                         else
-                            let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) mousePosition world
+                            let viewport = World.getViewport world
+                            let eyePosition = World.getEyePosition3d world
+                            let eyeRotation = World.getEyeRotation3d world
+                            let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
                             let entityPosition = entity.GetPosition world
                             let entityPlane = Plane.CreateFromPositionAndNormal (entityPosition, Vector3.Transform (v3Forward, World.getEyeRotation3d world))
-                            let intersectionOpt = mouseRay.Intersection entityPlane
+                            let intersectionOpt = mouseRayWorld.Intersection entityPlane
                             if intersectionOpt.HasValue then
                                 let entityDragOffset = intersectionOpt.Value - entityPosition
                                 { editorState with DragEntityState = DragEntityPosition3d (entityDragOffset, entityPlane, entity) }
@@ -302,8 +308,7 @@ module Gaia =
             | DragEntityInactive -> (Resolve, world)
 
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let mousePosition = World.getMousePosition world
-        let mousePositionScreen = World.mouseToScreen2d mousePosition world
+        let mousePositionScreen = World.getMousePositionScreen2d world
         let dragState = DragEyePosition2d (World.getEyePosition2d world + mousePositionScreen, mousePositionScreen)
         let world = updateEditorState (fun editorState -> { editorState with DragEyeState = dragState }) world
         (Resolve, world)
@@ -841,9 +846,13 @@ module Gaia =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePosition world
                 let entityPosition =
+                    // TODO: 3D: implement for 3d.
+                    let viewport = World.getViewport world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
                     if atMouse
-                    then World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
-                    else World.mouseToWorld2d (entity.GetAbsolute world) (World.getEyeSize2d world * 0.5f) world
+                    then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
+                    else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
                 let mutable entityTransform = entity.GetTransform world
                 entityTransform.Position <- entityPosition.V3
                 entityTransform.Size <- entity.GetQuickSize world
@@ -1322,8 +1331,7 @@ module Gaia =
             | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
-                    let mousePosition = World.getMousePosition world
-                    let mousePositionWorld = World.mouseToWorld2d (entity.GetAbsolute world) mousePosition world
+                    let mousePositionWorld = World.getMousePositionWorld2d (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
@@ -1338,8 +1346,8 @@ module Gaia =
                 else world
             | DragEntityPosition3d (entityDragOffset, entityPlane, entity) ->
                 if entity.Exists world then
-                    let mouseRay = World.mouseToWorld3d (entity.GetAbsolute world) (World.getMousePosition world) world
-                    let intersectionOpt = mouseRay.Intersection entityPlane
+                    let mouseRayWorld = World.getMouseRayWorld3d (entity.GetAbsolute world) world
+                    let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
                         let world =
@@ -1360,8 +1368,7 @@ module Gaia =
     let private updateEyeDrag (_ : GaiaForm) world =
         match (getEditorState world).DragEyeState with
         | DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) ->
-            let mousePosition = World.getMousePosition world
-            let mousePositionScreen = World.mouseToScreen2d mousePosition world
+            let mousePositionScreen = World.getMousePositionScreen2d world
             let eyePosition = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyePosition2d eyePosition world
             updateEditorState (fun editorState ->

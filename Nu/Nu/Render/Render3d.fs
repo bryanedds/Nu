@@ -347,30 +347,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
-    /// Compute the 3d projection matrix.
-    /// TODO: 3D: expose this elsewhere.
-    static member computeProjection presence =
-        let farPlaneDistance =
-            match presence with
-            | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
-            | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
-            | Prominent -> Constants.Render.FarPlaneDistanceProminent
-            | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
-        Matrix4x4.CreatePerspectiveFieldOfView
-            (Constants.Render.FieldOfView,
-             Constants.Render.AspectRatio,
-             Constants.Render.NearPlaneDistance,
-             farPlaneDistance)
-
-    /// Compute the 3d view frustum.
-    /// TODO: 3D: expose this elsewhere.
-    static member computeFrustum presence eyePosition (eyeRotation : Quaternion) =
-        let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
-        let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
-        let projection = GlRenderer3d.computeProjection presence
-        let viewProjection = view * projection
-        Frustum viewProjection
-
     /// Get the physically-based shader.
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedForwardShader
@@ -548,11 +524,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = GlRenderer3d.createIrradianceMap box2iZero 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
+        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
-        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap box2iZero 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
+        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create brdf texture
@@ -639,7 +615,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
-            let projection = GlRenderer3d.computeProjection Omnipresent
+            let viewport = Constants.Render.Viewport
+            let projection = viewport.Projection3d Omnipresent
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
@@ -686,7 +663,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.DepthMask true
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-            OpenGL.Gl.Scissor (viewportOffset.Position.X, viewportOffset.Position.Y, viewportOffset.Size.X, viewportOffset.Size.Y)
+            OpenGL.Gl.Scissor (viewportOffset.Bounds.Position.X, viewportOffset.Bounds.Position.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
