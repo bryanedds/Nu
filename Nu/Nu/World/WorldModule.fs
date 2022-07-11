@@ -470,6 +470,24 @@ module WorldModule =
         static member tryGetWindowSize world =
             World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
 
+        /// Get the window size, using resolution as default in case there is no window.
+        [<FunctionBinding>]
+        static member getWindowSize world =
+            match World.tryGetWindowSize world with
+            | Some windowsSize -> windowsSize
+            | None -> Constants.Render.Resolution
+
+        /// Get the viewport.
+        [<FunctionBinding>]
+        static member getViewport world =
+            Constants.Render.Viewport
+
+        /// Get the viewport offset by margin when applicable.
+        [<FunctionBinding>]
+        static member getViewportOffset world =
+            let windowSize = World.getWindowSize world
+            Constants.Render.ViewportOffset windowSize
+
         /// Check whether the world should sleep rather than run.
         [<FunctionBinding>]
         static member shouldSleep world =

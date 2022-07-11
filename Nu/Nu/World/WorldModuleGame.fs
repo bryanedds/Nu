@@ -125,14 +125,12 @@ module WorldModuleGame =
         static member internal setEyePosition3dPlus (value : Vector3) world =
             World.updateGameState (fun gameState ->
                 if v3Neq value gameState.EyePosition3d then
-                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed value gameState.EyeRotation3d
-                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed value gameState.EyeRotation3d
-                    let eyeFrustumProminent3d = GlRenderer3d.computeFrustum Prominent value gameState.EyeRotation3d
+                    let viewport = Constants.Render.Viewport
                     { gameState with
                         EyePosition3d = value
-                        EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
-                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
-                        EyeFrustumProminent3d = eyeFrustumProminent3d }
+                        EyeFrustumEnclosed3d = viewport.Frustum Enclosed value gameState.EyeRotation3d
+                        EyeFrustumUnenclosed3d = viewport.Frustum Unenclosed value gameState.EyeRotation3d
+                        EyeFrustumProminent3d = viewport.Frustum Prominent value gameState.EyeRotation3d }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -149,14 +147,12 @@ module WorldModuleGame =
         static member internal setEyeRotation3dPlus value world =
             World.updateGameState (fun gameState ->
                 if quatNeq value gameState.EyeRotation3d then
-                    let eyeFrustumEnclosed3d = GlRenderer3d.computeFrustum Enclosed gameState.EyePosition3d value
-                    let eyeFrustumUnenclosed3d = GlRenderer3d.computeFrustum Unenclosed gameState.EyePosition3d value
-                    let eyeFrustumProminent3d = GlRenderer3d.computeFrustum Prominent gameState.EyePosition3d value
+                    let viewport = Constants.Render.Viewport
                     { gameState with
                         EyeRotation3d = value
-                        EyeFrustumEnclosed3d = eyeFrustumEnclosed3d
-                        EyeFrustumUnenclosed3d = eyeFrustumUnenclosed3d
-                        EyeFrustumProminent3d = eyeFrustumProminent3d }
+                        EyeFrustumEnclosed3d = viewport.Frustum Enclosed gameState.EyePosition3d value
+                        EyeFrustumUnenclosed3d = viewport.Frustum Unenclosed gameState.EyePosition3d value
+                        EyeFrustumProminent3d = viewport.Frustum Prominent gameState.EyePosition3d value }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.
@@ -338,26 +334,6 @@ module WorldModuleGame =
                 destination
                 world
 
-        /// Get the view of the 2d eye in absolute terms (world space).
-        [<FunctionBinding>]
-        static member getViewAbsolute2d world =
-            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-
-        /// The relative view of the 2d eye.
-        [<FunctionBinding>]
-        static member getViewRelative2d world =
-            Math.getViewRelative2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-
-        /// Get the view of the 3d eye in absolute terms (world space).
-        [<FunctionBinding>]
-        static member getViewAbsolute3d world =
-            Math.getViewAbsolute2d (World.getEyePosition2d world) (World.getEyeSize2d world)
-
-        /// The relative view of the 3d eye.
-        [<FunctionBinding>]
-        static member getViewRelative3d world =
-            Math.getViewRelative3d (World.getEyePosition3d world) (World.getEyeRotation3d world)
-
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         [<FunctionBinding>]
         static member getViewBoundsAbsolute2d world =
@@ -426,55 +402,6 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
-
-        /// Transform the given mouse position to 2d screen space.
-        [<FunctionBinding>]
-        static member mouseToScreen2d (mousePosition : Vector2) world =
-            let gameState = World.getGameState world
-            v2
-                +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize2d.X * 0.5f)
-                -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize2d.Y * 0.5f) // negation for right-handedness
-
-        /// Transform the given mouse position to 2d world space.
-        [<FunctionBinding>]
-        static member mouseToWorld2d absolute mousePosition world =
-            let mouseScreen = World.mouseToScreen2d mousePosition world
-            let view =
-                if absolute
-                then World.getViewAbsolute2d world
-                else World.getViewRelative2d world
-            (Vector3.Transform (mouseScreen.V3, view)).V2
-
-        /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
-        [<FunctionBinding>]
-        static member mouseToEntity2d absolute entityPosition mousePosition world =
-            let mouseWorld = World.mouseToWorld2d absolute mousePosition world
-            entityPosition - mouseWorld
-
-        /// Transform the given mouse position to 3d screen space (normalized device coordinates).
-        [<FunctionBinding>]
-        static member mouseToScreen3d (mousePosition : Vector2) (_ : World) =
-            v2
-                (mousePosition.X / single Constants.Render.ResolutionX)
-                (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
-
-        /// Transform the given mouse position to 3d world space.
-        [<FunctionBinding>]
-        static member mouseToWorld3d absolute (mousePosition : Vector2) world =
-            let view =
-                if absolute
-                then World.getViewAbsolute3d world
-                else World.getViewRelative3d world
-            let projection = GlRenderer3d.computeProjection Omnipresent
-            let windowSize =
-                match World.tryGetWindowSize world with
-                | Some windowsSize -> windowsSize
-                | None -> Constants.Render.Resolution
-            let viewportOffset = Constants.Render.ViewportOffset windowSize
-            let viewProjection = view * projection
-            let near = MathHelper.Unproject(Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, viewportOffset, mousePosition.V3.WithZ 0.0f, viewProjection)
-            let far = MathHelper.Unproject(Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, viewportOffset, mousePosition.V3.WithZ 1.0f, viewProjection)
-            Ray (near, Vector3.Normalize (far - near))
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =

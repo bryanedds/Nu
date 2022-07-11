@@ -489,9 +489,11 @@ module WorldEntityModule =
             let entitiesSorted = World.sortEntities2d entities world
             Array.tryFind
                 (fun (entity : Entity) ->
-                    let positionWorld = World.mouseToWorld2d (entity.GetAbsolute world) position world
-                    let picked = Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).Box2
-                    picked)
+                    let viewport = World.getViewport world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
+                    let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyePosition, eyeSize)
+                    Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).Box2)
                 entitiesSorted
 
         /// Try to pick a 3d entity with the given ray.
@@ -500,7 +502,10 @@ module WorldEntityModule =
             let intersectionses =
                 Seq.map
                     (fun (entity : Entity) ->
-                        let rayWorld = World.mouseToWorld3d (entity.GetAbsolute world) position world
+                        let viewport = World.getViewport world
+                        let eyePosition = World.getEyePosition3d world
+                        let eyeRotation = World.getEyeRotation3d world
+                        let rayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, position, eyePosition, eyeRotation)
                         let entityBounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects entityBounds
                         if intersectionOpt.HasValue then

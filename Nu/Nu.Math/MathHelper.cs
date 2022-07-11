@@ -706,45 +706,6 @@ namespace Nu
             return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
         }
 
-        /// <summary>
-        /// Project to the given frame.
-        /// </summary>
-        public static Vector3 Project(float minDepth, float maxDepth, Box2i viewportOffset, Vector3 source, Matrix4x4 frame)
-        {
-            Vector3 vector = Vector3.Transform(source, frame);
-            float a = (((source.X * frame.M14) + (source.Y * frame.M24)) + (source.Z * frame.M34)) + frame.M44;
-            if (!WithinEpsilon(a, 1f))
-            {
-                vector.X = vector.X / a;
-                vector.Y = vector.Y / a;
-                vector.Z = vector.Z / a;
-            }
-            vector.X = (((vector.X + 1f) * 0.5f) * viewportOffset.Size.X) + viewportOffset.Position.X;
-            vector.Y = (((-vector.Y + 1f) * 0.5f) * viewportOffset.Size.Y) + viewportOffset.Position.Y;
-            vector.Z = (vector.Z * (maxDepth - minDepth)) + minDepth;
-            return vector;
-        }
-
-        /// <summary>
-        /// Unproject from the given frame.
-        /// </summary>
-        public static Vector3 Unproject(float minDepth, float maxDepth, Box2i viewportOffset, Vector3 source, Matrix4x4 frame)
-        {
-            Matrix4x4.Invert(frame, out Matrix4x4 matrix);
-		    source.X = (source.X - viewportOffset.Position.X) / viewportOffset.Size.X * 2f - 1f;
-		    source.Y = -((source.Y - viewportOffset.Position.Y) / viewportOffset.Size.Y * 2f - 1f);
-		    source.Z = (source.Z - minDepth) / (maxDepth - minDepth);
-		    Vector3 vector = Vector3.Transform(source, matrix);
-		    float a = source.X * matrix.M14 + source.Y * matrix.M24 + source.Z * matrix.M34 + matrix.M44;
-		    if (!WithinEpsilon(a, 1f))
-		    {
-		        vector.X /= a;
-		        vector.Y /= a;
-		        vector.Z /= a;
-		    }
-		    return vector;
-        }
-
         private static bool WithinEpsilon(float a, float b)
         {
             float num = a - b;

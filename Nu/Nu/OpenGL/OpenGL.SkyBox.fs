@@ -308,7 +308,7 @@ module SkyBox =
         Hl.Assert ()
 
     let CreateIrradianceMap
-        (currentViewportOffset : Box2i,
+        (currentViewportOffset : Viewport,
          currentFramebuffer : uint,
          renderbufferWidth,
          renderbufferHeight,
@@ -361,7 +361,11 @@ module SkyBox =
             Hl.Assert ()
 
         // restore viewport
-        Gl.Viewport (currentViewportOffset.Position.X, currentViewportOffset.Position.Y, currentViewportOffset.Size.X, currentViewportOffset.Size.Y)
+        Gl.Viewport
+            (currentViewportOffset.Bounds.Position.X,
+             currentViewportOffset.Bounds.Position.Y,
+             currentViewportOffset.Bounds.Size.X,
+             currentViewportOffset.Bounds.Size.Y)
         Hl.Assert ()
 
         // teardown framebuffer
@@ -369,7 +373,7 @@ module SkyBox =
         irradianceMap
 
     let CreateEnvironmentFilterMap
-        (currentViewportOffset : Box2i,
+        (currentViewportOffset : Viewport,
          currentFramebuffer : uint,
          renderbufferWidth,
          renderbufferHeight,
@@ -424,7 +428,11 @@ module SkyBox =
                 Hl.Assert ()
 
         // restore viewport
-        Gl.Viewport (currentViewportOffset.Position.X, currentViewportOffset.Position.Y, currentViewportOffset.Size.X, currentViewportOffset.Size.Y)
+        Gl.Viewport
+            (currentViewportOffset.Bounds.Position.X,
+             currentViewportOffset.Bounds.Position.Y,
+             currentViewportOffset.Bounds.Size.X,
+             currentViewportOffset.Bounds.Size.Y)
         Hl.Assert ()
 
         // teardown framebuffer

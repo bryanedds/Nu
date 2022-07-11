@@ -212,26 +212,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private sortRenderLayeredMessages renderer =
         renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
 
-    /// Compute the 2d absolute view matrix.
-    static member computeViewAbsolute (_ : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
-        let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
-        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
-
-    /// Compute the 2d relative view matrix.
-    static member computeViewRelative (eyePosition : Vector2) (eyeSize : Vector2) (_ : GlRenderer2d) =
-        let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
-        Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
-
-    /// Compute the 2d projection matrix.
-    /// TODO: 3D: put this in a more general place!
-    static member computeProjection (viewport : Box2i) (_ : GlRenderer2d) =
-        Matrix4x4.CreateOrthographicOffCenter
-            (single (viewport.Position.X),
-             single (viewport.Position.X + viewport.Size.X),
-             single (viewport.Position.Y),
-             single (viewport.Position.Y + viewport.Size.Y),
-             -1.0f, 1.0f)
-
     /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
     static member getSpriteShader renderer =
         renderer.RenderSpriteShader
@@ -459,10 +439,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
             let viewport = Constants.Render.Viewport
-            let viewAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer
-            let viewRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer
-            let projection = GlRenderer2d.computeProjection viewport renderer
-            let viewProjection = if absolute then viewAbsolute * projection else viewRelative * projection
+            let viewProjection = viewport.ViewProjection2d (absolute, eyePosition, eyeSize)
             let font = AssetTag.generalize font
             match GlRenderer2d.tryFindRenderAsset font renderer with
             | ValueSome renderAsset ->
@@ -640,15 +617,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.Render eyePosition eyeSize windowSize renderMessages =
 
             // begin frame
+            let viewportOffset = Constants.Render.ViewportOffset windowSize
             if renderer.RenderShouldBeginFrame then
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize)
+                OpenGL.Hl.BeginFrame viewportOffset
                 OpenGL.Hl.Assert ()
 
             // begin sprite batch frame
             let viewport = Constants.Render.Viewport
-            let projection = GlRenderer2d.computeProjection viewport renderer
-            let viewProjectionAbsolute = GlRenderer2d.computeViewAbsolute eyePosition eyeSize renderer * projection
-            let viewProjectionRelative = GlRenderer2d.computeViewRelative eyePosition eyeSize renderer * projection
+            let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyePosition, eyeSize)
+            let viewProjectionRelative = viewport.ViewProjection2d (false, eyePosition, eyeSize)
             OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
 
