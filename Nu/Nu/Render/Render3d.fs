@@ -496,16 +496,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create sky box cube map
+        // create white sky box cube map
         let skyBoxMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
-                    ("Assets/Default/SkyBoxRight.png",
-                     "Assets/Default/SkyBoxLeft.png",
-                     "Assets/Default/SkyBoxTop.png",
-                     "Assets/Default/SkyBoxBottom.png",
-                     "Assets/Default/SkyBoxBack.png",
-                     "Assets/Default/SkyBoxFront.png") with
+                    ("Assets/Default/Image9.bmp",
+                     "Assets/Default/Image9.bmp",
+                     "Assets/Default/Image9.bmp",
+                     "Assets/Default/Image9.bmp",
+                     "Assets/Default/Image9.bmp",
+                     "Assets/Default/Image9.bmp") with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
         OpenGL.Hl.Assert ()
