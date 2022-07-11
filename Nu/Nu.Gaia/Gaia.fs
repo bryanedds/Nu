@@ -1328,9 +1328,9 @@ module Gaia =
                     let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
                     let world =
                         if entity.MountExists world then
-                            let entityPositionDelta = entityPosition - entity.GetPosition world
-                            let entityPositionLocal = entity.GetPositionLocal world + entityPositionDelta
-                            entity.SetPositionLocal entityPositionLocal world
+                            let entityPositionDelta = entityPosition - (entity.GetPosition world).V2
+                            let entityPositionLocal = (entity.GetPositionLocal world).V2 + entityPositionDelta
+                            entity.SetPositionLocal entityPositionLocal.V3 world
                         else entity.SetPosition entityPositionSnapped world
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()

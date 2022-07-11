@@ -1389,7 +1389,7 @@ module StaticModelFacetModule =
                             let intersections = raySurface.Intersections (geometry.Indices, geometry.Vertices)
                             intersections |> Seq.map snd' |> Seq.toArray
                         else [||])
-                        staticModel.PhysicallyBasedSurfaces
+                        staticModel.Surfaces
                 Array.concat intersectionses
             | None -> [||]
 
@@ -1437,8 +1437,8 @@ module StaticModelSurfaceFacetModule =
         override this.GetQuickSize (entity, world) =
             let staticModel = World.getStaticModelMetadata (entity.GetStaticModel world) world
             let surfaceIndex = entity.GetSurfaceIndex world
-            if surfaceIndex > -1 && surfaceIndex < staticModel.PhysicallyBasedSurfaces.Length then
-                let bounds = staticModel.PhysicallyBasedSurfaces.[surfaceIndex].SurfaceBounds
+            if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
+                let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
             else Constants.Engine.EntitySize3dDefault
@@ -1447,7 +1447,7 @@ module StaticModelSurfaceFacetModule =
             match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
-                let surface = staticModel.PhysicallyBasedSurfaces.[surfaceIndex]
+                let surface = staticModel.Surfaces.[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let mutable bounds = geometry.Bounds
                 let boundsIntersectionOpt = ray.Intersects bounds
@@ -2636,9 +2636,9 @@ module StaticSceneDispatcherModule =
                     let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
                     let world = child.SetPersistent false world
                     let world = child.SetStatic (entity.GetStatic world) world
-                    // TODO: 3D: set mount - let world = child.SetMountOpt ... world
+                    let world = child.SetMountOpt (Some (Relation.makeParent ())) world
                     world)
-                    world staticModelMetadata.PhysicallyBasedSurfaces
+                    world staticModelMetadata.Surfaces
             | None -> world
 
         static let syncChildren evt world =
