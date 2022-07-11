@@ -522,9 +522,8 @@ module PhysicallyBased =
                     let hierarchy =
                         scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
                             seq {
-                                // NOTE: we collapse elide the parent node down where 1 or more meshes are present.
-                                if node.MeshIndices.Count = 0 then yield Left names
-                                else
+                                // NOTE: we elide the parent node when 1 or more child meshes are present.
+                                if node.MeshIndices.Count > 0 then
                                     for i in 0 .. dec node.MeshIndices.Count do
                                         let meshIndex = node.MeshIndices.[i]
                                         let names = if i = 0 then names else Array.append names [|i.ToString "D4"|]
@@ -534,7 +533,8 @@ module PhysicallyBased =
                                         let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
                                         bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                         SegmentedList.add surface surfaces
-                                        yield Right surface  } |>
+                                        yield Right surface
+                                else yield Left names } |>
                             Seq.toArray |>
                             TreeNode)
                     Right { Bounds = bounds; PhysicallyBasedHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
