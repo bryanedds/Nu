@@ -42,7 +42,7 @@ module PhysicallyBased =
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { mutable HashCode : int
-          SurfaceName : string
+          SurfaceNames : string array
           SurfaceMatrixIsIdentity : bool
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
@@ -59,10 +59,10 @@ module PhysicallyBased =
             int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
             int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member make surfaceName (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
+        static member make surfaceNames (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
-                  SurfaceName = surfaceName
+                  SurfaceNames = surfaceNames
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
                   SurfaceMatrix = surfaceMatrix
                   SurfaceBounds = surfaceBounds
@@ -96,7 +96,7 @@ module PhysicallyBased =
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
           Surfaces : PhysicallyBasedSurface array
-          PhysicallyBasedSurfaceHierarchy : PhysicallyBasedSurface array TreeNode }
+          PhysicallyBasedHierarchy : Either<string array, PhysicallyBasedSurface> array TreeNode }
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -520,20 +520,24 @@ module PhysicallyBased =
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
-                        scene.RootNode.Map (unitType, m4Identity, fun node transform ->
+                        scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
                             seq {
-                                for meshIndex in node.MeshIndices do
-                                    let nodeName = if String.IsNullOrEmpty node.Name then Gen.name else node.Name
-                                    let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                    let material = materials.[materialIndex]
-                                    let geometry = geometries.[meshIndex]
-                                    let surface = PhysicallyBasedSurface.make nodeName transform geometry.Bounds material geometry
-                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
-                                    SegmentedList.add surface surfaces
-                                    yield surface } |>
+                                // NOTE: we collapse elide the parent node down where 1 or more meshes are present.
+                                if node.MeshIndices.Count = 0 then yield Left names
+                                else
+                                    for i in 0 .. dec node.MeshIndices.Count do
+                                        let meshIndex = node.MeshIndices.[i]
+                                        let names = if i = 0 then names else Array.append names [|i.ToString "D4"|]
+                                        let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                        let material = materials.[materialIndex]
+                                        let geometry = geometries.[meshIndex]
+                                        let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
+                                        bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                        SegmentedList.add surface surfaces
+                                        yield Right surface  } |>
                             Seq.toArray |>
                             TreeNode)
-                    Right { Bounds = bounds; PhysicallyBasedSurfaceHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
+                    Right { Bounds = bounds; PhysicallyBasedHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
