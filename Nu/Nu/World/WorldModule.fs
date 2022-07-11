@@ -479,7 +479,8 @@ module WorldModule =
 
         /// Get the viewport.
         [<FunctionBinding>]
-        static member getViewport world =
+        static member getViewport (world : World) =
+            ignore world
             Constants.Render.Viewport
 
         /// Get the viewport offset by margin when applicable.
