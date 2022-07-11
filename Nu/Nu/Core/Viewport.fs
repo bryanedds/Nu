@@ -107,12 +107,6 @@ module Viewport =
             then this.ViewAbsolute3d (eyePosition, eyeRotation)
             else this.ViewRelative3d (eyePosition, eyeRotation)
 
-        /// Compute the 3d view projection matrix.
-        member this.ViewProjection3d (absolute, presence, eyePosition, eyeSize) =
-            let view = this.View3d (absolute, eyePosition, eyeSize)
-            let projection = this.Projection3d presence
-            view * projection
-
         /// Compute the 3d projection matrix.
         member this.Projection3d presence =
             let farPlaneDistance =
@@ -126,6 +120,12 @@ module Viewport =
                  this.AspectRatio,
                  Constants.Render.NearPlaneDistance,
                  farPlaneDistance)
+
+        /// Compute the 3d view projection matrix.
+        member this.ViewProjection3d (absolute, presence, eyePosition, eyeSize) =
+            let view = this.View3d (absolute, eyePosition, eyeSize)
+            let projection = this.Projection3d presence
+            view * projection
 
         /// Compute the 3d view frustum.
         member this.Frustum presence eyePosition (eyeRotation : Quaternion) =
