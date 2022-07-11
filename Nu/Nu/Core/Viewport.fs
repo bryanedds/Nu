@@ -13,7 +13,7 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Unenclosed
     | Prominent
     | Omnipresent
-    member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false // TODO: 3D: come up with better getter names.
+    member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false
     member this.UnenclosedType with get () = match this with Unenclosed -> true | _ -> false
     member this.ProminentType with get () = match this with Prominent -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
