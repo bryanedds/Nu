@@ -522,19 +522,17 @@ module PhysicallyBased =
                     let hierarchy =
                         scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
                             seq {
-                                // NOTE: we elide the parent node when 1 or more child meshes are present.
-                                if node.MeshIndices.Count > 0 then
-                                    for i in 0 .. dec node.MeshIndices.Count do
-                                        let meshIndex = node.MeshIndices.[i]
-                                        let names = if i = 0 then names else Array.append names [|i.ToString "D4"|]
-                                        let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                        let material = materials.[materialIndex]
-                                        let geometry = geometries.[meshIndex]
-                                        let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
-                                        bounds <- bounds.Combine (geometry.Bounds.Transform transform)
-                                        SegmentedList.add surface surfaces
-                                        yield Right surface
-                                else yield Left names } |>
+                                yield Left names
+                                for i in 0 .. dec node.MeshIndices.Count do
+                                    let meshIndex = node.MeshIndices.[i]
+                                    let names = Array.append names [|i.ToString "D4"|]
+                                    let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                    let material = materials.[materialIndex]
+                                    let geometry = geometries.[meshIndex]
+                                    let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
+                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                    SegmentedList.add surface surfaces
+                                    yield Right surface } |>
                             Seq.toArray |>
                             TreeNode)
                     Right { Bounds = bounds; PhysicallyBasedHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
