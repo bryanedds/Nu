@@ -705,13 +705,15 @@ module WorldEntityModule =
         /// Read multiple entities.
         [<FunctionBinding>]
         static member internal readEntities (entityDescriptors : EntityDescriptor list) (parent : Simulant) world =
-            List.foldBack
-                (fun entityDescriptor (entities, world) ->
-                    let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
-                    let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
-                    (entity :: entities, world))
-                    entityDescriptors
-                    ([], world)
+            let (entitiesRev, world) =
+                List.fold
+                    (fun (entities, world) entityDescriptor ->
+                        let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
+                        let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
+                        (entity :: entities, world))
+                        ([], world)
+                        entityDescriptors
+            (List.rev entitiesRev, world)
 
         /// Turn an entity lens into a series of live entities.
         static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner group world =

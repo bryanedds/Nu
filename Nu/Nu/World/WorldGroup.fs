@@ -279,13 +279,15 @@ module WorldGroupModule =
 
         /// Read multiple groups from a screen descriptor.
         static member readGroups groupDescriptors screen world =
-            List.foldBack
-                (fun groupDescriptor (groups, world) ->
-                    let groupNameOpt = GroupDescriptor.getNameOpt groupDescriptor
-                    let (group, world) = World.readGroup groupDescriptor groupNameOpt screen world
-                    (group :: groups, world))
-                groupDescriptors
-                ([], world)
+            let (groupsRev, world) =
+                List.fold
+                    (fun (groups, world) groupDescriptor ->
+                        let groupNameOpt = GroupDescriptor.getNameOpt groupDescriptor
+                        let (group, world) = World.readGroup groupDescriptor groupNameOpt screen world
+                        (group :: groups, world))
+                    ([], world)
+                    groupDescriptors
+            (List.rev groupsRev, world)
 
         /// Read a group from a file.
         [<FunctionBinding>]
