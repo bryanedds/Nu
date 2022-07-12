@@ -62,8 +62,8 @@ module Program =
 
         // ensure template directory exists
         let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-        let slnDir = Path.Combine (programDir, "../../../..") |> Path.Simplify
-        let templateDir = Path.Combine (programDir, "../../../Nu.Template") |> Path.Simplify
+        let slnDir = programDir + "/../../../.." |> Path.Simplify
+        let templateDir = programDir + "/../../../Nu.Template" |> Path.Simplify
         if Directory.Exists templateDir then
 
             // query user to create new project
@@ -81,10 +81,10 @@ module Program =
                     // compute directories
                     let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                     let templateFileName = "Nu.Template.fsproj"
-                    let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
-                    let newProjDir = Path.Combine (projectsDir, name) |> Path.Simplify
+                    let projectsDir = programDir + "/../../../../Projects" |> Path.Simplify
+                    let newProjDir = projectsDir + "/" + name |> Path.Simplify
                     let newFileName = name + ".fsproj"
-                    let newProj = Path.Combine (newProjDir, newFileName) |> Path.Simplify
+                    let newProj = newProjDir + "/" + newFileName |> Path.Simplify
                     Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
 
                     // install nu template
