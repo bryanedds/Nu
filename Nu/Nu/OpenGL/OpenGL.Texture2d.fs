@@ -66,7 +66,7 @@ module Texture2d =
         with _ -> None
 
     let private TryCreateImageSurface filePath =
-        let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
+        let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
         let unconvertedPtr = SDL_image.IMG_Load filePath
         if unconvertedPtr <> nativeint 0 then
             let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
@@ -79,9 +79,10 @@ module Texture2d =
             let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
             if unconvertedFormat.format <> format then
                 let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
-                SDL.SDL_FreeSurface unconvertedPtr
-                Some (metadata, convertedPtr, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
-            else Some (metadata, unconvertedPtr, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
+                let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
+                SDL.SDL_FreeSurface unconvertedPtr // no longer need this
+                Some (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
+            else Some (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
         else None
 
     /// Attempt to create uploadable image data from the given file path.
@@ -100,7 +101,7 @@ module Texture2d =
         | Some (metadata, imageData, disposer) ->
 
             // upload the image data to gl
-            use _ = disposer
+            use d = disposer
             let texture2d = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, texture2d)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.Texture2dInternalFormat, metadata.Texture2dWidth, metadata.Texture2dHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
