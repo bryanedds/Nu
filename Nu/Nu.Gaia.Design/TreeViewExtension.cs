@@ -28,7 +28,6 @@ namespace System.Windows.Forms
 
                 tree.TopNode = findNodeFromPath(tree, state.TopNodePath);
                 tree.SelectedNode = findNodeFromPath(tree, state.SelectedNodePath);
-                tree.Focus();
             }
             tree.EndUpdate();
         }
