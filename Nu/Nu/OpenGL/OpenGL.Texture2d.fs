@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
+open System.IO
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -132,7 +133,7 @@ module Texture2d =
     let TryCreateTexture2dMemoized (minFilter, magFilter, generateMipmaps, filePath : string, texture2dMemo) =
 
         // memoize 2d texture
-        let textureKey = (minFilter, magFilter, generateMipmaps, filePath)
+        let textureKey = (minFilter, magFilter, generateMipmaps, Path.Simplify filePath)
         match texture2dMemo.Texture2ds.TryGetValue textureKey with
         | (false, _) ->
 

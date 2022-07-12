@@ -191,12 +191,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
                 let dirPath = Path.GetDirectoryName asset.FilePath
-                let faceRightFilePath = Path.Combine (dirPath, faceRightFilePath) |> fun str -> str.Trim ()
-                let faceLeftFilePath = Path.Combine (dirPath, faceLeftFilePath) |> fun str -> str.Trim ()
-                let faceTopFilePath = Path.Combine (dirPath, faceTopFilePath) |> fun str -> str.Trim ()
-                let faceBottomFilePath = Path.Combine (dirPath, faceBottomFilePath) |> fun str -> str.Trim ()
-                let faceBackFilePath = Path.Combine (dirPath, faceBackFilePath) |> fun str -> str.Trim ()
-                let faceFrontFilePath = Path.Combine (dirPath, faceFrontFilePath) |> fun str -> str.Trim ()
+                let faceRightFilePath = dirPath + "/" + faceRightFilePath |> fun str -> str.Trim ()
+                let faceLeftFilePath = dirPath + "/" + faceLeftFilePath |> fun str -> str.Trim ()
+                let faceTopFilePath = dirPath + "/" + faceTopFilePath |> fun str -> str.Trim ()
+                let faceBottomFilePath = dirPath + "/" + faceBottomFilePath |> fun str -> str.Trim ()
+                let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
+                let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
                 match OpenGL.CubeMap.TryCreateCubeMapMemoized (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, packageState.CubeMapMemo) with
                 | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMap, ref None))
                 | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None

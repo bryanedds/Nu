@@ -4,6 +4,7 @@
 namespace OpenGL
 open System
 open System.Collections.Generic
+open System.IO
 open Prime
 open Nu
 
@@ -61,7 +62,13 @@ module CubeMap =
     let TryCreateCubeMapMemoized (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, cubeMapMemo) =
 
         // memoize cube map
-        let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+        let cubeMapKey =
+            (Path.Simplify faceRightFilePath,
+             Path.Simplify faceLeftFilePath,
+             Path.Simplify faceTopFilePath,
+             Path.Simplify faceBottomFilePath,
+             Path.Simplify faceBackFilePath,
+             Path.Simplify faceFrontFilePath)
         match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
         | (false, _) ->
 
