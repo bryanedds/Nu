@@ -525,7 +525,7 @@ module PhysicallyBased =
                                 yield Left names
                                 for i in 0 .. dec node.MeshIndices.Count do
                                     let meshIndex = node.MeshIndices.[i]
-                                    let names = Array.append names [|i.ToString "D4"|]
+                                    let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
                                     let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                     let material = materials.[materialIndex]
                                     let geometry = geometries.[meshIndex]
