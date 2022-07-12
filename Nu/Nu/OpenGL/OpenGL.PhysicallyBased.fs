@@ -432,7 +432,7 @@ module PhysicallyBased =
         let albedoTexture =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
                 match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, albedoTexture.FilePath), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture2d) -> texture2d
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
         let metalness =
@@ -443,7 +443,7 @@ module PhysicallyBased =
         let metalnessTexture =
             if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
                 match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, metalnessTexture.FilePath), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture2d) -> texture2d
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
         let roughness =
@@ -454,7 +454,7 @@ module PhysicallyBased =
         let roughnessTexture =
             if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
                 match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, roughnessTexture.FilePath), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture2d) -> texture2d
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
         let ambientOcclusion =
@@ -465,14 +465,14 @@ module PhysicallyBased =
         let ambientOcclusionTexture =
             if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then
                 match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, ambientOcclusionTexture.FilePath), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture2d) -> texture2d
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
             if renderable && not (String.IsNullOrEmpty normal.FilePath) then
                 match Texture2d.TryCreateTexture2dMemoizedFiltered (Path.Combine (dirPath, normal.FilePath), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture2d) -> texture2d
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
         { Albedo = color albedo.R albedo.G albedo.B albedo.A
