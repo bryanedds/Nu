@@ -103,7 +103,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let targetNames =
                         entity.Group.GroupAddress.Names |>
-                        Array.append (Array.allButLast entity.Surnames) |>
+                        flip Array.append (Array.allButLast entity.Surnames) |>
                         Array.add name
                     let target = Entity targetNames
                     let world = World.renameEntityImmediate entity target world
