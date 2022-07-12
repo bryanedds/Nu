@@ -296,7 +296,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let surfaceMatrix =
             if ignoreSurfaceMatrix || surface.SurfaceMatrixIsIdentity
             then modelMatrix
-            else modelMatrix * surface.SurfaceMatrix
+            else surface.SurfaceMatrix * modelMatrix
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -330,7 +330,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
-    static member inline private categorizeStaticModel
+    static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          renderMaterial : RenderMaterial inref,
