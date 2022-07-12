@@ -522,6 +522,7 @@ module PhysicallyBased =
                     let hierarchy =
                         scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
                             seq {
+                                // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause too subtle hierarchy bugs.
                                 yield Left names
                                 for i in 0 .. dec node.MeshIndices.Count do
                                     let meshIndex = node.MeshIndices.[i]
