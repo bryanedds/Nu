@@ -328,13 +328,15 @@ module WorldScreenModule =
 
         /// Read multiple screens from a game descriptor.
         static member readScreens screenDescriptors world =
-            List.foldBack
-                (fun screenDescriptor (screens, world) ->
-                    let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
-                    let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
-                    (screen :: screens, world))
-                screenDescriptors
-                ([], world)
+            let (screensRev, world) =
+                List.fold
+                    (fun (screens, world) screenDescriptor ->
+                        let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
+                        let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
+                        (screen :: screens, world))
+                    ([], world)
+                    screenDescriptors
+            (List.rev screensRev, world)
 
         /// Read a screen from a file.
         [<FunctionBinding>]
