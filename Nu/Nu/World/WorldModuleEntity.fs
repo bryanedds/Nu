@@ -496,7 +496,7 @@ module WorldModuleEntity =
 
         static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
-            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SegmentedArray.ofSeq |> seq
+            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SegmentedList.ofSeq |> seq
             | (false, _) -> Seq.empty
 
         static member internal traverseEntityMounters effect entity (world : World) =
