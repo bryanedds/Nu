@@ -85,7 +85,7 @@ module Texture2d =
         else None
 
     /// Attempt to create uploadable image data from the given file path.
-    /// Don't forget to call the return disposer callback when finished with the image data.
+    /// Don't forget to dispose the last field when finished with the image data.
     let TryCreateImageData filePath =
         match Environment.OSVersion.Platform with
         | PlatformID.Win32NT
