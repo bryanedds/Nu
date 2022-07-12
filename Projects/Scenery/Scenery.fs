@@ -36,7 +36,7 @@ type SceneryDispatcher () =
         match command with
         | Update ->
             let moveSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
-            let turnSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.1f elif KeyboardState.isShiftDown () then 0.025f else 0.05f
+            let turnSpeed = if KeyboardState.isShiftDown () then 0.025f else 0.05f
             let position = World.getEyePosition3d world
             let rotation = World.getEyeRotation3d world
             let world =
