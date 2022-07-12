@@ -114,7 +114,7 @@ module Sprite =
         (vertexBuffer, indexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
-    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture2d, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -163,7 +163,7 @@ module Sprite =
         Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         Gl.Uniform1 (texUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        Gl.BindTexture (TextureTarget.Texture2d, texture2d)
         Hl.Assert ()
 
         // setup geometry

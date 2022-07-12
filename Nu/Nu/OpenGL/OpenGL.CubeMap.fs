@@ -15,7 +15,7 @@ module CubeMap =
         private
             { CubeMaps : Dictionary<string * string * string * string * string * string, uint> }
 
-        /// Make a texture memoizer.
+        /// Make a cube map memoizer.
         static member make () =
             { CubeMaps = Dictionary HashIdentity.Structural }
 
@@ -60,7 +60,7 @@ module CubeMap =
     /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMapMemoized (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, cubeMapMemo) =
 
-        // memoize texture
+        // memoize cube map
         let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
         match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
         | (false, _) ->

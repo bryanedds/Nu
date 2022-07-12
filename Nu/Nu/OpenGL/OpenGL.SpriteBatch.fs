@@ -15,17 +15,17 @@ module SpriteBatch =
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor
           BlendingEquation : BlendEquationMode
-          Texture : uint }
+          Texture2d : uint }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
-            state.Texture <> state2.Texture
+            state.Texture2d <> state2.Texture2d
 
-        static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
+        static member make absolute bfs bfd beq texture2d =
+            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture2d = texture2d }
 
         static member defaultState =
             SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
@@ -165,7 +165,7 @@ module SpriteBatch =
             Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
             Gl.Uniform1 (env.TexUniform, 0)
             Gl.ActiveTexture TextureUnit.Texture0
-            Gl.BindTexture (TextureTarget.Texture2d, env.State.Texture)
+            Gl.BindTexture (TextureTarget.Texture2d, env.State.Texture2d)
             Hl.Assert ()
 
             // draw geometry
@@ -230,10 +230,10 @@ module SpriteBatch =
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
-    let SubmitSpriteBatchSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
+    let SubmitSpriteBatchSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture2d, env) =
 
         // adjust to potential sprite batch state changes
-        let state = SpriteBatchState.make absolute bfs bfd beq texture
+        let state = SpriteBatchState.make absolute bfs bfd beq texture2d
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state env
             Hl.Assert ()

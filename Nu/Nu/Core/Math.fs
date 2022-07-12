@@ -1117,7 +1117,7 @@ type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
     static member inline defaultOutput =
         Unchecked.defaultof<RayCast2Output>
 
-/// The flipness of a texture.
+/// The flipness of an image.
 [<Syntax
     ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
