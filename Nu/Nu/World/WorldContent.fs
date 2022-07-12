@@ -221,7 +221,7 @@ module Content =
     let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
     /// Describe light with the given initializers.
-    let light entityName initializers = entity<LightDispatcher> entityName initializers
+    let light3d entityName initializers = entity<Light3dDispatcher> entityName initializers
 
     /// Describe sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers

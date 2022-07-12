@@ -409,8 +409,8 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher (true, false, false)
-                 EntityDispatcher2d (false, false) :> EntityDispatcher
-                 EntityDispatcher3d (true, false) :> EntityDispatcher
+                 Entity2dDispatcher (false, false) :> EntityDispatcher
+                 Entity3dDispatcher (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -429,7 +429,7 @@ module WorldModule3 =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
-                 LightDispatcher () :> EntityDispatcher
+                 Light3dDispatcher () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
@@ -449,7 +449,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
-                 LightFacet () :> Facet
+                 Light3dFacet () :> Facet
                  SkyBoxFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet]

@@ -1257,7 +1257,7 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
-module LightFacetModule =
+module Light3dFacetModule =
 
     type Entity with
         member this.GetBrightness world : single = this.Get Property? Brightness world
@@ -1270,7 +1270,7 @@ module LightFacetModule =
         member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
         member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
 
-    type LightFacet () =
+    type Light3dFacet () =
         inherit Facet (false)
 
         static member Properties =
@@ -1461,7 +1461,7 @@ module StaticModelSurfaceFacetModule =
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (centered, physical) =
+    type Entity2dDispatcher (centered, physical) =
         inherit EntityDispatcher (true, centered, physical)
 
         static member Properties =
@@ -1469,7 +1469,7 @@ module EntityDispatcherModule =
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d (centered, physical) =
+    type Entity3dDispatcher (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
 
         static member Properties =
@@ -1581,14 +1581,14 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, initial) =
+    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command> (centered, physical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, initial)
 
         static member Properties =
             [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, initial) =
+    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command> (centered, physical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
 
         static member Properties =
@@ -1598,7 +1598,7 @@ module EntityDispatcherModule =
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit Entity2dDispatcher (false, false)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1614,7 +1614,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit Entity2dDispatcher (false, false)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1638,7 +1638,7 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit Entity2dDispatcher (false, false)
 
         static member Properties =
             [define Entity.Absolute true
@@ -1648,7 +1648,7 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
+        inherit Entity2dDispatcher<'model, 'message, 'command> (false, false, model)
 
         static member Properties =
             [define Entity.Presence Omnipresent
@@ -2342,7 +2342,7 @@ module FillBarDispatcherModule =
 module BasicEmitter2dDispatcherModule =
 
     type BasicEmitter2dDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit Entity2dDispatcher (true, false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2354,7 +2354,7 @@ module BasicEmitter2dDispatcherModule =
 module Effect2dDispatcherModule =
 
     type Effect2dDispatcher () =
-        inherit EntityDispatcher2d (true, false)
+        inherit Entity2dDispatcher (true, false)
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2367,7 +2367,7 @@ module Effect2dDispatcherModule =
 module Block2dDispatcherModule =
 
     type Block2dDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit Entity2dDispatcher (false, true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -2381,7 +2381,7 @@ module Block2dDispatcherModule =
 module Box2dDispatcherModule =
 
     type Box2dDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit Entity2dDispatcher (false, true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -2408,7 +2408,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit Entity2dDispatcher (false, true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2484,7 +2484,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit Entity2dDispatcher (false, true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2507,7 +2507,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit Entity2dDispatcher (false, true)
 
         static member Facets =
             [typeof<TmxMapFacet>]
@@ -2525,13 +2525,13 @@ module TmxMapDispatcherModule =
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
-module LightDispatcherModule =
+module Light3dDispatcherModule =
 
-    type LightDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+    type Light3dDispatcher () =
+        inherit Entity3dDispatcher (true, false)
 
         static member Facets =
-            [typeof<LightFacet>]
+            [typeof<Light3dFacet>]
 
         static member Properties =
             [define Entity.Light true
@@ -2544,7 +2544,7 @@ module LightDispatcherModule =
 module SkyBoxDispatcherModule =
 
     type SkyBoxDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit Entity3dDispatcher (true, false)
 
         static member Facets =
             [typeof<SkyBoxFacet>]
@@ -2558,7 +2558,7 @@ module SkyBoxDispatcherModule =
 module StaticModelDispatcherModule =
 
     type StaticModelDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit Entity3dDispatcher (true, false)
 
         static member Facets =
             [typeof<StaticModelFacet>]
@@ -2571,7 +2571,7 @@ module StaticModelDispatcherModule =
 module StaticModelSurfaceDispatcherModule =
 
     type StaticModelSurfaceDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit Entity3dDispatcher (true, false)
 
         static member Facets =
             [typeof<StaticModelSurfaceFacet>]
@@ -2590,7 +2590,7 @@ module StaticSceneDispatcherModule =
         member this.StaticScene = lens Property? StaticScene this.GetStaticScene this.SetStaticScene this
 
     type StaticSceneDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit Entity3dDispatcher (true, false)
 
         static let destroyChildren (entity : Entity) world =
             Seq.fold (fun world child ->
@@ -2614,7 +2614,7 @@ module StaticSceneDispatcherModule =
                         | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
                             let world = world'
                             let childSurnames = Array.append entity.Surnames names // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
-                            let (child, world) = World.createEntity<EntityDispatcher3d> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            let (child, world) = World.createEntity<Entity3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
@@ -2622,7 +2622,7 @@ module StaticSceneDispatcherModule =
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
                             let childSurnames = Array.append entity.Surnames light.LightNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
-                            let (child, world) = World.createEntity<LightDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            let (child, world) = World.createEntity<Light3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                             let transform = light.LightMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
