@@ -558,7 +558,8 @@ module WorldModuleEntity =
                 transform.Position <- position
                 transform.Rotation <- rotation
                 transform.Scale <- scale
-                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+                let world = World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+                World.traverseEntityMounters World.propagateEntityAffineMatrix3 mounter world
             else world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
@@ -977,7 +978,8 @@ module WorldModuleEntity =
             let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationMount + elevationLocal
-            World.setEntityElevation elevation mounter world |> snd'
+            let world = World.setEntityElevation elevation mounter world |> snd'
+            World.traverseEntityMounters World.propagateEntityElevation3 mounter world
 
         static member internal propagateEntityElevation entity world =
             World.traverseEntityMounters World.propagateEntityElevation3 entity world
@@ -1043,7 +1045,8 @@ module WorldModuleEntity =
             let enabledMount = World.getEntityEnabled mount world
             let enabledLocal = World.getEntityEnabledLocal mounter world
             let enabled = enabledMount && enabledLocal
-            World.setEntityEnabled enabled mounter world |> snd'
+            let world = World.setEntityEnabled enabled mounter world |> snd'
+            World.traverseEntityMounters World.propagateEntityEnabled3 mounter world
 
         static member internal propagateEntityEnabled entity world =
             World.traverseEntityMounters World.propagateEntityEnabled3 entity world
@@ -1085,7 +1088,8 @@ module WorldModuleEntity =
             let visibleMount = World.getEntityVisible mount world
             let visibleLocal = World.getEntityVisibleLocal mounter world
             let visible = visibleMount && visibleLocal
-            World.setEntityVisible visible mounter world |> snd'
+            let world = World.setEntityVisible visible mounter world |> snd'
+            World.traverseEntityMounters World.propagateEntityVisible3 mounter world
 
         static member internal propagateEntityVisible entity world =
             World.traverseEntityMounters World.propagateEntityVisible3 entity world
