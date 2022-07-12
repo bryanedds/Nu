@@ -53,15 +53,17 @@ module Texture2d =
             Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
             Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
+    /// Create an image bitmap via .NET for faster loading on windows.
+    /// NOTE: this does not seem to work on Mono currently.
     let TryCreateImageBitmap (filePath : string) =
         try let image = new Bitmap (filePath)
             let data = image.LockBits (Rectangle (0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, Imaging.PixelFormat.Format32bppRgb)
             Some (data.Scan0, image)
         with _ -> None
 
-    /// Attempt to create an SDL surface of an image from the give file path, converting its format if needed.
+    /// Attempt to create an SDL surface of an image from the given file path.
     /// NOTE: caller is reponsible for calling SDL.SDL_FreeSurface on return surface pointer.
-    let TryCreateImageSurface (filePath : string) =
+    let TryCreateImageSurface filePath =
         let format = SDL.SDL_PIXELFORMAT_ABGR8888 // this is RGBA8888 on little-endian architectures
         let unconvertedPtr = SDL_image.IMG_Load filePath
         if unconvertedPtr <> nativeint 0 then
@@ -78,38 +80,79 @@ module Texture2d =
     /// Attempt to create a 2d texture from a file.
     let TryCreateTexture2d (minFilter, magFilter, generateMipmaps, filePath : string) =
 
-        // attempt to create image surface
-        match TryCreateImageBitmap filePath with
-        | Some (bitmapData, bitmap) ->
+        // presume rgba8 texture 2d format
+        let internalFormat = InternalFormat.Rgba8
 
-            // dispose bitmap automatically
-            use bitmap = bitmap
+        // attmept to load image
+        let texture2dOpt =
 
-            // upload the 2d texture to gl
-            let texture2d = Gl.GenTexture ()
-            let internalFormat = InternalFormat.Rgba8
-            Gl.BindTexture (TextureTarget.Texture2d, texture2d)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
+            // attempt to use faster image loading facilities on windows
+            match Environment.OSVersion.Platform with
+            | PlatformID.Win32NT
+            | PlatformID.Win32Windows ->
+
+                // attempt to create image bitmap
+                match TryCreateImageBitmap filePath with
+                | Some (bitmapData, bitmap) ->
+
+                    // dispose bitmap automatically
+                    use bitmap = bitmap
+
+                    // construct metadata
+                    let metadata =
+                        { Texture2dWidth = bitmap.Width
+                          Texture2dHeight = bitmap.Height
+                          Texture2dTexelWidth = 1.0f / single bitmap.Width
+                          Texture2dTexelHeight = 1.0f / single bitmap.Height
+                          Texture2dInternalFormat = internalFormat }
+
+                    // upload the 2d texture to gl
+                    let texture2d = Gl.GenTexture ()
+                    Gl.BindTexture (TextureTarget.Texture2d, texture2d)
+                    Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, bitmap.Width, bitmap.Height, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bitmapData)
+                    Some (metadata, texture2d)
+
+                // could not create
+                | None -> None
+
+            // otherwise...
+            | _ ->
+
+                // use slower but universal loading facilities via SDL
+                match TryCreateImageSurface filePath with
+                | Some (surfacePtr, surface) ->
+
+                    // construct metadata
+                    let metadata =
+                        { Texture2dWidth = surface.w
+                          Texture2dHeight = surface.h
+                          Texture2dTexelWidth = 1.0f / single surface.w
+                          Texture2dTexelHeight = 1.0f / single surface.h
+                          Texture2dInternalFormat = internalFormat }
+
+                    // upload the texture to gl
+                    let texture2d = Gl.GenTexture ()
+                    let internalFormat = InternalFormat.Rgba8
+                    Gl.BindTexture (TextureTarget.Texture2d, texture2d)
+                    Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, surface.w, surface.h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, surface.pixels)
+
+                    // free surface
+                    SDL.SDL_FreeSurface surfacePtr
+                    Some (metadata, texture2d)
+
+                // could not create
+                | None -> None
+
+        // attempt to finish parameterizing texture 2d
+        match texture2dOpt with
+        | Some (metadata, texture2d) ->
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
-
-            // check for errors
-            match Gl.GetError () with
-            | ErrorCode.NoError ->
-                let metadata =
-                    { Texture2dWidth = bitmap.Width
-                      Texture2dHeight = bitmap.Height
-                      Texture2dTexelWidth = 1.0f / single bitmap.Width
-                      Texture2dTexelHeight = 1.0f / single bitmap.Height
-                      Texture2dInternalFormat = internalFormat }
-                Right (metadata, texture2d)
-            | error -> Left (string error)
-
-        // load error
+            Right (metadata, texture2d)
         | None -> Left ("Missing file or unloadable image '" + filePath + "'.")
 
     /// Attempt to create an unfiltered 2d texture from a file.
