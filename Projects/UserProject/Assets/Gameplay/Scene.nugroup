@@ -30,7 +30,7 @@
     [Size [200 200 0]]]]
   [SkyBoxDispatcher
    []]
-  [LightDispatcher
+  [Light3dDispatcher
    [[Position [0 5 2]]]]
   [StaticModelDispatcher
    [[Name SphereLeft]

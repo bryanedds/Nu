@@ -77,7 +77,7 @@ type SceneryDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
-                [Content.light Simulants.Light.Name
+                [Content.light3d Simulants.Light.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
                      Entity.Color == Color.White
                      Entity.Brightness == 10.0f
