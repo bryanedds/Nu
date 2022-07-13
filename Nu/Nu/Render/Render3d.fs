@@ -624,7 +624,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
             let viewport = Constants.Render.Viewport
-            let projection = viewport.Projection3d Omnipresent
+            let projection = viewport.Projection3d Constants.Render.NearPlaneDistance Constants.Render.FarPlaneDistanceOmnipresent
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 
