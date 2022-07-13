@@ -1080,6 +1080,7 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
+// TODO: 3D: ray and plane ctor functions.
 [<AutoOpen>]
 module Plane =
 
@@ -1185,19 +1186,7 @@ module Math =
 
     /// Snap a single value to an offset.
     let snapF (offset : single) (value : single) =
-        single (snapI (int offset) (int value))
-
-    /// Snap a degree value to an offset.
-    let snapD (offset : single) (value : single) =
-        value |>
-        int |>
-        snapI (int offset) |>
-        single |>
-        degreesToRadians
-
-    /// Snap a Vector3 degree value to an offset.
-    let snapD3d offset (v3 : Vector3) =
-        Vector3 (snapD offset v3.X, snapD offset v3.Y, snapD offset v3.Z)
+        single ((snapI (int (offset * 100.0f)) (int (value * 100.0f)))) * 0.01f
 
     /// Snap a Vector3 value to an offset.
     let snapF3d offset (v3 : Vector3) =
