@@ -342,8 +342,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             match renderAsset with
             | StaticModelAsset modelAsset ->
                 for light in modelAsset.Lights do
+                    let lightMatrix = light.LightMatrix * modelMatrix
                     let light =
-                        { SortableLightPosition = light.LightMatrix.Translation
+                        { SortableLightPosition = lightMatrix.Translation
                           SortableLightColor = light.LightColor
                           SortableLightBrightness = light.LightBrightness
                           SortableLightIntensity = light.LightIntensity
