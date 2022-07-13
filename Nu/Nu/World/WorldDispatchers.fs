@@ -1381,13 +1381,14 @@ module StaticModelFacetModule =
             boundsExtended.Size
 
         override this.RayCast (ray, entity, world) =
+            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
             match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
             | Some staticModel ->
                 let intersectionses =
                     Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                         let geometry = surface.PhysicallyBasedGeometry
                         let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
-                        let raySurface = ray.Transform inverse
+                        let raySurface = rayEntity.Transform inverse
                         let mutable bounds = geometry.Bounds
                         let boundsIntersectionOpt = raySurface.Intersects bounds
                         if boundsIntersectionOpt.HasValue then
@@ -1449,15 +1450,16 @@ module StaticModelSurfaceFacetModule =
             else Constants.Engine.EntitySize3dDefault
 
         override this.RayCast (ray, entity, world) =
+            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
             match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
                 let surface = staticModel.Surfaces.[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let mutable bounds = geometry.Bounds
-                let boundsIntersectionOpt = ray.Intersects bounds
+                let boundsIntersectionOpt = rayEntity.Intersects bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = ray.Intersects (geometry.Indices, geometry.Vertices)
+                    let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
                     intersections |> Seq.map snd' |> Seq.toArray
                 else [||]
             | None -> [||]
