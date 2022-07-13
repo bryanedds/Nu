@@ -139,7 +139,7 @@ module Viewport =
         /// NOTE: this function suffers from a floating-point accuracy precision issue like the one described here -
         /// https://github.com/amerkoleci/Vortice.Mathematics/issues/9
         member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyePosition, eyeRotation) =
-            let viewProjection = this.ViewProjection3d (absolute, 1.0f, 10.0f, eyePosition, eyeRotation) // NOTE: I'm not sure what the ideal near and far parameters are here to preserve accuracy.
+            let viewProjection = this.ViewProjection3d (absolute, Constants.Render.NearPlaneDistance, 1.0f, eyePosition, eyeRotation) // NOTE: I'm not sure what the ideal near and far parameters are here to preserve accuracy.
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
             Ray (near, Vector3.Normalize (far - near))

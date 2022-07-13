@@ -41,5 +41,6 @@ module Assets =
         let (*Literal*) TileMapEmpty = asset<TileMap> PackageName Assets.Default.TileMapEmptyName
         let (*Literal*) SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let (*Literal*) StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
+        let (*Literal*) HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
         let (*Literal*) Sound = asset<Sound> PackageName Assets.Default.SoundName
         let (*Literal*) Song = asset<Song> PackageName Assets.Default.SongName
