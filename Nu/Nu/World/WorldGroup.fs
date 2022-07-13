@@ -40,6 +40,7 @@ module WorldGroupModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.ActualizeEvent = Events.Actualize --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -128,8 +129,14 @@ module WorldGroupModule =
             World.publishPlus () (Events.PostUpdate --> group) eventTrace Simulants.Game false false world
 
         static member internal actualizeGroup (group : Group) world =
+
+            // actualize via dispatcher
             let dispatcher = group.GetDispatcher world
-            dispatcher.Actualize (group, world)
+            let world = dispatcher.Actualize (group, world)
+
+            // publish actualize event
+            let eventTrace = EventTrace.debug "World" "actualizeGroup" "" EventTrace.empty
+            World.publishPlus () (Events.Actualize --> group) eventTrace Simulants.Game false false world
 
         /// Get all the groups in a screen.
         [<FunctionBinding>]

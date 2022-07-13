@@ -417,8 +417,13 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Actualize (entity, world)
             let facets = entity.GetFacets world
-            if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-            then Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+            let world =
+                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
+                then Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+                else world
+            if World.getEntityPublishActualizes entity world then
+                let eventTrace = EventTrace.debug "World" "actualizeEntity" "" EventTrace.empty
+                World.publishPlus () entity.ActualizeEvent eventTrace Simulants.Game false false world
             else world
 
         /// Get all the entities in a group.

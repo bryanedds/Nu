@@ -53,6 +53,7 @@ module WorldScreenModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.ActualizeEvent = Events.Actualize --> this
         member this.SelectEvent = Events.Select --> this
         member this.DeselectEvent = Events.Deselecting --> this
         member this.IncomingStartEvent = Events.IncomingStart --> this
@@ -168,7 +169,11 @@ module WorldScreenModule =
 
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
-            dispatcher.Actualize (screen, world)
+            let world = dispatcher.Actualize (screen, world)
+
+            // publish actualize event
+            let eventTrace = EventTrace.debug "World" "actualizeScreen" "" EventTrace.empty
+            World.publishPlus () (Events.Actualize --> screen) eventTrace Simulants.Game false false world
 
         /// Get all the screens in the world.
         [<FunctionBinding>]

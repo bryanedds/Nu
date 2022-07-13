@@ -1477,6 +1477,7 @@ module Gaia =
                         let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                         let world = World.subscribe (handleNuUpdate form) Events.Update Simulants.Game world
+                        let world = World.subscribe (handleNuUpdate form) Events.Act Simulants.Game world
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
