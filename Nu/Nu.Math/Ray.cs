@@ -322,21 +322,9 @@ namespace Nu
         }
 
         /// <summary>
-        /// Attempt to find the intersection of the <see cref="Ray"/> with a <see cref="Plane"/>.
-        /// </summary>
-        public Vector3? Intersection(Plane plane)
-        {
-            var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
-            var t =
-                -(d + Position.Z * plane.Normal.Z + Position.Y * plane.Normal.Y + Position.X * plane.Normal.X) /
-                +(Direction.Z * plane.Normal.Z + Direction.Y * plane.Normal.Y + Direction.X * plane.Normal.X);
-            return Position + t * Direction;
-        }
-
-        /// <summary>
         /// Get all of the ray intersections of a triangle.
         /// </summary>
-        public IEnumerable<(int, float)> Intersections(int[] indices, Vector3[] vertices)
+        public IEnumerable<(int, float)> Intersects(int[] indices, Vector3[] vertices)
         {
             var faceCount = indices.Length / 3;
             for (var i = 0; i < faceCount; ++i)
@@ -392,7 +380,7 @@ namespace Nu
         /// </summary>
         public bool Intersects(int[] indices, Vector3[] vertices, out float? result)
 		{
-            var enr = Intersections(indices, vertices).GetEnumerator();
+            var enr = Intersects(indices, vertices).GetEnumerator();
             if (enr.MoveNext())
             {
                 var (_, t) = enr.Current;
@@ -401,16 +389,20 @@ namespace Nu
             }
             result = null;
             return false;
-		}
+        }
 
         /// <summary>
-        /// Check if ray intersects any of the given triangle vertices.
+        /// Attempt to find the intersection of the <see cref="Ray"/> with a <see cref="Plane"/>.
+        /// TODO: 3D: get rid of this function and use Intersects instead.
         /// </summary>
-        public bool Intersects(int[] indices, Vector3[] vertices)
-		{
-            Intersects(indices, vertices, out var resultOpt);
-            return resultOpt.HasValue;
-		}
+        public Vector3? Intersection(Plane plane)
+        {
+            var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
+            var t =
+                -(d + Position.Z * plane.Normal.Z + Position.Y * plane.Normal.Y + Position.X * plane.Normal.X) /
+                +(Direction.Z * plane.Normal.Z + Direction.Y * plane.Normal.Y + Direction.X * plane.Normal.X);
+            return Position + t * Direction;
+        }
 
         /// <summary>
         /// Check if two rays are not equal.

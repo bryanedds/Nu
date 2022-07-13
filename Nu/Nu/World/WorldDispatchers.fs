@@ -1257,6 +1257,28 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
+module SkyBoxFacetModule =
+
+    type Entity with
+        member this.GetCubeMap world : CubeMap AssetTag = this.Get Property? CubeMap world
+        member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set Property? CubeMap value world
+        member this.CubeMap = lens Property? CubeMap this.GetCubeMap this.SetCubeMap this
+
+    type SkyBoxFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
+             define Entity.CubeMap Assets.Default.SkyBoxMap]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let cubeMap = entity.GetCubeMap world
+                World.enqueueRenderMessage3d (RenderSkyBoxDescriptor cubeMap) world
+            else world
+
+[<AutoOpen>]
 module Light3dFacetModule =
 
     type Entity with
@@ -1290,27 +1312,10 @@ module Light3dFacetModule =
                 World.enqueueRenderMessage3d (RenderLightDescriptor (position, color, brightness, intensity, lightType)) world
             else world
 
-[<AutoOpen>]
-module SkyBoxFacetModule =
-
-    type Entity with
-        member this.GetCubeMap world : CubeMap AssetTag = this.Get Property? CubeMap world
-        member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set Property? CubeMap value world
-        member this.CubeMap = lens Property? CubeMap this.GetCubeMap this.SetCubeMap this
-
-    type SkyBoxFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.Absolute true
-             define Entity.Presence Omnipresent
-             define Entity.CubeMap Assets.Default.SkyBoxMap]
-
-        override this.Actualize (entity, world) =
-            if entity.GetVisible world then
-                let cubeMap = entity.GetCubeMap world
-                World.enqueueRenderMessage3d (RenderSkyBoxDescriptor cubeMap) world
-            else world
+        override this.RayCast (ray, entity, world) =
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+            else [||]
 
 [<AutoOpen>]
 module StaticModelFacetModule =
@@ -1386,7 +1391,7 @@ module StaticModelFacetModule =
                         let mutable bounds = geometry.Bounds
                         let boundsIntersectionOpt = raySurface.Intersects bounds
                         if boundsIntersectionOpt.HasValue then
-                            let intersections = raySurface.Intersections (geometry.Indices, geometry.Vertices)
+                            let intersections = raySurface.Intersects (geometry.Indices, geometry.Vertices)
                             intersections |> Seq.map snd' |> Seq.toArray
                         else [||])
                         staticModel.Surfaces
@@ -1452,7 +1457,7 @@ module StaticModelSurfaceFacetModule =
                 let mutable bounds = geometry.Bounds
                 let boundsIntersectionOpt = ray.Intersects bounds
                 if boundsIntersectionOpt.HasValue then
-                    let intersections = ray.Intersections (geometry.Indices, geometry.Vertices)
+                    let intersections = ray.Intersects (geometry.Indices, geometry.Vertices)
                     intersections |> Seq.map snd' |> Seq.toArray
                 else [||]
             | None -> [||]
@@ -2525,6 +2530,20 @@ module TmxMapDispatcherModule =
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
+module SkyBoxDispatcherModule =
+
+    type SkyBoxDispatcher () =
+        inherit Entity3dDispatcher (true, false)
+
+        static member Facets =
+            [typeof<SkyBoxFacet>]
+
+        static member Properties =
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
+             define Entity.CubeMap Assets.Default.SkyBoxMap]
+
+[<AutoOpen>]
 module Light3dDispatcherModule =
 
     type Light3dDispatcher () =
@@ -2539,20 +2558,6 @@ module Light3dDispatcherModule =
              define Entity.Brightness 10.0f
              define Entity.Intensity 1.0f
              define Entity.LightType PointLight]
-
-[<AutoOpen>]
-module SkyBoxDispatcherModule =
-
-    type SkyBoxDispatcher () =
-        inherit Entity3dDispatcher (true, false)
-
-        static member Facets =
-            [typeof<SkyBoxFacet>]
-
-        static member Properties =
-            [define Entity.Absolute true
-             define Entity.Presence Omnipresent
-             define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
 module StaticModelDispatcherModule =
