@@ -47,9 +47,10 @@ module Gaia =
         (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
-        let positionSnap = snd (Int32.TryParse form.positionSnapTextBox.Text)
-        let rotationSnap = snd (Int32.TryParse form.rotationSnapTextBox.Text)
-        (positionSnap, rotationSnap)
+        let positionSnap = snd (Single.TryParse form.positionSnapTextBox.Text)
+        let rotationSnap = snd (Single.TryParse form.rotationSnapTextBox.Text)
+        let scaleSnap = snd (Single.TryParse form.scaleSnapTextBox.Text)
+        (positionSnap, rotationSnap, scaleSnap)
     
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
@@ -850,21 +851,37 @@ module Gaia =
                     | overlayName -> ExplicitOverlay overlayName
                 let name = generateEntityName dispatcherName world
                 let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
-                let (positionSnap, rotationSnap) = getSnaps form
+                let (positionSnap, rotationSnap, scaleSnap) = getSnaps form
+                let viewport = World.getViewport world
                 let mousePosition = World.getMousePosition world
-                let entityPosition =
-                    // TODO: 3D: implement for 3d.
-                    let viewport = World.getViewport world
-                    let eyePosition = World.getEyePosition2d world
-                    let eyeSize = World.getEyeSize2d world
-                    if atMouse
-                    then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
-                    else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
                 let mutable entityTransform = entity.GetTransform world
-                entityTransform.Position <- entityPosition.V3
-                entityTransform.Size <- entity.GetQuickSize world
-                entityTransform.Elevation <- getCreationElevation form
-                let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
+                let world =
+                    if entity.GetIs2d world then
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let entityPosition =
+                            if atMouse
+                            then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
+                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
+                        entityTransform.Position <- entityPosition.V3
+                        entityTransform.Size <- entity.GetQuickSize world
+                        entityTransform.Elevation <- getCreationElevation form
+                        if not form.snap3dButton.Checked
+                        then entity.SetTransformSnapped positionSnap rotationSnap scaleSnap entityTransform world
+                        else entity.SetTransform entityTransform world
+                    else
+                        let eyePosition = World.getEyePosition3d world
+                        let eyeRotation = World.getEyeRotation3d world
+                        let entityPosition =
+                            if atMouse then
+                                let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
+                                ray.Position + ray.Direction * Constants.Render.EyePosition3dDefault.Z
+                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Render.EyePosition3dDefault.Z
+                        entityTransform.Position <- entityPosition
+                        entityTransform.Size <- entity.GetQuickSize world
+                        if form.snap3dButton.Checked
+                        then entity.SetTransformSnapped positionSnap rotationSnap scaleSnap entityTransform world
+                        else entity.SetTransform entityTransform world
                 selectEntity entity form world
                 world
             with exn ->
@@ -1032,10 +1049,10 @@ module Gaia =
         addWorldChanger $ fun world ->
             Globals.pushPastWorld world
             let selectedGroup = (getEditorState world).SelectedGroup
-            let (positionSnap, rotationSnap) = getSnaps form
+            let (positionSnap, rotationSnap, scaleSnap) = getSnaps form
             let editorState = getEditorState world
             let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap surnamesOpt selectedGroup world
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap scaleSnap surnamesOpt selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world
@@ -1053,12 +1070,24 @@ module Gaia =
                 world
             | _ -> failwithumf ()
 
-    let private handleFormResetEye (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            if form.eye3d.Checked then
-                let world = World.setEyePosition3d Constants.Render.EyePosition3dDefault world
-                World.setEyeRotation3d quatIdentity world
-            else World.setEyePosition2d v2Zero world
+            if not form.snap3dButton.Checked then
+                form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap2dDefault
+                form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap2dDefault
+                form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap2dDefault
+            else
+                form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap3dDefault
+                form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap3dDefault
+                form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap3dDefault
+            world
+
+    let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
+        addWorldChanger $ fun world ->
+            let world = World.setEyePosition2d v2Zero world
+            let world = World.setEyePosition3d Constants.Render.EyePosition3dDefault world
+            let world = World.setEyeRotation3d quatIdentity world
+            world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1337,10 +1366,12 @@ module Gaia =
             match (getEditorState world).DragEntityState with
             | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
-                    let (positionSnap, _) = getSnaps form
                     let mousePositionWorld = World.getMousePositionWorld2d (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
-                    let entityPositionSnapped = Math.snapF3d positionSnap entityPosition.V3
+                    let entityPositionSnapped =
+                        if not form.snap3dButton.Checked
+                        then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
+                        else entityPosition.V3
                     let world =
                         if entity.MountExists world
                         then entity.SetPositionLocal entityPositionSnapped world
@@ -1355,12 +1386,16 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
+                        let entityPositionSnapped =
+                            if form.snap3dButton.Checked
+                            then Math.snapF3d (Triple.fst (getSnaps form) * 100.0f) (entityPosition * 100.0f) * 0.01f
+                            else entityPosition
                         let world =
                             if entity.MountExists world then
-                                let entityPositionDelta = entityPosition - entity.GetPosition world
+                                let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
                                 let entityPositionLocal = entity.GetPositionLocal world + entityPositionDelta
                                 entity.SetPositionLocal entityPositionLocal world
-                            else entity.SetPosition entityPosition world
+                            else entity.SetPosition entityPositionSnapped world
                         // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                         // form.entityPropertyGrid.Refresh ()
                         world
@@ -1385,19 +1420,15 @@ module Gaia =
     let private updateUndoButton (form : GaiaForm) world =
         if form.undoToolStripMenuItem.Enabled then
             if List.isEmpty Globals.PastWorlds then
-                form.undoButton.Enabled <- false
                 form.undoToolStripMenuItem.Enabled <- false
         elif not (List.isEmpty Globals.PastWorlds) then
-            form.undoButton.Enabled <- not (World.getImperative world)
             form.undoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
     let private updateRedoButton (form : GaiaForm) world =
         if form.redoToolStripMenuItem.Enabled then
             if List.isEmpty Globals.FutureWorlds then
-                form.redoButton.Enabled <- false
                 form.redoToolStripMenuItem.Enabled <- false
         elif not (List.isEmpty Globals.FutureWorlds) then
-            form.redoButton.Enabled <- not (World.getImperative world)
             form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
     let private updateEditorWorld (form : GaiaForm) world =
@@ -1466,7 +1497,7 @@ module Gaia =
                  MessageBoxButtons.YesNo,
                  MessageBoxIcon.Error) with
             | DialogResult.Yes ->
-                form.undoButton.PerformClick ()
+                form.undoToolStripMenuItem.PerformClick ()
                 Globals.World <- World.choose Globals.World
                 tryRun3 runWhile sdlDeps form
             | _ -> Globals.World <- World.choose Globals.World
@@ -1545,8 +1576,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnapDefault
-        form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnapDefault
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap2dDefault
+        form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap2dDefault
+        form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap2dDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
 
         // build tree view sorter
@@ -1594,7 +1626,6 @@ module Gaia =
         form.createEntityButton.Click.Add (handleFormCreateEntity false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
         form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
-        form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
         form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.advancingButton.PerformClick ())
@@ -1604,9 +1635,7 @@ module Gaia =
         form.saveGroupAsToolStripMenuItem.Click.Add (handleFormSave true form)
         form.openGroupToolStripMenuItem.Click.Add (handleFormOpen form)
         form.closeGroupToolStripMenuItem.Click.Add (handleFormClose form)
-        form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
-        form.redoButton.Click.Add (handleFormRedo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
         form.advancingButton.CheckedChanged.Add (handleFormAdvancingChanged form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
@@ -1617,6 +1646,7 @@ module Gaia =
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
+        form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
