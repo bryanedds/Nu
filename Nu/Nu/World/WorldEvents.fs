@@ -66,6 +66,7 @@ module Events =
     let LifeCycle simulantTypeName = stoa<LifeCycleData> ("LifeCycle/" + simulantTypeName + "/Event")
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
+    let Actualize = stoa<unit> "Actualize/Event"
     let Select = stoa<unit> "Select/Event"
     let Deselecting = stoa<unit> "Deselecting/Event"
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"

@@ -55,6 +55,7 @@ module WorldGameModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.ActualizeEvent = Events.Actualize --> this
         member this.MouseMoveEvent = Events.MouseMove --> this
         member this.MouseDragEvent = Events.MouseDrag --> this
         member this.MouseLeftChangeEvent = Events.MouseLeftChange --> this
@@ -181,9 +182,15 @@ module WorldGameModule =
             World.choose world
 
         static member internal actualizeGame world =
+
+            // actualize via dispatcher
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Actualize (game, world)
+
+            // publish actualize event
+            let eventTrace = EventTrace.debug "World" "actualizeGame" "" EventTrace.empty
+            let world = World.publishPlus () Events.Actualize eventTrace game false false world
             World.choose world
 
         /// Get all the entities in the world.
