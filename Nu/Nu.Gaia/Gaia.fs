@@ -1339,6 +1339,14 @@ module Gaia =
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
             if Keys.F5 = key then form.advancingButton.PerformClick ()
+            if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
+            if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
+            if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
+            if Keys.Z = key && Keys.None = Control.ModifierKeys then form.constrainZButton.Checked <- not form.constrainZButton.Checked
+            if Keys.C = key && Keys.None = Control.ModifierKeys then
+                form.constrainXButton.Checked <- false
+                form.constrainYButton.Checked <- false
+                form.constrainZButton.Checked <- false
             if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
