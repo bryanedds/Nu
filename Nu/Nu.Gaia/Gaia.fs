@@ -874,6 +874,7 @@ module Gaia =
                         let eyeRotation = World.getEyeRotation3d world
                         let entityPosition =
                             if atMouse then
+                                // TODO: 3D: use position on forward plane rather than ray.
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
                                 ray.Position + ray.Direction * Constants.Render.EyePosition3dDefault.Z
                             else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Render.EyePosition3dDefault.Z
@@ -1388,7 +1389,7 @@ module Gaia =
                         let entityPosition = intersectionOpt.Value - entityDragOffset
                         let entityPositionSnapped =
                             if form.snap3dButton.Checked
-                            then Math.snapF3d (Triple.fst (getSnaps form) * 100.0f) (entityPosition * 100.0f) * 0.01f
+                            then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
                             else entityPosition
                         let world =
                             if entity.MountExists world then
