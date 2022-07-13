@@ -657,7 +657,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
                 Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
                 flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
-            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
+            SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
             renderer.RenderTasks.RenderSurfacesForwardRelative |>
                 Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
                 Seq.toArray |>

@@ -22,6 +22,7 @@ void main()
     positionOut = vec3(model * vec4(position, 1.0));
     texCoordsOut = texCoords;
     albedoOut = albedo;
+    materialOut = material;
     normalOut = mat3(model) * normal;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
