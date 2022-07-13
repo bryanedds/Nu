@@ -341,6 +341,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset modelAsset ->
+                for light in modelAsset.Lights do
+                    let light =
+                        { SortableLightPosition = light.LightMatrix.Translation
+                          SortableLightColor = light.LightColor
+                          SortableLightBrightness = light.LightBrightness
+                          SortableLightIntensity = light.LightIntensity
+                          SortableLightDistanceSquared = Single.MaxValue }
+                    SegmentedList.add light renderer.RenderTasks.RenderLights
                 for surface in modelAsset.Surfaces do
                     GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, false, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
