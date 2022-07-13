@@ -509,10 +509,7 @@ module WorldEntityModule =
                         let entityBounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects entityBounds
                         if intersectionOpt.HasValue then
-                            let affineMatrix = entity.GetAffineMatrix world
-                            let (_, inverse) = Matrix4x4.Invert affineMatrix
-                            let rayEntity = rayWorld.Transform inverse
-                            let intersections = entity.RayCast rayEntity world
+                            let intersections = entity.RayCast rayWorld world
                             Array.map (fun intersection -> (intersection, entity)) intersections
                         else [||])
                     entities
