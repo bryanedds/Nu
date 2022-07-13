@@ -111,6 +111,7 @@ module PhysicallyBased =
     /// A physically-based static model.
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
+          Lights : PhysicallyBasedLight array
           Surfaces : PhysicallyBasedSurface array
           PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
 
@@ -527,6 +528,8 @@ module PhysicallyBased =
         | None -> Right geometries
 
     let TryCreatePhysicallyBasedStaticModel (renderable, unitType, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
+
+        // attempt to import from assimp scene
         try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
@@ -534,17 +537,18 @@ module PhysicallyBased =
                 match TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene) with
                 | Right geometries ->
 
-                    // collect lights
-                    let lights =
+                    // collect light nodes
+                    let lightNodes =
                         seq {
                             for i in 0 .. dec scene.LightCount do
                                 let light = scene.Lights[i]
                                 let node = scene.RootNode.FindNode light.Name
-                                yield (node, light) } |>
+                                yield (light, node) } |>
                         Seq.toArray
 
                     // construct bounds and hierarchy
                     // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause too subtle hierarchy bugs.
+                    let lights = SegmentedList.make ()
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
@@ -556,8 +560,8 @@ module PhysicallyBased =
 
                                 // collect light
                                 // NOTE: this is an n^2 algorithm to deal with nodes having no light information
-                                for i in 0 .. dec lights.Length do
-                                    let (lightNode, light) = lights.[i]
+                                for i in 0 .. dec lightNodes.Length do
+                                    let (light, lightNode) = lightNodes.[i]
                                     if lightNode = node then
                                         let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
                                         let transform = node.ImportMatrix (unitType, node.TransformWorld)
@@ -565,15 +569,15 @@ module PhysicallyBased =
                                         match light.LightType with
                                         | _ -> // just use point light for all lights right now
                                             let physicallyBasedLight =
-                                                PhysicallyBasedLight
-                                                    { LightNames = names
-                                                      LightMatrixIsIdentity = transform.IsIdentity
-                                                      LightMatrix = transform
-                                                      LightColor = color
-                                                      LightBrightness = 1.0f // TODO: 3D: see if we can figure out how to populate this.
-                                                      LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this.
-                                                      PhysicallyBasedLightType = PointLight }
-                                            yield physicallyBasedLight
+                                                { LightNames = names
+                                                  LightMatrixIsIdentity = transform.IsIdentity
+                                                  LightMatrix = transform
+                                                  LightColor = color
+                                                  LightBrightness = 1.0f // TODO: 3D: see if we can figure out how to populate this.
+                                                  LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this.
+                                                  PhysicallyBasedLightType = PointLight }
+                                            SegmentedList.add physicallyBasedLight lights
+                                            yield PhysicallyBasedLight physicallyBasedLight
 
                                 for i in 0 .. dec node.MeshIndices.Count do
 
@@ -591,7 +595,13 @@ module PhysicallyBased =
                             TreeNode)
 
                     // fin
-                    Right { Bounds = bounds; PhysicallyBasedStaticHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
+                    Right
+                        { Bounds = bounds
+                          Lights = Array.ofSeq lights
+                          Surfaces = Array.ofSeq surfaces
+                          PhysicallyBasedStaticHierarchy = hierarchy }
+
+                // error
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
