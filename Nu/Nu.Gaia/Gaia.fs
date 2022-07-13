@@ -857,12 +857,15 @@ module Gaia =
                 else world
             else world
 
-    let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormCreateEntity atMouse (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             let oldWorld = world
             try Globals.pushPastWorld world
                 let selectedGroup = (getEditorState world).SelectedGroup
-                let dispatcherName = form.createEntityComboBox.Text
+                let dispatcherName =
+                    match dispatcherNameOpt with
+                    | Some dispatcherName -> dispatcherName
+                    | None -> form.createEntityComboBox.Text
                 let overlayNameDescriptor =
                     match form.overlayComboBox.Text with
                     | "(Default Overlay)" -> DefaultOverlay
@@ -1377,7 +1380,7 @@ module Gaia =
                 if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
-                if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false None form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.D = key then handleFormDeleteEntity form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.X = key then handleFormCut form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
@@ -1550,12 +1553,23 @@ module Gaia =
                 tryRun3 runWhile sdlDeps form
             | _ -> Globals.World <- World.choose Globals.World
 
+    let private refreshCreateContextMenuItemChildren (form : GaiaForm) world =
+        form.createContextMenuItem.DropDownItems.Clear ()
+        let item = form.createContextMenuItem.DropDownItems.Add "Selected"
+        item.Click.Add (handleFormCreateEntity true None form)
+        form.createContextMenuItem.DropDownItems.Add "-" |> ignore
+        for dispatcherKvp in World.getEntityDispatchers world do
+            let dispatcherName = dispatcherKvp.Key
+            let item = form.createContextMenuItem.DropDownItems.Add dispatcherName
+            item.Click.Add (handleFormCreateEntity true (Some dispatcherName) form)
+
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         let (defaultGroup, world) = attachToWorld targetDir form Globals.World
         let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
         Globals.World <- world
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
+        refreshCreateContextMenuItemChildren form Globals.World
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup defaultGroup form Globals.World
@@ -1677,9 +1691,8 @@ module Gaia =
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
         form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
         form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
-        form.createEntityButton.Click.Add (handleFormCreateEntity false form)
-        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
-        form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
+        form.createEntityButton.Click.Add (handleFormCreateEntity false None form)
+        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false None form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
         form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.advancingButton.PerformClick ())
