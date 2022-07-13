@@ -1387,6 +1387,7 @@ module Gaia =
             match (getEditorState world).DragEntityState with
             | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
+                    // TODO: 3D: implmeent entity constraints here as well.
                     let mousePositionWorld = World.getMousePositionWorld2d (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
@@ -1414,9 +1415,26 @@ module Gaia =
                         let world =
                             if entity.MountExists world then
                                 let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
-                                let entityPositionLocal = entity.GetPositionLocal world + entityPositionDelta
-                                entity.SetPositionLocal entityPositionLocal world
-                            else entity.SetPosition entityPositionSnapped world
+                                let entityPositionConstrained =
+                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                    | (true, false, false) -> entity.GetPositionLocal world + entityPositionDelta * v3Right
+                                    | (false, true, false) -> entity.GetPositionLocal world + entityPositionDelta * v3Up
+                                    | (false, false, true) -> entity.GetPositionLocal world + entityPositionDelta * v3Back
+                                    | (true, true, false) -> entity.GetPositionLocal world + entityPositionDelta * (v3Right + v3Up)
+                                    | (false, true, true) -> entity.GetPositionLocal world + entityPositionDelta * (v3Up + v3Back)
+                                    | (_, _, _) -> entity.GetPositionLocal world + entityPositionDelta
+                                entity.SetPositionLocal entityPositionConstrained world
+                            else
+                                let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
+                                let entityPositionConstrained =
+                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                    | (true, false, false) -> entity.GetPosition world + entityPositionDelta * v3Right
+                                    | (false, true, false) -> entity.GetPosition world + entityPositionDelta * v3Up
+                                    | (false, false, true) -> entity.GetPosition world + entityPositionDelta * v3Back
+                                    | (true, true, false) -> entity.GetPosition world + entityPositionDelta * (v3Right + v3Up)
+                                    | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
+                                    | (_, _, _) -> entity.GetPosition world + entityPositionDelta
+                                entity.SetPosition entityPositionConstrained world
                         // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                         // form.entityPropertyGrid.Refresh ()
                         world
