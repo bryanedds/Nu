@@ -4,5 +4,5 @@
    [Assets Assets/Default [bmp] [Render2d] []]
    [Assets Assets/Default [png tif cbm fbx obj mtl glsl] [Render3d] []]
    [Assets Assets/Default [wav ogg] [Audio] []]
-   [Assets Assets/Default [nueffect nuscript] [Symbol] []]
+   [Assets Assets/Default [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Default [nugroup tsx tmx] [] []]]]]]
