@@ -1709,6 +1709,27 @@ module WorldModuleEntity =
             let intersections = Array.append intersectionsFacets intersectionsDispatcher
             Array.sort intersections
 
+        static member internal getEntityHighlightBounds (entity : Entity) world =
+            let mutable boundsOpt = None : Box3 option
+            let facets = World.getEntityFacets entity world
+            let dispatcher = World.getEntityDispatcher entity world
+            for facet in facets do
+                let bounds2Opt = facet.TryGetHighlightBounds (entity, world)
+                match (boundsOpt, bounds2Opt) with
+                | (Some bounds, Some bounds2) -> boundsOpt <- Some (bounds.Combine bounds2)
+                | (Some _, None) -> ()
+                | (None, Some _) -> boundsOpt <- bounds2Opt
+                | (None, None) -> ()
+            let bounds2Opt = dispatcher.TryGetHighlightBounds (entity, world)
+            match (boundsOpt, bounds2Opt) with
+            | (Some bounds, Some bounds2) -> boundsOpt <- Some (bounds.Combine bounds2)
+            | (Some _, None) -> ()
+            | (None, Some _) -> boundsOpt <- bounds2Opt
+            | (None, None) -> ()
+            match boundsOpt with
+            | Some bounds -> bounds
+            | None -> box3 (v3Dup 0.5f) v3One
+
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
 

@@ -264,6 +264,10 @@ module WorldTypes =
         abstract RayCast : Ray * Entity * World -> single array
         default this.RayCast (_, _, _) = [||]
 
+        /// Attempt to get the highlight bounds of an entity.
+        abstract TryGetHighlightBounds : Entity * World -> Box3 option
+        default this.TryGetHighlightBounds (_, _) = None
+
         /// Whether the dispatcher participates in a physics system.
         member this.Physical = physical
 
@@ -313,6 +317,10 @@ module WorldTypes =
         /// Participate in attempting to pick an entity with a ray.
         abstract RayCast : Ray * Entity * World -> single array
         default this.RayCast (_, _, _) = [||]
+
+        /// Attempt to get the highlight bounds of a facet.
+        abstract TryGetHighlightBounds : Entity * World -> Box3 option
+        default this.TryGetHighlightBounds (_, _) = None
 
         /// Participate in getting the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3

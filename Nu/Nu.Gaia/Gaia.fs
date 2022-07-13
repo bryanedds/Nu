@@ -379,7 +379,7 @@ module Gaia =
                 (Cascade, world)
             else
                 let absolute = entity.GetAbsolute world
-                let bounds = entity.GetBounds world
+                let bounds = entity.GetHighlightBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size * 1.01f) // slightly bigger to prevent z-fighting w/ highlight box
                 boundsMatrix.Translation <- bounds.Center
                 let renderMaterial = Unchecked.defaultof<_>

@@ -281,8 +281,11 @@ module WorldEntityModule =
         /// Check if an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
 
+        /// Get the entity's highlight bounds.
+        member this.GetHighlightBounds world = World.getEntityHighlightBounds this world
+
         /// Set an entity's size by its quick size.
-        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
+        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world |> snd'
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
         /// TODO: 3D: make this work 3-dimensionally!
