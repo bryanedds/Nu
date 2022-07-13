@@ -1577,17 +1577,24 @@ module Gaia =
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
-    let selectTargetDirAndMakeNuPluginFromFilePath filePath =
-        let dirName = Path.GetDirectoryName filePath
-        Directory.SetCurrentDirectory dirName
-        let assemblyTypes =
-            try let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                assembly.GetTypes ()
-            with _ ->
-                Log.info "Could not load assembly dependencies when utilitzing Assembly.Load (.NET does not look in the assembly's directory for dependencies for some reason). Using non-shadow assemply load instead."
-                let assembly = Assembly.LoadFrom filePath
-                assembly.GetTypes ()
-        let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
+    let selectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let (dirName, types) =
+            if not (String.IsNullOrWhiteSpace filePathOpt) then
+                let filePath = filePathOpt
+                try let dirName = Path.GetDirectoryName filePath
+                    try
+                        Directory.SetCurrentDirectory dirName
+                        let assembly = Assembly.Load (File.ReadAllBytes filePath)
+                        (dirName, assembly.GetTypes ())
+                    with _ ->
+                        Log.info "Could not load assembly dependencies when utilitzing Assembly.Load (.NET does not look in the assembly's directory for dependencies for some reason). Using non-shadow assemply load instead."
+                        let assembly = Assembly.LoadFrom filePath
+                        (dirName, assembly.GetTypes ())
+                with _ ->
+                    Log.info ("Invalid file path '" + filePath + " for NuPlugin assembly.")
+                    (".", [|typeof<NuPlugin>|])
+            else (".", [|typeof<NuPlugin>|])
+        let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
         match dispatcherTypeOpt with
         | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in (dirName, plugin)
         | None -> (".", NuPlugin ())
@@ -1604,15 +1611,14 @@ module Gaia =
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
         startForm.useGameplayScreenCheckBox.Checked <- savedState.UseGameplayScreen
         startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
-        if  startForm.ShowDialog () = DialogResult.OK &&
-            not (String.IsNullOrWhiteSpace (startForm.binaryFilePathText.Text)) then
+        if  startForm.ShowDialog () = DialogResult.OK then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
                   UseGameplayScreen = startForm.useGameplayScreenCheckBox.Checked
                   UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
             try File.WriteAllText (Constants.Editor.SavedStateFilePath, (scstring savedState))
             with _ -> Log.info "Could not save editor state."
-            let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePath startForm.binaryFilePathText.Text
+            let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text
             (savedState, targetDir, plugIn)
         else (savedState, ".", NuPlugin ())
 
