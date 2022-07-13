@@ -1296,8 +1296,7 @@ module Light3dFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Size (v3Dup 0.5f)
-             define Entity.Light true
+            [define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness 1000.0f
              define Entity.Intensity 1.0f
@@ -1317,6 +1316,12 @@ module Light3dFacetModule =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
+
+        override this.TryGetHighlightBounds (entity, world) =
+            Some (entity.GetBounds world)
+
+        override this.GetQuickSize (_, _) =
+            v3Dup 0.5f
 
 [<AutoOpen>]
 module StaticModelFacetModule =
@@ -1400,6 +1405,20 @@ module StaticModelFacetModule =
                 Array.concat intersectionses
             | None -> [||]
 
+        override this.TryGetHighlightBounds (entity, world) =
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
+            | Some staticModel ->
+                let mutable boundsOpt = None
+                for surface in staticModel.Surfaces do
+                    let bounds2 = surface.PhysicallyBasedGeometry.Bounds
+                    match boundsOpt with
+                    | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
+                    | None -> boundsOpt <- Some bounds2
+                match boundsOpt with
+                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrix world))
+                | None -> None
+            | None -> None
+
 [<AutoOpen>]
 module StaticModelSurfaceFacetModule =
 
@@ -1455,15 +1474,28 @@ module StaticModelSurfaceFacetModule =
             match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
-                let surface = staticModel.Surfaces.[surfaceIndex]
-                let geometry = surface.PhysicallyBasedGeometry
-                let mutable bounds = geometry.Bounds
-                let boundsIntersectionOpt = rayEntity.Intersects bounds
-                if boundsIntersectionOpt.HasValue then
-                    let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
-                    intersections |> Seq.map snd' |> Seq.toArray
+                if surfaceIndex < staticModel.Surfaces.Length then
+                    let surface = staticModel.Surfaces.[surfaceIndex]
+                    let geometry = surface.PhysicallyBasedGeometry
+                    let mutable bounds = geometry.Bounds
+                    let boundsIntersectionOpt = rayEntity.Intersects bounds
+                    if boundsIntersectionOpt.HasValue then
+                        let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
+                        intersections |> Seq.map snd' |> Seq.toArray
+                    else [||]
                 else [||]
             | None -> [||]
+
+        override this.TryGetHighlightBounds (entity, world) =
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) world with
+            | Some staticModel ->
+                let surfaceIndex = entity.GetSurfaceIndex world
+                if surfaceIndex < staticModel.Surfaces.Length then
+                    let surface = staticModel.Surfaces.[surfaceIndex]
+                    let bounds = surface.PhysicallyBasedGeometry.Bounds
+                    Some (bounds.Transform (entity.GetAffineMatrix world))
+                else None
+            | None -> None
 
 [<AutoOpen>]
 module EntityDispatcherModule =
@@ -2556,12 +2588,14 @@ module Light3dDispatcherModule =
             [typeof<Light3dFacet>]
 
         static member Properties =
-            [define Entity.Size (v3Dup 0.5f)
-             define Entity.Light true
+            [define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness 10.0f
              define Entity.Intensity 1.0f
              define Entity.LightType PointLight]
+
+        override this.GetQuickSize (_, _) =
+            v3Dup 0.5f
 
 [<AutoOpen>]
 module StaticModelDispatcherModule =
@@ -2627,6 +2661,7 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let world = child.QuickSize world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
@@ -2644,13 +2679,12 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let world = child.QuickSize world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let world = world'
                             let childSurnames = Array.append entity.Surnames surface.SurfaceNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
                             let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
-                            let bounds = surface.SurfaceBounds
-                            let boundsExtended = bounds.Combine bounds.Mirror
                             let transform = surface.SurfaceMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -2660,7 +2694,6 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetSize boundsExtended.Size world
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
@@ -2670,6 +2703,7 @@ module StaticSceneDispatcherModule =
                             let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
                             let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
                             let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
+                            let world = child.QuickSize world
                             world' <- world
                             i <- inc i)
                 world'
