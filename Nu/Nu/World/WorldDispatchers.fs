@@ -1260,15 +1260,15 @@ module TmxMapFacetModule =
 module LightFacetModule =
 
     type Entity with
-        member this.GetLightType world : LightType = this.Get Property? LightType world
-        member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
-        member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
         member this.GetBrightness world : single = this.Get Property? Brightness world
         member this.SetBrightness (value : single) world = this.Set Property? Brightness value world
         member this.Brightness = lens Property? Brightness this.GetBrightness this.SetBrightness this
         member this.GetIntensity world : single = this.Get Property? Intensity world
         member this.SetIntensity (value : single) world = this.Set Property? Intensity value world
         member this.Intensity = lens Property? Intensity this.GetIntensity this.SetIntensity this
+        member this.GetLightType world : LightType = this.Get Property? LightType world
+        member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
+        member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
 
     type LightFacet () =
         inherit Facet (false)
@@ -1276,9 +1276,9 @@ module LightFacetModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.LightType PointLight
              define Entity.Brightness 1000.0f
-             define Entity.Intensity 1.0f]
+             define Entity.Intensity 1.0f
+             define Entity.LightType PointLight]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -2536,9 +2536,9 @@ module LightDispatcherModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.LightType PointLight
              define Entity.Brightness 10.0f
-             define Entity.Intensity 1.0f]
+             define Entity.Intensity 1.0f
+             define Entity.LightType PointLight]
 
 [<AutoOpen>]
 module SkyBoxDispatcherModule =
@@ -2608,10 +2608,10 @@ module StaticSceneDispatcherModule =
                 // 4) export root GameObject
                 // 5) delete all fbx files except the one you exported
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
-                staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
+                staticModelMetadata.PhysicallyBasedStaticHierarchy.Traverse (fun nodes ->
                     for node in nodes do
                         match node with
-                        | Left names ->
+                        | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
                             let world = world'
                             let childSurnames = Array.append entity.Surnames names // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
                             let (child, world) = World.createEntity<EntityDispatcher3d> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
@@ -2619,7 +2619,24 @@ module StaticSceneDispatcherModule =
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
                             world' <- world
-                        | Right surface ->
+                        | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
+                            let world = world'
+                            let childSurnames = Array.append entity.Surnames light.LightNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let (child, world) = World.createEntity<LightDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            let transform = light.LightMatrix
+                            let position = transform.Translation
+                            let mutable rotation = transform
+                            rotation.Translation <- v3Zero
+                            let rotation = Quaternion.CreateFromRotationMatrix rotation
+                            let scale = transform.Scale ()
+                            let world = child.SetPositionLocal position world
+                            let world = child.SetRotationLocal rotation world
+                            let world = child.SetScaleLocal scale world
+                            let world = child.SetPersistent false world
+                            let world = child.SetStatic (entity.GetStatic world) world
+                            let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            world' <- world
+                        | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let world = world'
                             let childSurnames = Array.append entity.Surnames surface.SurfaceNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
                             let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
@@ -2631,12 +2648,6 @@ module StaticSceneDispatcherModule =
                             rotation.Translation <- v3Zero
                             let rotation = Quaternion.CreateFromRotationMatrix rotation
                             let scale = transform.Scale ()
-                            let world = child.SetSurfaceIndex i world
-                            let world = child.SetStaticModel staticModel world
-                            let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
-                            let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
-                            let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
-                            let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
@@ -2644,6 +2655,12 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
                             let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let world = child.SetSurfaceIndex i world
+                            let world = child.SetStaticModel staticModel world
+                            let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
+                            let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
+                            let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
+                            let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
                             world' <- world
                             i <- inc i)
                 world'

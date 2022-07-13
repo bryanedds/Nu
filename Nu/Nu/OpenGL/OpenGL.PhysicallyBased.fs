@@ -43,10 +43,10 @@ module PhysicallyBased =
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { mutable HashCode : int
           SurfaceNames : string array
-          SurfaceMatrixIsIdentity : bool
+          SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unecessary.
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
-          PhysicallyBasedMaterial : PhysicallyBasedMaterial // OPTIMIZATION: avoid matrix multiply when unecessary.
+          PhysicallyBasedMaterial : PhysicallyBasedMaterial
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
@@ -92,11 +92,27 @@ module PhysicallyBased =
         override this.GetHashCode () =
             this.HashCode
 
+    /// A light inside a physically-based static model.
+    type [<NoEquality; NoComparison>] PhysicallyBasedLight =
+        { LightNames : string array
+          LightMatrixIsIdentity : bool
+          LightMatrix : Matrix4x4
+          LightColor : Color
+          LightBrightness : single
+          LightIntensity : single
+          PhysicallyBasedLightType : LightType }
+
+    /// A part of a physically-based hierarchy.
+    type [<NoEquality; NoComparison>] PhysicallyBasedPart =
+        | PhysicallyBasedNode of string array
+        | PhysicallyBasedLight of PhysicallyBasedLight
+        | PhysicallyBasedSurface of PhysicallyBasedSurface
+
     /// A physically-based static model.
     type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
           Surfaces : PhysicallyBasedSurface array
-          PhysicallyBasedHierarchy : Either<string array, PhysicallyBasedSurface> array TreeNode }
+          PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
 
     /// Describes a physically-based shader that's loaded into GPU.
     type [<StructuralEquality; NoComparison>] PhysicallyBasedShader =
@@ -517,14 +533,51 @@ module PhysicallyBased =
             | Right materials ->
                 match TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene) with
                 | Right geometries ->
+
+                    // collect lights
+                    let lights =
+                        seq {
+                            for i in 0 .. dec scene.LightCount do
+                                let light = scene.Lights[i]
+                                let node = scene.RootNode.FindNode light.Name
+                                yield (node, light) } |>
+                        Seq.toArray
+
+                    // construct bounds and hierarchy
+                    // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause too subtle hierarchy bugs.
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
                         scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
                             seq {
-                                // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause too subtle hierarchy bugs.
-                                yield Left names
+
+                                // collect node
+                                yield PhysicallyBasedNode names
+
+                                // collect light
+                                // NOTE: this is an n^2 algorithm to deal with nodes having no light information
+                                for i in 0 .. dec lights.Length do
+                                    let (lightNode, light) = lights.[i]
+                                    if lightNode = node then
+                                        let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                        let transform = node.ImportMatrix (unitType, node.TransformWorld)
+                                        let color = color light.ColorDiffuse.R light.ColorDiffuse.G light.ColorDiffuse.B 1.0f
+                                        match light.LightType with
+                                        | _ -> // just use point light for all lights right now
+                                            let physicallyBasedLight =
+                                                PhysicallyBasedLight
+                                                    { LightNames = names
+                                                      LightMatrixIsIdentity = transform.IsIdentity
+                                                      LightMatrix = transform
+                                                      LightColor = color
+                                                      LightBrightness = 1.0f // TODO: 3D: see if we can figure out how to populate this.
+                                                      LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this.
+                                                      PhysicallyBasedLightType = PointLight }
+                                            yield physicallyBasedLight
+
                                 for i in 0 .. dec node.MeshIndices.Count do
+
+                                    // collect surfaces
                                     let meshIndex = node.MeshIndices.[i]
                                     let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
                                     let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
@@ -533,10 +586,12 @@ module PhysicallyBased =
                                     let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
                                     bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                     SegmentedList.add surface surfaces
-                                    yield Right surface } |>
+                                    yield PhysicallyBasedSurface surface } |>
                             Seq.toArray |>
                             TreeNode)
-                    Right { Bounds = bounds; PhysicallyBasedHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
+
+                    // fin
+                    Right { Bounds = bounds; PhysicallyBasedStaticHierarchy = hierarchy; Surfaces = Array.ofSeq surfaces }
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)

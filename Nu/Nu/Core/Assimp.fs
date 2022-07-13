@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open Prime
 open Nu
 
 /// Specifies how to interpret imported asset units.
@@ -17,6 +18,16 @@ module AssimpExtensions =
     /// Node extensions.
     type Assimp.Node with
 
+        /// Get the world transform of the node.
+        member this.TransformWorld =
+            let mutable parentOpt = this.Parent
+            let mutable transform = this.Transform
+            while notNull parentOpt do
+                transform <- transform * parentOpt.Transform
+                parentOpt <- parentOpt.Parent
+            transform
+
+        /// TODO: 3D: make this static?
         member this.ImportMatrix (unitType, m : Assimp.Matrix4x4) =
             let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
             Matrix4x4
