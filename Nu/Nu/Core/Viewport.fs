@@ -108,30 +108,24 @@ module Viewport =
             else this.ViewRelative3d (eyePosition, eyeRotation)
 
         /// Compute the 3d projection matrix.
-        member this.Projection3d presence =
-            let farPlaneDistance =
-                match presence with
-                | Enclosed -> Constants.Render.FarPlaneDistanceEnclosed
-                | Unenclosed -> Constants.Render.FarPlaneDistanceUnenclosed
-                | Prominent -> Constants.Render.FarPlaneDistanceProminent
-                | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
+        member this.Projection3d nearPlaneDistance farPlaneDistance =
             Matrix4x4.CreatePerspectiveFieldOfView
                 (Constants.Render.FieldOfView,
                  this.AspectRatio,
-                 Constants.Render.NearPlaneDistance,
+                 nearPlaneDistance,
                  farPlaneDistance)
 
-        /// Compute the 3d view projection matrix.
-        member this.ViewProjection3d (absolute, presence, eyePosition, eyeSize) =
+        /// Compute a 3d view projection matrix.
+        member this.ViewProjection3d (absolute, nearPlaneDistance, farPlaneDistance, eyePosition, eyeSize) =
             let view = this.View3d (absolute, eyePosition, eyeSize)
-            let projection = this.Projection3d presence
+            let projection = this.Projection3d nearPlaneDistance farPlaneDistance
             view * projection
 
-        /// Compute the 3d view frustum.
-        member this.Frustum presence eyePosition (eyeRotation : Quaternion) =
+        /// Compute a 3d view frustum.
+        member this.Frustum (nearPlaneDistance, farPlaneDistance, eyePosition, eyeRotation : Quaternion) =
             let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
             let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
-            let projection = this.Projection3d presence
+            let projection = this.Projection3d nearPlaneDistance farPlaneDistance
             let viewProjection = view * projection
             Frustum viewProjection
 
@@ -143,7 +137,7 @@ module Viewport =
 
         /// Transform the given mouse position to 3d world space.
         member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyePosition, eyeRotation) =
-            let viewProjection = this.ViewProjection3d (absolute, Omnipresent, eyePosition, eyeRotation)
+            let viewProjection = this.ViewProjection3d (absolute, 1.0f, 10.0f, eyePosition, eyeRotation) // NOTE: I'm not sure what the ideal near and far parameters are here to preserve accuracy.
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
             Ray (near, Vector3.Normalize (far - near))

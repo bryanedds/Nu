@@ -128,9 +128,9 @@ module WorldModuleGame =
                     let viewport = Constants.Render.Viewport
                     { gameState with
                         EyePosition3d = value
-                        EyeFrustumEnclosed3d = viewport.Frustum Enclosed value gameState.EyeRotation3d
-                        EyeFrustumUnenclosed3d = viewport.Frustum Unenclosed value gameState.EyeRotation3d
-                        EyeFrustumProminent3d = viewport.Frustum Prominent value gameState.EyeRotation3d }
+                        EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
+                        EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, value, gameState.EyeRotation3d)
+                        EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, value, gameState.EyeRotation3d) }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -150,9 +150,9 @@ module WorldModuleGame =
                     let viewport = Constants.Render.Viewport
                     { gameState with
                         EyeRotation3d = value
-                        EyeFrustumEnclosed3d = viewport.Frustum Enclosed gameState.EyePosition3d value
-                        EyeFrustumUnenclosed3d = viewport.Frustum Unenclosed gameState.EyePosition3d value
-                        EyeFrustumProminent3d = viewport.Frustum Prominent gameState.EyePosition3d value }
+                        EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
+                        EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, gameState.EyePosition3d, value)
+                        EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, gameState.EyePosition3d, value) }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.

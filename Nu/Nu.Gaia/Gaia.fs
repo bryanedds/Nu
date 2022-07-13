@@ -876,8 +876,8 @@ module Gaia =
                             if atMouse then
                                 // TODO: 3D: use position on forward plane rather than ray.
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
-                                ray.Position + ray.Direction * Constants.Render.EyePosition3dDefault.Z
-                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Render.EyePosition3dDefault.Z
+                                ray.Position + ray.Direction * Constants.Engine.EyePosition3dDefault.Z
+                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyePosition3dDefault.Z
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
                         if form.snap3dButton.Checked
@@ -1086,7 +1086,7 @@ module Gaia =
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             let world = World.setEyePosition2d v2Zero world
-            let world = World.setEyePosition3d Constants.Render.EyePosition3dDefault world
+            let world = World.setEyePosition3d Constants.Engine.EyePosition3dDefault world
             let world = World.setEyeRotation3d quatIdentity world
             world
 

@@ -354,7 +354,7 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyePosition3d = Constants.Render.EyePosition3dDefault
+            let eyePosition3d = Constants.Engine.EyePosition3dDefault
             let eyeRotation3d = quatIdentity
             let viewport = Constants.Render.Viewport
             { Dispatcher = dispatcher
@@ -368,9 +368,9 @@ module WorldTypes =
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               EyePosition3d = eyePosition3d
               EyeRotation3d = eyeRotation3d
-              EyeFrustumEnclosed3d = viewport.Frustum Enclosed eyePosition3d eyeRotation3d
-              EyeFrustumUnenclosed3d = viewport.Frustum Unenclosed eyePosition3d eyeRotation3d
-              EyeFrustumProminent3d = viewport.Frustum Prominent eyePosition3d eyeRotation3d
+              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
+              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eyePosition3d, eyeRotation3d)
+              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eyePosition3d, eyeRotation3d)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
