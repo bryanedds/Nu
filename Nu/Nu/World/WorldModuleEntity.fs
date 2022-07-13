@@ -2180,7 +2180,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap surnamesOpt (group : Group) world =
+        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap degreesSnap scaleSnap surnamesOpt (group : Group) world =
             // TODO: 3D: implement this for 3d.
             match Clipboard with
             | Some entityStateObj ->
@@ -2196,7 +2196,7 @@ module WorldModuleEntity =
                     else viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)
                 let mutable transform = entityState.Transform
                 transform.Position <- position2d.V3
-                transform.Snap (positionSnap, rotationSnap)
+                transform.Snap (positionSnap, degreesSnap, scaleSnap)
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world

@@ -196,9 +196,9 @@ module WorldEntityModule =
             World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap rotationSnap (value : Transform) world =
+        member this.SetTransformSnapped positionSnap degreesSnap scaleSnap (value : Transform) world =
             let mutable transform = value
-            transform.Snap (positionSnap, rotationSnap)
+            transform.Snap (positionSnap, degreesSnap, scaleSnap)
             this.SetTransform transform world
 
         /// Try to get a property value and type.

@@ -232,10 +232,10 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterOrientedOpt_ <- ref perimeterOriented
             this.PerimeterOrientedDirty <- false
 
-    // TODO: 3D: scale snapping.
-    member this.Snap (positionSnap, rotationSnap) =
+    member this.Snap (positionSnap, degreesSnap, scaleSnap) =
         this.Position <- Math.snapF3d positionSnap this.Position
-        this.Angles <- Math.snapR3d rotationSnap this.Angles
+        this.Angles <- Math.degreesToRadians3d (Math.snapD3d degreesSnap (Math.degreesToRadians3d this.Angles)) // TODO: 3D: implement Degrees directly in Transform.
+        this.Scale <- Math.snapF3d scaleSnap this.Scale
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask

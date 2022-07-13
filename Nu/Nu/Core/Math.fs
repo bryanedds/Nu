@@ -1176,28 +1176,28 @@ module Math =
             (degreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
-    let snap offset value =
+    let snapI offset (value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
             let rem = if rem < offset / 2 then 0 else offset
             div * offset + rem
         else value
 
-    /// Snap a radian value to an offset.
-    let snapR offset value =
-        radiansToDegrees value |>
+    /// Snap a single value to an offset.
+    let snapF (offset : single) (value : single) =
+        single (snapI (int offset) (int value))
+
+    /// Snap a degree value to an offset.
+    let snapD (offset : single) (value : single) =
+        value |>
         int |>
-        snap offset |>
+        snapI (int offset) |>
         single |>
         degreesToRadians
 
-    /// Snap a Vector3 radian value to an offset.
-    let snapR3d offset (v3 : Vector3) =
-        Vector3 (snapR offset v3.X, snapR offset v3.Y, snapR offset v3.Z)
-
-    /// Snap an single float value to an offset.
-    let snapF offset (value : single) =
-        single (snap offset (int value))
+    /// Snap a Vector3 degree value to an offset.
+    let snapD3d offset (v3 : Vector3) =
+        Vector3 (snapD offset v3.X, snapD offset v3.Y, snapD offset v3.Z)
 
     /// Snap a Vector3 value to an offset.
     let snapF3d offset (v3 : Vector3) =
