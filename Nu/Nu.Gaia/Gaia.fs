@@ -369,6 +369,26 @@ module Gaia =
             (Cascade, world)
         else (Cascade, world)
 
+    let private handleNuActualize (form : GaiaForm) (_ : Event<unit, Game>) world =
+        match form.entityPropertyGrid.SelectedObject with
+        | null -> (Cascade, world)
+        | :? EntityTypeDescriptorSource as entityTds ->
+            let entity = entityTds.DescribedEntity
+            if entity.GetIs2d world then
+                // TODO: 3D: 2d selection render
+                (Cascade, world)
+            else
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetBounds world
+                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size * 1.01f) // slightly bigger to prevent z-fighting w/ highlight box
+                boundsMatrix.Translation <- bounds.Center
+                let renderMaterial = Unchecked.defaultof<_>
+                let renderType = ForwardRenderType
+                let staticModel = Assets.Default.HighlightModel
+                let world = World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
+                (Cascade, world)
+        | _ -> (Cascade, world)
+
     let private monitorLifeCycleEvents form world =
         let world = World.monitor (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Globals.Screen world
         let world = World.monitor (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Globals.Screen world
@@ -1477,7 +1497,7 @@ module Gaia =
                         let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                         let world = World.subscribe (handleNuUpdate form) Events.Update Simulants.Game world
-                        let world = World.subscribe (handleNuUpdate form) Events.Act Simulants.Game world
+                        let world = World.subscribe (handleNuActualize form) Events.Actualize Simulants.Game world
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")

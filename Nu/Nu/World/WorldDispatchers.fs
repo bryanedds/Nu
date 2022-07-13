@@ -1296,7 +1296,8 @@ module Light3dFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Light true
+            [define Entity.Size (v3Dup 0.5f)
+             define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness 1000.0f
              define Entity.Intensity 1.0f
@@ -2555,7 +2556,8 @@ module Light3dDispatcherModule =
             [typeof<Light3dFacet>]
 
         static member Properties =
-            [define Entity.Light true
+            [define Entity.Size (v3Dup 0.5f)
+             define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness 10.0f
              define Entity.Intensity 1.0f
