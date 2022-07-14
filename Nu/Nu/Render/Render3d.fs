@@ -37,10 +37,22 @@ and [<NoEquality; NoComparison>] RenderTasks =
       mutable RenderSkyBoxes : CubeMap AssetTag SegmentedList
       mutable RenderLights : SortableLight SegmentedList }
 
+/// The parameters for completing a render pass.
+and [<NoEquality; NoComparison>] RenderPass3dDescriptor =
+    { EyePosition : Vector3
+      EyeRotation : Quaternion
+      ViewAbsolute : Matrix4x4
+      ViewRelative : Matrix4x4
+      ViewSkyBox : Matrix4x4
+      Viewport : Viewport
+      Projection : Matrix4x4
+      RenderTasks : RenderTasks
+      Renderer3d : Renderer3d }
+
 /// Describes a 3d render pass.
 and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
     { RenderPassOrder : int64
-      RenderPass3d : Matrix4x4 * Matrix4x4 * Matrix4x4 * Matrix4x4 * RenderTasks * Renderer3d -> unit }
+      RenderPass3d : RenderPass3dDescriptor -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
@@ -588,9 +600,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture2d = brdfTexture2d
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
-              RenderModelsFields = Array.zeroCreate<single> (16 * 1024) // TODO: 3D: use constant for these 1024's.
-              RenderAlbedosFields = Array.zeroCreate<single> (4 * 1024)
-              RenderMaterialsFields = Array.zeroCreate<single> (3 * 1024)
+              RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
+              RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
+              RenderMaterialsFields = Array.zeroCreate<single> (3 * Constants.Render.GeometryBatchPrealloc)
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -619,10 +631,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
             let viewAbsolute = m4Identity
             let viewAbsoluteArray = viewAbsolute.ToArray ()
-            let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-            let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
+            let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
+            let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewport = Constants.Render.Viewport
             let projection = viewport.Projection3d Constants.Render.NearPlaneDistance Constants.Render.FarPlaneDistanceOmnipresent
             let projectionArray = projection.ToArray ()
@@ -646,8 +658,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderLightDescriptor (position, color, brightness, intensity, _) ->
                     let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
+                | HintRenderPackageUseMessage3d hintPackageUse ->
+                    GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
+                | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
+                    GlRenderer3d.handleHintRenderPackage3dDisuse hintPackageDisuse renderer
                 | RenderPostPassDescriptor3d postPass ->
-                    postPasses.Add postPass |> ignore<bool> // TODO: 3D: implement post-pass handling.
+                    postPasses.Add postPass |> ignore<bool>
+                | ReloadRenderAssetsMessage3d ->
+                    () // TODO: 3D: implement post-pass handling.
 
             // sort forward surfaces
             // TODO: 3D: extract sorting function from this mess.
@@ -834,8 +852,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // render post-passes
+            let passParameters =
+                { EyePosition = eyePosition
+                  EyeRotation = eyeRotation
+                  ViewAbsolute = viewAbsolute
+                  ViewRelative = viewRelative
+                  ViewSkyBox = viewSkyBox
+                  Viewport = viewport
+                  Projection = projection
+                  RenderTasks = renderer.RenderTasks
+                  Renderer3d = renderer }
             for pass in postPasses do
-                pass.RenderPass3d (viewAbsolute, viewSkyBox, viewRelative, projection, renderer.RenderTasks, renderer :> Renderer3d)
+                pass.RenderPass3d passParameters
                 OpenGL.Hl.Assert ()
 
             // clear render tasks
