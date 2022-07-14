@@ -375,7 +375,7 @@ module Gaia =
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
             if entity.GetIs2d world then
-                // TODO: 3D: 2d selection render
+                // TODO: 3D: 2d selection render.
                 (Cascade, world)
             else
                 let absolute = entity.GetAbsolute world
@@ -385,7 +385,6 @@ module Gaia =
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType
                 let staticModel = Assets.Default.HighlightModel
-                // TODO: 3D: make it so this renders last
                 let world = World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
