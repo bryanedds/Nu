@@ -17,7 +17,7 @@ type CustomModelDispatcher () =
     inherit StaticModelDispatcher ()
 
     override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.1f)) world
+        entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.01f)) world
 
 // this is our Elm-style command type
 type Command =
