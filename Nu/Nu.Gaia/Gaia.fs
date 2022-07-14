@@ -284,7 +284,7 @@ module Gaia =
                             let eyeRotation = World.getEye3dRotation world
                             let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
                             let entityPosition = entity.GetPosition world
-                            let entityPlane = Plane3.CreateFromPositionAndNormal (entityPosition, Vector3.Transform (v3Forward, World.getEye3dRotation world))
+                            let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEye3dRotation world))
                             let intersectionOpt = mouseRayWorld.Intersection entityPlane
                             if intersectionOpt.HasValue then
                                 let entityDragOffset = intersectionOpt.Value - entityPosition
@@ -906,9 +906,10 @@ module Gaia =
                         let eyeRotation = World.getEye3dRotation world
                         let entityPosition =
                             if atMouse then
-                                // TODO: 3D: use position on forward plane rather than ray.
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
-                                ray.Position + ray.Direction * Constants.Engine.Eye3dPositionDefault.Z
+                                let forward = Vector3.Transform (v3Forward, eyeRotation)
+                                let plane = plane3 (eyePosition + forward * Constants.Engine.Eye3dPositionDefault.Z) -forward
+                                (ray.Intersection plane).Value
                             else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.Eye3dPositionDefault.Z
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
