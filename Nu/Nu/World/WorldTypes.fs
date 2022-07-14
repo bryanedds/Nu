@@ -261,7 +261,7 @@ module WorldTypes =
             else Constants.Engine.EntitySize3dDefault
 
         /// Attempt to pick an entity with a ray.
-        abstract RayCast : Ray * Entity * World -> single array
+        abstract RayCast : Ray3 * Entity * World -> single array
         default this.RayCast (_, _, _) = [||]
 
         /// Attempt to get the highlight bounds of an entity.
@@ -315,7 +315,7 @@ module WorldTypes =
         default this.TrySignal (_, _, world) = world
 
         /// Participate in attempting to pick an entity with a ray.
-        abstract RayCast : Ray * Entity * World -> single array
+        abstract RayCast : Ray3 * Entity * World -> single array
         default this.RayCast (_, _, _) = [||]
 
         /// Attempt to get the highlight bounds of a facet.

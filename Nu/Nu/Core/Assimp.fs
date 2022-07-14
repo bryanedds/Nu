@@ -27,7 +27,7 @@ module AssimpExtensions =
                 parentOpt <- parentOpt.Parent
             transform
 
-        /// TODO: 3D: make this static?
+        /// Convert a matrix from an Assimp representation to Nu's.
         member this.ImportMatrix (unitType, m : Assimp.Matrix4x4) =
             let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
             Matrix4x4

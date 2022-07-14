@@ -237,12 +237,12 @@ namespace Nu
         {
             Vector3 min = this.Position, max = this.Position + this.Size;
             result =
-                max.X <= point.X &&
-                max.Y <= point.Y &&
-                max.Z <= point.Z &&
-                min.X >= point.X &&
-                min.Y >= point.Y &&
-                min.Z >= point.Z;
+                max.X >= point.X &&
+                max.Y >= point.Y &&
+                max.Z >= point.Z &&
+                min.X <= point.X &&
+                min.Y <= point.Y &&
+                min.Z <= point.Z;
         }
 
         /// <summary>
@@ -273,12 +273,12 @@ namespace Nu
             Vector3 min = this.Position, max = this.Position + this.Size;
             Vector3 min2 = box.Position, max2 = box.Position + box.Size;
             result =
-                max.X <= min2.X &&
-                max.Y <= min2.Y &&
-                max.Z <= min2.Z &&
-                min.X >= max2.X &&
-                min.Y >= max2.Y &&
-                min.Z >= max2.Z;
+                !(max.X < min2.X ||
+                  max.Y < min2.Y ||
+                  max.Z < min2.Z ||
+                  min.X > max2.X ||
+                  min.Y > max2.Y ||
+                  min.Z > max2.Z);
         }
 
         /// <summary>
@@ -319,14 +319,14 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <returns>
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public PlaneIntersectionType Intersects(Plane plane)
+        public PlaneIntersectionType Intersects(Plane3 plane)
         {
             PlaneIntersectionType result;
             Intersects(in plane, out result);
@@ -334,14 +334,14 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <param name="result">
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             // See http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
 

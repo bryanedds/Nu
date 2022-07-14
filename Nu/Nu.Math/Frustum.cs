@@ -15,7 +15,7 @@ namespace Nu
     {
         private Matrix4x4 _matrix;
         private readonly Vector3[] _corners = new Vector3[CornerCount];
-        private readonly Plane[] _planes = new Plane[PlaneCount];
+        private readonly Plane3[] _planes = new Plane3[PlaneCount];
 
         /// <summary>
         /// The number of planes in the frustum.
@@ -44,7 +44,7 @@ namespace Nu
         /// <summary>
         /// Gets the near plane of the frustum.
         /// </summary>
-        public Plane Near
+        public Plane3 Near
         {
             get { return this._planes[0]; }
         }
@@ -52,7 +52,7 @@ namespace Nu
         /// <summary>
         /// Gets the far plane of the frustum.
         /// </summary>
-        public Plane Far
+        public Plane3 Far
         {
             get { return this._planes[1]; }
         }
@@ -60,7 +60,7 @@ namespace Nu
         /// <summary>
         /// Gets the left plane of the frustum.
         /// </summary>
-        public Plane Left
+        public Plane3 Left
         {
             get { return this._planes[2]; }
         }
@@ -68,7 +68,7 @@ namespace Nu
         /// <summary>
         /// Gets the right plane of the frustum.
         /// </summary>
-        public Plane Right
+        public Plane3 Right
         {
             get { return this._planes[3]; }
         }
@@ -76,7 +76,7 @@ namespace Nu
         /// <summary>
         /// Gets the top plane of the frustum.
         /// </summary>
-        public Plane Top
+        public Plane3 Top
         {
             get { return this._planes[4]; }
         }
@@ -84,7 +84,7 @@ namespace Nu
         /// <summary>
         /// Gets the bottom plane of the frustum.
         /// </summary>
-        public Plane Bottom
+        public Plane3 Bottom
         {
             get { return this._planes[5]; }
         }
@@ -371,11 +371,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets type of intersection between specified <see cref="Plane"/> and this <see cref="Frustum"/>.
+        /// Gets type of intersection between specified <see cref="Plane3"/> and this <see cref="Frustum"/>.
         /// </summary>
-        /// <param name="plane">A <see cref="Plane"/> for intersection test.</param>
+        /// <param name="plane">A <see cref="Plane3"/> for intersection test.</param>
         /// <returns>A plane intersection type.</returns>
-        public PlaneIntersectionType Intersects(Plane plane)
+        public PlaneIntersectionType Intersects(Plane3 plane)
         {
             PlaneIntersectionType result;
             Intersects(in plane, out result);
@@ -383,11 +383,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets type of intersection between specified <see cref="Plane"/> and this <see cref="Frustum"/>.
+        /// Gets type of intersection between specified <see cref="Plane3"/> and this <see cref="Frustum"/>.
         /// </summary>
-        /// <param name="plane">A <see cref="Plane"/> for intersection test.</param>
+        /// <param name="plane">A <see cref="Plane3"/> for intersection test.</param>
         /// <param name="result">A plane intersection type as an output parameter.</param>
-        public void Intersects(in Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             plane.Intersects(in _corners[0], out result);
             for (int i = 1; i < _corners.Length; i++)
@@ -399,11 +399,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets the distance of intersection of <see cref="Ray"/> and this <see cref="Frustum"/> or null if no intersection happens.
+        /// Gets the distance of intersection of <see cref="Ray3"/> and this <see cref="Frustum"/> or null if no intersection happens.
         /// </summary>
-        /// <param name="ray">A <see cref="Ray"/> for intersection test.</param>
+        /// <param name="ray">A <see cref="Ray3"/> for intersection test.</param>
         /// <returns>Distance at which ray intersects with this <see cref="Frustum"/> or null if no intersection happens.</returns>
-        public float? Intersects(Ray ray)
+        public float? Intersects(Ray3 ray)
         {
             float? result;
             Intersects(in ray, out result);
@@ -411,11 +411,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets the distance of intersection of <see cref="Ray"/> and this <see cref="Frustum"/> or null if no intersection happens.
+        /// Gets the distance of intersection of <see cref="Ray3"/> and this <see cref="Frustum"/> or null if no intersection happens.
         /// </summary>
-        /// <param name="ray">A <see cref="Ray"/> for intersection test.</param>
+        /// <param name="ray">A <see cref="Ray3"/> for intersection test.</param>
         /// <param name="result">Distance at which ray intersects with this <see cref="Frustum"/> or null if no intersection happens as an output parameter.</param>
-        public void Intersects(in Ray ray, out float? result)
+        public void Intersects(in Ray3 ray, out float? result)
         {
             ContainmentType ctype;
             this.Contains(in ray.Position, out ctype);
@@ -465,12 +465,12 @@ namespace Nu
 
         private void CreatePlanes()
         {
-            this._planes[0] = new Plane(-this._matrix.M13, -this._matrix.M23, -this._matrix.M33, -this._matrix.M43);
-            this._planes[1] = new Plane(this._matrix.M13 - this._matrix.M14, this._matrix.M23 - this._matrix.M24, this._matrix.M33 - this._matrix.M34, this._matrix.M43 - this._matrix.M44);
-            this._planes[2] = new Plane(-this._matrix.M14 - this._matrix.M11, -this._matrix.M24 - this._matrix.M21, -this._matrix.M34 - this._matrix.M31, -this._matrix.M44 - this._matrix.M41);
-            this._planes[3] = new Plane(this._matrix.M11 - this._matrix.M14, this._matrix.M21 - this._matrix.M24, this._matrix.M31 - this._matrix.M34, this._matrix.M41 - this._matrix.M44);
-            this._planes[4] = new Plane(this._matrix.M12 - this._matrix.M14, this._matrix.M22 - this._matrix.M24, this._matrix.M32 - this._matrix.M34, this._matrix.M42 - this._matrix.M44);
-            this._planes[5] = new Plane(-this._matrix.M14 - this._matrix.M12, -this._matrix.M24 - this._matrix.M22, -this._matrix.M34 - this._matrix.M32, -this._matrix.M44 - this._matrix.M42);
+            this._planes[0] = new Plane3(-this._matrix.M13, -this._matrix.M23, -this._matrix.M33, -this._matrix.M43);
+            this._planes[1] = new Plane3(this._matrix.M13 - this._matrix.M14, this._matrix.M23 - this._matrix.M24, this._matrix.M33 - this._matrix.M34, this._matrix.M43 - this._matrix.M44);
+            this._planes[2] = new Plane3(-this._matrix.M14 - this._matrix.M11, -this._matrix.M24 - this._matrix.M21, -this._matrix.M34 - this._matrix.M31, -this._matrix.M44 - this._matrix.M41);
+            this._planes[3] = new Plane3(this._matrix.M11 - this._matrix.M14, this._matrix.M21 - this._matrix.M24, this._matrix.M31 - this._matrix.M34, this._matrix.M41 - this._matrix.M44);
+            this._planes[4] = new Plane3(this._matrix.M12 - this._matrix.M14, this._matrix.M22 - this._matrix.M24, this._matrix.M32 - this._matrix.M34, this._matrix.M42 - this._matrix.M44);
+            this._planes[5] = new Plane3(-this._matrix.M14 - this._matrix.M12, -this._matrix.M24 - this._matrix.M22, -this._matrix.M34 - this._matrix.M32, -this._matrix.M44 - this._matrix.M42);
 
             this.NormalizePlane(ref this._planes[0]);
             this.NormalizePlane(ref this._planes[1]);
@@ -480,7 +480,7 @@ namespace Nu
             this.NormalizePlane(ref this._planes[5]);
         }
 
-        private static void IntersectionPoint(in Plane a, in Plane b, in Plane c, out Vector3 result)
+        private static void IntersectionPoint(in Plane3 a, in Plane3 b, in Plane3 c, out Vector3 result)
         {
             // Formula used
             //                d1 ( N2 * N3 ) + d2 ( N3 * N1 ) + d3 ( N1 * N2 )
@@ -514,7 +514,7 @@ namespace Nu
             result.Z = (v1.Z + v2.Z + v3.Z) / f;
         }
 
-        private void NormalizePlane(ref Plane p)
+        private void NormalizePlane(ref Plane3 p)
         {
             float factor = 1f / p.Normal.Length();
             p.Normal.X *= factor;

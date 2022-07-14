@@ -54,7 +54,7 @@ module Enemy =
             let viewBounds = World.getViewBounds2d world
             let perimeter = this.GetBounds world
             let center = perimeter.Center
-            Math.isPointInBounds2d center.V2 viewBounds
+            viewBounds.Intersects center.V2
 
     type EnemyDispatcher () =
         inherit Entity2dDispatcher (false, true)

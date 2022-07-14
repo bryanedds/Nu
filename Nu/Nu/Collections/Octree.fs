@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections
 open System.Collections.Generic
+open System.Numerics
 open Prime
 
 /// Masks for Octelement flags.
@@ -48,11 +49,11 @@ module internal Octnode =
               Bounds : Box3
               Children : ValueEither<'e Octnode array, 'e Octelement HashSet> }
 
-    let inline internal atPoint point node =
-        Math.isPointInBounds3d point node.Bounds
+    let internal atPoint (point : Vector3) node =
+        node.Bounds.Intersects point
 
-    let inline internal isIntersectingBox box node =
-        Math.isBoundsIntersectingBounds3d box node.Bounds
+    let internal isIntersectingBox (bounds : Box3) node =
+        node.Bounds.Intersects bounds
 
     let inline internal isIntersectingFrustum (frustum : Frustum) node =
         frustum.Intersects node.Bounds

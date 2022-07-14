@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace Nu
@@ -13,82 +12,82 @@ namespace Nu
     /// Represents a ray with an origin and a direction in 3D space.
     /// Copied from - https://github.com/MonoGame/MonoGame/blob/v3.8/MonoGame.Framework/Ray.cs
     /// </summary>
-    public struct Ray : IEquatable<Ray>
+    public struct Ray3 : IEquatable<Ray3>
     {
         /// <summary>
-        /// The direction of this <see cref="Ray"/>.
+        /// The direction of this <see cref="Ray3"/>.
         /// </summary>
         public Vector3 Direction;
 
         /// <summary>
-        /// The origin of this <see cref="Ray"/>.
+        /// The origin of this <see cref="Ray3"/>.
         /// </summary>
         public Vector3 Position;
 
         /// <summary>
-        /// Create a <see cref="Ray"/>.
+        /// Create a <see cref="Ray3"/>.
         /// </summary>
-        /// <param name="position">The origin of the <see cref="Ray"/>.</param>
-        /// <param name="direction">The direction of the <see cref="Ray"/>.</param>
-        public Ray(Vector3 position, Vector3 direction)
+        /// <param name="position">The origin of the <see cref="Ray3"/>.</param>
+        /// <param name="direction">The direction of the <see cref="Ray3"/>.</param>
+        public Ray3(Vector3 position, Vector3 direction)
         {
             this.Position = position;
             this.Direction = direction;
         }
 
         /// <summary>
-        /// Check if the specified <see cref="Object"/> is equal to this <see cref="Ray"/>.
+        /// Check if the specified <see cref="Object"/> is equal to this <see cref="Ray3"/>.
         /// </summary>
-        /// <param name="obj">The <see cref="Object"/> to test for equality with this <see cref="Ray"/>.</param>
+        /// <param name="obj">The <see cref="Object"/> to test for equality with this <see cref="Ray3"/>.</param>
         /// <returns>
-        /// <code>true</code> if the specified <see cref="Object"/> is equal to this <see cref="Ray"/>,
+        /// <code>true</code> if the specified <see cref="Object"/> is equal to this <see cref="Ray3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
         public override bool Equals(object obj)
         {
-            return (obj is Ray) && this.Equals((Ray)obj);
+            return (obj is Ray3) && this.Equals((Ray3)obj);
         }
 
         /// <summary>
-        /// Check if the specified <see cref="Ray"/> is equal to this <see cref="Ray"/>.
+        /// Check if the specified <see cref="Ray3"/> is equal to this <see cref="Ray3"/>.
         /// </summary>
-        /// <param name="other">The <see cref="Ray"/> to test for equality with this <see cref="Ray"/>.</param>
+        /// <param name="other">The <see cref="Ray3"/> to test for equality with this <see cref="Ray3"/>.</param>
         /// <returns>
-        /// <code>true</code> if the specified <see cref="Ray"/> is equal to this <see cref="Ray"/>,
+        /// <code>true</code> if the specified <see cref="Ray3"/> is equal to this <see cref="Ray3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Ray other)
+        public bool Equals(Ray3 other)
         {
             return this.Position.Equals(other.Position) && this.Direction.Equals(other.Direction);
         }
 
         /// <summary>
-        /// Get a hash code for this <see cref="Ray"/>.
+        /// Get a hash code for this <see cref="Ray3"/>.
         /// </summary>
-        /// <returns>A hash code for this <see cref="Ray"/>.</returns>
+        /// <returns>A hash code for this <see cref="Ray3"/>.</returns>
         public override int GetHashCode()
         {
             return Position.GetHashCode() ^ Direction.GetHashCode();
         }
 
         /// <summary>
-        /// Transform this <see cref="Ray"/> by a matrix.
+        /// Transform this <see cref="Ray3"/> by a matrix.
         /// </summary>
-        public Ray Transform(Matrix4x4 m)
+        public Ray3 Transform(Matrix4x4 m)
 		{
             var a = Vector3.Transform(Position, m);
             var b = Vector3.Transform(Position + Direction, m);
-            return new Ray(a, Vector3.Normalize(b - a));
+            return new Ray3(a, Vector3.Normalize(b - a));
 		}
 
         /// <summary>
-        /// Transform this <see cref="Ray"/> by a quaternion.
+        /// Transform this <see cref="Ray3"/> by a quaternion.
         /// </summary>
-        public Ray Transform(Quaternion q)
+        public Ray3 Transform(Quaternion q)
 		{
             var a = Vector3.Transform(Position, q);
             var b = Vector3.Transform(Position + Direction, q);
-            return new Ray(a, Vector3.Normalize(b - a));
+            return new Ray3(a, Vector3.Normalize(b - a));
 		}
 
         /// <summary>
@@ -104,12 +103,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="BoundingBox"/>.
         /// </summary>
         /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
         /// <returns>
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="BoundingBox"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="BoundingBox"/>.
         /// </returns>
         public float? Intersects(Box3 box)
         {
@@ -196,12 +195,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="BoundingBox"/>.
         /// </summary>
         /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
         /// <param name="result">
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="BoundingBox"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="BoundingBox"/>.
         /// </param>
         public void Intersects(in Box3 box, out float? result)
         {
@@ -219,12 +218,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="Sphere"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Sphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="Box"/> to test for intersection.</param>
         /// <returns>
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="Sphere"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Sphere"/>.
         /// </returns>
         public float? Intersects(Sphere sphere)
         {
@@ -234,14 +233,14 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="Plane"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <returns>
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="Plane"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Plane3"/>.
         /// </returns>
-        public float? Intersects(Plane plane)
+        public float? Intersects(Plane3 plane)
         {
             float? result;
             Intersects(in plane, out result);
@@ -249,14 +248,14 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="Plane"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <param name="result">
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="Plane"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Plane3"/>.
         /// </param>
-        public void Intersects(in Plane plane, out float? result)
+        public void Intersects(in Plane3 plane, out float? result)
         {
             var den = Vector3.Dot(Direction, plane.Normal);
             if (Math.Abs(den) < 0.00001f)
@@ -280,12 +279,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray"/> intersects the specified <see cref="Sphere"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Sphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="Box3"/> to test for intersection.</param>
         /// <param name="result">
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray"/> does not intersect the <see cref="Sphere"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Sphere"/>.
         /// </param>
         public void Intersects(in Sphere sphere, out float? result)
         {
@@ -392,10 +391,10 @@ namespace Nu
         }
 
         /// <summary>
-        /// Attempt to find the intersection of the <see cref="Ray"/> with a <see cref="Plane"/>.
+        /// Attempt to find the intersection of the <see cref="Ray3"/> with a <see cref="Plane3"/>.
         /// TODO: 3D: get rid of this function and use Intersects instead.
         /// </summary>
-        public Vector3? Intersection(Plane plane)
+        public Vector3? Intersection(Plane3 plane)
         {
             var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
             var t =
@@ -410,7 +409,7 @@ namespace Nu
         /// <param name="a">A ray to check for inequality.</param>
         /// <param name="b">A ray to check for inequality.</param>
         /// <returns><code>true</code> if the two rays are not equal, <code>false</code> if they are.</returns>
-        public static bool operator !=(Ray a, Ray b)
+        public static bool operator !=(Ray3 a, Ray3 b)
         {
             return !a.Equals(b);
         }
@@ -421,22 +420,22 @@ namespace Nu
         /// <param name="a">A ray to check for equality.</param>
         /// <param name="b">A ray to check for equality.</param>
         /// <returns><code>true</code> if the two rays are equals, <code>false</code> if they are not.</returns>
-        public static bool operator ==(Ray a, Ray b)
+        public static bool operator ==(Ray3 a, Ray3 b)
         {
             return a.Equals(b);
         }
 
         /// <summary>
-        /// Get a <see cref="String"/> representation of this <see cref="Ray"/>.
+        /// Get a <see cref="String"/> representation of this <see cref="Ray3"/>.
         /// </summary>
-        /// <returns>A <see cref="String"/> representation of this <see cref="Ray"/>.</returns>
+        /// <returns>A <see cref="String"/> representation of this <see cref="Ray3"/>.</returns>
         public override string ToString()
         {
             return "{{Position:" + Position.ToString() + " Direction:" + Direction.ToString() + "}}";
         }
 
         /// <summary>
-        /// Deconstruction method for <see cref="Ray"/>.
+        /// Deconstruction method for <see cref="Ray3"/>.
         /// </summary>
         /// <param name="position">Receives the start position of the ray.</param>
         /// <param name="direction">Receives the direction of the ray.</param>

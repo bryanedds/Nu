@@ -469,11 +469,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Plane"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Plane3"/> intersects with this sphere.
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <returns>Type of intersection.</returns>
-        public PlaneIntersectionType Intersects(Plane plane)
+        public PlaneIntersectionType Intersects(Plane3 plane)
         {
             var result = default(PlaneIntersectionType);
             // TODO: we might want to inline this for performance reasons
@@ -482,11 +482,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Plane"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Plane3"/> intersects with this sphere.
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <param name="result">Type of intersection as an output parameter.</param>
-        public void Intersects(in Plane plane, out PlaneIntersectionType result)
+        public void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             // TODO: we might want to inline this for performance reasons
             var distance = Vector3.Dot(plane.Normal, this.Center);
@@ -500,21 +500,21 @@ namespace Nu
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Ray"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Ray3"/> intersects with this sphere.
         /// </summary>
         /// <param name="ray">The ray for testing.</param>
         /// <returns>Distance of ray intersection or <c>null</c> if there is no intersection.</returns>
-        public float? Intersects(Ray ray)
+        public float? Intersects(Ray3 ray)
         {
             return ray.Intersects(this);
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Ray"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Ray3"/> intersects with this sphere.
         /// </summary>
         /// <param name="ray">The ray for testing.</param>
         /// <param name="result">Distance of ray intersection or <c>null</c> if there is no intersection as an output parameter.</param>
-        public void Intersects(in Ray ray, out float? result)
+        public void Intersects(in Ray3 ray, out float? result)
         {
             ray.Intersects(in this, out result);
         }

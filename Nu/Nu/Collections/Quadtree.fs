@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections
 open System.Collections.Generic
+open System.Numerics
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -16,11 +17,11 @@ module internal Quadnode =
               Bounds : Box2
               Children : ValueEither<'e Quadnode array, 'e HashSet> }
 
-    let internal atPoint point node =
-        Math.isPointInBounds2d point node.Bounds
+    let internal atPoint (point : Vector2) node =
+        node.Bounds.Intersects point
 
-    let internal isIntersectingBounds bounds node =
-        Math.isBoundsIntersectingBounds2d bounds node.Bounds
+    let internal isIntersectingBounds (bounds : Box2) node =
+        node.Bounds.Intersects bounds
 
     let rec internal addElement bounds element node =
         if isIntersectingBounds bounds node then

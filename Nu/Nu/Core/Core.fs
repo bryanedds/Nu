@@ -61,12 +61,3 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
-
-/// Type of light.
-/// TODO: 3D: find a better place for this type!
-[<Syntax
-    ("PointLight", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison>] LightType =
-    | PointLight

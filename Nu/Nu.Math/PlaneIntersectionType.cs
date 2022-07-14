@@ -5,7 +5,7 @@
 namespace Nu
 {
     /// <summary>
-    /// Defines the intersection between a <see cref="Plane"/> and a bounding volume.
+    /// Defines the intersection between a <see cref="Plane3"/> and a bounding volume.
     /// Copied from - https://github.com/MonoGame/MonoGame/blob/v3.8/MonoGame.Framework/PlaneIntersectionType.cs
     /// </summary>
     public enum PlaneIntersectionType
