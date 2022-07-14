@@ -706,7 +706,6 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup state
-        Gl.DepthMask true
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
         if blending then
@@ -817,7 +816,6 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
-        Gl.DepthMask false
 
     /// Draw a the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface

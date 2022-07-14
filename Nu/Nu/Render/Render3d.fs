@@ -395,6 +395,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
+    static member private sortSurfaces eyePosition (surfaces : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) (renderer : GlRenderer3d) =
+        surfaces |>
+        Seq.map (fun struct (model, renderMaterial, surface) -> struct (model, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+        Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
+        Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
+        Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface))
+
     static member private renderPhysicallyBasedSurfaces
         eyePosition
         viewArray
@@ -665,23 +672,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderPostPassDescriptor3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
                 | ReloadRenderAssetsMessage3d ->
-                    () // TODO: 3D: implement post-pass handling.
+                    () // TODO: 3D: implement asset reloading?
 
-            // sort forward surfaces
-            // TODO: 3D: extract sorting function from this mess.
-            renderer.RenderTasks.RenderSurfacesForwardAbsolute |>
-                Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-                Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
-                flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
+            // sort absolute forward surfaces
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute renderer
+            SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            renderer.RenderTasks.RenderSurfacesForwardRelative |>
-                Seq.map (fun struct (model, renderMaterialOpt, surface) -> struct (model, renderMaterialOpt, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
-                Seq.toArray |>
-                Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-                Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface)) |>
-                flip SegmentedList.addMany renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
+
+            // sort relative forward surfaces
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardRelative renderer
+            SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
             // setup geometry buffer
