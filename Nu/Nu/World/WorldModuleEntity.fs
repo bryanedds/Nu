@@ -2219,11 +2219,11 @@ module WorldModuleEntity =
                 let entityState = { entityState with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
                 let position2d =
                     let viewport = World.getViewport world
-                    let eyePosition = World.getEyePosition2d world
-                    let eyeSize = World.getEyeSize2d world
+                    let eyePosition = World.getEye2dPosition world
+                    let eyeSize = World.getEye2dSize world
                     if atMouse
                     then viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)
-                    else viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)
+                    else viewport.MouseToWorld2d (entityState.Absolute, (World.getEye2dSize world * 0.5f), eyePosition, eyeSize)
                 let mutable transform = entityState.Transform
                 transform.Position <- position2d.V3
                 transform.Snap (positionSnap, degreesSnap, scaleSnap)

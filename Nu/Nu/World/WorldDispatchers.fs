@@ -291,7 +291,7 @@ module StaticSpriteFacetModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetStaticImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.Entity2dSizeDefault
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -619,7 +619,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -1161,7 +1161,7 @@ module TileMapFacetModule =
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap -> TmxMap.getQuickSize tileMap
-            | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.Entity2dSizeDefault
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -1467,7 +1467,7 @@ module StaticModelSurfaceFacetModule =
                 let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
-            else Constants.Engine.EntitySize3dDefault
+            else Constants.Engine.Entity3dSizeDefault
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
@@ -1506,14 +1506,14 @@ module EntityDispatcherModule =
 
         static member Properties =
             [define Entity.Centered false
-             define Entity.Size Constants.Engine.EntitySize2dDefault]
+             define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
     /// A 3d entity dispatcher.
     type Entity3dDispatcher (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
     type World with
 
@@ -1626,13 +1626,13 @@ module EntityDispatcherModule =
 
         static member Properties =
             [define Entity.Centered false
-             define Entity.Size Constants.Engine.EntitySize2dDefault]
+             define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
     and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command> (centered, physical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -1684,7 +1684,7 @@ module GuiDispatcherModule =
             [define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
@@ -1694,7 +1694,7 @@ module GuiDispatcherModule =
             [define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
 [<AutoOpen>]
@@ -1807,7 +1807,7 @@ module ButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetUpImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | None -> Constants.Engine.EntityGuiSizeDefault
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -1847,7 +1847,7 @@ module LabelDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetLabelImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | None -> Constants.Engine.EntityGuiSizeDefault
 
 [<AutoOpen>]
 module TextDispatcherModule =
@@ -1895,8 +1895,8 @@ module TextDispatcherModule =
             | Some image ->
                 match World.tryGetTexture2dSizeF image world with
                 | Some size -> size.V3
-                | None -> Constants.Engine.EntitySizeGuiDefault
-            | None -> Constants.Engine.EntitySizeGuiDefault
+                | None -> Constants.Engine.EntityGuiSizeDefault
+            | None -> Constants.Engine.EntityGuiSizeDefault
 
 [<AutoOpen>]
 module ToggleButtonDispatcherModule =
@@ -2027,7 +2027,7 @@ module ToggleButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetUntoggledImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | None -> Constants.Engine.EntityGuiSizeDefault
 
 [<AutoOpen>]
 module RadioButtonDispatcherModule =
@@ -2153,7 +2153,7 @@ module RadioButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetUndialedImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.Entity2dSizeDefault
 
 [<AutoOpen>]
 module FpsDispatcherModule =
@@ -2277,7 +2277,7 @@ module FeelerDispatcherModule =
             else world
 
         override this.GetQuickSize (_, _) =
-            Constants.Engine.EntitySizeGuiDefault
+            Constants.Engine.EntityGuiSizeDefault
 
 [<AutoOpen>]
 module FillBarDispatcherModule =
@@ -2383,7 +2383,7 @@ module FillBarDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTexture2dSizeF (entity.GetBorderImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.Entity2dSizeDefault
 
 [<AutoOpen>]
 module BasicEmitter2dDispatcherModule =

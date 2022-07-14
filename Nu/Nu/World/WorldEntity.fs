@@ -498,8 +498,8 @@ module WorldEntityModule =
             Array.tryFind
                 (fun (entity : Entity) ->
                     let viewport = World.getViewport world
-                    let eyePosition = World.getEyePosition2d world
-                    let eyeSize = World.getEyeSize2d world
+                    let eyePosition = World.getEye2dPosition world
+                    let eyeSize = World.getEye2dSize world
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyePosition, eyeSize)
                     let perimeterOriented = (entity.GetPerimeterOriented world).Box2
                     perimeterOriented.Intersects positionWorld)
@@ -512,8 +512,8 @@ module WorldEntityModule =
                 Seq.map
                     (fun (entity : Entity) ->
                         let viewport = World.getViewport world
-                        let eyePosition = World.getEyePosition3d world
-                        let eyeRotation = World.getEyeRotation3d world
+                        let eyePosition = World.getEye3dPosition world
+                        let eyeRotation = World.getEye3dRotation world
                         let rayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, position, eyePosition, eyeRotation)
                         let entityBounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects entityBounds

@@ -14,13 +14,13 @@ type WorldChanger = World -> World
 type WorldChangers = WorldChanger List
 
 type DragEntityState =
-    | DragEntityPosition2d of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
+    | DragEntity2dPosition of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
     | DragEntityRotation2d of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
-    | DragEntityPosition3d of EntityDragOffset : Vector3 * EntityPlane : Plane3 * Entity : Entity
+    | DragEntity3dPosition of EntityDragOffset : Vector3 * EntityPlane : Plane3 * Entity : Entity
     | DragEntityInactive
 
 type DragEyeState =
-    | DragEyePosition2d of Vector2 * Vector2
+    | DragEye2dPosition of Vector2 * Vector2
     | DragEyeInactive
 
 type EditorState =
