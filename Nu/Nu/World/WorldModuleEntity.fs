@@ -2210,23 +2210,43 @@ module WorldModuleEntity =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap degreesSnap scaleSnap surnamesOpt (group : Group) world =
-            // TODO: 3D: implement this for 3d.
+        static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
-                let entityState = entityStateObj :?> EntityState
                 let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
-                let entityState = { entityState with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
-                let position2d =
-                    let viewport = World.getViewport world
-                    let eyePosition = World.getEye2dPosition world
-                    let eyeSize = World.getEye2dSize world
-                    if atMouse
-                    then viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)
-                    else viewport.MouseToWorld2d (entityState.Absolute, (World.getEye2dSize world * 0.5f), eyePosition, eyeSize)
+                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
+                let (position, snapsOpt) =
+                    if entityState.Is2d then
+                        let viewport = World.getViewport world
+                        let eyePosition = World.getEye2dPosition world
+                        let eyeSize = World.getEye2dSize world
+                        let position =
+                            if atMouse
+                            then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEye2dSize world * 0.5f), eyePosition, eyeSize)).V3
+                        match snapsEir with
+                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        | Right _ -> (position, None)
+                    else
+                        let eyePosition = World.getEye3dPosition world
+                        let eyeRotation = World.getEye3dRotation world
+                        let position =
+                            if atMouse then
+                                let viewport = Constants.Render.Viewport
+                                let ray = viewport.MouseToWorld3d (entityState.Absolute, rightClickPosition, eyePosition, eyeRotation)
+                                let forward = Vector3.Transform (v3Forward, eyeRotation)
+                                let plane = plane3 (eyePosition + forward * Constants.Engine.Eye3dPositionDefault.Z) -forward
+                                let intersectionOpt = ray.Intersection plane
+                                intersectionOpt.Value
+                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.Eye3dPositionDefault.Z
+                        match snapsEir with
+                        | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        | Left _ -> (position, None)
                 let mutable transform = entityState.Transform
-                transform.Position <- position2d.V3
-                transform.Snap (positionSnap, degreesSnap, scaleSnap)
+                transform.Position <- position
+                match snapsOpt with
+                | Some (positionSnap, degreesSnap, scaleSnap) -> transform.Snap (positionSnap, degreesSnap, scaleSnap)
+                | None -> ()
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
