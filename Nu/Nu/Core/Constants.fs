@@ -86,6 +86,7 @@ module Render =
     let [<Literal>] SpriteBorderTexelScalar = 0.01f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
+    let [<Literal>] GeometryBatchPrealloc = 1024
     let [<Literal>] ShaderLightsMax = 32
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
