@@ -439,7 +439,6 @@ module PhysicallyBased =
         CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
-    /// TODO: 3D: see if we can get the presence of transparency with material.TransparencyFactor.
     let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
         let albedo =
             if material.HasColorDiffuse
@@ -547,7 +546,7 @@ module PhysicallyBased =
                         Seq.toArray
 
                     // construct bounds and hierarchy
-                    // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause too subtle hierarchy bugs.
+                    // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
                     let lights = SegmentedList.make ()
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
@@ -573,8 +572,8 @@ module PhysicallyBased =
                                                   LightMatrixIsIdentity = transform.IsIdentity
                                                   LightMatrix = transform
                                                   LightColor = color
-                                                  LightBrightness = 1.0f // TODO: 3D: see if we can figure out how to populate this.
-                                                  LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this.
+                                                  LightBrightness = light.AttenuationConstant
+                                                  LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
                                                   PhysicallyBasedLightType = PointLight }
                                             SegmentedList.add physicallyBasedLight lights
                                             yield PhysicallyBasedLight physicallyBasedLight
