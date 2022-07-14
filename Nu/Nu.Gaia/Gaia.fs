@@ -380,8 +380,8 @@ module Gaia =
             else
                 let absolute = entity.GetAbsolute world
                 let bounds = entity.GetHighlightBounds world
-                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size * 1.01f) // slightly bigger to prevent z-fighting w/ highlight box
-                boundsMatrix.Translation <- bounds.Center
+                let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
+                boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEye3dRotation world) // slightly closer to eye to prevent z-fighting with selected entity
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType
                 let staticModel = Assets.Default.HighlightModel
