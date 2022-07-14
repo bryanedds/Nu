@@ -857,7 +857,7 @@ module Gaia =
                 else world
             else world
 
-    let private handleFormCreateEntity atMouse (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             let oldWorld = world
             try Globals.pushPastWorld world
@@ -873,7 +873,15 @@ module Gaia =
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
                 let name = generateEntityName dispatcherName world
-                let (entity, world) = World.createEntity5 dispatcherName (Some [|name|]) overlayNameDescriptor selectedGroup world
+                let surnames =
+                    match form.entityPropertyGrid.SelectedObject with
+                    | null -> [|name|]
+                    | :? GroupTypeDescriptorSource -> [|name|]
+                    | :? EntityTypeDescriptorSource as entityTds when inHierarchy ->
+                        let parent = entityTds.DescribedEntity
+                        Array.add name parent.Surnames
+                    | _ -> [|name|]
+                let (entity, world) = World.createEntity5 dispatcherName (Some surnames) overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap, scaleSnap) = getSnaps form
                 let viewport = World.getViewport world
                 let mousePosition = World.getMousePosition world
@@ -906,6 +914,10 @@ module Gaia =
                         if form.snap3dButton.Checked
                         then entity.SetTransformSnapped positionSnap rotationSnap scaleSnap entityTransform world
                         else entity.SetTransform entityTransform world
+                let world =
+                    if inHierarchy
+                    then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                    else world
                 selectEntity entity form world
                 world
             with exn ->
@@ -1380,7 +1392,7 @@ module Gaia =
                 if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
-                if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false None form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false false None form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.D = key then handleFormDeleteEntity form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.X = key then handleFormCut form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
@@ -1553,15 +1565,15 @@ module Gaia =
                 tryRun3 runWhile sdlDeps form
             | _ -> Globals.World <- World.choose Globals.World
 
-    let private refreshCreateContextMenuItemChildren (form : GaiaForm) world =
-        form.createContextMenuItem.DropDownItems.Clear ()
-        let item = form.createContextMenuItem.DropDownItems.Add "Selected"
-        item.Click.Add (handleFormCreateEntity true None form)
-        form.createContextMenuItem.DropDownItems.Add "-" |> ignore
+    let private refreshCreateContextMenuItemChildren atMouse inHierarchy (createContextMenuItem : ToolStripMenuItem) (form : GaiaForm) world =
+        createContextMenuItem.DropDownItems.Clear ()
+        let item = createContextMenuItem.DropDownItems.Add "Selected"
+        item.Click.Add (handleFormCreateEntity atMouse inHierarchy None form)
+        createContextMenuItem.DropDownItems.Add "-" |> ignore
         for dispatcherKvp in World.getEntityDispatchers world do
             let dispatcherName = dispatcherKvp.Key
-            let item = form.createContextMenuItem.DropDownItems.Add dispatcherName
-            item.Click.Add (handleFormCreateEntity true (Some dispatcherName) form)
+            let item = createContextMenuItem.DropDownItems.Add dispatcherName
+            item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         let (defaultGroup, world) = attachToWorld targetDir form Globals.World
@@ -1569,7 +1581,8 @@ module Gaia =
         Globals.World <- world
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
-        refreshCreateContextMenuItemChildren form Globals.World
+        refreshCreateContextMenuItemChildren true false form.createContextMenuItem form Globals.World
+        refreshCreateContextMenuItemChildren false true form.createInHierarchyContextMenuItem form Globals.World
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup defaultGroup form Globals.World
@@ -1665,6 +1678,17 @@ module Gaia =
         form.hierarchyTreeView.AllowDrop <- true // TODO: configure this in designer instead.
         form.hierarchyTreeView.Sorted <- true
         form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
+        form.hierarchyTreeView.NodeMouseClick.Add (fun (e : TreeNodeMouseClickEventArgs) ->
+            addWorldChanger $ fun world ->
+                let nodeKey = e.Node.Name
+                if nodeKey <> Constants.Editor.GroupNodeKey then
+                    let address = Address.makeFromString nodeKey
+                    let entity = Entity ((getEditorState world).SelectedGroup.GroupAddress <-- atoa address)
+                    if entity.Exists world then selectEntity entity form world
+                    if e.Button = MouseButtons.Right then
+                        form.hierarchyContextMenuStrip.Show ()
+                form.hierarchyTreeView.SelectedNode <- e.Node
+                world)
 
         // set up events handlers
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
@@ -1691,12 +1715,13 @@ module Gaia =
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
         form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
         form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
-        form.createEntityButton.Click.Add (handleFormCreateEntity false None form)
-        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false None form)
-        form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.createEntityButton.Click.Add (handleFormCreateEntity false false None form)
+        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false false None form)
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
         form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.advancingButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.deleteInHierachyContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.newGroupToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveGroupToolStripMenuItem.Click.Add (handleFormSave false form)
         form.saveGroupAsToolStripMenuItem.Click.Add (handleFormSave true form)
