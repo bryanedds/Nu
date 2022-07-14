@@ -1088,24 +1088,10 @@ module Plane3 =
     let inline plane3Eq (left : Plane3) (right : Plane3) = left.Equals right
     let inline plane3Neq (left : Plane3) (right : Plane3) = not (left.Equals right)
 
-    /// Create a plane at the specified position and normal.
-    let CreateFromPositionAndNormal (position : Vector3, normal : Vector3) =
-        plane3 position normal
-
     type Plane3 with
 
-        /// Calculate a position on the plane.
-        member this.Position = this.Normal * -this.D;
-
-        /// Project a point onto the plane.
-        member this.Project point =  
-            // Formula: A || B = B x (A x B / |B|) / |B|
-            let a = point
-            let b = this.Position
-            let bm = b.Magnitude
-            Vector3.Cross(b, (Vector3.Cross(a, b) / bm) / bm)
-
         /// Attempt to find the intersection of the given ray with the plane.
+        /// TODO: move this to Ray3.cs.
         member this.Intersection (ray : Ray3) =
             ray.Intersection this
 

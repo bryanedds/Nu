@@ -395,7 +395,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member private sortSurfaces eyePosition (surfaces : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) (renderer : GlRenderer3d) =
+    static member private sortSurfaces eyePosition (surfaces : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
         Seq.map (fun struct (model, renderMaterial, surface) -> struct (model, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
@@ -675,12 +675,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     () // TODO: 3D: implement asset reloading?
 
             // sort absolute forward surfaces
-            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute renderer
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute
             SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
 
             // sort relative forward surfaces
-            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardRelative renderer
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardRelative
             SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
